@@ -1,7 +1,9 @@
 import argparse
 from pprint import pprint
-from . db import db_create, db_read, db_update, db_delete, db_list
-from . data import verify, from_json
+
+from msample import verify, from_json
+from msample.client import client_create, client_read, client_update, client_delete, client_list
+from msample.db import db_create, db_read, db_update, db_delete, db_list
 
 #
 # arg parser
@@ -9,20 +11,32 @@ from . data import verify, from_json
 
 parser = argparse.ArgumentParser(description='Sample Python CLI')
 
-parser.add_argument('command', type=str, choices=['verify', 'create', 'read', 'update', 'delete', 'list'])
+parser.add_argument('command', type=str, choices=[
+    'verify',
+    'db-create',
+    'db-read',
+    'db-update',
+    'db-delete',
+    'db-list'
+    'client-create',
+    'client-read',
+    'client-update',
+    'client-delete',
+    'client-list'
+])
 
-parser.add_argument('--id', type=str)
-parser.add_argument('--json', type=str)
+parser.add_argument('--id', type=str, default=None)
+parser.add_argument('--json', type=str, default=None)
 
 parser.add_argument('--offset', type=int, default=0)
 parser.add_argument('--limit', type=int, default=25)
 
-parser.add_argument('--name', type=str)
-parser.add_argument('--verified', type=bool)
-parser.add_argument('--color', type=str, choices=['red', 'green', 'blue'])
-parser.add_argument('--age', type=int)
-parser.add_argument('--score', type=float)
-parser.add_argument('--tags', type=str, nargs='+')
+parser.add_argument('--name', type=str, default=None)
+parser.add_argument('--verified', type=bool, default=None)
+parser.add_argument('--color', type=str, choices=['red', 'green', 'blue'], default=None)
+parser.add_argument('--age', type=int, default=None)
+parser.add_argument('--score', type=float, default=None)
+parser.add_argument('--tags', type=str, nargs='+', default=None)
 
 #
 # parse args
@@ -32,30 +46,49 @@ args = parser.parse_args()
 
 def get_user_data():
     if args.json is not None:
-        data = from_json(args.json)
+        return from_json(args.json)
     else:
-        data = {
-            'name': args.name,
-            'verified': args.verified,
-            'color': args.color,
-            'age': args.age,
-            'score': args.score,
-            'tags': args.tags
-        }
+        user_data = {}
+        if args.name is not None:
+            user_data['name'] = args.name
+        if args.verified is not None:
+            user_data['verified'] = args.verified
+        if args.color is not None:
+            user_data['color'] = args.color
+        if args.age is not None:
+            user_data['age'] = args.age
+        if args.score is not None:
+            user_data['score'] = args.score
+        if args.tags is not None:
+            user_data['tags'] = args.tags
+        return user_data
 
 #
 # run program
 #
 
 if args.command == 'verify':
-    verify(get_user_data())
-elif args.command == 'create':
-    pprint(db_create(get_user_data()))
-elif args.command == 'read':
-    pprint(db_read(args.id))
-elif args.command == 'update':
-    db_update(args.id, get_user_data())
-elif args.command == 'delete':
-    pprint(db_delete(args.id))
-elif args.command == 'list':
-    pprint(db_list(args.offset, args.limit))
+    result = verify(get_user_data())
+elif args.command == 'db-create':
+    result = db_create(get_user_data())
+elif args.command == 'db-read':
+    result = db_read(args.id)
+elif args.command == 'db-update':
+    result = db_update(args.id, get_user_data())
+elif args.command == 'db-delete':
+    result = db_delete(args.id)
+elif args.command == 'db-list':
+    result = db_list(args.offset, args.limit)
+elif args.command == 'client-create':
+    result = client_create(get_user_data())
+elif args.command == 'client-read':
+    result = client_read()
+elif args.command == 'client-update':
+    result = client_update()
+elif args.command == 'client-delete':
+    result = client_delete()
+elif args.command == 'client-list':
+    result = client_list(args.offsete, args.limit)
+
+
+pprint(result)

@@ -8,7 +8,7 @@ def render_py():
 """
 
 dist/
-    py/
+    msample/
         pyproject.toml
         src/
             sample/
@@ -31,15 +31,14 @@ dist/
                     + verify
                     + from_json
                     + to_json
-
-    html/
-        src/
-            style.css
-            index.html
-            sample/
-                index.html     (list)
-                create.html
-                read.html      (read + delete)
+        html/
+            src/
+                style.css
+                index.html
+                sample/
+                    index.html     (list)
+                    create.html
+                    read.html      (read + delete)
 """
 
 # entry points #

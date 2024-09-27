@@ -1,6 +1,6 @@
 
 
-__all__ = ['router', 'app']
+__all__ = ['routes']
 
 def routes(url):
     if url == '':
@@ -10,4 +10,4 @@ def routes(url):
 
 def application(env, start_response):
     start_response('200 OK', [('Content-Type','text/html')])
-    return [b"<html><body><h1>Hello World</h1></body></html>"]
+    return [b'<html><body><h1>Hello World</h1></body></html>']
