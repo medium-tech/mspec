@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title>mspec.msample.sample_item.id</title>
+        <link rel="stylesheet" type="text/css" href="/style.css">
+        <script src="/msample/sample_item/index.js"></script>
+        <script type="text/javascript">
+            // instance views //
+
+            function showSampleItemReadView() {
+
+            }
+
+            function showSampleItemUpdateView() {
+
+            }
+
+            function showSampleItemDeleteView() {
+
+            }
+
+            function fetchSampleItem() {
+
+            }
+
+            function deleteSampleItem() {
+
+            }
+
+            function updateSampleItem() {
+
+            }
+
+        </script>
+    </head>
+
+    <body onload="fetchSampleItem()">
+        <h1>sample_item</h1>
+        <p>the sample_item protocol browser</p>
+
+        <div id="sample-item-read">
+            
+            <button onclick="fetchSampleItem()">load</button>
+            &emsp;|&emsp;
+            <button onclick="showSampleItemUpdateView()">update</button>
+            &emsp;|&emsp;
+            <button onclick="showSampleItemDeleteView()">delete</button>
+
+        </div>
+
+        <div id="sample-item-update" hidden>
+
+            <button onclick="updateSampleItem()">save</button>
+            &emsp;|&emsp;
+            <button onclick="showSampleItemReadView()">cancel</button>
+
+        </div>
+
+        <div id="sample-item-delete" hidden>
+
+            <p>confirm delete?</p>
+            <button onclick="deleteSampleItem()">yes, please delete</button>
+            &emsp;|&emsp;
+            <button onclick="showSampleItemReadView()">no, cancel</button>
+
+        </div>
+
+    </body>
+
+</html>

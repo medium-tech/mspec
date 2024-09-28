@@ -2,8 +2,8 @@ import argparse
 from pprint import pprint
 
 from msample import verify, from_json
-from msample.client import client_create_sample_item, client_read_sample_item, client_update_sample_item, client_delete_sample_item, client_list_sample_item
-from msample.db import db_create_sample_item, db_read_sample_item, db_update_sample_item, db_delete_sample_item, db_list_sample_item
+from msample.client import *
+from msample.db import *
 
 #
 # define arguments

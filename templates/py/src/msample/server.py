@@ -98,6 +98,8 @@ def routes(env:dict):
 
 def application(env, start_response):
 
+    db_init()
+
     try:
         body = routes(env)
         status_code = '201 Created' if body is None else '200 OK'

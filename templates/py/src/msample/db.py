@@ -2,9 +2,24 @@ from msample import from_json, to_json, verify
 from pymongo import MongoClient
 from bson import ObjectId
 
-__all__ = ['db_create_sample_item', 'db_read_sample_item', 'db_update_sample_item', 'db_delete_sample_item', 'db_list_sample_item']
+__all__ = ['db_init', 'db_create_sample_item', 'db_read_sample_item', 'db_update_sample_item', 'db_delete_sample_item', 'db_list_sample_item']
 
-client = MongoClient()
+db_client = None
+
+def db_init(client:MongoClient=None) -> None:
+    """
+    initialize the database client.
+
+    args ::
+        client :: the client to use, if None, a new client will be created with default settings.
+    
+    return :: None
+    """
+    global db_client
+    if client is None:
+        db_client = MongoClient()
+    else:
+        db_client = client
 
 def db_create_sample_item(data:dict) -> str:
     """
@@ -15,7 +30,7 @@ def db_create_sample_item(data:dict) -> str:
 
     return :: the id of the created item.
     """
-    result = client['sample']['sample_item'].insert_one(verify(data))
+    result = db_client['sample']['sample_item'].insert_one(verify(data))
     return str(result.inserted_id)
 
 def db_read_sample_item(id:str) -> dict|None:
@@ -27,7 +42,7 @@ def db_read_sample_item(id:str) -> dict|None:
     
     return :: dict of the item if it exists, None otherwise.
     """
-    sample_items = client['sample']['sample_item']
+    sample_items = db_client['sample']['sample_item']
     return verify(sample_items.find_one({'_id': ObjectId(id)}))
 
 def db_update_sample_item(id:str, data:dict) -> None:
@@ -40,7 +55,7 @@ def db_update_sample_item(id:str, data:dict) -> None:
 
     return :: None
     """
-    client['sample']['sample_item'].update_one({'_id': ObjectId(id)}, {'$set': verify(data)})
+    db_client['sample']['sample_item'].update_one({'_id': ObjectId(id)}, {'$set': verify(data)})
 
 def db_delete_sample_item(id:str) -> None:
     """
@@ -52,7 +67,7 @@ def db_delete_sample_item(id:str) -> None:
     return :: None
     """
 
-    client['sample']['sample_item'].delete_one({'_id': ObjectId(id)})
+    db_client['sample']['sample_item'].delete_one({'_id': ObjectId(id)})
 
 def db_list_sample_item(offset:int=0, limit:int=25) -> list[dict]:
     """
@@ -64,5 +79,5 @@ def db_list_sample_item(offset:int=0, limit:int=25) -> list[dict]:
     
     return :: list of each item as a dict.
     """
-    sample_items = client['sample']['sample_item'].find().skip(offset).limit(limit)
+    sample_items = db_client['sample']['sample_item'].find().skip(offset).limit(limit)
     return [verify(item) for item in sample_items]

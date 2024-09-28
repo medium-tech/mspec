@@ -1,6 +1,6 @@
 import unittest
 from copy import deepcopy
-from msample import verify, from_json, to_json
+from msample import verify, to_json, from_json
 from msample.client import *
 
 example = {
@@ -15,6 +15,32 @@ example = {
 new_example = lambda: deepcopy(example)
 
 class TestSampleItem(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        client_init()
+
+    def test_verify(self):
+        """
+        test the verify function
+        """
+        verify(example)
+
+        bad_example = new_example()
+        bad_example['name'] = 42
+        self.assertRaises(TypeError, verify, bad_example)
+
+    def test_json(self):
+        """
+        test the json functions
+        """
+        json_string = to_json(example)
+        self.assertIsInstance(json_string, str)
+
+        data = from_json(json_string)
+        self.assertIsInstance(data, dict)
+        self.assertEqual(data, example)
+        verify(data)
 
     def test_crud(self):
         """
@@ -58,7 +84,7 @@ class TestSampleItem(unittest.TestCase):
         for i in range(60):
             client_create_sample_item(new_example())
 
-        # 1 page of 100 items #
+        # page size 100 #
 
         for n in range(2):
             items = client_list_sample_item(offset=0, limit=100)
@@ -73,7 +99,7 @@ class TestSampleItem(unittest.TestCase):
                 verify(item)
                 self.assertEqual(item, example)
 
-        # 3 pages of 25 items each #
+        # page size 25 #
 
         for i in range(4):
             items = client_list_sample_item(offset=i*25, limit=25)

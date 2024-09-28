@@ -9,9 +9,30 @@ WARNING: urlib.request module is unsafe to use with os.fork on OSX
 
 from msample import verify, to_json
 
-__all__ = ['client_create_sample_item', 'client_read_sample_item', 'client_update_sample_item', 'client_delete_sample_item', 'client_list_sample_item']
+__all__ = ['client_init', 'client_create_sample_item', 'client_read_sample_item', 'client_update_sample_item', 'client_delete_sample_item', 'client_list_sample_item']
 
-host = os.environ.get('HOST', 'http://localhost:8000')
+client_host = None
+default_client_host = 'http://localhost:9009'
+
+
+def client_init(host:str=None):
+    """
+    initialize the client with a host. if host is not provided,
+    it will use the value of the MSPEC_CLIENT_HOST environment variable,
+    if that is not set, it will use '{}'.
+    
+    args ::
+        host :: the host to connect to.
+    
+    return :: None
+    """.format(default_client_host)
+    global client_host
+    if host is None:
+        client_host = os.environ.get('MSPEC_CLIENT_HOST', default_client_host)
+    else:
+        client_host = host
+
+
 headers = {'Content-Type': 'application/json'}
 
 def client_create_sample_item(data:dict) -> str:
@@ -25,7 +46,7 @@ def client_create_sample_item(data:dict) -> str:
     """
 
     request_body = to_json(verify(data)).encode()
-    request = Request(f'{host}/sample', headers=headers, method='POST', data=request_body)
+    request = Request(f'{client_host}/sample', headers=headers, method='POST', data=request_body)
 
     try:
         with urlopen(request) as response:
@@ -51,7 +72,7 @@ def client_read_sample_item(id:str) -> dict|None:
     return :: dict of the item if it exists, None otherwise.
     """
 
-    request = Request(f'{host}/sample/{id}', headers=headers, method='GET')
+    request = Request(f'{client_host}/sample/{id}', headers=headers, method='GET')
 
     try:
         with urlopen(request) as response:
@@ -76,7 +97,7 @@ def client_update_sample_item(id:str, data:dict) -> bool:
     """
 
     request_body = to_json(verify(data)).encode()
-    request = Request(f'{host}/sample/{id}', headers=headers, method='PUT', data=request_body)
+    request = Request(f'{client_host}/sample/{id}', headers=headers, method='PUT', data=request_body)
 
     try:
         with urlopen(request) as response:
@@ -97,7 +118,7 @@ def client_delete_sample_item(id:str):
     return :: None
     """
 
-    request = Request(f'{host}/sample/{id}', headers=headers, method='DELETE')
+    request = Request(f'{client_host}/sample/{id}', headers=headers, method='DELETE')
 
     try:
         with urlopen(request) as response:
@@ -119,7 +140,7 @@ def client_list_sample_item(offset:int=0, limit:int=25):
     return :: list of items.
     """
 
-    request = Request(f'{host}/sample?offset={offset}&limit={limit}', headers=headers, method='GET')
+    request = Request(f'{client_host}/sample?offset={offset}&limit={limit}', headers=headers, method='GET')
 
     try:
         with urlopen(request) as response:

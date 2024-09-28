@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title>mspec.msample.sample_item</title>
+        <link rel="stylesheet" type="text/css" href="/style.css">
+        <script src="/msample/sample_item/index.js"></script>
+
+        <script type="text/javascript">
+
+            function showSampleItemListView() {
+                document.getElementById('sample-item-create').hidden = true;
+                document.getElementById('sample-item-list').hidden = false;
+            }
+
+            function showSampleItemCreateView() {
+                document.getElementById('sample-item-list').hidden = true;
+                document.getElementById('sample-item-create').hidden = false;
+            }
+
+            function sampleItemToTableRow(data) {
+                // return <tr> element
+            }
+
+            function loadItems() {
+
+            }
+
+            function prevPage() {
+
+            }
+
+            function nextPage() {
+
+            }
+
+        </script>
+    </head>
+
+    <body onload="loadItems()">
+        <h1>sample_item</h1>
+        <p>the sample_item protocol browser</p>
+
+        <div id="sample-item-list">
+            
+            <button onclick="prevPage()">prev</button>
+            &emsp;|&emsp;
+            <button onclick="loadItems()">load</button>
+            &emsp;|&emsp;
+            <button onclick="nextPage()">next</button>
+            &emsp;|&emsp;
+            <button onclick="showSampleItemCreateView()">create</button>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>id</th>
+                        <th>name</th>
+                        <th>verified</th>
+                        <th>color</th>
+                        <th>age</th>
+                        <th>score</th>
+                        <th>tags</th>
+                    </tr>
+                </thead>
+                <tbody id="sample-item-list-tbody">
+                    <tr id="sample-item-list-empty-row"><td colspan="7">no items</td></tr>
+                </tbody>
+            </table>
+
+        </div>
+
+        <div id="sample-item-create" hidden>
+
+        </div>
+
+    </body>
+
+</html>

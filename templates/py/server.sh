@@ -1,2 +1,2 @@
 #!/bin/bash
-uwsgi --http :9090 --wsgi-file src/msample/server.py
+uwsgi --http :9009 --wsgi-file src/msample/server.py --static-map /=srv/ --static-index index.html --workers 4
