@@ -1,5 +1,11 @@
 import json
 
+def to_json(data:dict, sort_keys=True, indent=4) -> str:
+    return json.dumps(data, sort_keys=sort_keys, indent=indent)
+
+def from_json(json_string:str) -> dict:
+    return verify(json.loads(json_string))
+
 def verify(data:dict) -> dict:
     try:
         if not isinstance(data['name'], str):
@@ -43,9 +49,3 @@ def verify(data:dict) -> dict:
         pass
 
     return data
-
-def to_json(data:dict, sort_keys=True, indent=4) -> str:
-    return json.dumps(data, sort_keys=sort_keys, indent=indent)
-
-def from_json(json_string:str) -> dict:
-    return verify(json.loads(json_string))

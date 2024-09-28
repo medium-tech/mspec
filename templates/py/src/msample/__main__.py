@@ -2,11 +2,11 @@ import argparse
 from pprint import pprint
 
 from msample import verify, from_json
-from msample.client import client_create, client_read, client_update, client_delete, client_list
-from msample.db import db_create, db_read, db_update, db_delete, db_list
+from msample.client import client_create_sample_item, client_read_sample_item, client_update_sample_item, client_delete_sample_item, client_list_sample_item
+from msample.db import db_create_sample_item, db_read_sample_item, db_update_sample_item, db_delete_sample_item, db_list_sample_item
 
 #
-# arg parser
+# define arguments
 #
 
 parser = argparse.ArgumentParser(description='Sample Python CLI')
@@ -39,7 +39,7 @@ parser.add_argument('--score', type=float, default=None)
 parser.add_argument('--tags', type=str, nargs='+', default=None)
 
 #
-# parse args
+# parse input
 #
 
 args = parser.parse_args()
@@ -69,26 +69,39 @@ def get_user_data():
 
 if args.command == 'verify':
     result = verify(get_user_data())
-elif args.command == 'db-create':
-    result = db_create(get_user_data())
-elif args.command == 'db-read':
-    result = db_read(args.id)
-elif args.command == 'db-update':
-    result = db_update(args.id, get_user_data())
-elif args.command == 'db-delete':
-    result = db_delete(args.id)
-elif args.command == 'db-list':
-    result = db_list(args.offset, args.limit)
-elif args.command == 'client-create':
-    result = client_create(get_user_data())
-elif args.command == 'client-read':
-    result = client_read()
-elif args.command == 'client-update':
-    result = client_update()
-elif args.command == 'client-delete':
-    result = client_delete()
-elif args.command == 'client-list':
-    result = client_list(args.offsete, args.limit)
 
+elif args.command == 'db-create':
+    result = db_create_sample_item(get_user_data())
+
+elif args.command == 'db-read':
+    result = db_read_sample_item(args.id)
+
+elif args.command == 'db-update':
+    result = db_update_sample_item(args.id, get_user_data())
+
+elif args.command == 'db-delete':
+    result = db_delete_sample_item(args.id)
+
+elif args.command == 'db-list':
+    result = db_list_sample_item(args.offset, args.limit)
+
+elif args.command == 'client-create':
+    result = client_create_sample_item(get_user_data())
+
+elif args.command == 'client-read':
+    result = client_read_sample_item()
+
+elif args.command == 'client-update':
+    result = client_update_sample_item()
+
+elif args.command == 'client-delete':
+    result = client_delete_sample_item()
+
+elif args.command == 'client-list':
+    result = client_list_sample_item(args.offsete, args.limit)
+
+#
+# output result
+#
 
 pprint(result)

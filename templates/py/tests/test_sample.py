@@ -1,15 +1,93 @@
+import unittest
+from copy import deepcopy
+from msample import verify, from_json, to_json
+from msample.client import *
 
-def test_crud():
-    """
+example = {
+    'name': 'this is a thing',
+    'verified': True,
+    'color': 'green',
+    'age': 42,
+    'score': 3.14,
+    'tags': ['tag1', 'tag2', 'tag3']
+}
 
-    only need to test the client, which by proxy tests the server and other modules
+new_example = lambda: deepcopy(example)
 
+class TestSampleItem(unittest.TestCase):
 
-    + create
-    + read
-    + update
-    + delete
-    """
+    def test_crud(self):
+        """
 
-def test_list():
-    pass
+        only need to test the client, which by proxy tests the server and other modules
+
+        + create
+        + read
+        + update
+        + delete
+        """
+
+        # create #
+        id = client_create_sample_item(new_example())
+        self.assertIsInstance(id, str)
+        self.assertGreater(len(id), 0)
+
+        # read #
+        item_read = client_read_sample_item(id)
+        self.assertIsInstance(item_read, dict)
+        verify(item_read)
+        self.assertEqual(item_read, example)
+
+        # update #
+        item_read['name'] = 'this is a modified thing'
+        client_update_sample_item(id, item_read)
+
+        read_after_update = client_read_sample_item(id)
+        self.assertEqual(read_after_update, item_read)
+        self.assertNotEqual(read_after_update, example)
+
+        # delete #
+        client_delete_sample_item(id)
+        item_read_after_delete = client_read_sample_item(id)
+        self.assertIsNone(item_read_after_delete)
+
+    def test_list(self):
+        
+        # insert 60 items #
+
+        for i in range(60):
+            client_create_sample_item(new_example())
+
+        # 1 page of 100 items #
+
+        for n in range(2):
+            items = client_list_sample_item(offset=0, limit=100)
+
+            if n == 0:
+                self.assertEqual(len(items), 60)
+            else:
+                self.assertEqual(len(items), 0)
+
+            for item in items:
+                self.assertIsInstance(item, dict)
+                verify(item)
+                self.assertEqual(item, example)
+
+        # 3 pages of 25 items each #
+
+        for i in range(4):
+            items = client_list_sample_item(offset=i*25, limit=25)
+            self.assertIsInstance(items, list)
+
+            if i < 2:
+                self.assertEqual(len(items), 25)
+            else:
+                self.assertEqual(len(items), 10)
+
+            for item in items:
+                self.assertIsInstance(item, dict)
+                verify(item)
+                self.assertEqual(item, example)
+
+if __name__ == '__main__':
+    unittest.main()

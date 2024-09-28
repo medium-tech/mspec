@@ -1,27 +1,133 @@
 import os
-import urllib.request
+import json
+from urllib.request import Request, urlopen
+
+"""
+WARNING: urlib.request module is unsafe to use with os.fork on OSX
+    ref: https://docs.python.org/3/library/urllib.request.html#urllib.request.urlopen
+"""
 
 from msample import verify, to_json
 
-__all__ = ['client_create', 'client_read', 'client_update', 'client_delete', 'client_list']
+__all__ = ['client_create_sample_item', 'client_read_sample_item', 'client_update_sample_item', 'client_delete_sample_item', 'client_list_sample_item']
 
 host = os.environ.get('HOST', 'http://localhost:8000')
 headers = {'Content-Type': 'application/json'}
 
-def client_create(data:dict) -> str:
-    as_json = to_json(verify(data))
-    req = urllib.request.Request(f'{host}/sample', headers=headers, method='POST', data=as_json.encode())
-    with urllib.request.urlopen(req) as res:
-        return res.read()
+def client_create_sample_item(data:dict) -> str:
+    """
+    create a sample item on the server, verifying the data first.
+    
+    args ::
+        data :: the data to create the item with.
+    
+    return :: the id of the created item.
+    """
 
-def client_read(id:str):
-    pass
+    request_body = to_json(verify(data)).encode()
+    request = Request(f'{host}/sample', headers=headers, method='POST', data=request_body)
 
-def client_update(id:str, data:dict):
-    pass
+    try:
+        with urlopen(request) as response:
+            response_body = response.read().decode('utf-8')
 
-def client_delete(id:str):
-    pass
+        id = json.loads(response_body)['id']
+        if not isinstance(id, str):
+            raise Exception('invalid response from server, id must be a string')
+        return id
+    
+    except (json.JSONDecodeError, KeyError) as e:
+        raise Exception('invalid response from server, {e.__class__.__name__}: {e}')
+    except Exception as e:
+        raise Exception(f'error creating sample item: {e.__class__.__name__}: {e}')
 
-def client_list(offset:int=0, limit:int=25):
-    pass
+def client_read_sample_item(id:str) -> dict|None:
+    """
+    read a sample item from the server, verifying it.
+
+    args ::
+        id :: the id of the item to read.
+    
+    return :: dict of the item if it exists, None otherwise.
+    """
+
+    request = Request(f'{host}/sample/{id}', headers=headers, method='GET')
+
+    try:
+        with urlopen(request) as response:
+            response_body = response.read().decode('utf-8')
+
+        return verify(json.loads(response_body))
+    
+    except (json.JSONDecodeError, TypeError) as e:
+        raise Exception('invalid response from server, {e.__class__.__name__}: {e}')
+    except Exception as e:
+        raise Exception(f'error reading sample item: {e.__class__.__name__}: {e}')
+
+def client_update_sample_item(id:str, data:dict) -> bool:
+    """
+    update a sample item on the server, verifying the data first.
+
+    args ::
+        id :: the id of the item to update.
+        data :: the data to update the item with.
+    
+    return :: true if the item was updated, false otherwise.
+    """
+
+    request_body = to_json(verify(data)).encode()
+    request = Request(f'{host}/sample/{id}', headers=headers, method='PUT', data=request_body)
+
+    try:
+        with urlopen(request) as response:
+            pass
+    
+    except (json.JSONDecodeError, KeyError) as e:
+        raise Exception('invalid response from server, {e.__class__.__name__}: {e}')
+    except Exception as e:
+        raise Exception(f'error updating sample item: {e.__class__.__name__}: {e}')
+
+def client_delete_sample_item(id:str):
+    """
+    delete a sample item from the server.
+
+    args ::
+        id :: the id of the item to delete.
+    
+    return :: None
+    """
+
+    request = Request(f'{host}/sample/{id}', headers=headers, method='DELETE')
+
+    try:
+        with urlopen(request) as response:
+            pass
+    
+    except (json.JSONDecodeError, KeyError) as e:
+        raise Exception('invalid response from server, {e.__class__.__name__}: {e}')
+    except Exception as e:
+        raise Exception(f'error deleting sample item: {e.__class__.__name__}: {e}')
+
+def client_list_sample_item(offset:int=0, limit:int=25):
+    """
+    list sample items from the server, verifying each.
+
+    args ::
+        offset :: the offset to start listing from.
+        limit :: the maximum number of items to list.
+    
+    return :: list of items.
+    """
+
+    request = Request(f'{host}/sample?offset={offset}&limit={limit}', headers=headers, method='GET')
+
+    try:
+        with urlopen(request) as response:
+            response_body = response.read().decode('utf-8')
+
+        return [verify(item) for item in json.loads(response_body)]
+    
+    except (json.JSONDecodeError, TypeError) as e:
+        raise Exception('invalid response from server, {e.__class__.__name__}: {e}')
+    except Exception as e:
+        raise Exception(f'error listing sample items: {e.__class__.__name__}: {e}')
