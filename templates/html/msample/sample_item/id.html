@@ -6,7 +6,10 @@
         <link rel="stylesheet" type="text/css" href="/style.css">
         <script src="/msample/sample_item/index.js"></script>
         <script type="text/javascript">
-            // instance views //
+
+            //
+            // views
+            //
 
             function showSampleItemReadView() {
                 window.document.getElementById('sample-item-update').hidden = true;
@@ -26,62 +29,68 @@
                 window.document.getElementById('sample-item-delete').hidden = false;
             }
 
-            function fetchSampleItem() {
+            //
+            // server ops
+            //
 
-                fetch('/msample/sample_item/id')
+            function fetchSampleItem() {
+                readSampleItem(sampleItemId)
                     .then(response => response.json())
                     .then(data => {
+                        console.log(data);
+
                         const readTBody = document.querySelector('#sample-item-read-tbody');
+                        sampleItemToDisplayTBody(data, readTBody);
+
                         const updateTBody = document.querySelector('#sample-item-update-tbody');
-                        readTBody.innerHTML = '';
-                        updateTBody.innerHTML = '';
-                    
-                        const dataDisplay = sampleItemToDisplayElements(data);
-                        const dataInputs = sampleItemToInputElements(data);
-
-                        for (const key in dataDisplay) {
-                            // read table //
-                            const readTdKey = document.createElement('td');
-                            const readTdValue = document.createElement('td');
-                            readTdKey.textContent = key;
-                            readTdValue.appendChild(dataDisplay[key])
-
-                            const readTr = document.createElement('tr');
-                            readTr.appendChild(readTdKey);
-                            readTr.appendChild(readTdValue);
-
-                            readTBody.appendChild(readTr);  
-
-                            // update table //
-                            const updateTdKey = document.createElement('td');
-                            const updateTdValue = document.createElement('td');
-                            updateTdKey.textContent = key;
-                            updateTdValue.appendChild(dataInputs[key]);
-
-                            const updateTr = document.createElement('tr');
-                            updateTr.appendChild(updateTdKey);
-                            updateTr.appendChild(updateTdValue);
-
-                            updateTBody.appendChild(updateTr);
-                        }
-
+                        sampleItemToInputTBody(data, updateTBody);
                     });
             }
 
             function deleteSampleItem() {
-
+                deleteSampleItem(sampleItemId)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log(data);
+                        showSampleItemReadView();
+                    });
             }
 
             function updateSampleItem() {
+                
+                const updateTBody = document.querySelector('#sample-item-update-tbody');
+                const data = sampleItemFromInputTBody(updateTBody);
 
-                const data = sampleItemFromInputElements()
+                const verify = verifySampleItem(data);
+                if (verify !== true) {
+                    alert(verify);
+                    return;
+                }
 
+                updateSampleItem(sampleItemId, data)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log(data);
+                        showSampleItemReadView();
+                    });
+
+            }
+
+            //
+            // init
+            //
+
+            let sampleItemId = window.location.pathname.split('/').pop()
+
+            window.onload = () => {
+                document.getElementById('sample-item-id').innerText = sampleItemId;
+                fetchSampleItem();
             }
 
         </script>
     </head>
 
-    <body onload="fetchSampleItem()">
+    <body>
         <h1>sample_item</h1>
         <p>the sample_item protocol browser</p>
 
@@ -105,6 +114,8 @@
             </table>
 
         </div>
+
+        <p>id: <span id="sample-item-id"></span></p>
 
         <div id="sample-item-update" hidden>
 
