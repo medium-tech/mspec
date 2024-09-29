@@ -94,6 +94,10 @@
         <h1>sample_item</h1>
         <p>the sample_item protocol browser</p>
 
+        <!-- 
+        read view layout 
+        -->
+
         <div id="sample-item-read">
             
             <button onclick="fetchSampleItem()">load</button>
@@ -101,6 +105,8 @@
             <button onclick="showSampleItemUpdateView()">update</button>
             &emsp;|&emsp;
             <button onclick="showSampleItemDeleteView()">delete</button>
+
+            <p>id: <span id="sample-item-id"></span></p>
 
             <table>
                 <thead>
@@ -115,7 +121,9 @@
 
         </div>
 
-        <p>id: <span id="sample-item-id"></span></p>
+        <!-- 
+        update view layout 
+        -->
 
         <div id="sample-item-update" hidden>
 
@@ -135,6 +143,10 @@
             </table>
 
         </div>
+
+        <!-- 
+        delete view layout 
+        -->
 
         <div id="sample-item-delete" hidden>
 

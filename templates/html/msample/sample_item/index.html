@@ -22,12 +22,26 @@
                 document.getElementById('sample-item-create').hidden = false;
             }
 
+            function showEmptyRow() {
+                document.getElementById('sample-item-list-empty-row').hidden = false
+            }
+
+            function hideEmptyRow() {
+                document.getElementById('sample-item-list-empty-row').hidden = true
+            }
+
             //
             // server ops
             //
 
             function loadItems() {
+                const offset = parseInt(document.getElementById('sample-item-list-offset').innerText)
+                const size = parseInt(document.getElementById('sample-item-list-size').innerText)
 
+                listSampleItems(offset, size)
+                    .then(data => {
+                        console.log(data);
+                    });
             }
 
             function prevPage() {
@@ -42,12 +56,42 @@
             // init
             //
 
+            // parse offset and size from query string if provided
+
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('offset')) {
+                document.getElementById('sample-item-list-offset').innerText = urlParams['offset'];
+            }
+            if (urlParams.has('size')) {
+                document.getElementById('sample-item-list-size').innerText = urlParams['size'];
+            }
+
+            const defaultSampleItem = {
+                name: '',
+                verified: false,
+                color: 'red',
+                age: 42,
+                score: 5.0,
+                tags: []
+            }
+
+            window.onload = function() {
+                loadItems();
+                
+                const createTBody = document.querySelector('#sample-item-create-tbody');
+                sampleItemToDisplayTBody(defaultSampleItem, createTBody)
+            }
+
         </script>
     </head>
 
-    <body onload="loadItems()">
+    <body>
         <h1>sample_item</h1>
         <p>the sample_item protocol browser</p>
+
+        <!-- 
+        list view layout 
+        -->
 
         <div id="sample-item-list">
             
@@ -58,6 +102,13 @@
             <button onclick="nextPage()">next</button>
             &emsp;|&emsp;
             <button onclick="showSampleItemCreateView()">create</button>
+
+            <br>
+            
+            offset: <span id="sample-item-list-offset">0</span>
+            &emsp;|&emsp;
+            size: <span id="sample-item-list-size">25</span>
+            
 
             <table>
                 <thead>
@@ -79,7 +130,26 @@
 
         </div>
 
+        <!-- 
+        create view layout 
+        -->
+
         <div id="sample-item-create" hidden>
+
+            <button onclick="createSampleItem()">create</button>
+            &emsp;|&emsp;
+            <button onclick="showSampleItemListView()">cancel</button>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>field</th>
+                        <th>value</th>
+                    </tr>
+                </thead>
+                <tbody id="sample-item-create-tbody">
+                </tbody>
+            </table>
 
         </div>
 

@@ -1,4 +1,6 @@
-// data functions //
+//
+// data functions
+//
 
 function verifySampleItem(data) {
     /*
@@ -13,56 +15,60 @@ function verifySampleItem(data) {
 
     */
 
-    const errors = {};
-    let valid = true;
+    let result = {
+        valid: true,
+        errors: {}
+    }
 
     // name - string
 
     if (typeof data.name !== 'string') {
-        errors.name = 'name must be a string';
-        valid = false;
+        result.error.name = 'name must be a string';
+        result.valid = false;
     }
 
     // verified - boolean
 
     if (typeof data.verified !== 'boolean') {
-        errors.verified = 'verified must be a boolean';
-        valid = false;
+        result.error.verified = 'verified must be a boolean';
+        result.valid = false;
     }
 
     // color - string enum (red, green, blue)
 
     if (typeof data.color !== 'string') {
-        errors.color = 'color must be a string';
-        valid = false;
+        result.error.color = 'color must be a string';
+        result.valid = false;
     }else if (!['red', 'green', 'blue'].includes(data.color)) {
-        errors.color = 'invalid color';
-        valid = false;
+        result.error.color = 'invalid color';
+        result.valid = false;
     }
 
     // age - integer
 
     if (!Number.isInteger(data.age)) {
-        errors.age = 'age must be an integer';
-        valid = false;
+        result.error.age = 'age must be an integer';
+        result.valid = false;
     }
 
     // score - float
 
     if (typeof data.score !== 'number') {
-        errors.score = 'score must be a float';
-        valid = false;
+        result.error.score = 'score must be a float';
+        result.valid = false;
     }
 
     // tags - array of strings
 
     if (!Array.isArray(data.tags)) {
-        errors.tags = 'tags must be an array';
-        valid = false;
+        result.error.tags = 'tags must be an array';
+        result.valid = false;
     }else if (data.tags.some(tag => typeof tag !== 'string')) {
-        errors.tags = 'tags must be an array of strings';
-        valid = false;
+        result.error.tags = 'tags must be an array of strings';
+        result.valid = false;
     }
+
+    return result
 
 }
 
@@ -309,11 +315,13 @@ function sampleItemToDisplayTBody(data, tbody) {
     tbody.appendChild(tagsTr);
 }
 
-// client functions //
+//
+// client functions
+//
 
 function createSampleItem(data) {
     
-    return fetch('/api/msample/sample_item', {
+    return fetch('/api/msample/sample-item', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -325,7 +333,7 @@ function createSampleItem(data) {
 
 function readSampleItem(id) {
 
-    return fetch(`/api/msample/sample_item/${id}`, {
+    return fetch(`/api/msample/sample-item/${id}`, {
         method: 'GET',
     })
     .then(response => response.json())
@@ -333,7 +341,7 @@ function readSampleItem(id) {
 
 function updateSampleItem(id, data) {
 
-    return fetch(`/api/msample/sample_item/${id}`, {
+    return fetch(`/api/msample/sample-item/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -345,8 +353,16 @@ function updateSampleItem(id, data) {
 
 function deleteSampleItem(id) {
 
-    return fetch(`/api/msample/sample_item/${id}`, {
+    return fetch(`/api/msample/sample-item/${id}`, {
         method: 'DELETE',
     })
 
+}
+
+function listSampleItems() {
+
+    return fetch(`/api/msample/sample-item`, {
+        method: 'GET',
+    })
+    .then(response => response.json())
 }
