@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title>mspec.msample.sample_item.id</title>
+        <link rel="stylesheet" type="text/css" href="/style.css">
+        <script src="/msample/sample_item/index.js"></script>
+        <script type="text/javascript">
+            // instance views //
+
+            function showSampleItemReadView() {
+                window.document.getElementById('sample-item-update').hidden = true;
+                window.document.getElementById('sample-item-delete').hidden = true;
+                window.document.getElementById('sample-item-read').hidden = false;
+            }
+
+            function showSampleItemUpdateView() {
+                window.document.getElementById('sample-item-read').hidden = true;
+                window.document.getElementById('sample-item-delete').hidden = true;
+                window.document.getElementById('sample-item-update').hidden = false;
+            }
+
+            function showSampleItemDeleteView() {
+                window.document.getElementById('sample-item-read').hidden = true;
+                window.document.getElementById('sample-item-update').hidden = true;
+                window.document.getElementById('sample-item-delete').hidden = false;
+            }
+
+            function fetchSampleItem() {
+
+                fetch('/msample/sample_item/id')
+                    .then(response => response.json())
+                    .then(data => {
+                        const readTBody = document.querySelector('#sample-item-read-tbody');
+                        const updateTBody = document.querySelector('#sample-item-update-tbody');
+                        readTBody.innerHTML = '';
+                        updateTBody.innerHTML = '';
+                    
+                        const dataDisplay = sampleItemToDisplayElements(data);
+                        const dataInputs = sampleItemToInputElements(data);
+
+                        for (const key in dataDisplay) {
+                            // read table //
+                            const readTdKey = document.createElement('td');
+                            const readTdValue = document.createElement('td');
+                            readTdKey.textContent = key;
+                            readTdValue.appendChild(dataDisplay[key])
+
+                            const readTr = document.createElement('tr');
+                            readTr.appendChild(readTdKey);
+                            readTr.appendChild(readTdValue);
+
+                            readTBody.appendChild(readTr);  
+
+                            // update table //
+                            const updateTdKey = document.createElement('td');
+                            const updateTdValue = document.createElement('td');
+                            updateTdKey.textContent = key;
+                            updateTdValue.appendChild(dataInputs[key]);
+
+                            const updateTr = document.createElement('tr');
+                            updateTr.appendChild(updateTdKey);
+                            updateTr.appendChild(updateTdValue);
+
+                            updateTBody.appendChild(updateTr);
+                        }
+
+                    });
+            }
+
+            function deleteSampleItem() {
+
+            }
+
+            function updateSampleItem() {
+
+                const data = sampleItemFromInputElements()
+
+            }
+
+        </script>
+    </head>
+
+    <body onload="fetchSampleItem()">
+        <h1>sample_item</h1>
+        <p>the sample_item protocol browser</p>
+
+        <div id="sample-item-read">
+            
+            <button onclick="fetchSampleItem()">load</button>
+            &emsp;|&emsp;
+            <button onclick="showSampleItemUpdateView()">update</button>
+            &emsp;|&emsp;
+            <button onclick="showSampleItemDeleteView()">delete</button>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>field</th>
+                        <th>value</th>
+                    </tr>
+                </thead>
+                <tbody id="sample-item-read-tbody">
+                </tbody>
+            </table>
+
+        </div>
+
+        <div id="sample-item-update" hidden>
+
+            <button onclick="updateSampleItem()">save</button>
+            &emsp;|&emsp;
+            <button onclick="showSampleItemReadView()">cancel</button>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>field</th>
+                        <th>value</th>
+                    </tr>
+                </thead>
+                <tbody id="sample-item-update-tbody">
+                </tbody>
+            </table>
+
+        </div>
+
+        <div id="sample-item-delete" hidden>
+
+            <p>confirm delete?</p>
+            <button onclick="deleteSampleItem()">yes, please delete</button>
+            &emsp;|&emsp;
+            <button onclick="showSampleItemReadView()">no, cancel</button>
+
+        </div>
+
+    </body>
+
+</html>
