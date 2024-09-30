@@ -35,36 +35,56 @@
             //
 
             function loadItems() {
+
                 const offset = parseInt(document.getElementById('sample-item-list-offset').innerText)
                 const size = parseInt(document.getElementById('sample-item-list-size').innerText)
 
+                console.log(`loadItems(offset=${offset}, size=${size})`)
+
                 listSampleItems(offset, size)
-                    .then(data => {
-                        console.log(data);
+                    .then(items => {
+                        console.log(items)
+                    })
+                    .catch(error => {
+                        console.error(error)
                     });
             }
 
-            function prevPage() {
+            function changePage(direction) {
 
-            }
+                let offset = parseInt(document.getElementById('sample-item-list-offset').innerText)
+                let size = parseInt(document.getElementById('sample-item-list-size').innerText)
 
-            function nextPage() {
+                if (direction < 0) {
+                    offset -= size
+                    if (offset < 0) offset = 0
+                } else if (direction == 0) {
+                    offset = 0
+                } else {
+                    offset += size
+                }
 
+                document.getElementById('sample-item-list-offset').innerText = offset
+                
+                // 
+
+                const url = new URL(window.location.href)
+                url.searchParams.set('offset', offset)
+                url.searchParams.set('size', size)
+                window.history.pushState({}, '', url)
+                
+                //
+
+                loadItems()
             }
 
             //
-            // init
+            // on load
             //
-
-            // parse offset and size from query string if provided
 
             const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('offset')) {
-                document.getElementById('sample-item-list-offset').innerText = urlParams['offset'];
-            }
-            if (urlParams.has('size')) {
-                document.getElementById('sample-item-list-size').innerText = urlParams['size'];
-            }
+            if (urlParams.has('offset')) document.getElementById('sample-item-list-offset').innerText = urlParams['offset']
+            if (urlParams.has('size')) document.getElementById('sample-item-list-size').innerText = urlParams['size'];
 
             const defaultSampleItem = {
                 name: '',
@@ -78,6 +98,7 @@
             window.onload = function() {
                 loadItems();
                 
+                // fill form with default values
                 const createTBody = document.querySelector('#sample-item-create-tbody');
                 sampleItemToDisplayTBody(defaultSampleItem, createTBody)
             }
@@ -95,11 +116,11 @@
 
         <div id="sample-item-list">
             
-            <button onclick="prevPage()">prev</button>
+            <button onclick="changePage(-1)">prev</button>
             &emsp;|&emsp;
             <button onclick="loadItems()">load</button>
             &emsp;|&emsp;
-            <button onclick="nextPage()">next</button>
+            <button onclick="changePage(1)">next</button>
             &emsp;|&emsp;
             <button onclick="showSampleItemCreateView()">create</button>
 
@@ -109,6 +130,7 @@
             &emsp;|&emsp;
             size: <span id="sample-item-list-size">25</span>
             
+            <br>
 
             <table>
                 <thead>

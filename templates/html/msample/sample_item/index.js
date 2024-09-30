@@ -315,6 +315,57 @@ function sampleItemToDisplayTBody(data, tbody) {
     tbody.appendChild(tagsTr);
 }
 
+function sampleItemListToDisplayTBody(sampleItemList, tbody) {
+
+    tbody.innerHTML = '';
+
+    const tableRow = (key, value) => {
+        const tdKey = document.createElement('td');
+        tdKey.textContent = key;
+
+        const tdValue = document.createElement('td');
+        tdValue.textContent = value;
+
+        const tr = document.createElement('tr');
+        tr.appendChild(tdKey);
+        tr.appendChild(tdValue);
+
+        return tr;
+    }
+
+    for (const sampleItem of sampleItemList) {
+
+        // id - string
+
+        tbody.appendChild(tableRow('id', sampleItem.id));
+
+        // name - string
+
+        tbody.appendChild(tableRow('name', sampleItem.name));
+
+        // verified - boolean
+
+        tbody.appendChild(tableRow('verified', (sampleItem.verified) ? 'yes' : 'no'));
+
+        // color - string enum (red, green, blue)
+
+        tbody.appendChild(tableRow('color', sampleItem.color));
+
+        // age - integer
+
+        tbody.appendChild(tableRow('age', sampleItem.age));
+
+        // score - float
+
+        tbody.appendChild(tableRow('score', sampleItem.score));
+
+        // tags - array of strings
+
+        tbody.appendChild(tableRow('tags', sampleItem.tags.join(', ')));
+    }
+
+}
+
 //
 // client functions
 //

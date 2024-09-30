@@ -34,56 +34,62 @@
             //
 
             function fetchSampleItem() {
-                readSampleItem(sampleItemId)
+                const id = sampleItemId();
+                console.log(`fetching sampleItem ${id}`);
+                readSampleItem(id)
                     .then(response => response.json())
                     .then(data => {
                         console.log(data);
+
+                        document.getElementById('sample-item-id').innerText = id;
 
                         const readTBody = document.querySelector('#sample-item-read-tbody');
                         sampleItemToDisplayTBody(data, readTBody);
 
                         const updateTBody = document.querySelector('#sample-item-update-tbody');
                         sampleItemToInputTBody(data, updateTBody);
-                    });
+                    })
+                    .catch(error => {console.error(error)});
             }
 
             function deleteSampleItem() {
-                deleteSampleItem(sampleItemId)
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log(data);
-                        showSampleItemReadView();
-                    });
+                const id = sampleItemId();
+                console.log(`deleting sampleItem ${id}`);
+                deleteSampleItem(id)
+                .then(response => {console.log(`sampleItem ${id} deleted`)})
+                .catch(error => {console.error(error)});
             }
 
             function updateSampleItem() {
+
+                const id = sampleItemId();
                 
                 const updateTBody = document.querySelector('#sample-item-update-tbody');
                 const data = sampleItemFromInputTBody(updateTBody);
 
                 const verify = verifySampleItem(data);
-                if (verify !== true) {
-                    alert(verify);
-                    return;
+                if (verify.valid !== true) {
+                    console.error(verify);
+                    throw new Error(`sampleItem ${id} invalid`);
                 }
 
-                updateSampleItem(sampleItemId, data)
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log(data);
-                        showSampleItemReadView();
-                    });
+                console.log(`updating sampleItem ${id}`);
+
+                updateSampleItem(id, data)
+                    .then(response => {console.log(`sampleItem ${id} updated`)})
+                    .catch(error => {console.error(error)});
 
             }
 
             //
-            // init
+            // on load
             //
 
-            let sampleItemId = window.location.pathname.split('/').pop()
+            function sampleItemId() {
+                return window.location.pathname.split('/').pop();
+            }
 
             window.onload = () => {
-                document.getElementById('sample-item-id').innerText = sampleItemId;
                 fetchSampleItem();
             }
 
