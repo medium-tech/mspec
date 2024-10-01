@@ -7,6 +7,16 @@ def from_json(json_string:str) -> dict:
     return verify(json.loads(json_string))
 
 def verify(data:dict) -> dict:
+
+    if not isinstance(data, dict):
+        raise TypeError('input must be a dictionary')
+    
+    try:
+        if not isinstance(data['id'], str):
+            raise TypeError('id must be a string')
+    except KeyError:
+        pass
+
     try:
         if not isinstance(data['name'], str):
             raise TypeError('name must be a string')
@@ -47,5 +57,9 @@ def verify(data:dict) -> dict:
                 raise TypeError('tags must be a list of strings')
     except KeyError:
         pass
+
+    for key in data.keys():
+        if key not in ['id', 'name', 'verified', 'color', 'age', 'score', 'tags']:
+            raise KeyError(f'unknown key: {key}')
 
     return data

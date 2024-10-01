@@ -13,7 +13,7 @@ __all__ = ['client_init', 'client_create_sample_item', 'client_read_sample_item'
 
 client_host = None
 default_client_host = 'http://localhost:9009'
-
+endpoint = f'/api/sample/sample-item'
 
 def client_init(host:str=None):
     """
@@ -46,7 +46,7 @@ def client_create_sample_item(data:dict) -> str:
     """
 
     request_body = to_json(verify(data)).encode()
-    request = Request(f'{client_host}/sample', headers=headers, method='POST', data=request_body)
+    request = Request(f'{client_host}{endpoint}', headers=headers, method='POST', data=request_body)
 
     try:
         with urlopen(request) as response:
@@ -72,7 +72,7 @@ def client_read_sample_item(id:str) -> dict|None:
     return :: dict of the item if it exists, None otherwise.
     """
 
-    request = Request(f'{client_host}/sample/{id}', headers=headers, method='GET')
+    request = Request(f'{client_host}{endpoint}/{id}', headers=headers, method='GET')
 
     try:
         with urlopen(request) as response:
@@ -97,7 +97,7 @@ def client_update_sample_item(id:str, data:dict) -> bool:
     """
 
     request_body = to_json(verify(data)).encode()
-    request = Request(f'{client_host}/sample/{id}', headers=headers, method='PUT', data=request_body)
+    request = Request(f'{client_host}{endpoint}/{id}', headers=headers, method='PUT', data=request_body)
 
     try:
         with urlopen(request) as response:
@@ -118,7 +118,7 @@ def client_delete_sample_item(id:str):
     return :: None
     """
 
-    request = Request(f'{client_host}/sample/{id}', headers=headers, method='DELETE')
+    request = Request(f'{client_host}{endpoint}/{id}', headers=headers, method='DELETE')
 
     try:
         with urlopen(request) as response:
@@ -140,7 +140,7 @@ def client_list_sample_item(offset:int=0, limit:int=25):
     return :: list of items.
     """
 
-    request = Request(f'{client_host}/sample?offset={offset}&limit={limit}', headers=headers, method='GET')
+    request = Request(f'{client_host}{endpoint}?offset={offset}&limit={limit}', headers=headers, method='GET')
 
     try:
         with urlopen(request) as response:

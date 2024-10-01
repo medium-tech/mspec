@@ -5,7 +5,12 @@ from urllib.parse import parse_qs
 from msample import from_json
 from msample.db import *
 
+import uwsgi
+
 __all__ = ['routes']
+
+class NotFoundError(Exception):
+    pass
 
 def dump_env(env):
     """
@@ -15,7 +20,7 @@ def dump_env(env):
     QUERY_STRING :: arg1=hello&arg2=stuff
     SERVER_PROTOCOL :: HTTP/1.1
     SCRIPT_NAME :: 
-    SERVER_NAME :: Brads-MBP-2
+    SERVER_NAME :: A-MBP-2
     SERVER_PORT :: 9090
     UWSGI_ROUTER :: http
     REMOTE_ADDR :: 127.0.0.1
@@ -39,7 +44,7 @@ def dump_env(env):
     wsgi.multiprocess :: False
     wsgi.url_scheme :: http
     uwsgi.version :: b'2.0.27'
-    uwsgi.node :: b'Brads-MBP-2'
+    uwsgi.node :: b'A-MBP-2'
     """
     for key in env:
         print(f'{key} :: {env[key]}')
@@ -64,49 +69,75 @@ def routes(env:dict):
     if (instance := re.match(r'/api/sample/sample-item/(.+)', env['PATH_INFO'])) is not None:
         instance_id = instance.group(1)
         if env['REQUEST_METHOD'] == 'GET':
-            if(item := db_read_sample_item(instance_id) is not None):
+            uwsgi.log(f'ROUTE - GET sample.sample_item/{instance_id}')
+            item = db_read_sample_item(instance_id) is not None
+            uwsgi.log(f'ROUTE - GET sample.sample_item/{instance_id} - found: {item is not None}')
+            if item:
                 return item
             else:
                 raise RequestError('item not found', '404 Not Found')
 
         elif env['REQUEST_METHOD'] == 'PUT':
+            uwsgi.log(f'ROUTE - PUT sample.sample_item/{instance_id}')
             return db_update_sample_item(instance_id, input_model())
 
         elif env['REQUEST_METHOD'] == 'DELETE':
+            uwsgi.log(f'ROUTE - DELETE sample.sample_item/{instance_id}')
             return db_delete_sample_item(instance_id)
         
         else:
+            uwsgi.log(f'ROUTE - ERROR 405 sample.sample_item/{instance_id}')
             raise RequestError('invalid request method', '405 Method Not Allowed')
 
     # model routes #
 
     elif re.match(r'/api/sample/sample-item', env['PATH_INFO']):
         if env['REQUEST_METHOD'] == 'POST':
+            uwsgi.log(f'ROUTE - POST sample.sample_item')
             result_id = db_create_sample_item(input_model())
             return {'id': result_id}
         
         elif env['REQUEST_METHOD'] == 'GET':
+            uwsgi.log(f'ROUTE - GET sample.sample_item')
             query = parse_qs(env['QUERY_STRING'])
-            return db_list_sample_item(offset=int(query.get('offset', 0)), limit=int(query.get('limit', 25)))
+            offset = query.get('offset', [0])[0]
+            limit = query.get('limit', [25])[0]
+            return db_list_sample_item(offset=int(offset), limit=int(limit))
     
         else:
+            uwsgi.log(f'ROUTE - ERROR 405 sample.sample_item')
             raise RequestError('invalid request method', '405 Method Not Allowed')
+    
+    else:
+        uwsgi.log(f'ROUTE - ERROR 404 sample.sample_item')
+        raise NotFoundError(env['PATH_INFO'])
 
 #
 # entry point
 #
 
-def application(env, start_response):
+db_init()
 
-    db_init()
+def application(env, start_response):
 
     try:
         body = routes(env)
         status_code = '201 Created' if body is None else '200 OK'
 
+    except NotFoundError as e:
+        body = {'error': f'not found: {e}'}
+        status_code = '404 Not Found'
+
     except RequestError as e:
         body = {'error': e.msg}
         status_code = e.status
+
+    except Exception as e:
+        body = {'error': 'internal server error'}
+        status_code = '500 Internal Server Error'
+        uwsgi.log(f'ERROR - {e.__class__.__name__} - {e}')
     
     start_response(status_code, [('Content-Type','application/json')])
+
+    uwsgi.log(f'RESPONSE - {status_code} - {body.get("error", 'no error')}')
     return [json.dumps(body).encode('utf-8')]

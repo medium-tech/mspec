@@ -17,9 +17,11 @@ def db_init(client:MongoClient=None) -> None:
     """
     global db_client
     if client is None:
-        db_client = MongoClient()
+        db_client = MongoClient('mongodb://localhost:27017')
     else:
         db_client = client
+
+    return db_client
 
 def db_create_sample_item(data:dict) -> str:
     """
@@ -30,8 +32,14 @@ def db_create_sample_item(data:dict) -> str:
 
     return :: the id of the created item.
     """
-    result = db_client['sample']['sample_item'].insert_one(verify(data))
-    return str(result.inserted_id)
+    try:
+        result = db_client['sample']['sample_item'].insert_one(verify(data))
+        return str(result.inserted_id)
+    except TypeError as e:
+        if db_client is None:
+            raise Exception('database client not initialized')
+        else:
+            raise e
 
 def db_read_sample_item(id:str) -> dict|None:
     """
@@ -42,8 +50,19 @@ def db_read_sample_item(id:str) -> dict|None:
     
     return :: dict of the item if it exists, None otherwise.
     """
-    sample_items = db_client['sample']['sample_item']
-    return verify(sample_items.find_one({'_id': ObjectId(id)}))
+    try:
+        sample_items = db_client['sample']['sample_item']
+        db_entry = sample_items.find_one({'_id': ObjectId(id)})
+        if db_entry is None:
+            return None
+        else:
+            db_entry['id'] = str(db_entry.pop('_id'))
+            return verify(db_entry)
+    except TypeError as e:
+        if db_client is None:
+            raise Exception('database client not initialized')
+        else:
+            raise e
 
 def db_update_sample_item(id:str, data:dict) -> None:
     """
@@ -55,7 +74,13 @@ def db_update_sample_item(id:str, data:dict) -> None:
 
     return :: None
     """
-    db_client['sample']['sample_item'].update_one({'_id': ObjectId(id)}, {'$set': verify(data)})
+    try:
+        db_client['sample']['sample_item'].update_one({'_id': ObjectId(id)}, {'$set': verify(data)})
+    except TypeError as e:
+        if db_client is None:
+            raise Exception('database client not initialized')
+        else:
+            raise e
 
 def db_delete_sample_item(id:str) -> None:
     """
@@ -67,7 +92,13 @@ def db_delete_sample_item(id:str) -> None:
     return :: None
     """
 
-    db_client['sample']['sample_item'].delete_one({'_id': ObjectId(id)})
+    try:
+        db_client['sample']['sample_item'].delete_one({'_id': ObjectId(id)})
+    except TypeError as e:
+        if db_client is None:
+            raise Exception('database client not initialized')
+        else:
+            raise e
 
 def db_list_sample_item(offset:int=0, limit:int=25) -> list[dict]:
     """
@@ -79,5 +110,15 @@ def db_list_sample_item(offset:int=0, limit:int=25) -> list[dict]:
     
     return :: list of each item as a dict.
     """
-    sample_items = db_client['sample']['sample_item'].find().skip(offset).limit(limit)
-    return [verify(item) for item in sample_items]
+    try:
+        sample_items = db_client['sample']['sample_item'].find().skip(offset).limit(limit)
+        items = []
+        for item in sample_items:
+            item['id'] = str(item.pop('_id'))
+            items.append(verify(item))
+        return items
+    except TypeError as e:
+        if db_client is None:
+            raise Exception('database client not initialized')
+        else:
+            raise e
