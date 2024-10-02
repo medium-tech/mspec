@@ -3,6 +3,9 @@
 
     <head>
         <title>mspec.msample.sample_item</title>
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
         <link rel="stylesheet" type="text/css" href="/style.css">
         <script src="/msample/sample_item/index.js"></script>
 
@@ -44,6 +47,12 @@
                 listSampleItems(offset, size)
                     .then(items => {
                         console.log(items)
+                        if (items['items'].length == 0) {
+                            showEmptyRow()
+                        } else {
+                            hideEmptyRow()
+                        }
+                        sampleItemListToDisplayTBody(items['items'], document.querySelector('#sample-item-list-tbody')) 
                     })
                     .catch(error => {
                         console.error(error)
@@ -118,9 +127,9 @@
             
             <button onclick="changePage(-1)">prev</button>
             &emsp;|&emsp;
-            <button onclick="loadItems()">load</button>
-            &emsp;|&emsp;
             <button onclick="changePage(1)">next</button>
+            &emsp;|&emsp;
+            <button onclick="loadItems()">load</button>
             &emsp;|&emsp;
             <button onclick="showSampleItemCreateView()">create</button>
 

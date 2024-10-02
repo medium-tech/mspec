@@ -225,6 +225,8 @@ function sampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(tagsTr);
 
+    return tbody;
+
 }
 
 function sampleItemToDisplayTBody(data, tbody) {
@@ -313,56 +315,69 @@ function sampleItemToDisplayTBody(data, tbody) {
     tagsTr.appendChild(tagsTdValue);
 
     tbody.appendChild(tagsTr);
+
+    return tbody;
+}
+
+function sampleItemToTableRow(data) {
+
+    const tr = document.createElement('tr');
+
+    // id - string
+
+    const idTd = document.createElement('td');
+    idTd.textContent = data.id;
+    tr.appendChild(idTd);
+
+    // name - string
+
+    const nameTd = document.createElement('td');
+    nameTd.textContent = data.name;
+    tr.appendChild(nameTd);
+
+    // verified - boolean
+
+    const verifiedTd = document.createElement('td');
+    verifiedTd.textContent = (data.verified) ? 'yes' : 'no';
+    tr.appendChild(verifiedTd);
+
+    // color - string enum (red, green, blue)
+
+    const colorTd = document.createElement('td');
+    colorTd.textContent = data.color;
+    tr.appendChild(colorTd);
+
+    // age - integer
+
+    const ageTd = document.createElement('td');
+    ageTd.textContent = data.age;
+    tr.appendChild(ageTd);
+
+    // score - float
+
+    const scoreTd = document.createElement('td');
+    scoreTd.textContent = data.score;
+    tr.appendChild(scoreTd);
+
+    // tags - array of strings
+
+    const tagsTd = document.createElement('td');
+    tagsTd.textContent = data.tags.join(', ');
+    tr.appendChild(tagsTd);
+
+    return tr;
+
 }
 
 function sampleItemListToDisplayTBody(sampleItemList, tbody) {
 
     tbody.innerHTML = '';
 
-    const tableRow = (key, value) => {
-        const tdKey = document.createElement('td');
-        tdKey.textContent = key;
-
-        const tdValue = document.createElement('td');
-        tdValue.textContent = value;
-
-        const tr = document.createElement('tr');
-        tr.appendChild(tdKey);
-        tr.appendChild(tdValue);
-
-        return tr;
-    }
-
     for (const sampleItem of sampleItemList) {
-
-        // id - string
-
-        tbody.appendChild(tableRow('id', sampleItem.id));
-
-        // name - string
-
-        tbody.appendChild(tableRow('name', sampleItem.name));
-
-        // verified - boolean
-
-        tbody.appendChild(tableRow('verified', (sampleItem.verified) ? 'yes' : 'no'));
-
-        // color - string enum (red, green, blue)
-
-        tbody.appendChild(tableRow('color', sampleItem.color));
-
-        // age - integer
-
-        tbody.appendChild(tableRow('age', sampleItem.age));
-
-        // score - float
-
-        tbody.appendChild(tableRow('score', sampleItem.score));
-
-        // tags - array of strings
-
-        tbody.appendChild(tableRow('tags', sampleItem.tags.join(', ')));
+        tbody.appendChild(sampleItemToTableRow(sampleItem));
     }
+
+    return tbody;
 
 }
 
@@ -372,7 +387,7 @@ function sampleItemListToDisplayTBody(sampleItemList, tbody) {
 
 function createSampleItem(data) {
     
-    return fetch('/api/msample/sample-item', {
+    return fetch('/api/sample/sample-item', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -384,7 +399,7 @@ function createSampleItem(data) {
 
 function readSampleItem(id) {
 
-    return fetch(`/api/msample/sample-item/${id}`, {
+    return fetch(`/api/sample/sample-item/${id}`, {
         method: 'GET',
     })
     .then(response => response.json())
@@ -392,7 +407,7 @@ function readSampleItem(id) {
 
 function updateSampleItem(id, data) {
 
-    return fetch(`/api/msample/sample-item/${id}`, {
+    return fetch(`/api/sample/sample-item/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -404,7 +419,7 @@ function updateSampleItem(id, data) {
 
 function deleteSampleItem(id) {
 
-    return fetch(`/api/msample/sample-item/${id}`, {
+    return fetch(`/api/sample/sample-item/${id}`, {
         method: 'DELETE',
     })
 
@@ -412,7 +427,7 @@ function deleteSampleItem(id) {
 
 function listSampleItems() {
 
-    return fetch(`/api/msample/sample-item`, {
+    return fetch(`/api/sample/sample-item`, {
         method: 'GET',
     })
     .then(response => response.json())

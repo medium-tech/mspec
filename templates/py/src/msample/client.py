@@ -47,9 +47,10 @@ def client_create_sample_item(data:dict) -> str:
     """
 
     request_body = to_json(verify(data)).encode()
-    request = Request(f'{client_host}{endpoint}', headers=headers, method='POST', data=request_body)
 
     try:
+        request = Request(f'{client_host}{endpoint}', headers=headers, method='POST', data=request_body)
+
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
 
@@ -57,6 +58,12 @@ def client_create_sample_item(data:dict) -> str:
         if not isinstance(id, str):
             raise Exception('invalid response from server, id must be a string')
         return id
+    
+    except ValueError as e:
+        if client_host is None:
+            raise Exception('client not initialized, call client_init() first')
+        else:
+            raise
     
     except (json.JSONDecodeError, KeyError) as e:
         raise Exception('invalid response from server, {e.__class__.__name__}: {e}')
@@ -73,13 +80,19 @@ def client_read_sample_item(id:str) -> dict|None:
     return :: dict of the item if it exists, None otherwise.
     """
 
-    request = Request(f'{client_host}{endpoint}/{id}', headers=headers, method='GET')
-
     try:
+        request = Request(f'{client_host}{endpoint}/{id}', headers=headers, method='GET')
+
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
 
         return verify(json.loads(response_body))
+
+    except ValueError as e:
+        if client_host is None:
+            raise Exception('client not initialized, call client_init() first')
+        else:
+            raise
     
     except (json.JSONDecodeError, TypeError) as e:
         raise Exception('invalid response from server, {e.__class__.__name__}: {e}')
@@ -98,14 +111,22 @@ def client_update_sample_item(id:str, data:dict) -> bool:
     """
 
     request_body = to_json(verify(data)).encode()
-    request = Request(f'{client_host}{endpoint}/{id}', headers=headers, method='PUT', data=request_body)
 
     try:
-        with urlopen(request) as response:
-            pass
+        request = Request(f'{client_host}{endpoint}/{id}', headers=headers, method='PUT', data=request_body)
+
+        with urlopen(request) as _:
+            """we dont need the response"""
     
+    except ValueError as e:
+        if client_host is None:
+            raise Exception('client not initialized, call client_init() first')
+        else:
+            raise
+        
     except (json.JSONDecodeError, KeyError) as e:
         raise Exception('invalid response from server, {e.__class__.__name__}: {e}')
+    
     except Exception as e:
         raise Exception(f'error updating sample item: {e.__class__.__name__}: {e}')
 
@@ -119,14 +140,21 @@ def client_delete_sample_item(id:str):
     return :: None
     """
 
-    request = Request(f'{client_host}{endpoint}/{id}', headers=headers, method='DELETE')
-
     try:
-        with urlopen(request) as response:
-            pass
+        request = Request(f'{client_host}{endpoint}/{id}', headers=headers, method='DELETE')
+
+        with urlopen(request) as _:
+            """we dont need the response"""
     
+    except ValueError as e:
+        if client_host is None:
+            raise Exception('client not initialized, call client_init() first')
+        else:
+            raise
+
     except (json.JSONDecodeError, KeyError) as e:
         raise Exception('invalid response from server, {e.__class__.__name__}: {e}')
+    
     except Exception as e:
         raise Exception(f'error deleting sample item: {e.__class__.__name__}: {e}')
 
@@ -141,15 +169,21 @@ def client_list_sample_item(offset:int=0, limit:int=25):
     return :: list of items.
     """
 
-    request = Request(f'{client_host}{endpoint}?offset={offset}&limit={limit}', headers=headers, method='GET')
-
     try:
+        request = Request(f'{client_host}{endpoint}?offset={offset}&limit={limit}', headers=headers, method='GET')
+        
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
 
         return [verify(item) for item in json.loads(response_body)['items']]
-    
+    except ValueError as e:
+        if client_host is None:
+            raise Exception('client not initialized, call client_init() first')
+        else:
+            raise
+
     except (json.JSONDecodeError, TypeError) as e:
         raise Exception('invalid response from server, {e.__class__.__name__}: {e}')
+    
     except Exception as e:
         raise Exception(f'error listing sample items: {e.__class__.__name__}: {e}')

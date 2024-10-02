@@ -1,0 +1,8 @@
+uwsgi:
+  http: :9009
+  wsgi-file: src/msample/server.py
+  static-map: /=../html/
+  
+  py-auto-reload: 1
+  static-index: index.html
+  static-expires: /* 0

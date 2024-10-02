@@ -1,5 +1,5 @@
 import unittest
-from msample import verify, to_json, from_json, example
+from msample import verify, to_json, from_json, example_sample_item
 from msample.client import *
 from msample.db import *
 
@@ -15,13 +15,13 @@ class TestSampleItem(unittest.TestCase):
         """
         test the verify function
         """
-        verify(example())
+        verify(example_sample_item())
 
-        bad_type = example()
+        bad_type = example_sample_item()
         bad_type['name'] = 42
         self.assertRaises(TypeError, verify, bad_type)
 
-        bad_key = example()
+        bad_key = example_sample_item()
         bad_key['bad_key'] = 'muy mal'
         self.assertRaises(KeyError, verify, bad_key)
 
@@ -29,12 +29,12 @@ class TestSampleItem(unittest.TestCase):
         """
         test the json functions
         """
-        json_string = to_json(example())
+        json_string = to_json(example_sample_item())
         self.assertIsInstance(json_string, str)
 
         data = from_json(json_string)
         self.assertIsInstance(data, dict)
-        self.assertEqual(data, example())
+        self.assertEqual(data, example_sample_item())
         verify(data)
 
     def test_db_crud(self):
@@ -49,7 +49,7 @@ class TestSampleItem(unittest.TestCase):
         """
 
         # create #
-        id = db_create_sample_item(example())
+        id = db_create_sample_item(example_sample_item())
         self.assertIsInstance(id, str)
         self.assertGreater(len(id), 0)
 
@@ -58,7 +58,7 @@ class TestSampleItem(unittest.TestCase):
         self.assertIsInstance(item_read, dict)
         verify(item_read)
         del item_read['id']
-        self.assertEqual(item_read, example())
+        self.assertEqual(item_read, example_sample_item())
 
         # update #
         item_read['name'] = 'this is a modified thing'
@@ -68,7 +68,7 @@ class TestSampleItem(unittest.TestCase):
         verify(read_after_update)
         del read_after_update['id']
         self.assertEqual(read_after_update, item_read)
-        self.assertNotEqual(read_after_update, example())
+        self.assertNotEqual(read_after_update, example_sample_item())
 
         # delete #
         db_delete_sample_item(id)
@@ -90,7 +90,7 @@ class TestSampleItem(unittest.TestCase):
         """
 
         # create #
-        id = client_create_sample_item(example())
+        id = client_create_sample_item(example_sample_item())
         self.assertIsInstance(id, str)
         self.assertGreater(len(id), 0)
 
@@ -99,7 +99,7 @@ class TestSampleItem(unittest.TestCase):
         self.assertIsInstance(item_read, dict)
         verify(item_read)
         del item_read['id']
-        self.assertEqual(item_read, example())
+        self.assertEqual(item_read, example_sample_item())
 
         # update #
         item_read['name'] = 'this is a modified thing'
@@ -109,7 +109,7 @@ class TestSampleItem(unittest.TestCase):
         verify(read_after_update)
         del read_after_update['id']
         self.assertEqual(read_after_update, item_read)
-        self.assertNotEqual(read_after_update, example())
+        self.assertNotEqual(read_after_update, example_sample_item())
 
         # delete #
         client_delete_sample_item(id)
@@ -127,7 +127,7 @@ class TestSampleItem(unittest.TestCase):
         # seed the db #
 
         for _ in range(60):
-            db_create_sample_item(example())
+            db_create_sample_item(example_sample_item())
 
         self.assertEqual(collection.count_documents({}), 60)
 
@@ -145,7 +145,7 @@ class TestSampleItem(unittest.TestCase):
                 self.assertIsInstance(item, dict)
                 verify(item)
                 del item['id']
-                self.assertEqual(item, example())
+                self.assertEqual(item, example_sample_item())
 
         # page size 25 #
 
@@ -164,7 +164,7 @@ class TestSampleItem(unittest.TestCase):
                 self.assertIsInstance(item, dict)
                 verify(item)
                 del item['id']
-                self.assertEqual(item, example())
+                self.assertEqual(item, example_sample_item())
 
 if __name__ == '__main__':
     unittest.main()

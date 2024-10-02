@@ -1,4 +1,5 @@
 import json
+import random
 from copy import deepcopy
 
 def to_json(data:dict, sort_keys=True, indent=4) -> str:
@@ -7,15 +8,32 @@ def to_json(data:dict, sort_keys=True, indent=4) -> str:
 def from_json(json_string:str) -> dict:
     return verify(json.loads(json_string))
 
-def example() -> dict:
-    return deepcopy({
-        'name': 'this is a thing',
-        'verified': True,
-        'color': 'green',
-        'age': 42,
-        'score': 3.14,
-        'tags': ['tag1', 'tag2', 'tag3']
-    })
+name_examples = ['a large thing', 'a random thing', 'another thing']
+verified_examples = [True, False]
+color_examples = ['red', 'green', 'blue']
+age_examples = [36, 27, 42]
+score_examples = [4.7, 8.1, 9.9]
+tags_examples = [['tag1', 'tag2'], ['tag3', 'tag4'], ['tag5', 'tag6']]
+
+def random_sample_item() -> dict:
+    return {
+        'name': random.choice(name_examples),
+        'verified': random.choice(verified_examples),
+        'color': random.choice(color_examples),
+        'age': random.choice(age_examples),
+        'score': random.choice(score_examples),
+        'tags': random.choice(tags_examples)
+    }
+
+def example_sample_item() -> dict:
+    return {
+        'name': name_examples[0],
+        'verified': verified_examples[0],
+        'color': color_examples[0],
+        'age': age_examples[0],
+        'score': score_examples[0],
+        'tags': tags_examples[0]
+    }
 
 def verify(data:dict) -> dict:
 

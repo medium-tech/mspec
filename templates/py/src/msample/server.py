@@ -1,5 +1,6 @@
 import re
 import json
+from os import getpid
 from traceback import format_exc
 from urllib.parse import parse_qs
 
@@ -126,7 +127,7 @@ def routes(env:dict):
 @postfork
 def initialize():
     db_init()
-    uwsgi.log('INITIALIZED')
+    uwsgi.log(f'INITIALIZED - pid: {getpid()}')
 
 def application(env, start_response):
 

@@ -1,9 +1,14 @@
 import argparse
+import random
 from pprint import pprint
 
-from msample import verify, from_json
+from msample import verify, from_json, to_json, random_sample_item, example_sample_item
 from msample.client import *
 from msample.db import *
+
+def data_seed(count:int):
+    for _ in range(count):
+        db_create_sample_item(random_sample_item())
 
 #
 # define arguments
@@ -12,12 +17,15 @@ from msample.db import *
 parser = argparse.ArgumentParser(description='Sample Python CLI')
 
 parser.add_argument('command', type=str, choices=[
-    'verify',
+    'data-verify',
+    'data-seed',
+    'data-example',
+    'data-random',
     'db-create',
     'db-read',
     'db-update',
     'db-delete',
-    'db-list'
+    'db-list',
     'client-create',
     'client-read',
     'client-update',
@@ -26,17 +34,19 @@ parser.add_argument('command', type=str, choices=[
 ])
 
 parser.add_argument('--id', type=str, default=None)
-parser.add_argument('--json', type=str, default=None)
+parser.add_argument('--json', type=str, default=None, help='pass in data as a json string')
 
-parser.add_argument('--offset', type=int, default=0)
-parser.add_argument('--limit', type=int, default=25)
+parser.add_argument('--offset', type=int, default=0, help='used with pagination')
+parser.add_argument('--limit', type=int, default=25, help='used with pagination')
+parser.add_argument('--seed', type=int, default=None, help='seed for random data generation')
+parser.add_argument('--count', type=int, default=101, help='number of items to seed')
 
-parser.add_argument('--name', type=str, default=None)
-parser.add_argument('--verified', type=bool, default=None)
-parser.add_argument('--color', type=str, choices=['red', 'green', 'blue'], default=None)
-parser.add_argument('--age', type=int, default=None)
-parser.add_argument('--score', type=float, default=None)
-parser.add_argument('--tags', type=str, nargs='+', default=None)
+parser.add_argument('--name', type=str, default=None, help='name of the item')
+parser.add_argument('--verified', type=bool, default=None, help='whether the item is verified')
+parser.add_argument('--color', type=str, choices=['red', 'green', 'blue'], default=None, help='favorite color')
+parser.add_argument('--age', type=int, default=None, help='age of the item')
+parser.add_argument('--score', type=float, default=None, help='score of the item')
+parser.add_argument('--tags', type=str, nargs='+', default=None, help='tags for the item')
 
 #
 # parse input
@@ -62,13 +72,28 @@ def get_user_data():
         if args.tags is not None:
             user_data['tags'] = args.tags
         return user_data
+    
+if args.seed is not None:
+    random.seed(args.seed)
+
+db_init()
+client_init()
 
 #
 # run program
 #
 
-if args.command == 'verify':
+if args.command == 'data-verify':
     result = verify(get_user_data())
+
+elif args.command == 'data-seed':
+    result = data_seed(args.count)
+
+elif args.command == 'data-example':
+    result = to_json(example_sample_item())
+
+elif args.command == 'data-random':
+    result = to_json(random_sample_item())
 
 elif args.command == 'db-create':
     result = db_create_sample_item(get_user_data())
@@ -98,10 +123,15 @@ elif args.command == 'client-delete':
     result = client_delete_sample_item()
 
 elif args.command == 'client-list':
-    result = client_list_sample_item(args.offsete, args.limit)
+    result = client_list_sample_item(args.offset, args.limit)
 
 #
 # output result
 #
 
-pprint(result)
+if isinstance(result, dict):
+    pprint(result)
+elif result is None:
+    pass
+else:
+    print(result)
