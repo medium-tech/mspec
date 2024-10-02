@@ -1,10 +1,21 @@
 import json
+from copy import deepcopy
 
 def to_json(data:dict, sort_keys=True, indent=4) -> str:
     return json.dumps(data, sort_keys=sort_keys, indent=indent)
 
 def from_json(json_string:str) -> dict:
     return verify(json.loads(json_string))
+
+def example() -> dict:
+    return deepcopy({
+        'name': 'this is a thing',
+        'verified': True,
+        'color': 'green',
+        'age': 42,
+        'score': 3.14,
+        'tags': ['tag1', 'tag2', 'tag3']
+    })
 
 def verify(data:dict) -> dict:
 

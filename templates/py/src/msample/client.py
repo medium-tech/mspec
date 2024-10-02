@@ -15,7 +15,7 @@ client_host = None
 default_client_host = 'http://localhost:9009'
 endpoint = f'/api/sample/sample-item'
 
-def client_init(host:str=None):
+def client_init(host:str=None) -> str:
     """
     initialize the client with a host. if host is not provided,
     it will use the value of the MSPEC_CLIENT_HOST environment variable,
@@ -31,6 +31,7 @@ def client_init(host:str=None):
         client_host = os.environ.get('MSPEC_CLIENT_HOST', default_client_host)
     else:
         client_host = host
+    return client_host
 
 
 headers = {'Content-Type': 'application/json'}
@@ -146,7 +147,7 @@ def client_list_sample_item(offset:int=0, limit:int=25):
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
 
-        return [verify(item) for item in json.loads(response_body)]
+        return [verify(item) for item in json.loads(response_body)['items']]
     
     except (json.JSONDecodeError, TypeError) as e:
         raise Exception('invalid response from server, {e.__class__.__name__}: {e}')

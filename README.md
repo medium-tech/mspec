@@ -1,13 +1,14 @@
 # mspec
 
-# TO DO
+# Roadmap
 
-* need to be able to serve html from same app as python, in template app and generated app
+🔴 = not started
 
-hi
+🟡 = started
 
-# dev setup
+🟢 = finished
 
-    python3 -m venv .venv --upgrade-deps
-    pip install -e .
 
+
+🟢 python unittests passing
+🔴 javascript ui

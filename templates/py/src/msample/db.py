@@ -17,7 +17,7 @@ def db_init(client:MongoClient=None) -> None:
     """
     global db_client
     if client is None:
-        db_client = MongoClient('mongodb://localhost:27017')
+        db_client = MongoClient('mongodb://127.0.0.1:27017', serverSelectionTimeoutMS=3_000)
     else:
         db_client = client
 

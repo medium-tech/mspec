@@ -1,11 +1,13 @@
 import re
 import json
+from traceback import format_exc
 from urllib.parse import parse_qs
 
 from msample import from_json
 from msample.db import *
 
 import uwsgi
+from uwsgidecorators import postfork
 
 __all__ = ['routes']
 
@@ -62,7 +64,10 @@ class RequestError(Exception):
 
 def routes(env:dict):
 
-    input_model = lambda: from_json(env['wsgi.input'].read().decode('utf-8'))
+    # best practice is to always consume body if it exists: https://uwsgi-docs.readthedocs.io/en/latest/ThingsToKnow.html
+    req_body_raw:bytes = env['wsgi.input'].read()
+    # but we'll only decode and parse it if needed
+    req_body = lambda: from_json(req_body_raw.decode('utf-8'))
 
     # instance routes #
 
@@ -70,7 +75,7 @@ def routes(env:dict):
         instance_id = instance.group(1)
         if env['REQUEST_METHOD'] == 'GET':
             uwsgi.log(f'ROUTE - GET sample.sample_item/{instance_id}')
-            item = db_read_sample_item(instance_id) is not None
+            item = db_read_sample_item(instance_id)
             uwsgi.log(f'ROUTE - GET sample.sample_item/{instance_id} - found: {item is not None}')
             if item:
                 return item
@@ -79,7 +84,7 @@ def routes(env:dict):
 
         elif env['REQUEST_METHOD'] == 'PUT':
             uwsgi.log(f'ROUTE - PUT sample.sample_item/{instance_id}')
-            return db_update_sample_item(instance_id, input_model())
+            return db_update_sample_item(instance_id, req_body())
 
         elif env['REQUEST_METHOD'] == 'DELETE':
             uwsgi.log(f'ROUTE - DELETE sample.sample_item/{instance_id}')
@@ -94,7 +99,7 @@ def routes(env:dict):
     elif re.match(r'/api/sample/sample-item', env['PATH_INFO']):
         if env['REQUEST_METHOD'] == 'POST':
             uwsgi.log(f'ROUTE - POST sample.sample_item')
-            result_id = db_create_sample_item(input_model())
+            result_id = db_create_sample_item(req_body())
             return {'id': result_id}
         
         elif env['REQUEST_METHOD'] == 'GET':
@@ -102,7 +107,9 @@ def routes(env:dict):
             query = parse_qs(env['QUERY_STRING'])
             offset = query.get('offset', [0])[0]
             limit = query.get('limit', [25])[0]
-            return db_list_sample_item(offset=int(offset), limit=int(limit))
+            return {
+                'items': db_list_sample_item(offset=int(offset), limit=int(limit))
+            }
     
         else:
             uwsgi.log(f'ROUTE - ERROR 405 sample.sample_item')
@@ -116,7 +123,10 @@ def routes(env:dict):
 # entry point
 #
 
-db_init()
+@postfork
+def initialize():
+    db_init()
+    uwsgi.log('INITIALIZED')
 
 def application(env, start_response):
 
@@ -135,7 +145,7 @@ def application(env, start_response):
     except Exception as e:
         body = {'error': 'internal server error'}
         status_code = '500 Internal Server Error'
-        uwsgi.log(f'ERROR - {e.__class__.__name__} - {e}')
+        uwsgi.log(f'ERROR - {e.__class__.__name__} - {e} \n' + format_exc())
     
     start_response(status_code, [('Content-Type','application/json')])
 
