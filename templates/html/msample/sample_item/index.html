@@ -25,14 +25,6 @@
                 document.getElementById('sample-item-create').hidden = false;
             }
 
-            function showEmptyRow() {
-                document.getElementById('sample-item-list-empty-row').hidden = false
-            }
-
-            function hideEmptyRow() {
-                document.getElementById('sample-item-list-empty-row').hidden = true
-            }
-
             //
             // server ops
             //
@@ -47,11 +39,7 @@
                 listSampleItems(offset, size)
                     .then(items => {
                         console.log(items)
-                        if (items['items'].length == 0) {
-                            showEmptyRow()
-                        } else {
-                            hideEmptyRow()
-                        }
+                        document.getElementById('sample-item-list-count').innerText = items['items'].length
                         sampleItemListToDisplayTBody(items['items'], document.querySelector('#sample-item-list-tbody')) 
                     })
                     .catch(error => {
@@ -91,10 +79,6 @@
             // on load
             //
 
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('offset')) document.getElementById('sample-item-list-offset').innerText = urlParams['offset']
-            if (urlParams.has('size')) document.getElementById('sample-item-list-size').innerText = urlParams['size'];
-
             const defaultSampleItem = {
                 name: '',
                 verified: false,
@@ -105,6 +89,18 @@
             }
 
             window.onload = function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlOffsetParam = urlParams.get('offset')
+                const urlSizeParam = urlParams.get('size')
+                console.log(`url params :: offset: ${urlOffsetParam} size: ${urlSizeParam}`)
+
+                if (urlOffsetParam !== null) {
+                    const listOffset = document.getElementById('sample-item-list-offset')
+                    console.log('list offset', listOffset)
+                    listOffset.innerText = urlOffsetParam
+                }
+                if (urlSizeParam !== null) document.getElementById('sample-item-list-size').innerText = urlSizeParam
+
                 loadItems();
                 
                 // fill form with default values
@@ -125,19 +121,19 @@
 
         <div id="sample-item-list">
             
-            <button onclick="changePage(-1)">prev</button>
+            <button onclick="changePage(-1)">&lt;&lt;&lt;</button>
+            <button onclick="changePage(1)">&gt;&gt;&gt;</button>
             &emsp;|&emsp;
-            <button onclick="changePage(1)">next</button>
-            &emsp;|&emsp;
-            <button onclick="loadItems()">load</button>
-            &emsp;|&emsp;
+            <button onclick="loadItems()">refresh</button>
             <button onclick="showSampleItemCreateView()">create</button>
 
             <br>
             
             offset: <span id="sample-item-list-offset">0</span>
-            &emsp;|&emsp;
+            &emsp;
             size: <span id="sample-item-list-size">25</span>
+            &emsp;
+            count: <span id="sample-item-list-count">-</span>
             
             <br>
 
@@ -155,7 +151,6 @@
                 </thead>
 
                 <tbody id="sample-item-list-tbody">
-                    <tr id="sample-item-list-empty-row"><td colspan="7">no items</td></tr>
                 </tbody>
             </table>
 

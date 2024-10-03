@@ -8,31 +8,50 @@ def to_json(data:dict, sort_keys=True, indent=4) -> str:
 def from_json(json_string:str) -> dict:
     return verify(json.loads(json_string))
 
-name_examples = ['a large thing', 'a random thing', 'another thing']
-verified_examples = [True, False]
-color_examples = ['red', 'green', 'blue']
-age_examples = [36, 27, 42]
-score_examples = [4.7, 8.1, 9.9]
-tags_examples = [['tag1', 'tag2'], ['tag3', 'tag4'], ['tag5', 'tag6']]
+_random_nouns = ['apple', 'banana', 'horse', 'iguana', 'jellyfish', 'kangaroo', 'lion', 'quail', 'rabbit', 'snake', 'tiger', 'x-ray', 'yak', 'zebra']
+_random_adjectives = ['shiny', 'dull', 'new', 'old', 'big', 'small', 'fast', 'slow', 'hot', 'cold', 'happy', 'sad', 'angry', 'calm', 'loud', 'quiet']
+_random_words = _random_nouns + _random_adjectives
 
 def random_sample_item() -> dict:
+    num = random.randint(1, 4)
+    if num == 1:
+        name = random.choice(_random_adjectives) + ' ' + random.choice(_random_nouns)
+    elif num == 2:
+        name = ('The ' + random.choice(_random_nouns) + ' ' + random.choice(_random_nouns)).title()
+    elif num == 3:
+        name = random.choice(_random_words).title()
+        if random.randint(0, 2) == 0:
+            name += f'_{random.randint(1, 100)}'
+    elif num == 4:
+        _words = []
+        
+        for i in range(random.randint(3, 4)):
+            _word = random.choice(_random_words)
+            if random.randint(0, 2) == 0:
+                _words.append(_word.upper())
+            else:
+                _words.append(_word)
+
+        random.shuffle(_words)
+        name = ' '.join(_words)
+
     return {
-        'name': random.choice(name_examples),
-        'verified': random.choice(verified_examples),
-        'color': random.choice(color_examples),
-        'age': random.choice(age_examples),
-        'score': random.choice(score_examples),
-        'tags': random.choice(tags_examples)
+        'name': name,
+        'verified': bool(random.randint(0, 1)),
+        'color': random.choice(['red', 'green', 'blue']),
+        'age': random.randint(1, 100),
+        'score': round(random.random() * random.randint(1, 15), 1),
+        'tags': random.choices(_random_adjectives, k=random.randint(1, 3))
     }
 
 def example_sample_item() -> dict:
     return {
-        'name': name_examples[0],
-        'verified': verified_examples[0],
-        'color': color_examples[0],
-        'age': age_examples[0],
-        'score': score_examples[0],
-        'tags': tags_examples[0]
+        'name': 'a large thing',
+        'verified': True,
+        'color': 'red',
+        'age': 36,
+        'score': 7.3,
+        'tags': ['tag1', 'tag2']
     }
 
 def verify(data:dict) -> dict:

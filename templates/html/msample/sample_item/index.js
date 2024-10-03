@@ -425,9 +425,9 @@ function deleteSampleItem(id) {
 
 }
 
-function listSampleItems() {
+function listSampleItems(offset, size) {
 
-    return fetch(`/api/sample/sample-item`, {
+    return fetch(`/api/sample/sample-item?offset=${offset}&size=${size}`, {
         method: 'GET',
     })
     .then(response => response.json())

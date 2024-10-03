@@ -12,7 +12,7 @@
 🟢 python unittests passing
 🟢 no cache for quick reloading of html files
 🔴 javascript ui
-    🟡 pagination
+    🟢 pagination
     🟡 create
     🟡 update
     🟡 delete
