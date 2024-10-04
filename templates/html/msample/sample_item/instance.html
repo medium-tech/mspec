@@ -39,7 +39,7 @@
             function fetchSampleItem() {
                 const id = sampleItemId();
                 console.log(`fetching sampleItem ${id}`);
-                readSampleItem(id)
+                clientReadSampleItem(id)
                     .then(data => {
                         console.log(data);
 
@@ -55,7 +55,7 @@
             function deleteSampleItem() {
                 const id = sampleItemId();
                 console.log(`deleting sampleItem ${id}`);
-                deleteSampleItem(id)
+                clientDeleteSampleItem(id)
                 .then(response => {console.log(`sampleItem ${id} deleted`)})
                 .catch(error => {console.error(error)});
             }
@@ -75,7 +75,7 @@
 
                 console.log(`updating sampleItem ${id}`);
 
-                updateSampleItem(id, data)
+                clientUpdateSampleItem(id, data)
                     .then(response => {console.log(`sampleItem ${id} updated`)})
                     .catch(error => {console.error(error)});
 

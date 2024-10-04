@@ -401,7 +401,7 @@ function sampleItemListToDisplayTBody(sampleItemList, tbody) {
 // client functions
 //
 
-function createSampleItem(data) {
+function clientCreateSampleItem(data) {
     
     return fetch('/api/sample/sample-item', {
         method: 'POST',
@@ -413,7 +413,7 @@ function createSampleItem(data) {
     .then(response => response.json())
 }
 
-function readSampleItem(id) {
+function clientReadSampleItem(id) {
 
     return fetch(`/api/sample/sample-item/${id}`, {
         method: 'GET',
@@ -421,7 +421,7 @@ function readSampleItem(id) {
     .then(response => response.json())
 }
 
-function updateSampleItem(id, data) {
+function clientUpdateSampleItem(id, data) {
 
     return fetch(`/api/sample/sample-item/${id}`, {
         method: 'PUT',
@@ -433,7 +433,7 @@ function updateSampleItem(id, data) {
 
 }
 
-function deleteSampleItem(id) {
+function clientDeleteSampleItem(id) {
 
     return fetch(`/api/sample/sample-item/${id}`, {
         method: 'DELETE',
@@ -441,7 +441,7 @@ function deleteSampleItem(id) {
 
 }
 
-function listSampleItems(offset, size) {
+function clientListSampleItems(offset, size) {
 
     return fetch(`/api/sample/sample-item?offset=${offset}&size=${size}`, {
         method: 'GET',

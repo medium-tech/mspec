@@ -45,7 +45,7 @@
 
                 console.log(`loadItems(offset=${offset}, size=${size})`)
 
-                listSampleItems(offset, size)
+                clientListSampleItems(offset, size)
                     .then(items => {
                         console.log(items)
                         document.getElementById('sample-item-list-count').innerText = items['items'].length
