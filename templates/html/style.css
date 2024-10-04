@@ -25,6 +25,10 @@ body {
     color: white;
     font-weight: bold;
   }
+
+  th {
+    text-align: left;
+  }
   
   td {
     min-width: 3em;

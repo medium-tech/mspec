@@ -25,6 +25,15 @@
                 document.getElementById('sample-item-create').hidden = false;
             }
 
+            function showSampleItemNavigateToId() {
+                const id = document.getElementById('sample-item-get-id').value
+                if(id === '') {
+                    console.error('id is empty')
+                }else{
+                    window.location.href = `/msample/sample_item/${id}`
+                }
+            }
+
             //
             // server ops
             //
@@ -122,10 +131,13 @@
         <div id="sample-item-list">
             
             <button onclick="changePage(-1)">&lt;&lt;&lt;</button>
+            <button onclick="loadItems()">refresh</button>
             <button onclick="changePage(1)">&gt;&gt;&gt;</button>
             &emsp;|&emsp;
-            <button onclick="loadItems()">refresh</button>
             <button onclick="showSampleItemCreateView()">create</button>
+            &emsp;|&emsp;
+            <button onclick="showSampleItemNavigateToId()">get</button>
+            <input id="sample-item-get-id" type="text" placeholder="sample item id" size="32" />
 
             <br>
             

@@ -14,6 +14,7 @@
 🔴 javascript ui
     🟢 pagination
     🟡 create
+    🟢 read
     🟡 update
     🟡 delete
     🟡 create tests

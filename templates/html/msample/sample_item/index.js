@@ -232,6 +232,20 @@ function sampleItemToInputTBody(data, tbody) {
 function sampleItemToDisplayTBody(data, tbody) {
     tbody.innerHTML = '';
 
+    // id - string
+
+    const idTdKey = document.createElement('td');
+    idTdKey.textContent = 'id';
+
+    const idTdValue = document.createElement('td');
+    idTdValue.textContent = data.id;
+
+    const idTr = document.createElement('tr');
+    idTr.appendChild(idTdKey);
+    idTr.appendChild(idTdValue);
+
+    tbody.appendChild(idTr);
+
     // name - string
 
     const nameTdKey = document.createElement('td');
@@ -322,6 +336,8 @@ function sampleItemToDisplayTBody(data, tbody) {
 function sampleItemToTableRow(data) {
 
     const tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    tr.onclick = () => window.location.href = `/msample/sample_item/${data.id}`
 
     // id - string
 

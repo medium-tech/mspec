@@ -1,6 +1,5 @@
 import json
 import random
-from copy import deepcopy
 
 def to_json(data:dict, sort_keys=True, indent=4) -> str:
     return json.dumps(data, sort_keys=sort_keys, indent=indent)
@@ -41,7 +40,7 @@ def random_sample_item() -> dict:
         'color': random.choice(['red', 'green', 'blue']),
         'age': random.randint(1, 100),
         'score': round(random.random() * random.randint(1, 15), 1),
-        'tags': random.choices(_random_adjectives, k=random.randint(1, 3))
+        'tags': random.choices(_random_adjectives, k=random.randint(0, 4))
     }
 
 def example_sample_item() -> dict:
@@ -57,7 +56,7 @@ def example_sample_item() -> dict:
 def verify(data:dict) -> dict:
 
     if not isinstance(data, dict):
-        raise TypeError('input must be a dictionary')
+        raise TypeError('data must be a dictionary')
     
     try:
         if not isinstance(data['id'], str):

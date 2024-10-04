@@ -40,11 +40,8 @@
                 const id = sampleItemId();
                 console.log(`fetching sampleItem ${id}`);
                 readSampleItem(id)
-                    .then(response => response.json())
                     .then(data => {
                         console.log(data);
-
-                        document.getElementById('sample-item-id').innerText = id;
 
                         const readTBody = document.querySelector('#sample-item-read-tbody');
                         sampleItemToDisplayTBody(data, readTBody);
@@ -109,13 +106,11 @@
 
         <div id="sample-item-read">
             
-            <button onclick="fetchSampleItem()">load</button>
+            <button onclick="fetchSampleItem()">refresh</button>
             &emsp;|&emsp;
             <button onclick="showSampleItemUpdateView()">update</button>
             &emsp;|&emsp;
             <button onclick="showSampleItemDeleteView()">delete</button>
-
-            <p>id: <span id="sample-item-id"></span></p>
 
             <table>
                 <thead>

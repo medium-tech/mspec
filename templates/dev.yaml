@@ -1,0 +1,11 @@
+uwsgi:
+  http: :9009
+  wsgi-file: py/src/msample/server.py
+
+  route: /msample/sample_item/index(.*) static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/msample/sample_item/index$1
+  route: /msample/sample_item/(.*) static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/msample/sample_item/instance.html
+  static-map: /=html/
+  static-index: index.html
+  static-expires: /* 0
+  
+  py-auto-reload: 1
