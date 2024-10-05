@@ -40,24 +40,38 @@
                 const id = sampleItemId();
                 console.log(`fetching sampleItem ${id}`);
                 clientReadSampleItem(id)
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        } else {
+                            // if not found
+                            if (response.status === 404) {
+                                document.getElementById('sample-item-not-found').hidden = false;
+                            }
+                            throw new Error(`sampleItem ${id} read failed`);
+                        }
+                    })
                     .then(data => {
-                        console.log(data);
+                        document.getElementById('sample-item-not-found').hidden = true;
 
                         const readTBody = document.querySelector('#sample-item-read-tbody');
                         sampleItemToDisplayTBody(data, readTBody);
 
                         const updateTBody = document.querySelector('#sample-item-update-tbody');
                         sampleItemToInputTBody(data, updateTBody);
-                    })
-                    .catch(error => {console.error(error)});
+                    }).
+                    catch(error => {console.error(error)});
             }
 
             function deleteSampleItem() {
                 const id = sampleItemId();
                 console.log(`deleting sampleItem ${id}`);
                 clientDeleteSampleItem(id)
-                .then(response => {console.log(`sampleItem ${id} deleted`)})
-                .catch(error => {console.error(error)});
+                    .then(response => {
+                        console.log(`sampleItem ${id} deleted`)
+                        window.location.reload();
+                    })
+                    .catch(error => {console.error(error)});
             }
 
             function updateSampleItem() {
@@ -90,6 +104,12 @@
             }
 
             window.onload = () => {
+                const idBreadcrumb = document.getElementById('sample-item-id-breadcrumb')
+                const idLink = document.createElement('a');
+                idLink.href = `/msample/sample_item/${sampleItemId()}`;
+                idLink.innerText = sampleItemId();
+                idBreadcrumb.appendChild(idLink);
+
                 fetchSampleItem();
             }
 
@@ -98,7 +118,9 @@
 
     <body>
         <h1>sample_item</h1>
-        <p>the sample_item protocol browser</p>
+        <p>
+            <a href="/">mspec</a> . <a href="/msample">msample</a> . <a href="/msample/sample_item">sample_item</a> . <span id="sample-item-id-breadcrumb"></span>
+        </p>
 
         <!-- 
         read view layout 
@@ -108,9 +130,11 @@
             
             <button onclick="fetchSampleItem()">refresh</button>
             &emsp;|&emsp;
-            <button onclick="showSampleItemUpdateView()">update</button>
+            <button onclick="showSampleItemUpdateView()">edit</button>
             &emsp;|&emsp;
             <button onclick="showSampleItemDeleteView()">delete</button>
+            &emsp;
+            <span id="sample-item-not-found" hidden>item not found</span>
 
             <table>
                 <thead>
@@ -140,6 +164,7 @@
                     <tr>
                         <th>field</th>
                         <th>value</th>
+                        <th>other</th>
                     </tr>
                 </thead>
                 <tbody id="sample-item-update-tbody">

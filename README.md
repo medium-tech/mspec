@@ -12,23 +12,23 @@
 
 * 🟢 python unittests passing
 * 🟢 no cache for quick reloading of html files
-* 🔴 javascript/browser ui
+* 🟡 javascript/browser ui
     * 🟢 pagination
-    * 🟡 create
+    * 🟢 create
     * 🟢 read
-    * 🟡 update
-    * 🟡 delete
+    * 🟢 update
+    * 🟢 delete
     * 🟡 create tests
-* 🔴 standardize urls
+* 🔴 standardize urls (- vs _) and naming (sample vs. msample)
+* 🔴 refactor code layout to prepare for more template projects
 * 🔴 templating
     * 🔴 extract templates
     * 🔴 generate py
     * 🔴 generate html
     * 🔴 add additional sample module and model to output
-* 🔴 refactor code layout to prepare for more template projects
 
 ### guis
-* 🔴 python tkinter
+* 🔴 python tkinter (and/or gtk)
     * 🔴 index
     * 🔴 sample index
     * 🔴 sample item
@@ -63,10 +63,10 @@
             * 🔴 delete
 
 ## additional features
-* 🔴 content ids
-* 🔴 users
-* 🔴 profiles
 * 🔴 markup
     * 🔴 ui
     * 🔴 scripting
+* 🔴 content ids
+* 🔴 users
+* 🔴 profiles
 * 🔴 files

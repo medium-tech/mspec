@@ -2,6 +2,7 @@ uwsgi:
   http: :9009
   wsgi-file: py/src/msample/server.py
 
+  route: /msample/sample_item/create static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/msample/sample_item/index.html
   route: /msample/sample_item/index(.*) static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/msample/sample_item/index$1
   route: /msample/sample_item/(.*) static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/msample/sample_item/instance.html
   static-map: /=html/

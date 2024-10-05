@@ -15,14 +15,37 @@
             // views
             //
 
-            function showSampleItemListView() {
+            function showSampleItemListView(pushState) {
                 document.getElementById('sample-item-create').hidden = true;
                 document.getElementById('sample-item-list').hidden = false;
+
+                // push state
+                if(pushState === true) {
+                    const url = new URL(window.location.href)
+                    url.pathname = '/msample/sample_item'
+
+                    const offset = parseInt(document.getElementById('sample-item-list-offset').innerText)
+                    const size = parseInt(document.getElementById('sample-item-list-size').innerText)
+                    url.searchParams.set('offset', offset)
+                    url.searchParams.set('size', size)
+
+                    window.history.pushState({}, '', url)
+                }
             }
 
-            function showSampleItemCreateView() {
+            function showSampleItemCreateView(pushState) {
                 document.getElementById('sample-item-list').hidden = true;
                 document.getElementById('sample-item-create').hidden = false;
+
+                // push state
+                if(pushState === true) {
+                    const url = new URL(window.location.href)
+                    url.pathname = '/msample/sample_item/create'
+                    url.searchParams.delete('offset')
+                    url.searchParams.delete('size')
+                    window.history.pushState({}, '', url)
+                    console.log('pushed state', url)
+                }
             }
 
             function showSampleItemNavigateToId() {
@@ -32,6 +55,16 @@
                 }else{
                     window.location.href = `/msample/sample_item/${id}`
                 }
+            }
+
+            function randomizeSampleItem() {
+                const createTBody = document.querySelector('#sample-item-create-tbody');
+                sampleItemToInputTBody(randomSampleItem(), createTBody)
+            }
+
+            function resetSampleItemInput() {
+                const createTBody = document.querySelector('#sample-item-create-tbody');
+                sampleItemToInputTBody(defaultSampleItem, createTBody)
             }
 
             //
@@ -56,7 +89,7 @@
                     });
             }
 
-            function changePage(direction) {
+            function changeListPage(direction) {
 
                 let offset = parseInt(document.getElementById('sample-item-list-offset').innerText)
                 let size = parseInt(document.getElementById('sample-item-list-size').innerText)
@@ -84,37 +117,65 @@
                 loadItems()
             }
 
+            function createSampleItem() {
+
+                const createTBody = document.querySelector('#sample-item-create-tbody');
+                const data = sampleItemFromInputTBody(createTBody);
+
+                const verify = verifySampleItem(data);
+                if (verify.valid !== true) {
+                    console.error(verify);
+                    throw new Error('sampleItem invalid');
+                }
+
+                console.log('creating sampleItem', data);
+
+                clientCreateSampleItem(data)
+                    .then(response => {
+                        const newItemId = response['id']
+                        console.log(`created sampleItem ${newItemId}`)
+
+                        const newItemLi = document.createElement('li')
+                        const newItemLink = document.createElement('a')
+                        newItemLink.href = `/msample/sample_item/${newItemId}`
+                        newItemLink.innerText = newItemId
+                        
+                        const createdSampleItems = document.getElementById('created-sample-items')
+                        newItemLi.appendChild(newItemLink)
+                        createdSampleItems.appendChild(newItemLi)
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            }
+
             //
             // on load
             //
 
-            const defaultSampleItem = {
-                name: '',
-                verified: false,
-                color: 'red',
-                age: 42,
-                score: 5.0,
-                tags: []
-            }
-
             window.onload = function() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const urlOffsetParam = urlParams.get('offset')
-                const urlSizeParam = urlParams.get('size')
-                console.log(`url params :: offset: ${urlOffsetParam} size: ${urlSizeParam}`)
-
-                if (urlOffsetParam !== null) {
-                    const listOffset = document.getElementById('sample-item-list-offset')
-                    console.log('list offset', listOffset)
-                    listOffset.innerText = urlOffsetParam
-                }
-                if (urlSizeParam !== null) document.getElementById('sample-item-list-size').innerText = urlSizeParam
-
-                loadItems();
-                
                 // fill form with default values
-                const createTBody = document.querySelector('#sample-item-create-tbody');
-                sampleItemToDisplayTBody(defaultSampleItem, createTBody)
+                resetSampleItemInput()
+
+                const isCreatePage = window.location.pathname.endsWith('/create')
+
+                if(isCreatePage) {
+                    showSampleItemCreateView(false)
+                }else{
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const urlOffsetParam = urlParams.get('offset')
+                    const urlSizeParam = urlParams.get('size')
+                    console.log(`url params :: offset: ${urlOffsetParam} size: ${urlSizeParam}`)
+
+                    if (urlOffsetParam !== null) {
+                        const listOffset = document.getElementById('sample-item-list-offset')
+                        console.log('list offset', listOffset)
+                        listOffset.innerText = urlOffsetParam
+                    }
+                    if (urlSizeParam !== null) document.getElementById('sample-item-list-size').innerText = urlSizeParam
+
+                    loadItems();
+                }
             }
 
         </script>
@@ -122,7 +183,9 @@
 
     <body>
         <h1>sample_item</h1>
-        <p>the sample_item protocol browser</p>
+        <p>
+            <a href="/">mspec</a> . <a href="/msample">msample</a> . <a href="/msample/sample_item">sample_item</a>
+        </p>
 
         <!-- 
         list view layout 
@@ -130,11 +193,11 @@
 
         <div id="sample-item-list">
             
-            <button onclick="changePage(-1)">&lt;&lt;&lt;</button>
+            <button onclick="changeListPage(-1)">&lt;&lt;&lt;</button>
             <button onclick="loadItems()">refresh</button>
-            <button onclick="changePage(1)">&gt;&gt;&gt;</button>
+            <button onclick="changeListPage(1)">&gt;&gt;&gt;</button>
             &emsp;|&emsp;
-            <button onclick="showSampleItemCreateView()">create</button>
+            <button onclick="showSampleItemCreateView(true)">create</button>
             &emsp;|&emsp;
             <button onclick="showSampleItemNavigateToId()">get</button>
             <input id="sample-item-get-id" type="text" placeholder="sample item id" size="32" />
@@ -174,20 +237,26 @@
 
         <div id="sample-item-create" hidden>
 
-            <button onclick="createSampleItem()">create</button>
+            <button onclick="createSampleItem()">submit</button>
             &emsp;|&emsp;
-            <button onclick="showSampleItemListView()">cancel</button>
+            <button onclick="resetSampleItemInput()">reset</button>
+            &emsp;|&emsp;
+            <button onclick="randomizeSampleItem()">random</button>
 
             <table>
                 <thead>
                     <tr>
-                        <th>field</th>
-                        <th>value</th>
+                        <th width="15%">field</th>
+                        <th width="33%">value</th>
+                        <th>other</th>
                     </tr>
                 </thead>
                 <tbody id="sample-item-create-tbody">
                 </tbody>
             </table>
+
+            <ul id="created-sample-items">
+            </ul>
 
         </div>
 
