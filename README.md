@@ -20,7 +20,17 @@
     * 🟢 delete
     * 🟢 standardize urls (- vs _) and naming (sample vs. msample)
     * 🟢 refactor code layout to prepare for more template projects
-    * 🔴 create js ui tests
+    * 🟡 create js ui tests
+        * 🟢 refactor to:
+            * templates/html
+                * srv/
+                    * index.html
+                    * ...
+                * test/
+                    * ...
+                * package.json
+        * 🟡 create tests
+
 * 🔴 templating
     * 🔴 extract templates
     * 🔴 generate py
