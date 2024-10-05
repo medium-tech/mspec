@@ -2,9 +2,9 @@ import argparse
 import random
 from pprint import pprint
 
-from msample import verify, from_json, to_json, random_sample_item, example_sample_item
-from msample.client import *
-from msample.db import *
+from sample import verify, from_json, to_json, random_sample_item, example_sample_item
+from sample.client import *
+from sample.db import *
 
 def data_seed(count:int):
     for _ in range(count):

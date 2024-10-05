@@ -4,8 +4,8 @@ from os import getpid
 from traceback import format_exc
 from urllib.parse import parse_qs
 
-from msample import from_json
-from msample.db import *
+from sample import from_json
+from sample.db import *
 
 import uwsgi
 from uwsgidecorators import postfork

@@ -1,4 +1,4 @@
-from msample import from_json, to_json, verify
+from sample import from_json, to_json, verify
 from pymongo import MongoClient
 from bson import ObjectId
 

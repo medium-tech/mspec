@@ -2,12 +2,12 @@
 <html>
 
     <head>
-        <title>mspec.msample.sample_item</title>
+        <title>mspec.sample.sample_item</title>
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta http-equiv="Pragma" content="no-cache" />
         <meta http-equiv="Expires" content="0" />
         <link rel="stylesheet" type="text/css" href="/style.css">
-        <script src="/msample/sample_item/index.js"></script>
+        <script src="/sample/sample-item/index.js"></script>
 
         <script type="text/javascript">
 
@@ -22,7 +22,7 @@
                 // push state
                 if(pushState === true) {
                     const url = new URL(window.location.href)
-                    url.pathname = '/msample/sample_item'
+                    url.pathname = '/sample/sample-item'
 
                     const offset = parseInt(document.getElementById('sample-item-list-offset').innerText)
                     const size = parseInt(document.getElementById('sample-item-list-size').innerText)
@@ -40,7 +40,7 @@
                 // push state
                 if(pushState === true) {
                     const url = new URL(window.location.href)
-                    url.pathname = '/msample/sample_item/create'
+                    url.pathname = '/sample/sample-item/create'
                     url.searchParams.delete('offset')
                     url.searchParams.delete('size')
                     window.history.pushState({}, '', url)
@@ -53,7 +53,7 @@
                 if(id === '') {
                     console.error('id is empty')
                 }else{
-                    window.location.href = `/msample/sample_item/${id}`
+                    window.location.href = `/sample/sample-item/${id}`
                 }
             }
 
@@ -67,11 +67,24 @@
                 sampleItemToInputTBody(defaultSampleItem, createTBody)
             }
 
+            function sampleItemNavigatorEnterKey(e) {
+                console.log('sampleItemNavigatorEnterKey', e)
+                if (e.key === 'Enter' || e.type === 'paste') {
+                    showSampleItemNavigateToId()
+                }
+            }
+
             //
             // server ops
             //
 
             function loadItems() {
+
+                const prevPage = document.getElementById('sample-item-prev-page')
+                const nextPage = document.getElementById('sample-item-next-page')
+
+                prevPage.disabled = true
+                nextPage.disabled = true
 
                 const offset = parseInt(document.getElementById('sample-item-list-offset').innerText)
                 const size = parseInt(document.getElementById('sample-item-list-size').innerText)
@@ -82,7 +95,10 @@
                     .then(items => {
                         console.log(items)
                         document.getElementById('sample-item-list-count').innerText = items['items'].length
-                        sampleItemListToDisplayTBody(items['items'], document.querySelector('#sample-item-list-tbody')) 
+                        sampleItemListToDisplayTBody(items['items'], document.querySelector('#sample-item-list-tbody'))
+
+                        if (offset > 0) prevPage.disabled = false
+                        if (items['items'].length === size) nextPage.disabled = false
                     })
                     .catch(error => {
                         console.error(error)
@@ -137,7 +153,7 @@
 
                         const newItemLi = document.createElement('li')
                         const newItemLink = document.createElement('a')
-                        newItemLink.href = `/msample/sample_item/${newItemId}`
+                        newItemLink.href = `/sample/sample-item/${newItemId}`
                         newItemLink.innerText = newItemId
                         
                         const createdSampleItems = document.getElementById('created-sample-items')
@@ -184,7 +200,7 @@
     <body>
         <h1>sample_item</h1>
         <p>
-            <a href="/">mspec</a> . <a href="/msample">msample</a> . <a href="/msample/sample_item">sample_item</a>
+            <a href="/">mspec</a> . <a href="/sample">sample</a> . <a href="/sample/sample-item">sample_item</a>
         </p>
 
         <!-- 
@@ -193,14 +209,14 @@
 
         <div id="sample-item-list">
             
-            <button onclick="changeListPage(-1)">&lt;&lt;&lt;</button>
+            <button id="sample-item-prev-page" onclick="changeListPage(-1)" disabled>&lt;&lt;&lt;</button>
             <button onclick="loadItems()">refresh</button>
-            <button onclick="changeListPage(1)">&gt;&gt;&gt;</button>
+            <button id="sample-item-next-page" onclick="changeListPage(1)" disabled>&gt;&gt;&gt;</button>
             &emsp;|&emsp;
             <button onclick="showSampleItemCreateView(true)">create</button>
             &emsp;|&emsp;
             <button onclick="showSampleItemNavigateToId()">get</button>
-            <input id="sample-item-get-id" type="text" placeholder="sample item id" size="32" />
+            <input id="sample-item-get-id" type="text" placeholder="sample item id" size="32" onkeypress="sampleItemNavigatorEnterKey(event)"/>
 
             <br>
             

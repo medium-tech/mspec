@@ -448,7 +448,7 @@ function sampleItemToTableRow(data) {
 
     const tr = document.createElement('tr');
     tr.style.cursor = 'pointer';
-    tr.onclick = () => window.location.href = `/msample/sample_item/${data.id}`
+    tr.onclick = () => window.location.href = `/sample/sample-item/${data.id}`
 
     // id - string
 

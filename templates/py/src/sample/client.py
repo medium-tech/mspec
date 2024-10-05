@@ -7,7 +7,7 @@ WARNING: urlib.request module is unsafe to use with os.fork on OSX
     ref: https://docs.python.org/3/library/urllib.request.html#urllib.request.urlopen
 """
 
-from msample import verify, to_json
+from sample import verify, to_json
 
 __all__ = ['client_init', 'client_create_sample_item', 'client_read_sample_item', 'client_update_sample_item', 'client_delete_sample_item', 'client_list_sample_item']
 

@@ -12,15 +12,15 @@
 
 * 🟢 python unittests passing
 * 🟢 no cache for quick reloading of html files
-* 🟡 javascript/browser ui
+* 🟢 javascript/browser ui
     * 🟢 pagination
     * 🟢 create
     * 🟢 read
     * 🟢 update
     * 🟢 delete
-    * 🟡 create tests
-* 🔴 standardize urls (- vs _) and naming (sample vs. msample)
-* 🔴 refactor code layout to prepare for more template projects
+    * 🟢 standardize urls (- vs _) and naming (sample vs. msample)
+    * 🟢 refactor code layout to prepare for more template projects
+    * 🔴 create js ui tests
 * 🔴 templating
     * 🔴 extract templates
     * 🔴 generate py

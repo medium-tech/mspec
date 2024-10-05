@@ -1,7 +1,7 @@
 import unittest
-from msample import verify, to_json, from_json, example_sample_item
-from msample.client import *
-from msample.db import *
+from sample import verify, to_json, from_json, example_sample_item
+from sample.client import *
+from sample.db import *
 
 db_client = db_init()
 
