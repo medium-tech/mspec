@@ -20,7 +20,7 @@
     * 🟢 delete
     * 🟢 standardize urls (- vs _) and naming (sample vs. msample)
     * 🟢 refactor code layout to prepare for more template projects
-    * 🟡 create js ui tests
+    * 🟢 create js ui tests
         * 🟢 refactor to:
             * templates/html
                 * srv/
@@ -29,13 +29,13 @@
                 * test/
                     * ...
                 * package.json
-        * 🟡 create tests
+        * 🟢 create tests
 
 * 🔴 templating
     * 🔴 extract templates
     * 🔴 generate py
     * 🔴 generate html
-    * 🔴 add additional sample module and model to output
+    * 🔴 generated app should have 2 modules and 3 total models, but not sample.sample_item
 
 ### guis
 * 🔴 python tkinter (and/or gtk)

@@ -150,5 +150,5 @@ def application(env, start_response):
     
     start_response(status_code, [('Content-Type','application/json')])
 
-    uwsgi.log(f'RESPONSE - {status_code} - {body.get("error", 'no error')}')
+    uwsgi.log(f'RESPONSE - {status_code}')
     return [json.dumps(body).encode('utf-8')]

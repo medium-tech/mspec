@@ -73,6 +73,13 @@
                     showSampleItemNavigateToId()
                 }
             }
+            
+            function createSampleItemStatus(status, className) {
+                const statusP = document.getElementById('create-sample-item-status')
+                statusP.hidden = false
+                statusP.innerText = status
+                statusP.className = className
+            }
 
             //
             // server ops
@@ -146,6 +153,8 @@
 
                 console.log('creating sampleItem', data);
 
+                createSampleItemStatus('creating...', '')
+
                 clientCreateSampleItem(data)
                     .then(response => {
                         const newItemId = response['id']
@@ -153,15 +162,19 @@
 
                         const newItemLi = document.createElement('li')
                         const newItemLink = document.createElement('a')
+                        newItemLink.id = 'created-sample-item'
                         newItemLink.href = `/sample/sample-item/${newItemId}`
                         newItemLink.innerText = newItemId
                         
                         const createdSampleItems = document.getElementById('created-sample-items')
                         newItemLi.appendChild(newItemLink)
                         createdSampleItems.appendChild(newItemLi)
+
+                        createSampleItemStatus(`success`, 'success')
                     })
                     .catch(error => {
                         console.error(error);
+                        createSampleItemStatus('error', 'error')
                     });
             }
 
@@ -198,7 +211,7 @@
     </head>
 
     <body>
-        <h1>sample_item</h1>
+        <h1>sample item</h1>
         <p>
             <a href="/">mspec</a> . <a href="/sample">sample</a> . <a href="/sample/sample-item">sample_item</a>
         </p>
@@ -270,6 +283,8 @@
                 <tbody id="sample-item-create-tbody">
                 </tbody>
             </table>
+
+            <p id="create-sample-item-status" hidden></p>
 
             <ul id="created-sample-items">
             </ul>

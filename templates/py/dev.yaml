@@ -2,10 +2,10 @@ uwsgi:
   http: :9009
   wsgi-file: src/sample/server.py
 
-  route: ^/sample/sample-item/create static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/sample/sample-item/index.html
-  route: ^/sample/sample-item/index(.*) static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/sample/sample-item/index$1
-  route: ^/sample/sample-item/(.*) static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/sample/sample-item/instance.html
-  static-map: /=../html/
+  route: ^/sample/sample-item/create static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv/sample/sample-item/index.html
+  route: ^/sample/sample-item/index(.*) static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv/sample/sample-item/index$1
+  route: ^/sample/sample-item/(.*) static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv/sample/sample-item/instance.html
+  static-map: /=../html/srv/
   static-index: index.html
   static-expires: /* 0
   
