@@ -1,8 +1,19 @@
-from sample import from_json, to_json, verify
+from sample import *
 from pymongo import MongoClient
 from bson import ObjectId
 
-__all__ = ['db_init', 'db_create_sample_item', 'db_read_sample_item', 'db_update_sample_item', 'db_delete_sample_item', 'db_list_sample_item']
+# vars :: {"sample": "module.snake_case", "mongodb://127.0.0.1:27017": "default_mongo_url"}
+
+__all__ = [
+    'db_init', 
+    # for :: {% for model in module.models %} :: {"sample_item": "model.snake_case"}
+    'db_create_sample_item', 
+    'db_read_sample_item',
+    'db_update_sample_item', 
+    'db_delete_sample_item', 
+    'db_list_sample_item',
+    # end for ::
+]
 
 db_client = None
 
@@ -23,6 +34,8 @@ def db_init(client:MongoClient=None) -> None:
 
     return db_client
 
+# for :: {% for model in module.models %} :: {"sample_item": "model.snake_case", "sample item": "model.lower_case"}
+
 def db_create_sample_item(data:dict) -> str:
     """
     create a sample item in the database, verifying the data first.
@@ -33,7 +46,7 @@ def db_create_sample_item(data:dict) -> str:
     return :: the id of the created item.
     """
     try:
-        result = db_client['sample']['sample_item'].insert_one(verify(data))
+        result = db_client['sample']['sample_item'].insert_one(sample_item_verify(data))
         return str(result.inserted_id)
     except TypeError as e:
         if db_client is None:
@@ -57,7 +70,7 @@ def db_read_sample_item(id:str) -> dict|None:
             return None
         else:
             db_entry['id'] = str(db_entry.pop('_id'))
-            return verify(db_entry)
+            return sample_item_verify(db_entry)
     except TypeError as e:
         if db_client is None:
             raise Exception('database client not initialized')
@@ -75,7 +88,7 @@ def db_update_sample_item(id:str, data:dict) -> None:
     return :: None
     """
     try:
-        db_client['sample']['sample_item'].update_one({'_id': ObjectId(id)}, {'$set': verify(data)})
+        db_client['sample']['sample_item'].update_one({'_id': ObjectId(id)}, {'$set': sample_item_verify(data)})
     except TypeError as e:
         if db_client is None:
             raise Exception('database client not initialized')
@@ -115,10 +128,11 @@ def db_list_sample_item(offset:int=0, limit:int=25) -> list[dict]:
         items = []
         for item in sample_items:
             item['id'] = str(item.pop('_id'))
-            items.append(verify(item))
+            items.append(sample_item_verify(item))
         return items
     except TypeError as e:
         if db_client is None:
             raise Exception('database client not initialized')
         else:
             raise e
+# end for ::

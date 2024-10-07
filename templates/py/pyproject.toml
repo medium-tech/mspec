@@ -1,3 +1,5 @@
+# vars :: {"mspec":"project.snake_case", "Brad Corlett":"author_name", "brad.corlett@gmail.com":"author_email"}
+
 [build-system]
 requires = ['setuptools>=61.0']
 build-backend = 'setuptools.build_meta'

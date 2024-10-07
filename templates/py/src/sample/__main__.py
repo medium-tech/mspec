@@ -2,35 +2,34 @@ import argparse
 import random
 from pprint import pprint
 
-from sample import verify, from_json, to_json, random_sample_item, example_sample_item
+from sample import *
 from sample.client import *
 from sample.db import *
-
-def data_seed(count:int):
-    for _ in range(count):
-        db_create_sample_item(random_sample_item())
 
 #
 # define arguments
 #
 
-parser = argparse.ArgumentParser(description='Sample Python CLI')
+# vars :: {"mspec":"project.snake_case", "sample":"module.snake_case"}
+parser = argparse.ArgumentParser(description='mspec - sample - cli')
 
 parser.add_argument('command', type=str, choices=[
-    'data-verify',
     'data-seed',
-    'data-example',
-    'data-random',
-    'db-create',
-    'db-read',
-    'db-update',
-    'db-delete',
-    'db-list',
-    'client-create',
-    'client-read',
-    'client-update',
-    'client-delete',
-    'client-list'
+    # for :: {% for model in module.models %} :: {"sample-item": "model.kebab_case"}
+    'verify-sample-item',
+    'random-sample-item',
+    'example-sample-item',
+    'db-create-sample-item',
+    'db-read-sample-item',
+    'db-update-sample-item',
+    'db-delete-sample-item',
+    'db-list-sample-item',
+    'client-create-sample-item',
+    'client-read-sample-item',
+    'client-update-sample-item',
+    'client-delete-sample-item',
+    'client-list-sample-item',
+    # end for ::
 ])
 
 parser.add_argument('--id', type=str, default=None)
@@ -41,13 +40,6 @@ parser.add_argument('--limit', type=int, default=25, help='used with pagination'
 parser.add_argument('--seed', type=int, default=None, help='seed for random data generation')
 parser.add_argument('--count', type=int, default=101, help='number of items to seed')
 
-parser.add_argument('--name', type=str, default=None, help='name of the item')
-parser.add_argument('--verified', type=bool, default=None, help='whether the item is verified')
-parser.add_argument('--color', type=str, choices=['red', 'green', 'blue'], default=None, help='favorite color')
-parser.add_argument('--age', type=int, default=None, help='age of the item')
-parser.add_argument('--score', type=float, default=None, help='score of the item')
-parser.add_argument('--tags', type=str, nargs='+', default=None, help='tags for the item')
-
 #
 # parse input
 #
@@ -55,23 +47,10 @@ parser.add_argument('--tags', type=str, nargs='+', default=None, help='tags for 
 args = parser.parse_args()
 
 def get_user_data():
-    if args.json is not None:
-        return from_json(args.json)
+    if args.json is None:
+        raise Exception('must supply data via json argument')
     else:
-        user_data = {}
-        if args.name is not None:
-            user_data['name'] = args.name
-        if args.verified is not None:
-            user_data['verified'] = args.verified
-        if args.color is not None:
-            user_data['color'] = args.color
-        if args.age is not None:
-            user_data['age'] = args.age
-        if args.score is not None:
-            user_data['score'] = args.score
-        if args.tags is not None:
-            user_data['tags'] = args.tags
-        return user_data
+        return sample_item_from_json(args.json)
     
 if args.seed is not None:
     random.seed(args.seed)
@@ -83,47 +62,49 @@ client_init()
 # run program
 #
 
-if args.command == 'data-verify':
-    result = verify(get_user_data())
+if args.command == 'data-seed':
+    result = seed_data(args.count)
 
-elif args.command == 'data-seed':
-    result = data_seed(args.count)
+# for :: {% for model in module.models %} :: {"sample-item": "model.kebab_case", "sample_item": "model.snake_case"}
+elif args.command == 'verify-sample-item':
+    result = sample_item_verify(get_user_data())
 
-elif args.command == 'data-example':
-    result = to_json(example_sample_item())
+elif args.command == 'random-sample-item':
+    result = sample_item_to_json(sample_item_random())
 
-elif args.command == 'data-random':
-    result = to_json(random_sample_item())
+elif args.command == 'example-sample-item':
+    result = sample_item_to_json(sample_item_example())
 
-elif args.command == 'db-create':
+elif args.command == 'db-create-sample-item':
     result = db_create_sample_item(get_user_data())
 
-elif args.command == 'db-read':
+elif args.command == 'db-read-sample-item':
     result = db_read_sample_item(args.id)
 
-elif args.command == 'db-update':
+elif args.command == 'db-update-sample-item':
     result = db_update_sample_item(args.id, get_user_data())
 
-elif args.command == 'db-delete':
+elif args.command == 'db-delete-sample-item':
     result = db_delete_sample_item(args.id)
 
-elif args.command == 'db-list':
+elif args.command == 'db-list-sample-item':
     result = db_list_sample_item(args.offset, args.limit)
 
-elif args.command == 'client-create':
+elif args.command == 'client-create-sample-item':
     result = client_create_sample_item(get_user_data())
 
-elif args.command == 'client-read':
+elif args.command == 'client-read-sample-item':
     result = client_read_sample_item()
 
-elif args.command == 'client-update':
+elif args.command == 'client-update-sample-item':
     result = client_update_sample_item()
 
-elif args.command == 'client-delete':
+elif args.command == 'client-delete-sample-item':
     result = client_delete_sample_item()
 
-elif args.command == 'client-list':
+elif args.command == 'client-list-sample-item':
     result = client_list_sample_item(args.offset, args.limit)
+# end for ::
 
 #
 # output result

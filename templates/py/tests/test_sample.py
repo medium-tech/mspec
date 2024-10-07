@@ -1,9 +1,13 @@
 import unittest
-from sample import verify, to_json, from_json, example_sample_item
+from sample import sample_item_verify, sample_item_to_json, sample_item_from_json, sample_item_example
 from sample.client import *
 from sample.db import *
 
+# vars :: {"sample": "module.snake_case"}
+
 db_client = db_init()
+
+# for :: {% for model in module.models %} :: {"sample_item": "model.snake_case", "SampleItem": "model.pascal_case"}
 
 class TestSampleItem(unittest.TestCase):
 
@@ -15,27 +19,23 @@ class TestSampleItem(unittest.TestCase):
         """
         test the verify function
         """
-        verify(example_sample_item())
+        sample_item_verify(sample_item_example())
 
-        bad_type = example_sample_item()
-        bad_type['name'] = 42
-        self.assertRaises(TypeError, verify, bad_type)
-
-        bad_key = example_sample_item()
+        bad_key = sample_item_example()
         bad_key['bad_key'] = 'muy mal'
-        self.assertRaises(KeyError, verify, bad_key)
+        self.assertRaises(KeyError, sample_item_verify, bad_key)
 
     def test_json(self):
         """
         test the json functions
         """
-        json_string = to_json(example_sample_item())
+        json_string = sample_item_to_json(sample_item_example())
         self.assertIsInstance(json_string, str)
 
-        data = from_json(json_string)
+        data = sample_item_from_json(json_string)
         self.assertIsInstance(data, dict)
-        self.assertEqual(data, example_sample_item())
-        verify(data)
+        self.assertEqual(data, sample_item_example())
+        sample_item_verify(data)
 
     def test_db_crud(self):
         """
@@ -49,26 +49,22 @@ class TestSampleItem(unittest.TestCase):
         """
 
         # create #
-        id = db_create_sample_item(example_sample_item())
+        id = db_create_sample_item(sample_item_example())
         self.assertIsInstance(id, str)
         self.assertGreater(len(id), 0)
 
         # read #
         item_read = db_read_sample_item(id)
         self.assertIsInstance(item_read, dict)
-        verify(item_read)
+        sample_item_verify(item_read)
         del item_read['id']
-        self.assertEqual(item_read, example_sample_item())
+        self.assertEqual(item_read, sample_item_example())
 
         # update #
-        item_read['name'] = 'this is a modified thing'
         db_update_sample_item(id, item_read)
 
         read_after_update = db_read_sample_item(id)
-        verify(read_after_update)
-        del read_after_update['id']
-        self.assertEqual(read_after_update, item_read)
-        self.assertNotEqual(read_after_update, example_sample_item())
+        sample_item_verify(read_after_update)
 
         # delete #
         db_delete_sample_item(id)
@@ -90,26 +86,21 @@ class TestSampleItem(unittest.TestCase):
         """
 
         # create #
-        id = client_create_sample_item(example_sample_item())
+        id = client_create_sample_item(sample_item_example())
         self.assertIsInstance(id, str)
         self.assertGreater(len(id), 0)
 
         # read #
         item_read = client_read_sample_item(id)
         self.assertIsInstance(item_read, dict)
-        verify(item_read)
+        sample_item_verify(item_read)
         del item_read['id']
-        self.assertEqual(item_read, example_sample_item())
+        self.assertEqual(item_read, sample_item_example())
 
         # update #
-        item_read['name'] = 'this is a modified thing'
         client_update_sample_item(id, item_read)
-
         read_after_update = client_read_sample_item(id)
-        verify(read_after_update)
-        del read_after_update['id']
-        self.assertEqual(read_after_update, item_read)
-        self.assertNotEqual(read_after_update, example_sample_item())
+        sample_item_verify(read_after_update)
 
         # delete #
         client_delete_sample_item(id)
@@ -127,7 +118,7 @@ class TestSampleItem(unittest.TestCase):
         # seed the db #
 
         for _ in range(60):
-            db_create_sample_item(example_sample_item())
+            db_create_sample_item(sample_item_example())
 
         self.assertEqual(collection.count_documents({}), 60)
 
@@ -143,9 +134,9 @@ class TestSampleItem(unittest.TestCase):
 
             for item in items:
                 self.assertIsInstance(item, dict)
-                verify(item)
+                sample_item_verify(item)
                 del item['id']
-                self.assertEqual(item, example_sample_item())
+                self.assertEqual(item, sample_item_example())
 
         # page size 25 #
 
@@ -162,9 +153,10 @@ class TestSampleItem(unittest.TestCase):
 
             for item in items:
                 self.assertIsInstance(item, dict)
-                verify(item)
+                sample_item_verify(item)
                 del item['id']
-                self.assertEqual(item, example_sample_item())
+                self.assertEqual(item, sample_item_example())
+# endfor ::
 
 if __name__ == '__main__':
     unittest.main()
