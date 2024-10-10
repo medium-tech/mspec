@@ -1,4 +1,5 @@
-# notes for a production conf of uwsgi
+
+## notes for a production conf of uwsgi
 
 * best practices: https://uwsgi-docs.readthedocs.io/en/latest/ThingsToKnow.html
 * workers / threads for application 

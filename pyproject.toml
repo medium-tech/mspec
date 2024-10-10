@@ -12,5 +12,6 @@ description = 'the medium protocol and stuff'
 readme = 'README.md'
 requires-python = '>=3.7'
 dependencies = [
-    'pyyaml == 6.0.2'
+    'pyyaml == 6.0.2',
+    'Jinja2 == 3.1.4'
 ]

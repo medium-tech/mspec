@@ -1,9 +1,7 @@
 import json
 from core import *
-from sample.db import *
 
 __all__ = [
-    'seed_data',
     # for :: {% for model in module.models %} :: {"sample_item": "model.snake_case"}
     'sample_item_to_json',
     'sample_item_from_json',
@@ -12,12 +10,6 @@ __all__ = [
     'sample_item_verify',
     # end for ::
 ]
-
-def seed_data(count:int=100):
-    for _ in range(count):
-        # for :: {% for model in module.models %} :: {"sample_item": "model.snake_case"}
-        db_create_sample_item(sample_item_random())
-        # end for ::
 
 # for :: {% for model in module.models %} :: {"sample_item": "model.snake_case", "SampleItem": "model.pascal_case"}
 def sample_item_to_json(data:dict, sort_keys=True, indent=4) -> str:
@@ -40,7 +32,6 @@ def sample_item_example() -> dict:
 
 def sample_item_random() -> dict:
     return {
-        # replace :: model.python_random_fields
         # macro :: python_random_string :: {"name": "macro.arg.field"}
         'name': random_string(),
         # macro :: python_random_bool :: {"verified": "macro.arg.field"}
@@ -53,7 +44,8 @@ def sample_item_random() -> dict:
         'score': random_float(),
         # macro :: python_random_list :: {"tags": "macro.arg.field"}
         'tags': random_list()
-        # end replace ::
+        # end macro ::
+        # insert :: model.python_random_fields
     }
 
 def sample_item_verify(data:dict) -> dict:
@@ -66,8 +58,6 @@ def sample_item_verify(data:dict) -> dict:
             raise TypeError('id must be a string')
     except KeyError:
         pass
-
-    # replace :: model.python_verify_fields
 
     # macro :: python_verify_string :: {"name": "macro.arg.field"}
     try:
@@ -116,7 +106,7 @@ def sample_item_verify(data:dict) -> dict:
     except KeyError:
         pass
 
-    # end replace ::
+    # insert :: model.python_verify_fields
     
     for key in data.keys():
         # vars :: {"['id', 'name', 'verified', 'color', 'age', 'score', 'tags']": "model.python_field_list"}

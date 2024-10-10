@@ -17,6 +17,12 @@ __all__ = [
 
 db_client = None
 
+def seed_data(count:int=100):
+    for _ in range(count):
+        # for :: {% for model in module.models %} :: {"sample_item": "model.snake_case"}
+        db_create_sample_item(sample_item_random())
+        # end for ::
+
 def db_init(client:MongoClient=None) -> None:
     """
     initialize the database client.

@@ -5,7 +5,7 @@ import json
 
 from urllib.request import Request, urlopen
 
-# vars :: {"sample": "module.snake_case", "http://localhost:9009": "default_client_host"}
+# vars :: {"sample": "module.snake_case", "http://localhost:9009": "project.default_client_host"}
 
 """
 WARNING: urlib.request module is unsafe to use with os.fork on OSX
