@@ -1,11 +1,11 @@
 from sample import *
-from pymongo import MongoClient
+from core.exceptions import NotFoundError
+from core.db import db_client
 from bson import ObjectId
 
 # vars :: {"sample": "module.snake_case", "mongodb://127.0.0.1:27017": "default_mongo_url"}
 
 __all__ = [
-    'db_init', 
     # for :: {% for model in module.models %} :: {"sample_item": "model.snake_case"}
     'db_create_sample_item', 
     'db_read_sample_item',
@@ -15,30 +15,13 @@ __all__ = [
     # end for ::
 ]
 
-db_client = None
+db = db_client()
 
 def seed_data(count:int=100):
     for _ in range(count):
         # for :: {% for model in module.models %} :: {"sample_item": "model.snake_case"}
         db_create_sample_item(sample_item_random())
         # end for ::
-
-def db_init(client:MongoClient=None) -> None:
-    """
-    initialize the database client.
-
-    args ::
-        client :: the client to use, if None, a new client will be created with default settings.
-    
-    return :: None
-    """
-    global db_client
-    if client is None:
-        db_client = MongoClient('mongodb://127.0.0.1:27017', serverSelectionTimeoutMS=3_000)
-    else:
-        db_client = client
-
-    return db_client
 
 # for :: {% for model in module.models %} :: {"sample_item": "model.snake_case", "sample item": "model.lower_case"}
 
@@ -52,10 +35,10 @@ def db_create_sample_item(data:dict) -> str:
     return :: the id of the created item.
     """
     try:
-        result = db_client['sample']['sample_item'].insert_one(sample_item_verify(data))
+        result = db['sample']['sample_item'].insert_one(sample_item_verify(data))
         return str(result.inserted_id)
     except TypeError as e:
-        if db_client is None:
+        if db is None:
             raise Exception('database client not initialized')
         else:
             raise e
@@ -70,15 +53,15 @@ def db_read_sample_item(id:str) -> dict|None:
     return :: dict of the item if it exists, None otherwise.
     """
     try:
-        sample_items = db_client['sample']['sample_item']
+        sample_items = db['sample']['sample_item']
         db_entry = sample_items.find_one({'_id': ObjectId(id)})
         if db_entry is None:
-            return None
+            raise NotFoundError(f'sample item {id} not found')
         else:
             db_entry['id'] = str(db_entry.pop('_id'))
             return sample_item_verify(db_entry)
     except TypeError as e:
-        if db_client is None:
+        if db is None:
             raise Exception('database client not initialized')
         else:
             raise e
@@ -94,9 +77,9 @@ def db_update_sample_item(id:str, data:dict) -> None:
     return :: None
     """
     try:
-        db_client['sample']['sample_item'].update_one({'_id': ObjectId(id)}, {'$set': sample_item_verify(data)})
+        db['sample']['sample_item'].update_one({'_id': ObjectId(id)}, {'$set': sample_item_verify(data)})
     except TypeError as e:
-        if db_client is None:
+        if db is None:
             raise Exception('database client not initialized')
         else:
             raise e
@@ -112,9 +95,9 @@ def db_delete_sample_item(id:str) -> None:
     """
 
     try:
-        db_client['sample']['sample_item'].delete_one({'_id': ObjectId(id)})
+        db['sample']['sample_item'].delete_one({'_id': ObjectId(id)})
     except TypeError as e:
-        if db_client is None:
+        if db is None:
             raise Exception('database client not initialized')
         else:
             raise e
@@ -130,14 +113,14 @@ def db_list_sample_item(offset:int=0, limit:int=25) -> list[dict]:
     return :: list of each item as a dict.
     """
     try:
-        sample_items = db_client['sample']['sample_item'].find().skip(offset).limit(limit)
+        sample_items = db['sample']['sample_item'].find().skip(offset).limit(limit)
         items = []
         for item in sample_items:
             item['id'] = str(item.pop('_id'))
             items.append(sample_item_verify(item))
         return items
     except TypeError as e:
-        if db_client is None:
+        if db is None:
             raise Exception('database client not initialized')
         else:
             raise e
