@@ -1,4 +1,6 @@
-from sample import *
+# for :: {% for module in proejct.modules %} :: {"sample": "module.snake_case", "Sample": "module.camel_case"}
+from sample import sample_client
+# end for ::
 
 import os
 import json
@@ -13,27 +15,32 @@ WARNING: urlib.request module is unsafe to use with os.fork on OSX
 """
 
 __all__ = [
-    'client_init'
+    'create_client_context'
 ]
 
-client_host = None
-default_client_host = 'http://localhost:9009'
-headers = {'Content-Type': 'application/json'}
+default_host = os.environ.get('MSPEC_CLIENT_HOST', 'http://localhost:9009')
 
-def client_init(host:str=None) -> str:
+def create_client_context(host:str=default_host) -> str:
     """
     initialize the client with a host. if host is not provided,
-    it will use the value of the MSPEC_CLIENT_HOST environment variable,
-    if that is not set, it will use '{}'.
+    it will use the value of the `MSPEC_CLIENT_HOST` environment variable,
+    if that is not set, it will use the value for environment variable `MSPEC_CLIENT_HOST`.
     
     args ::
         host :: the host to connect to.
     
     return :: None
-    """.format(default_client_host)
-    global client_host
-    if host is None:
-        client_host = os.environ.get('MSPEC_CLIENT_HOST', default_client_host)
-    else:
-        client_host = host
-    return client_host
+    """.format(default_host)
+
+    return {
+        'host': host,
+        'headers': {
+            'Content-Type': 'application/json'
+        }
+    }
+
+class MSpecClient:
+
+    # for :: {% for module in proejct.modules %} :: {"sample": "module.snake_case", "Sample": "module.camel_case"}
+    sample = sample_client
+    # end for ::

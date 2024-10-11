@@ -1,10 +1,10 @@
 import argparse
 import random
 from pprint import pprint
-
-from sample import *
-from sample.client import *
-from sample.db import *
+from core.db import create_db_context
+from core.client import create_client_context
+from sample import sample_db, sample_client
+from sample.sample_item import *
 
 #
 # define arguments
@@ -55,15 +55,17 @@ def get_user_data():
 if args.seed is not None:
     random.seed(args.seed)
 
-db_init()
-client_init()
+cli_ctx = {}
+cli_ctx.update(create_db_context())
+cli_ctx.update(create_client_context())
+
 
 #
 # run program
 #
 
 if args.command == 'data-seed':
-    result = seed_data(args.count)
+    result = sample_db.seed_data(cli_ctx, args.count)
 
 # for :: {% for model in module.models %} :: {"sample-item": "model.kebab_case", "sample_item": "model.snake_case"}
 elif args.command == 'verify-sample-item':
@@ -76,34 +78,34 @@ elif args.command == 'example-sample-item':
     result = sample_item_to_json(sample_item_example())
 
 elif args.command == 'db-create-sample-item':
-    result = db_create_sample_item(get_user_data())
+    result = sample_db.create_sample_item(cli_ctx, get_user_data())
 
 elif args.command == 'db-read-sample-item':
-    result = db_read_sample_item(args.id)
+    result = sample_db.read_sample_item(cli_ctx, args.id)
 
 elif args.command == 'db-update-sample-item':
-    result = db_update_sample_item(args.id, get_user_data())
+    result = sample_db.update_sample_item(cli_ctx, args.id, get_user_data())
 
 elif args.command == 'db-delete-sample-item':
-    result = db_delete_sample_item(args.id)
+    result = sample_db.delete_sample_item(cli_ctx, args.id)
 
 elif args.command == 'db-list-sample-item':
-    result = db_list_sample_item(args.offset, args.limit)
+    result = sample_db.list_sample_item(cli_ctx, args.offset, args.limit)
 
 elif args.command == 'client-create-sample-item':
-    result = client_create_sample_item(get_user_data())
+    result = sample_client.create_sample_item(cli_ctx, get_user_data())
 
 elif args.command == 'client-read-sample-item':
-    result = client_read_sample_item()
+    result = sample_client.read_sample_item(cli_ctx, )
 
 elif args.command == 'client-update-sample-item':
-    result = client_update_sample_item()
+    result = sample_client.update_sample_item(cli_ctx, )
 
 elif args.command == 'client-delete-sample-item':
-    result = client_delete_sample_item()
+    result = sample_client.delete_sample_item(cli_ctx, )
 
 elif args.command == 'client-list-sample-item':
-    result = client_list_sample_item(args.offset, args.limit)
+    result = sample_client.list_sample_item(cli_ctx, args.offset, args.limit)
 # end for ::
 
 #

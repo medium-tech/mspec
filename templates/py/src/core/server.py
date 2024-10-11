@@ -1,17 +1,20 @@
 import json
 from os import getpid
 from traceback import format_exc
-from core.db import db_init
-from sample.sample_item.server import sample_item_routes
+from core.db import create_db_context
 from core.exceptions import RequestError, JSONResponse
-from sample.db import *
+# for :: {% for module in project.modules %} :: {"sample": "module.snake_case"}
+from sample import sample_routes
+# end for ::
 
 import uwsgi
 from uwsgidecorators import postfork
 
 route_list = [
-    sample_item_routes
+    sample_routes,
 ]
+
+server_ctx = {}
 
 #
 # entry point
@@ -19,14 +22,15 @@ route_list = [
 
 @postfork
 def initialize():
-    db_init()
+    global server_ctx
+    server_ctx.update(create_db_context())
     uwsgi.log(f'INITIALIZED - pid: {getpid()}')
 
 def application(env, start_response):
 
     for route in route_list:
         try:
-            route(env)
+            route(server_ctx, env)
         except RequestError as e:
             body = {'error': e.msg}
             status_code = e.status

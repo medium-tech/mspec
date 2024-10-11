@@ -1,11 +1,11 @@
-from sample import *
+from sample.sample_item import *
 
 import os
 import json
 
 from urllib.request import Request, urlopen
 
-# vars :: {"sample": "module.snake_case", "http://localhost:9009": "project.default_client_host"}
+# vars :: {"sample": "module.snake_case", "http://localhost:9009": "project.default_client_host", "sample_item": "model.snake_case", "sample item": "model.lower_case", "sample-item": "model.kebab_case"}
 
 """
 WARNING: urlib.request module is unsafe to use with os.fork on OSX
@@ -13,41 +13,14 @@ WARNING: urlib.request module is unsafe to use with os.fork on OSX
 """
 
 __all__ = [
-    'client_init', 
-    # for :: {% for model in module.models %} :: {"sample_item": "model.snake_case"}
     'client_create_sample_item', 
     'client_read_sample_item', 
     'client_update_sample_item', 
     'client_delete_sample_item', 
     'client_list_sample_item'
-    # end for ::
 ]
 
-client_host = None
-default_client_host = 'http://localhost:9009'
-headers = {'Content-Type': 'application/json'}
-
-def client_init(host:str=None) -> str:
-    """
-    initialize the client with a host. if host is not provided,
-    it will use the value of the MSPEC_CLIENT_HOST environment variable,
-    if that is not set, it will use '{}'.
-    
-    args ::
-        host :: the host to connect to.
-    
-    return :: None
-    """.format(default_client_host)
-    global client_host
-    if host is None:
-        client_host = os.environ.get('MSPEC_CLIENT_HOST', default_client_host)
-    else:
-        client_host = host
-    return client_host
-
-# for :: {% for model in module.models %} :: {"sample_item": "model.snake_case", "sample item": "model.lower_case", "sample-item": "model.kebab_case"}
-
-def client_create_sample_item(data:dict) -> str:
+def client_create_sample_item(ctx:dict, data:dict) -> str:
     """
     create a sample item on the server, verifying the data first.
     
@@ -60,7 +33,7 @@ def client_create_sample_item(data:dict) -> str:
     request_body = sample_item_to_json(sample_item_verify(data)).encode()
 
     try:
-        request = Request(f'{client_host}/api/sample/sample-item', headers=headers, method='POST', data=request_body)
+        request = Request(f'{ctx["host"]}/api/sample/sample-item', headers=ctx['headers'], method='POST', data=request_body)
 
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
@@ -70,18 +43,12 @@ def client_create_sample_item(data:dict) -> str:
             raise Exception('invalid response from server, id must be a string')
         return id
     
-    except ValueError as e:
-        if client_host is None:
-            raise Exception('client not initialized, call client_init() first')
-        else:
-            raise
-    
     except (json.JSONDecodeError, KeyError) as e:
         raise Exception('invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
         raise Exception(f'error creating sample item: {e.__class__.__name__}: {e}')
 
-def client_read_sample_item(id:str) -> dict|None:
+def client_read_sample_item(ctx:dict, id:str) -> dict|None:
     """
     read a sample item from the server, verifying it.
 
@@ -92,25 +59,19 @@ def client_read_sample_item(id:str) -> dict|None:
     """
 
     try:
-        request = Request(f'{client_host}/api/sample/sample-item/{id}', headers=headers, method='GET')
+        request = Request(ctx['host'] + '/api/sample/sample-item/' + id, headers=ctx['headers'], method='GET')
 
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
 
         return sample_item_verify(json.loads(response_body))
-
-    except ValueError as e:
-        if client_host is None:
-            raise Exception('client not initialized, call client_init() first')
-        else:
-            raise
     
     except (json.JSONDecodeError, TypeError) as e:
         raise Exception('invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
         raise Exception(f'error reading sample item: {e.__class__.__name__}: {e}')
 
-def client_update_sample_item(id:str, data:dict) -> bool:
+def client_update_sample_item(ctx:dict, id:str, data:dict) -> bool:
     """
     update a sample item on the server, verifying the data first.
 
@@ -124,16 +85,10 @@ def client_update_sample_item(id:str, data:dict) -> bool:
     request_body = sample_item_to_json(sample_item_verify(data)).encode()
 
     try:
-        request = Request(f'{client_host}/api/sample/sample-item/{id}', headers=headers, method='PUT', data=request_body)
+        request = Request(f'{ctx["host"]}/api/sample/sample-item/{id}', headers=ctx['headers'], method='PUT', data=request_body)
 
         with urlopen(request) as _:
             """we dont need the response"""
-    
-    except ValueError as e:
-        if client_host is None:
-            raise Exception('client not initialized, call client_init() first')
-        else:
-            raise
         
     except (json.JSONDecodeError, KeyError) as e:
         raise Exception('invalid response from server, {e.__class__.__name__}: {e}')
@@ -141,7 +96,7 @@ def client_update_sample_item(id:str, data:dict) -> bool:
     except Exception as e:
         raise Exception(f'error updating sample item: {e.__class__.__name__}: {e}')
 
-def client_delete_sample_item(id:str):
+def client_delete_sample_item(ctx:dict, id:str):
     """
     delete a sample item from the server.
 
@@ -152,16 +107,10 @@ def client_delete_sample_item(id:str):
     """
 
     try:
-        request = Request(f'{client_host}/api/sample/sample-item/{id}', headers=headers, method='DELETE')
+        request = Request(f'{ctx["host"]}/api/sample/sample-item/{id}', headers=ctx['headers'], method='DELETE')
 
         with urlopen(request) as _:
             """we dont need the response"""
-    
-    except ValueError as e:
-        if client_host is None:
-            raise Exception('client not initialized, call client_init() first')
-        else:
-            raise
 
     except (json.JSONDecodeError, KeyError) as e:
         raise Exception('invalid response from server, {e.__class__.__name__}: {e}')
@@ -169,7 +118,7 @@ def client_delete_sample_item(id:str):
     except Exception as e:
         raise Exception(f'error deleting sample item: {e.__class__.__name__}: {e}')
 
-def client_list_sample_item(offset:int=0, limit:int=25):
+def client_list_sample_item(ctx:dict, offset:int=0, limit:int=25):
     """
     list sample items from the server, verifying each.
 
@@ -181,21 +130,15 @@ def client_list_sample_item(offset:int=0, limit:int=25):
     """
 
     try:
-        request = Request(f'{client_host}/api/sample/sample-item?offset={offset}&limit={limit}', headers=headers, method='GET')
+        request = Request(f'{ctx["host"]}/api/sample/sample-item?offset={offset}&limit={limit}', headers=ctx['headers'], method='GET')
         
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
 
         return [sample_item_verify(item) for item in json.loads(response_body)['items']]
-    except ValueError as e:
-        if client_host is None:
-            raise Exception('client not initialized, call client_init() first')
-        else:
-            raise
 
     except (json.JSONDecodeError, TypeError) as e:
         raise Exception('invalid response from server, {e.__class__.__name__}: {e}')
     
     except Exception as e:
         raise Exception(f'error listing sample items: {e.__class__.__name__}: {e}')
-# end for ::

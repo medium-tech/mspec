@@ -1,15 +1,15 @@
-from sample import *
 from pymongo import MongoClient
+# for :: {% for module in proejct.modules %} :: {"sample": "module.snake_case", "Sample": "module.camel_case"}
+from sample import sample_db
+# end for ::
 
-# vars :: {"mongodb://127.0.0.1:27017": "db.default_url"}
+# vars :: {"mongodb://127.0.0.1:27017": "db.default_url", "MSpec": "project.camel_case"}
 
 __all__ = [
-    'db_init'
+    'create_db_context'
 ]
 
-_db_client = None
-
-def db_init(client:MongoClient=None) -> None:
+def create_db_context(client:MongoClient=None) -> None:
     """
     initialize the database client.
 
@@ -18,19 +18,13 @@ def db_init(client:MongoClient=None) -> None:
     
     return :: None
     """
-    global _db_client
     if client is None:
-        _db_client = MongoClient('mongodb://127.0.0.1:27017', serverSelectionTimeoutMS=3_000)
-    else:
-        _db_client = client
+        client = MongoClient('mongodb://127.0.0.1:27017', serverSelectionTimeoutMS=3_000)
 
-    return _db_client
+    return {'db': {'client': client}}
 
+class MSpecDB:
 
-def db_client() -> MongoClient:
-    """
-    get the database client.
-
-    return :: the database client.
-    """
-    return _db_client
+    # for :: {% for module in proejct.modules %} :: {"sample": "module.snake_case", "Sample": "module.camel_case"}
+    sample = sample_db
+    # end for ::

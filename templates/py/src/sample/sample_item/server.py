@@ -1,7 +1,7 @@
 import re
 from urllib.parse import parse_qs
-from sample import sample_item_from_json
-from sample.db import *
+from sample.sample_item import sample_item_from_json
+from sample.sample_item.db import *
 
 import uwsgi
 from core.exceptions import NotFoundError, RequestError, JSONResponse
@@ -16,7 +16,7 @@ __all__ = [
 # router
 #
 
-def sample_item_routes(env:dict):
+def sample_item_routes(ctx:dict, env:dict):
 
     # best practice is to always consume body if it exists: https://uwsgi-docs.readthedocs.io/en/latest/ThingsToKnow.html
     req_body_raw:bytes = env['wsgi.input'].read()
@@ -33,7 +33,7 @@ def sample_item_routes(env:dict):
             uwsgi.log(f'ROUTE - GET sample.sample_item/{instance_id}')
 
             try:
-                item = db_read_sample_item(instance_id)
+                item = db_read_sample_item(ctx, instance_id)
                 uwsgi.log(f'ROUTE - GET sample.sample_item/{instance_id} - found: {item is not None}')
                 raise JSONResponse('200 OK', item)
             except NotFoundError:
@@ -41,12 +41,12 @@ def sample_item_routes(env:dict):
 
         elif env['REQUEST_METHOD'] == 'PUT':
             uwsgi.log(f'ROUTE - PUT sample.sample_item/{instance_id}')
-            db_update_sample_item(instance_id, req_body())
+            db_update_sample_item(ctx, instance_id, req_body())
             raise JSONResponse('204 No Content')
 
         elif env['REQUEST_METHOD'] == 'DELETE':
             uwsgi.log(f'ROUTE - DELETE sample.sample_item/{instance_id}')
-            db_delete_sample_item(instance_id)
+            db_delete_sample_item(ctx, instance_id)
             raise JSONResponse('204 No Content')
         
         else:
@@ -58,7 +58,7 @@ def sample_item_routes(env:dict):
     elif re.match(r'/api/sample/sample-item', env['PATH_INFO']):
         if env['REQUEST_METHOD'] == 'POST':
             uwsgi.log(f'ROUTE - POST sample.sample_item')
-            result_id = db_create_sample_item(req_body())
+            result_id = db_create_sample_item(ctx, req_body())
             raise JSONResponse('200 OK', {'id': result_id})
         
         elif env['REQUEST_METHOD'] == 'GET':
@@ -68,7 +68,7 @@ def sample_item_routes(env:dict):
             offset = query.get('offset', [0])[0]
             limit = query.get('limit', [25])[0]
 
-            items = db_list_sample_item(offset=int(offset), limit=int(limit))
+            items = db_list_sample_item(ctx, offset=int(offset), limit=int(limit))
             raise JSONResponse('200 OK', {'items': items})
     
         else:

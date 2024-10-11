@@ -32,7 +32,7 @@
         * 🟢 create tests
 
 * 🟡 templating
-    * 🟡 refactor src/sample/__init__.py -> src/sample/sample_item/__init__.py
+    * 🟡 refactor `src/sample/__init__.py` -> `src/sample/sample_item/__init__.py`
     * 🟡 extract templates
         * 🟡 add macro syntax
         * 🟡 add insert syntax
@@ -40,6 +40,12 @@
     * 🟡 generate html
     * 🔴 generated app should have 2 modules and 3 total models, but not sample.sample_item
     * 🔴 template app and generated apps unittests are passing
+
+    * 🟡 refactor client / db modules
+    * 🟡 decouple db/client from global ns
+    * 🟡 add convience classes for db/client
+        * 🟡 in `sample/__init__.py` - alias db and client functions from `sample/db.py` and `sample/client.py`
+        * 🟡 in `core/db.py` and `core/client.py` - alias client and db classes from `sample/__init__.py`
 
 ### guis
 * 🔴 python tkinter (and/or gtk)
