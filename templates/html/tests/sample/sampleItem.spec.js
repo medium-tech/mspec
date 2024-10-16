@@ -9,7 +9,7 @@ test('test - sample - sample item - pagination', async ({ page }) => {
   await expect(page.locator('h1')).toContainText('mspec');
   await page.getByRole('link', { name: 'sample' }).click();
   await expect(page.locator('h1')).toContainText('sample');
-  await page.getByRole('link', { name: 'sample item' }).click();
+  await page.getByRole('link', { name: 'sample-item' }).click();
   await expect(page.getByRole('heading')).toContainText('sample item');
 
   await page.getByRole('button', { name: '>>>' }).click();
