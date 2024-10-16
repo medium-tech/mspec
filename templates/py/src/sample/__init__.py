@@ -1,10 +1,16 @@
+# for :: {% for model in module.models %} :: {"sample_item": "model.snake_case"}
 from .sample_item import sample_item_random
 from .sample_item.server import sample_item_routes
 from .sample_item.db import *
 from .sample_item.client import *
+# end for ::
+
+# vars :: {"sample_item": "model.snake_case", "sample": "module.snake_case"}
 
 __all__ = [
     'sample_routes',
+    'sample_db',
+    'sample_client'
 ]
 
 sample_routes = [

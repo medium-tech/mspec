@@ -1,7 +1,7 @@
 # vars :: {"sample": "module.snake_case", "9009": "server.port"}
 uwsgi:
   http: :9009
-  wsgi-file: src/sample/server.py
+  wsgi-file: src/core/server.py
   # for :: {% for model in module.models %} :: {"sample-item": "model.kebab_case, "/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv": "server.static_root"}
   route: ^/sample/sample-item/create static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv/sample/sample-item/index.html
   route: ^/sample/sample-item/index(.*) static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv/sample/sample-item/index$1

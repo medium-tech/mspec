@@ -1,11 +1,11 @@
-# vars :: {"mspec":"project.snake_case", "Brad Corlett":"author_name", "brad.corlett@gmail.com":"author_email"}
+# vars :: {"msample":"project.snake_case", "Brad Corlett":"author_name", "brad.corlett@gmail.com":"author_email"}
 
 [build-system]
 requires = ['setuptools>=61.0']
 build-backend = 'setuptools.build_meta'
 
 [project]
-name = 'mspec'
+name = 'msample'
 version = '0.0.1'
 authors = [
   { name='Brad Corlett', email='brad.corlett@gmail.com' },

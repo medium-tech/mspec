@@ -4,9 +4,14 @@ from typing import Tuple
 
 
 template_dir = Path(__file__).parent.parent.parent / 'templates/html'
-app_template_prefixes = [
-    str(template_dir),
-    str(template_dir / 'srv')
+
+model_prefixes = [
+    str(template_dir / 'tests/sample'),
+    str(template_dir / 'srv/sample/sample-item')
+]
+
+module_prefixes = [
+    str(template_dir / 'srv/sample')
 ]
 
 def html_template_source_paths() -> Tuple[list[str], list[str]]:
@@ -18,6 +23,7 @@ def html_template_source_paths() -> Tuple[list[str], list[str]]:
     }
 
     for root, dirs, files in os.walk(template_dir):
+        
         if 'node_modules' in root:
                 continue
         
@@ -26,8 +32,6 @@ def html_template_source_paths() -> Tuple[list[str], list[str]]:
 
         if 'playwright-report' in root:
             continue
-
-        is_app_dir = root in app_template_prefixes
         
         for name in files:
             if name == '.DS_Store':
@@ -36,10 +40,12 @@ def html_template_source_paths() -> Tuple[list[str], list[str]]:
             if name == 'package-lock.json':
                 continue
 
-            if is_app_dir:
-                paths['app'].append(os.path.join(root, name))
-            else:
+            if root in model_prefixes:
                 paths['model'].append(os.path.join(root, name))
+            elif root in module_prefixes:
+                paths['module'].append(os.path.join(root, name))
+            else:
+                paths['app'].append(os.path.join(root, name))
     
     return paths
 

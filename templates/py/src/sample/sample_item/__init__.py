@@ -2,16 +2,14 @@ import json
 from core.util import *
 
 __all__ = [
-    # for :: {% for model in module.models %} :: {"sample_item": "model.snake_case"}
     'sample_item_to_json',
     'sample_item_from_json',
     'sample_item_example',
     'sample_item_random',
-    'sample_item_verify',
-    # end for ::
+    'sample_item_verify'
 ]
 
-# for :: {% for model in module.models %} :: {"sample_item": "model.snake_case", "SampleItem": "model.pascal_case"}
+
 def sample_item_to_json(data:dict, sort_keys=True, indent=4) -> str:
     return json.dumps(data, sort_keys=sort_keys, indent=indent)
 

@@ -1,6 +1,5 @@
 from sample.sample_item import *
 
-import os
 import json
 
 from urllib.request import Request, urlopen

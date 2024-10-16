@@ -1,5 +1,4 @@
 import random
-from core.util import random_nouns
 
 __all__ = [
     'random_nouns',

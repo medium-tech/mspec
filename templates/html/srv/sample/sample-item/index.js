@@ -1,3 +1,5 @@
+// vars :: {"SampleItem": "model.PascalCase", "sampleItem": "model.camelCase", "sample-item": "model.kebab_case"}
+
 //
 // data functions
 //
@@ -11,72 +13,45 @@ const defaultSampleItem = {
     tags: []
 }
 
-const randomNouns = ['apple', 'banana', 'horse', 'iguana', 'jellyfish', 'kangaroo', 'lion', 'quail', 'rabbit', 'snake', 'tiger', 'x-ray', 'yak', 'zebra']
-const randomAdjectives = ['shiny', 'dull', 'new', 'old', 'big', 'small', 'fast', 'slow', 'hot', 'cold', 'happy', 'sad', 'angry', 'calm', 'loud', 'quiet']
-const randomWords = randomNouns.concat(randomAdjectives)
-
 function randomSampleItem() {
-    // random int 1 to 4
-    const numWordsInName = Math.floor(Math.random() * 4) + 1;
-    const nameWords = [];
-    if (Math.random() < 0.33) nameWords.push('the');
-    for (let i = 0; i < numWordsInName; i++) {
-        const nameWord = randomWords[Math.floor(Math.random() * randomWords.length)];
-        const nextWord = (Math.random() < 0.3) ? nameWord.toUpperCase() : nameWord;
-        nameWords.push(nextWord);
-    }
-    const nameSep = Math.random() < 0.3 ? '_' : ' ';
-    const nameSuffix = Math.random() < 0.3 ? Math.floor(Math.random() * 1000) : '';
-
-    const numTags = Math.floor(Math.random() * 6);
-    const tags = [];
-    for (let i = 0; i < numTags; i++) {
-        tags.push(randomAdjectives[Math.floor(Math.random() * randomAdjectives.length)]);
-    }
     return {
-        name: `${nameWords.join(nameSep)}${nameSuffix}`,
-        verified: Math.random() < 0.5,
-        color: ['red', 'green', 'blue'][Math.floor(Math.random() * 3)],
-        age: Math.floor(Math.random() * 100),
-        score: Math.random() * 10,
-        tags: tags
+        // macro :: js_random_string :: {"name": "macro.arg.field"}
+        name: randomString(),
+        // macro :: js_random_boolean :: {"verified": "macro.arg.field"}
+        verified: randomBool(),
+        // macro :: js_random_enum :: {"color": "macro.arg.field", "['red', 'green', 'blue']": "macro.arg.enum_value_list"}
+        color: randomEnum(['red', 'green', 'blue']),
+        // macro :: js_random_integer :: {"age": "macro.arg.field"}
+        age: randomInt(),
+        // macro :: js_random_float :: {"score": "macro.arg.field"}
+        score: randomFloat(),
+        // macro :: js_random_list :: {"tags": "macro.arg.field"}
+        tags: randomList()
+        // end macro ::
+        // insert :: model.js_random_fields
     }
 }
 
 function verifySampleItem(data) {
-    /*
-
-    return {
-        valid: true/false,
-        errors: {
-            field: 'error message',
-            ...
-        }
-    }
-
-    */
 
     let result = {
         valid: true,
         errors: {}
     }
 
-    // name - string
-
+    // macro :: js_verify_string :: {"name": "macro.arg.field"}
     if (typeof data.name !== 'string') {
         result.error.name = 'name must be a string';
         result.valid = false;
     }
 
-    // verified - boolean
-
+    // macro :: js_verify_boolean :: {"verified": "macro.arg.field"}
     if (typeof data.verified !== 'boolean') {
         result.error.verified = 'verified must be a boolean';
         result.valid = false;
     }
 
-    // color - string enum (red, green, blue)
-
+    // macro :: js_verify_enum :: {"color": "macro.arg.field", "['red', 'green', 'blue']": "macro.arg.enum_value_list"}
     if (typeof data.color !== 'string') {
         result.error.color = 'color must be a string';
         result.valid = false;
@@ -85,22 +60,19 @@ function verifySampleItem(data) {
         result.valid = false;
     }
 
-    // age - integer
-
+    // macro :: js_verify_integer :: {"age": "macro.arg.field"}
     if (!Number.isInteger(data.age)) {
         result.error.age = 'age must be an integer';
         result.valid = false;
     }
 
-    // score - float
-
+    // macro :: js_verify_float :: {"score": "macro.arg.field"}
     if (typeof data.score !== 'number') {
         result.error.score = 'score must be a float';
         result.valid = false;
     }
 
-    // tags - array of strings
-
+    // macro :: js_verify_list :: {"tags": "macro.arg.field"}
     if (!Array.isArray(data.tags)) {
         result.error.tags = 'tags must be an array';
         result.valid = false;
@@ -108,6 +80,8 @@ function verifySampleItem(data) {
         result.error.tags = 'tags must be an array of strings';
         result.valid = false;
     }
+    // end macro ::
+    // insert :: model.js_verify_fields
 
     return result
 
@@ -116,35 +90,31 @@ function verifySampleItem(data) {
 function sampleItemFromInputTBody(tbody) {   
     const data = {};
 
-    // name - string
-
+    // macro :: js_from_input_tbody_string :: {"name": "macro.arg.field"}
     const nameInput = tbody.querySelector('input[name="name"]');
     data.name = nameInput.value;
 
-    // verified - boolean
-
+    // macro :: js_from_input_tbody_boolean :: {"verified": "macro.arg.field"}
     const verifiedInput = tbody.querySelector('input[name="verified"]');
     data.verified = verifiedInput.checked;
 
-    // color - string enum (red, green, blue)
-
+    // macro :: js_from_input_tbody_enum :: {"color": "macro.arg.field"}
     const colorInput = tbody.querySelector('select[name="color"]');
     data.color = colorInput.value;
 
-    // age - integer
-
+    // macro :: js_from_input_tbody_integer :: {"age": "macro.arg.field"}
     const ageInput = tbody.querySelector('input[name="age"]');
     data.age = parseInt(ageInput.value);
 
-    // score - float
-
+    // macro :: js_from_input_tbody_float :: {"score": "macro.arg.field"}
     const scoreInput = tbody.querySelector('input[name="score"]');
     data.score = parseFloat(scoreInput.value);
 
-    // tags - array of strings
-
+    // macro :: js_from_input_tbody_list :: {"tags": "macro.arg.field"}
     const tagsInput = tbody.querySelector('input[name="tags"]');
     data.tags = JSON.parse(tagsInput.getAttribute('valueAsJSON'));
+    // end macro ::
+    // insert :: model.js_from_input_tbody_fields
 
     return data;
 }
@@ -152,8 +122,7 @@ function sampleItemFromInputTBody(tbody) {
 function sampleItemToInputTBody(data, tbody) {
     tbody.innerHTML = '';
 
-    // name - string
-
+    // macro :: js_to_input_tbody_string :: {"name": "macro.arg.field"}
     const nameTdKey = document.createElement('td');
     nameTdKey.textContent = 'name';
 
@@ -174,8 +143,7 @@ function sampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(nameTr);
 
-    // verified - boolean
-
+    // macro :: js_to_input_tbody_boolean :: {"verified": "macro.arg.field"}
     const verifiedTdKey = document.createElement('td');
     verifiedTdKey.textContent = 'verified';
 
@@ -196,8 +164,7 @@ function sampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(verifiedTr);
 
-    // color - string enum (red, green, blue)
-
+    // macro :: js_to_input_tbody_enum :: {"color": "macro.arg.field"}
     const colorTdKey = document.createElement('td');
     colorTdKey.textContent = 'color';
 
@@ -226,8 +193,7 @@ function sampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(colorTr);
 
-    // age - integer
-
+    // macro :: js_to_input_tbody_integer :: {"age": "macro.arg.field"}
     const ageTdKey = document.createElement('td');
     ageTdKey.textContent = 'age';
 
@@ -249,8 +215,7 @@ function sampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(ageTr);
 
-    // score - float
-
+    // macro :: js_to_input_tbody_float :: {"score": "macro.arg.field"}
     const scoreTdKey = document.createElement('td');
     scoreTdKey.textContent = 'score';
 
@@ -273,8 +238,7 @@ function sampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(scoreTr);
 
-    // tags - array of strings
-
+    // macro :: js_to_input_tbody_list :: {"tags": "macro.arg.field"}
     let tagsEntered = data.tags.slice();
 
     const tagsTdKey = document.createElement('td');
@@ -335,6 +299,8 @@ function sampleItemToInputTBody(data, tbody) {
     tagsTr.appendChild(tagsTdOther);
 
     tbody.appendChild(tagsTr);
+    // end macro ::
+    // insert :: model.js_to_input_tbody_fields
 
     return tbody;
 
@@ -357,8 +323,7 @@ function sampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(idTr);
 
-    // name - string
-
+    // macro :: js_to_display_tbody_string :: {"name": "macro.arg.field"}
     const nameTdKey = document.createElement('td');
     nameTdKey.textContent = 'name';
 
@@ -371,8 +336,7 @@ function sampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(nameTr);
 
-    // verified - boolean
-
+    // macro :: js_to_display_tbody_boolean :: {"verified": "macro.arg.field"}
     const verifiedTdKey = document.createElement('td');
     verifiedTdKey.textContent = 'verified';
 
@@ -385,8 +349,7 @@ function sampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(verifiedTr);
 
-    // color - string enum (red, green, blue)
-
+    // macro :: js_to_display_tbody_enum :: {"color": "macro.arg.field"}
     const colorTdKey = document.createElement('td');
     colorTdKey.textContent = 'color';
 
@@ -399,8 +362,7 @@ function sampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(colorTr);
 
-    // age - integer
-
+    // macro :: js_to_display_tbody_integer :: {"age": "macro.arg.field"}
     const ageTdKey = document.createElement('td');
     ageTdKey.textContent = 'age';
 
@@ -413,8 +375,7 @@ function sampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(ageTr);
 
-    // score - float
-
+    // macro :: js_to_display_tbody_float :: {"score": "macro.arg.field"}
     const scoreTdKey = document.createElement('td');
     scoreTdKey.textContent = 'score';
 
@@ -427,8 +388,7 @@ function sampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(scoreTr);
 
-    // tags - array of strings
-
+    // macro :: js_to_display_tbody_list :: {"tags": "macro.arg.field"}
     const tagsTdKey = document.createElement('td');
     tagsTdKey.textContent = 'tags';
 
@@ -440,6 +400,8 @@ function sampleItemToDisplayTBody(data, tbody) {
     tagsTr.appendChild(tagsTdValue);
 
     tbody.appendChild(tagsTr);
+    // end macro ::
+    // insert :: model.js_to_display_tbody_fields
 
     return tbody;
 }
@@ -456,41 +418,37 @@ function sampleItemToTableRow(data) {
     idTd.textContent = data.id;
     tr.appendChild(idTd);
 
-    // name - string
-
+    // macro :: js_to_table_row_string :: {"name": "macro.arg.field"}
     const nameTd = document.createElement('td');
     nameTd.textContent = data.name;
     tr.appendChild(nameTd);
 
-    // verified - boolean
-
+    // macro :: js_to_table_row_boolean :: {"verified": "macro.arg.field"}
     const verifiedTd = document.createElement('td');
     verifiedTd.textContent = (data.verified) ? 'yes' : 'no';
     tr.appendChild(verifiedTd);
 
-    // color - string enum (red, green, blue)
-
+    // macro :: js_to_table_row_enum :: {"color": "macro.arg.field"}
     const colorTd = document.createElement('td');
     colorTd.textContent = data.color;
     tr.appendChild(colorTd);
 
-    // age - integer
-
+    // macro :: js_to_table_row_integer :: {"age": "macro.arg.field"}
     const ageTd = document.createElement('td');
     ageTd.textContent = data.age;
     tr.appendChild(ageTd);
 
-    // score - float
-
+    // macro :: js_to_table_row_float :: {"score": "macro.arg.field"}
     const scoreTd = document.createElement('td');
     scoreTd.textContent = data.score;
     tr.appendChild(scoreTd);
 
-    // tags - array of strings
-
+    // macro :: js_to_table_row_list :: {"tags": "macro.arg.field"}
     const tagsTd = document.createElement('td');
     tagsTd.textContent = data.tags.join(', ');
     tr.appendChild(tagsTd);
+    // end macro ::
+    // insert :: model.js_to_table_row_fields
 
     return tr;
 

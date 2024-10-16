@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- vars :: {"mspec": "project.snake_case", "sample": "module.snake_case"} -->
 <html>
 
     <head>
@@ -18,7 +19,9 @@
 
         <h2>sub sections</h2>
         <ul>
-            <li><a href="/sample/sample-item">sample item</a></li>
+            <!-- for :: {% for model in module.models %} :: {"sample-item": "model.snake_case", "sample-item": "model.lower_case"} -->
+            <li><a href="/sample/sample-item">sample-item</a></li>
+            <!-- end for :: -->
         </ul>
     </body>
 

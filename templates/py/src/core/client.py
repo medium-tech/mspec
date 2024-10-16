@@ -1,11 +1,7 @@
 # for :: {% for module in proejct.modules %} :: {"sample": "module.snake_case", "Sample": "module.camel_case"}
 from sample import sample_client
 # end for ::
-
 import os
-import json
-
-from urllib.request import Request, urlopen
 
 # vars :: {"http://localhost:9009": "project.default_client_host"}
 
@@ -20,7 +16,7 @@ __all__ = [
 
 default_host = os.environ.get('MSPEC_CLIENT_HOST', 'http://localhost:9009')
 
-def create_client_context(host:str=default_host) -> str:
+def create_client_context(host:str=default_host) -> dict:
     """
     initialize the client with a host. if host is not provided,
     it will use the value of the `MSPEC_CLIENT_HOST` environment variable,

@@ -4,7 +4,9 @@ from pprint import pprint
 from core.db import create_db_context
 from core.client import create_client_context
 from sample import sample_db, sample_client
+# for :: {% for model in module.models %} :: {"sample_item": "model.snake_case"}
 from sample.sample_item import *
+# end for ::
 
 #
 # define arguments

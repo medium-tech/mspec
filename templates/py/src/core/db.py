@@ -9,7 +9,7 @@ __all__ = [
     'create_db_context'
 ]
 
-def create_db_context(client:MongoClient=None) -> None:
+def create_db_context(client:MongoClient=None) -> dict:
     """
     initialize the database client.
 

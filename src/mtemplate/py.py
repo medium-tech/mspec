@@ -5,9 +5,17 @@ from typing import Tuple
 
 
 template_dir = Path(__file__).parent.parent.parent / 'templates/py'
-app_template_prefixes = [
-    str(template_dir),
-    str(template_dir / 'src/core')
+# app_template_prefixes = [
+#     str(template_dir),
+#     str(template_dir / 'src/core')
+# ]
+model_prefixes = [
+    str(template_dir / 'src/sample/sample_item'),
+    str(template_dir / 'tests/sample')
+]
+
+module_prefixes = [
+    str(template_dir / 'src/sample')
 ]
 
 def py_template_source_paths() -> dict:
@@ -26,17 +34,17 @@ def py_template_source_paths() -> dict:
         
         if '.egg-info' in root:
             continue
-
-        is_app_dir = root in app_template_prefixes
         
         for name in files:
             if name == '.DS_Store':
                 continue
 
-            if is_app_dir:
-                paths['app'].append(os.path.join(root, name))
-            else:
+            if root in model_prefixes:
+                paths['model'].append(os.path.join(root, name))
+            elif root in module_prefixes:
                 paths['module'].append(os.path.join(root, name))
+            else:
+                paths['app'].append(os.path.join(root, name))
     
     return paths
 

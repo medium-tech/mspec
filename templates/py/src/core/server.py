@@ -10,9 +10,11 @@ from sample import sample_routes
 import uwsgi
 from uwsgidecorators import postfork
 
-route_list = [
-    sample_routes,
-]
+route_list = []
+# for :: {% for module in project.modules %} :: {"sample": "module.snake_case"}
+route_list.extend(sample_routes)
+# end for ::
+
 
 server_ctx = {}
 
@@ -34,15 +36,18 @@ def application(env, start_response):
         except RequestError as e:
             body = {'error': e.msg}
             status_code = e.status
+            break
 
         except JSONResponse as e:
             body = e.data
             status_code = e.status
+            break
 
         except Exception as e:
             body = {'error': 'internal server error'}
             status_code = '500 Internal Server Error'
             uwsgi.log(f'ERROR - {e.__class__.__name__} - {e} \n' + format_exc())
+            break
     else:
         body = {'error': f'not found: ' + env['PATH_INFO']}
         status_code = '404 Not Found'
