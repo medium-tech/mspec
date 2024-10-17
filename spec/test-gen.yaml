@@ -1,0 +1,89 @@
+project:
+  name:
+    lower_case: 'test gen' 
+
+  modules:
+    stuff:
+      name:
+        lower_case: 'stuff'
+
+      models:
+        favorites:
+          name:
+            lower_case: 'favorites'
+
+          fields:
+            word: 
+              type: str
+              examples:
+                - "banana"
+                - "amplitude"
+                - "courage"
+
+            number:
+              type: int
+              examples:
+                - 7
+                - 11
+                - 42
+
+            color:
+              type: str
+              enum:
+                - red
+                - orange
+                - yellow
+                - green
+                - blue
+                - indigo
+                - violet
+
+              examples:
+                - red
+                - orange
+                - yellow
+                - green
+                - blue
+                - indigo
+                - violet
+
+        more_data:
+          name:
+            lower_case: 'more data'
+
+          fields:
+            excited:
+              type: bool
+              examples:
+                - true
+                - false
+
+            points:
+              type: float
+              examples:
+                - 3.6
+                - 10.1
+
+    social_media:
+      name:
+        lower_case: 'social media'
+
+      models:
+        post:
+          name:
+            lower_case: 'post'
+            
+          fields:
+            text: 
+              type: str
+              examples:
+                - "hello world"
+                - "this is my first post!"
+
+            tags:
+              type: list
+              element_type: string
+              examples:
+                - ["tag1", "tag2"]
+                - ["tag3", "tag4"]
+                - ["tag5", "tag6"]

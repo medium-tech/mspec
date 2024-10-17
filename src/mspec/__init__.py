@@ -6,7 +6,7 @@ __all__ = ['spec', 'spec_dir', 'dist_dir']
 spec_dir = Path(__file__).parent.parent.parent / 'spec'
 dist_dir = Path(__file__).parent.parent.parent / 'dist'
 
-def load_spec(pattern:str='*.yaml') -> dict:
+def load_spec(pattern:str='test-gen.yaml') -> dict:
     """
     load all yaml files in the spec directory and return them as a dictionary,
     each top level key is the name of the file without extension 

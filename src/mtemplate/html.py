@@ -49,7 +49,7 @@ def html_template_source_paths() -> Tuple[list[str], list[str]]:
     
     return paths
 
-def extract_html_templates():
+def display_html_templates():
     paths = html_template_source_paths()
     for key in paths.keys():
         print(f'html {key} templates:')
@@ -58,4 +58,4 @@ def extract_html_templates():
 
 
 def render_html_templates(spec:dict, output_dir:str|Path, debug:bool=False):
-    extract_html_templates()
+    display_html_templates()

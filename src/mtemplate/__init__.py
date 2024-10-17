@@ -25,6 +25,22 @@ def sort_dict_by_key_length(dictionary:dict) -> OrderedDict:
     shorter keys that are substrings of longer keys are not replaced prematurely"""
     return OrderedDict(sorted(dictionary.items(), key=lambda item: len(item[0]), reverse=True))
 
+
+class MTemplateProject:
+        
+    def __init__(self, spec:dict):
+        self.spec = spec
+
+        # jinja env #
+
+        loader = lambda name: MTemplateExtractor.template_from_file(self.site_root / name)
+
+        self.jinja = Environment(
+            autoescape=False,
+            loader=FunctionLoader(loader),
+            undefined=StrictUndefined
+        )
+
     
 class MTemplateExtractor:
 
