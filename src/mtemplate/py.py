@@ -60,12 +60,11 @@ def display_py_templates():
             print(f'\t{path}')
     
 
-def render_py_templates(spec:dict, output_dir:str|Path=None, debug:bool=False):
+def render_py_templates(project:dict, output_dir:str|Path=None, debug:bool=False):
     if output_dir is None:
         output_dir = dist_dir
         
     py = py_template_source_paths()
-    project = spec['test-gen']['project']
 
     print('app')
 
@@ -80,7 +79,8 @@ def render_py_templates(spec:dict, output_dir:str|Path=None, debug:bool=False):
         print('\t', module['name']['lower_case'])
         
         for template in py['module']:
-            output = output_dir / template['rel']
+            output = (output_dir / template['rel']).as_posix()
+            output = output.format(module_name_snake_case=module['name']['snake_case'])
             print('\t\t', output)
 
         print('\t\tmodels')
@@ -91,7 +91,7 @@ def render_py_templates(spec:dict, output_dir:str|Path=None, debug:bool=False):
             for template in py['model']:
                 output = (output_dir / template['rel']).as_posix()
                 output = output.format(
-                    module_name_snake_case=module['name']['lower_case'], 
-                    model_name_snake_case=model['name']['lower_case']
+                    module_name_snake_case=module['name']['snake_case'], 
+                    model_name_snake_case=model['name']['snake_case']
                 )
                 print('\t\t\t\t', output)
