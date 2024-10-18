@@ -30,17 +30,17 @@ def sample_item_example() -> dict:
 
 def sample_item_random() -> dict:
     return {
-        # macro :: python_random_string :: {"name": "macro.arg.field"}
+        # macro :: python_random_string :: {"name": "field"}
         'name': random_string(),
-        # macro :: python_random_bool :: {"verified": "macro.arg.field"}
+        # macro :: python_random_bool :: {"verified": "field"}
         'verified': random_bool(),
-        # macro :: python_random_enum :: {"color": "macro.arg.field", "['red', 'green', 'blue']": "macro.arg.enum_value_list"}
+        # macro :: python_random_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
         'color': random_enum(['red', 'green', 'blue']),
-        # macro :: python_random_int :: {"age": "macro.arg.field"}
+        # macro :: python_random_int :: {"age": "field"}
         'age': random_int(),
-        # macro :: python_random_float :: {"score": "macro.arg.field"}
+        # macro :: python_random_float :: {"score": "field"}
         'score': random_float(),
-        # macro :: python_random_list :: {"tags": "macro.arg.field"}
+        # macro :: python_random_list :: {"tags": "field"}
         'tags': random_list()
         # end macro ::
         # insert :: model.python_random_fields
@@ -57,21 +57,21 @@ def sample_item_verify(data:dict) -> dict:
     except KeyError:
         pass
 
-    # macro :: python_verify_string :: {"name": "macro.arg.field"}
+    # macro :: python_verify_string :: {"name": "field"}
     try:
         if not isinstance(data['name'], str):
             raise TypeError('name must be a string')
     except KeyError:
         pass
     
-    # macro :: python_verify_bool :: {"verified": "macro.arg.field"}
+    # macro :: python_verify_bool :: {"verified": "field"}
     try:
         if not isinstance(data['verified'], bool):
             raise TypeError('verified must be a boolean')
     except KeyError:
         pass
     
-    # macro :: python_verify_enum :: {"color": "macro.arg.field", "['red', 'green', 'blue']": "macro.arg.enum_value_list"}
+    # macro :: python_verify_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
     try:
         if not isinstance(data['color'], str):
             raise TypeError('color must be a string')
@@ -80,21 +80,21 @@ def sample_item_verify(data:dict) -> dict:
     except KeyError:
         pass
 
-    # macro :: python_verify_int :: {"age": "macro.arg.field"}
+    # macro :: python_verify_int :: {"age": "field"}
     try:
         if not isinstance(data['age'], int):
             raise TypeError('age must be an integer')
     except KeyError:
         pass
 
-    # macro :: python_verify_float :: {"score": "macro.arg.field"}
+    # macro :: python_verify_float :: {"score": "field"}
     try:
         if not isinstance(data['score'], float):
             raise TypeError('score must be a float')
     except KeyError:
         pass
 
-    # macro :: python_verify_list :: {"tags": "macro.arg.field"}
+    # macro :: python_verify_list :: {"tags": "field"}
     try:
         if not isinstance(data['tags'], list):
             raise TypeError('tags must be a list')

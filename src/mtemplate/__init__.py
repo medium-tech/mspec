@@ -4,10 +4,12 @@ import json
 import shutil
 import importlib
 
+from copy import copy
 from enum import Enum
 from pathlib import Path
 from collections import OrderedDict
 from typing import Optional, Any, Generator
+from dataclasses import dataclass
 
 from jinja2 import Environment, FunctionLoader, StrictUndefined, UndefinedError, TemplateSyntaxError
 from bson import ObjectId
@@ -75,6 +77,23 @@ class MTemplateProject:
         
         self.write_file(template_out_path, rendered_template)
 
+
+@dataclass
+class MTemplateMacro:
+    name:str
+    text:str
+    vars:dict
+    
+    def render(self, values:dict) -> str:
+        # the keys in self.vars are the string in the template that will be replaced by the 
+        # variable/macro arg which is defined in the value of the dict
+        output = copy(self.text)
+        for template_value, input_key in sort_dict_by_key_length(self.vars).items():
+            try:
+                output = output.replace(template_value, values[input_key])
+            except KeyError:
+                raise MTemplateError(f'{input_key} not given to macro {self.name}')
+        return output
     
 class MTemplateExtractor:
 
@@ -137,12 +156,21 @@ class MTemplateExtractor:
     
     def _parse_macro(self, macro_def_line:str, lines:list[str], start_line_no:int):
         macro_split = macro_def_line.split('::')
-        macro_name = macro_split[1].strip()
+        try:
+            macro_name = macro_split[1].strip()
+        except IndexError:
+            raise MTemplateError(f'macro definition missing name on line {start_line_no}')
+        
         try:
             macro_vars = json.loads(macro_split[2].strip())
+        except json.JSONDecodeError as e:
+            raise MTemplateError(f'error parsing macro vars on line {start_line_no} | {e}')
         except IndexError:
             macro_vars = {}
-        raise NotImplementedError('macros are not yet implemented')
+
+        macro_text = '\n'.join(lines)
+
+        self.macros[macro_name] = MTemplateMacro(macro_name, macro_text, macro_vars)
 
     def create_template(self) -> str:
         template = ''.join(self.template_lines)

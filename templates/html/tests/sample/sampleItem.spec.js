@@ -25,23 +25,23 @@ test('test - sample - sample item - instance', async ({ page }) => {
     await page.goto('http://localhost:9009/sample/sample-item');
     await page.getByRole('button', { name: 'create' }).click();
 
-    // macro :: js_unittest_string :: {"name": "macro.arg.field"}
+    // macro :: js_unittest_string :: {"name": "field"}
     await page.locator('input[name="name"]').click();
     await page.locator('input[name="name"]').fill('this is a unittest');
 
     // macro :: js_unittest_boolean :: {}
     await page.getByRole('checkbox').check();
 
-    // macro :: js_unittest_enum :: {"green": "macro.arg.field"}
+    // macro :: js_unittest_enum :: {"green": "field"}
     await page.getByRole('combobox').selectOption('green');
 
-    // macro :: js_unittest_integer :: {"age": "macro.arg.field"}
+    // macro :: js_unittest_integer :: {"age": "field"}
     await page.locator('input[name="age"]').click({
         clickCount: 3
     });
     await page.locator('input[name="age"]').fill('55');
 
-    // macro :: js_unittest_float :: {"score": "macro.arg.field"}
+    // macro :: js_unittest_float :: {"score": "field"}
     await page.locator('input[name="score"]').fill('3.33');
     await page.locator('html').click();
     await page.getByPlaceholder('press enter after each tag').click();

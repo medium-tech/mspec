@@ -53,7 +53,6 @@ def py_template_source_paths() -> dict:
     
     return paths
 
-    
 
 def render_py_templates(spec:dict, output_dir:str|Path=None, debug:bool=False):
     template_proj = MTemplateProject(spec, debug=debug)
