@@ -32,10 +32,10 @@ class MTemplateProject:
         
     def __init__(self, spec:dict, debug:bool=False):
         self.spec = spec
-        self._init_spec()
         self.debug = debug
+        self.templates:dict[str, MTemplateExtractor] = {}
 
-        loader = lambda path: MTemplateExtractor.template_from_file(path)
+        loader = lambda rel_path: self.templates[rel_path].create_template()
 
         self.jinja = Environment(
             autoescape=False,
@@ -44,13 +44,26 @@ class MTemplateProject:
         )
         self.jinja.globals.update(self.spec)
 
-    def _init_spec(self):
+    def init_template_vars(self):
         all_models = []
         for module in self.spec['modules'].values():
             for model in module['models'].values():
                 all_models.append({'module': module, 'model': model})
         self.spec['all_models'] = all_models
+
+        self.spec['macros'] = {}
+        for template in self.templates.values():
+            self.spec['macros'].update(template.macros)
+    
+    def extract_templates(self, template_paths:dict):
+        try:
+            paths = template_paths['app'] + template_paths['module'] + template_paths['model']
+        except KeyError:
+            raise MTemplateError('template_paths must contain app, module and model keys')
         
+        for path in paths:
+            template = MTemplateExtractor.template_from_file(path['src'])
+            self.templates[path['rel']] = template
 
     def write_file(self, path:Path, data:str):
         try:
@@ -61,21 +74,19 @@ class MTemplateProject:
             with open(path, 'w+') as f:
                 f.write(data)
 
-    def render_template(self, template_vars:dict, template_file:Path|str, template_out_path:Path|str):
-        template_file = Path(template_file)
-        template_out_path = Path(template_out_path)
+    def render_template(self, vars:dict, rel_path:str, out_path:Path|str):
+        out_path = Path(out_path)
         if self.debug:
-            debug_output_path = template_out_path.with_name(template_out_path.name + '.jinja2')
-            jinja_template = MTemplateExtractor.template_from_file(template_file)
-            self.write_file(debug_output_path, jinja_template)
+            debug_output_path = out_path.with_name(out_path.name + '.jinja2')
+            self.write_file(debug_output_path, self.templates[rel_path].create_template())
 
-        jinja_template = self.jinja.get_template(template_file.as_posix())
+        jinja_template = self.jinja.get_template(rel_path)
         try:
-            rendered_template = jinja_template.render(template_vars)
+            rendered_template = jinja_template.render(vars)
         except UndefinedError as e:
-            raise UndefinedError(f'{e} in template {template_file}')
+            raise UndefinedError(f'{e} in template {rel_path}')
         
-        self.write_file(template_out_path, rendered_template)
+        self.write_file(out_path, rendered_template)
 
 
 @dataclass
@@ -83,6 +94,9 @@ class MTemplateMacro:
     name:str
     text:str
     vars:dict
+
+    def __call__(self, *args, **kwargs):
+        return self.render(*args, **kwargs)
     
     def render(self, values:dict) -> str:
         # the keys in self.vars are the string in the template that will be replaced by the 
@@ -307,10 +321,10 @@ class MTemplateExtractor:
                     self.template_lines.append(line)
 
     @classmethod
-    def template_from_file(cls, path:str|Path) -> str:
+    def template_from_file(cls, path:str|Path) -> 'MTemplateExtractor':
         path = Path(path)
         is_js = path.suffix in ['.js', '.ts']
         instance = cls(path, prefix='//' if is_js else '#')
         instance.parse()
-        return instance.create_template()
+        return instance
     

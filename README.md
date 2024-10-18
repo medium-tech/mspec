@@ -79,6 +79,11 @@
             * 🔴 update
             * 🔴 delete
 
+* 🔴 Gio UI (go lang) https://gioui.org
+
+* 🔴 micro controller guis
+    * 🔴 razz pi pico: https://www.youtube.com/watch?v=KSYjGul84aU&t=819s
+
 ### servers
 * 🔴 go
     * 🔴 index
@@ -91,7 +96,7 @@
             * 🔴 update
             * 🔴 delete
 
-## additional features
+## additional protocol features
 * 🔴 markup
     * 🔴 ui
     * 🔴 scripting
@@ -99,3 +104,4 @@
 * 🔴 users
 * 🔴 profiles
 * 🔴 files
+* 🔴 sqlite

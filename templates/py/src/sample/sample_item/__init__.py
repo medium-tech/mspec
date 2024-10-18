@@ -30,6 +30,8 @@ def sample_item_example() -> dict:
 
 def sample_item_random() -> dict:
     return {
+        # macro switch :: python_random_field, name, field ::
+
         # macro :: python_random_string :: {"name": "field"}
         'name': random_string(),
         # macro :: python_random_bool :: {"verified": "field"}
@@ -43,7 +45,10 @@ def sample_item_random() -> dict:
         # macro :: python_random_list :: {"tags": "field"}
         'tags': random_list()
         # end macro ::
-        # insert :: model.python_random_fields
+
+        # for :: {% for name, field in model.fields.items() %} :: {}
+        # insert :: macro.python.random_field(name, field)
+        # end for ::
     }
 
 def sample_item_verify(data:dict) -> dict:

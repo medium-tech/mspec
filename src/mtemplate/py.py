@@ -55,12 +55,15 @@ def py_template_source_paths() -> dict:
 
 
 def render_py_templates(spec:dict, output_dir:str|Path=None, debug:bool=False):
-    template_proj = MTemplateProject(spec, debug=debug)
-
+    
     if output_dir is None:
         output_dir = dist_dir
         
     py = py_template_source_paths()
+
+    template_proj = MTemplateProject(spec, debug=debug)
+    template_proj.extract_templates(py)
+    template_proj.init_template_vars()
 
     print(':: app')
     for template in py['app']:
