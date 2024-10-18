@@ -1,9 +1,9 @@
-# for :: {% for module in proejct.modules %} :: {"sample": "module.snake_case", "Sample": "module.camel_case"}
+# for :: {% for module in modules.values() %} :: {"sample": "module.name.snake_case"}
 from sample import sample_client
 # end for ::
 import os
 
-# vars :: {"http://localhost:9009": "project.default_client_host"}
+# vars :: {"http://localhost:9009": "client.default_host"}
 
 """
 WARNING: urlib.request module is unsafe to use with os.fork on OSX
@@ -37,6 +37,6 @@ def create_client_context(host:str=default_host) -> dict:
 
 class MSpecClient:
 
-    # for :: {% for module in proejct.modules %} :: {"sample": "module.snake_case", "Sample": "module.camel_case"}
+    # for :: {% for module in modules.values() %} :: {"sample": "module.name.snake_case"}
     sample = sample_client
     # end for ::

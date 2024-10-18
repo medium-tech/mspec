@@ -79,7 +79,7 @@ def render_py_templates(spec:dict, output_dir:str|Path=None, debug:bool=False):
             module_output = module_output.format(module_name_snake_case=module['name']['snake_case'])
 
             print('\t\t', module_output)
-            template_proj.render_template(module, template['src'], module_output)
+            template_proj.render_template({'module': module}, template['src'], module_output)
 
         print('\n\t\t:: models')
         for model in module['models'].values():
@@ -93,6 +93,6 @@ def render_py_templates(spec:dict, output_dir:str|Path=None, debug:bool=False):
                 )
 
                 print('\t\t\t\t', model_output)
-                template_proj.render_template(model, template['src'], model_output)
+                template_proj.render_template({'module': module, 'model': model}, template['src'], model_output)
 
     print(':: done')

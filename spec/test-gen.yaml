@@ -9,6 +9,12 @@ server:
   port: 9009
   static_root: '/Users/brad/Code/medium-tech/mspec-alpha/dist/html/srv'
 
+db:
+  default_url: 'mongodb://127.0.0.1:27017'
+
+client:
+  default_host: 'http://localhost:9009'
+
 modules:
   stuff:
     name:

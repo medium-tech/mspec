@@ -3,7 +3,7 @@ from os import getpid
 from traceback import format_exc
 from core.db import create_db_context
 from core.exceptions import RequestError, JSONResponse
-# for :: {% for module in project.modules %} :: {"sample": "module.snake_case"}
+# for :: {% for module in modules.values() %} :: {"sample": "module.name.snake_case"}
 from sample import sample_routes
 # end for ::
 
@@ -11,7 +11,7 @@ import uwsgi
 from uwsgidecorators import postfork
 
 route_list = []
-# for :: {% for module in project.modules %} :: {"sample": "module.snake_case"}
+# for :: {% for module in modules.values() %} :: {"sample": "module.name.snake_case"}
 route_list.extend(sample_routes)
 # end for ::
 

@@ -4,7 +4,7 @@ from pprint import pprint
 from core.db import create_db_context
 from core.client import create_client_context
 from sample import sample_db, sample_client
-# for :: {% for model in module.models %} :: {"sample_item": "model.snake_case"}
+# for :: {% for model in module.models.values() %} :: {"sample_item": "model.name.snake_case"}
 from sample.sample_item import *
 # end for ::
 
@@ -12,12 +12,12 @@ from sample.sample_item import *
 # define arguments
 #
 
-# vars :: {"mspec":"project.snake_case", "sample":"module.snake_case"}
+# vars :: {"mspec":"project.name.snake_case", "sample":"module.name.snake_case"}
 parser = argparse.ArgumentParser(description='mspec - sample - cli')
 
 parser.add_argument('command', type=str, choices=[
     'data-seed',
-    # for :: {% for model in module.models %} :: {"sample-item": "model.kebab_case"}
+    # for :: {% for model in module.models.values() %} :: {"sample-item": "model.name.kebab_case"}
     'verify-sample-item',
     'random-sample-item',
     'example-sample-item',
@@ -69,7 +69,7 @@ cli_ctx.update(create_client_context())
 if args.command == 'data-seed':
     result = sample_db.seed_data(cli_ctx, args.count)
 
-# for :: {% for model in module.models %} :: {"sample-item": "model.kebab_case", "sample_item": "model.snake_case"}
+# for :: {% for model in module.models.values() %} :: {"sample-item": "model.name.kebab_case", "sample_item": "model.name.snake_case"}
 elif args.command == 'verify-sample-item':
     result = sample_item_verify(get_user_data())
 

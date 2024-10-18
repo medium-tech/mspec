@@ -1,9 +1,9 @@
 from pymongo import MongoClient
-# for :: {% for module in proejct.modules %} :: {"sample": "module.snake_case", "Sample": "module.camel_case"}
+# for :: {% for module in modules.values() %} :: {"sample": "module.name.snake_case", "Sample": "module.name.camel_case"}
 from sample import sample_db
 # end for ::
 
-# vars :: {"mongodb://127.0.0.1:27017": "db.default_url", "MSpec": "project.camel_case"}
+# vars :: {"mongodb://127.0.0.1:27017": "db.default_url", "MSpec": "project.name.camel_case"}
 
 __all__ = [
     'create_db_context'
@@ -25,6 +25,6 @@ def create_db_context(client:MongoClient=None) -> dict:
 
 class MSpecDB:
 
-    # for :: {% for module in proejct.modules %} :: {"sample": "module.snake_case", "Sample": "module.camel_case"}
+    # for :: {% for module in modules.values() %} :: {"sample": "module.name.snake_case", "Sample": "module.name.camel_case"}
     sample = sample_db
     # end for ::

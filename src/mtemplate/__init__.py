@@ -59,8 +59,9 @@ class MTemplateProject:
             with open(path, 'w+') as f:
                 f.write(data)
 
-    def render_template(self, template_vars:dict, template_file:Path|str, template_out_path:Path):
+    def render_template(self, template_vars:dict, template_file:Path|str, template_out_path:Path|str):
         template_file = Path(template_file)
+        template_out_path = Path(template_out_path)
         if self.debug:
             debug_output_path = template_out_path.with_name(template_out_path.name + '.jinja2')
             jinja_template = MTemplateExtractor.template_from_file(template_file)
@@ -267,7 +268,7 @@ class MTemplateExtractor:
                             macro_lines = []
                             continue
                         else:
-                            macro_lines.append()
+                            macro_lines.append(next_line_strippped)
                             
                 # end of loop, ignore the line or add it to template #
 

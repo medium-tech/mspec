@@ -6,12 +6,10 @@ from sample.sample_item import sample_item_verify, sample_item_to_json, sample_i
 from sample.sample_item.client import *
 from sample.sample_item.db import db_create_sample_item, db_read_sample_item, db_update_sample_item, db_delete_sample_item, db_list_sample_item
 
-# vars :: {"sample": "module.snake_case"}
+# vars :: {"sample": "module.name.snake_case", "sample_item": "model.name.snake_case", "SampleItem": "model.name.pascal_case"}
 
 test_ctx = create_db_context()
 test_ctx.update(create_client_context())
-
-# for :: {% for model in module.models %} :: {"sample_item": "model.snake_case", "SampleItem": "model.pascal_case"}
 
 class TestSampleItem(unittest.TestCase):
 
@@ -153,7 +151,6 @@ class TestSampleItem(unittest.TestCase):
                 sample_item_verify(item)
                 del item['id']
                 self.assertEqual(item, sample_item_example())
-# endfor ::
 
 if __name__ == '__main__':
     unittest.main()
