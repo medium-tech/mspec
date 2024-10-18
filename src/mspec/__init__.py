@@ -32,9 +32,9 @@ def load_spec(spec_file:str) -> dict:
     project = spec['project']
     project['name'].update(generate_names(project['name']['lower_case']))
 
-    for module in project['modules'].values():
+    for module in spec['modules'].values():
         module['name'].update(generate_names(module['name']['lower_case']))
         for model in module['models'].values():
             model['name'].update(generate_names(model['name']['lower_case']))
         
-    return project
+    return spec

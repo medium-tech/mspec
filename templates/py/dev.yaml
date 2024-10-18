@@ -1,12 +1,12 @@
-# vars :: {"sample": "module.snake_case", "9009": "server.port"}
+# vars :: {"9009": "server.port"}
 uwsgi:
   http: :9009
   wsgi-file: src/core/server.py
-  # for :: {% for model in module.models %} :: {"sample-item": "model.kebab_case, "/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv": "server.static_root"}
+  # for :: {% for item in all_models %} :: {"sample":"item.module.name.snake_case", "sample-item": "item.model.name.kebab_case", "/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv": "server.static_root"}
   route: ^/sample/sample-item/create static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv/sample/sample-item/index.html
   route: ^/sample/sample-item/index(.*) static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv/sample/sample-item/index$1
   route: ^/sample/sample-item/(.*) static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv/sample/sample-item/instance.html
-  # endfor ::
+  # end for ::
   static-map: /=../html/srv/
   static-index: index.html
   static-expires: /* 0

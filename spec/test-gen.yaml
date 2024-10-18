@@ -1,89 +1,96 @@
 project:
+  author:
+    name: 'B rad C'
+    email: 'sample@email.com'
   name:
-    lower_case: 'test gen' 
+    lower_case: 'test gen'
 
-  modules:
-    stuff:
-      name:
-        lower_case: 'stuff'
+server:
+  port: 9009
+  static_root: '/Users/brad/Code/medium-tech/mspec-alpha/dist/html/srv'
 
-      models:
-        favorites:
-          name:
-            lower_case: 'favorites'
+modules:
+  stuff:
+    name:
+      lower_case: 'stuff'
 
-          fields:
-            word: 
-              type: str
-              examples:
-                - "banana"
-                - "amplitude"
-                - "courage"
+    models:
+      favorites:
+        name:
+          lower_case: 'favorites'
 
-            number:
-              type: int
-              examples:
-                - 7
-                - 11
-                - 42
+        fields:
+          word: 
+            type: str
+            examples:
+              - "banana"
+              - "amplitude"
+              - "courage"
 
-            color:
-              type: str
-              enum:
-                - red
-                - orange
-                - yellow
-                - green
-                - blue
-                - indigo
-                - violet
+          number:
+            type: int
+            examples:
+              - 7
+              - 11
+              - 42
 
-              examples:
-                - red
-                - orange
-                - yellow
-                - green
-                - blue
-                - indigo
-                - violet
+          color:
+            type: str
+            enum:
+              - red
+              - orange
+              - yellow
+              - green
+              - blue
+              - indigo
+              - violet
 
-        more_data:
-          name:
-            lower_case: 'more data'
+            examples:
+              - red
+              - orange
+              - yellow
+              - green
+              - blue
+              - indigo
+              - violet
 
-          fields:
-            excited:
-              type: bool
-              examples:
-                - true
-                - false
+      more_data:
+        name:
+          lower_case: 'more data'
 
-            points:
-              type: float
-              examples:
-                - 3.6
-                - 10.1
+        fields:
+          excited:
+            type: bool
+            examples:
+              - true
+              - false
 
-    social_media:
-      name:
-        lower_case: 'social media'
+          points:
+            type: float
+            examples:
+              - 3.6
+              - 10.1
 
-      models:
-        post:
-          name:
-            lower_case: 'post'
-            
-          fields:
-            text: 
-              type: str
-              examples:
-                - "hello world"
-                - "this is my first post!"
+  social_media:
+    name:
+      lower_case: 'social media'
 
-            tags:
-              type: list
-              element_type: string
-              examples:
-                - ["tag1", "tag2"]
-                - ["tag3", "tag4"]
-                - ["tag5", "tag6"]
+    models:
+      post:
+        name:
+          lower_case: 'post'
+          
+        fields:
+          text: 
+            type: str
+            examples:
+              - "hello world"
+              - "this is my first post!"
+
+          tags:
+            type: list
+            element_type: string
+            examples:
+              - ["tag1", "tag2"]
+              - ["tag3", "tag4"]
+              - ["tag5", "tag6"]

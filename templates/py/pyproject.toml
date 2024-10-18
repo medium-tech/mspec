@@ -1,5 +1,4 @@
-# vars :: {"msample":"project.snake_case", "Brad Corlett":"author_name", "brad.corlett@gmail.com":"author_email"}
-
+# vars :: {"msample":"project.name.snake_case", "Brad Corlett":"project.author.name", "brad.corlett@gmail.com":"project.author.email"}
 [build-system]
 requires = ['setuptools>=61.0']
 build-backend = 'setuptools.build_meta'

@@ -1,3 +1,4 @@
+from mtemplate import MTemplateProject
 from mtemplate.html import *
 from pathlib import Path
 import os
@@ -52,46 +53,46 @@ def py_template_source_paths() -> dict:
     
     return paths
 
-def display_py_templates():
-    paths = py_template_source_paths()
-    for key in paths.keys():
-        print(f'py {key} templates:')
-        for path in paths[key]:
-            print(f'\t{path}')
     
 
-def render_py_templates(project:dict, output_dir:str|Path=None, debug:bool=False):
+def render_py_templates(spec:dict, output_dir:str|Path=None, debug:bool=False):
+    template_proj = MTemplateProject(spec, debug=debug)
+
     if output_dir is None:
         output_dir = dist_dir
         
     py = py_template_source_paths()
 
-    print('app')
-
+    print(':: app')
     for template in py['app']:
-        output = output_dir / template['rel']
-        print('\t', output)
+        app_output = output_dir / template['rel']
 
-    print('modules')
+        print('\t', app_output)
+        template_proj.render_template({}, template['src'], app_output)
 
-    for module in project['modules'].values():
-
+    print(':: modules')
+    for module in spec['modules'].values():
         print('\t', module['name']['lower_case'])
         
         for template in py['module']:
-            output = (output_dir / template['rel']).as_posix()
-            output = output.format(module_name_snake_case=module['name']['snake_case'])
-            print('\t\t', output)
+            module_output = (output_dir / template['rel']).as_posix()
+            module_output = module_output.format(module_name_snake_case=module['name']['snake_case'])
 
-        print('\t\tmodels')
+            print('\t\t', module_output)
+            template_proj.render_template(module, template['src'], module_output)
 
+        print('\n\t\t:: models')
         for model in module['models'].values():
             print('\t\t\t', model['name']['lower_case'])
 
             for template in py['model']:
-                output = (output_dir / template['rel']).as_posix()
-                output = output.format(
+                model_output = (output_dir / template['rel']).as_posix()
+                model_output = model_output.format(
                     module_name_snake_case=module['name']['snake_case'], 
                     model_name_snake_case=model['name']['snake_case']
                 )
-                print('\t\t\t\t', output)
+
+                print('\t\t\t\t', model_output)
+                template_proj.render_template(model, template['src'], model_output)
+
+    print(':: done')

@@ -28,18 +28,51 @@ def sort_dict_by_key_length(dictionary:dict) -> OrderedDict:
 
 class MTemplateProject:
         
-    def __init__(self, spec:dict):
+    def __init__(self, spec:dict, debug:bool=False):
         self.spec = spec
+        self._init_spec()
+        self.debug = debug
 
-        # jinja env #
-
-        loader = lambda name: MTemplateExtractor.template_from_file(self.site_root / name)
+        loader = lambda path: MTemplateExtractor.template_from_file(path)
 
         self.jinja = Environment(
             autoescape=False,
             loader=FunctionLoader(loader),
-            undefined=StrictUndefined
+            undefined=StrictUndefined,
         )
+        self.jinja.globals.update(self.spec)
+
+    def _init_spec(self):
+        all_models = []
+        for module in self.spec['modules'].values():
+            for model in module['models'].values():
+                all_models.append({'module': module, 'model': model})
+        self.spec['all_models'] = all_models
+        
+
+    def write_file(self, path:Path, data:str):
+        try:
+            with open(path, 'w+') as f:
+                f.write(data)
+        except FileNotFoundError:
+            os.makedirs(path.parent)
+            with open(path, 'w+') as f:
+                f.write(data)
+
+    def render_template(self, template_vars:dict, template_file:Path|str, template_out_path:Path):
+        template_file = Path(template_file)
+        if self.debug:
+            debug_output_path = template_out_path.with_name(template_out_path.name + '.jinja2')
+            jinja_template = MTemplateExtractor.template_from_file(template_file)
+            self.write_file(debug_output_path, jinja_template)
+
+        jinja_template = self.jinja.get_template(template_file.as_posix())
+        try:
+            rendered_template = jinja_template.render(template_vars)
+        except UndefinedError as e:
+            raise UndefinedError(f'{e} in template {template_file}')
+        
+        self.write_file(template_out_path, rendered_template)
 
     
 class MTemplateExtractor:
@@ -108,6 +141,7 @@ class MTemplateExtractor:
             macro_vars = json.loads(macro_split[2].strip())
         except IndexError:
             macro_vars = {}
+        raise NotImplementedError('macros are not yet implemented')
 
     def create_template(self) -> str:
         template = ''.join(self.template_lines)
@@ -245,6 +279,7 @@ class MTemplateExtractor:
 
     @classmethod
     def template_from_file(cls, path:str|Path) -> str:
+        path = Path(path)
         is_js = path.suffix in ['.js', '.ts']
         instance = cls(path, prefix='//' if is_js else '#')
         instance.parse()

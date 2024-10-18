@@ -40,7 +40,7 @@
         * 🟢 create tests
 
 * 🟡 templating
-    * 🟡 refactor `src/sample/__init__.py` -> `src/sample/sample_item/__init__.py`
+    * 🟢 refactor `src/sample/__init__.py` -> `src/sample/sample_item/__init__.py`
     * 🟡 extract templates
         * 🟡 add macro syntax
         * 🟡 add insert syntax
