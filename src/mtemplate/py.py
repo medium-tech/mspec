@@ -5,6 +5,46 @@ import os
 from typing import Tuple
 from pprint import pprint
 
+#
+# template macros
+#
+
+def macro_py_example_fields(fields:dict, indent='\t') -> str:
+    lines = []
+    for name, field in fields.items():
+        try:
+            lines.append(f"{indent * 2}'{name}': '{field["examples"][0]}'")
+        except (KeyError, IndexError):
+            raise MTemplateError(f'field {name} does not have an example')  
+    return ',\n'.join(lines)
+
+def macro_py_random_fields(fields:dict, indent='\t') -> str:
+    lines = []
+    for name, field in fields.items():
+        field_type = 'enum' if 'enum' in field else field['type']
+        try:
+            lines.append(f"{indent * 2}'{name}': random_{field_type}()")
+        except KeyError:
+            raise MTemplateError(f'field {name} does not have a type')  
+    return ',\n'.join(lines)
+
+def macro_py_verify_fields(fields:dict, indent='\t') -> str:
+    lines = []
+    for name, field in fields.items():
+        field_type = 'enum' if 'enum' in field else field['type']
+        try:
+            lines.append(f"{indent}raise NotImplementedError('macro_py_verify_" + field_type + "')")
+        except KeyError:
+            raise MTemplateError(f'field {name} does not have a type')
+    return '\n'.join(lines)
+
+def macro_py_field_list(fields:dict) -> str:
+    keys = [f"'{name}'" for name in fields.keys()]
+    return '[' + ', '.join(keys) + ']'
+
+#
+# template paths
+#
 
 template_dir = Path(__file__).parent.parent.parent / 'templates/py'
 dist_dir = Path(__file__).parent.parent.parent / 'dist/py'
@@ -17,16 +57,6 @@ model_prefixes = [
 module_prefixes = [
     str(template_dir / 'src/sample')
 ]
-
-def macro_py_example_fields(fields:dict, indent='\t') -> str:
-    out = indent + 'return {\n'
-    for name, field in fields.items():
-        try:
-            out += f"{indent * 2}'{name}': '{field["examples"][0]}',\n"
-        except (KeyError, IndexError):
-            raise MTemplateError(f'field {name} does not have an example')  
-    out += indent + '}\n'
-    return out
 
 
 def py_template_source_paths() -> dict:
@@ -65,6 +95,10 @@ def py_template_source_paths() -> dict:
     return paths
 
 
+#
+# render templates
+#
+
 def render_py_templates(spec:dict, output_dir:str|Path=None, debug:bool=False):
     
     if output_dir is None:
@@ -75,7 +109,10 @@ def render_py_templates(spec:dict, output_dir:str|Path=None, debug:bool=False):
     template_proj = MTemplateProject(spec, debug=debug)
     template_proj.extract_templates(py)
     template_proj.spec['macro'].update({
-        'py_example_fields': macro_py_example_fields
+        'py_example_fields': macro_py_example_fields,
+        'py_random_fields': macro_py_random_fields,
+        'py_verify_fields': macro_py_verify_fields,
+        'py_field_list': macro_py_field_list
     })
     template_proj.init_template_vars()
 

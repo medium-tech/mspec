@@ -2,7 +2,7 @@ from sample.sample_item import *
 from core.exceptions import NotFoundError
 from bson import ObjectId
 
-# vars :: {"sample": "module.name.snake_case", "mongodb://127.0.0.1:27017": "db.default_url"}
+# vars :: {"sample": "module.name.snake_case", "sample_item": "model.name.snake_case", "mongodb://127.0.0.1:27017": "db.default_url"}
 
 __all__ = [
     'db_create_sample_item', 

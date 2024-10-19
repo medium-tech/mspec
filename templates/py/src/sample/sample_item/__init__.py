@@ -9,6 +9,7 @@ __all__ = [
     'sample_item_verify'
 ]
 
+# vars :: {"sample_item": "model.name.snake_case"}
 
 def sample_item_to_json(data:dict, sort_keys=True, indent=4) -> str:
     return json.dumps(data, sort_keys=sort_keys, indent=indent)
@@ -31,8 +32,8 @@ def sample_item_example() -> dict:
 def sample_item_random() -> dict:
     return {
         # insert :: macro.py_random_fields(model.fields)
-        # macro :: py_random_string :: {"name": "field"}
-        'name': random_string(),
+        # macro :: py_random_str :: {"name": "field"}
+        'name': random_str(),
         # macro :: py_random_bool :: {"verified": "field"}
         'verified': random_bool(),
         # macro :: py_random_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
@@ -59,7 +60,7 @@ def sample_item_verify(data:dict) -> dict:
 
     # insert :: macro.py_verify_fields(model.fields)
 
-    # macro :: py_verify_string :: {"name": "field"}
+    # macro :: py_verify_str :: {"name": "field"}
     try:
         if not isinstance(data['name'], str):
             raise TypeError('name must be a string')
@@ -105,6 +106,7 @@ def sample_item_verify(data:dict) -> dict:
                 raise TypeError('tags must be a list of strings')
     except KeyError:
         pass
+    # end macro ::
     
     for key in data.keys():
         # vars :: {"['id', 'name', 'verified', 'color', 'age', 'score', 'tags']": "macro.py_field_list(model.fields)"}
@@ -112,4 +114,3 @@ def sample_item_verify(data:dict) -> dict:
             raise KeyError(f'unknown key: {key}')
 
     return data
-# end for ::

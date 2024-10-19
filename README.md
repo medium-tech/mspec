@@ -101,6 +101,8 @@
     * 🔴 ui
     * 🔴 scripting
 * 🔴 content ids
+* 🔴 date and time types
+* 🔴 string format email
 * 🔴 users
 * 🔴 profiles
 * 🔴 files
