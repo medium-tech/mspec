@@ -85,15 +85,21 @@ class MTemplatePyProject(MTemplateProject):
         return ',\n'.join(lines)
 
     def macro_py_verify_fields(self, fields:dict, indent='\t') -> str:
-        lines = []
+        out = ''
         for name, field in fields.items():
-            field_type = 'enum' if 'enum' in field else field['type']
+            vars = {'field': name}
             try:
-                raise NotImplementedError('this feature not implented yet')
-                lines.append(f"{indent}raise NotImplementedError('macro_py_verify_" + field_type + "')")
+                enum_values = [f"'{value}'" for value in field['enum']]
+                vars['enum_value_list'] = '[' + ', '.join(enum_values) + ']'
+                field_type = 'enum'
+            except KeyError:
+                field_type = field['type']
+
+            try:
+                out += self.spec['macro'][f'py_verify_{field_type}'](vars) + '\n'
             except KeyError:
                 raise MTemplateError(f'field {name} does not have a type')
-        return '\n'.join(lines)
+        return out
 
     def macro_py_field_list(self, fields:dict) -> str:
         keys = [f"'{name}'" for name in fields.keys()]

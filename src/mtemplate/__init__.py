@@ -198,7 +198,7 @@ class MTemplateExtractor:
         except IndexError:
             macro_vars = {}
 
-        macro_text = '\n'.join(lines)
+        macro_text = ''.join(lines)
 
         self.macros[macro_name] = MTemplateMacro(macro_name, macro_text, macro_vars)
 
@@ -336,7 +336,7 @@ class MTemplateExtractor:
                             macro_lines = []
                             continue
                         else:
-                            macro_lines.append(next_line_strippped)
+                            macro_lines.append(next_line)
                             
                 # end of loop, ignore the line or add it to template #
 
