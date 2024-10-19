@@ -38,6 +38,7 @@ class MTemplateProject:
         self.spec = spec
         self.spec['macro'] = {}
         self.debug = debug
+        self.template_paths:dict[str, list[dict[str, str]]] = {}
         self.templates:dict[str, MTemplateExtractor] = {}
 
         self.jinja = Environment(
@@ -46,16 +47,16 @@ class MTemplateProject:
             undefined=StrictUndefined,
         )
 
+    def template_source_paths(self) -> dict[str, list[dict[str, str]]]:
+        raise NotImplementedError('template_source_paths must be implemented by subclass')
+
     def _jinja_loader(self, rel_path:str) -> str:
         try:
             return self.templates[rel_path].create_template()
         except KeyError: 
             raise MTemplateError(f'template {rel_path} not found')
         
-    def init_template_vars(self, vars:dict=None):
-        if vars is not None:
-            self.spec.update(vars)
-
+    def init_template_vars(self):
         all_models = []
         for module in self.spec['modules'].values():
             for model in module['models'].values():
@@ -67,7 +68,8 @@ class MTemplateProject:
 
         self.jinja.globals.update(self.spec)
     
-    def extract_templates(self, template_paths:dict):
+    def extract_templates(self) -> dict:
+        template_paths = self.template_source_paths()
         try:
             paths = template_paths['app'] + template_paths['module'] + template_paths['model']
         except KeyError:
@@ -76,6 +78,8 @@ class MTemplateProject:
         for path in paths:
             template = MTemplateExtractor.template_from_file(path['src'])
             self.templates[path['rel']] = template
+
+        return self.templates
 
     def write_file(self, path:Path, data:str):
         try:
