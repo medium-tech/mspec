@@ -15,7 +15,11 @@ from jinja2 import Environment, FunctionLoader, StrictUndefined, UndefinedError,
 from bson import ObjectId
 
 __all__ = [
-
+    'MTemplateProject',
+    'MTemplateExtractor',
+    'MTemplateMacro',
+    'MTemplateError',
+    'sort_dict_by_key_length'
 ]
 
 class MTemplateError(Exception):
@@ -32,28 +36,36 @@ class MTemplateProject:
         
     def __init__(self, spec:dict, debug:bool=False):
         self.spec = spec
+        self.spec['macro'] = {}
         self.debug = debug
         self.templates:dict[str, MTemplateExtractor] = {}
 
-        loader = lambda rel_path: self.templates[rel_path].create_template()
-
         self.jinja = Environment(
             autoescape=False,
-            loader=FunctionLoader(loader),
+            loader=FunctionLoader(self._jinja_loader),
             undefined=StrictUndefined,
         )
-        self.jinja.globals.update(self.spec)
 
-    def init_template_vars(self):
+    def _jinja_loader(self, rel_path:str) -> str:
+        try:
+            return self.templates[rel_path].create_template()
+        except KeyError: 
+            raise MTemplateError(f'template {rel_path} not found')
+        
+    def init_template_vars(self, vars:dict=None):
+        if vars is not None:
+            self.spec.update(vars)
+
         all_models = []
         for module in self.spec['modules'].values():
             for model in module['models'].values():
                 all_models.append({'module': module, 'model': model})
         self.spec['all_models'] = all_models
 
-        self.spec['macros'] = {}
         for template in self.templates.values():
-            self.spec['macros'].update(template.macros)
+            self.spec['macro'].update(template.macros)
+
+        self.jinja.globals.update(self.spec)
     
     def extract_templates(self, template_paths:dict):
         try:
@@ -251,6 +263,16 @@ class MTemplateExtractor:
 
                 elif line_stripped.startswith(f'{self.prefix} end ignore ::'):
                     ignoring = False
+
+                # insert line #
+
+                elif line_stripped.startswith(f'{self.prefix} insert ::'): 
+                    try:
+                        _, insert_stmt = line_stripped.split('::')
+                    except ValueError:
+                        raise MTemplateError(f'invalid insert statement on line {line_no}')
+                    
+                    self.template_lines.append('{{ ' + insert_stmt.strip() + ' }}\n')
 
                 # replace lines #
 

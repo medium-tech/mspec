@@ -1,4 +1,4 @@
-from mtemplate import MTemplateProject
+from mtemplate import MTemplateProject, MTemplateError
 from mtemplate.html import *
 from pathlib import Path
 import os
@@ -17,6 +17,17 @@ model_prefixes = [
 module_prefixes = [
     str(template_dir / 'src/sample')
 ]
+
+def macro_py_example_fields(fields:dict, indent='\t') -> str:
+    out = indent + 'return {\n'
+    for name, field in fields.items():
+        try:
+            out += f"{indent * 2}'{name}': '{field["examples"][0]}',\n"
+        except (KeyError, IndexError):
+            raise MTemplateError(f'field {name} does not have an example')  
+    out += indent + '}\n'
+    return out
+
 
 def py_template_source_paths() -> dict:
     """
@@ -63,6 +74,9 @@ def render_py_templates(spec:dict, output_dir:str|Path=None, debug:bool=False):
 
     template_proj = MTemplateProject(spec, debug=debug)
     template_proj.extract_templates(py)
+    template_proj.spec['macro'].update({
+        'py_example_fields': macro_py_example_fields
+    })
     template_proj.init_template_vars()
 
     print(':: app')
@@ -70,7 +84,7 @@ def render_py_templates(spec:dict, output_dir:str|Path=None, debug:bool=False):
         app_output = output_dir / template['rel']
 
         print('\t', app_output)
-        template_proj.render_template({}, template['src'], app_output)
+        template_proj.render_template({}, template['rel'], app_output)
 
     print(':: modules')
     for module in spec['modules'].values():
@@ -81,7 +95,7 @@ def render_py_templates(spec:dict, output_dir:str|Path=None, debug:bool=False):
             module_output = module_output.format(module_name_snake_case=module['name']['snake_case'])
 
             print('\t\t', module_output)
-            template_proj.render_template({'module': module}, template['src'], module_output)
+            template_proj.render_template({'module': module}, template['rel'], module_output)
 
         print('\n\t\t:: models')
         for model in module['models'].values():
@@ -95,6 +109,6 @@ def render_py_templates(spec:dict, output_dir:str|Path=None, debug:bool=False):
                 )
 
                 print('\t\t\t\t', model_output)
-                template_proj.render_template({'module': module, 'model': model}, template['src'], model_output)
+                template_proj.render_template({'module': module, 'model': model}, template['rel'], model_output)
 
     print(':: done')

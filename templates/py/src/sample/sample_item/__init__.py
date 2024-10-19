@@ -18,7 +18,7 @@ def sample_item_from_json(json_string:str) -> dict:
 
 def sample_item_example() -> dict:
     return {
-        # replace :: model.python_example_fields
+        # replace :: macro.py_example_fields(model.fields)
         'name': 'a large thing',
         'verified': True,
         'color': 'red',
@@ -30,25 +30,20 @@ def sample_item_example() -> dict:
 
 def sample_item_random() -> dict:
     return {
-        # macro switch :: python_random_field, name, field ::
-
-        # macro :: python_random_string :: {"name": "field"}
+        # insert :: macro.py_random_fields(model.fields)
+        # macro :: py_random_string :: {"name": "field"}
         'name': random_string(),
-        # macro :: python_random_bool :: {"verified": "field"}
+        # macro :: py_random_bool :: {"verified": "field"}
         'verified': random_bool(),
-        # macro :: python_random_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
+        # macro :: py_random_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
         'color': random_enum(['red', 'green', 'blue']),
-        # macro :: python_random_int :: {"age": "field"}
+        # macro :: py_random_int :: {"age": "field"}
         'age': random_int(),
-        # macro :: python_random_float :: {"score": "field"}
+        # macro :: py_random_float :: {"score": "field"}
         'score': random_float(),
-        # macro :: python_random_list :: {"tags": "field"}
+        # macro :: py_random_list :: {"tags": "field"}
         'tags': random_list()
         # end macro ::
-
-        # for :: {% for name, field in model.fields.items() %} :: {}
-        # insert :: macro.python.random_field(name, field)
-        # end for ::
     }
 
 def sample_item_verify(data:dict) -> dict:
@@ -62,21 +57,23 @@ def sample_item_verify(data:dict) -> dict:
     except KeyError:
         pass
 
-    # macro :: python_verify_string :: {"name": "field"}
+    # insert :: macro.py_verify_fields(model.fields)
+
+    # macro :: py_verify_string :: {"name": "field"}
     try:
         if not isinstance(data['name'], str):
             raise TypeError('name must be a string')
     except KeyError:
         pass
     
-    # macro :: python_verify_bool :: {"verified": "field"}
+    # macro :: py_verify_bool :: {"verified": "field"}
     try:
         if not isinstance(data['verified'], bool):
             raise TypeError('verified must be a boolean')
     except KeyError:
         pass
     
-    # macro :: python_verify_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
+    # macro :: py_verify_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
     try:
         if not isinstance(data['color'], str):
             raise TypeError('color must be a string')
@@ -85,21 +82,21 @@ def sample_item_verify(data:dict) -> dict:
     except KeyError:
         pass
 
-    # macro :: python_verify_int :: {"age": "field"}
+    # macro :: py_verify_int :: {"age": "field"}
     try:
         if not isinstance(data['age'], int):
             raise TypeError('age must be an integer')
     except KeyError:
         pass
 
-    # macro :: python_verify_float :: {"score": "field"}
+    # macro :: py_verify_float :: {"score": "field"}
     try:
         if not isinstance(data['score'], float):
             raise TypeError('score must be a float')
     except KeyError:
         pass
 
-    # macro :: python_verify_list :: {"tags": "field"}
+    # macro :: py_verify_list :: {"tags": "field"}
     try:
         if not isinstance(data['tags'], list):
             raise TypeError('tags must be a list')
@@ -108,11 +105,9 @@ def sample_item_verify(data:dict) -> dict:
                 raise TypeError('tags must be a list of strings')
     except KeyError:
         pass
-
-    # insert :: model.python_verify_fields
     
     for key in data.keys():
-        # vars :: {"['id', 'name', 'verified', 'color', 'age', 'score', 'tags']": "model.python_field_list"}
+        # vars :: {"['id', 'name', 'verified', 'color', 'age', 'score', 'tags']": "macro.py_field_list(model.fields)"}
         if key not in ['id', 'name', 'verified', 'color', 'age', 'score', 'tags']:
             raise KeyError(f'unknown key: {key}')
 
