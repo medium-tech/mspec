@@ -104,6 +104,51 @@ class MTemplateProject:
         
         self.write_file(out_path, rendered_template)
 
+    def render_templates(self, output_dir:str|Path=None):
+        
+        if output_dir is None:
+            output_dir = self.dist_dir
+
+        print(':: app')
+        for template in self.template_paths['app']:
+            app_output = output_dir / template['rel']
+
+            print('\t', app_output)
+            self.render_template({}, template['rel'], app_output)
+
+        print(':: modules')
+        for module in self.spec['modules'].values():
+            print('\t', module['name']['lower_case'])
+            
+            for template in self.template_paths['module']:
+                module_output = (output_dir / template['rel']).as_posix()
+                module_output = module_output.format(
+                    module_name_snake_case=module['name']['snake_case'], 
+                    module_name_kebap_case=module['name']['kebab_case'],
+                )
+
+                print('\t\t', module_output)
+                self.render_template({'module': module}, template['rel'], module_output)
+
+            print('\n\t\t:: models')
+            for model in module['models'].values():
+                print('\t\t\t', model['name']['lower_case'])
+
+                for template in self.template_paths['model']:
+                    model_output = (output_dir / template['rel']).as_posix()
+                    model_output = model_output.format(
+                        module_name_snake_case=module['name']['snake_case'], 
+                        module_name_kebap_case=module['name']['kebab_case'],
+                        model_name_snake_case=model['name']['snake_case'],
+                        model_name_kebab_case=model['name']['kebab_case']
+                    )
+
+                    print('\t\t\t\t', model_output)
+                    self.render_template({'module': module, 'model': model}, template['rel'], model_output)
+
+        print(':: done')
+
+
 
 @dataclass
 class MTemplateMacro:
@@ -127,9 +172,10 @@ class MTemplateMacro:
     
 class MTemplateExtractor:
 
-    def __init__(self, path:str|Path, prefix='#') -> None:
+    def __init__(self, path:str|Path, prefix='#', postfix='') -> None:
         self.path = Path(path)
         self.prefix = prefix
+        self.postfix = postfix
         self.template = ''
         self.template_lines = []
         self.template_vars = {}
@@ -223,7 +269,7 @@ class MTemplateExtractor:
 
             for line in f:
                 line_no += 1
-                line_stripped = line.strip()
+                line_stripped = line.strip().replace(self.postfix, '')
 
                 # vars line #
 
@@ -349,8 +395,21 @@ class MTemplateExtractor:
     @classmethod
     def template_from_file(cls, path:str|Path) -> 'MTemplateExtractor':
         path = Path(path)
-        is_js = path.suffix in ['.js', '.ts']
-        instance = cls(path, prefix='//' if is_js else '#')
+
+        if path.suffix in ['.js', '.ts']:
+            prefix = '//'
+            postfix = ''
+        elif path.suffix in ['.html', '.htm']:
+            prefix = '<!--'
+            postfix = '-->'
+        elif path.suffix == '.css':
+            prefix = '/*'
+            postfix = '*/'
+        else:
+            prefix = '#'
+            postfix = ''
+
+        instance = cls(path, prefix=prefix, postfix=postfix)
         instance.parse()
         return instance
     

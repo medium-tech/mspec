@@ -105,45 +105,6 @@ class MTemplatePyProject(MTemplateProject):
         keys = [f"'{name}'" for name in fields.keys()]
         return '[' + ', '.join(keys) + ']'
 
-    def render_templates(self, output_dir:str|Path=None):
-        
-        if output_dir is None:
-            output_dir = self.dist_dir
-
-        print(':: app')
-        for template in self.template_paths['app']:
-            app_output = output_dir / template['rel']
-
-            print('\t', app_output)
-            self.render_template({}, template['rel'], app_output)
-
-        print(':: modules')
-        for module in self.spec['modules'].values():
-            print('\t', module['name']['lower_case'])
-            
-            for template in self.template_paths['module']:
-                module_output = (output_dir / template['rel']).as_posix()
-                module_output = module_output.format(module_name_snake_case=module['name']['snake_case'])
-
-                print('\t\t', module_output)
-                self.render_template({'module': module}, template['rel'], module_output)
-
-            print('\n\t\t:: models')
-            for model in module['models'].values():
-                print('\t\t\t', model['name']['lower_case'])
-
-                for template in self.template_paths['model']:
-                    model_output = (output_dir / template['rel']).as_posix()
-                    model_output = model_output.format(
-                        module_name_snake_case=module['name']['snake_case'], 
-                        model_name_snake_case=model['name']['snake_case']
-                    )
-
-                    print('\t\t\t\t', model_output)
-                    self.render_template({'module': module, 'model': model}, template['rel'], model_output)
-
-        print(':: done')
-
 
 def render_py_templates(spec:dict, output_dir:str|Path=None, debug:bool=False):
     template_proj = MTemplatePyProject(spec, debug=debug)
