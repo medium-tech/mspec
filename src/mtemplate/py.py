@@ -1,9 +1,8 @@
 from mtemplate import MTemplateProject, MTemplateError
-from mtemplate.html import *
 from pathlib import Path
-import os
-from typing import Tuple
-from pprint import pprint
+
+
+__all__ = ['MTemplateHTMLProject']
 
 
 class MTemplatePyProject(MTemplateProject):
@@ -11,13 +10,13 @@ class MTemplatePyProject(MTemplateProject):
     template_dir = Path(__file__).parent.parent.parent / 'templates/py'
     dist_dir = Path(__file__).parent.parent.parent / 'dist/py'
 
+    module_prefixes = [
+        str(template_dir / 'src/sample')
+    ]
+
     model_prefixes = [
         str(template_dir / 'src/sample/sample_item'),
         str(template_dir / 'tests/sample')
-    ]
-
-    module_prefixes = [
-        str(template_dir / 'src/sample')
     ]
 
     def init_template_vars(self):
@@ -28,42 +27,6 @@ class MTemplatePyProject(MTemplateProject):
             'py_verify_fields': self.macro_py_verify_fields,
             'py_field_list': self.macro_py_field_list,
         })
-
-    def template_source_paths(self) -> dict[str, list[dict[str, str]]]:
-        """
-        return a tuple of two lists, the first list contains the paths of the app templates
-        and the second list contains the paths of the module templates
-        """
-        paths = {
-            'app': [],
-            'module': [],
-            'model': []
-        }
-        for root, _, files in os.walk(self.template_dir):
-            if '__pycache__' in root:
-                    continue
-            
-            if '.egg-info' in root:
-                continue
-            
-            for name in files:
-                if name == '.DS_Store':
-                    continue
-                
-                rel_path = os.path.relpath(os.path.join(root, name), self.template_dir)
-                rel_path = rel_path.replace('sample_item', '{model_name_snake_case}')
-                rel_path = rel_path.replace('sample', '{module_name_snake_case}')
-                template = {'src': os.path.join(root, name), 'rel': rel_path}
-
-                if root in self.model_prefixes:
-                    paths['model'].append(template)
-                elif root in self.module_prefixes:
-                    paths['module'].append(template)
-                else:
-                    paths['app'].append(template)
-
-        self.template_paths = paths
-        return paths
     
     def macro_py_example_fields(self, fields:dict, indent='\t') -> str:
         lines = []
@@ -105,9 +68,3 @@ class MTemplatePyProject(MTemplateProject):
         keys = [f"'{name}'" for name in fields.keys()]
         return '[' + ', '.join(keys) + ']'
 
-
-def render_py_templates(spec:dict, output_dir:str|Path=None, debug:bool=False):
-    template_proj = MTemplatePyProject(spec, debug=debug)
-    template_proj.extract_templates()
-    template_proj.init_template_vars()
-    template_proj.render_templates(output_dir)

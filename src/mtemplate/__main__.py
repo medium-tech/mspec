@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from mspec import load_spec
 from mtemplate import MTemplateExtractor
-from mtemplate.html import render_html_templates
-from mtemplate.py import render_py_templates
+from mtemplate.html import MTemplateHTMLProject
+from mtemplate.py import MTemplatePyProject
 import argparse
 from pathlib import Path
 
@@ -28,7 +28,7 @@ if args.command == 'extract':
             f.write(template)
 
 elif args.command == 'render-py':
-    render_py_templates(load_spec(args.spec), args.output, args.debug)
+    MTemplatePyProject.render(load_spec(args.spec), args.output, args.debug)
 
 elif args.command == 'render-html':
-    render_html_templates(load_spec(args.spec), args.output, args.debug)
+    MTemplateHTMLProject.render(load_spec(args.spec), args.output, args.debug)

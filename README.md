@@ -47,7 +47,7 @@
     * 🟡 generate py
     * 🟡 generate html
     * 🟡 generated app should have 2 modules and 3 total models, but not sample.sample_item
-    * 🔴 add html/css template extraction
+    * 🟡 add html/css template extraction
     * 🔴 template app and generated apps unittests are passing
 
     * 🟢 refactor client / db modules

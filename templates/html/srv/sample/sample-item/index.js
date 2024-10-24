@@ -15,20 +15,20 @@ const defaultSampleItem = {
 
 function randomSampleItem() {
     return {
-        // macro :: js_random_string :: {"name": "field"}
+        // macro :: html_random_string :: {"name": "field"}
         name: randomString(),
-        // macro :: js_random_boolean :: {"verified": "field"}
+        // macro :: html_random_boolean :: {"verified": "field"}
         verified: randomBool(),
-        // macro :: js_random_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
+        // macro :: html_random_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
         color: randomEnum(['red', 'green', 'blue']),
-        // macro :: js_random_integer :: {"age": "field"}
+        // macro :: html_random_integer :: {"age": "field"}
         age: randomInt(),
-        // macro :: js_random_float :: {"score": "field"}
+        // macro :: html_random_float :: {"score": "field"}
         score: randomFloat(),
-        // macro :: js_random_list :: {"tags": "field"}
+        // macro :: html_random_list :: {"tags": "field"}
         tags: randomList()
         // end macro ::
-        // insert :: model.js_random_fields
+        // insert :: model.html_random_fields
     }
 }
 
@@ -39,19 +39,19 @@ function verifySampleItem(data) {
         errors: {}
     }
 
-    // macro :: js_verify_string :: {"name": "field"}
+    // macro :: html_verify_string :: {"name": "field"}
     if (typeof data.name !== 'string') {
         result.error.name = 'name must be a string';
         result.valid = false;
     }
 
-    // macro :: js_verify_boolean :: {"verified": "field"}
+    // macro :: html_verify_boolean :: {"verified": "field"}
     if (typeof data.verified !== 'boolean') {
         result.error.verified = 'verified must be a boolean';
         result.valid = false;
     }
 
-    // macro :: js_verify_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
+    // macro :: html_verify_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
     if (typeof data.color !== 'string') {
         result.error.color = 'color must be a string';
         result.valid = false;
@@ -60,19 +60,19 @@ function verifySampleItem(data) {
         result.valid = false;
     }
 
-    // macro :: js_verify_integer :: {"age": "field"}
+    // macro :: html_verify_integer :: {"age": "field"}
     if (!Number.isInteger(data.age)) {
         result.error.age = 'age must be an integer';
         result.valid = false;
     }
 
-    // macro :: js_verify_float :: {"score": "field"}
+    // macro :: html_verify_float :: {"score": "field"}
     if (typeof data.score !== 'number') {
         result.error.score = 'score must be a float';
         result.valid = false;
     }
 
-    // macro :: js_verify_list :: {"tags": "field"}
+    // macro :: html_verify_list :: {"tags": "field"}
     if (!Array.isArray(data.tags)) {
         result.error.tags = 'tags must be an array';
         result.valid = false;
@@ -81,7 +81,7 @@ function verifySampleItem(data) {
         result.valid = false;
     }
     // end macro ::
-    // insert :: model.js_verify_fields
+    // insert :: model.html_verify_fields
 
     return result
 
@@ -90,31 +90,31 @@ function verifySampleItem(data) {
 function sampleItemFromInputTBody(tbody) {   
     const data = {};
 
-    // macro :: js_from_input_tbody_string :: {"name": "field"}
+    // macro :: html_from_input_tbody_string :: {"name": "field"}
     const nameInput = tbody.querySelector('input[name="name"]');
     data.name = nameInput.value;
 
-    // macro :: js_from_input_tbody_boolean :: {"verified": "field"}
+    // macro :: html_from_input_tbody_boolean :: {"verified": "field"}
     const verifiedInput = tbody.querySelector('input[name="verified"]');
     data.verified = verifiedInput.checked;
 
-    // macro :: js_from_input_tbody_enum :: {"color": "field"}
+    // macro :: html_from_input_tbody_enum :: {"color": "field"}
     const colorInput = tbody.querySelector('select[name="color"]');
     data.color = colorInput.value;
 
-    // macro :: js_from_input_tbody_integer :: {"age": "field"}
+    // macro :: html_from_input_tbody_integer :: {"age": "field"}
     const ageInput = tbody.querySelector('input[name="age"]');
     data.age = parseInt(ageInput.value);
 
-    // macro :: js_from_input_tbody_float :: {"score": "field"}
+    // macro :: html_from_input_tbody_float :: {"score": "field"}
     const scoreInput = tbody.querySelector('input[name="score"]');
     data.score = parseFloat(scoreInput.value);
 
-    // macro :: js_from_input_tbody_list :: {"tags": "field"}
+    // macro :: html_from_input_tbody_list :: {"tags": "field"}
     const tagsInput = tbody.querySelector('input[name="tags"]');
     data.tags = JSON.parse(tagsInput.getAttribute('valueAsJSON'));
     // end macro ::
-    // insert :: model.js_from_input_tbody_fields
+    // insert :: model.html_from_input_tbody_fields
 
     return data;
 }
@@ -122,7 +122,7 @@ function sampleItemFromInputTBody(tbody) {
 function sampleItemToInputTBody(data, tbody) {
     tbody.innerHTML = '';
 
-    // macro :: js_to_input_tbody_string :: {"name": "field"}
+    // macro :: html_to_input_tbody_string :: {"name": "field"}
     const nameTdKey = document.createElement('td');
     nameTdKey.textContent = 'name';
 
@@ -143,7 +143,7 @@ function sampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(nameTr);
 
-    // macro :: js_to_input_tbody_boolean :: {"verified": "field"}
+    // macro :: html_to_input_tbody_boolean :: {"verified": "field"}
     const verifiedTdKey = document.createElement('td');
     verifiedTdKey.textContent = 'verified';
 
@@ -164,7 +164,7 @@ function sampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(verifiedTr);
 
-    // macro :: js_to_input_tbody_enum :: {"color": "field"}
+    // macro :: html_to_input_tbody_enum :: {"color": "field"}
     const colorTdKey = document.createElement('td');
     colorTdKey.textContent = 'color';
 
@@ -193,7 +193,7 @@ function sampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(colorTr);
 
-    // macro :: js_to_input_tbody_integer :: {"age": "field"}
+    // macro :: html_to_input_tbody_integer :: {"age": "field"}
     const ageTdKey = document.createElement('td');
     ageTdKey.textContent = 'age';
 
@@ -215,7 +215,7 @@ function sampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(ageTr);
 
-    // macro :: js_to_input_tbody_float :: {"score": "field"}
+    // macro :: html_to_input_tbody_float :: {"score": "field"}
     const scoreTdKey = document.createElement('td');
     scoreTdKey.textContent = 'score';
 
@@ -238,7 +238,7 @@ function sampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(scoreTr);
 
-    // macro :: js_to_input_tbody_list :: {"tags": "field"}
+    // macro :: html_to_input_tbody_list :: {"tags": "field"}
     let tagsEntered = data.tags.slice();
 
     const tagsTdKey = document.createElement('td');
@@ -300,7 +300,7 @@ function sampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(tagsTr);
     // end macro ::
-    // insert :: model.js_to_input_tbody_fields
+    // insert :: model.html_to_input_tbody_fields
 
     return tbody;
 
@@ -323,7 +323,7 @@ function sampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(idTr);
 
-    // macro :: js_to_display_tbody_string :: {"name": "field"}
+    // macro :: html_to_display_tbody_string :: {"name": "field"}
     const nameTdKey = document.createElement('td');
     nameTdKey.textContent = 'name';
 
@@ -336,7 +336,7 @@ function sampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(nameTr);
 
-    // macro :: js_to_display_tbody_boolean :: {"verified": "field"}
+    // macro :: html_to_display_tbody_boolean :: {"verified": "field"}
     const verifiedTdKey = document.createElement('td');
     verifiedTdKey.textContent = 'verified';
 
@@ -349,7 +349,7 @@ function sampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(verifiedTr);
 
-    // macro :: js_to_display_tbody_enum :: {"color": "field"}
+    // macro :: html_to_display_tbody_enum :: {"color": "field"}
     const colorTdKey = document.createElement('td');
     colorTdKey.textContent = 'color';
 
@@ -362,7 +362,7 @@ function sampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(colorTr);
 
-    // macro :: js_to_display_tbody_integer :: {"age": "field"}
+    // macro :: html_to_display_tbody_integer :: {"age": "field"}
     const ageTdKey = document.createElement('td');
     ageTdKey.textContent = 'age';
 
@@ -375,7 +375,7 @@ function sampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(ageTr);
 
-    // macro :: js_to_display_tbody_float :: {"score": "field"}
+    // macro :: html_to_display_tbody_float :: {"score": "field"}
     const scoreTdKey = document.createElement('td');
     scoreTdKey.textContent = 'score';
 
@@ -388,7 +388,7 @@ function sampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(scoreTr);
 
-    // macro :: js_to_display_tbody_list :: {"tags": "field"}
+    // macro :: html_to_display_tbody_list :: {"tags": "field"}
     const tagsTdKey = document.createElement('td');
     tagsTdKey.textContent = 'tags';
 
@@ -401,7 +401,7 @@ function sampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(tagsTr);
     // end macro ::
-    // insert :: model.js_to_display_tbody_fields
+    // insert :: model.html_to_display_tbody_fields
 
     return tbody;
 }
@@ -418,37 +418,37 @@ function sampleItemToTableRow(data) {
     idTd.textContent = data.id;
     tr.appendChild(idTd);
 
-    // macro :: js_to_table_row_string :: {"name": "field"}
+    // macro :: html_to_table_row_string :: {"name": "field"}
     const nameTd = document.createElement('td');
     nameTd.textContent = data.name;
     tr.appendChild(nameTd);
 
-    // macro :: js_to_table_row_boolean :: {"verified": "field"}
+    // macro :: html_to_table_row_boolean :: {"verified": "field"}
     const verifiedTd = document.createElement('td');
     verifiedTd.textContent = (data.verified) ? 'yes' : 'no';
     tr.appendChild(verifiedTd);
 
-    // macro :: js_to_table_row_enum :: {"color": "field"}
+    // macro :: html_to_table_row_enum :: {"color": "field"}
     const colorTd = document.createElement('td');
     colorTd.textContent = data.color;
     tr.appendChild(colorTd);
 
-    // macro :: js_to_table_row_integer :: {"age": "field"}
+    // macro :: html_to_table_row_integer :: {"age": "field"}
     const ageTd = document.createElement('td');
     ageTd.textContent = data.age;
     tr.appendChild(ageTd);
 
-    // macro :: js_to_table_row_float :: {"score": "field"}
+    // macro :: html_to_table_row_float :: {"score": "field"}
     const scoreTd = document.createElement('td');
     scoreTd.textContent = data.score;
     tr.appendChild(scoreTd);
 
-    // macro :: js_to_table_row_list :: {"tags": "field"}
+    // macro :: html_to_table_row_list :: {"tags": "field"}
     const tagsTd = document.createElement('td');
     tagsTd.textContent = data.tags.join(', ');
     tr.appendChild(tagsTd);
     // end macro ::
-    // insert :: model.js_to_table_row_fields
+    // insert :: model.html_to_table_row_fields
 
     return tr;
 

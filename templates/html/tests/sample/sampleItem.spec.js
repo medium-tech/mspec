@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-// vars :: {"mspec":"project.snake_case", "http://localhost:9009": "default_client_host"}
-// vars :: {"sample": "module.snake_case", "sample item": "model.lower_case", "sample-item": "model.kebab_case"}
+// vars :: {"mspec":"project.name.snake_case", "http://localhost:9009": "client.default_host"}
+// vars :: {"sample": "module.name.snake_case", "sample item": "model.name.lower_case", "sample-item": "model.name.kebab_case"}
 
 test('test - sample - sample item - pagination', async ({ page }) => {
   await page.goto('http://localhost:9009/');
@@ -25,23 +25,23 @@ test('test - sample - sample item - instance', async ({ page }) => {
     await page.goto('http://localhost:9009/sample/sample-item');
     await page.getByRole('button', { name: 'create' }).click();
 
-    // macro :: js_unittest_string :: {"name": "field"}
+    // macro :: html_unittest_string :: {"name": "field"}
     await page.locator('input[name="name"]').click();
     await page.locator('input[name="name"]').fill('this is a unittest');
 
-    // macro :: js_unittest_boolean :: {}
+    // macro :: html_unittest_boolean :: {}
     await page.getByRole('checkbox').check();
 
-    // macro :: js_unittest_enum :: {"green": "field"}
+    // macro :: html_unittest_enum :: {"green": "field"}
     await page.getByRole('combobox').selectOption('green');
 
-    // macro :: js_unittest_integer :: {"age": "field"}
+    // macro :: html_unittest_integer :: {"age": "field"}
     await page.locator('input[name="age"]').click({
         clickCount: 3
     });
     await page.locator('input[name="age"]').fill('55');
 
-    // macro :: js_unittest_float :: {"score": "field"}
+    // macro :: html_unittest_float :: {"score": "field"}
     await page.locator('input[name="score"]').fill('3.33');
     await page.locator('html').click();
     await page.getByPlaceholder('press enter after each tag').click();
@@ -51,7 +51,7 @@ test('test - sample - sample item - instance', async ({ page }) => {
     await page.getByPlaceholder('press enter after each tag').press('Enter');
     // end macro ::
 
-    // insert :: js_unittest_form
+    // insert :: html_unittest_form
     
     await page.getByRole('button', { name: 'submit' }).click();
 

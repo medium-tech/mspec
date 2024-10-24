@@ -1,18 +1,13 @@
 import os
-import stat
 import json
 import shutil
-import importlib
 
 from copy import copy
-from enum import Enum
 from pathlib import Path
 from collections import OrderedDict
-from typing import Optional, Any, Generator
 from dataclasses import dataclass
 
-from jinja2 import Environment, FunctionLoader, StrictUndefined, UndefinedError, TemplateSyntaxError
-from bson import ObjectId
+from jinja2 import Environment, FunctionLoader, StrictUndefined, UndefinedError
 
 __all__ = [
     'MTemplateProject',
@@ -48,7 +43,40 @@ class MTemplateProject:
         )
 
     def template_source_paths(self) -> dict[str, list[dict[str, str]]]:
-        raise NotImplementedError('template_source_paths must be implemented by subclass')
+        paths = {
+            'app': [],
+            'module': [],
+            'model': []
+        }
+        for root, _, files in os.walk(self.template_dir):
+            if 'node_modules' in root:
+                continue
+            
+            if '__pycache__' in root:
+                    continue
+            
+            if '.egg-info' in root:
+                continue
+            
+            for name in files:
+                if name == '.DS_Store':
+                    continue
+                
+                rel_path = os.path.relpath(os.path.join(root, name), self.template_dir)
+                rel_path = rel_path.replace('sample-item', '{module_name_kebab_case}')
+                rel_path = rel_path.replace('sample_item', '{model_name_snake_case}')
+                rel_path = rel_path.replace('sample', '{module_name_snake_case}')
+                template = {'src': os.path.join(root, name), 'rel': rel_path}
+
+                if root in self.model_prefixes:
+                    paths['model'].append(template)
+                elif root in self.module_prefixes:
+                    paths['module'].append(template)
+                else:
+                    paths['app'].append(template)
+
+        self.template_paths = paths
+        return paths
 
     def _jinja_loader(self, rel_path:str) -> str:
         try:
@@ -76,8 +104,12 @@ class MTemplateProject:
             raise MTemplateError('template_paths must contain app, module and model keys')
         
         for path in paths:
-            template = MTemplateExtractor.template_from_file(path['src'])
-            self.templates[path['rel']] = template
+            try:
+                template = MTemplateExtractor.template_from_file(path['src'])
+                self.templates[path['rel']] = template
+            except Exception as exc:
+                print(path['src'])
+                raise
 
         return self.templates
 
@@ -108,6 +140,8 @@ class MTemplateProject:
         
         if output_dir is None:
             output_dir = self.dist_dir
+
+        shutil.rmtree(output_dir, ignore_errors=True)
 
         print(':: app')
         for template in self.template_paths['app']:
@@ -148,6 +182,13 @@ class MTemplateProject:
 
         print(':: done')
 
+    @classmethod
+    def render(cls, spec:dict, output_dir:str|Path=None, debug:bool=False) -> 'MTemplateProject':
+        template_proj = cls(spec, debug=debug)
+        template_proj.extract_templates()
+        template_proj.init_template_vars()
+        template_proj.render_templates(output_dir)
+        return template_proj
 
 
 @dataclass
@@ -169,7 +210,8 @@ class MTemplateMacro:
             except KeyError:
                 raise MTemplateError(f'{input_key} not given to macro {self.name}')
         return output
-    
+
+
 class MTemplateExtractor:
 
     def __init__(self, path:str|Path, prefix='#', postfix='') -> None:
@@ -269,7 +311,7 @@ class MTemplateExtractor:
 
             for line in f:
                 line_no += 1
-                line_stripped = line.strip().replace(self.postfix, '')
+                line_stripped = line.replace(self.postfix, '').strip()
 
                 # vars line #
 
@@ -291,9 +333,9 @@ class MTemplateExtractor:
                         except StopIteration:
                             raise MTemplateError(f'Unterminated for loop starting on line {for_start_line_no} of {self.path}')
                         
-                        next_line_strippped = next_line.strip()
+                        next_line_strippped = next_line.replace(self.postfix, '').strip()
                         line_no += 1
-                            
+                        
                         if next_line_strippped == f'{self.prefix} end for ::':
                             break
 
@@ -345,7 +387,7 @@ class MTemplateExtractor:
                         except StopIteration:
                             raise MTemplateError(f'Unterminated replace block starting on line {replace_start_line_no} of {self.path}')
                         
-                        next_line_strippped = next_line.strip()
+                        next_line_strippped = next_line.replace(self.postfix, '').strip()
                         line_no += 1
                         
                         # insert replacement statement #
@@ -369,7 +411,7 @@ class MTemplateExtractor:
                         except StopIteration:
                             break
                         
-                        next_line_strippped = next_line.strip()
+                        next_line_strippped = next_line.replace(self.postfix, '').strip()
                         line_no += 1
 
                         if next_line_strippped == f'{self.prefix} end macro ::':
@@ -412,4 +454,3 @@ class MTemplateExtractor:
         instance = cls(path, prefix=prefix, postfix=postfix)
         instance.parse()
         return instance
-    
