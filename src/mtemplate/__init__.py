@@ -172,7 +172,7 @@ class MTemplateProject:
                     model_output = (output_dir / template['rel']).as_posix()
                     model_output = model_output.format(
                         module_name_snake_case=module['name']['snake_case'], 
-                        module_name_kebap_case=module['name']['kebab_case'],
+                        module_name_kebab_case=module['name']['kebab_case'],
                         model_name_snake_case=model['name']['snake_case'],
                         model_name_kebab_case=model['name']['kebab_case']
                     )

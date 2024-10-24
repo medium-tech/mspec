@@ -1,4 +1,4 @@
-// vars :: {"SampleItem": "model.PascalCase", "sampleItem": "model.camelCase", "sample-item": "model.kebab_case"}
+// vars :: {"SampleItem": "model.name.pascal_case", "sampleItem": "model.name.camel_case", "sample-item": "model.name.kebab_case"}
 
 //
 // data functions
@@ -28,7 +28,7 @@ function randomSampleItem() {
         // macro :: html_random_list :: {"tags": "field"}
         tags: randomList()
         // end macro ::
-        // insert :: model.html_random_fields
+        // insert :: macro.html_random_fields
     }
 }
 
@@ -39,13 +39,13 @@ function verifySampleItem(data) {
         errors: {}
     }
 
-    // macro :: html_verify_string :: {"name": "field"}
+    // macro :: html_verify_str :: {"name": "field"}
     if (typeof data.name !== 'string') {
         result.error.name = 'name must be a string';
         result.valid = false;
     }
 
-    // macro :: html_verify_boolean :: {"verified": "field"}
+    // macro :: html_verify_bool :: {"verified": "field"}
     if (typeof data.verified !== 'boolean') {
         result.error.verified = 'verified must be a boolean';
         result.valid = false;
@@ -60,7 +60,7 @@ function verifySampleItem(data) {
         result.valid = false;
     }
 
-    // macro :: html_verify_integer :: {"age": "field"}
+    // macro :: html_verify_int :: {"age": "field"}
     if (!Number.isInteger(data.age)) {
         result.error.age = 'age must be an integer';
         result.valid = false;
@@ -81,7 +81,7 @@ function verifySampleItem(data) {
         result.valid = false;
     }
     // end macro ::
-    // insert :: model.html_verify_fields
+    // insert :: macro.html_verify_fields(model.fields)
 
     return result
 

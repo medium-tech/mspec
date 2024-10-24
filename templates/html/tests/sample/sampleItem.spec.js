@@ -25,23 +25,23 @@ test('test - sample - sample item - instance', async ({ page }) => {
     await page.goto('http://localhost:9009/sample/sample-item');
     await page.getByRole('button', { name: 'create' }).click();
 
-    // macro :: html_unittest_string :: {"name": "field"}
+    // macro :: html_unittest_form_str :: {"name": "field"}
     await page.locator('input[name="name"]').click();
     await page.locator('input[name="name"]').fill('this is a unittest');
 
-    // macro :: html_unittest_boolean :: {}
-    await page.getByRole('checkbox').check();
+    // macro :: html_unittest_form_bool :: {"verified": "field"}
+    await page.locator('checkbox[name="verified"]').check();
 
-    // macro :: html_unittest_enum :: {"green": "field"}
-    await page.getByRole('combobox').selectOption('green');
+    // macro :: html_unittest_form_enum :: {"color": "field", "green": "enum_choice"}
+    await page.locator('combobox[name="color"]').selectOption('green');
 
-    // macro :: html_unittest_integer :: {"age": "field"}
+    // macro :: html_unittest_form_int :: {"age": "field"}
     await page.locator('input[name="age"]').click({
         clickCount: 3
     });
     await page.locator('input[name="age"]').fill('55');
 
-    // macro :: html_unittest_float :: {"score": "field"}
+    // macro :: html_unittest_form_float :: {"score": "field"}
     await page.locator('input[name="score"]').fill('3.33');
     await page.locator('html').click();
     await page.getByPlaceholder('press enter after each tag').click();
@@ -51,7 +51,7 @@ test('test - sample - sample item - instance', async ({ page }) => {
     await page.getByPlaceholder('press enter after each tag').press('Enter');
     // end macro ::
 
-    // insert :: html_unittest_form
+    // insert :: macro.html_unittest_form(model.fields)
     
     await page.getByRole('button', { name: 'submit' }).click();
 
