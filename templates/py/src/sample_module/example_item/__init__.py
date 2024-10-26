@@ -2,22 +2,22 @@ import json
 from core.util import *
 
 __all__ = [
-    'sample_item_to_json',
-    'sample_item_from_json',
-    'sample_item_example',
-    'sample_item_random',
-    'sample_item_verify'
+    'example_item_to_json',
+    'example_item_from_json',
+    'example_item_example',
+    'example_item_random',
+    'example_item_verify'
 ]
 
-# vars :: {"sample_item": "model.name.snake_case"}
+# vars :: {"example_item": "model.name.snake_case"}
 
-def sample_item_to_json(data:dict, sort_keys=True, indent=4) -> str:
+def example_item_to_json(data:dict, sort_keys=True, indent=4) -> str:
     return json.dumps(data, sort_keys=sort_keys, indent=indent)
 
-def sample_item_from_json(json_string:str) -> dict:
-    return sample_item_verify(json.loads(json_string))
+def example_item_from_json(json_string:str) -> dict:
+    return example_item_verify(json.loads(json_string))
 
-def sample_item_example() -> dict:
+def example_item_example() -> dict:
     return {
         # replace :: macro.py_example_fields(model.fields)
         'name': 'a large thing',
@@ -29,7 +29,7 @@ def sample_item_example() -> dict:
         # end replace ::
     }
 
-def sample_item_random() -> dict:
+def example_item_random() -> dict:
     return {
         # insert :: macro.py_random_fields(model.fields)
         # macro :: py_random_str :: {"name": "field"}
@@ -47,7 +47,7 @@ def sample_item_random() -> dict:
         # end macro ::
     }
 
-def sample_item_verify(data:dict) -> dict:
+def example_item_verify(data:dict) -> dict:
 
     if not isinstance(data, dict):
         raise TypeError('data must be a dictionary')

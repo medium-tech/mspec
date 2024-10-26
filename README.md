@@ -48,6 +48,7 @@
     * 🟢 generate html
     * 🟢 generated app should have 2 modules and 3 total models, but not sample.sample_item
     * 🟢 add html/css template extraction
+    * 🟡 refactor template apps so that module and model names are both 2 words which enables proper templating for kebab-case, etc
     * 🟡 template app and generated apps unittests are passing
 
     * 🟢 refactor client / db modules

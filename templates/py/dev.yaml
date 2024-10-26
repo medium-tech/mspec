@@ -2,10 +2,10 @@
 uwsgi:
   http: :9009
   wsgi-file: src/core/server.py
-  # for :: {% for item in all_models %} :: {"sample":"item.module.name.snake_case", "sample-item": "item.model.name.kebab_case", "/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv": "server.static_root"}
-  route: ^/sample/sample-item/create static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv/sample/sample-item/index.html
-  route: ^/sample/sample-item/index(.*) static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv/sample/sample-item/index$1
-  route: ^/sample/sample-item/(.*) static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv/sample/sample-item/instance.html
+  # for :: {% for item in all_models %} :: {"sample_module":"item.module.name.snake_case", "example-item": "item.model.name.kebab_case", "/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv": "server.static_root"}
+  route: ^/sample_module/example-item/create static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv/sample_module/example-item/index.html
+  route: ^/sample_module/example-item/index(.*) static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv/sample_module/example-item/index$1
+  route: ^/sample_module/example-item/(.*) static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv/sample_module/example-item/instance.html
   # end for ::
   static-map: /=../html/srv/
   static-index: index.html

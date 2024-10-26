@@ -1,5 +1,5 @@
-# for :: {% for module in modules.values() %} :: {"sample": "module.name.snake_case"}
-from sample import sample_client
+# for :: {% for module in modules.values() %} :: {"sample_module": "module.name.snake_case"}
+from sample_module import sample_module_client
 # end for ::
 import os
 
@@ -37,6 +37,6 @@ def create_client_context(host:str=default_host) -> dict:
 
 class MSpecClient:
 
-    # for :: {% for module in modules.values() %} :: {"sample": "module.name.snake_case"}
-    sample = sample_client
+    # for :: {% for module in modules.values() %} :: {"sample_module": "module.name.snake_case"}
+    sample_module = sample_module_client
     # end for ::
