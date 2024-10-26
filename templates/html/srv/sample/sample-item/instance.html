@@ -112,7 +112,7 @@
             window.onload = () => {
                 const idBreadcrumb = document.getElementById('sample-item-id-breadcrumb')
                 const idLink = document.createElement('a');
-                idLink.href = `/sample/sample-item/${sampleItemId()}`;
+                idLink.href = '/sample/sample-item/' + sampleItemId();
                 idLink.innerText = sampleItemId();
                 idBreadcrumb.appendChild(idLink);
 

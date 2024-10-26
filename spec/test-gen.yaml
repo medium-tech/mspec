@@ -6,14 +6,14 @@ project:
     lower_case: 'test gen'
 
 server:
-  port: 9009
+  port: 7007
   static_root: '/Users/brad/Code/medium-tech/mspec-alpha/dist/html/srv'
 
 db:
   default_url: 'mongodb://127.0.0.1:27017'
 
 client:
-  default_host: 'http://localhost:9009'
+  default_host: 'http://localhost:7007'
 
 modules:
   stuff:

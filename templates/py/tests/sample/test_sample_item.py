@@ -6,7 +6,7 @@ from sample.sample_item import sample_item_verify, sample_item_to_json, sample_i
 from sample.sample_item.client import *
 from sample.sample_item.db import db_create_sample_item, db_read_sample_item, db_update_sample_item, db_delete_sample_item, db_list_sample_item
 
-# vars :: {"sample": "module.name.snake_case", "sample_item": "model.name.snake_case", "SampleItem": "model.name.pascal_case"}
+# vars :: {"sample": "module.name.snake_case", "sample_item": "model.name.snake_case", "SampleItem": "model.name.pascal_case", "msample": "project.name.snake_case"}
 
 test_ctx = create_db_context()
 test_ctx.update(create_client_context())
@@ -107,7 +107,7 @@ class TestSampleItem(unittest.TestCase):
 
     def _test_list(self, list_function):
 
-        collection = test_ctx['db']['client']['sample']['sample_item']
+        collection = test_ctx['db']['client']['msample']['sample.sample_item']
         collection.delete_many({})
 
         # seed the db #

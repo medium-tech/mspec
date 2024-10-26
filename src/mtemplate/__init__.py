@@ -7,7 +7,7 @@ from pathlib import Path
 from collections import OrderedDict
 from dataclasses import dataclass
 
-from jinja2 import Environment, FunctionLoader, StrictUndefined, UndefinedError
+from jinja2 import Environment, FunctionLoader, StrictUndefined, TemplateError, TemplateSyntaxError
 
 __all__ = [
     'MTemplateProject',
@@ -128,11 +128,11 @@ class MTemplateProject:
             debug_output_path = out_path.with_name(out_path.name + '.jinja2')
             self.write_file(debug_output_path, self.templates[rel_path].create_template())
 
-        jinja_template = self.jinja.get_template(rel_path)
         try:
+            jinja_template = self.jinja.get_template(rel_path)
             rendered_template = jinja_template.render(vars)
-        except UndefinedError as e:
-            raise UndefinedError(f'{e} in template {rel_path}')
+        except TemplateError as e:
+            raise TemplateError(f'{e.__class__.__name__}:{e} in template {out_path}')
         
         self.write_file(out_path, rendered_template)
 

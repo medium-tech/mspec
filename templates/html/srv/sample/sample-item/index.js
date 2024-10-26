@@ -15,20 +15,20 @@ const defaultSampleItem = {
 
 function randomSampleItem() {
     return {
-        // macro :: html_random_string :: {"name": "field"}
+        // macro :: html_random_str :: {"name": "field"}
         name: randomString(),
-        // macro :: html_random_boolean :: {"verified": "field"}
+        // macro :: html_random_bool :: {"verified": "field"}
         verified: randomBool(),
         // macro :: html_random_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
         color: randomEnum(['red', 'green', 'blue']),
-        // macro :: html_random_integer :: {"age": "field"}
+        // macro :: html_random_int :: {"age": "field"}
         age: randomInt(),
         // macro :: html_random_float :: {"score": "field"}
         score: randomFloat(),
         // macro :: html_random_list :: {"tags": "field"}
         tags: randomList()
         // end macro ::
-        // insert :: macro.html_random_fields
+        // insert :: macro.html_random_fields(model.fields)
     }
 }
 
@@ -90,11 +90,11 @@ function verifySampleItem(data) {
 function sampleItemFromInputTBody(tbody) {   
     const data = {};
 
-    // macro :: html_from_input_tbody_string :: {"name": "field"}
+    // macro :: html_from_input_tbody_str :: {"name": "field"}
     const nameInput = tbody.querySelector('input[name="name"]');
     data.name = nameInput.value;
 
-    // macro :: html_from_input_tbody_boolean :: {"verified": "field"}
+    // macro :: html_from_input_tbody_bool :: {"verified": "field"}
     const verifiedInput = tbody.querySelector('input[name="verified"]');
     data.verified = verifiedInput.checked;
 
@@ -102,7 +102,7 @@ function sampleItemFromInputTBody(tbody) {
     const colorInput = tbody.querySelector('select[name="color"]');
     data.color = colorInput.value;
 
-    // macro :: html_from_input_tbody_integer :: {"age": "field"}
+    // macro :: html_from_input_tbody_int :: {"age": "field"}
     const ageInput = tbody.querySelector('input[name="age"]');
     data.age = parseInt(ageInput.value);
 
@@ -114,7 +114,7 @@ function sampleItemFromInputTBody(tbody) {
     const tagsInput = tbody.querySelector('input[name="tags"]');
     data.tags = JSON.parse(tagsInput.getAttribute('valueAsJSON'));
     // end macro ::
-    // insert :: model.html_from_input_tbody_fields
+    // insert :: macro.html_from_input_tbody_fields(model.fields)
 
     return data;
 }
@@ -122,7 +122,7 @@ function sampleItemFromInputTBody(tbody) {
 function sampleItemToInputTBody(data, tbody) {
     tbody.innerHTML = '';
 
-    // macro :: html_to_input_tbody_string :: {"name": "field"}
+    // macro :: html_to_input_tbody_str :: {"name": "field"}
     const nameTdKey = document.createElement('td');
     nameTdKey.textContent = 'name';
 
@@ -143,7 +143,7 @@ function sampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(nameTr);
 
-    // macro :: html_to_input_tbody_boolean :: {"verified": "field"}
+    // macro :: html_to_input_tbody_bool :: {"verified": "field"}
     const verifiedTdKey = document.createElement('td');
     verifiedTdKey.textContent = 'verified';
 
@@ -193,7 +193,7 @@ function sampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(colorTr);
 
-    // macro :: html_to_input_tbody_integer :: {"age": "field"}
+    // macro :: html_to_input_tbody_int :: {"age": "field"}
     const ageTdKey = document.createElement('td');
     ageTdKey.textContent = 'age';
 
@@ -300,7 +300,7 @@ function sampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(tagsTr);
     // end macro ::
-    // insert :: model.html_to_input_tbody_fields
+    // insert :: macro.html_to_input_tbody(model.fields)
 
     return tbody;
 
@@ -323,7 +323,7 @@ function sampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(idTr);
 
-    // macro :: html_to_display_tbody_string :: {"name": "field"}
+    // macro :: html_to_display_tbody_str :: {"name": "field"}
     const nameTdKey = document.createElement('td');
     nameTdKey.textContent = 'name';
 
@@ -336,7 +336,7 @@ function sampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(nameTr);
 
-    // macro :: html_to_display_tbody_boolean :: {"verified": "field"}
+    // macro :: html_to_display_tbody_bool :: {"verified": "field"}
     const verifiedTdKey = document.createElement('td');
     verifiedTdKey.textContent = 'verified';
 
@@ -362,7 +362,7 @@ function sampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(colorTr);
 
-    // macro :: html_to_display_tbody_integer :: {"age": "field"}
+    // macro :: html_to_display_tbody_int :: {"age": "field"}
     const ageTdKey = document.createElement('td');
     ageTdKey.textContent = 'age';
 
@@ -401,7 +401,7 @@ function sampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(tagsTr);
     // end macro ::
-    // insert :: model.html_to_display_tbody_fields
+    // insert :: macro.html_to_display_tbody(model.fields)
 
     return tbody;
 }
@@ -418,12 +418,12 @@ function sampleItemToTableRow(data) {
     idTd.textContent = data.id;
     tr.appendChild(idTd);
 
-    // macro :: html_to_table_row_string :: {"name": "field"}
+    // macro :: html_to_table_row_str :: {"name": "field"}
     const nameTd = document.createElement('td');
     nameTd.textContent = data.name;
     tr.appendChild(nameTd);
 
-    // macro :: html_to_table_row_boolean :: {"verified": "field"}
+    // macro :: html_to_table_row_bool :: {"verified": "field"}
     const verifiedTd = document.createElement('td');
     verifiedTd.textContent = (data.verified) ? 'yes' : 'no';
     tr.appendChild(verifiedTd);
@@ -433,7 +433,7 @@ function sampleItemToTableRow(data) {
     colorTd.textContent = data.color;
     tr.appendChild(colorTd);
 
-    // macro :: html_to_table_row_integer :: {"age": "field"}
+    // macro :: html_to_table_row_int :: {"age": "field"}
     const ageTd = document.createElement('td');
     ageTd.textContent = data.age;
     tr.appendChild(ageTd);
@@ -448,7 +448,7 @@ function sampleItemToTableRow(data) {
     tagsTd.textContent = data.tags.join(', ');
     tr.appendChild(tagsTd);
     // end macro ::
-    // insert :: model.html_to_table_row_fields
+    // insert :: macro.html_to_table_row(model.fields)
 
     return tr;
 

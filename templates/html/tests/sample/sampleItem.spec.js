@@ -30,10 +30,10 @@ test('test - sample - sample item - instance', async ({ page }) => {
     await page.locator('input[name="name"]').fill('this is a unittest');
 
     // macro :: html_unittest_form_bool :: {"verified": "field"}
-    await page.locator('checkbox[name="verified"]').check();
+    await page.locator('input[name="verified"]').check();
 
     // macro :: html_unittest_form_enum :: {"color": "field", "green": "enum_choice"}
-    await page.locator('combobox[name="color"]').selectOption('green');
+    await page.locator('select[name="color"]').selectOption('green');
 
     // macro :: html_unittest_form_int :: {"age": "field"}
     await page.locator('input[name="age"]').click({
@@ -43,12 +43,14 @@ test('test - sample - sample item - instance', async ({ page }) => {
 
     // macro :: html_unittest_form_float :: {"score": "field"}
     await page.locator('input[name="score"]').fill('3.33');
+
+    // macro :: html_unittest_form_list :: {"tags": "field"}
     await page.locator('html').click();
-    await page.getByPlaceholder('press enter after each tag').click();
-    await page.getByPlaceholder('press enter after each tag').fill('one');
-    await page.getByPlaceholder('press enter after each tag').press('Enter');
-    await page.getByPlaceholder('press enter after each tag').fill('two');
-    await page.getByPlaceholder('press enter after each tag').press('Enter');
+    await page.locator('input[name="tags"]').click();
+    await page.locator('input[name="tags"]').fill('one');
+    await page.locator('input[name="tags"]').press('Enter');
+    await page.locator('input[name="tags"]').fill('two');
+    await page.locator('input[name="tags"]').press('Enter');
     // end macro ::
 
     // insert :: macro.html_unittest_form(model.fields)

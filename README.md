@@ -41,14 +41,14 @@
 
 * 🟡 templating
     * 🟢 refactor `src/sample/__init__.py` -> `src/sample/sample_item/__init__.py`
-    * 🟡 extract templates
-        * 🟡 add macro syntax
-        * 🟡 add insert syntax
-    * 🟡 generate py
-    * 🟡 generate html
-    * 🟡 generated app should have 2 modules and 3 total models, but not sample.sample_item
-    * 🟡 add html/css template extraction
-    * 🔴 template app and generated apps unittests are passing
+    * 🟢 extract templates
+        * 🟢 add macro syntax
+        * 🟢 add insert syntax
+    * 🟢 generate py
+    * 🟢 generate html
+    * 🟢 generated app should have 2 modules and 3 total models, but not sample.sample_item
+    * 🟢 add html/css template extraction
+    * 🟡 template app and generated apps unittests are passing
 
     * 🟢 refactor client / db modules
     * 🟢 decouple db/client from global ns

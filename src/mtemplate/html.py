@@ -24,8 +24,60 @@ class MTemplateHTMLProject(MTemplateProject):
         self.spec['macro'].update({
             'html_unittest_form': self.macro_html_unittest_form,
             'html_random_fields': self.macro_html_random_fields,
-            'html_verify_fields': self.macro_html_verify_fields
+            'html_verify_fields': self.macro_html_verify_fields,
+            'html_from_input_tbody_fields': self.macro_html_from_input_tbody_fields,
+            'html_to_input_tbody': self.macro_html_to_input_tbody,
+            'html_to_display_tbody': self.macro_html_to_display_tbody,
+            'html_to_table_row': self.macro_html_to_table_row,
         })
+
+    def macro_html_to_table_row( self, fields:dict, indent='\t') -> str:
+        out = ''
+        for name, field in fields.items():
+            vars = {'field': name}
+            field_type = field['type']
+
+            try:
+                out += self.spec['macro'][f'html_to_table_row_{field_type}'](vars) + '\n'
+            except KeyError:
+                raise MTemplateError(f'field {name} does not have type "{field_type}"')
+        return out
+
+    def macro_html_to_display_tbody(self, fields:dict, indent='\t') -> str:
+        out = ''
+        for name, field in fields.items():
+            vars = {'field': name}
+            field_type = field['type']
+
+            try:
+                out += self.spec['macro'][f'html_to_display_tbody_{field_type}'](vars) + '\n'
+            except KeyError:
+                raise MTemplateError(f'field {name} does not have type "{field_type}"')
+        return out
+
+    def macro_html_to_input_tbody(self, fields:dict, indent='\t') -> str:
+        out = ''
+        for name, field in fields.items():
+            vars = {'field': name}
+            field_type = field['type']
+
+            try:
+                out += self.spec['macro'][f'html_to_input_tbody_{field_type}'](vars) + '\n'
+            except KeyError:
+                raise MTemplateError(f'field {name} does not have type "{field_type}"')
+        return out
+
+    def macro_html_from_input_tbody_fields(self, fields:dict, indent='\t') -> str:
+        out = ''
+        for name, field in fields.items():
+            vars = {'field': name}
+            field_type = field['type']
+
+            try:
+                out += self.spec['macro'][f'html_from_input_tbody_{field_type}'](vars) + '\n'
+            except KeyError:
+                raise MTemplateError(f'field {name} does not have type "{field_type}"')
+        return out
 
     def macro_html_unittest_form(self, fields:dict, indent='\t'):
         out = ''
