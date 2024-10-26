@@ -57,16 +57,25 @@ class MTemplateProject:
             
             if '.egg-info' in root:
                 continue
+
+            if 'playwright-report' in root:
+                continue
             
+            if 'test-results' in root:
+                continue
+
             for name in files:
                 if name == '.DS_Store':
                     continue
                 
                 rel_path = os.path.relpath(os.path.join(root, name), self.template_dir)
-                rel_path = rel_path.replace('sample-item', '{module_name_kebab_case}')
-                rel_path = rel_path.replace('sample_item', '{model_name_snake_case}')
-                rel_path = rel_path.replace('sample', '{module_name_snake_case}')
+                rel_path = rel_path.replace('sample-item', '{{ model.name.kebab_case }}')
+                rel_path = rel_path.replace('sample_item', '{{ model.name.snake_case }}')
+                rel_path = rel_path.replace('sampleItem', '{{ model.name.camel_case }}')
+                rel_path = rel_path.replace('SampleItem', '{{ model.name.pascal_case }}')
+                rel_path = rel_path.replace('sample', '{{ module.name.snake_case }}')
                 template = {'src': os.path.join(root, name), 'rel': rel_path}
+
 
                 if root in self.model_prefixes:
                     paths['model'].append(template)
@@ -156,10 +165,10 @@ class MTemplateProject:
             
             for template in self.template_paths['module']:
                 module_output = (output_dir / template['rel']).as_posix()
-                module_output = module_output.format(
-                    module_name_snake_case=module['name']['snake_case'], 
-                    module_name_kebap_case=module['name']['kebab_case'],
-                )
+                module_output = module_output.replace('{{ module.name.snake_case }}', module['name']['snake_case'])
+                module_output = module_output.replace('{{ module.name.kebab_case }}', module['name']['kebab_case'])
+                module_output = module_output.replace('{{ module.name.pascal_case }}', module['name']['pascal_case'])
+                module_output = module_output.replace('{{ module.name.camel_case }}', module['name']['camel_case'])
 
                 print('\t\t', module_output)
                 self.render_template({'module': module}, template['rel'], module_output)
@@ -169,13 +178,19 @@ class MTemplateProject:
                 print('\t\t\t', model['name']['lower_case'])
 
                 for template in self.template_paths['model']:
+                    #breakpoint()
                     model_output = (output_dir / template['rel']).as_posix()
-                    model_output = model_output.format(
-                        module_name_snake_case=module['name']['snake_case'], 
-                        module_name_kebab_case=module['name']['kebab_case'],
-                        model_name_snake_case=model['name']['snake_case'],
-                        model_name_kebab_case=model['name']['kebab_case']
-                    )
+                    model_output = model_output.replace('{{ model.name.snake_case }}', model['name']['snake_case'])
+                    model_output = model_output.replace('{{ model.name.kebab_case }}', model['name']['kebab_case'])
+                    model_output = model_output.replace('{{ model.name.pascal_case }}', model['name']['pascal_case'])
+                    model_output = model_output.replace('{{ model.name.camel_case }}', model['name']['camel_case'])
+
+                    model_output = model_output.replace('{{ module.name.snake_case }}', module['name']['snake_case'])
+                    model_output = model_output.replace('{{ module.name.kebab_case }}', module['name']['kebab_case'])
+                    model_output = model_output.replace('{{ module.name.pascal_case }}', module['name']['pascal_case'])
+                    model_output = model_output.replace('{{ module.name.camel_case }}', module['name']['camel_case'])
+
+                    #breakpoint()
 
                     print('\t\t\t\t', model_output)
                     self.render_template({'module': module, 'model': model}, template['rel'], model_output)
