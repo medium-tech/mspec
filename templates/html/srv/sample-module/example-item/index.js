@@ -1,10 +1,10 @@
-// vars :: {"SampleItem": "model.name.pascal_case", "sampleItem": "model.name.camel_case", "sample-item": "model.name.kebab_case"}
+// vars :: {"ExampleItem": "model.name.pascal_case", "exampleItem": "model.name.camel_case", "example-item": "model.name.kebab_case"}
 
 //
 // data functions
 //
 
-const defaultSampleItem = {
+const defaultExampleItem = {
     name: '',
     verified: false,
     color: 'red',
@@ -13,7 +13,7 @@ const defaultSampleItem = {
     tags: []
 }
 
-function randomSampleItem() {
+function randomExampleItem() {
     return {
         // macro :: html_random_str :: {"name": "field"}
         name: randomString(),
@@ -32,7 +32,7 @@ function randomSampleItem() {
     }
 }
 
-function verifySampleItem(data) {
+function verifyExampleItem(data) {
 
     let result = {
         valid: true,
@@ -87,7 +87,7 @@ function verifySampleItem(data) {
 
 }
 
-function sampleItemFromInputTBody(tbody) {   
+function exampleItemFromInputTBody(tbody) {   
     const data = {};
 
     // macro :: html_from_input_tbody_str :: {"name": "field"}
@@ -119,7 +119,7 @@ function sampleItemFromInputTBody(tbody) {
     return data;
 }
 
-function sampleItemToInputTBody(data, tbody) {
+function exampleItemToInputTBody(data, tbody) {
     tbody.innerHTML = '';
 
     // macro :: html_to_input_tbody_str :: {"name": "field"}
@@ -306,7 +306,7 @@ function sampleItemToInputTBody(data, tbody) {
 
 }
 
-function sampleItemToDisplayTBody(data, tbody) {
+function exampleItemToDisplayTBody(data, tbody) {
     tbody.innerHTML = '';
 
     // id - string
@@ -406,11 +406,11 @@ function sampleItemToDisplayTBody(data, tbody) {
     return tbody;
 }
 
-function sampleItemToTableRow(data) {
+function exampleItemToTableRow(data) {
 
     const tr = document.createElement('tr');
     tr.style.cursor = 'pointer';
-    tr.onclick = () => window.location.href = `/sample/sample-item/${data.id}`
+    tr.onclick = () => window.location.href = `/sample/example-item/${data.id}`
 
     // id - string
 
@@ -454,12 +454,12 @@ function sampleItemToTableRow(data) {
 
 }
 
-function sampleItemListToDisplayTBody(sampleItemList, tbody) {
+function exampleItemListToDisplayTBody(exampleItemList, tbody) {
 
     tbody.innerHTML = '';
 
-    for (const sampleItem of sampleItemList) {
-        tbody.appendChild(sampleItemToTableRow(sampleItem));
+    for (const exampleItem of exampleItemList) {
+        tbody.appendChild(exampleItemToTableRow(exampleItem));
     }
 
     return tbody;
@@ -470,9 +470,9 @@ function sampleItemListToDisplayTBody(sampleItemList, tbody) {
 // client functions
 //
 
-function clientCreateSampleItem(data) {
+function clientCreateExampleItem(data) {
     
-    return fetch('/api/sample/sample-item', {
+    return fetch('/api/sample/example-item', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -482,16 +482,16 @@ function clientCreateSampleItem(data) {
     .then(response => response.json())
 }
 
-function clientReadSampleItem(id) {
+function clientReadExampleItem(id) {
 
-    return fetch(`/api/sample/sample-item/${id}`, {
+    return fetch(`/api/sample/example-item/${id}`, {
         method: 'GET',
     })
 }
 
-function clientUpdateSampleItem(id, data) {
+function clientUpdateExampleItem(id, data) {
 
-    return fetch(`/api/sample/sample-item/${id}`, {
+    return fetch(`/api/sample/example-item/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -501,17 +501,17 @@ function clientUpdateSampleItem(id, data) {
 
 }
 
-function clientDeleteSampleItem(id) {
+function clientDeleteExampleItem(id) {
 
-    return fetch(`/api/sample/sample-item/${id}`, {
+    return fetch(`/api/sample/example-item/${id}`, {
         method: 'DELETE',
     })
 
 }
 
-function clientListSampleItems(offset, size) {
+function clientListExampleItems(offset, size) {
 
-    return fetch(`/api/sample/sample-item?offset=${offset}&size=${size}`, {
+    return fetch(`/api/sample/example-item?offset=${offset}&size=${size}`, {
         method: 'GET',
     })
     .then(response => response.json())

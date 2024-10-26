@@ -229,19 +229,26 @@ class MTemplateMacro:
 
 class MTemplateExtractor:
 
-    def __init__(self, path:str|Path, prefix='#', postfix='') -> None:
+    def __init__(self, path:str|Path, prefix='#', postfix='', single_quotes=False) -> None:
         self.path = Path(path)
         self.prefix = prefix
         self.postfix = postfix
+        self.single_quotes = single_quotes
         self.template = ''
         self.template_lines = []
         self.template_vars = {}
         self.macros = {}
 
+    def _load_json(self, data:str):
+        if self.single_quotes:
+            return json.loads(data.replace("'", '"'))
+        else:
+            return json.loads(data)
+
     def _parse_vars_line(self, line:str, line_no:int):
         try:
             vars_str = line.split('::')[1].strip()
-            vars_decoded = json.loads(vars_str)
+            vars_decoded = self._load_json(vars_str)
             if not isinstance(vars_decoded, dict):
                 raise MTemplateError(f'vars must be a json object not "{type(vars_decoded).__name__}" on line {line_no}')
             
@@ -264,7 +271,7 @@ class MTemplateExtractor:
         # parse block vars #
 
         try:
-            block_vars = json.loads(definition_split[2].strip())
+            block_vars = self._load_json(definition_split[2].strip())
 
         except json.JSONDecodeError:
             try:
@@ -295,7 +302,7 @@ class MTemplateExtractor:
             raise MTemplateError(f'macro definition missing name on line {start_line_no}')
         
         try:
-            macro_vars = json.loads(macro_split[2].strip())
+            macro_vars = self._load_json(macro_split[2].strip())
         except json.JSONDecodeError as e:
             raise MTemplateError(f'error parsing macro vars on line {start_line_no} | {e}')
         except IndexError:
@@ -456,16 +463,24 @@ class MTemplateExtractor:
         if path.suffix in ['.js', '.ts']:
             prefix = '//'
             postfix = ''
+            single_quotes = False
         elif path.suffix in ['.html', '.htm']:
             prefix = '<!--'
             postfix = '-->'
+            single_quotes = False
         elif path.suffix == '.css':
             prefix = '/*'
             postfix = '*/'
+            single_quotes = False
+        elif path.suffix == '.json':
+            prefix = '"_": "'
+            postfix = '",'
+            single_quotes = True
         else:
             prefix = '#'
             postfix = ''
+            single_quotes = False
 
-        instance = cls(path, prefix=prefix, postfix=postfix)
+        instance = cls(path, prefix=prefix, postfix=postfix, single_quotes=single_quotes)
         instance.parse()
         return instance

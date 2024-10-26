@@ -1,48 +1,48 @@
 <!DOCTYPE html>
-<!-- vars :: {"mspec": "project.name.snake_case", "sample": "module"} -->
-<!-- vars :: {"sample_item": "model.name.snake_case", "sample-item": "model.name.kebab_case"} -->
-<!-- vars :: {"sampleItem": "model.name.camel_case", "SampleItem": "model.name.pascal_case"} -->
+<!-- vars :: {"mspec": "project.name.snake_case", "sample-module": "module.name.kebab_case", "sample_module": "module.name.snake_case"} -->
+<!-- vars :: {"example_item": "model.name.snake_case", "example-item": "model.name.kebab_case", "example item": "model.name.lower_case"} -->
+<!-- vars :: {"exampleItem": "model.name.camel_case", "ExampleItem": "model.name.pascal_case"} -->
 <html>
 
     <head>
-        <title>mspec.sample.sample_item.id</title>
+        <title>mspec.sample_module.example_item.id</title>
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta http-equiv="Pragma" content="no-cache" />
         <meta http-equiv="Expires" content="0" />
         <link rel="stylesheet" type="text/css" href="/style.css">
-        <script src="/sample/sample-item/index.js"></script>
+        <script src="/sample-module/example-item/index.js"></script>
         <script type="text/javascript">
 
             //
             // views
             //
 
-            function showSampleItemReadView() {
-                window.document.getElementById('sample-item-update').hidden = true;
-                window.document.getElementById('sample-item-delete').hidden = true;
-                window.document.getElementById('sample-item-read').hidden = false;
+            function showExampleItemReadView() {
+                window.document.getElementById('example-item-update').hidden = true;
+                window.document.getElementById('example-item-delete').hidden = true;
+                window.document.getElementById('example-item-read').hidden = false;
             }
 
-            function showSampleItemUpdateView() {
-                window.document.getElementById('sample-item-read').hidden = true;
-                window.document.getElementById('sample-item-delete').hidden = true;
-                window.document.getElementById('sample-item-update').hidden = false;
+            function showExampleItemUpdateView() {
+                window.document.getElementById('example-item-read').hidden = true;
+                window.document.getElementById('example-item-delete').hidden = true;
+                window.document.getElementById('example-item-update').hidden = false;
             }
 
-            function showSampleItemDeleteView() {
-                window.document.getElementById('sample-item-read').hidden = true;
-                window.document.getElementById('sample-item-update').hidden = true;
-                window.document.getElementById('sample-item-delete').hidden = false;
+            function showExampleItemDeleteView() {
+                window.document.getElementById('example-item-read').hidden = true;
+                window.document.getElementById('example-item-update').hidden = true;
+                window.document.getElementById('example-item-delete').hidden = false;
             }
 
             //
             // server ops
             //
 
-            function fetchSampleItem() {
-                const id = sampleItemId();
-                console.log(`fetching sampleItem ${id}`);
-                clientReadSampleItem(id)
+            function fetchExampleItem() {
+                const id = exampleItemId();
+                console.log(`fetching exampleItem ${id}`);
+                clientReadExampleItem(id)
                     .then(response => {
                         console.log(response)
                         if (response.ok) {
@@ -50,53 +50,53 @@
                         } else {
                             // if not found
                             if (response.status === 404) {
-                                document.getElementById('sample-item-not-found').hidden = false;
+                                document.getElementById('example-item-not-found').hidden = false;
                             }
-                            throw new Error(`sampleItem ${id} read failed`);
+                            throw new Error(`exampleItem ${id} read failed`);
                         }
                     })
                     .then(text => {
                         console.log(text);
                         const data = JSON.parse(text);
-                        document.getElementById('sample-item-not-found').hidden = true;
+                        document.getElementById('example-item-not-found').hidden = true;
 
-                        const readTBody = document.querySelector('#sample-item-read-tbody');
-                        sampleItemToDisplayTBody(data, readTBody);
+                        const readTBody = document.querySelector('#example-item-read-tbody');
+                        exampleItemToDisplayTBody(data, readTBody);
 
-                        const updateTBody = document.querySelector('#sample-item-update-tbody');
-                        sampleItemToInputTBody(data, updateTBody);
+                        const updateTBody = document.querySelector('#example-item-update-tbody');
+                        exampleItemToInputTBody(data, updateTBody);
                     }).
                     catch(error => {console.error(error)});
             }
 
-            function deleteSampleItem() {
-                const id = sampleItemId();
-                console.log(`deleting sampleItem ${id}`);
-                clientDeleteSampleItem(id)
+            function deleteExampleItem() {
+                const id = exampleItemId();
+                console.log(`deleting exampleItem ${id}`);
+                clientDeleteExampleItem(id)
                     .then(response => {
-                        console.log(`sampleItem ${id} deleted`)
+                        console.log(`exampleItem ${id} deleted`)
                         window.location.reload();
                     })
                     .catch(error => {console.error(error)});
             }
 
-            function updateSampleItem() {
+            function updateExampleItem() {
 
-                const id = sampleItemId();
+                const id = exampleItemId();
                 
-                const updateTBody = document.querySelector('#sample-item-update-tbody');
-                const data = sampleItemFromInputTBody(updateTBody);
+                const updateTBody = document.querySelector('#example-item-update-tbody');
+                const data = exampleItemFromInputTBody(updateTBody);
 
-                const verify = verifySampleItem(data);
+                const verify = verifyExampleItem(data);
                 if (verify.valid !== true) {
                     console.error(verify);
-                    throw new Error(`sampleItem ${id} invalid`);
+                    throw new Error(`exampleItem ${id} invalid`);
                 }
 
-                console.log(`updating sampleItem ${id}`);
+                console.log(`updating exampleItem ${id}`);
 
-                clientUpdateSampleItem(id, data)
-                    .then(response => {console.log(`sampleItem ${id} updated`)})
+                clientUpdateExampleItem(id, data)
+                    .then(response => {console.log(`exampleItem ${id} updated`)})
                     .catch(error => {console.error(error)});
 
             }
@@ -105,42 +105,42 @@
             // on load
             //
 
-            function sampleItemId() {
+            function exampleItemId() {
                 return window.location.pathname.split('/').pop();
             }
 
             window.onload = () => {
-                const idBreadcrumb = document.getElementById('sample-item-id-breadcrumb')
+                const idBreadcrumb = document.getElementById('example-item-id-breadcrumb')
                 const idLink = document.createElement('a');
-                idLink.href = '/sample/sample-item/' + sampleItemId();
-                idLink.innerText = sampleItemId();
+                idLink.href = '/sample-module/example-item/' + exampleItemId();
+                idLink.innerText = exampleItemId();
                 idBreadcrumb.appendChild(idLink);
 
-                fetchSampleItem();
+                fetchExampleItem();
             }
 
         </script>
     </head>
 
     <body>
-        <h1>sample item</h1>
+        <h1>example item</h1>
         <p>
-            <a href="/">mspec</a> . <a href="/sample">sample</a> . <a href="/sample/sample-item">sample_item</a> . <span id="sample-item-id-breadcrumb"></span>
+            <a href="/">mspec</a> . <a href="/sample-module">sample_module</a> . <a href="/sample-module/example-item">example-item</a> . <span id="example-item-id-breadcrumb"></span>
         </p>
 
         <!-- 
         read view layout 
         -->
 
-        <div id="sample-item-read">
+        <div id="example-item-read">
             
-            <button onclick="fetchSampleItem()">refresh</button>
+            <button onclick="fetchExampleItem()">refresh</button>
             &emsp;|&emsp;
-            <button onclick="showSampleItemUpdateView()">edit</button>
+            <button onclick="showExampleItemUpdateView()">edit</button>
             &emsp;|&emsp;
-            <button onclick="showSampleItemDeleteView()">delete</button>
+            <button onclick="showExampleItemDeleteView()">delete</button>
             &emsp;
-            <span id="sample-item-not-found" hidden>item not found</span>
+            <span id="example-item-not-found" hidden>item not found</span>
 
             <table>
                 <thead>
@@ -149,7 +149,7 @@
                         <th>value</th>
                     </tr>
                 </thead>
-                <tbody id="sample-item-read-tbody">
+                <tbody id="example-item-read-tbody">
                 </tbody>
             </table>
 
@@ -159,11 +159,11 @@
         update view layout 
         -->
 
-        <div id="sample-item-update" hidden>
+        <div id="example-item-update" hidden>
 
-            <button onclick="updateSampleItem()">save</button>
+            <button onclick="updateExampleItem()">save</button>
             &emsp;|&emsp;
-            <button onclick="showSampleItemReadView()">cancel</button>
+            <button onclick="showExampleItemReadView()">cancel</button>
 
             <table>
                 <thead>
@@ -173,7 +173,7 @@
                         <th>other</th>
                     </tr>
                 </thead>
-                <tbody id="sample-item-update-tbody">
+                <tbody id="example-item-update-tbody">
                 </tbody>
             </table>
 
@@ -183,12 +183,12 @@
         delete view layout 
         -->
 
-        <div id="sample-item-delete" hidden>
+        <div id="example-item-delete" hidden>
 
             <p>confirm delete?</p>
-            <button onclick="deleteSampleItem()">yes, please delete</button>
+            <button onclick="deleteExampleItem()">yes, please delete</button>
             &emsp;|&emsp;
-            <button onclick="showSampleItemReadView()">no, cancel</button>
+            <button onclick="showExampleItemReadView()">no, cancel</button>
 
         </div>
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- vars :: {"mspec": "project.name.snake_case", "sample": "module.name.snake_case"} -->
+<!-- vars :: {"mspec": "project.name.snake_case", "sample_module": "module.name.snake_case"} -->
 <html>
 
     <head>
@@ -8,19 +8,19 @@
         <meta http-equiv="Pragma" content="no-cache" />
         <meta http-equiv="Expires" content="0" />
         <link rel="stylesheet" type="text/css" href="/style.css">
-        <script src="/sample/index.js"></script>
+        <script src="/sample_module/index.js"></script>
     </head>
 
     <body>
-        <h1>sample</h1>
+        <h1>sample_module</h1>
         <p>
-            <a href="/">mspec</a> . <a href="/sample">sample</a>
+            <a href="/">mspec</a> . <a href="/sample_module">sample_module</a>
         </p>
 
         <h2>sub sections</h2>
         <ul>
-            <!-- for :: {% for model in module.models.values() %} :: {"sample-item": "model.name.snake_case", "sample-item": "model.name.lower_case"} -->
-            <li><a href="/sample/sample-item">sample-item</a></li>
+            <!-- for :: {% for model in module.models.values() %} :: {"example-item": "model.name.snake_case", "example-item": "model.name.lower_case"} -->
+            <li><a href="/sample_module/example-item">example-item</a></li>
             <!-- end for :: -->
         </ul>
     </body>

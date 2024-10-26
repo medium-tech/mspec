@@ -1,4 +1,5 @@
 {
+    "_": " vars :: {'mspec': 'project.name.snake_case', 'http://localhost:9009': 'client.default_host'}",
     "name": "mspec-js",
     "version": "0.0.1",
     "type": "module",

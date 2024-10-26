@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<!-- vars :: {"mspec": "project.name.snake_case", "sample": "module"} -->
-<!-- vars :: {"sample_item": "model.name.snake_case", "sample-item": "model.name.kebab_case"} -->
-<!-- vars :: {"sampleItem": "model.name.camel_case", "SampleItem": "model.name.pascal_case"} -->
+<!-- vars :: {"mspec": "project.name.snake_case", "sample-module": "module.name.kebab_case", "sample_module": "module.name.snake_case"} -->
+<!-- vars :: {"example_item": "model.name.snake_case", "example-item": "model.name.kebab_case"} -->
+<!-- vars :: {"exampleItem": "model.name.camel_case", "ExampleItem": "model.name.pascal_case"} -->
 <html>
 
     <head>
-        <title>mspec.sample.sample_item</title>
+        <title>mspec.sample_module.example_item</title>
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta http-equiv="Pragma" content="no-cache" />
         <meta http-equiv="Expires" content="0" />
         <link rel="stylesheet" type="text/css" href="/style.css">
-        <script src="/sample/sample-item/index.js"></script>
+        <script src="/sample-module/example-item/index.js"></script>
 
         <script type="text/javascript">
 
@@ -18,17 +18,17 @@
             // views
             //
 
-            function showSampleItemListView(pushState) {
-                document.getElementById('sample-item-create').hidden = true;
-                document.getElementById('sample-item-list').hidden = false;
+            function showExampleItemListView(pushState) {
+                document.getElementById('example-item-create').hidden = true;
+                document.getElementById('example-item-list').hidden = false;
 
                 // push state
                 if(pushState === true) {
                     const url = new URL(window.location.href)
-                    url.pathname = '/sample/sample-item'
+                    url.pathname = '/sample-module/example-item'
 
-                    const offset = parseInt(document.getElementById('sample-item-list-offset').innerText)
-                    const size = parseInt(document.getElementById('sample-item-list-size').innerText)
+                    const offset = parseInt(document.getElementById('example-item-list-offset').innerText)
+                    const size = parseInt(document.getElementById('example-item-list-size').innerText)
                     url.searchParams.set('offset', offset)
                     url.searchParams.set('size', size)
 
@@ -36,14 +36,14 @@
                 }
             }
 
-            function showSampleItemCreateView(pushState) {
-                document.getElementById('sample-item-list').hidden = true;
-                document.getElementById('sample-item-create').hidden = false;
+            function showExampleItemCreateView(pushState) {
+                document.getElementById('example-item-list').hidden = true;
+                document.getElementById('example-item-create').hidden = false;
 
                 // push state
                 if(pushState === true) {
                     const url = new URL(window.location.href)
-                    url.pathname = '/sample/sample-item/create'
+                    url.pathname = '/sample-module/example-item/create'
                     url.searchParams.delete('offset')
                     url.searchParams.delete('size')
                     window.history.pushState({}, '', url)
@@ -51,34 +51,34 @@
                 }
             }
 
-            function showSampleItemNavigateToId() {
-                const id = document.getElementById('sample-item-get-id').value
+            function showExampleItemNavigateToId() {
+                const id = document.getElementById('example-item-get-id').value
                 if(id === '') {
                     console.error('id is empty')
                 }else{
-                    window.location.href = `/sample/sample-item/${id}`
+                    window.location.href = `/sample-module/example-item/${id}`
                 }
             }
 
-            function randomizeSampleItem() {
-                const createTBody = document.querySelector('#sample-item-create-tbody');
-                sampleItemToInputTBody(randomSampleItem(), createTBody)
+            function randomizeExampleItem() {
+                const createTBody = document.querySelector('#example-item-create-tbody');
+                exampleItemToInputTBody(randomExampleItem(), createTBody)
             }
 
-            function resetSampleItemInput() {
-                const createTBody = document.querySelector('#sample-item-create-tbody');
-                sampleItemToInputTBody(defaultSampleItem, createTBody)
+            function resetExampleItemInput() {
+                const createTBody = document.querySelector('#example-item-create-tbody');
+                exampleItemToInputTBody(defaultExampleItem, createTBody)
             }
 
-            function sampleItemNavigatorEnterKey(e) {
-                console.log('sampleItemNavigatorEnterKey', e)
+            function exampleItemNavigatorEnterKey(e) {
+                console.log('exampleItemNavigatorEnterKey', e)
                 if (e.key === 'Enter' || e.type === 'paste') {
-                    showSampleItemNavigateToId()
+                    showExampleItemNavigateToId()
                 }
             }
             
-            function createSampleItemStatus(status, className) {
-                const statusP = document.getElementById('create-sample-item-status')
+            function createExampleItemStatus(status, className) {
+                const statusP = document.getElementById('create-example-item-status')
                 statusP.hidden = false
                 statusP.innerText = status
                 statusP.className = className
@@ -90,22 +90,22 @@
 
             function loadItems() {
 
-                const prevPage = document.getElementById('sample-item-prev-page')
-                const nextPage = document.getElementById('sample-item-next-page')
+                const prevPage = document.getElementById('example-item-prev-page')
+                const nextPage = document.getElementById('example-item-next-page')
 
                 prevPage.disabled = true
                 nextPage.disabled = true
 
-                const offset = parseInt(document.getElementById('sample-item-list-offset').innerText)
-                const size = parseInt(document.getElementById('sample-item-list-size').innerText)
+                const offset = parseInt(document.getElementById('example-item-list-offset').innerText)
+                const size = parseInt(document.getElementById('example-item-list-size').innerText)
 
                 console.log(`loadItems(offset=${offset}, size=${size})`)
 
-                clientListSampleItems(offset, size)
+                clientListExampleItems(offset, size)
                     .then(items => {
                         console.log(items)
-                        document.getElementById('sample-item-list-count').innerText = items['items'].length
-                        sampleItemListToDisplayTBody(items['items'], document.querySelector('#sample-item-list-tbody'))
+                        document.getElementById('example-item-list-count').innerText = items['items'].length
+                        exampleItemListToDisplayTBody(items['items'], document.querySelector('#example-item-list-tbody'))
 
                         if (offset > 0) prevPage.disabled = false
                         if (items['items'].length === size) nextPage.disabled = false
@@ -117,8 +117,8 @@
 
             function changeListPage(direction) {
 
-                let offset = parseInt(document.getElementById('sample-item-list-offset').innerText)
-                let size = parseInt(document.getElementById('sample-item-list-size').innerText)
+                let offset = parseInt(document.getElementById('example-item-list-offset').innerText)
+                let size = parseInt(document.getElementById('example-item-list-size').innerText)
 
                 if (direction < 0) {
                     offset -= size
@@ -129,7 +129,7 @@
                     offset += size
                 }
 
-                document.getElementById('sample-item-list-offset').innerText = offset
+                document.getElementById('example-item-list-offset').innerText = offset
                 
                 // 
 
@@ -143,41 +143,41 @@
                 loadItems()
             }
 
-            function createSampleItem() {
+            function createExampleItem() {
 
-                const createTBody = document.querySelector('#sample-item-create-tbody');
-                const data = sampleItemFromInputTBody(createTBody);
+                const createTBody = document.querySelector('#example-item-create-tbody');
+                const data = exampleItemFromInputTBody(createTBody);
 
-                const verify = verifySampleItem(data);
+                const verify = verifyExampleItem(data);
                 if (verify.valid !== true) {
                     console.error(verify);
-                    throw new Error('sampleItem invalid');
+                    throw new Error('exampleItem invalid');
                 }
 
-                console.log('creating sampleItem', data);
+                console.log('creating exampleItem', data);
 
-                createSampleItemStatus('creating...', '')
+                createExampleItemStatus('creating...', '')
 
-                clientCreateSampleItem(data)
+                clientCreateExampleItem(data)
                     .then(response => {
                         const newItemId = response['id']
-                        console.log(`created sampleItem ${newItemId}`)
+                        console.log(`created exampleItem ${newItemId}`)
 
                         const newItemLi = document.createElement('li')
                         const newItemLink = document.createElement('a')
-                        newItemLink.id = 'created-sample-item'
-                        newItemLink.href = `/sample/sample-item/${newItemId}`
+                        newItemLink.id = 'created-example-item'
+                        newItemLink.href = `/sample-module/example-item/${newItemId}`
                         newItemLink.innerText = newItemId
                         
-                        const createdSampleItems = document.getElementById('created-sample-items')
+                        const createdExampleItems = document.getElementById('created-example-items')
                         newItemLi.appendChild(newItemLink)
-                        createdSampleItems.appendChild(newItemLi)
+                        createdExampleItems.appendChild(newItemLi)
 
-                        createSampleItemStatus(`success`, 'success')
+                        createExampleItemStatus(`success`, 'success')
                     })
                     .catch(error => {
                         console.error(error);
-                        createSampleItemStatus('error', 'error')
+                        createExampleItemStatus('error', 'error')
                     });
             }
 
@@ -187,12 +187,12 @@
 
             window.onload = function() {
                 // fill form with default values
-                resetSampleItemInput()
+                resetExampleItemInput()
 
                 const isCreatePage = window.location.pathname.endsWith('/create')
 
                 if(isCreatePage) {
-                    showSampleItemCreateView(false)
+                    showExampleItemCreateView(false)
                 }else{
                     const urlParams = new URLSearchParams(window.location.search);
                     const urlOffsetParam = urlParams.get('offset')
@@ -200,11 +200,11 @@
                     console.log(`url params :: offset: ${urlOffsetParam} size: ${urlSizeParam}`)
 
                     if (urlOffsetParam !== null) {
-                        const listOffset = document.getElementById('sample-item-list-offset')
+                        const listOffset = document.getElementById('example-item-list-offset')
                         console.log('list offset', listOffset)
                         listOffset.innerText = urlOffsetParam
                     }
-                    if (urlSizeParam !== null) document.getElementById('sample-item-list-size').innerText = urlSizeParam
+                    if (urlSizeParam !== null) document.getElementById('example-item-list-size').innerText = urlSizeParam
 
                     loadItems();
                 }
@@ -214,33 +214,33 @@
     </head>
 
     <body>
-        <h1>sample item</h1>
+        <h1>example item</h1>
         <p>
-            <a href="/">mspec</a> . <a href="/sample">sample</a> . <a href="/sample/sample-item">sample_item</a>
+            <a href="/">mspec</a> . <a href="/sample-module">sample_module</a> . <a href="/sample-module/example-item">example_item</a>
         </p>
 
         <!-- 
         list view layout 
         -->
 
-        <div id="sample-item-list">
+        <div id="example-item-list">
             
-            <button id="sample-item-prev-page" onclick="changeListPage(-1)" disabled>&lt;&lt;&lt;</button>
+            <button id="example-item-prev-page" onclick="changeListPage(-1)" disabled>&lt;&lt;&lt;</button>
             <button onclick="loadItems()">refresh</button>
-            <button id="sample-item-next-page" onclick="changeListPage(1)" disabled>&gt;&gt;&gt;</button>
+            <button id="example-item-next-page" onclick="changeListPage(1)" disabled>&gt;&gt;&gt;</button>
             &emsp;|&emsp;
-            <button onclick="showSampleItemCreateView(true)">create</button>
+            <button onclick="showExampleItemCreateView(true)">create</button>
             &emsp;|&emsp;
-            <button onclick="showSampleItemNavigateToId()">get</button>
-            <input id="sample-item-get-id" type="text" placeholder="sample item id" size="32" onkeypress="sampleItemNavigatorEnterKey(event)"/>
+            <button onclick="showExampleItemNavigateToId()">get</button>
+            <input id="example-item-get-id" type="text" placeholder="example item id" size="32" onkeypress="exampleItemNavigatorEnterKey(event)"/>
 
             <br>
             
-            offset: <span id="sample-item-list-offset">0</span>
+            offset: <span id="example-item-list-offset">0</span>
             &emsp;
-            size: <span id="sample-item-list-size">25</span>
+            size: <span id="example-item-list-size">25</span>
             &emsp;
-            count: <span id="sample-item-list-count">-</span>
+            count: <span id="example-item-list-count">-</span>
             
             <br>
 
@@ -257,7 +257,7 @@
                     </tr>
                 </thead>
 
-                <tbody id="sample-item-list-tbody">
+                <tbody id="example-item-list-tbody">
                 </tbody>
             </table>
 
@@ -267,13 +267,13 @@
         create view layout 
         -->
 
-        <div id="sample-item-create" hidden>
+        <div id="example-item-create" hidden>
 
-            <button onclick="createSampleItem()">submit</button>
+            <button onclick="createExampleItem()">submit</button>
             &emsp;|&emsp;
-            <button onclick="resetSampleItemInput()">reset</button>
+            <button onclick="resetExampleItemInput()">reset</button>
             &emsp;|&emsp;
-            <button onclick="randomizeSampleItem()">random</button>
+            <button onclick="randomizeExampleItem()">random</button>
 
             <table>
                 <thead>
@@ -283,13 +283,13 @@
                         <th>other</th>
                     </tr>
                 </thead>
-                <tbody id="sample-item-create-tbody">
+                <tbody id="example-item-create-tbody">
                 </tbody>
             </table>
 
-            <p id="create-sample-item-status" hidden></p>
+            <p id="create-example-item-status" hidden></p>
 
-            <ul id="created-sample-items">
+            <ul id="created-example-items">
             </ul>
 
         </div>

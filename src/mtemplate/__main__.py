@@ -5,6 +5,7 @@ from mtemplate.html import MTemplateHTMLProject
 from mtemplate.py import MTemplatePyProject
 import argparse
 from pathlib import Path
+import json
 
 # parser #
 
@@ -21,11 +22,12 @@ args = parser.parse_args()
 
 if args.command == 'extract':
     template = MTemplateExtractor.template_from_file(args.source)
+        
     if args.output is None:
-        print(template)
+        print(template.create_template())
     else:
         with open(args.output, 'w+') as f:
-            f.write(template)
+            f.write(template.create_template())
 
 elif args.command == 'render-py':
     MTemplatePyProject.render(load_spec(args.spec), args.output, args.debug)
