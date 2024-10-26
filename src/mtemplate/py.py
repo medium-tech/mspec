@@ -11,12 +11,12 @@ class MTemplatePyProject(MTemplateProject):
     dist_dir = Path(__file__).parent.parent.parent / 'dist/py'
 
     module_prefixes = [
-        str(template_dir / 'src/sample')
+        str(template_dir / 'src/sample_module')
     ]
 
     model_prefixes = [
-        str(template_dir / 'src/sample/sample_item'),
-        str(template_dir / 'tests/sample')
+        str(template_dir / 'src/sample_module/example_item'),
+        str(template_dir / 'tests/sample_module')
     ]
 
     def init_template_vars(self):

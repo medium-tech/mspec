@@ -11,12 +11,12 @@ class MTemplateHTMLProject(MTemplateProject):
     dist_dir = Path(__file__).parent.parent.parent / 'dist/html'
 
     module_prefixes = [
-        str(template_dir / 'srv/sample')
+        str(template_dir / 'srv/sample-module')
     ]
 
     model_prefixes = [
-        str(template_dir / 'tests/sample'),
-        str(template_dir / 'srv/sample/sample-item')
+        str(template_dir / 'tests/sample-module'),
+        str(template_dir / 'srv/sample-module/example-item')
     ]
 
     def init_template_vars(self):

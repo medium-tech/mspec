@@ -69,11 +69,16 @@ class MTemplateProject:
                     continue
                 
                 rel_path = os.path.relpath(os.path.join(root, name), self.template_dir)
-                rel_path = rel_path.replace('sample-item', '{{ model.name.kebab_case }}')
-                rel_path = rel_path.replace('sample_item', '{{ model.name.snake_case }}')
-                rel_path = rel_path.replace('sampleItem', '{{ model.name.camel_case }}')
-                rel_path = rel_path.replace('SampleItem', '{{ model.name.pascal_case }}')
-                rel_path = rel_path.replace('sample', '{{ module.name.snake_case }}')
+                rel_path = rel_path.replace('example-item', '{{ model.name.kebab_case }}')
+                rel_path = rel_path.replace('example_item', '{{ model.name.snake_case }}')
+                rel_path = rel_path.replace('exampleItem', '{{ model.name.camel_case }}')
+                rel_path = rel_path.replace('ExampleItem', '{{ model.name.pascal_case }}')
+
+                rel_path = rel_path.replace('sample-module', '{{ module.name.kebab_case }}')
+                rel_path = rel_path.replace('sample_module', '{{ module.name.snake_case }}')
+                rel_path = rel_path.replace('sampleModule', '{{ module.name.camel_case }}')
+                rel_path = rel_path.replace('SampleModule', '{{ module.name.pascal_case }}')
+                
                 template = {'src': os.path.join(root, name), 'rel': rel_path}
 
 
