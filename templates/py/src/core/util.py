@@ -32,8 +32,8 @@ def random_bool() -> bool:
 def random_int(min:int=-100, max:int=100) -> int:
     return random.randint(min, max)
 
-def random_float(min:float=-100.0, max:float=100.0, round=2) -> float:
-    return round(random.uniform(min, max), round)
+def random_float(min:float=-100.0, max:float=100.0, round_to=2) -> float:
+    return round(random.uniform(min, max), round_to)
 
 def random_str() -> str:
     return ' '.join(random.choices(random_words, k=random.randint(1, 5)))

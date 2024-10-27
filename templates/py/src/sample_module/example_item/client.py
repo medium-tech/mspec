@@ -32,7 +32,7 @@ def client_create_example_item(ctx:dict, data:dict) -> str:
     request_body = example_item_to_json(example_item_verify(data)).encode()
 
     try:
-        request = Request(f'{ctx["host"]}/api/sample_module/example-item', headers=ctx['headers'], method='POST', data=request_body)
+        request = Request(f'{ctx["host"]}/api/sample-module/example-item', headers=ctx['headers'], method='POST', data=request_body)
 
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
@@ -58,7 +58,7 @@ def client_read_example_item(ctx:dict, id:str) -> dict|None:
     """
 
     try:
-        request = Request(ctx['host'] + '/api/sample_module/example-item/' + id, headers=ctx['headers'], method='GET')
+        request = Request(ctx['host'] + '/api/sample-module/example-item/' + id, headers=ctx['headers'], method='GET')
 
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
@@ -84,7 +84,7 @@ def client_update_example_item(ctx:dict, id:str, data:dict) -> bool:
     request_body = example_item_to_json(example_item_verify(data)).encode()
 
     try:
-        request = Request(f'{ctx["host"]}/api/sample_module/example-item/{id}', headers=ctx['headers'], method='PUT', data=request_body)
+        request = Request(f'{ctx["host"]}/api/sample-module/example-item/{id}', headers=ctx['headers'], method='PUT', data=request_body)
 
         with urlopen(request) as _:
             """we dont need the response"""
@@ -106,7 +106,7 @@ def client_delete_example_item(ctx:dict, id:str):
     """
 
     try:
-        request = Request(f'{ctx["host"]}/api/sample_module/example-item/{id}', headers=ctx['headers'], method='DELETE')
+        request = Request(f'{ctx["host"]}/api/sample-module/example-item/{id}', headers=ctx['headers'], method='DELETE')
 
         with urlopen(request) as _:
             """we dont need the response"""
@@ -129,7 +129,7 @@ def client_list_example_item(ctx:dict, offset:int=0, limit:int=25):
     """
 
     try:
-        request = Request(f'{ctx["host"]}/api/sample_module/example-item?offset={offset}&limit={limit}', headers=ctx['headers'], method='GET')
+        request = Request(f'{ctx["host"]}/api/sample-module/example-item?offset={offset}&limit={limit}', headers=ctx['headers'], method='GET')
         
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')

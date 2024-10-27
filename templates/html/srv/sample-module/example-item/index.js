@@ -410,7 +410,7 @@ function exampleItemToTableRow(data) {
 
     const tr = document.createElement('tr');
     tr.style.cursor = 'pointer';
-    tr.onclick = () => window.location.href = `/sample/example-item/${data.id}`
+    tr.onclick = () => window.location.href = `/sample-module/example-item/${data.id}`
 
     // id - string
 
@@ -472,7 +472,7 @@ function exampleItemListToDisplayTBody(exampleItemList, tbody) {
 
 function clientCreateExampleItem(data) {
     
-    return fetch('/api/sample/example-item', {
+    return fetch('/api/sample-module/example-item', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -484,14 +484,14 @@ function clientCreateExampleItem(data) {
 
 function clientReadExampleItem(id) {
 
-    return fetch(`/api/sample/example-item/${id}`, {
+    return fetch(`/api/sample-module/example-item/${id}`, {
         method: 'GET',
     })
 }
 
 function clientUpdateExampleItem(id, data) {
 
-    return fetch(`/api/sample/example-item/${id}`, {
+    return fetch(`/api/sample-module/example-item/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -503,7 +503,7 @@ function clientUpdateExampleItem(id, data) {
 
 function clientDeleteExampleItem(id) {
 
-    return fetch(`/api/sample/example-item/${id}`, {
+    return fetch(`/api/sample-module/example-item/${id}`, {
         method: 'DELETE',
     })
 
@@ -511,7 +511,7 @@ function clientDeleteExampleItem(id) {
 
 function clientListExampleItems(offset, size) {
 
-    return fetch(`/api/sample/example-item?offset=${offset}&size=${size}`, {
+    return fetch(`/api/sample-module/example-item?offset=${offset}&size=${size}`, {
         method: 'GET',
     })
     .then(response => response.json())

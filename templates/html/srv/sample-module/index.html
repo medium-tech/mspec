@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- vars :: {"mspec": "project.name.snake_case", "sample_module": "module.name.snake_case"} -->
+<!-- vars :: {"mspec": "project.name.snake_case", "sample_module": "module.name.snake_case", "sample module": "module.name.lower_case"} -->
 <html>
 
     <head>
@@ -12,15 +12,15 @@
     </head>
 
     <body>
-        <h1>sample_module</h1>
+        <h1>sample module</h1>
         <p>
             <a href="/">mspec</a> . <a href="/sample_module">sample_module</a>
         </p>
 
         <h2>sub sections</h2>
         <ul>
-            <!-- for :: {% for model in module.models.values() %} :: {"example-item": "model.name.snake_case", "example-item": "model.name.lower_case"} -->
-            <li><a href="/sample_module/example-item">example-item</a></li>
+            <!-- for :: {% for model in module.models.values() %} :: {"sample-module": "module.name.snake_case", "example_item": "model.name.snake_case"} -->
+            <li><a href="/sample-module/example-item">example_item</a></li>
             <!-- end for :: -->
         </ul>
     </body>

@@ -84,6 +84,12 @@
                 statusP.className = className
             }
 
+            function listExampleItemStatus(status, className) {
+                const statusElement = document.getElementById('example-item-list-status')
+                statusElement.innerText = status
+                statusElement.className = className
+            }
+
             //
             // server ops
             //
@@ -99,6 +105,8 @@
                 const offset = parseInt(document.getElementById('example-item-list-offset').innerText)
                 const size = parseInt(document.getElementById('example-item-list-size').innerText)
 
+                listExampleItemStatus('loading...', '')
+
                 console.log(`loadItems(offset=${offset}, size=${size})`)
 
                 clientListExampleItems(offset, size)
@@ -109,9 +117,12 @@
 
                         if (offset > 0) prevPage.disabled = false
                         if (items['items'].length === size) nextPage.disabled = false
+
+                        listExampleItemStatus('success', 'success')
                     })
                     .catch(error => {
                         console.error(error)
+                        listExampleItemStatus('error', 'error')
                     });
             }
 
@@ -224,6 +235,10 @@
         -->
 
         <div id="example-item-list">
+
+            status: <span id="example-item-list-status">intial</span>
+
+            <br>
             
             <button id="example-item-prev-page" onclick="changeListPage(-1)" disabled>&lt;&lt;&lt;</button>
             <button onclick="loadItems()">refresh</button>
@@ -233,9 +248,10 @@
             &emsp;|&emsp;
             <button onclick="showExampleItemNavigateToId()">get</button>
             <input id="example-item-get-id" type="text" placeholder="example item id" size="32" onkeypress="exampleItemNavigatorEnterKey(event)"/>
+            
 
             <br>
-            
+
             offset: <span id="example-item-list-offset">0</span>
             &emsp;
             size: <span id="example-item-list-size">25</span>
@@ -259,6 +275,7 @@
 
                 <tbody id="example-item-list-tbody">
                 </tbody>
+
             </table>
 
         </div>
