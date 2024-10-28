@@ -4,7 +4,9 @@ import json
 
 from urllib.request import Request, urlopen
 
-# vars :: {"sample_module": "module.name.snake_case", "http://localhost:9009": "client.default_host", "example_item": "model.name.snake_case", "example item": "model.name.lower_case", "example-item": "model.name.kebab_case"}
+# vars :: {"sample_module": "module.name.snake_case", "sample-module": "module.name.kebab_case"}
+# vars :: {"http://localhost:9009": "client.default_host", "example_item": "model.name.snake_case", "example item": "model.name.lower_case", "example-item": "model.name.kebab_case"}
+
 
 """
 WARNING: urlib.request module is unsafe to use with os.fork on OSX

@@ -109,8 +109,8 @@ def example_item_verify(data:dict) -> dict:
     # end macro ::
     
     for key in data.keys():
-        # vars :: {"['id', 'name', 'verified', 'color', 'age', 'score', 'tags']": "macro.py_field_list(model.fields)"}
-        if key not in ['id', 'name', 'verified', 'color', 'age', 'score', 'tags']:
+        # vars :: {"['name', 'verified', 'color', 'age', 'score', 'tags']": "macro.py_field_list(model.fields)"}
+        if key not in ['name', 'verified', 'color', 'age', 'score', 'tags']:
             raise KeyError(f'unknown key: {key}')
 
     return data

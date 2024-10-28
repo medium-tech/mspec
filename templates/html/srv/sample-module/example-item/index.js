@@ -1,3 +1,4 @@
+// vars :: {"sample-module": "module.name.kebab_case"}
 // vars :: {"ExampleItem": "model.name.pascal_case", "exampleItem": "model.name.camel_case", "example-item": "model.name.kebab_case"}
 
 //

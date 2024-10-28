@@ -1,6 +1,7 @@
 import os
 import json
 import shutil
+import stat
 
 from copy import copy
 from pathlib import Path
@@ -135,6 +136,10 @@ class MTemplateProject:
             os.makedirs(path.parent)
             with open(path, 'w+') as f:
                 f.write(data)
+
+        if path.suffix == '.sh':
+            out_stat = path.stat()
+            os.chmod(path.as_posix(), out_stat.st_mode | stat.S_IEXEC)
 
     def render_template(self, vars:dict, rel_path:str, out_path:Path|str):
         out_path = Path(out_path)

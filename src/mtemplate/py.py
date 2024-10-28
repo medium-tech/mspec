@@ -30,11 +30,22 @@ class MTemplatePyProject(MTemplateProject):
     
     def macro_py_example_fields(self, fields:dict, indent='\t') -> str:
         lines = []
+
         for name, field in fields.items():
             try:
-                lines.append(f"{indent * 2}'{name}': '{field["examples"][0]}'")
+                example = field["examples"][0]
             except (KeyError, IndexError):
-                raise MTemplateError(f'field {name} does not have an example')  
+                raise MTemplateError(f'field {name} does not have an example')
+
+            if field['type'] in ['bool', 'int', 'float']:
+                value = str(example)
+            elif field['type'] == 'str':
+                value = f"'{example}'"
+            elif field['type'] == 'list':
+                value = '[' + ', '.join([f"'{item}'" for item in example]) + ']'
+
+            lines.append(f"{indent * 2}'{name}': {value}")
+
         return ',\n'.join(lines)
 
     def macro_py_random_fields(self, fields:dict, indent='\t') -> str:
@@ -65,6 +76,7 @@ class MTemplatePyProject(MTemplateProject):
         return out
 
     def macro_py_field_list(self, fields:dict) -> str:
-        keys = [f"'{name}'" for name in fields.keys()]
+        all_keys = ['id'] + list(fields.keys())
+        keys = [f"'{name}'" for name in all_keys]
         return '[' + ', '.join(keys) + ']'
 
