@@ -14,10 +14,10 @@ WARNING: urlib.request module is unsafe to use with os.fork on OSX
 """
 
 __all__ = [
-    'client_create_example_item', 
-    'client_read_example_item', 
-    'client_update_example_item', 
-    'client_delete_example_item', 
+    'client_create_example_item',
+    'client_read_example_item',
+    'client_update_example_item',
+    'client_delete_example_item',
     'client_list_example_item'
 ]
 
