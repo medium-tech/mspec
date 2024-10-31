@@ -16,7 +16,9 @@ route_list.extend(sample_module_routes)
 # end for ::
 
 
-server_ctx = {}
+server_ctx = {
+    'log': uwsgi.log
+}
 
 #
 # entry point
