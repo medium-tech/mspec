@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 // vars :: {"mspec":"project.name.snake_case", "http://localhost:9009": "client.default_host"}
-// vars :: {"sample-module": "module.name.kebab_case", "sample module": "module.name.lower_case"}
+// vars :: {"sample-module": "module.name.kebab_case", "sample module": "module.name.lower_case", "sample_module": "module.name.snake_case"}
 // vars :: {"example item": "model.name.lower_case", "example-item": "model.name.kebab_case"}
 
 test('test - sample module - example item - pagination', async ({ page }) => {

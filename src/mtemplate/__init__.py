@@ -160,7 +160,8 @@ class MTemplateProject:
         if output_dir is None:
             output_dir = self.dist_dir
 
-        shutil.rmtree(output_dir, ignore_errors=True)
+        if not self.debug:
+            shutil.rmtree(output_dir, ignore_errors=True)
 
         print(':: app')
         for template in self.template_paths['app']:
