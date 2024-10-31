@@ -57,7 +57,7 @@
     * 🟢 add convience classes for db/client
         * 🟢 in `sample/__init__.py` - alias db and client functions from `sample/db.py` and `sample/client.py`
         * 🟢 in `core/db.py` and `core/client.py` - alias client and db classes from `sample/__init__.py`
-    * 🔴 rename example_item.age and example_item.name because those field names conflict with templating code
+    * 🟢 rename example_item.age and example_item.name because those field names conflict with templating code
 
 ### guis
 * 🔴 python tkinter (and/or gtk)

@@ -6,24 +6,24 @@
 //
 
 const defaultExampleItem = {
-    name: '',
+    description: '',
     verified: false,
     color: 'red',
-    age: 42,
+    count: 42,
     score: 9.9,
     tags: []
 }
 
 function randomExampleItem() {
     return {
-        // macro :: html_random_str :: {"name": "field"}
-        name: randomString(),
+        // macro :: html_random_str :: {"description": "field"}
+        description: randomString(),
         // macro :: html_random_bool :: {"verified": "field"}
         verified: randomBool(),
         // macro :: html_random_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
         color: randomEnum(['red', 'green', 'blue']),
-        // macro :: html_random_int :: {"age": "field"}
-        age: randomInt(),
+        // macro :: html_random_int :: {"count": "field"}
+        count: randomInt(),
         // macro :: html_random_float :: {"score": "field"}
         score: randomFloat(),
         // macro :: html_random_list :: {"tags": "field"}
@@ -40,9 +40,9 @@ function verifyExampleItem(data) {
         errors: {}
     }
 
-    // macro :: html_verify_str :: {"name": "field"}
-    if (typeof data.name !== 'string') {
-        result.error.name = 'name must be a string';
+    // macro :: html_verify_str :: {"description": "field"}
+    if (typeof data.description !== 'string') {
+        result.error.description = 'description must be a string';
         result.valid = false;
     }
 
@@ -61,9 +61,9 @@ function verifyExampleItem(data) {
         result.valid = false;
     }
 
-    // macro :: html_verify_int :: {"age": "field"}
-    if (!Number.isInteger(data.age)) {
-        result.error.age = 'age must be an integer';
+    // macro :: html_verify_int :: {"count": "field"}
+    if (!Number.isInteger(data.count)) {
+        result.error.count = 'count must be an integer';
         result.valid = false;
     }
 
@@ -91,9 +91,9 @@ function verifyExampleItem(data) {
 function exampleItemFromInputTBody(tbody) {   
     const data = {};
 
-    // macro :: html_from_input_tbody_str :: {"name": "field"}
-    const nameInput = tbody.querySelector('input[name="name"]');
-    data.name = nameInput.value;
+    // macro :: html_from_input_tbody_str :: {"description": "field"}
+    const descriptionInput = tbody.querySelector('input[name="description"]');
+    data.description = descriptionInput.value;
 
     // macro :: html_from_input_tbody_bool :: {"verified": "field"}
     const verifiedInput = tbody.querySelector('input[name="verified"]');
@@ -103,9 +103,9 @@ function exampleItemFromInputTBody(tbody) {
     const colorInput = tbody.querySelector('select[name="color"]');
     data.color = colorInput.value;
 
-    // macro :: html_from_input_tbody_int :: {"age": "field"}
-    const ageInput = tbody.querySelector('input[name="age"]');
-    data.age = parseInt(ageInput.value);
+    // macro :: html_from_input_tbody_int :: {"count": "field"}
+    const countInput = tbody.querySelector('input[name="count"]');
+    data.count = parseInt(countInput.value);
 
     // macro :: html_from_input_tbody_float :: {"score": "field"}
     const scoreInput = tbody.querySelector('input[name="score"]');
@@ -123,26 +123,26 @@ function exampleItemFromInputTBody(tbody) {
 function exampleItemToInputTBody(data, tbody) {
     tbody.innerHTML = '';
 
-    // macro :: html_to_input_tbody_str :: {"name": "field"}
-    const nameTdKey = document.createElement('td');
-    nameTdKey.textContent = 'name';
+    // macro :: html_to_input_tbody_str :: {"description": "field"}
+    const descriptionTdKey = document.createElement('td');
+    descriptionTdKey.textContent = 'description';
 
-    const nameTdInput = document.createElement('td');
-    const nameInput = document.createElement('input');
-    nameInput.name = 'name';
-    nameInput.value = data.name;
-    nameInput.size = 35;
-    nameTdInput.appendChild(nameInput);
+    const descriptionTdInput = document.createElement('td');
+    const descriptionInput = document.createElement('input');
+    descriptionInput.name = 'description';
+    descriptionInput.value = data.description;
+    descriptionInput.size = 35;
+    descriptionTdInput.appendChild(descriptionInput);
 
-    const nameTdOther = document.createElement('td');
-    nameTdOther.textContent = '-';
+    const descriptionTdOther = document.createElement('td');
+    descriptionTdOther.textContent = '-';
 
-    const nameTr = document.createElement('tr');
-    nameTr.appendChild(nameTdKey);
-    nameTr.appendChild(nameTdInput);
-    nameTr.appendChild(nameTdOther);
+    const descriptionTr = document.createElement('tr');
+    descriptionTr.appendChild(descriptionTdKey);
+    descriptionTr.appendChild(descriptionTdInput);
+    descriptionTr.appendChild(descriptionTdOther);
 
-    tbody.appendChild(nameTr);
+    tbody.appendChild(descriptionTr);
 
     // macro :: html_to_input_tbody_bool :: {"verified": "field"}
     const verifiedTdKey = document.createElement('td');
@@ -194,27 +194,27 @@ function exampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(colorTr);
 
-    // macro :: html_to_input_tbody_int :: {"age": "field"}
-    const ageTdKey = document.createElement('td');
-    ageTdKey.textContent = 'age';
+    // macro :: html_to_input_tbody_int :: {"count": "field"}
+    const countTdKey = document.createElement('td');
+    countTdKey.textContent = 'count';
 
-    const ageTdInput = document.createElement('td');
-    const ageInput = document.createElement('input');
-    ageInput.name = 'age';
-    ageInput.type = 'number';
-    ageInput.size = 5;
-    ageInput.value = data.age;
-    ageTdInput.appendChild(ageInput);
+    const countTdInput = document.createElement('td');
+    const countInput = document.createElement('input');
+    countInput.name = 'count';
+    countInput.type = 'number';
+    countInput.size = 5;
+    countInput.value = data.count;
+    countTdInput.appendChild(countInput);
 
-    const ageTdOther = document.createElement('td');
-    ageTdOther.textContent = '-';
+    const countTdOther = document.createElement('td');
+    countTdOther.textContent = '-';
 
-    const ageTr = document.createElement('tr');
-    ageTr.appendChild(ageTdKey);
-    ageTr.appendChild(ageTdInput);
-    ageTr.appendChild(ageTdOther);
+    const countTr = document.createElement('tr');
+    countTr.appendChild(countTdKey);
+    countTr.appendChild(countTdInput);
+    countTr.appendChild(countTdOther);
 
-    tbody.appendChild(ageTr);
+    tbody.appendChild(countTr);
 
     // macro :: html_to_input_tbody_float :: {"score": "field"}
     const scoreTdKey = document.createElement('td');
@@ -324,18 +324,18 @@ function exampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(idTr);
 
-    // macro :: html_to_display_tbody_str :: {"name": "field"}
-    const nameTdKey = document.createElement('td');
-    nameTdKey.textContent = 'name';
+    // macro :: html_to_display_tbody_str :: {"description": "field"}
+    const descriptionTdKey = document.createElement('td');
+    descriptionTdKey.textContent = 'description';
 
-    const nameTdValue = document.createElement('td');
-    nameTdValue.textContent = data.name;
+    const descriptionTdValue = document.createElement('td');
+    descriptionTdValue.textContent = data.description;
 
-    const nameTr = document.createElement('tr');
-    nameTr.appendChild(nameTdKey);
-    nameTr.appendChild(nameTdValue);
+    const descriptionTr = document.createElement('tr');
+    descriptionTr.appendChild(descriptionTdKey);
+    descriptionTr.appendChild(descriptionTdValue);
 
-    tbody.appendChild(nameTr);
+    tbody.appendChild(descriptionTr);
 
     // macro :: html_to_display_tbody_bool :: {"verified": "field"}
     const verifiedTdKey = document.createElement('td');
@@ -363,18 +363,18 @@ function exampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(colorTr);
 
-    // macro :: html_to_display_tbody_int :: {"age": "field"}
-    const ageTdKey = document.createElement('td');
-    ageTdKey.textContent = 'age';
+    // macro :: html_to_display_tbody_int :: {"count": "field"}
+    const countTdKey = document.createElement('td');
+    countTdKey.textContent = 'count';
 
-    const ageTdValue = document.createElement('td');
-    ageTdValue.textContent = data.age;
+    const countTdValue = document.createElement('td');
+    countTdValue.textContent = data.count;
 
-    const ageTr = document.createElement('tr');
-    ageTr.appendChild(ageTdKey);
-    ageTr.appendChild(ageTdValue);
+    const countTr = document.createElement('tr');
+    countTr.appendChild(countTdKey);
+    countTr.appendChild(countTdValue);
 
-    tbody.appendChild(ageTr);
+    tbody.appendChild(countTr);
 
     // macro :: html_to_display_tbody_float :: {"score": "field"}
     const scoreTdKey = document.createElement('td');
@@ -419,10 +419,10 @@ function exampleItemToTableRow(data) {
     idTd.textContent = data.id;
     tr.appendChild(idTd);
 
-    // macro :: html_to_table_row_str :: {"name": "field"}
-    const nameTd = document.createElement('td');
-    nameTd.textContent = data.name;
-    tr.appendChild(nameTd);
+    // macro :: html_to_table_row_str :: {"description": "field"}
+    const descriptionTd = document.createElement('td');
+    descriptionTd.textContent = data.description;
+    tr.appendChild(descriptionTd);
 
     // macro :: html_to_table_row_bool :: {"verified": "field"}
     const verifiedTd = document.createElement('td');
@@ -434,10 +434,10 @@ function exampleItemToTableRow(data) {
     colorTd.textContent = data.color;
     tr.appendChild(colorTd);
 
-    // macro :: html_to_table_row_int :: {"age": "field"}
-    const ageTd = document.createElement('td');
-    ageTd.textContent = data.age;
-    tr.appendChild(ageTd);
+    // macro :: html_to_table_row_int :: {"count": "field"}
+    const countTd = document.createElement('td');
+    countTd.textContent = data.count;
+    tr.appendChild(countTd);
 
     // macro :: html_to_table_row_float :: {"score": "field"}
     const scoreTd = document.createElement('td');

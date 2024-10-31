@@ -263,13 +263,17 @@
             <table>
                 <thead>
                     <tr>
+                        <!-- macro :: html_list_table_header :: {"id": "field"} -->
                         <th>id</th>
-                        <th>name</th>
+                        <!-- end macro :: -->
+                        <!-- replace :: macro.html_list_table_headers(model.fields) -->
+                        <th>description</th>
                         <th>verified</th>
                         <th>color</th>
-                        <th>age</th>
+                        <th>count</th>
                         <th>score</th>
                         <th>tags</th>
+                        <!-- end replace :: -->
                     </tr>
                 </thead>
 

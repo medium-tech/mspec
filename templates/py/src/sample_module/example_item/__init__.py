@@ -20,10 +20,10 @@ def example_item_from_json(json_string:str) -> dict:
 def example_item_example() -> dict:
     return {
         # replace :: macro.py_example_fields(model.fields)
-        'name': 'a large thing',
+        'description': 'a large thing',
         'verified': True,
         'color': 'red',
-        'age': 36,
+        'count': 36,
         'score': 7.3,
         'tags': ['tag1', 'tag2']
         # end replace ::
@@ -32,14 +32,14 @@ def example_item_example() -> dict:
 def example_item_random() -> dict:
     return {
         # insert :: macro.py_random_fields(model.fields)
-        # macro :: py_random_str :: {"name": "field"}
-        'name': random_str(),
+        # macro :: py_random_str :: {"description": "field"}
+        'description': random_str(),
         # macro :: py_random_bool :: {"verified": "field"}
         'verified': random_bool(),
         # macro :: py_random_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
         'color': random_enum(['red', 'green', 'blue']),
-        # macro :: py_random_int :: {"age": "field"}
-        'age': random_int(),
+        # macro :: py_random_int :: {"count": "field"}
+        'count': random_int(),
         # macro :: py_random_float :: {"score": "field"}
         'score': random_float(),
         # macro :: py_random_list :: {"tags": "field"}
@@ -60,10 +60,10 @@ def example_item_verify(data:dict) -> dict:
 
     # insert :: macro.py_verify_fields(model.fields)
 
-    # macro :: py_verify_str :: {"name": "field"}
+    # macro :: py_verify_str :: {"description": "field"}
     try:
-        if not isinstance(data['name'], str):
-            raise TypeError('name must be a string')
+        if not isinstance(data['description'], str):
+            raise TypeError('description must be a string')
     except KeyError:
         pass
     
@@ -83,10 +83,10 @@ def example_item_verify(data:dict) -> dict:
     except KeyError:
         pass
 
-    # macro :: py_verify_int :: {"age": "field"}
+    # macro :: py_verify_int :: {"count": "field"}
     try:
-        if not isinstance(data['age'], int):
-            raise TypeError('age must be an integer')
+        if not isinstance(data['count'], int):
+            raise TypeError('count must be an integer')
     except KeyError:
         pass
 
@@ -109,8 +109,8 @@ def example_item_verify(data:dict) -> dict:
     # end macro ::
     
     for key in data.keys():
-        # vars :: {"['id', 'name', 'verified', 'color', 'age', 'score', 'tags']": "macro.py_field_list(model.fields)"}
-        if key not in ['id', 'name', 'verified', 'color', 'age', 'score', 'tags']:
+        # vars :: {"['id', 'description', 'verified', 'color', 'count', 'score', 'tags']": "macro.py_field_list(model.fields)"}
+        if key not in ['id', 'description', 'verified', 'color', 'count', 'score', 'tags']:
             raise KeyError(f'unknown key: {key}')
 
     return data

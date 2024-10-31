@@ -10,7 +10,7 @@ import json
 # parser #
 
 parser = argparse.ArgumentParser(description='mtemplate - cli')
-parser.add_argument('command', choices=['extract', 'render-py', 'render-html'], help='command to run')
+parser.add_argument('command', choices=['extract', 'render-all', 'render-py', 'render-html'], help='command to run')
 parser.add_argument('--spec', type=str, default='test-gen.yaml', help='spec file pattern')
 parser.add_argument('--source', type=Path, default=None, help='source to extract template from')
 parser.add_argument('--output', type=Path, default=None, help='output directory')

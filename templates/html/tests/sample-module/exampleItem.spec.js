@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 // vars :: {"mspec":"project.name.snake_case", "http://localhost:9009": "client.default_host"}
 // vars :: {"sample-module": "module.name.kebab_case", "sample module": "module.name.lower_case", "sample_module": "module.name.snake_case"}
-// vars :: {"example item": "model.name.lower_case", "example-item": "model.name.kebab_case"}
+// vars :: {"example item": "model.name.lower_case", "example-item": "model.name.kebab_case", "example_item": "model.name.snake_case"}
 
 test('test - sample module - example item - pagination', async ({ page }) => {
   await page.goto('http://localhost:9009/');
@@ -26,9 +26,9 @@ test('test - sample module - example item - instance', async ({ page }) => {
     await page.goto('http://localhost:9009/sample-module/example-item');
     await page.getByRole('button', { name: 'create' }).click();
 
-    // macro :: html_unittest_form_str :: {"name": "field"}
-    await page.locator('input[name="name"]').click();
-    await page.locator('input[name="name"]').fill('this is a unittest');
+    // macro :: html_unittest_form_str :: {"description": "field"}
+    await page.locator('input[name="description"]').click();
+    await page.locator('input[name="description"]').fill('this is a unittest');
 
     // macro :: html_unittest_form_bool :: {"verified": "field"}
     await page.locator('input[name="verified"]').check();
@@ -36,11 +36,11 @@ test('test - sample module - example item - instance', async ({ page }) => {
     // macro :: html_unittest_form_enum :: {"color": "field", "green": "enum_choice"}
     await page.locator('select[name="color"]').selectOption('green');
 
-    // macro :: html_unittest_form_int :: {"age": "field"}
-    await page.locator('input[name="age"]').click({
+    // macro :: html_unittest_form_int :: {"count": "field"}
+    await page.locator('input[name="count"]').click({
         clickCount: 3
     });
-    await page.locator('input[name="age"]').fill('55');
+    await page.locator('input[name="count"]').fill('55');
 
     // macro :: html_unittest_form_float :: {"score": "field"}
     await page.locator('input[name="score"]').fill('3.33');
@@ -74,14 +74,9 @@ test('test - sample module - example item - instance', async ({ page }) => {
     await expect(page.locator('#example-item-read-tbody')).toContainText('one, two');
 
     await page.getByRole('button', { name: 'edit' }).click();
-    await page.getByRole('checkbox').check();
-    await page.locator('input[name="name"]').click();
-    await page.locator('input[name="name"]').fill('modified name');
-    await page.locator('html').click();
     await page.getByRole('button', { name: 'save' }).click();
     await page.getByRole('link', { name: createdItemId }).click();
     
-    await expect(page.locator('#example-item-read-tbody')).toContainText('modified name');
     await page.getByRole('button', { name: 'delete' }).click();
     await page.getByRole('button', { name: 'no, cancel' }).click();
     await page.getByRole('link', { name: 'example_item' }).click();

@@ -29,9 +29,17 @@ class MTemplateHTMLProject(MTemplateProject):
             'html_to_input_tbody': self.macro_html_to_input_tbody,
             'html_to_display_tbody': self.macro_html_to_display_tbody,
             'html_to_table_row': self.macro_html_to_table_row,
+            'html_list_table_headers': self.macro_html_list_table_headers,
         })
 
-    def macro_html_to_table_row( self, fields:dict, indent='\t') -> str:
+    def macro_html_list_table_headers(self, fields:dict, indent='\t') -> str:
+        out = ''
+        for name, field in fields.items():
+            vars = {'field': name}
+            out += self.spec['macro'][f'html_list_table_header'](vars) + '\n'
+        return out
+
+    def macro_html_to_table_row(self, fields:dict, indent='\t') -> str:
         out = ''
         for name, field in fields.items():
             vars = {'field': name}
