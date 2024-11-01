@@ -21,6 +21,8 @@ test('test - sample module - example item - pagination', async ({ page }) => {
 
 test('test - sample module - example item - instance', async ({ page }) => {
 
+    const textToContain = []
+
     // create item
 
     await page.goto('http://localhost:9009/sample-module/example-item');
@@ -29,21 +31,24 @@ test('test - sample module - example item - instance', async ({ page }) => {
     // macro :: html_unittest_form_str :: {"description": "field"}
     await page.locator('input[name="description"]').click();
     await page.locator('input[name="description"]').fill('this is a unittest');
+    textToContain.push('this is a unittest');
+
 
     // macro :: html_unittest_form_bool :: {"verified": "field"}
     await page.locator('input[name="verified"]').check();
+    textToContain.push('yes');
 
     // macro :: html_unittest_form_enum :: {"color": "field", "green": "enum_choice"}
     await page.locator('select[name="color"]').selectOption('green');
+    textToContain.push('green');
 
     // macro :: html_unittest_form_int :: {"count": "field"}
-    await page.locator('input[name="count"]').click({
-        clickCount: 3
-    });
     await page.locator('input[name="count"]').fill('55');
+    textToContain.push('55');
 
     // macro :: html_unittest_form_float :: {"score": "field"}
     await page.locator('input[name="score"]').fill('3.33');
+    textToContain.push('3.33');
 
     // macro :: html_unittest_form_list :: {"tags": "field"}
     await page.locator('html').click();
@@ -52,6 +57,7 @@ test('test - sample module - example item - instance', async ({ page }) => {
     await page.locator('input[name="tags"]').press('Enter');
     await page.locator('input[name="tags"]').fill('two');
     await page.locator('input[name="tags"]').press('Enter');
+    textToContain.push('one, two');
     // end macro ::
 
     // insert :: macro.html_unittest_form(model.fields)
@@ -62,16 +68,13 @@ test('test - sample module - example item - instance', async ({ page }) => {
 
     const createdItem = await page.locator('#created-example-item');
     const createdItemId = await createdItem.innerText();
+    textToContain.push(createdItemId);
     
     await createdItem.click();
 
-    await expect(page.locator('#example-item-read-tbody')).toContainText(createdItemId);
-    await expect(page.locator('#example-item-read-tbody')).toContainText('this is a unittest');
-    await expect(page.locator('#example-item-read-tbody')).toContainText('yes');
-    await expect(page.locator('#example-item-read-tbody')).toContainText('green');
-    await expect(page.locator('#example-item-read-tbody')).toContainText('55');
-    await expect(page.locator('#example-item-read-tbody')).toContainText('3.33');
-    await expect(page.locator('#example-item-read-tbody')).toContainText('one, two');
+    for (const text of textToContain) {
+        await expect(page.locator('#example-item-read-tbody')).toContainText(text);
+    }
 
     await page.getByRole('button', { name: 'edit' }).click();
     await page.getByRole('button', { name: 'save' }).click();
@@ -80,10 +83,15 @@ test('test - sample module - example item - instance', async ({ page }) => {
     await page.getByRole('button', { name: 'delete' }).click();
     await page.getByRole('button', { name: 'no, cancel' }).click();
     await page.getByRole('link', { name: 'example_item' }).click();
+    
     await page.getByPlaceholder('example item id').click();
     await page.getByPlaceholder('example item id').fill(createdItemId);
     await page.getByRole('button', { name: 'get' }).click();
-    await expect(page.locator('#example-item-read-tbody')).toContainText(createdItemId);
+
+    for (const text of textToContain) {
+        await expect(page.locator('#example-item-read-tbody')).toContainText(text);
+    }
+
     await page.getByRole('button', { name: 'delete' }).click();
     await page.getByRole('button', { name: 'yes, please delete' }).click();
     await expect(page.locator('#example-item-not-found')).toContainText('item not found');

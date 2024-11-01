@@ -2,7 +2,7 @@
 uwsgi:
   http: :9009
   wsgi-file: src/core/server.py
-  # for :: {% for item in all_models %} :: {"sample-module":"item.module.name.snake_case", "example-item": "item.model.name.kebab_case", "/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv": "server.static_root"}
+  # for :: {% for item in all_models %} :: {"sample-module":"item.module.name.kebab_case", "example-item": "item.model.name.kebab_case", "/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv": "server.static_root"}
   route: ^/sample-module/example-item/create static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv/sample-module/example-item/index.html
   route: ^/sample-module/example-item/index(.*) static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv/sample-module/example-item/index$1
   route: ^/sample-module/example-item/(.*) static:/Users/brad/Code/medium-tech/mspec-alpha/templates/html/srv/sample-module/example-item/instance.html

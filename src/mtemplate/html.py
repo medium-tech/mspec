@@ -67,7 +67,7 @@ class MTemplateHTMLProject(MTemplateProject):
         out = ''
         for name, field in fields.items():
             vars = {'field': name}
-            field_type = field['type']
+            field_type = 'enum' if 'enum' in field else field['type']
 
             try:
                 out += self.spec['macro'][f'html_to_input_tbody_{field_type}'](vars) + '\n'
@@ -79,7 +79,7 @@ class MTemplateHTMLProject(MTemplateProject):
         out = ''
         for name, field in fields.items():
             vars = {'field': name}
-            field_type = field['type']
+            field_type = 'enum' if 'enum' in field else field['type']
 
             try:
                 out += self.spec['macro'][f'html_from_input_tbody_{field_type}'](vars) + '\n'

@@ -39,7 +39,7 @@
                 * package.json
         * 🟢 create tests
 
-* 🟡 templating
+* 🟢 templating
     * 🟢 refactor `src/sample/__init__.py` -> `src/sample/sample_item/__init__.py`
     * 🟢 extract templates
         * 🟢 add macro syntax
@@ -50,7 +50,7 @@
     * 🟢 add html/css template extraction
     * 🟢 add json template extraction
     * 🟢 refactor template apps so that module and model names are both 2 words which enables proper templating for kebab-case, etc
-    * 🟡 template app and generated apps unittests are passing
+    * 🟢 template app and generated apps unittests are passing
 
     * 🟢 refactor client / db modules
     * 🟢 decouple db/client from global ns
