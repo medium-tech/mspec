@@ -9,9 +9,16 @@ test('test - sample module - example item - pagination', async ({ page }) => {
 
   await expect(page.locator('h1')).toContainText('mspec');
   await page.getByRole('link', { name: 'sample_module' }).click();
+
   await expect(page.locator('h1')).toContainText('sample module');
   await page.getByRole('link', { name: 'example_item' }).click();
   await expect(page.getByRole('heading')).toContainText('example item');
+
+  // vars :: {"['id', 'description', 'verified', 'color', 'count', 'score', 'tags']": "macro.html_field_list(model.fields)"}
+  const fields = ['id', 'description', 'verified', 'color', 'count', 'score', 'tags'];
+  for (const field of fields) {
+    await expect(page.locator('th', {hasText: field})).toBeVisible();
+  }
 
   await page.getByRole('button', { name: '>>>' }).click();
   await page.getByRole('button', { name: '<<<' }).click();
@@ -32,7 +39,6 @@ test('test - sample module - example item - instance', async ({ page }) => {
     await page.locator('input[name="description"]').click();
     await page.locator('input[name="description"]').fill('this is a unittest');
     textToContain.push('this is a unittest');
-
 
     // macro :: html_unittest_form_bool :: {"verified": "field"}
     await page.locator('input[name="verified"]').check();

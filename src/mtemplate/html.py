@@ -30,11 +30,13 @@ class MTemplateHTMLProject(MTemplateProject):
             'html_to_display_tbody': self.macro_html_to_display_tbody,
             'html_to_table_row': self.macro_html_to_table_row,
             'html_list_table_headers': self.macro_html_list_table_headers,
+            'html_field_list': self.macro_html_field_list,
         })
 
     def macro_html_list_table_headers(self, fields:dict, indent='\t') -> str:
         out = ''
-        for name, field in fields.items():
+        all_keys = ['id'] + list(fields.keys())
+        for name in all_keys:
             vars = {'field': name}
             out += self.spec['macro'][f'html_list_table_header'](vars) + '\n'
         return out
@@ -129,3 +131,8 @@ class MTemplateHTMLProject(MTemplateProject):
             except KeyError:
                 raise MTemplateError(f'field {name} does not have type "{field_type}"')
         return out
+    
+    def macro_html_field_list(self, fields:dict) -> str:
+        all_keys = ['id'] + list(fields.keys())
+        keys = [f"'{name}'" for name in all_keys]
+        return '[' + ', '.join(keys) + ']'
