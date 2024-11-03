@@ -60,7 +60,7 @@
     * 🟢 rename example_item.age and example_item.name because those field names conflict with templating code
 
 ### guis
-* 🔴 python tkinter (and/or gtk)
+* 🟡 python tkinter (and/or gtk)
     * 🔴 index
     * 🔴 sample index
     * 🔴 sample item
@@ -99,14 +99,14 @@
             * 🔴 update
             * 🔴 delete
 
-## additional protocol features
+## additional protocol/app features
 * 🔴 markup
     * 🔴 ui
     * 🔴 scripting
 * 🔴 content ids
 * 🔴 date and time types
 * 🔴 string format email
-* 🔴 users
+* 🔴 users / auth
 * 🔴 profiles
 * 🔴 files
 * 🔴 sqlite
