@@ -2,9 +2,12 @@ import tkinter as tk
 from tkinter import *
 from tkinter import ttk, messagebox
 
+from sample_module import SampleModuleIndexPage
+from sample_module.example_item.gui import *
 
 def main():
-    pass
+    app = MSpecGUIApp()
+    app.mainloop()
 
 def hello():
     root = Tk()
@@ -63,10 +66,7 @@ def form():
 
     root.mainloop()
 
-
-
-
-LARGEFONT =("Verdana", 35)
+LARGEFONT = ('Verdana', 35)
   
 class tkinterApp(tk.Tk):
      
@@ -114,7 +114,7 @@ class StartPage(tk.Frame):
         tk.Frame.__init__(self, parent)
          
         # label of frame Layout 2
-        label = ttk.Label(self, text ="Startpage", font = LARGEFONT)
+        label = ttk.Label(self, text="Startpage", font=LARGEFONT)
          
         # putting the grid in its place by using
         # grid
@@ -134,9 +134,6 @@ class StartPage(tk.Frame):
         # putting the button in its place by
         # using grid
         button2.grid(row = 2, column = 1, padx = 10, pady = 10)
-  
-          
-  
   
 # second window frame page1 
 class Page1(tk.Frame):
@@ -164,9 +161,6 @@ class Page1(tk.Frame):
         # putting the button in its place by 
         # using grid
         button2.grid(row = 2, column = 1, padx = 10, pady = 10)
-  
-  
-  
   
 # third window frame page2
 class Page2(tk.Frame): 
@@ -196,3 +190,54 @@ class Page2(tk.Frame):
 def pages():
     app = tkinterApp()
     app.mainloop()
+
+#
+# #
+#
+
+class MSpecIndexPage(tk.Frame):
+     
+    def __init__(self, parent, controller): 
+        super().__init__(parent)
+
+        label = ttk.Label(self, text='mspec', font=LARGEFONT)
+        label.grid(row=0, column=4, padx=10, pady=10) 
+  
+        button1 = ttk.Button(self, text='sample module', command=lambda: controller.show_frame(SampleModuleIndexPage))
+        button1.grid(row=1, column=1, padx=10, pady=10)
+
+
+class MSpecGUIApp(tk.Tk):
+
+    frame_classes = (
+        MSpecIndexPage, 
+        SampleModuleIndexPage,
+        ExampleItemIndexPage,
+        ExampleItemInstancePage
+    )
+
+    def __init__(self):
+        super().__init__()
+         
+        # create container
+        container = tk.Frame(self)  
+        container.pack(side='top', fill='both', expand=True) 
+  
+        container.grid_rowconfigure(0, weight = 1)
+        container.grid_columnconfigure(0, weight = 1)
+  
+        self.frames = {}  
+  
+        for frame_class in self.frame_classes:
+            self.frames[frame_class] = frame_class(container, self) 
+            self.frames[frame_class].grid(row = 0, column = 0, sticky ="nsew")
+  
+        self.show_frame(MSpecIndexPage)
+  
+    # to display the current frame passed as
+    # parameter
+    def show_frame(self, cont):
+        frame = self.frames[cont]
+        frame.tkraise()
+
+

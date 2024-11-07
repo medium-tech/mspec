@@ -1,3 +1,6 @@
+from sample_module.example_item.gui import ExampleItemIndexPage
+import tkinter
+from tkinter import ttk
 # for :: {% for model in module.models.values() %} :: {"example_item": "model.name.snake_case"}
 from .example_item import example_item_random
 from .example_item.server import example_item_routes
@@ -44,3 +47,16 @@ class sample_module_client:
     delete_example_item = client_delete_example_item
     list_example_item = client_list_example_item
     # end for ::
+
+LARGEFONT = ('Verdana', 35)
+
+class SampleModuleIndexPage(tkinter.Frame):
+
+    def __init__(self, parent, controller): 
+        super().__init__(parent)
+
+        label = ttk.Label(self, text='sample module', font=LARGEFONT)
+        label.grid(row=0, column=4, padx=10, pady=10) 
+  
+        button1 = ttk.Button(self, text='example item', command=lambda: controller.show_frame(ExampleItemIndexPage))
+        button1.grid(row=1, column=1, padx=10, pady=10)

@@ -61,15 +61,15 @@
 
 ### guis
 * 🟡 python tkinter (and/or gtk)
-    * 🔴 index
-    * 🔴 sample index
-    * 🔴 sample item
-        * 🔴 list
-        * 🔴 instance
-            * 🔴 create
-            * 🔴 read
-            * 🔴 update
-            * 🔴 delete
+    * 🟡 index
+    * 🟡 sample index
+    * 🟡 sample item
+        * 🟡 list
+        * 🟡 instance
+            * 🟡 create
+            * 🟡 read
+            * 🟡 update
+            * 🟡 delete
 
 * 🔴 c (gtk)
     * 🔴 index
