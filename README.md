@@ -59,7 +59,7 @@
         * 🟢 in `core/db.py` and `core/client.py` - alias client and db classes from `sample/__init__.py`
     * 🟢 rename example_item.age and example_item.name because those field names conflict with templating code
 
-* 🔴 create markup (python and/or js)
+* 🔴 python markup viewer
     * 🔴 heading (1 level to keep simple at first)
     * 🔴 paragraph
     * 🔴 lists
@@ -73,6 +73,8 @@
         * 🔴 add
         * 🔴 subtract
         * 🔴 datetime.now
+* 🔴 blender markup viewer  
+
 
 ### guis
 * 🟡 python tkinter

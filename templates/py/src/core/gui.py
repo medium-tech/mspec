@@ -197,14 +197,14 @@ def main():
     
 class MSpecIndexPage(tk.Frame):
      
-    def __init__(self, parent, controller): 
+    def __init__(self, parent, controller:'MSpecGUIApp'): 
         super().__init__(parent)
 
         label = ttk.Label(self, text='mspec', font=LARGEFONT)
-        label.grid(row=0, column=0, padx=10, pady=10) 
+        label.grid(row=0, column=0) 
   
         button1 = ttk.Button(self, text='sample module', command=lambda: controller.show_frame(SampleModuleIndexPage))
-        button1.grid(row=2, column=0, padx=10, pady=10)
+        button1.grid(row=1, column=0)
 
 
 class MSpecGUIApp(tk.Tk):
@@ -235,7 +235,14 @@ class MSpecGUIApp(tk.Tk):
             self.frames[frame_class].grid(row=0, column=0, sticky='nsew')
   
         self.show_frame(MSpecIndexPage)
+
+    def show_index_frame(self):
+        self.show_frame(MSpecIndexPage)
   
-    def show_frame(self, cont):
-        frame = self.frames[cont]
+    def show_frame(self, frame_class):
+        frame = self.frames[frame_class]
         frame.tkraise()
+
+    def show_frame_str(self, frame_class_str):
+        frame_class = globals()[frame_class_str]
+        self.show_frame(frame_class)
