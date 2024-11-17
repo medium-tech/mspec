@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import *
 from tkinter import ttk, messagebox
 
+from core.client import create_client_context
 from sample_module import SampleModuleIndexPage
 from sample_module.example_item.gui import *
 
@@ -191,8 +192,8 @@ def pages():
 #
 #
 
-def main():
-    app = MSpecGUIApp()
+def main(start_frame='MSpecIndexPage'):
+    app = MSpecGUIApp(start_frame)
     app.mainloop()
     
 class MSpecIndexPage(tk.Frame):
@@ -216,17 +217,15 @@ class MSpecGUIApp(tk.Tk):
         ExampleItemInstancePage
     )
 
-    def __init__(self):
+    def __init__(self, start_frame='MSpecIndexPage'):
         super().__init__()
         self.title('mspec')
         self.geometry('1000x800')
-         
-        # create container
+
+        self.ctx = create_client_context()
+        
         container = tk.Frame(self)
         container.grid(column=0, row=0, sticky='nsew')
-  
-        # container.grid_rowconfigure(0, weight=1)
-        # container.grid_columnconfigure(0, weight=1)
   
         self.frames = {}  
   
@@ -234,7 +233,7 @@ class MSpecGUIApp(tk.Tk):
             self.frames[frame_class] = frame_class(container, self) 
             self.frames[frame_class].grid(row=0, column=0, sticky='nsew')
   
-        self.show_frame(MSpecIndexPage)
+        self.show_frame_str(start_frame)
 
     def show_index_frame(self):
         self.show_frame(MSpecIndexPage)
