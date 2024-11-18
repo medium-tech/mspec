@@ -63,9 +63,6 @@ class ExampleItemIndexPage(tkinter.Frame):
 
         self.table = ttk.Frame(self)
         self.table.grid(row=self.list_items_row_offset, column=0, columnspan=2, sticky='nsew')
-        for n, field_name in enumerate(self.field_names):
-            header = ttk.Label(self.table, text=field_name)
-            header.grid(row=self.list_items_row_offset - 1, column=n)
 
     def on_show_frame(self):
         if self.is_first_show:
@@ -78,6 +75,10 @@ class ExampleItemIndexPage(tkinter.Frame):
 
         for widget in self.table.winfo_children():
             widget.destroy()
+
+        for n, field_name in enumerate(self.field_names):
+            header = ttk.Label(self.table, text=field_name)
+            header.grid(row=self.list_items_row_offset - 1, column=n)
 
         try:
             example_items = client_list_example_item(self.controller.ctx, offset=self.list_offset, limit=self.list_page_size)

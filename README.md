@@ -73,7 +73,7 @@
         * 🔴 add
         * 🔴 subtract
         * 🔴 datetime.now
-* 🔴 blender markup viewer  
+* 🔴 blender markup viewer
 
 
 ### guis
