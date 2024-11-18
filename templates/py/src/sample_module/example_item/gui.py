@@ -1,5 +1,5 @@
 import tkinter
-from tkinter import ttk
+from tkinter import ttk, StringVar
 
 from sample_module.example_item.client import client_list_example_item
 
@@ -15,70 +15,126 @@ class ExampleItemIndexPage(tkinter.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
+        
+        # state #
+
+        self.list_offset = 0
+        self.list_page_size = 25
+        self.list_items_row_offset = 6
+        self.is_first_show = True
+
+        self.list_status = StringVar()
+        self.list_status.set('status: initial')
+
+        self.pagination_label = StringVar()
+        self.pagination_label.set('-')
+
+        # header #
+
         back_button = ttk.Button(self, text='<-', command=lambda: controller.show_frame_str('SampleModuleIndexPage'))
         back_button.grid(row=0, column=0)
 
         label = ttk.Label(self, text='example item', font=LARGEFONT)
         label.grid(row=0, column=1)
 
-        # tabs = ttk.Notebook(parent)
-        # tabs.add(self._list_tab(tabs), text='list')
-        # tabs.add(self._create_tab(tabs), text='create')
-        # tabs.grid(row=1, column=0, sticky='nsew')
+        # contorls #
 
-        list_frame = self._list_tab(self)
-        list_frame.grid(row=1, column=1, columnspan=3, sticky='nsew')
+        self.controls = ttk.Frame(self)
+        self.controls.grid(row=4, column=0, columnspan=2, sticky='nsew')
 
-    def _list_tab(self, tabs):
-        list_tab = ttk.Frame(tabs)
+        pagination_label = ttk.Label(self.controls, textvariable=self.pagination_label)
+        pagination_label.grid(row=3, column=4, columnspan=2, sticky='w')
+
+        self.prev_pg_button = ttk.Button(self.controls, text='<-', command=lambda: self.prev_pg())
+        self.prev_pg_button.state(['disabled'])
+        self.prev_pg_button.grid(row=3, column=0)
+
+        load_button = ttk.Button(self.controls, text='load', command=lambda: self._list_fetch())
+        load_button.grid(row=3, column=1)
+
+        self.next_pg_button = ttk.Button(self.controls, text='->', command=lambda: self.next_pg())
+        self.next_pg_button.grid(row=3, column=2)
+
+        status_label = ttk.Label(self.controls, textvariable=self.list_status)
+        status_label.grid(row=2, column=0, columnspan=2, sticky='w')
 
         # vars :: {"['id', 'description', 'verified', 'color', 'count', 'score', 'tags']": "macro.py_field_list(model.fields)"}
-        field_names = ['id', 'description', 'verified', 'color', 'count', 'score', 'tags']
+        self.field_names = ['id', 'description', 'verified', 'color', 'count', 'score', 'tags']
 
-        offset = 0
-        page_size = 25
-        example_items = client_list_example_item(self.controller.ctx, offset=offset, limit=page_size)
+        self.table = ttk.Frame(self)
+        self.table.grid(row=self.list_items_row_offset, column=0, columnspan=2, sticky='nsew')
+        for n, field_name in enumerate(self.field_names):
+            header = ttk.Label(self.table, text=field_name)
+            header.grid(row=self.list_items_row_offset - 1, column=n)
 
-        pagination_label = ttk.Label(list_tab, text=f'offset: {offset} limit: {page_size} results: {len(example_items)}')
-        pagination_label.grid(row=2, column=0, columnspan=len(field_names), sticky='w')
+    def on_show_frame(self):
+        if self.is_first_show:
+            self.is_first_show = False
+            self._list_fetch()
+    
+    def _list_fetch(self):
+        self.list_status.set('status: fetching')
+        self.pagination_label.set(f'offset: {self.list_offset} limit: {self.list_page_size} results: -')
 
-        status_label = ttk.Label(list_tab, text='status: ok')
-        status_label.grid(row=2, column=0, columnspan=len(field_names), sticky='e')
+        for widget in self.table.winfo_children():
+            widget.destroy()
 
-        for n, field_name in enumerate(field_names):
-            header = ttk.Label(list_tab, text=field_name)
-            header.grid(row=3, column=n)
+        try:
+            example_items = client_list_example_item(self.controller.ctx, offset=self.list_offset, limit=self.list_page_size)
+        except Exception as e:
+            print(e)
+            self.list_status.set('status: error')
+            return
+        
+        self.pagination_label.set(f'offset: {self.list_offset} limit: {self.list_page_size} results: {len(example_items)}')
+        
+        self.list_status.set('status: ok')
+    
+        for n in range(self.list_page_size):
+            
+            try:
+                example_item = example_items[n]
+            except IndexError:
+                example_item = {}
 
-        for n, example_item in enumerate(example_items):
+            id_label = ttk.Label(self.table, text=example_item.get('id', '-'))
+            id_label.grid(row=n + self.list_items_row_offset, column=0)
 
-            id_label = ttk.Label(list_tab, text=example_item.get('id', '-'))
-            id_label.grid(row=n + 4, column=0)
+            description_label = ttk.Label(self.table, text=example_item.get('description', '-'))
+            description_label.grid(row=n + self.list_items_row_offset, column=1)
 
-            description_label = ttk.Label(list_tab, text=example_item['description'])
-            description_label.grid(row=n + 4, column=1)
+            verified_label = ttk.Label(self.table, text=str(example_item.get('verified', '-')).lower())
+            verified_label.grid(row=n + self.list_items_row_offset, column=2)
 
-            verified_label = ttk.Label(list_tab, text=str(example_item['verified']).lower())
-            verified_label.grid(row=n + 4, column=2)
+            color_label = ttk.Label(self.table, text=example_item.get('color', '-'))
+            color_label.grid(row=n + self.list_items_row_offset, column=3)
 
-            color_label = ttk.Label(list_tab, text=example_item['color'])
-            color_label.grid(row=n + 4, column=3)
+            count_label = ttk.Label(self.table, text=str(example_item.get('count', '-')))
+            count_label.grid(row=n + self.list_items_row_offset, column=4)
 
-            count_label = ttk.Label(list_tab, text=str(example_item['count']))
-            count_label.grid(row=n + 4, column=4)
+            score_label = ttk.Label(self.table, text=str(example_item.get('score', '-')))
+            score_label.grid(row=n + self.list_items_row_offset, column=5)
 
-            score_label = ttk.Label(list_tab, text=str(example_item['score']))
-            score_label.grid(row=n + 4, column=5)
+            tags_label = ttk.Label(self.table, text=', '.join(example_item.get('tags', [])))
+            tags_label.grid(row=n + self.list_items_row_offset, column=6)
 
-            tags_label = ttk.Label(list_tab, text=', '.join(example_item['tags']))
-            tags_label.grid(row=n + 4, column=6)
+        if self.list_offset == 0:
+            self.prev_pg_button.state(['disabled'])
+        else:
+            self.prev_pg_button.state(['!disabled'])
 
-        return list_tab
+        if len(example_items) < self.list_page_size:
+            self.next_pg_button.state(['disabled'])
+        else:
+            self.next_pg_button.state(['!disabled'])
 
-    def _create_tab(self, tabs):
-        create_tab = ttk.Frame(tabs)
-        label = ttk.Label(create_tab, text='create example item')
-        label.grid(row=0, column=1)
-        return create_tab
+    def prev_pg(self):
+        self.list_offset = max(0, self.list_offset - self.list_page_size)
+        self._list_fetch()
+
+    def next_pg(self):
+        self.list_offset += self.list_page_size
+        self._list_fetch()
 
 
 class ExampleItemInstancePage(tkinter.Frame):

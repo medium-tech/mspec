@@ -227,21 +227,36 @@ class MSpecGUIApp(tk.Tk):
         container = tk.Frame(self)
         container.grid(column=0, row=0, sticky='nsew')
   
-        self.frames = {}  
+        self.frames = {}
+        self.current_frame = None
   
         for frame_class in self.frame_classes:
-            self.frames[frame_class] = frame_class(container, self) 
+            self.frames[frame_class] = frame_class(container, self)
             self.frames[frame_class].grid(row=0, column=0, sticky='nsew')
+            self.frames[frame_class].forget()
   
         self.show_frame_str(start_frame)
-
-    def show_index_frame(self):
-        self.show_frame(MSpecIndexPage)
   
     def show_frame(self, frame_class):
         frame = self.frames[frame_class]
+        frame.grid(row=0, column=0, sticky='nsew')
         frame.tkraise()
+
+        try:
+            self.current_frame.forget()
+        except AttributeError:
+            """self.current_frame is None"""
+
+        try:
+            frame.on_show_frame()
+        except AttributeError:
+            pass
+
+        self.current_frame = frame
 
     def show_frame_str(self, frame_class_str):
         frame_class = globals()[frame_class_str]
         self.show_frame(frame_class)
+
+    def show_index_frame(self):
+        self.show_frame(MSpecIndexPage)
