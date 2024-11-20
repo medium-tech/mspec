@@ -78,15 +78,20 @@
 
 ### guis
 * 🟡 python tkinter
-    * 🟡 index
-    * 🟡 sample index
-    * 🟡 sample item
-        * 🟡 list
+    * 🟢 index
+    * 🟢 module index
+    * 🟢 model
+        * 🟢 index
         * 🟡 instance
-            * 🟡 create
-            * 🟡 read
-            * 🟡 update
-            * 🟡 delete
+            * 🟡 list
+            * 🟡 instance
+                * 🟡 create
+                * 🟡 read
+                * 🟡 update
+                * 🟡 delete
+    * 🔴 template extraction 
+    * 🔴 unittests
+    * 🔴 make network requests async
 
 * 🔴 c (gtk)
     * 🔴 index
