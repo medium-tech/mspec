@@ -73,8 +73,36 @@
         * 🔴 add
         * 🔴 subtract
         * 🔴 datetime.now
-* 🔴 blender markup viewer
 
+* 🔴 blender markup viewer
+    * 🔴 heading (1 level to keep simple at first)
+        * 🔴 paragraph
+        * 🔴 lists
+        * 🔴 model widgets
+            * 🔴 create
+            * 🔴 read
+            * 🔴 update
+            * 🔴 delete
+            * 🔴 list
+        * 🔴 expressions
+            * 🔴 add
+            * 🔴 subtract
+            * 🔴 datetime.now
+
+* 🔴 html (browser) markup viewer
+    * 🔴 heading (1 level to keep simple at first)
+    * 🔴 paragraph
+    * 🔴 lists
+    * 🔴 model widgets
+        * 🔴 create
+        * 🔴 read
+        * 🔴 update
+        * 🔴 delete
+        * 🔴 list
+    * 🔴 expressions
+        * 🔴 add
+        * 🔴 subtract
+        * 🔴 datetime.now
 
 ### guis
 * 🟡 python tkinter
