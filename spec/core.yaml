@@ -1,0 +1,141 @@
+types:
+    cid:
+        type: str
+
+    tags:
+        type: list
+        element_type: string
+
+    hierarchy:
+        type: list
+        element_type: string
+
+    meta:
+        type: object
+        fields:
+            data:
+                type: object
+            tags:
+                type: tags
+            loc:
+                type: hierarchy
+
+    context:
+        type: object
+        fields:
+            id:
+                type: str
+            source:
+                type: str
+            meta:
+                type: meta
+
+    entity:
+        type: object
+        fields:
+            id:
+                type: cid
+            type:
+                type: str
+                enum:
+                    - user
+                    - profile
+                    - group_profile
+    
+    acl:
+        type: object
+        fields:
+            name:
+                type: str
+            admin:
+                type: entity
+
+    permissions:
+        type: object
+        fields:
+            read:
+                type: str
+                help: "public, private, inherit, or cid of acl"
+            write:
+                type: str
+                help: "public, private, inherit, or cid of acl"
+            delete:
+                type: str
+                help: "public, private, inherit, or cid of acl"
+
+models:
+    user:
+        fields:
+            name:
+                type: str
+            email:
+                type: str
+            profiles:
+                type: list
+                element_type: cid
+
+    profile:
+        fields:
+            name:
+                type: str
+            meta:
+                type: meta
+
+    group_profile:
+        fields:
+            name:
+                type: str
+            admin:
+                type: entity
+                
+    acl_entry:
+        fields:
+            acl:
+                type: cid
+            entity:
+                type: cid
+
+    attachment:
+        type: object
+        fields:
+            item:
+                type: cid
+                help: "reference cid to the item being attached"
+            to:
+                type: cid
+                help: "reference cid that `item` is being attached to"
+
+
+    reference:
+        type:
+        name:
+        meta:
+        perms:
+        cid:
+        context:
+        
+        current:
+            help: db query for version.ref == self.cid, sort by time and take most recent
+        versions:
+            help: db query returning version where version.ref == self.cid
+
+    version:
+        name:
+        meta:
+        context:
+        perms:
+
+        ref:
+        hash:
+        size:
+        type:
+        datetime:
+        
+        cid:
+            help: generated from hash/size/etc on this object
+
+        previous:
+            type: str
+            help: previous version cid for reference, if empty string this is first version in series
+        next:
+            help: db query to return version where previous == self.cid

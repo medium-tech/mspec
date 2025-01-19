@@ -58,21 +58,18 @@
         * 🟢 in `sample/__init__.py` - alias db and client functions from `sample/db.py` and `sample/client.py`
         * 🟢 in `core/db.py` and `core/client.py` - alias client and db classes from `sample/__init__.py`
     * 🟢 rename example_item.age and example_item.name because those field names conflict with templating code
+    * 🔴 add type suppport
+        * 🔴 define types
+        * 🔴 validator function
+        * 🔴 integrate with model templating
+    * 🔴 generate:
+        * 🔴 core.yaml
+            * 🔴 add auth logic
+        * 🔴 cms.yaml
+            * 🔴 add import logic
+            * 🔴 add backup logic
 
-* 🔴 python markup viewer
-    * 🔴 heading (1 level to keep simple at first)
-    * 🔴 paragraph
-    * 🔴 lists
-    * 🔴 model widgets
-        * 🔴 create
-        * 🔴 read
-        * 🔴 update
-        * 🔴 delete
-        * 🔴 list
-    * 🔴 expressions
-        * 🔴 add
-        * 🔴 subtract
-        * 🔴 datetime.now
+### guis
 
 * 🔴 blender markup viewer
     * 🔴 heading (1 level to keep simple at first)
@@ -85,8 +82,8 @@
             * 🔴 delete
             * 🔴 list
         * 🔴 expressions
-            * 🔴 add
-            * 🔴 subtract
+            * 🔴 is true/false
+            * 🔴 add/subtract
             * 🔴 datetime.now
 
 * 🔴 html (browser) markup viewer
@@ -100,11 +97,10 @@
         * 🔴 delete
         * 🔴 list
     * 🔴 expressions
-        * 🔴 add
-        * 🔴 subtract
+        * 🔴 is true/false
+        * 🔴 add/subtract
         * 🔴 datetime.now
 
-### guis
 * 🟡 python tkinter
     * 🟢 index
     * 🟢 module index
@@ -121,7 +117,22 @@
     * 🔴 unittests
     * 🔴 make network requests async
 
-* 🔴 c (gtk)
+    * 🔴 markup viewer
+        * 🔴 heading (1 level to keep simple at first)
+        * 🔴 paragraph
+        * 🔴 lists
+        * 🔴 model widgets
+            * 🔴 create
+            * 🔴 read
+            * 🔴 update
+            * 🔴 delete
+            * 🔴 list
+        * 🔴 expressions
+            * 🔴 is true/false
+            * 🔴 add/subtract
+            * 🔴 datetime.now
+
+* 🔴 c 
     * 🔴 index
     * 🔴 sample index
     * 🔴 sample item
