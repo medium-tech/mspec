@@ -41,14 +41,6 @@ types:
                     - user
                     - profile
                     - group_profile
-    
-    acl:
-        type: object
-        fields:
-            name:
-                type: str
-            admin:
-                type: entity
 
     permissions:
         type: object
@@ -70,18 +62,37 @@ models:
                 type: str
             email:
                 type: str
-            profiles:
-                type: list
-                element_type: cid
+            profile:
+                type: cid
+
+    user_session:
+        fields:
+            user:
+                type: cid
+            token:
+                type: str
+            expires:
+                type: datetime
+
+    user_password_hash:
+        fields:
+            user:
+                type: cid
+            hash:
+                type: str
+            salt:
+                type: str
 
     profile:
         fields:
             name:
                 type: str
+            bio:
+                type: str
             meta:
                 type: meta
 
-    group_profile:
+    acl:
         fields:
             name:
                 type: str
@@ -93,10 +104,9 @@ models:
             acl:
                 type: cid
             entity:
-                type: cid
+                type: entity
 
     attachment:
-        type: object
         fields:
             item:
                 type: cid
@@ -105,37 +115,52 @@ models:
                 type: cid
                 help: "reference cid that `item` is being attached to"
 
-
     reference:
-        type:
-        name:
-        meta:
-        perms:
-        cid:
-        context:
+        fields:
+            cid:
+                type: cid
+            name:
+                type: str
+            meta:
+                type: meta
+            perms:
+                type: permissions
         
-        current:
-            help: db query for version.ref == self.cid, sort by time and take most recent
-        versions:
-            help: db query returning version where version.ref == self.cid
+        ops:
+            current:
+                help: db query for version.ref == self.cid, sort by time and take most recent
+            versions:
+                help: db query returning version where version.ref == self.cid
 
     version:
-        name:
-        meta:
-        context:
-        perms:
+        fields:
+            name:
+                type: str
+            meta:
+                type: meta
+            perms:
+                type: permissions
 
-        ref:
-        hash:
-        size:
-        type:
-        datetime:
+            type:
+                type: str
+                help: "file, image, video, audio, text, etc"
+
+            ref:
+                type: cid
+                help: reference to the item this version is for
+            hash:
+                type: str
+            size:
+                type: int
+            datetime:
+                type: datetime
         
-        cid:
-            help: generated from hash/size/etc on this object
+            cid:
+                help: generated from hash/size/etc on this object
 
-        previous:
-            type: str
-            help: previous version cid for reference, if empty string this is first version in series
-        next:
-            help: db query to return version where previous == self.cid
+        ops:
+            previous:
+                type: str
+                help: previous version cid for reference, if empty string this is first version in series
+            next:
+                help: db query to return version where previous == self.cid

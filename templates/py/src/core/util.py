@@ -1,4 +1,6 @@
 import random
+import datetime
+from .types import cid, entity, permission, entity_type, permission_type
 
 __all__ = [
     'random_nouns',
@@ -14,6 +16,10 @@ __all__ = [
     'random_str',
     'random_enum',
     'random_list',
+    'random_datetime',
+    'random_cid',
+    'random_entity',
+    'random_permission',
     'random_person_name',
     'random_user_name',
     'random_thing_name'
@@ -41,8 +47,30 @@ def random_str() -> str:
 def random_enum(enum:list) -> str:
     return random.choice(enum)
 
-def random_list() -> list:
-    return random.choices(random_adjectives, k=random.randint(0, 5))
+def random_list(element_type:str) -> list:
+    items = []
+    for _ in range(random.randint(0, 5)):
+        if element_type == 'str':
+            items.append(random.choice(random_adjectives))
+        else:
+            items.append(globals[f'random_{element_type}']())
+    return items
+
+def random_datetime() -> datetime:
+    return datetime.datetime.fromtimestamp(random.randint(1705900793, 1768972793))
+
+def random_cid() -> cid:
+    return cid.from_string(random_str())
+
+def random_entity() -> entity:
+    return entity(random_cid(), random_enum(list(entity_type)))
+
+def random_permission() -> permission:
+    return permission(
+        read=random_enum(list(permission_type)),
+        write=random_enum(list(permission_type)),
+        delete=random_enum(list(permission_type))
+    )
 
 def random_person_name() -> str:
     first = random.choice(random_first_names)

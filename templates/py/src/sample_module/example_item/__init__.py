@@ -1,5 +1,9 @@
 import json
+from dataclasses import asdict
+from datetime import datetime
+from core.types import *
 from core.util import *
+
 
 __all__ = [
     'example_item_to_json',
@@ -12,7 +16,7 @@ __all__ = [
 # vars :: {"example_item": "model.name.snake_case"}
 
 def example_item_to_json(data:dict, sort_keys=True, indent=4) -> str:
-    return json.dumps(data, sort_keys=sort_keys, indent=indent)
+    return to_json(data, sort_keys=sort_keys, indent=indent)
 
 def example_item_from_json(json_string:str) -> dict:
     return example_item_verify(json.loads(json_string))
@@ -25,7 +29,13 @@ def example_item_example() -> dict:
         'color': 'red',
         'count': 36,
         'score': 7.3,
-        'tags': ['tag1', 'tag2']
+        'tags': ['tag1', 'tag2'],
+        'ids': ['05P9jRI5j4Or3oeQG4X_C0r56fL41d5G1bo1wdsI0XJw334.json', '05P9jRI5j4Or3oeQG4X_C0r56fL41d5G1bo1wdsI0XJw334.json'],
+        'item': '05P9jRI5j4Or3oeQG4X_C0r56fL41d5G1bo1wdsI0XJw334.json',
+        'meta': meta(),
+        'when': datetime.now(),
+        'admin': entity('05P9jRI5j4Or3oeQG4X_C0r56fL41d5G1bo1wdsI0XJw334.json', 'user'),
+        'perms': permission(read='public', write='public', delete='public'),
         # end replace ::
     }
 
@@ -42,8 +52,20 @@ def example_item_random() -> dict:
         'count': random_int(),
         # macro :: py_random_float :: {"score": "field"}
         'score': random_float(),
-        # macro :: py_random_list :: {"tags": "field"}
-        'tags': random_list()
+        # macro :: py_random_list :: {"tags": "field", "str": "element_type"}
+        'tags': random_list('str'),
+        # end macro ::
+        'ids': random_list('cid'),
+        # macro :: py_random_cid :: {"item": "field"}
+        'item': random_cid(),
+        # macro :: pyrandom_meta :: {"meta": "field"}
+        'meta': meta(),
+        # macro :: py_random_datetime :: {"when": "field"}
+        'when': random_datetime(),
+        # macro :: py_random_entity :: {"admin": "field"}
+        'admin': random_entity(),
+        # macro :: py_random_permission :: {"perms": "field"}
+        'perms': random_permission(),
         # end macro ::
     }
 
@@ -97,13 +119,18 @@ def example_item_verify(data:dict) -> dict:
     except KeyError:
         pass
 
-    # macro :: py_verify_list :: {"tags": "field"}
+    # macro :: py_verify_list :: {"tags": "field", "str": "element_type"}
     try:
         if not isinstance(data['tags'], list):
             raise TypeError('tags must be a list')
-        for tag in data['tags']:
-            if not isinstance(tag, str):
-                raise TypeError('tags must be a list of strings')
+        for item in data['tags']:
+            if not isinstance(item, str):
+                raise TypeError('tag elements must be str')
+            try:
+                item.validate()
+            except AttributeError:
+                pass
+
     except KeyError:
         pass
     # end macro ::

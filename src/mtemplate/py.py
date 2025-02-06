@@ -42,7 +42,10 @@ class MTemplatePyProject(MTemplateProject):
             elif field['type'] == 'str':
                 value = f"'{example}'"
             elif field['type'] == 'list':
-                value = '[' + ', '.join([f"'{item}'" for item in example]) + ']'
+                item_display = lambda i: f"'{i}'" if isinstance(i, str) else str(i)
+                value = '[' + ', '.join([item_display(item) for item in example]) + ']'
+            else:
+                raise MTemplateError(f'field "{name}" has unsupported type "{field["type"]}"')
 
             lines.append(f"{indent * 2}'{name}': {value}")
 
