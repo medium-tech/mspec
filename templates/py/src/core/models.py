@@ -2,6 +2,27 @@ import json
 from datetime import datetime
 from . types import to_json, meta, email_regex, entity
 
+__all__ = [
+    'user_to_json',
+    'user_from_json',
+    'user_validate',
+    'user_session_to_json',
+    'user_session_from_json',
+    'user_session_validate',
+    'user_password_hash_to_json',
+    'user_password_hash_from_json',
+    'user_password_hash_validate',
+    'profile_to_json',
+    'profile_from_json',
+    'profile_validate',
+    'acl_to_json',
+    'acl_from_json',
+    'acl_validate',
+    'acl_entry_to_json',
+    'acl_entry_from_json',
+    'acl_entry_validate'
+]
+
 # user #
 
 def user_to_json(user:dict) -> str:
@@ -10,7 +31,7 @@ def user_to_json(user:dict) -> str:
 def user_from_json(user_json:str) -> dict:
     return json.loads(user_json)
 
-def user_validate(user:dict) -> None:
+def user_validate(user:dict) -> dict:
     if not isinstance(user, dict):
         raise TypeError('user must be a dictionary')
     
@@ -19,7 +40,7 @@ def user_validate(user:dict) -> None:
             raise ValueError('user id must be a string')
         
     except KeyError:
-        raise ValueError('user is missing id')
+        pass
     
     try:
         if not isinstance(user['name'], str):
@@ -46,6 +67,8 @@ def user_validate(user:dict) -> None:
     
     if len(user.keys()) > 4:
         raise ValueError('user has too many keys')
+    
+    return user
 
 # user session #
 
@@ -55,7 +78,7 @@ def user_session_to_json(user_session:dict) -> str:
 def user_session_from_json(user_session_json:str) -> dict:
     return json.loads(user_session_json)
 
-def user_session_validate(user_session:dict) -> None:
+def user_session_validate(user_session:dict) -> dict:
     if not isinstance(user_session, dict):
         raise TypeError('user_session must be a dictionary')
     
@@ -63,7 +86,7 @@ def user_session_validate(user_session:dict) -> None:
         if not isinstance(user_session['id'], str):
             raise ValueError('user_session id must be a string')
     except KeyError:
-        raise ValueError('user_session is missing id')
+        pass
     
     try:
         if not isinstance(user_session['user'], str):
@@ -87,6 +110,8 @@ def user_session_validate(user_session:dict) -> None:
     if len(user_session.keys()) > 4:
         raise ValueError('user_session has too many keys')
     
+    return user_session
+    
 # user password hash #
 
 def user_password_hash_to_json(user_password_hash:dict) -> str:
@@ -95,7 +120,7 @@ def user_password_hash_to_json(user_password_hash:dict) -> str:
 def user_password_hash_from_json(user_password_hash_json:str) -> dict:
     return json.loads(user_password_hash_json)
 
-def user_password_hash_validate(user_password_hash:dict) -> None:
+def user_password_hash_validate(user_password_hash:dict) -> dict:
     if not isinstance(user_password_hash, dict):
         raise TypeError('user_password_hash must be a dictionary')
     
@@ -103,7 +128,7 @@ def user_password_hash_validate(user_password_hash:dict) -> None:
         if not isinstance(user_password_hash['id'], str):
             raise ValueError('user_password_hash id must be a string')
     except KeyError:
-        raise ValueError('user_password_hash is missing id')
+        pass
     
     try:
         if not isinstance(user_password_hash['user'], str):
@@ -126,6 +151,8 @@ def user_password_hash_validate(user_password_hash:dict) -> None:
     if len(user_password_hash.keys()) > 3:
         raise ValueError('user_password_hash has too many keys')
     
+    return user_password_hash
+    
 # profile #
 
 def profile_to_json(profile:dict) -> str:
@@ -134,7 +161,7 @@ def profile_to_json(profile:dict) -> str:
 def profile_from_json(profile_json:str) -> dict:
     return json.loads(profile_json)
 
-def profile_validate(profile:dict) -> None:
+def profile_validate(profile:dict) -> dict:
     if not isinstance(profile, dict):
         raise TypeError('profile must be a dictionary')
     
@@ -142,7 +169,7 @@ def profile_validate(profile:dict) -> None:
         if not isinstance(profile['id'], str):
             raise ValueError('profile id must be a string')
     except KeyError:
-        raise ValueError('profile is missing id')
+        pass
     
     try:
         if not isinstance(profile['name'], str):
@@ -168,6 +195,8 @@ def profile_validate(profile:dict) -> None:
     if len(profile.keys()) > 4:
         raise ValueError('profile has too many keys')
     
+    return profile
+    
 # acl #
 
 def acl_to_json(acl:dict) -> str:
@@ -176,7 +205,7 @@ def acl_to_json(acl:dict) -> str:
 def acl_from_json(acl_json:str) -> dict:
     return json.loads(acl_json)
 
-def acl_validate(acl:dict) -> None:
+def acl_validate(acl:dict) -> dict:
     if not isinstance(acl, dict):
         raise TypeError('acl must be a dictionary')
     
@@ -184,7 +213,7 @@ def acl_validate(acl:dict) -> None:
         if not isinstance(acl['id'], str):
             raise ValueError('acl id must be a string')
     except KeyError:
-        raise ValueError('acl is missing id')
+        pass
     
     try:
         if not isinstance(acl['name'], str):
@@ -201,6 +230,8 @@ def acl_validate(acl:dict) -> None:
     if len(acl.keys()) > 3:
         raise ValueError('acl has too many keys')
     
+    return acl
+    
 # acl entry #
 
 def acl_entry_to_json(acl_entry:dict) -> str:
@@ -209,7 +240,7 @@ def acl_entry_to_json(acl_entry:dict) -> str:
 def acl_entry_from_json(acl_entry_json:str) -> dict:
     return json.loads(acl_entry_json)
 
-def acl_entry_validate(acl_entry:dict) -> None:
+def acl_entry_validate(acl_entry:dict) -> dict:
     if not isinstance(acl_entry, dict):
         raise TypeError('acl_entry must be a dictionary')
     
@@ -217,7 +248,7 @@ def acl_entry_validate(acl_entry:dict) -> None:
         if not isinstance(acl_entry['id'], str):
             raise ValueError('acl_entry id must be a string')
     except KeyError:
-        raise ValueError('acl_entry is missing id')
+        pass
     
     try:
         if not isinstance(acl_entry['acl'], str):
@@ -237,3 +268,4 @@ def acl_entry_validate(acl_entry:dict) -> None:
     if len(acl_entry.keys()) > 3:
         raise ValueError('acl_entry has too many keys')
     
+    return acl_entry

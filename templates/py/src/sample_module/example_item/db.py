@@ -20,12 +20,13 @@ def db_create_example_item(ctx:dict, data:dict) -> str:
         ctx :: dict containing the database client
         data :: the data to create the item with.
 
-    return :: the id of the created item.
+    return :: str of the id of the created item.
     """
-    result = ctx['db']['client']['msample']['sample_module.example_item'].insert_one(example_item_verify(data))
+    example_items = ctx['db']['client']['msample']['sample_module.example_item']
+    result = example_items.insert_one(example_item_verify(data))
     return str(result.inserted_id)
 
-def db_read_example_item(ctx:dict, id:str) -> dict|None:
+def db_read_example_item(ctx:dict, id:str) -> dict:
     """
     read a example item from the database and verify it.
 
@@ -33,7 +34,8 @@ def db_read_example_item(ctx:dict, id:str) -> dict|None:
         ctx :: dict containing the database client
         id :: the id of the item to read.
     
-    return :: dict of the item if it exists, None otherwise.
+    return :: dict of the example item
+    raises :: NotFoundError if the item is not found.
     """
     example_items = ctx['db']['client']['msample']['sample_module.example_item']
     db_entry = example_items.find_one({'_id': ObjectId(id)})
@@ -44,7 +46,7 @@ def db_read_example_item(ctx:dict, id:str) -> dict|None:
         return example_item_verify(db_entry)
 
 
-def db_update_example_item(ctx:dict, id:str, data:dict) -> None:
+def db_update_example_item(ctx:dict, data:dict) -> None:
     """
     update a example item in the database, and verify the data first.
 
@@ -54,8 +56,14 @@ def db_update_example_item(ctx:dict, id:str, data:dict) -> None:
         data :: the data to update the item with.
 
     return :: None
+    raises :: NotFoundError if the item is not found
     """
-    ctx['db']['client']['msample']['sample_module.example_item'].update_one({'_id': ObjectId(id)}, {'$set': example_item_verify(data)})
+    example_item_verify(data)
+    _id = data.pop('id')
+    example_items = ctx['db']['client']['msample']['sample_module.example_item']
+    result = example_items.update_one({'_id': ObjectId(_id)}, {'$set': data})
+    if result.matched_count == 0:
+        raise NotFoundError(f'example item {_id} not found')
 
 def db_delete_example_item(ctx:dict, id:str) -> None:
     """
@@ -68,7 +76,8 @@ def db_delete_example_item(ctx:dict, id:str) -> None:
     return :: None
     """
 
-    ctx['db']['client']['msample']['sample_module.example_item'].delete_one({'_id': ObjectId(id)})
+    example_items = ctx['db']['client']['msample']['sample_module.example_item']
+    example_items.delete_one({'_id': ObjectId(id)})
 
 def db_list_example_item(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
     """
@@ -81,9 +90,9 @@ def db_list_example_item(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
     
     return :: list of each item as a dict.
     """
-    example_items = ctx['db']['client']['msample']['sample_module.example_item'].find().skip(offset).limit(limit)
+    example_items = ctx['db']['client']['msample']['sample_module.example_item']
     items = []
-    for item in example_items:
+    for item in example_items.find().skip(offset).limit(limit):
         item['id'] = str(item.pop('_id'))
         items.append(example_item_verify(item))
     return items
