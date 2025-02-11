@@ -16,9 +16,7 @@ __all__ = [
 # router
 #
 
-def example_item_routes(ctx:dict, env:dict):
-
-    # best practice is to always consume body if it exists: https://uwsgi-docs.readthedocs.io/en/latest/ThingsToKnow.html
+def example_item_routes(ctx:dict, env:dict, raw_req_body:bytes):
 
     # example item - instance routes #
 
@@ -34,9 +32,12 @@ def example_item_routes(ctx:dict, env:dict):
                 raise RequestError('404 Not Found', f'not found sample-module.example-item.{instance_id}')
 
         elif env['REQUEST_METHOD'] == 'PUT':
-            req_body_raw:bytes = env['wsgi.input'].read()
-            req_body = example_item_from_json(req_body_raw.decode('utf-8'))
-            db_update_example_item(ctx, instance_id, req_body)
+            req_body = example_item_from_json(raw_req_body.decode('utf-8'))
+            try:
+                db_update_example_item(ctx, instance_id, req_body)
+            except NotFoundError:
+                ctx['log'](f'PUT sample-module.example-item/{instance_id} - Not Found')
+                raise RequestError('404 Not Found', f'not found sample-module.example-item.{instance_id}')
             ctx['log'](f'PUT sample-module.example-item/{instance_id}')
             raise JSONResponse('204 No Content')
 
@@ -53,8 +54,7 @@ def example_item_routes(ctx:dict, env:dict):
 
     elif re.match(r'/api/sample-module/example-item', env['PATH_INFO']):
         if env['REQUEST_METHOD'] == 'POST':
-            req_body_raw:bytes = env['wsgi.input'].read()
-            req_body = example_item_from_json(req_body_raw.decode('utf-8'))
+            req_body = example_item_from_json(raw_req_body.decode('utf-8'))
             result_id = db_create_example_item(ctx, req_body)
             ctx['log'](f'POST sample-module.example-item - id: {result_id}')
             raise JSONResponse('200 OK', {'id': result_id})

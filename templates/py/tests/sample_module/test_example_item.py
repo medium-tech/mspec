@@ -2,7 +2,7 @@ import unittest
 from core.db import create_db_context
 from core.client import create_client_context
 from core.exceptions import NotFoundError
-from sample_module.example_item import example_item_verify, example_item_to_json, example_item_from_json, example_item_example
+from sample_module.example_item import example_item_validate, example_item_to_json, example_item_from_json, example_item_example
 from sample_module.example_item.client import *
 from sample_module.example_item.db import db_create_example_item, db_read_example_item, db_update_example_item, db_delete_example_item, db_list_example_item
 
@@ -17,11 +17,11 @@ class TestExampleItem(unittest.TestCase):
         """
         test the verify function
         """
-        example_item_verify(example_item_example())
+        example_item_validate(example_item_example())
 
         bad_key = example_item_example()
         bad_key['bad_key'] = 'muy mal'
-        self.assertRaises(KeyError, example_item_verify, bad_key)
+        self.assertRaises(KeyError, example_item_validate, bad_key)
 
     def test_json(self):
         """
@@ -33,7 +33,7 @@ class TestExampleItem(unittest.TestCase):
         data = example_item_from_json(json_string)
         self.assertIsInstance(data, dict)
         self.assertEqual(data, example_item_example())
-        example_item_verify(data)
+        example_item_validate(data)
 
     def test_db_crud(self):
         """
@@ -53,7 +53,7 @@ class TestExampleItem(unittest.TestCase):
         # read #
         item_read = db_read_example_item(test_ctx, id)
         self.assertIsInstance(item_read, dict)
-        example_item_verify(item_read)
+        example_item_validate(item_read)
         del item_read['id']
         self.assertEqual(item_read, example_item_example())
 
@@ -61,7 +61,7 @@ class TestExampleItem(unittest.TestCase):
         db_update_example_item(test_ctx, id, item_read)
 
         read_after_update = db_read_example_item(test_ctx, id)
-        example_item_verify(read_after_update)
+        example_item_validate(read_after_update)
 
         # delete #
         db_delete_example_item(test_ctx, id)
@@ -89,14 +89,14 @@ class TestExampleItem(unittest.TestCase):
         # read #
         item_read = client_read_example_item(test_ctx, id)
         self.assertIsInstance(item_read, dict)
-        example_item_verify(item_read)
+        example_item_validate(item_read)
         del item_read['id']
         self.assertEqual(item_read, example_item_example())
 
         # update #
         client_update_example_item(test_ctx, id, item_read)
         read_after_update = client_read_example_item(test_ctx, id)
-        example_item_verify(read_after_update)
+        example_item_validate(read_after_update)
 
         # delete #
         client_delete_example_item(test_ctx, id)
@@ -129,7 +129,7 @@ class TestExampleItem(unittest.TestCase):
 
             for item in items:
                 self.assertIsInstance(item, dict)
-                example_item_verify(item)
+                example_item_validate(item)
                 del item['id']
                 self.assertEqual(item, example_item_example())
 
@@ -148,7 +148,7 @@ class TestExampleItem(unittest.TestCase):
 
             for item in items:
                 self.assertIsInstance(item, dict)
-                example_item_verify(item)
+                example_item_validate(item)
                 del item['id']
                 self.assertEqual(item, example_item_example())
 

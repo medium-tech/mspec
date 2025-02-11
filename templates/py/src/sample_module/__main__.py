@@ -71,7 +71,7 @@ if args.command == 'data-seed':
 
 # for :: {% for model in module.models.values() %} :: {"example-item": "model.name.kebab_case", "example_item": "model.name.snake_case"}
 elif args.command == 'verify-example-item':
-    result = example_item_verify(get_user_data())
+    result = example_item_validate(get_user_data())
 
 elif args.command == 'random-example-item':
     result = example_item_to_json(example_item_random())

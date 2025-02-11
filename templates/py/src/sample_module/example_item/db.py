@@ -23,7 +23,7 @@ def db_create_example_item(ctx:dict, data:dict) -> str:
     return :: str of the id of the created item.
     """
     example_items = ctx['db']['client']['msample']['sample_module.example_item']
-    result = example_items.insert_one(example_item_verify(data))
+    result = example_items.insert_one(example_item_validate(data))
     return str(result.inserted_id)
 
 def db_read_example_item(ctx:dict, id:str) -> dict:
@@ -43,7 +43,7 @@ def db_read_example_item(ctx:dict, id:str) -> dict:
         raise NotFoundError(f'example item {id} not found')
     else:
         db_entry['id'] = str(db_entry.pop('_id'))
-        return example_item_verify(db_entry)
+        return example_item_validate(db_entry)
 
 
 def db_update_example_item(ctx:dict, data:dict) -> None:
@@ -58,7 +58,7 @@ def db_update_example_item(ctx:dict, data:dict) -> None:
     return :: None
     raises :: NotFoundError if the item is not found
     """
-    example_item_verify(data)
+    example_item_validate(data)
     _id = data.pop('id')
     example_items = ctx['db']['client']['msample']['sample_module.example_item']
     result = example_items.update_one({'_id': ObjectId(_id)}, {'$set': data})
@@ -94,5 +94,5 @@ def db_list_example_item(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
     items = []
     for item in example_items.find().skip(offset).limit(limit):
         item['id'] = str(item.pop('_id'))
-        items.append(example_item_verify(item))
+        items.append(example_item_validate(item))
     return items

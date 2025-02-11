@@ -10,7 +10,7 @@ __all__ = [
     'example_item_from_json',
     'example_item_example',
     'example_item_random',
-    'example_item_verify'
+    'example_item_validate'
 ]
 
 # vars :: {"example_item": "model.name.snake_case"}
@@ -19,7 +19,7 @@ def example_item_to_json(data:dict, sort_keys=True, indent=4) -> str:
     return to_json(data, sort_keys=sort_keys, indent=indent)
 
 def example_item_from_json(json_string:str) -> dict:
-    return example_item_verify(json.loads(json_string))
+    return json.loads(json_string)
 
 def example_item_example() -> dict:
     return {
@@ -69,7 +69,7 @@ def example_item_random() -> dict:
         # end macro ::
     }
 
-def example_item_verify(data:dict) -> dict:
+def example_item_validate(data:dict) -> dict:
 
     if not isinstance(data, dict):
         raise TypeError('data must be a dictionary')

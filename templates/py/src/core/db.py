@@ -51,6 +51,22 @@ __all__ = [
     'MSpecDB'
 ]
 
+def create_db_context(client:MongoClient=None) -> dict:
+    """
+    initialize the database client.
+
+    args ::
+        client :: the client to use, if None, a new client will be created with default settings.
+    
+    return :: None
+    """
+    if client is None:
+        client = MongoClient('mongodb://127.0.0.1:27017', serverSelectionTimeoutMS=3_000)
+
+    atexit.register(client.close)
+
+    return {'db': {'client': client}}
+
 #
 # model crud ops
 #
@@ -523,38 +539,3 @@ def db_list_acl_entry(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
         items.append(acl_entry_validate(item))
     return items
 
-#
-# util
-#
-
-def create_db_context(client:MongoClient=None) -> dict:
-    """
-    initialize the database client.
-
-    args ::
-        client :: the client to use, if None, a new client will be created with default settings.
-    
-    return :: None
-    """
-    if client is None:
-        client = MongoClient('mongodb://127.0.0.1:27017', serverSelectionTimeoutMS=3_000)
-
-    atexit.register(client.close)
-
-    return {'db': {'client': client}}
-
-
-class core_db:
-    create_user = db_create_user
-    read_user = db_read_user
-    update_user = db_update_user
-    delete_user = db_delete_user
-    list_user = db_list_user
-
-
-class MSpecDB:
-
-    core = core_db
-    # for :: {% for module in modules.values() %} :: {"sample_module": "module.name.snake_case", "Sample": "module.name.camel_case"}
-    sample_module = sample_module_db
-    # end for ::
