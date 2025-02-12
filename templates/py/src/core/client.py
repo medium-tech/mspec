@@ -1,8 +1,27 @@
 import os
 import json
+
+from urllib.request import Request, urlopen
+
 from . exceptions import MSpecError, ConfigError, NotFoundError
 from . models import *
-from urllib.request import Request, urlopen
+
+__all__ = [
+    'create_client_context',
+    
+    'client_create_user',
+    'client_read_user',
+    'client_update_user',
+    'client_delete_user',
+    'client_list_users',
+    
+    'client_create_profile',
+    'client_read_profile',
+    'client_update_profile',
+    'client_delete_profile',
+    'client_list_profile'
+]
+
 
 # vars :: {"http://localhost:9009": "client.default_host"}
 
@@ -12,11 +31,6 @@ WARNING: urlib.request module is unsafe to use with os.fork on OSX
 """
 
 default_host = os.environ.get('MSPEC_CLIENT_HOST', 'http://localhost:9009')
-
-__all__ = [
-    'create_client_context',
-    'MSpecClient'
-]
 
 def create_client_context(host:str=default_host) -> dict:
     """
@@ -39,14 +53,14 @@ def create_client_context(host:str=default_host) -> dict:
 
 # user #
 
-def client_create_user(ctx:dict, data:dict) -> str:
+def client_create_user(ctx:dict, data:dict) -> dict:
     """
     create a user on the server, verifying the data first.
     
     args ::
         data :: dict of the data to create the user with.
     
-    return :: str of the id of the created user.
+    return :: dict of the created user.
 
     raises :: ConfigError, MSpecError
     """
@@ -63,11 +77,7 @@ def client_create_user(ctx:dict, data:dict) -> str:
 
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-
-        id = json.loads(response_body)['id']
-        if not isinstance(id, str):
-            raise MSpecError('invalid response from server, id must be a string')
-        return id
+            return user_from_json(response_body)
     
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
@@ -202,14 +212,14 @@ def client_list_users(ctx:dict, offset:int=0, limit:int=50) -> list[dict]:
     
 # profile #
 
-def client_create_profile(ctx:dict, data:dict) -> str:
+def client_create_profile(ctx:dict, data:dict) -> dict:
     """
     create a profile on the server, verifying the data first.
     
     args ::
         data :: dict of the data to create the profile with.
     
-    return :: str of the id of the created profile.
+    return :: dict of the the created profile.
 
     raises :: ConfigError, MSpecError
     """
@@ -226,11 +236,7 @@ def client_create_profile(ctx:dict, data:dict) -> str:
 
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-
-        id = json.loads(response_body)['id']
-        if not isinstance(id, str):
-            raise MSpecError('invalid response from server, id must be a string')
-        return id
+            return profile_from_json(response_body)
     
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')

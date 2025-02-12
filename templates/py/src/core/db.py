@@ -1,11 +1,15 @@
+import atexit
+
 from . models import *
 from . exceptions import NotFoundError
-from pymongo import MongoClient
-from bson import ObjectId
+
 # for :: {% for module in modules.values() %} :: {"sample_module": "module.name.snake_case", "Sample": "module.name.camel_case"}
 from sample_module import sample_module_db
 # end for ::
-import atexit
+
+from pymongo import MongoClient
+from bson import ObjectId
+
 
 # vars :: {"mongodb://127.0.0.1:27017": "db.default_url", "MSpec": "project.name.camel_case"}
 
@@ -73,7 +77,7 @@ def create_db_context(client:MongoClient=None) -> dict:
 
 # user #
 
-def db_create_user(ctx:dict, data:dict) -> str:
+def db_create_user(ctx:dict, data:dict) -> dict:
     """
     create a user in the database, verifying the data first.
 
@@ -81,11 +85,12 @@ def db_create_user(ctx:dict, data:dict) -> str:
         ctx :: dict containing the database client
         data :: the data to create the user with.
 
-    return :: str of the id of the created user.
+    return :: dict of the created user.
     """
     users = ctx['db']['client']['msample']['core.user']
     result = users.insert_one(user_validate(data))
-    return str(result.inserted_id)
+    data['id'] = str(result.inserted_id)
+    return data
 
 def db_read_user(ctx:dict, id:str) -> dict:
     """
@@ -155,18 +160,19 @@ def db_list_user(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
 
 # user session #
 
-def db_create_user_session(ctx:dict, data:dict) -> str:
+def db_create_user_session(ctx:dict, data:dict) -> dict:
     """
     create a user session in the database, verifying the data first.
 
     args ::
         ctx :: dict containing the database client
         data :: the data to create the user session with.
-    return :: str of the id of the created user session.
+    return :: dict of the created user session.
     """
     user_sessions = ctx['db']['client']['msample']['core.user_session']
     result = user_sessions.insert_one(user_session_validate(data))
-    return str(result.inserted_id)
+    data['id'] = str(result.inserted_id)
+    return data 
 
 def db_read_user_session(ctx:dict, id:str) -> dict:
     """
@@ -238,7 +244,7 @@ def db_list_user_session(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
 
 # user password hash #
 
-def db_create_user_password_hash(ctx:dict, data:dict) -> str:
+def db_create_user_password_hash(ctx:dict, data:dict) -> dict:
     """
     create a user password hash in the database, verifying the data first.
 
@@ -246,11 +252,12 @@ def db_create_user_password_hash(ctx:dict, data:dict) -> str:
         ctx :: dict containing the database client
         data :: the data to create the user password hash with.
 
-    return :: str of the id of the created user password hash.
+    return :: dict of the created user password hash.
     """
     user_password_hashes = ctx['db']['client']['msample']['core.user_password_hash']
     result = user_password_hashes.insert_one(user_password_hash_validate(data))
-    return str(result.inserted_id)
+    data['id'] = str(result.inserted_id)
+    return data 
 
 def db_read_user_password_hash(ctx:dict, id:str) -> dict:
     """
@@ -291,7 +298,7 @@ def db_update_user_password_hash(ctx:dict, data:dict) -> None:
     
 # profile #
 
-def db_create_profile(ctx:dict, data:dict) -> str:
+def db_create_profile(ctx:dict, data:dict) -> dict:
     """
     create a profile in the database, verifying the data first.
 
@@ -299,11 +306,12 @@ def db_create_profile(ctx:dict, data:dict) -> str:
         ctx :: dict containing the database client
         data :: the data to create the profile with.
 
-    return :: str of the id of the created profile.
+    return :: dict of the created profile.
     """
     profiles = ctx['db']['client']['msample']['core.profile']
     result = profiles.insert_one(profile_validate(data))
-    return str(result.inserted_id)
+    data['id'] = str(result.inserted_id)
+    return data 
 
 def db_read_profile(ctx:dict, id:str) -> dict:
     """
@@ -375,7 +383,7 @@ def db_list_profile(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
 
 # acl #
 
-def db_create_acl(ctx:dict, data:dict) -> str:
+def db_create_acl(ctx:dict, data:dict) -> dict:
     """
     create a acl in the database, verifying the data first.
 
@@ -383,11 +391,12 @@ def db_create_acl(ctx:dict, data:dict) -> str:
         ctx :: dict containing the database client
         data :: the data to create the acl with.
 
-    return :: str of the id of the created acl.
+    return :: dict of the created acl.
     """
     acls = ctx['db']['client']['msample']['core.acl']
     result = acls.insert_one(acl_validate(data))
-    return str(result.inserted_id)
+    data['id'] = str(result.inserted_id)
+    return data 
 
 def db_read_acl(ctx:dict, id:str) -> dict:
     """
@@ -459,18 +468,19 @@ def db_list_acl(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
 
 # acl entry #
 
-def db_create_acl_entry(ctx:dict, data:dict) -> str:
+def db_create_acl_entry(ctx:dict, data:dict) -> dict:
     """
     create a acl entry in the database, verifying the data first.
 
     args ::
         ctx :: dict containing the database client
         data :: the data to create the acl entry with.
-    return :: str of the id of the created acl entry.
+    return :: dict of the created acl entry.
     """
     acl_entries = ctx['db']['client']['msample']['core.acl_entry']
     result = acl_entries.insert_one(acl_entry_validate(data))
-    return str(result.inserted_id)
+    data['id'] = str(result.inserted_id)
+    return data 
 
 def db_read_acl_entry(ctx:dict, id:str) -> dict:
     """

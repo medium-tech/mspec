@@ -1,5 +1,7 @@
 import json
+
 from datetime import datetime
+
 from . types import to_json, meta, email_regex, entity
 
 __all__ = [

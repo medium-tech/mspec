@@ -1,12 +1,13 @@
 import json
 import re
-from os import getpid
+import os
+
 from traceback import format_exc
 from urllib.parse import parse_qs
 
-from core.models import *
-from core.db import *
-from core.exceptions import RequestError, JSONResponse, NotFoundError
+from . models import *
+from . db import *
+from . exceptions import RequestError, JSONResponse, NotFoundError
 # for :: {% for module in modules.values() %} :: {"sample_module": "module.name.snake_case"}
 from sample_module import sample_module_routes
 # end for ::
@@ -57,9 +58,9 @@ def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
     elif re.match(r'/api/core/user', env['PATH_INFO']):
         if env['REQUEST_METHOD'] == 'POST':
             req_body = user_from_json(raw_req_body.decode('utf-8'))
-            result_id = db_create_user(ctx, req_body)
-            ctx['log'](f'POST core.user - id: {result_id}')
-            raise JSONResponse('200 OK', {'id': result_id})
+            item = db_create_user(ctx, req_body)
+            ctx['log'](f'POST core.user - id: {item["id"]}')
+            raise JSONResponse('200 OK', item)
         
         elif env['REQUEST_METHOD'] == 'GET':
             query = parse_qs(env['QUERY_STRING'])
@@ -114,9 +115,9 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
     elif re.match(r'/api/core/profile', env['PATH_INFO']):
         if env['REQUEST_METHOD'] == 'POST':
             req_body = profile_from_json(raw_req_body.decode('utf-8'))
-            result_id = db_create_profile(ctx, req_body)
-            ctx['log'](f'POST core.profile - id: {result_id}')
-            raise JSONResponse('200 OK', {'id': result_id})
+            item = db_create_profile(ctx, req_body)
+            ctx['log'](f'POST core.profile - id: {item["id"]}')
+            raise JSONResponse('200 OK', item)
         
         elif env['REQUEST_METHOD'] == 'GET':
             query = parse_qs(env['QUERY_STRING'])
@@ -153,7 +154,7 @@ server_ctx = {
 def initialize():
     global server_ctx
     server_ctx.update(create_db_context())
-    uwsgi.log(f'INITIALIZED - pid: {getpid()}')
+    uwsgi.log(f'INITIALIZED - pid: {os.getpid()}')
 
 def application(env, start_response):
 

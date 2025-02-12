@@ -1,13 +1,14 @@
+import re
+import os
+import base64
+import json
+
 from pathlib import Path
 from typing import ClassVar, BinaryIO, Union, Dict
 from dataclasses import dataclass, field, asdict
 from hashlib import sha3_256
 from datetime import datetime
 
-import re
-import os
-import base64
-import json
 
 try:
     import boto3
@@ -290,8 +291,7 @@ class entity:
         
         if self.type not in entity_types:
             raise ValueError(f'Invalid entity type: {self.type}')
-        
-        
+           
 @dataclass
 class acl:
     name: str
@@ -307,7 +307,6 @@ class acl:
         self.admin.validate()
 
 permission_types = {'public', 'private', 'inherit'}
-
 
 @dataclass
 class permission:
