@@ -2,9 +2,10 @@ import os
 import json
 
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 
-from . exceptions import MSpecError, ConfigError, NotFoundError
-from . models import *
+from core.exceptions import MSpecError, ConfigError, NotFoundError
+from core.models import *
 
 __all__ = [
     'create_client_context',
@@ -104,6 +105,7 @@ def client_read_user(ctx:dict, id:str) -> dict:
     request = Request(url, headers=ctx['headers'], method='GET')
 
     try:
+
         with urlopen(request) as response:
             if response.status == 404:
                 raise NotFoundError(f'user {id} not found')
@@ -111,26 +113,33 @@ def client_read_user(ctx:dict, id:str) -> dict:
         
         return user_validate(user_from_json(response_body))
     
+    except HTTPError as e:
+        if e.code == 404:
+            raise NotFoundError(f'user {id} not found')
+        raise MSpecError(f'error reading user: {e.__class__.__name__}: {e}')
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
         raise MSpecError(f'error reading user: {e.__class__.__name__}: {e}')
     
-def client_update_user(ctx:dict, id:str, data:dict) -> None:
+def client_update_user(ctx:dict, data:dict) -> None:
     """
     update a user on the server, verifying the data first.
 
     args ::
-        id :: str of the id of the user to update.
         data :: dict of the data to update the user with.
     
     return :: None
 
     raises :: ConfigError, MSpecError, NotFoundError
     """
-
     try:
-        url = ctx['host'] + '/api/core/user/' + id
+        _id = data['id']
+    except KeyError:
+        raise ValueError('invalid data, missing id')
+    
+    try:
+        url = ctx['host'] + '/api/core/user/' + _id
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
@@ -141,7 +150,7 @@ def client_update_user(ctx:dict, id:str, data:dict) -> None:
 
         with urlopen(request) as response:
             if response.status == 404:
-                raise NotFoundError(f'user {id} not found')
+                raise NotFoundError(f'user {_id} not found')
             
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
@@ -202,7 +211,7 @@ def client_list_users(ctx:dict, offset:int=0, limit:int=50) -> list[dict]:
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
         
-        return [user_validate(user_from_json(item)) for item in json.loads(response_body)]
+        return [user_validate(item) for item in json.loads(response_body)]
     
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
@@ -263,6 +272,7 @@ def client_read_profile(ctx:dict, id:str) -> dict:
     request = Request(url, headers=ctx['headers'], method='GET')
 
     try:
+
         with urlopen(request) as response:
             if response.status == 404:
                 raise NotFoundError(f'profile {id} not found')
@@ -270,17 +280,20 @@ def client_read_profile(ctx:dict, id:str) -> dict:
         
         return profile_validate(profile_from_json(response_body))
     
+    except HTTPError as e:
+        if e.code == 404:
+            raise NotFoundError(f'profile {id} not found')
+        raise MSpecError(f'error reading profile: {e.__class__.__name__}: {e}')
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
         raise MSpecError(f'error reading profile: {e.__class__.__name__}: {e}')
     
-def client_update_profile(ctx:dict, id:str, data:dict) -> None:
+def client_update_profile(ctx:dict, data:dict) -> None:
     """
     update a profile on the server, verifying the data first.
 
     args ::
-        id :: str of the id of the profile to update.
         data :: dict of the data to update the profile with.
     
     return :: None
@@ -289,7 +302,12 @@ def client_update_profile(ctx:dict, id:str, data:dict) -> None:
     """
 
     try:
-        url = f'{ctx["host"]}/api/core/profile/{id}'
+        _id = data['id']
+    except KeyError:
+        raise ValueError('invalid data, missing id')
+
+    try:
+        url = f'{ctx["host"]}/api/core/profile/{_id}'
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
@@ -300,7 +318,7 @@ def client_update_profile(ctx:dict, id:str, data:dict) -> None:
 
         with urlopen(request) as response:
             if response.status == 404:
-                raise NotFoundError(f'profile {id} not found')
+                raise NotFoundError(f'profile {_id} not found')
             
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
@@ -361,7 +379,7 @@ def client_list_profile(ctx:dict, offset:int=0, limit:int=50) -> list[dict]:
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
         
-        return [profile_validate(profile_from_json(item)) for item in json.loads(response_body)]
+        return [profile_validate(item) for item in json.loads(response_body)]
     
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')

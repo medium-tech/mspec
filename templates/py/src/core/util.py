@@ -1,6 +1,6 @@
 import random
 import datetime
-from . types import cid, entity, permission, entity_types, permission_types
+from core.types import cid, entity, permission, entity_types, permission_types
 
 __all__ = [
     'random_nouns',

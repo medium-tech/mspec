@@ -5,9 +5,9 @@ import os
 from traceback import format_exc
 from urllib.parse import parse_qs
 
-from . models import *
-from . db import *
-from . exceptions import RequestError, JSONResponse, NotFoundError
+from core.models import *
+from core.db import *
+from core.exceptions import RequestError, JSONResponse, NotFoundError
 # for :: {% for module in modules.values() %} :: {"sample_module": "module.name.snake_case"}
 from sample_module import sample_module_routes
 # end for ::
@@ -37,10 +37,17 @@ def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
         elif env['REQUEST_METHOD'] == 'PUT':
             req_body = user_from_json(raw_req_body.decode('utf-8'))
             try:
-                db_update_user(ctx, instance_id, req_body)
+                if instance_id != req_body['id']:
+                    raise RequestError('400 Bad Request', 'user id mismatch')
+            except KeyError:
+                raise RequestError('400 Bad Request', 'user is missing id')
+            
+            try:
+                db_update_user(ctx, req_body)
             except NotFoundError:
                 ctx['log'](f'PUT core.user/{instance_id} - Not Found')
                 raise RequestError('404 Not Found', f'not found core.user.{instance_id}')
+            
             ctx['log'](f'PUT core.user/{instance_id}')
             raise JSONResponse('204 No Content')
         
@@ -59,7 +66,7 @@ def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
         if env['REQUEST_METHOD'] == 'POST':
             req_body = user_from_json(raw_req_body.decode('utf-8'))
             item = db_create_user(ctx, req_body)
-            ctx['log'](f'POST core.user - id: {item["id"]}')
+            ctx['log'](f'POST core.user - id: {item["id"]} {item}')
             raise JSONResponse('200 OK', item)
         
         elif env['REQUEST_METHOD'] == 'GET':
@@ -93,11 +100,19 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
         
         elif env['REQUEST_METHOD'] == 'PUT':
             req_body = profile_from_json(raw_req_body.decode('utf-8'))
+
             try:
-                db_update_profile(ctx, instance_id, req_body)
+                if instance_id != req_body['id']:
+                    raise RequestError('400 Bad Request', 'user id mismatch')
+            except KeyError:
+                raise RequestError('400 Bad Request', 'user is missing id')
+            
+            try:
+                db_update_profile(ctx, req_body)
             except NotFoundError:
                 ctx['log'](f'PUT core.profile/{instance_id} - Not Found')
                 raise RequestError('404 Not Found', f'not found core.profile.{instance_id}')
+            
             ctx['log'](f'PUT core.profile/{instance_id}')
             raise JSONResponse('204 No Content')
         

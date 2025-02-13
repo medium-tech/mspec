@@ -10,7 +10,7 @@ from pymongo.collection import Collection
 test_ctx = create_db_context()
 test_ctx.update(create_client_context())
 
-class TestExampleItem(unittest.TestCase):
+class TestAuth(unittest.TestCase):
 
     def test_user_validate(self):
 
@@ -30,13 +30,22 @@ class TestExampleItem(unittest.TestCase):
         }
         self.assertRaises(ValueError, user_validate, user_bad_type)
 
-        user_extra_key = {
+        user_extra_key1 = {
+            'id': '12345',
             'name': 'Alice',
             'email': 'alice@example.com',
             'profile': '12345',
             'extra_key': 'extra_value'
         }
-        self.assertRaises(ValueError, user_validate, user_extra_key)
+        self.assertRaises(ValueError, user_validate, user_extra_key1)
+
+        user_extra_key2 = {
+            'name': 'Alice',
+            'email': 'alice@example.com',
+            'profile': '12345',
+            'extra_key': 'extra_value'
+        }
+        self.assertRaises(ValueError, user_validate, user_extra_key2)
 
     def test_user_crud(self):
         """
@@ -69,9 +78,10 @@ class TestExampleItem(unittest.TestCase):
         self.assertEqual(user_read, test_user)
 
         # update #
+        user_read['id'] = created_user_id
         user_read['email'] = 'test.user.2@nice.com'
         user_validate(user_read)
-        client_update_user(test_ctx, created_user_id, user_read)
+        client_update_user(test_ctx, user_read)
 
         read_after_update = client_read_user(test_ctx, created_user_id)
         user_validate(read_after_update)

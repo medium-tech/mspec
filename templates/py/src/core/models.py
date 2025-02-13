@@ -1,8 +1,9 @@
 import json
 
+from copy import copy
 from datetime import datetime
 
-from . types import to_json, meta, email_regex, entity
+from core.types import to_json, meta, email_regex, entity
 
 __all__ = [
     'user_to_json',
@@ -26,6 +27,8 @@ __all__ = [
 ]
 
 # user #
+
+user_fields = ['id', 'name', 'email', 'profile']
 
 def user_to_json(user:dict) -> str:
     return to_json(user)
@@ -67,8 +70,9 @@ def user_validate(user:dict) -> dict:
     except KeyError:
         raise ValueError('user is missing profile')
     
-    if len(user.keys()) > 4:
-        raise ValueError('user has too many keys')
+    for key in user.keys():
+        if key not in user_fields:
+            raise ValueError(f'user has extra key: {key}')
     
     return user
 

@@ -1,7 +1,7 @@
 import atexit
 
-from . models import *
-from . exceptions import NotFoundError
+from core.models import *
+from core.exceptions import NotFoundError
 
 # for :: {% for module in modules.values() %} :: {"sample_module": "module.name.snake_case", "Sample": "module.name.camel_case"}
 from sample_module import sample_module_db
@@ -14,6 +14,8 @@ from bson import ObjectId
 # vars :: {"mongodb://127.0.0.1:27017": "db.default_url", "MSpec": "project.name.camel_case"}
 
 __all__ = [
+    'create_db_context',
+
     'db_create_user',
     'db_read_user',
     'db_update_user',
@@ -48,11 +50,7 @@ __all__ = [
     'db_read_acl_entry',
     'db_update_acl_entry',
     'db_delete_acl_entry',
-    'db_list_acl_entry',
-
-    'create_db_context',
-    'core_db',
-    'MSpecDB'
+    'db_list_acl_entry'
 ]
 
 def create_db_context(client:MongoClient=None) -> dict:
@@ -89,7 +87,7 @@ def db_create_user(ctx:dict, data:dict) -> dict:
     """
     users = ctx['db']['client']['msample']['core.user']
     result = users.insert_one(user_validate(data))
-    data['id'] = str(result.inserted_id)
+    data['id'] = str(data.pop('_id'))
     return data
 
 def db_read_user(ctx:dict, id:str) -> dict:
@@ -127,7 +125,7 @@ def db_update_user(ctx:dict, data:dict) -> None:
     users = ctx['db']['client']['msample']['core.user']
     result = users.update_one({'_id': ObjectId(_id)}, {'$set': data})
     if result.matched_count == 0:
-        raise NotFoundError(f'user {id} not found')
+        raise NotFoundError(f'user {_id} not found')
 
 def db_delete_user(ctx:dict, id:str) -> None:
     """
@@ -295,7 +293,38 @@ def db_update_user_password_hash(ctx:dict, data:dict) -> None:
     result = user_password_hashes.update_one({'_id': ObjectId(_id)}, {'$set': data})
     if result.matched_count == 0:
         raise NotFoundError(f'user password hash {id} not found')
+
+def db_delete_user_password_hash(ctx:dict, id:str) -> None:
+    """
+    delete a user password hash from the database.
+
+    args ::
+        ctx :: dict containing the database client
+        id :: the id of the user password hash to delete.
+
+    return :: None
+    """
+    user_password_hashes = ctx['db']['client']['msample']['core.user_password_hash']
+    user_password_hashes.delete_one({'_id': ObjectId(id)})
+
+def db_list_user_password_hash(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
+    """
+    list user password hashes from the database and verify them.
+
+    args ::
+        ctx :: dict containing the database client
+        offset :: the offset to start listing from.
+        limit :: the maximum number of items to list.
     
+    return :: list of dicts of all user password hashes.
+    """
+    user_password_hashes = ctx['db']['client']['msample']['core.user_password_hash']
+    items = []
+    for item in user_password_hashes.find().skip(offset).limit(limit):
+        item['id'] = str(item.pop('_id'))
+        items.append(user_password_hash_validate(item))
+    return items
+
 # profile #
 
 def db_create_profile(ctx:dict, data:dict) -> dict:
