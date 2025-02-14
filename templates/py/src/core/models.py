@@ -2,10 +2,13 @@ import json
 
 from copy import copy
 from datetime import datetime
+from dataclasses import dataclass, field, asdict
+from typing import Optional
 
 from core.types import to_json, meta, email_regex, entity
 
 __all__ = [
+    'user',
     'user_to_json',
     'user_from_json',
     'user_validate',
@@ -27,6 +30,50 @@ __all__ = [
 ]
 
 # user #
+
+@dataclass
+class user:
+    name: str
+    email: str
+    profile: str
+
+    id: Optional[str] = None
+    
+    def validate(self):
+        if not isinstance(self.id, str) and self.id is not None:
+            raise ValueError('invalid user id')
+        
+        if not isinstance(self.name, str):
+            raise ValueError('user name must be a string')
+        
+        if not email_regex.fullmatch(self.email):
+            raise ValueError('user email is invalid')
+        
+        if not isinstance(self.profile, str):
+            raise ValueError('user profile must be a str')
+        
+        return self
+    
+    def to_dict(self):
+        data = asdict(self)
+        if self.id is None:
+            del data['id']
+        return data
+        
+    def to_json(self):
+        return to_json(self.to_dict())
+    
+    @classmethod
+    def from_json(cls, user_json:str):
+        return cls(**json.loads(user_json))
+    
+    @classmethod
+    def example(cls):
+        return cls(
+            name='Alice',
+            email='alice@nice.com',
+            profile='12345'
+        )
 
 user_fields = ['id', 'name', 'email', 'profile']
 

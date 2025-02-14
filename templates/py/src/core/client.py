@@ -54,14 +54,14 @@ def create_client_context(host:str=default_host) -> dict:
 
 # user #
 
-def client_create_user(ctx:dict, data:dict) -> dict:
+def client_create_user(ctx:dict, obj:user) -> user:
     """
     create a user on the server, verifying the data first.
     
     args ::
-        data :: dict of the data to create the user with.
+        obj :: user obejct
     
-    return :: dict of the created user.
+    return :: user object with new id
 
     raises :: ConfigError, MSpecError
     """
@@ -71,28 +71,28 @@ def client_create_user(ctx:dict, data:dict) -> dict:
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
-    request_body = user_to_json(user_validate(data)).encode()
+    request_body = obj.validate().to_json().encode()
 
     try:
         request = Request(url, headers=ctx['headers'], method='POST', data=request_body)
 
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return user_from_json(response_body)
+            return user.from_json(response_body)
     
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
         raise MSpecError(f'error creating user: {e.__class__.__name__}: {e}')
     
-def client_read_user(ctx:dict, id:str) -> dict:
+def client_read_user(ctx:dict, id:str) -> user:
     """
-    read a user from the server, verifying it first.
+    read a user from the server, verifying it before returning.
 
     args ::
         id :: str of the id of the user to read.
     
-    return :: dict of the user if it exists
+    return :: user object if it exists
 
     raises :: ConfigError, MSpecError, NotFoundError
     """
@@ -111,7 +111,7 @@ def client_read_user(ctx:dict, id:str) -> dict:
                 raise NotFoundError(f'user {id} not found')
             response_body = response.read().decode('utf-8')
         
-        return user_validate(user_from_json(response_body))
+        return user.from_json(response_body).validate()
     
     except HTTPError as e:
         if e.code == 404:
@@ -122,19 +122,19 @@ def client_read_user(ctx:dict, id:str) -> dict:
     except Exception as e:
         raise MSpecError(f'error reading user: {e.__class__.__name__}: {e}')
     
-def client_update_user(ctx:dict, data:dict) -> None:
+def client_update_user(ctx:dict, obj:user) -> None:
     """
     update a user on the server, verifying the data first.
 
     args ::
-        data :: dict of the data to update the user with.
+        obj :: user object
     
     return :: None
 
     raises :: ConfigError, MSpecError, NotFoundError
     """
     try:
-        _id = data['id']
+        _id = obj.id
     except KeyError:
         raise ValueError('invalid data, missing id')
     
@@ -143,7 +143,7 @@ def client_update_user(ctx:dict, data:dict) -> None:
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
-    request_body = user_to_json(user_validate(data)).encode()
+    request_body = obj.validate().to_json().encode()
 
     try:
         request = Request(url, headers=ctx['headers'], method='PUT', data=request_body)
@@ -187,7 +187,7 @@ def client_delete_user(ctx:dict, id:str) -> None:
     except Exception as e:
         raise MSpecError(f'error deleting user: {e.__class__.__name__}: {e}')
     
-def client_list_users(ctx:dict, offset:int=0, limit:int=50) -> list[dict]:
+def client_list_users(ctx:dict, offset:int=0, limit:int=50) -> list[user]:
     """
     list users from the server, verifying each.
 
@@ -211,7 +211,7 @@ def client_list_users(ctx:dict, offset:int=0, limit:int=50) -> list[dict]:
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
         
-        return [user_validate(item) for item in json.loads(response_body)]
+        return [user(**item).validate() for item in json.loads(response_body)]
     
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')

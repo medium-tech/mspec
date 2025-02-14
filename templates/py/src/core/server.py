@@ -29,21 +29,21 @@ def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
             try:
                 item = db_read_user(ctx, instance_id)
                 ctx['log'](f'GET core.user/{instance_id}')
-                raise JSONResponse('200 OK', item)
+                raise JSONResponse('200 OK', item.to_dict())
             except NotFoundError:
                 ctx['log'](f'GET core.user/{instance_id} - Not Found')
                 raise RequestError('404 Not Found', f'not found core.user.{instance_id}')
         
         elif env['REQUEST_METHOD'] == 'PUT':
-            req_body = user_from_json(raw_req_body.decode('utf-8'))
+            incoming_user = user.from_json(raw_req_body.decode('utf-8'))
             try:
-                if instance_id != req_body['id']:
+                if instance_id != incoming_user.id:
                     raise RequestError('400 Bad Request', 'user id mismatch')
             except KeyError:
                 raise RequestError('400 Bad Request', 'user is missing id')
             
             try:
-                db_update_user(ctx, req_body)
+                db_update_user(ctx, incoming_user)
             except NotFoundError:
                 ctx['log'](f'PUT core.user/{instance_id} - Not Found')
                 raise RequestError('404 Not Found', f'not found core.user.{instance_id}')
@@ -64,10 +64,10 @@ def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
 
     elif re.match(r'/api/core/user', env['PATH_INFO']):
         if env['REQUEST_METHOD'] == 'POST':
-            req_body = user_from_json(raw_req_body.decode('utf-8'))
-            item = db_create_user(ctx, req_body)
-            ctx['log'](f'POST core.user - id: {item["id"]} {item}')
-            raise JSONResponse('200 OK', item)
+            incoming_user = user.from_json(raw_req_body.decode('utf-8'))
+            item = db_create_user(ctx, incoming_user)
+            ctx['log'](f'POST core.user - id: {item.id}')
+            raise JSONResponse('200 OK', item.to_dict())
         
         elif env['REQUEST_METHOD'] == 'GET':
             query = parse_qs(env['QUERY_STRING'])
@@ -77,7 +77,7 @@ def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
             items = db_list_user(ctx, int(offset), int(limit))
             ctx['log'](f'GET core.user')
 
-            raise JSONResponse('200 OK', items)
+            raise JSONResponse('200 OK', [user.to_dict(item) for item in items])
         
         else:
             ctx['log'](f'ERROR 405 core.user')

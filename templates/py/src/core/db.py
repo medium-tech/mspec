@@ -8,6 +8,7 @@ from sample_module import sample_module_db
 # end for ::
 
 from pymongo import MongoClient
+from pymongo.collection import Collection
 from bson import ObjectId
 
 
@@ -75,22 +76,24 @@ def create_db_context(client:MongoClient=None) -> dict:
 
 # user #
 
-def db_create_user(ctx:dict, data:dict) -> dict:
+def db_create_user(ctx:dict, obj:user) -> user:
     """
     create a user in the database, verifying the data first.
 
     args ::
         ctx :: dict containing the database client
-        data :: the data to create the user with.
+        obj :: the data to create the user with.
 
-    return :: dict of the created user.
+    return :: user object
     """
-    users = ctx['db']['client']['msample']['core.user']
-    result = users.insert_one(user_validate(data))
-    data['id'] = str(data.pop('_id'))
-    return data
+    if obj.id is not None:
+        raise ValueError('cannot use user with id to create new user')
+    users:Collection = ctx['db']['client']['msample']['core.user']
+    result = users.insert_one(obj.validate().to_dict())
+    obj.id = str(result.inserted_id)
+    return obj
 
-def db_read_user(ctx:dict, id:str) -> dict:
+def db_read_user(ctx:dict, id:str) -> user:
     """
     read a user from the database and verify it.
 
@@ -98,31 +101,33 @@ def db_read_user(ctx:dict, id:str) -> dict:
         ctx :: dict containing the database client
         id :: the id of the user to read.
     
-    return :: dict of the user
+    return :: user object
     raises :: NotFoundError if the user does not exist
     """
-    users = ctx['db']['client']['msample']['core.user']
+    users:Collection = ctx['db']['client']['msample']['core.user']
     db_entry = users.find_one({'_id': ObjectId(id)})
     if db_entry is None:
         raise NotFoundError(f'user {id} not found')
     else:
         db_entry['id'] = str(db_entry.pop('_id'))
-        return user_validate(db_entry)
+        return user(**db_entry).validate()
 
-def db_update_user(ctx:dict, data:dict) -> None:
+def db_update_user(ctx:dict, obj:user) -> None:
     """
     update a user in the database, and verify the data first.
 
     args ::
         ctx :: dict containing the database client
-        data :: the data to update the user with.
+        obj :: the data to update the user with.
 
     return :: None
     raises :: NotFoundError if the user does not exist
     """
-    user_validate(data)
+    obj.validate()
+    data = obj.to_dict()
     _id = data.pop('id')
-    users = ctx['db']['client']['msample']['core.user']
+
+    users:Collection = ctx['db']['client']['msample']['core.user']
     result = users.update_one({'_id': ObjectId(_id)}, {'$set': data})
     if result.matched_count == 0:
         raise NotFoundError(f'user {_id} not found')
@@ -140,20 +145,20 @@ def db_delete_user(ctx:dict, id:str) -> None:
     users = ctx['db']['client']['msample']['core.user']
     users.delete_one({'_id': ObjectId(id)})
 
-def db_list_user(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
+def db_list_user(ctx:dict, offset:int=0, limit:int=25) -> list[user]:
     """
     list users in the database.
 
     args ::
         ctx :: dict containing the database client
 
-    return :: list of all users.
+    return :: list of user objects
     """
     users = ctx['db']['client']['msample']['core.user']
     items = []
     for item in users.find().skip(offset).limit(limit):
         item['id'] = str(item.pop('_id'))
-        items.append(user_validate(item))
+        items.append(user(**item).validate())
     return items
 
 # user session #

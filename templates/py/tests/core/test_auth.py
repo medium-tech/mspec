@@ -14,38 +14,17 @@ class TestAuth(unittest.TestCase):
 
     def test_user_validate(self):
 
-        user_good = {
-            'name': 'Alice',
-            'email': 'alice@nice.com',
-            'profile': '12345'
-        }
+        user_good = user.example()
 
-        user_validated = user_validate(user_good)
+        user_validated = user_good.validate()
         self.assertEqual(user_good, user_validated)
 
-        user_bad_type = {
-            'name': 'Alice',
-            'email': 'alice@nice.com',
-            'profile': 12345
-        }
-        self.assertRaises(ValueError, user_validate, user_bad_type)
-
-        user_extra_key1 = {
-            'id': '12345',
-            'name': 'Alice',
-            'email': 'alice@example.com',
-            'profile': '12345',
-            'extra_key': 'extra_value'
-        }
-        self.assertRaises(ValueError, user_validate, user_extra_key1)
-
-        user_extra_key2 = {
-            'name': 'Alice',
-            'email': 'alice@example.com',
-            'profile': '12345',
-            'extra_key': 'extra_value'
-        }
-        self.assertRaises(ValueError, user_validate, user_extra_key2)
+        user_bad_type = user(
+            name='Alice',
+            email='alice@nice.com',
+            profile=12345
+        )
+        self.assertRaises(ValueError, user_bad_type.validate)
 
     def test_user_crud(self):
         """
@@ -58,33 +37,38 @@ class TestAuth(unittest.TestCase):
         + delete
         """
 
-        test_user = {
-            'name': 'Test User',
-            'email': 'test.user@nice.com',
-            'profile': '09876'
-        }
-        user_validate(test_user)
+        test_user = user(
+            name='Test User',
+            email='test.user@nice.com',
+            profile='09876'
+        )
+        test_user.validate()
 
         # create #
         created_user = client_create_user(test_ctx, test_user)
-        user_validate(created_user)
-        created_user_id = created_user.pop('id')
+        self.assertTrue(isinstance(created_user, user))
+        created_user.validate()
+        created_user_id = created_user.id
+        created_user.id = None
         self.assertEqual(created_user, test_user)
 
         # read #
         user_read = client_read_user(test_ctx, created_user_id)
-        user_validate(user_read)
-        del user_read['id']
+        self.assertTrue(isinstance(user_read, user))
+        user_read.validate()
+        user_read.id = None
         self.assertEqual(user_read, test_user)
 
         # update #
-        user_read['id'] = created_user_id
-        user_read['email'] = 'test.user.2@nice.com'
-        user_validate(user_read)
+        user_read.id = created_user_id
+        user_read.email = 'test.user.2@nice.com'
+        user_read.validate()
         client_update_user(test_ctx, user_read)
 
         read_after_update = client_read_user(test_ctx, created_user_id)
-        user_validate(read_after_update)
+        self.assertTrue(isinstance(read_after_update, user))
+        read_after_update.validate()
+        self.assertEqual(read_after_update, user_read)
 
         # delete #
         client_delete_user(test_ctx, created_user_id)
@@ -97,14 +81,10 @@ class TestAuth(unittest.TestCase):
 
         # seed the db #
 
-        user_data = {
-            'name': 'Alice',
-            'email': 'alice@nice.com',
-            'profile': '12345'
-        }
+        sample_user = user.example()
 
         for _ in range(60):
-            client_create_user(test_ctx, user_data)
+            client_create_user(test_ctx, sample_user)
 
         self.assertEqual(collection.count_documents({}), 60)
 
@@ -119,15 +99,15 @@ class TestAuth(unittest.TestCase):
                 self.assertEqual(len(items), 0)
 
             for item in items:
-                user_validate(item)
-                del item['id']
-                self.assertEqual(item, user_data)
+                self.assertTrue(isinstance(item, user))
+                item.validate()
+                item.id = None
+                self.assertEqual(item, sample_user)
 
         # page size 25 #
 
         for i in range(4):
             items = client_list_users(test_ctx, offset=i*25, limit=25)
-            self.assertIsInstance(items, list)
 
             if i < 2:
                 self.assertEqual(len(items), 25)
@@ -137,9 +117,10 @@ class TestAuth(unittest.TestCase):
                 self.assertEqual(len(items), 0)
 
             for item in items:
-                user_validate(item)
-                del item['id']
-                self.assertEqual(item, user_data)
+                self.assertTrue(isinstance(item, user))
+                item.validate()
+                item.id = None
+                self.assertEqual(item, sample_user)
 
 if __name__ == '__main__':
     unittest.main()
