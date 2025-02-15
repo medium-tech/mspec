@@ -93,22 +93,22 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
             try:
                 item = db_read_profile(ctx, instance_id)
                 ctx['log'](f'GET core.profile/{instance_id}')
-                raise JSONResponse('200 OK', item)
+                raise JSONResponse('200 OK', item.to_dict())
             except NotFoundError:
                 ctx['log'](f'GET core.profile/{instance_id} - Not Found')
                 raise RequestError('404 Not Found', f'not found core.profile.{instance_id}')
         
         elif env['REQUEST_METHOD'] == 'PUT':
-            req_body = profile_from_json(raw_req_body.decode('utf-8'))
+            incoming_profile = profile.from_json(raw_req_body.decode('utf-8'))
 
             try:
-                if instance_id != req_body['id']:
+                if instance_id != incoming_profile.id:
                     raise RequestError('400 Bad Request', 'user id mismatch')
             except KeyError:
                 raise RequestError('400 Bad Request', 'user is missing id')
             
             try:
-                db_update_profile(ctx, req_body)
+                db_update_profile(ctx, incoming_profile)
             except NotFoundError:
                 ctx['log'](f'PUT core.profile/{instance_id} - Not Found')
                 raise RequestError('404 Not Found', f'not found core.profile.{instance_id}')
@@ -129,10 +129,12 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
 
     elif re.match(r'/api/core/profile', env['PATH_INFO']):
         if env['REQUEST_METHOD'] == 'POST':
-            req_body = profile_from_json(raw_req_body.decode('utf-8'))
-            item = db_create_profile(ctx, req_body)
-            ctx['log'](f'POST core.profile - id: {item["id"]}')
-            raise JSONResponse('200 OK', item)
+            ctx['log'](raw_req_body.decode('utf-8'))
+            incoming_profile = profile.from_json(raw_req_body.decode('utf-8'))
+            ctx['log'](f'POST core.profile - {type(incoming_profile.meta)} {incoming_profile.meta}')
+            item = db_create_profile(ctx, incoming_profile)
+            ctx['log'](f'POST core.profile - id: {item.id}')
+            raise JSONResponse('200 OK', item.to_dict())
         
         elif env['REQUEST_METHOD'] == 'GET':
             query = parse_qs(env['QUERY_STRING'])
@@ -142,7 +144,7 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
             items = db_list_profile(ctx, int(offset), int(limit))
             ctx['log'](f'GET core.profile')
 
-            raise JSONResponse('200 OK', items)
+            raise JSONResponse('200 OK', [profile.to_dict(item) for item in items])
         
         else:
             ctx['log'](f'ERROR 405 core.profile')

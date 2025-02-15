@@ -332,22 +332,22 @@ def db_list_user_password_hash(ctx:dict, offset:int=0, limit:int=25) -> list[dic
 
 # profile #
 
-def db_create_profile(ctx:dict, data:dict) -> dict:
+def db_create_profile(ctx:dict, obj:profile) -> profile:
     """
     create a profile in the database, verifying the data first.
 
     args ::
         ctx :: dict containing the database client
-        data :: the data to create the profile with.
+        obj :: the data to create the profile with.
 
-    return :: dict of the created profile.
+    return :: profile object with new id
     """
-    profiles = ctx['db']['client']['msample']['core.profile']
-    result = profiles.insert_one(profile_validate(data))
-    data['id'] = str(result.inserted_id)
-    return data 
+    profiles:Collection = ctx['db']['client']['msample']['core.profile']
+    result = profiles.insert_one(obj.validate().to_dict())
+    obj.id = str(result.inserted_id)
+    return obj 
 
-def db_read_profile(ctx:dict, id:str) -> dict:
+def db_read_profile(ctx:dict, id:str) -> profile:
     """
     read a profile from the database and verify it.
 
@@ -355,34 +355,36 @@ def db_read_profile(ctx:dict, id:str) -> dict:
         ctx :: dict containing the database client
         id :: the id of the profile to read.
     
-    return :: dict of the profile
+    return :: profile object if it exists
     raises :: NotFoundError if the profile does not exist
     """
-    profiles = ctx['db']['client']['msample']['core.profile']
+    profiles:Collection = ctx['db']['client']['msample']['core.profile']
     db_entry = profiles.find_one({'_id': ObjectId(id)})
     if db_entry is None:
         raise NotFoundError(f'profile {id} not found')
     else:
         db_entry['id'] = str(db_entry.pop('_id'))
-        return profile_validate(db_entry)
+        return profile(**db_entry).validate()
     
-def db_update_profile(ctx:dict, data:dict) -> None:
+def db_update_profile(ctx:dict, obj:profile) -> None:
     """
     update a profile in the database, and verify the data first.
 
     args ::
         ctx :: dict containing the database client
-        data :: the data to update the profile with.
+        obj :: the data to update the profile with.
 
     return :: None
     raises :: NotFoundError if the profile does not exist
     """
-    profile_validate(data)
+    obj.validate()
+    data = obj.to_dict()
     _id = data.pop('id')
-    profiles = ctx['db']['client']['msample']['core.profile']
+
+    profiles:Collection = ctx['db']['client']['msample']['core.profile']
     result = profiles.update_one({'_id': ObjectId(_id)}, {'$set': data})
     if result.matched_count == 0:
-        raise NotFoundError(f'profile {id} not found')
+        raise NotFoundError(f'profile {_id} not found')
     
 def db_delete_profile(ctx:dict, id:str) -> None:
     """
@@ -397,7 +399,7 @@ def db_delete_profile(ctx:dict, id:str) -> None:
     profiles = ctx['db']['client']['msample']['core.profile']
     profiles.delete_one({'_id': ObjectId(id)})
 
-def db_list_profile(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
+def db_list_profile(ctx:dict, offset:int=0, limit:int=25) -> list[profile]:
     """
     list profiles from the database and verify them.
 
@@ -406,13 +408,13 @@ def db_list_profile(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
         offset :: the offset to start listing from.
         limit :: the maximum number of items to list.
 
-    return :: list of all profiles.
+    return :: list of profile objects.
     """
     profiles = ctx['db']['client']['msample']['core.profile']
     items = []
     for item in profiles.find().skip(offset).limit(limit):
         item['id'] = str(item.pop('_id'))
-        items.append(profile_validate(item))
+        items.append(profile(**item).validate())
     return items
 
 # acl #

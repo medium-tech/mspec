@@ -221,14 +221,14 @@ def client_list_users(ctx:dict, offset:int=0, limit:int=50) -> list[user]:
     
 # profile #
 
-def client_create_profile(ctx:dict, data:dict) -> dict:
+def client_create_profile(ctx:dict, obj:profile) -> profile:
     """
     create a profile on the server, verifying the data first.
     
     args ::
-        data :: dict of the data to create the profile with.
+        obj :: profile object to create.
     
-    return :: dict of the the created profile.
+    return :: profile object with new id
 
     raises :: ConfigError, MSpecError
     """
@@ -238,28 +238,28 @@ def client_create_profile(ctx:dict, data:dict) -> dict:
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
-    request_body = profile_to_json(profile_validate(data)).encode()
+    request_body = obj.validate().to_json().encode()
 
     try:
         request = Request(url, headers=ctx['headers'], method='POST', data=request_body)
 
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return profile_from_json(response_body)
+            return profile.from_json(response_body)
     
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
         raise MSpecError(f'error creating profile: {e.__class__.__name__}: {e}')
     
-def client_read_profile(ctx:dict, id:str) -> dict:
+def client_read_profile(ctx:dict, id:str) -> profile:
     """
     read a profile from the server, verifying it first.
 
     args ::
         id :: str of the id of the profile to read.
     
-    return :: dict of the profile if it exists
+    return :: profile object if it exists
 
     raises :: ConfigError, MSpecError, NotFoundError
     """
@@ -278,7 +278,7 @@ def client_read_profile(ctx:dict, id:str) -> dict:
                 raise NotFoundError(f'profile {id} not found')
             response_body = response.read().decode('utf-8')
         
-        return profile_validate(profile_from_json(response_body))
+        return profile.from_json(response_body).validate()
     
     except HTTPError as e:
         if e.code == 404:
@@ -289,12 +289,12 @@ def client_read_profile(ctx:dict, id:str) -> dict:
     except Exception as e:
         raise MSpecError(f'error reading profile: {e.__class__.__name__}: {e}')
     
-def client_update_profile(ctx:dict, data:dict) -> None:
+def client_update_profile(ctx:dict, obj:profile) -> None:
     """
     update a profile on the server, verifying the data first.
 
     args ::
-        data :: dict of the data to update the profile with.
+        obj :: profile object
     
     return :: None
 
@@ -302,7 +302,7 @@ def client_update_profile(ctx:dict, data:dict) -> None:
     """
 
     try:
-        _id = data['id']
+        _id = obj.id
     except KeyError:
         raise ValueError('invalid data, missing id')
 
@@ -311,7 +311,7 @@ def client_update_profile(ctx:dict, data:dict) -> None:
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
-    request_body = profile_to_json(profile_validate(data)).encode()
+    request_body = obj.validate().to_json().encode()
 
     try:
         request = Request(url, headers=ctx['headers'], method='PUT', data=request_body)
@@ -355,7 +355,7 @@ def client_delete_profile(ctx:dict, id:str) -> None:
     except Exception as e:
         raise MSpecError(f'error deleting profile: {e.__class__.__name__}: {e}')
     
-def client_list_profile(ctx:dict, offset:int=0, limit:int=50) -> list[dict]:
+def client_list_profile(ctx:dict, offset:int=0, limit:int=50) -> list[profile]:
     """
     list profiles from the server, verifying each.
 
@@ -363,7 +363,7 @@ def client_list_profile(ctx:dict, offset:int=0, limit:int=50) -> list[dict]:
         offset :: int of the number of profiles to skip.
         limit :: int of the number of profiles to return.
     
-    return :: list of dicts of the profiles.
+    return :: list of profile objects
 
     raises :: ConfigError, MSpecError
     """
@@ -379,7 +379,7 @@ def client_list_profile(ctx:dict, offset:int=0, limit:int=50) -> list[dict]:
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
         
-        return [profile_validate(item) for item in json.loads(response_body)]
+        return [profile(**item).validate() for item in json.loads(response_body)]
     
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')

@@ -235,18 +235,25 @@ class hierarchy(str):
 
 class hierarchies(list):
 
+    def __init__(self, iterable):
+        super().__init__(hierarchy(item) for item in iterable)
+
     def validate(self):
-        for index, hierarchy in enumerate(self):
-            if not isinstance(hierarchy, hierarchy):
+        for index, item in enumerate(self):
+            if not isinstance(item, hierarchy):
                 raise ValueError(f'Invalid hierarchy type at index {index}')
         
-            hierarchy.validate()
+            item.validate()
 
 @dataclass
-class meta:
+class metadata:
     data: dict[str, str|int|float|bool] = field(default_factory=dict)
     tags: tags = field(default_factory=tags) # type: ignore
-    hierarchies: hierarchies = field(default_factory=hierarchies) # type: ignore
+    hierarchies: hierarchies = field(default_factory=lambda: hierarchies([])) # type: ignore
+
+    def __post_init__(self):
+        self.tags = tags(self.tags)
+        self.hierarchies = hierarchies(self.hierarchies)
     
     def validate(self):
         for key, value in self.data.items():
@@ -261,7 +268,7 @@ class meta:
 class context:
     id: str = ''
     source: str = ''
-    meta: meta = field(default_factory=meta) # type: ignore
+    meta: meta = field(default_factory=metadata) # type: ignore
 
     def validate(self):
         if not isinstance(self.id, str):

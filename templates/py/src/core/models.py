@@ -5,22 +5,17 @@ from datetime import datetime
 from dataclasses import dataclass, field, asdict
 from typing import Optional
 
-from core.types import to_json, meta, email_regex, entity
+from core.types import to_json, metadata, email_regex, entity
 
 __all__ = [
     'user',
-    'user_to_json',
-    'user_from_json',
-    'user_validate',
     'user_session_to_json',
     'user_session_from_json',
     'user_session_validate',
     'user_password_hash_to_json',
     'user_password_hash_from_json',
     'user_password_hash_validate',
-    'profile_to_json',
-    'profile_from_json',
-    'profile_validate',
+    'profile',
     'acl_to_json',
     'acl_from_json',
     'acl_validate',
@@ -74,54 +69,6 @@ class user:
             email='alice@nice.com',
             profile='12345'
         )
-
-user_fields = ['id', 'name', 'email', 'profile']
-
-def user_to_json(user:dict) -> str:
-    return to_json(user)
-
-def user_from_json(user_json:str) -> dict:
-    return json.loads(user_json)
-
-def user_validate(user:dict) -> dict:
-    if not isinstance(user, dict):
-        raise TypeError('user must be a dictionary')
-    
-    try:
-        if not isinstance(user['id'], str):
-            raise ValueError('user id must be a string')
-        
-    except KeyError:
-        pass
-    
-    try:
-        if not isinstance(user['name'], str):
-            raise ValueError('user name must be a string')
-    except KeyError:
-        raise ValueError('user is missing name')
-    
-    try:
-        if not email_regex.fullmatch(user['email']):
-            raise ValueError('user email is invalid')
-    
-    except TypeError:
-        raise ValueError('user email is invalid')
-
-    except KeyError:
-        raise ValueError('user is missing email')
-    
-    try:
-        if not isinstance(user['profile'], str):
-            raise ValueError('user profile must be a str')
-
-    except KeyError:
-        raise ValueError('user is missing profile')
-    
-    for key in user.keys():
-        if key not in user_fields:
-            raise ValueError(f'user has extra key: {key}')
-    
-    return user
 
 # user session #
 
@@ -208,47 +155,60 @@ def user_password_hash_validate(user_password_hash:dict) -> dict:
     
 # profile #
 
-def profile_to_json(profile:dict) -> str:
-    return to_json(profile)
+@dataclass
+class profile:
 
-def profile_from_json(profile_json:str) -> dict:
-    return json.loads(profile_json)
+    name: str
+    bio: str
+    meta: metadata
 
-def profile_validate(profile:dict) -> dict:
-    if not isinstance(profile, dict):
-        raise TypeError('profile must be a dictionary')
+    id: Optional[str] = None
+
+    def __post_init__(self):
+        if isinstance(self.meta, dict):
+            self.meta = metadata(**self.meta)
     
-    try:
-        if not isinstance(profile['id'], str):
-            raise ValueError('profile id must be a string')
-    except KeyError:
-        pass
-    
-    try:
-        if not isinstance(profile['name'], str):
-            raise ValueError('profile name must be a string')
-    except KeyError:
-        raise ValueError('profile is missing name')
-    
-    try:
-        if not isinstance(profile['bio'], str):
-            raise ValueError('profile bio must be a string')
-    except KeyError:
-        raise ValueError('profile is missing bio')
-    
-    try:
-        if not isinstance(profile['meta'], meta):
-            raise ValueError('profile permissions must be a meta object')
+    def validate(self):
+        if not isinstance(self.id, str) and self.id is not None:
+            raise ValueError('invalid profile id')
         
-        profile['meta'].validate()
-
-    except KeyError:
-        raise ValueError('profile is missing permissions')
+        if not isinstance(self.name, str):
+            raise ValueError('profile name must be a string')
+        
+        if not isinstance(self.bio, str):
+            raise ValueError('profile bio must be a string')
+        
+        if not isinstance(self.meta, metadata):
+            raise ValueError('profile meta must be a metadata object')
+        
+        self.meta.validate()
+        
+        return self
     
-    if len(profile.keys()) > 4:
-        raise ValueError('profile has too many keys')
+    def to_dict(self):
+        data = asdict(self)
+        if self.id is None:
+            del data['id']
+        return data
+        
+    def to_json(self):
+        return to_json(self.to_dict())
     
-    return profile
+    @classmethod
+    def from_json(cls, profile_json:str):
+        return cls(**json.loads(profile_json))
+    
+    @classmethod
+    def example(cls):
+        return cls(
+            name='Alice',
+            bio='Alice is a nice person.',
+            meta=metadata(
+                data={'age': 30},
+                tags=['nice', 'friendly', 'guitar', 'drums', 'camera', 'film'],
+                hierarchies=['artist/musician', 'artist/photographer']
+            )
+        )
     
 # acl #
 

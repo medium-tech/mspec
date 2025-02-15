@@ -4,6 +4,7 @@ from core.exceptions import NotFoundError
 from core.models import *
 from core.client import *
 from core.db import *
+from core.types import metadata
 
 from pymongo.collection import Collection
 
@@ -121,6 +122,61 @@ class TestAuth(unittest.TestCase):
                 item.validate()
                 item.id = None
                 self.assertEqual(item, sample_user)
+
+    def test_profile_validate(self):
+
+        profile_good = profile.example()
+
+        profile_validated = profile_good.validate()
+        self.assertEqual(profile_good, profile_validated)
+
+        profile_bad_type = profile.example()
+        profile_bad_type.bio = 12345
+        
+        self.assertRaises(ValueError, profile_bad_type.validate)
+
+    def test_profile_crud(self):
+        test_profile = profile(
+            name='Test Profile',
+            bio='Test profile bio',
+            meta=metadata(
+                data={'key': 'value'},
+                tags={'tag1', 'tag2'},
+                hierarchies={'one/two/three', 'blue/aqua'}
+            )
+        )
+
+        test_profile.validate()
+
+        # create #
+        created_profile = client_create_profile(test_ctx, test_profile)
+        self.assertTrue(isinstance(created_profile, profile))
+        created_profile.validate()
+        created_profile_id = created_profile.id
+        created_profile.id = None
+        self.assertEqual(created_profile, test_profile)
+
+        # read #
+        profile_read = client_read_profile(test_ctx, created_profile_id)
+        self.assertTrue(isinstance(profile_read, profile))
+        profile_read.validate()
+        profile_read.id = None
+        self.assertEqual(profile_read, test_profile)
+
+        # update #
+        profile_read.id = created_profile_id
+        profile_read.name = 'Updated Test Profile'
+        profile_read.validate()
+        client_update_profile(test_ctx, profile_read)
+
+        read_after_update = client_read_profile(test_ctx, created_profile_id)
+        self.assertTrue(isinstance(read_after_update, profile))
+        read_after_update.validate()
+        self.assertEqual(read_after_update, profile_read)
+
+        # delete #
+        client_delete_profile(test_ctx, created_profile_id)
+        self.assertRaises(NotFoundError, client_read_profile, test_ctx, created_profile_id)
 
 if __name__ == '__main__':
     unittest.main()
