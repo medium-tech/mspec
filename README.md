@@ -59,7 +59,9 @@
         * 🟢 in `core/db.py` and `core/client.py` - alias client and db classes from `sample/__init__.py`
     * 🟢 rename example_item.age and example_item.name because those field names conflict with templating code
     * 🟡 add auth/users/profile support
-        * 🔴 client/server unittests
+        * 🟢 client/server unittests for profile/user
+        * 🔴 onboarding working, new user/profile/password
+        * 🔴 login workflow
     * 🔴 refactor sample_module to match core module
         * 🔴 remove logic from __init__.py
         * 🔴 remove random generator logic
