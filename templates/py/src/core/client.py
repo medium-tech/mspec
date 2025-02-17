@@ -54,12 +54,12 @@ def create_client_context(host:str=default_host) -> dict:
 
 # user #
 
-def client_create_user(ctx:dict, obj:user) -> user:
+def client_create_user(ctx:dict, new_user:create_user_form) -> user:
     """
     create a user on the server, verifying the data first.
     
     args ::
-        obj :: user obejct
+        new_user: create_user_form object to create.
     
     return :: user object with new id
 
@@ -71,7 +71,7 @@ def client_create_user(ctx:dict, obj:user) -> user:
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
-    request_body = obj.validate().to_json().encode()
+    request_body = new_user.validate().to_json().encode()
 
     try:
         request = Request(url, headers=ctx['headers'], method='POST', data=request_body)

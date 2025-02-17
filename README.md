@@ -62,6 +62,8 @@
         * 🟢 client/server unittests for profile/user
         * 🔴 onboarding working, new user/profile/password
         * 🔴 login workflow
+        * 🔴 add salt to pw
+        * 🔴 add login sessions/logout
     * 🔴 refactor sample_module to match core module
         * 🔴 remove logic from __init__.py
         * 🔴 remove random generator logic

@@ -5,6 +5,7 @@ import os
 from traceback import format_exc
 from urllib.parse import parse_qs
 
+from core.auth import create_new_user
 from core.models import *
 from core.db import *
 from core.exceptions import RequestError, JSONResponse, NotFoundError
@@ -64,8 +65,9 @@ def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
 
     elif re.match(r'/api/core/user', env['PATH_INFO']):
         if env['REQUEST_METHOD'] == 'POST':
-            incoming_user = user.from_json(raw_req_body.decode('utf-8'))
-            item = db_create_user(ctx, incoming_user)
+            incoming_user = create_user_form.from_json(raw_req_body.decode('utf-8'))
+            ctx['log'](f'POST core.user - {type(incoming_user)} {incoming_user}')
+            item = create_new_user(ctx, incoming_user)
             ctx['log'](f'POST core.user - id: {item.id}')
             raise JSONResponse('200 OK', item.to_dict())
         

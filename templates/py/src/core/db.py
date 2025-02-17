@@ -247,7 +247,7 @@ def db_list_user_session(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
 
 # user password hash #
 
-def db_create_user_password_hash(ctx:dict, data:dict) -> dict:
+def db_create_user_password_hash(ctx:dict, data:user_password_hash) -> user_password_hash:
     """
     create a user password hash in the database, verifying the data first.
 
@@ -258,8 +258,8 @@ def db_create_user_password_hash(ctx:dict, data:dict) -> dict:
     return :: dict of the created user password hash.
     """
     user_password_hashes = ctx['db']['client']['msample']['core.user_password_hash']
-    result = user_password_hashes.insert_one(user_password_hash_validate(data))
-    data['id'] = str(result.inserted_id)
+    result = user_password_hashes.insert_one(data.validate().to_dict())
+    data.id = str(result.inserted_id)
     return data 
 
 def db_read_user_password_hash(ctx:dict, id:str) -> dict:

@@ -7,6 +7,9 @@ class ConfigError(MSpecError):
 class NotFoundError(MSpecError):
     pass
 
+class AuthenticationError(MSpecError):
+    pass
+
 class RequestError(MSpecError):
     def __init__(self, status:str, msg:str) -> None:
         super().__init__(msg)
