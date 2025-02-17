@@ -1,15 +1,18 @@
 import os
 import json
 
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
+from copy import deepcopy
 
-from core.exceptions import MSpecError, ConfigError, NotFoundError
+from core.exceptions import MSpecError, ConfigError, NotFoundError, AuthenticationError, ForbiddenError
 from core.models import *
 
 __all__ = [
     'create_client_context',
     
+    'client_login',
     'client_create_user',
     'client_read_user',
     'client_update_user',
@@ -45,14 +48,63 @@ def create_client_context(host:str=default_host) -> dict:
     return :: None
     """.format(default_host)
 
-    return {
+    return deepcopy({
         'host': host,
         'headers': {
             'Content-Type': 'application/json'
         }
-    }
+    })
 
 # user #
+
+def client_login(ctx:dict, email:str, password:str) -> dict:
+    """
+    login to the server, returning the context to be used for other client requests.
+    
+    args ::
+        email :: str of the email of the user to login.
+        password :: str of the password of the user to login.
+    
+    return :: dict with client context
+        {
+            'host': ctx['host'],
+            'headers': {
+                'Authorization': f'Bearer <token>'
+            }
+        }
+
+    raises :: ConfigError, MSpecError
+    """
+
+    try:
+        url = f'{ctx["host"]}/api/auth/login'
+    except KeyError:
+        raise ConfigError('invalid context, missing host')
+
+    request_body = urlencode({'email': email, 'password': password}).encode('utf-8')
+
+    try:
+        request = Request(url, headers=ctx['headers'], method='POST', data=request_body)
+
+        with urlopen(request) as response:
+            response_body = json.loads(response.read().decode('utf-8'))
+
+    except HTTPError as e:
+        if e.code == 401:
+            raise AuthenticationError('Error logging in: invalid username or password')
+        else:
+            raise MSpecError(f'error logging in: {e.__class__.__name__}: {e}')
+    except (json.JSONDecodeError, KeyError) as e:
+        raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
+    except Exception as e:
+        raise MSpecError(f'error logging in: {e.__class__.__name__}: {e}')
+    
+    login_ctx = {
+        'host': ctx['host'],
+        'headers': deepcopy(ctx['headers'])
+    }
+    login_ctx['headers']['Authorization'] = f'Bearer {response_body["access_token"]}'
+    return login_ctx
 
 def client_create_user(ctx:dict, new_user:create_user_form) -> user:
     """
@@ -101,26 +153,27 @@ def client_read_user(ctx:dict, id:str) -> user:
         url = ctx['host'] + '/api/core/user/' + id
     except KeyError:
         raise ConfigError('invalid context, missing host')
-
     request = Request(url, headers=ctx['headers'], method='GET')
 
     try:
 
         with urlopen(request) as response:
-            if response.status == 404:
-                raise NotFoundError(f'user {id} not found')
             response_body = response.read().decode('utf-8')
-        
-        return user.from_json(response_body).validate()
     
     except HTTPError as e:
-        if e.code == 404:
+        if e.code == 401:
+            raise AuthenticationError('Error reading user: invalid username or password')
+        elif e.code == 403:
+            raise ForbiddenError('Error reading user: forbidden')
+        elif e.code == 404:
             raise NotFoundError(f'user {id} not found')
         raise MSpecError(f'error reading user: {e.__class__.__name__}: {e}')
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
         raise MSpecError(f'error reading user: {e.__class__.__name__}: {e}')
+
+    return user.from_json(response_body).validate()
     
 def client_update_user(ctx:dict, obj:user) -> None:
     """

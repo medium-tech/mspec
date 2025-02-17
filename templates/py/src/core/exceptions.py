@@ -10,6 +10,9 @@ class NotFoundError(MSpecError):
 class AuthenticationError(MSpecError):
     pass
 
+class ForbiddenError(MSpecError):
+    pass
+
 class RequestError(MSpecError):
     def __init__(self, status:str, msg:str) -> None:
         super().__init__(msg)

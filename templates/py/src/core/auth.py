@@ -42,11 +42,9 @@ def get_user_from_token(ctx:dict, token:str):
         raise AuthenticationError('Could not validate credentials')
     
     try:
-        user = db_read_user(ctx, user_id)
+        return db_read_user(ctx, user_id)
     except NotFoundError:
         raise AuthenticationError('Could not validate credentials')
-    
-    return user
 
 
 def verify_password(plain_password:str, hashed_password:str) -> bool:
@@ -57,28 +55,27 @@ def get_password_hash(password:str) -> str:
     return pwd_context.hash(password)
 
 
-def login_user(ctx:dict, email: str, password: str) -> user:
+def login_user(ctx:dict, email: str, password: str) -> access_token:
     users:Collection = ctx['db']['client']['msample']['core.user']
 
+    user_db_result = users.find_one({'email': email.lower()})
     try:
-        user_to_login:user = users.find_one({'email': email.lower()})
-    except IndexError:
+        user_id = str(user_db_result['_id'])
+    except AttributeError:
+        """user_id is None - user id not found"""
         raise AuthenticationError('Invalid username or password')
-    
+
     user_pw_hashes:Collection = ctx['db']['client']['msample']['core.user_password_hash']
     
     try:
-        user_pw:user_password_hash = user_pw_hashes.find_one({'user': ObjectId(user_to_login.id)})
+        user_pw_db_result = user_pw_hashes.find_one({'user': ObjectId(user_id)})
     except IndexError:
         raise AuthenticationError('Invalid username or password')
 
-    if not verify_password(password, user_pw.hash):
+    if not verify_password(password, user_pw_db_result['hash']):
         raise AuthenticationError('Invalid username or password')
     
-    token_expires = timedelta(minutes=MSTACK_AUTH_LOGIN_EXPIRATION_MINUTES)
-    access_token = create_access_token(data={'sub': str(user_to_login.id)}, expires_delta=token_expires)
-    
-    return user_to_login
+    return create_access_token(data={'sub': str(user_id)})
 
 
 def create_access_token(data: dict):

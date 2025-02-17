@@ -258,7 +258,9 @@ def db_create_user_password_hash(ctx:dict, data:user_password_hash) -> user_pass
     return :: dict of the created user password hash.
     """
     user_password_hashes = ctx['db']['client']['msample']['core.user_password_hash']
-    result = user_password_hashes.insert_one(data.validate().to_dict())
+    data_for_mongo = data.validate().to_dict()
+    data_for_mongo['user'] = ObjectId(data_for_mongo['user'])
+    result = user_password_hashes.insert_one(data_for_mongo)
     data.id = str(result.inserted_id)
     return data 
 

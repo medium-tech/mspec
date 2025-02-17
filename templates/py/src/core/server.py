@@ -5,10 +5,10 @@ import os
 from traceback import format_exc
 from urllib.parse import parse_qs
 
-from core.auth import create_new_user
+from core.auth import create_new_user, login_user, get_user_from_token
 from core.models import *
 from core.db import *
-from core.exceptions import RequestError, JSONResponse, NotFoundError
+from core.exceptions import RequestError, JSONResponse, NotFoundError, AuthenticationError, ForbiddenError
 # for :: {% for module in modules.values() %} :: {"sample_module": "module.name.snake_case"}
 from sample_module import sample_module_routes
 # end for ::
@@ -20,13 +20,30 @@ from uwsgidecorators import postfork
 # routes
 #
 
+def auth_routes(ctx:dict, env:dict, raw_req_body:bytes):
+    if re.match(r'/api/auth/login', env['PATH_INFO']):
+        
+        if env['REQUEST_METHOD'] == 'POST':
+            form_data = parse_qs(raw_req_body.decode('utf-8'), strict_parsing=True)
+            ctx['log'](f'POST core.auth.login')
+            token = login_user(ctx, form_data['email'][0], form_data['password'][0])
+            raise JSONResponse('200 OK', token.to_dict())
+        
+        else:
+            ctx['log'](f'ERROR 405 core.auth.login')
+            raise RequestError('405 Method Not Allowed', 'invalid request method')
+
 def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
     
     # user - instance routes #
 
     if (instance := re.match(r'/api/core/user/(.+)', env['PATH_INFO'])) is not None:
         instance_id = instance.group(1)
+        cur_user:user = env['get_user']()
+        if cur_user.id != instance_id:
+            raise ForbiddenError('Resource is not accessible')
         if env['REQUEST_METHOD'] == 'GET':
+            
             try:
                 item = db_read_user(ctx, instance_id)
                 ctx['log'](f'GET core.user/{instance_id}')
@@ -157,6 +174,7 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
 #
 
 route_list = [
+    auth_routes,
     user_routes,
     profile_routes
 ]
@@ -175,15 +193,38 @@ def initialize():
     server_ctx.update(create_db_context())
     uwsgi.log(f'INITIALIZED - pid: {os.getpid()}')
 
+def get_user(env:dict) -> user:
+    global server_ctx
+    try:
+        auth_header = env['HTTP_AUTHORIZATION']
+    except KeyError:
+        raise AuthenticationError('Not logged in')
+    
+    token = auth_header[7:]
+    return get_user_from_token(server_ctx, token)
+
 def application(env, start_response):
 
     # best practice is to always consume body if it exists: https://uwsgi-docs.readthedocs.io/en/latest/ThingsToKnow.html
     req_body:bytes = env['wsgi.input'].read()
     env['wsgi.input'].close()
 
+    env['get_user'] = lambda: get_user(env)
+
     for route in route_list:
         try:
             route(server_ctx, env, req_body)
+
+        except AuthenticationError as e:
+            body = {'error': 'Unauthorized'}
+            status_code = '401 Unauthorized'
+            break
+
+        except ForbiddenError as e:
+            body = {'error': 'Forbidden'}
+            status_code = '403 Forbidden'
+            break
+
         except RequestError as e:
             body = {'error': e.msg}
             status_code = e.status

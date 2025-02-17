@@ -60,8 +60,10 @@
     * 🟢 rename example_item.age and example_item.name because those field names conflict with templating code
     * 🟡 add auth/users/profile support
         * 🟢 client/server unittests for profile/user
-        * 🔴 onboarding working, new user/profile/password
-        * 🔴 login workflow
+        * 🟢 onboarding working, new user/profile/password
+        * 🟢 login workflow
+        * 🔴 add root authorzation
+        * 🔴 add auth to profile endpoints
         * 🔴 add salt to pw
         * 🔴 add login sessions/logout
     * 🔴 refactor sample_module to match core module

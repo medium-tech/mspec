@@ -125,6 +125,25 @@ class access_token:
     access_token: str
     token_type: str
 
+    def validate(self):
+        if not isinstance(self.access_token, str):
+            raise ValueError('access_token access_token must be a string')
+        
+        if not isinstance(self.token_type, str):
+            raise ValueError('access_token token_type must be a string')
+        
+        return self
+    
+    def to_dict(self):
+        return asdict(self)
+    
+    def to_json(self):
+        return to_json(self.to_dict())
+    
+    @classmethod
+    def from_json(cls, access_token_json:str):
+        return cls(**json.loads(access_token_json))
+
 # new password #
 
 @dataclass

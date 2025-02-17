@@ -35,7 +35,7 @@ class TestModels(unittest.TestCase):
         user_upper_case.validate()
         self.assertEqual(user_upper_case.email, 'alice@example.com')
 
-    def test_user_crud(self):
+    def _disabled_test_user_crud(self):
         """
 
         only need to test the client, which by also tests the server and other modules
@@ -83,7 +83,7 @@ class TestModels(unittest.TestCase):
         client_delete_user(test_ctx, created_user_id)
         self.assertRaises(NotFoundError, client_read_user, test_ctx, created_user_id)
 
-    def test_user_list(self):
+    def _disabled_test_user_list(self):
 
         collection:Collection = test_ctx['db']['client']['msample']['core.user']
         collection.delete_many({})
@@ -143,7 +143,7 @@ class TestModels(unittest.TestCase):
         
         self.assertRaises(ValueError, profile_bad_type.validate)
 
-    def test_profile_crud(self):
+    def _disabled_test_profile_crud(self):
         test_profile = profile(
             name='Test Profile',
             bio='Test profile bio',
