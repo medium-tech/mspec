@@ -4,7 +4,7 @@ from core.exceptions import NotFoundError
 from core.models import *
 from core.client import *
 from core.db import *
-from core.types import metadata
+from core.types import Meta
 
 from pymongo.collection import Collection
 
@@ -147,7 +147,7 @@ class TestModels(unittest.TestCase):
         test_profile = profile(
             name='Test Profile',
             bio='Test profile bio',
-            meta=metadata(
+            meta=Meta(
                 data={'key': 'value'},
                 tags={'tag1', 'tag2'},
                 hierarchies={'one/two/three', 'blue/aqua'}

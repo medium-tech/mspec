@@ -5,7 +5,7 @@ from datetime import datetime
 from dataclasses import dataclass, field, asdict
 from typing import Optional
 
-from core.types import to_json, metadata, email_regex, entity
+from core.types import to_json, Meta, email_regex, Entity
 
 __all__ = [
     'user',
@@ -259,13 +259,13 @@ class profile:
 
     name: str
     bio: str
-    meta: metadata
+    meta: Meta
 
     id: Optional[str] = None
 
     def __post_init__(self):
         if isinstance(self.meta, dict):
-            self.meta = metadata(**self.meta)
+            self.meta = Meta(**self.meta)
     
     def validate(self):
         if not isinstance(self.id, str) and self.id is not None:
@@ -277,7 +277,7 @@ class profile:
         if not isinstance(self.bio, str):
             raise ValueError('profile bio must be a string')
         
-        if not isinstance(self.meta, metadata):
+        if not isinstance(self.meta, Meta):
             raise ValueError('profile meta must be a metadata object')
         
         self.meta.validate()
@@ -302,7 +302,7 @@ class profile:
         return cls(
             name='Alice',
             bio='Alice is a nice person.',
-            meta=metadata(
+            meta=Meta(
                 data={'age': 30},
                 tags=['nice', 'friendly', 'guitar', 'drums', 'camera', 'film'],
                 hierarchies=['artist/musician', 'artist/photographer']
@@ -369,7 +369,7 @@ def acl_entry_validate(acl_entry:dict) -> dict:
         raise ValueError('acl_entry is missing acl')
     
     try:
-        if not isinstance(acl_entry['entity'], entity):
+        if not isinstance(acl_entry['entity'], Entity):
             raise ValueError('acl_entry entity must be a str')
         
         acl_entry['entity'].validate()

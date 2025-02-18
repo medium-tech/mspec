@@ -25,7 +25,7 @@ class MSpecJsonEncoder(json.JSONEncoder):
 
         if isinstance(obj, datetime):
             return obj.isoformat()
-        elif isinstance(obj, cid):
+        elif isinstance(obj, CID):
             return str(obj)
         elif isinstance(obj, Path):
             return str(obj)
@@ -45,7 +45,7 @@ _cid_hash_pattern = r'[A-Za-z0-9-_]{43}'
 _read_buffer_len = int(os.environ.get('READ_BUFFER_LEN', 1024 * 1024 * 16))
 
 @dataclass(frozen=True)
-class cid:
+class CID:
     hash:str
     size:int
     ext:str = ''
@@ -87,7 +87,7 @@ class cid:
     # initilization existing CIDs #
 
     @classmethod
-    def create(cls, content_id:Union[str, dict, 'cid']) -> 'cid':
+    def create(cls, content_id:Union[str, dict, 'CID']) -> 'CID':
         """initialize an existing ContentId from various input types"""
         if isinstance(content_id, str):
             return cls.parse(content_id)
@@ -99,7 +99,7 @@ class cid:
             raise ValueError(f'Invalid ContentId input type: {type(content_id)}')
 
     @classmethod
-    def parse(cls, content_id:str) -> 'cid':
+    def parse(cls, content_id:str) -> 'CID':
         """parse an existing ContentId string"""
         version = int(content_id[0])
         if version != 0:
@@ -123,14 +123,14 @@ class cid:
     # calculate new content id #
 
     @classmethod
-    def from_string(cls:'cid', string:str, ext:str) -> 'cid':
+    def from_string(cls:'CID', string:str, ext:str) -> 'CID':
         """calculate a return a ContentId from a string"""
         hash_obj = sha3_256(string.encode('utf-8'))
         hash = cls._hash_from_digest(hash_obj.digest())
         return cls(hash=hash, size=len(string), ext=ext)
 
     @classmethod
-    def from_dict(cls:'cid', data:Dict) -> 'cid':
+    def from_dict(cls:'CID', data:Dict) -> 'CID':
         """calculate a return a ContentId from a dictionary"""
         json_string = to_json(data)
         cid = cls.from_string(json_string, 'json')
@@ -138,7 +138,7 @@ class cid:
         return cid
 
     @classmethod
-    def from_io(cls:'cid', stream:BinaryIO, size:int, ext:str) -> 'cid':
+    def from_io(cls:'CID', stream:BinaryIO, size:int, ext:str) -> 'CID':
         """calculate a return a ContentId from a file-like object"""
         hash_obj = sha3_256()
         while True:
@@ -152,7 +152,7 @@ class cid:
         return cls(hash=hash, size=size, ext=ext)
 
     @classmethod
-    def from_filepath(cls:'cid', filepath:Union[str, Path]) -> 'cid':
+    def from_filepath(cls:'CID', filepath:Union[str, Path]) -> 'CID':
         """calculate a return a ContentId from a file path"""
         path:Path = Path(filepath)
         ext = ''.join(path.suffixes)[1:]
@@ -164,7 +164,7 @@ class cid:
             return cls.from_io(stream, size, ext)
     
     @classmethod
-    def from_s3(cls:'cid', bucket:str, key:str) -> 'cid':
+    def from_s3(cls:'CID', bucket:str, key:str) -> 'CID':
         """calculate a return a ContentId from an S3 object"""
         ext = os.path.splitext(key)[1][1:]
 
@@ -206,7 +206,7 @@ class cid:
 #
 
 _max_tags_length = int(os.environ.get('MAX_TAGS_LENGTH', 32))
-class tags(list):
+class Tags(list):
 
     def validate(self):
         total = 0
@@ -220,7 +220,7 @@ class tags(list):
         if len(self) != len(set(self)):
             raise ValueError('Tags must be unique')
 
-class hierarchy(str):
+class Hierarchy(str):
 
     def levels(self) -> list:
         return str.split(self, '/')
@@ -233,42 +233,44 @@ class hierarchy(str):
             if level == '':
                 raise ValueError('Hierarchy level cannot be an empty string')
 
-class hierarchies(list):
+class Hierarchies(list):
 
-    def __init__(self, iterable):
-        super().__init__(hierarchy(item) for item in iterable)
+    def __init__(self, iterable=None):
+        if iterable is None:
+            iterable = []
+        super().__init__(Hierarchy(item) for item in iterable)
 
     def validate(self):
         for index, item in enumerate(self):
-            if not isinstance(item, hierarchy):
+            if not isinstance(item, Hierarchy):
                 raise ValueError(f'Invalid hierarchy type at index {index}')
         
             item.validate()
 
 @dataclass
-class metadata:
+class Meta:
     data: dict[str, str|int|float|bool] = field(default_factory=dict)
-    tags: tags = field(default_factory=tags) # type: ignore
-    hierarchies: hierarchies = field(default_factory=lambda: hierarchies([])) # type: ignore
+    tags: Tags = field(default_factory=Tags)
+    hierarchies: Hierarchies = field(default_factory=lambda: Hierarchies([]))
 
     def __post_init__(self):
-        self.tags = tags(self.tags)
-        self.hierarchies = hierarchies(self.hierarchies)
+        self.tags = Tags(self.tags)
+        self.hierarchies = Hierarchies(self.hierarchies)
     
     def validate(self):
         for key, value in self.data.items():
             if not isinstance(key, str):
                 raise ValueError('Meta keys must be strings')
             if not isinstance(value, (str, int, float, bool)):
-                raise ValueError(f'Invalid meta value type for key {key}')
+                raise ValueError(f'Invalid value type for data.{key}')
         self.tags.validate()
         self.hierarchies.validate()
 
 @dataclass
-class context:
+class Context:
     id: str = ''
     source: str = ''
-    meta: meta = field(default_factory=metadata) # type: ignore
+    meta: meta = field(default_factory=Meta) # type: ignore
 
     def validate(self):
         if not isinstance(self.id, str):
@@ -286,12 +288,12 @@ class context:
 entity_types = {'user', 'profile', 'group_profile'}
 
 @dataclass
-class entity:
-    id: cid
+class Entity:
+    id: CID
     type: str
 
     def validate(self):
-        if not isinstance(self.id, cid):
+        if not isinstance(self.id, CID):
             raise ValueError('Invalid entity id')
         
         self.id.validate()
@@ -300,15 +302,15 @@ class entity:
             raise ValueError(f'Invalid entity type: {self.type}')
            
 @dataclass
-class acl:
+class ACL:
     name: str
-    admin: entity
+    admin: Entity
 
     def validate(self):
         if not isinstance(self.name, str):
             raise ValueError('ACL name must be a string')
         
-        if not isinstance(self.admin, entity):
+        if not isinstance(self.admin, Entity):
             raise ValueError('ACL admin must be an entity')
         
         self.admin.validate()
@@ -316,24 +318,24 @@ class acl:
 permission_types = {'public', 'private', 'inherit'}
 
 @dataclass
-class permission:
+class Permission:
     """define permissions either by PermissionType or a ContentId of an ACL"""
-    read: str | cid
-    write: str | cid
-    delete: str | cid
+    read: str | CID
+    write: str | CID
+    delete: str | CID
 
     def validate(self):
-        if isinstance(self.read, cid):
+        if isinstance(self.read, CID):
             self.read.validate()
         elif self.read not in permission_types:
             raise ValueError(f'Invalid read permission type: {self.read}')
         
-        if isinstance(self.write, cid):
+        if isinstance(self.write, CID):
             self.write.validate()
         elif self.write not in permission_types:
             raise ValueError(f'Invalid write permission type: {self.write}')
         
-        if isinstance(self.delete, cid):
+        if isinstance(self.delete, CID):
             self.delete.validate()
         elif self.delete not in permission_types:
             raise ValueError(f'Invalid delete permission type: {self.delete}')

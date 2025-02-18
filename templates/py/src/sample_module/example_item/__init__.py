@@ -32,10 +32,10 @@ def example_item_example() -> dict:
         'tags': ['tag1', 'tag2'],
         'ids': ['05P9jRI5j4Or3oeQG4X_C0r56fL41d5G1bo1wdsI0XJw334.json', '05P9jRI5j4Or3oeQG4X_C0r56fL41d5G1bo1wdsI0XJw334.json'],
         'item': '05P9jRI5j4Or3oeQG4X_C0r56fL41d5G1bo1wdsI0XJw334.json',
-        'meta': metadata(),
+        'meta': Meta(),
         'when': datetime.now(),
-        'admin': entity('05P9jRI5j4Or3oeQG4X_C0r56fL41d5G1bo1wdsI0XJw334.json', 'user'),
-        'perms': permission(read='public', write='public', delete='public'),
+        'admin': Entity('05P9jRI5j4Or3oeQG4X_C0r56fL41d5G1bo1wdsI0XJw334.json', 'user'),
+        'perms': Permission(read='public', write='public', delete='public'),
         # end replace ::
     }
 
@@ -59,7 +59,7 @@ def example_item_random() -> dict:
         # macro :: py_random_cid :: {"item": "field"}
         'item': random_cid(),
         # macro :: pyrandom_meta :: {"meta": "field"}
-        'meta': metadata(),
+        'meta': Meta(),
         # macro :: py_random_datetime :: {"when": "field"}
         'when': random_datetime(),
         # macro :: py_random_entity :: {"admin": "field"}

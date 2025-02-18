@@ -4,7 +4,7 @@ from core.exceptions import *
 from core.models import *
 from core.client import *
 from core.db import *
-from core.types import metadata
+from core.types import Meta
 
 from pymongo.collection import Collection
 

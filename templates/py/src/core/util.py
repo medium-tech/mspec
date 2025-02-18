@@ -1,6 +1,6 @@
 import random
 import datetime
-from core.types import cid, entity, permission, entity_types, permission_types
+from core.types import CID, Entity, Permission, entity_types, permission_types
 
 __all__ = [
     'random_nouns',
@@ -59,14 +59,14 @@ def random_list(element_type:str) -> list:
 def random_datetime() -> datetime:
     return datetime.datetime.fromtimestamp(random.randint(1705900793, 1768972793))
 
-def random_cid() -> cid:
-    return cid.from_string(random_str())
+def random_cid() -> CID:
+    return CID.from_string(random_str())
 
-def random_entity() -> entity:
-    return entity(random_cid(), random.choice(entity_types))
+def random_entity() -> Entity:
+    return Entity(random_cid(), random.choice(entity_types))
 
-def random_permission() -> permission:
-    return permission(
+def random_permission() -> Permission:
+    return Permission(
         read=random.choice(permission_types),
         write=random.choice(permission_types),
         delete=random.choice(permission_types)
