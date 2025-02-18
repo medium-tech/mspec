@@ -76,7 +76,7 @@ def create_db_context(client:MongoClient=None) -> dict:
 
 # user #
 
-def db_create_user(ctx:dict, obj:user) -> user:
+def db_create_user(ctx:dict, obj:User) -> User:
     """
     create a user in the database, verifying the data first.
 
@@ -93,7 +93,7 @@ def db_create_user(ctx:dict, obj:user) -> user:
     obj.id = str(result.inserted_id)
     return obj
 
-def db_read_user(ctx:dict, id:str) -> user:
+def db_read_user(ctx:dict, id:str) -> User:
     """
     read a user from the database and verify it.
 
@@ -110,9 +110,9 @@ def db_read_user(ctx:dict, id:str) -> user:
         raise NotFoundError(f'user {id} not found')
     else:
         db_entry['id'] = str(db_entry.pop('_id'))
-        return user(**db_entry).validate()
+        return User(**db_entry).validate()
 
-def db_update_user(ctx:dict, obj:user) -> None:
+def db_update_user(ctx:dict, obj:User) -> None:
     """
     update a user in the database, and verify the data first.
 
@@ -145,7 +145,7 @@ def db_delete_user(ctx:dict, id:str) -> None:
     users = ctx['db']['client']['msample']['core.user']
     users.delete_one({'_id': ObjectId(id)})
 
-def db_list_user(ctx:dict, offset:int=0, limit:int=25) -> list[user]:
+def db_list_user(ctx:dict, offset:int=0, limit:int=25) -> list[User]:
     """
     list users in the database.
 
@@ -158,7 +158,7 @@ def db_list_user(ctx:dict, offset:int=0, limit:int=25) -> list[user]:
     items = []
     for item in users.find().skip(offset).limit(limit):
         item['id'] = str(item.pop('_id'))
-        items.append(user(**item).validate())
+        items.append(User(**item).validate())
     return items
 
 # user session #
@@ -247,7 +247,7 @@ def db_list_user_session(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
 
 # user password hash #
 
-def db_create_user_password_hash(ctx:dict, data:user_password_hash) -> user_password_hash:
+def db_create_user_password_hash(ctx:dict, data:UserPasswordHash) -> UserPasswordHash:
     """
     create a user password hash in the database, verifying the data first.
 
@@ -334,7 +334,7 @@ def db_list_user_password_hash(ctx:dict, offset:int=0, limit:int=25) -> list[dic
 
 # profile #
 
-def db_create_profile(ctx:dict, obj:profile) -> profile:
+def db_create_profile(ctx:dict, obj:Profile) -> Profile:
     """
     create a profile in the database, verifying the data first.
 
@@ -349,7 +349,7 @@ def db_create_profile(ctx:dict, obj:profile) -> profile:
     obj.id = str(result.inserted_id)
     return obj 
 
-def db_read_profile(ctx:dict, id:str) -> profile:
+def db_read_profile(ctx:dict, id:str) -> Profile:
     """
     read a profile from the database and verify it.
 
@@ -366,9 +366,9 @@ def db_read_profile(ctx:dict, id:str) -> profile:
         raise NotFoundError(f'profile {id} not found')
     else:
         db_entry['id'] = str(db_entry.pop('_id'))
-        return profile(**db_entry).validate()
+        return Profile(**db_entry).validate()
     
-def db_update_profile(ctx:dict, obj:profile) -> None:
+def db_update_profile(ctx:dict, obj:Profile) -> None:
     """
     update a profile in the database, and verify the data first.
 
@@ -401,7 +401,7 @@ def db_delete_profile(ctx:dict, id:str) -> None:
     profiles = ctx['db']['client']['msample']['core.profile']
     profiles.delete_one({'_id': ObjectId(id)})
 
-def db_list_profile(ctx:dict, offset:int=0, limit:int=25) -> list[profile]:
+def db_list_profile(ctx:dict, offset:int=0, limit:int=25) -> list[Profile]:
     """
     list profiles from the database and verify them.
 
@@ -416,7 +416,7 @@ def db_list_profile(ctx:dict, offset:int=0, limit:int=25) -> list[profile]:
     items = []
     for item in profiles.find().skip(offset).limit(limit):
         item['id'] = str(item.pop('_id'))
-        items.append(profile(**item).validate())
+        items.append(Profile(**item).validate())
     return items
 
 # acl #

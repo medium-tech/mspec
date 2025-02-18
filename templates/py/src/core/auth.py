@@ -2,7 +2,7 @@ import os
 
 from core.db import db_read_user, db_create_user_password_hash, db_create_user
 from core.exceptions import AuthenticationError, NotFoundError
-from core.models import user, user_password_hash, profile, access_token, create_user_form
+from core.models import User, UserPasswordHash, Profile, AccessToken, CreateUser
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
@@ -55,7 +55,7 @@ def get_password_hash(password:str) -> str:
     return pwd_context.hash(password)
 
 
-def login_user(ctx:dict, email: str, password: str) -> access_token:
+def login_user(ctx:dict, email: str, password: str) -> AccessToken:
     users:Collection = ctx['db']['client']['msample']['core.user']
 
     user_db_result = users.find_one({'email': email.lower()})
@@ -88,19 +88,19 @@ def create_access_token(data: dict):
         raise ValueError('MSTACK_AUTH_SECRET_KEY not set')
 
     token = jwt.encode(data_to_encode, MSTACK_AUTH_SECRET_KEY, algorithm=MSTACK_AUTH_ALGORITHM)
-    return access_token(access_token=token, token_type='bearer')
+    return AccessToken(access_token=token, token_type='bearer')
 
 
-def create_new_user(ctx:dict, data:create_user_form) -> user:
+def create_new_user(ctx:dict, data:CreateUser) -> User:
     users:Collection = ctx['db']['client']['msample']['core.user']
 
     if users.find_one({'email': data.email}) is not None:
         raise AuthenticationError('Email already registered')
 
-    new_user = user(name=data.name, email=data.email)
+    new_user = User(name=data.name, email=data.email)
     new_user = db_create_user(ctx, new_user)
 
-    hash = user_password_hash(user=new_user.id, hash=get_password_hash(data.password.password1))
+    hash = UserPasswordHash(user=new_user.id, hash=get_password_hash(data.password.password1))
     hash = db_create_user_password_hash(ctx, hash)
 
     return new_user

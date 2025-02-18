@@ -39,7 +39,7 @@ def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
 
     if (instance := re.match(r'/api/core/user/(.+)', env['PATH_INFO'])) is not None:
         instance_id = instance.group(1)
-        cur_user:user = env['get_user']()
+        cur_user:User = env['get_user']()
         if cur_user.id != instance_id:
             raise ForbiddenError('Resource is not accessible')
         if env['REQUEST_METHOD'] == 'GET':
@@ -53,7 +53,7 @@ def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
                 raise RequestError('404 Not Found', f'not found core.user.{instance_id}')
         
         elif env['REQUEST_METHOD'] == 'PUT':
-            incoming_user = user.from_json(raw_req_body.decode('utf-8'))
+            incoming_user = User.from_json(raw_req_body.decode('utf-8'))
             try:
                 if instance_id != incoming_user.id:
                     raise RequestError('400 Bad Request', 'user id mismatch')
@@ -82,7 +82,7 @@ def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
 
     elif re.match(r'/api/core/user', env['PATH_INFO']):
         if env['REQUEST_METHOD'] == 'POST':
-            incoming_user = create_user_form.from_json(raw_req_body.decode('utf-8'))
+            incoming_user = CreateUser.from_json(raw_req_body.decode('utf-8'))
             ctx['log'](f'POST core.user - {type(incoming_user)} {incoming_user}')
             item = create_new_user(ctx, incoming_user)
             ctx['log'](f'POST core.user - id: {item.id}')
@@ -96,7 +96,7 @@ def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
             items = db_list_user(ctx, int(offset), int(limit))
             ctx['log'](f'GET core.user')
 
-            raise JSONResponse('200 OK', [user.to_dict(item) for item in items])
+            raise JSONResponse('200 OK', [User.to_dict(item) for item in items])
         
         else:
             ctx['log'](f'ERROR 405 core.user')
@@ -118,7 +118,7 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
                 raise RequestError('404 Not Found', f'not found core.profile.{instance_id}')
         
         elif env['REQUEST_METHOD'] == 'PUT':
-            incoming_profile = profile.from_json(raw_req_body.decode('utf-8'))
+            incoming_profile = Profile.from_json(raw_req_body.decode('utf-8'))
 
             try:
                 if instance_id != incoming_profile.id:
@@ -149,7 +149,7 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
     elif re.match(r'/api/core/profile', env['PATH_INFO']):
         if env['REQUEST_METHOD'] == 'POST':
             ctx['log'](raw_req_body.decode('utf-8'))
-            incoming_profile = profile.from_json(raw_req_body.decode('utf-8'))
+            incoming_profile = Profile.from_json(raw_req_body.decode('utf-8'))
             ctx['log'](f'POST core.profile - {type(incoming_profile.meta)} {incoming_profile.meta}')
             item = db_create_profile(ctx, incoming_profile)
             ctx['log'](f'POST core.profile - id: {item.id}')
@@ -163,7 +163,7 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
             items = db_list_profile(ctx, int(offset), int(limit))
             ctx['log'](f'GET core.profile')
 
-            raise JSONResponse('200 OK', [profile.to_dict(item) for item in items])
+            raise JSONResponse('200 OK', [Profile.to_dict(item) for item in items])
         
         else:
             ctx['log'](f'ERROR 405 core.profile')
@@ -193,7 +193,7 @@ def initialize():
     server_ctx.update(create_db_context())
     uwsgi.log(f'INITIALIZED - pid: {os.getpid()}')
 
-def get_user(env:dict) -> user:
+def get_user(env:dict) -> User:
     global server_ctx
     try:
         auth_header = env['HTTP_AUTHORIZATION']

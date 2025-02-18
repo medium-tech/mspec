@@ -106,7 +106,7 @@ def client_login(ctx:dict, email:str, password:str) -> dict:
     login_ctx['headers']['Authorization'] = f'Bearer {response_body["access_token"]}'
     return login_ctx
 
-def client_create_user(ctx:dict, new_user:create_user_form) -> user:
+def client_create_user(ctx:dict, new_user:CreateUser) -> User:
     """
     create a user on the server, verifying the data first.
     
@@ -130,14 +130,14 @@ def client_create_user(ctx:dict, new_user:create_user_form) -> user:
 
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return user.from_json(response_body)
+            return User.from_json(response_body)
     
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
         raise MSpecError(f'error creating user: {e.__class__.__name__}: {e}')
     
-def client_read_user(ctx:dict, id:str) -> user:
+def client_read_user(ctx:dict, id:str) -> User:
     """
     read a user from the server, verifying it before returning.
 
@@ -173,9 +173,9 @@ def client_read_user(ctx:dict, id:str) -> user:
     except Exception as e:
         raise MSpecError(f'error reading user: {e.__class__.__name__}: {e}')
 
-    return user.from_json(response_body).validate()
+    return User.from_json(response_body).validate()
     
-def client_update_user(ctx:dict, obj:user) -> None:
+def client_update_user(ctx:dict, obj:User) -> None:
     """
     update a user on the server, verifying the data first.
 
@@ -240,7 +240,7 @@ def client_delete_user(ctx:dict, id:str) -> None:
     except Exception as e:
         raise MSpecError(f'error deleting user: {e.__class__.__name__}: {e}')
     
-def client_list_users(ctx:dict, offset:int=0, limit:int=50) -> list[user]:
+def client_list_users(ctx:dict, offset:int=0, limit:int=50) -> list[User]:
     """
     list users from the server, verifying each.
 
@@ -264,7 +264,7 @@ def client_list_users(ctx:dict, offset:int=0, limit:int=50) -> list[user]:
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
         
-        return [user(**item).validate() for item in json.loads(response_body)]
+        return [User(**item).validate() for item in json.loads(response_body)]
     
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
@@ -274,7 +274,7 @@ def client_list_users(ctx:dict, offset:int=0, limit:int=50) -> list[user]:
     
 # profile #
 
-def client_create_profile(ctx:dict, obj:profile) -> profile:
+def client_create_profile(ctx:dict, obj:Profile) -> Profile:
     """
     create a profile on the server, verifying the data first.
     
@@ -298,14 +298,14 @@ def client_create_profile(ctx:dict, obj:profile) -> profile:
 
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return profile.from_json(response_body)
+            return Profile.from_json(response_body)
     
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
         raise MSpecError(f'error creating profile: {e.__class__.__name__}: {e}')
     
-def client_read_profile(ctx:dict, id:str) -> profile:
+def client_read_profile(ctx:dict, id:str) -> Profile:
     """
     read a profile from the server, verifying it first.
 
@@ -331,7 +331,7 @@ def client_read_profile(ctx:dict, id:str) -> profile:
                 raise NotFoundError(f'profile {id} not found')
             response_body = response.read().decode('utf-8')
         
-        return profile.from_json(response_body).validate()
+        return Profile.from_json(response_body).validate()
     
     except HTTPError as e:
         if e.code == 404:
@@ -342,7 +342,7 @@ def client_read_profile(ctx:dict, id:str) -> profile:
     except Exception as e:
         raise MSpecError(f'error reading profile: {e.__class__.__name__}: {e}')
     
-def client_update_profile(ctx:dict, obj:profile) -> None:
+def client_update_profile(ctx:dict, obj:Profile) -> None:
     """
     update a profile on the server, verifying the data first.
 
@@ -408,7 +408,7 @@ def client_delete_profile(ctx:dict, id:str) -> None:
     except Exception as e:
         raise MSpecError(f'error deleting profile: {e.__class__.__name__}: {e}')
     
-def client_list_profile(ctx:dict, offset:int=0, limit:int=50) -> list[profile]:
+def client_list_profile(ctx:dict, offset:int=0, limit:int=50) -> list[Profile]:
     """
     list profiles from the server, verifying each.
 
@@ -432,7 +432,7 @@ def client_list_profile(ctx:dict, offset:int=0, limit:int=50) -> list[profile]:
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
         
-        return [profile(**item).validate() for item in json.loads(response_body)]
+        return [Profile(**item).validate() for item in json.loads(response_body)]
     
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')

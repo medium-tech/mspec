@@ -8,15 +8,15 @@ from typing import Optional
 from core.types import to_json, Meta, email_regex, Entity
 
 __all__ = [
-    'user',
+    'User',
     'user_session_to_json',
     'user_session_from_json',
     'user_session_validate',
-    'access_token',
-    'new_password',
-    'create_user_form',
-    'user_password_hash',
-    'profile',
+    'AccessToken',
+    'NewPassword',
+    'CreateUser',
+    'UserPasswordHash',
+    'Profile',
     'acl_to_json',
     'acl_from_json',
     'acl_validate',
@@ -28,7 +28,7 @@ __all__ = [
 # user #
 
 @dataclass
-class user:
+class User:
     name: str
     email: str
 
@@ -121,7 +121,7 @@ def user_session_validate(user_session:dict) -> dict:
 # access token #
 
 @dataclass
-class access_token:
+class AccessToken:
     access_token: str
     token_type: str
 
@@ -147,7 +147,7 @@ class access_token:
 # new password #
 
 @dataclass
-class new_password:
+class NewPassword:
     password1: str
     password2: str
 
@@ -167,15 +167,15 @@ class new_password:
         return self
     
 @dataclass
-class create_user_form:
+class CreateUser:
     name: str
     email: str
-    password: new_password
+    password: NewPassword
 
     def __post_init__(self):
         self.email = self.email.lower()
         if isinstance(self.password, dict):
-            self.password = new_password(**self.password)
+            self.password = NewPassword(**self.password)
 
     def validate(self) :
         if not isinstance(self.name, str):
@@ -195,15 +195,15 @@ class create_user_form:
         return to_json(self.to_dict())
     
     @classmethod
-    def from_json(cls, json_string:str) -> 'create_user_form':
+    def from_json(cls, json_string:str) -> 'CreateUser':
         return cls(**json.loads(json_string))
 
     @classmethod
-    def example(cls) -> 'create_user_form':
+    def example(cls) -> 'CreateUser':
         return cls(
             name='Test User',
             email='my@email.com',
-            password=new_password(
+            password=NewPassword(
                 password1='my-test-password',
                 password2='my-test-password'
             )
@@ -212,7 +212,7 @@ class create_user_form:
 # user password hash #
 
 @dataclass
-class user_password_hash:
+class UserPasswordHash:
 
     user: str
     hash: str
@@ -255,7 +255,7 @@ class user_password_hash:
 # profile #
 
 @dataclass
-class profile:
+class Profile:
 
     name: str
     bio: str

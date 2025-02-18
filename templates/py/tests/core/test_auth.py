@@ -22,10 +22,10 @@ class TestAuth(unittest.TestCase):
 
         # create user #
 
-        new_user = create_user_form(
+        new_user = CreateUser(
             name='Test User auth',
             email='test-user-auth@email.com',
-            password=new_password(
+            password=NewPassword(
                 password1='my-test-password',
                 password2='my-test-password'
             )
@@ -33,7 +33,7 @@ class TestAuth(unittest.TestCase):
         new_user.validate()
 
         created_user = client_create_user(test_ctx, new_user)
-        self.assertTrue(isinstance(created_user, user))
+        self.assertTrue(isinstance(created_user, User))
         created_user.validate()
         self.assertTrue(isinstance(created_user.id, str))
 
@@ -49,10 +49,10 @@ class TestAuth(unittest.TestCase):
         self.assertRaises(AuthenticationError, client_login, test_ctx, new_user.email, 'wrong-password')
         self.assertRaises(AuthenticationError, client_read_user, test_ctx, created_user.id)
 
-        other_user_form = create_user_form(
+        other_user_form = CreateUser(
             name='Other Test User auth',
             email='other-test-user-auth@email.com',
-            password=new_password(
+            password=NewPassword(
                 password1='my-test-password',
                 password2='my-test-password'
             )

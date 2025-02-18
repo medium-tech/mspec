@@ -15,19 +15,19 @@ class TestModels(unittest.TestCase):
 
     def test_user_validate(self):
 
-        user_good = user.example()
+        user_good = User.example()
 
         user_validated = user_good.validate()
         self.assertEqual(user_good, user_validated)
 
-        user_bad_type = user(
+        user_bad_type = User(
             name='Alice',
             email='alice@nice.com',
             profile=12345
         )
         self.assertRaises(ValueError, user_bad_type.validate)
 
-        user_upper_case = user(
+        user_upper_case = User(
             name='Alice',
             email='Alice@EXAMPLE.com',
             profile='12345'
@@ -46,7 +46,7 @@ class TestModels(unittest.TestCase):
         + delete
         """
 
-        test_user = user(
+        test_user = User(
             name='Test User',
             email='test.user@nice.com',
             profile='09876'
@@ -55,7 +55,7 @@ class TestModels(unittest.TestCase):
 
         # create #
         created_user = client_create_user(test_ctx, test_user)
-        self.assertTrue(isinstance(created_user, user))
+        self.assertTrue(isinstance(created_user, User))
         created_user.validate()
         created_user_id = created_user.id
         created_user.id = None
@@ -63,7 +63,7 @@ class TestModels(unittest.TestCase):
 
         # read #
         user_read = client_read_user(test_ctx, created_user_id)
-        self.assertTrue(isinstance(user_read, user))
+        self.assertTrue(isinstance(user_read, User))
         user_read.validate()
         user_read.id = None
         self.assertEqual(user_read, test_user)
@@ -75,7 +75,7 @@ class TestModels(unittest.TestCase):
         client_update_user(test_ctx, user_read)
 
         read_after_update = client_read_user(test_ctx, created_user_id)
-        self.assertTrue(isinstance(read_after_update, user))
+        self.assertTrue(isinstance(read_after_update, User))
         read_after_update.validate()
         self.assertEqual(read_after_update, user_read)
 
@@ -90,7 +90,7 @@ class TestModels(unittest.TestCase):
 
         # seed the db #
 
-        sample_user = user.example()
+        sample_user = User.example()
 
         for _ in range(60):
             client_create_user(test_ctx, sample_user)
@@ -108,7 +108,7 @@ class TestModels(unittest.TestCase):
                 self.assertEqual(len(items), 0)
 
             for item in items:
-                self.assertTrue(isinstance(item, user))
+                self.assertTrue(isinstance(item, User))
                 item.validate()
                 item.id = None
                 self.assertEqual(item, sample_user)
@@ -126,25 +126,25 @@ class TestModels(unittest.TestCase):
                 self.assertEqual(len(items), 0)
 
             for item in items:
-                self.assertTrue(isinstance(item, user))
+                self.assertTrue(isinstance(item, User))
                 item.validate()
                 item.id = None
                 self.assertEqual(item, sample_user)
 
     def test_profile_validate(self):
 
-        profile_good = profile.example()
+        profile_good = Profile.example()
 
         profile_validated = profile_good.validate()
         self.assertEqual(profile_good, profile_validated)
 
-        profile_bad_type = profile.example()
+        profile_bad_type = Profile.example()
         profile_bad_type.bio = 12345
         
         self.assertRaises(ValueError, profile_bad_type.validate)
 
     def _disabled_test_profile_crud(self):
-        test_profile = profile(
+        test_profile = Profile(
             name='Test Profile',
             bio='Test profile bio',
             meta=Meta(
@@ -158,7 +158,7 @@ class TestModels(unittest.TestCase):
 
         # create #
         created_profile = client_create_profile(test_ctx, test_profile)
-        self.assertTrue(isinstance(created_profile, profile))
+        self.assertTrue(isinstance(created_profile, Profile))
         created_profile.validate()
         created_profile_id = created_profile.id
         created_profile.id = None
@@ -166,7 +166,7 @@ class TestModels(unittest.TestCase):
 
         # read #
         profile_read = client_read_profile(test_ctx, created_profile_id)
-        self.assertTrue(isinstance(profile_read, profile))
+        self.assertTrue(isinstance(profile_read, Profile))
         profile_read.validate()
         profile_read.id = None
         self.assertEqual(profile_read, test_profile)
@@ -178,7 +178,7 @@ class TestModels(unittest.TestCase):
         client_update_profile(test_ctx, profile_read)
 
         read_after_update = client_read_profile(test_ctx, created_profile_id)
-        self.assertTrue(isinstance(read_after_update, profile))
+        self.assertTrue(isinstance(read_after_update, Profile))
         read_after_update.validate()
         self.assertEqual(read_after_update, profile_read)
 
