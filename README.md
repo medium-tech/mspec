@@ -66,10 +66,9 @@
         * 🔴 add auth to profile endpoints
         * 🔴 add salt to pw
         * 🔴 add login sessions/logout
-    * 🔴 refactor sample_module to match core module
-        * 🔴 remove logic from __init__.py
-        * 🔴 remove random generator logic
-        * 🔴 remove convenience logic (ie. sample_module_db)
+    * 🟡 refactor sample_module to match core module
+        * 🟡 refactor code
+        * 🟡 refactor templating
     * 🔴 add cid to example_item
 
 ### guis

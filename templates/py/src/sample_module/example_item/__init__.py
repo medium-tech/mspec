@@ -1,9 +1,11 @@
-import json
-from dataclasses import asdict
-from datetime import datetime
 from core.types import *
 from core.util import *
 
+import json
+
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from typing import Optional
 
 __all__ = [
     'example_item_to_json',
@@ -15,129 +17,128 @@ __all__ = [
 
 # vars :: {"example_item": "model.name.snake_case"}
 
-def example_item_to_json(data:dict, sort_keys=True, indent=4) -> str:
-    return to_json(data, sort_keys=sort_keys, indent=indent)
 
-def example_item_from_json(json_string:str) -> dict:
-    return json.loads(json_string)
+@dataclass
+class ExampleItem:
 
-def example_item_example() -> dict:
-    return {
-        # replace :: macro.py_example_fields(model.fields)
-        'description': 'a large thing',
-        'verified': True,
-        'color': 'red',
-        'count': 36,
-        'score': 7.3,
-        'tags': ['tag1', 'tag2'],
-        'ids': ['05P9jRI5j4Or3oeQG4X_C0r56fL41d5G1bo1wdsI0XJw334.json', '05P9jRI5j4Or3oeQG4X_C0r56fL41d5G1bo1wdsI0XJw334.json'],
-        'item': '05P9jRI5j4Or3oeQG4X_C0r56fL41d5G1bo1wdsI0XJw334.json',
-        'meta': Meta(),
-        'when': datetime.now(),
-        'admin': Entity('05P9jRI5j4Or3oeQG4X_C0r56fL41d5G1bo1wdsI0XJw334.json', 'user'),
-        'perms': Permission(read='public', write='public', delete='public'),
-        # end replace ::
-    }
+    # replace :: macro.py_dataclass_fields(model.fields)
+    description: str
+    verified: bool
+    color: str
+    count: int
+    score: float
+    stuff: list[str]
+    when: datetime
+    # end replace ::
+    id: Optional[str] = None
 
-def example_item_random() -> dict:
-    return {
-        # insert :: macro.py_random_fields(model.fields)
-        # macro :: py_random_str :: {"description": "field"}
-        'description': random_str(),
-        # macro :: py_random_bool :: {"verified": "field"}
-        'verified': random_bool(),
-        # macro :: py_random_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
-        'color': random_enum(['red', 'green', 'blue']),
-        # macro :: py_random_int :: {"count": "field"}
-        'count': random_int(),
-        # macro :: py_random_float :: {"score": "field"}
-        'score': random_float(),
-        # macro :: py_random_list :: {"tags": "field", "str": "element_type"}
-        'tags': random_list('str'),
+    def __post_init__(self):
+        if isinstance(self.when, str):
+            self.when = datetime.fromisoformat(self.when)
+
+    def validate(self) -> 'ExampleItem':
+        
+        try:
+            if not isinstance(self.id, str) and self.id is not None:
+                raise TypeError('invalid type for id')
+        except KeyError:
+            pass
+
+        # insert :: macro.py_verify_fields(model.fields)
+
+        # macro :: py_verify_str :: {"description": "field"}
+        try:
+            if not isinstance(self.description, str):
+                raise TypeError('description must be a string')
+        except KeyError:
+            pass
+        
+        # macro :: py_verify_bool :: {"verified": "field"}
+        try:
+            if not isinstance(self.verified, bool):
+                raise TypeError('verified must be a boolean')
+        except KeyError:
+            pass
+        
+        # macro :: py_verify_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
+        try:
+            if not isinstance(self.color, str):
+                raise TypeError('color must be a string')
+            if self.color not in ['red', 'green', 'blue']:
+                raise TypeError('invalid choice for color')
+        except KeyError:
+            pass
+
+        # macro :: py_verify_int :: {"count": "field"}
+        try:
+            if not isinstance(self.count, int):
+                raise TypeError('count must be an integer')
+        except KeyError:
+            pass
+
+        # macro :: py_verify_float :: {"score": "field"}
+        try:
+            if not isinstance(self.score, float):
+                raise TypeError('score must be a float')
+        except KeyError:
+            pass
+
+        # macro :: py_verify_list :: {"stuff": "field", "str": "element_type"}
+        try:
+            if not isinstance(self.stuff, list):
+                raise TypeError('stuff must be a list')
+            for item in self.stuff:
+                if not isinstance(item, str):
+                    raise TypeError('stuff elements must be str')
+
+        except KeyError:
+            pass
         # end macro ::
-        'ids': random_list('cid'),
-        # macro :: py_random_cid :: {"item": "field"}
-        'item': random_cid(),
-        # macro :: pyrandom_meta :: {"meta": "field"}
-        'meta': Meta(),
-        # macro :: py_random_datetime :: {"when": "field"}
-        'when': random_datetime(),
-        # macro :: py_random_entity :: {"admin": "field"}
-        'admin': random_entity(),
-        # macro :: py_random_permission :: {"perms": "field"}
-        'perms': random_permission(),
-        # end macro ::
-    }
+        
+        return self   
 
-def example_item_validate(data:dict) -> dict:
-
-    if not isinstance(data, dict):
-        raise TypeError('data must be a dictionary')
+    def to_dict(self) -> dict:
+        data = asdict(self)
+        if self.id is None:
+            del data['id']
+        return data
     
-    try:
-        if not isinstance(data['id'], str):
-            raise TypeError('id must be a string')
-    except KeyError:
-        pass
-
-    # insert :: macro.py_verify_fields(model.fields)
-
-    # macro :: py_verify_str :: {"description": "field"}
-    try:
-        if not isinstance(data['description'], str):
-            raise TypeError('description must be a string')
-    except KeyError:
-        pass
+    def to_json(self) -> str:
+        return to_json(self.to_dict())
     
-    # macro :: py_verify_bool :: {"verified": "field"}
-    try:
-        if not isinstance(data['verified'], bool):
-            raise TypeError('verified must be a boolean')
-    except KeyError:
-        pass
-    
-    # macro :: py_verify_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
-    try:
-        if not isinstance(data['color'], str):
-            raise TypeError('color must be a string')
-        if data['color'] not in ['red', 'green', 'blue']:
-            raise TypeError('invalid choice for color')
-    except KeyError:
-        pass
+    @classmethod
+    def from_json(cls, json_string:str) -> 'ExampleItem':
+        return cls(**json.loads(json_string))
 
-    # macro :: py_verify_int :: {"count": "field"}
-    try:
-        if not isinstance(data['count'], int):
-            raise TypeError('count must be an integer')
-    except KeyError:
-        pass
+    @classmethod
+    def example(cls) -> 'ExampleItem':
+        return cls(
+            description='a large thing',
+            verified=True,
+            color='red',
+            count=36,
+            score=7.3,
+            stuff=['apple', 'banana', 'pear'],
+            when=datetime.now()
+        ) 
 
-    # macro :: py_verify_float :: {"score": "field"}
-    try:
-        if not isinstance(data['score'], float):
-            raise TypeError('score must be a float')
-    except KeyError:
-        pass
-
-    # macro :: py_verify_list :: {"tags": "field", "str": "element_type"}
-    try:
-        if not isinstance(data['tags'], list):
-            raise TypeError('tags must be a list')
-        for item in data['tags']:
-            if not isinstance(item, str):
-                raise TypeError('tag elements must be str')
-            try:
-                item.validate()
-            except AttributeError:
-                pass
-
-    except KeyError:
-        pass
-    # end macro ::
-    
-    for key in data.keys():
-        # vars :: {"['id', 'description', 'verified', 'color', 'count', 'score', 'tags']": "macro.py_field_list(model.fields)"}
-        if key not in ['id', 'description', 'verified', 'color', 'count', 'score', 'tags']:
-            raise KeyError(f'unknown key: {key}')
-
-    return data
+    @classmethod
+    def example_item_random(cls) -> 'ExampleItem':
+        return {
+            # insert :: macro.py_random_fields(model.fields)
+            # macro :: py_random_str :: {"description": "field"}
+            'description': random_str(),
+            # macro :: py_random_bool :: {"verified": "field"}
+            'verified': random_bool(),
+            # macro :: py_random_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
+            'color': random_enum(['red', 'green', 'blue']),
+            # macro :: py_random_int :: {"count": "field"}
+            'count': random_int(),
+            # macro :: py_random_float :: {"score": "field"}
+            'score': random_float(),
+            # macro :: py_random_list :: {"tags": "field", "str": "element_type"}
+            'stuff': random_list('str'),
+            # macro :: py_random_datetime :: {"when": "field"}
+            'when': random_datetime(),
+            # end macro ::
+        }

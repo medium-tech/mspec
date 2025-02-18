@@ -22,32 +22,6 @@ sample_module_routes = [
     # end for ::
 ]
 
-class sample_module_db:
-
-    @staticmethod
-    def seed_data(ctx:dict, count:int=100):
-        for _ in range(count):
-            # for :: {% for model in module.models.values() %} :: {"example_item": "model.name.snake_case"}
-            db_create_example_item(ctx, example_item_random())
-            # end for ::
-
-    # for :: {% for model in module.models.values() %} :: {"example_item": "model.name.snake_case"}
-    create_example_item = db_create_example_item
-    read_example_item = db_read_example_item
-    update_example_item = db_update_example_item
-    delete_example_item = db_delete_example_item
-    list_example_item = db_list_example_item
-    # end for ::
-
-class sample_module_client:
-    # for :: {% for model in module.models.values() %} :: {"example_item": "model.name.snake_case"}
-    create_example_item = client_create_example_item
-    read_example_item = client_read_example_item
-    update_example_item = client_update_example_item
-    delete_example_item = client_delete_example_item
-    list_example_item = client_list_example_item
-    # end for ::
-
 LARGEFONT = ('Verdana', 35)
 
 class SampleModuleIndexPage(tkinter.Frame):
@@ -71,4 +45,3 @@ class SampleModuleIndexPage(tkinter.Frame):
         for n, item in enumerate(self.index_pages, start=1):
             button = ttk.Button(self, text=item[1], command=lambda: controller.show_frame(item[0]))
             button.grid(row=n, column=0)
-
