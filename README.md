@@ -66,27 +66,23 @@
         * 🔴 add auth to profile endpoints
         * 🔴 add salt to pw
         * 🔴 add login sessions/logout
+        * 🔴 add acls to endpoints/models
     * 🟡 refactor sample_module to match core module
         * 🟡 refactor code
         * 🟡 refactor templating
+        * 🔴 tests passing
+            * 🔴 sample app
+                * 🔴 client/server
+                * 🔴 browser gui
+                * 🔴 tkinter gui
+            * 🔴 generated app
+                * 🔴 client/server
+                * 🔴 browser gui
+                * 🔴 tkinter gui
+
     * 🔴 add cid to example_item
 
 ### guis
-
-* 🔴 blender markup viewer
-    * 🔴 heading (1 level to keep simple at first)
-        * 🔴 paragraph
-        * 🔴 lists
-        * 🔴 model widgets
-            * 🔴 create
-            * 🔴 read
-            * 🔴 update
-            * 🔴 delete
-            * 🔴 list
-        * 🔴 expressions
-            * 🔴 is true/false
-            * 🔴 add/subtract
-            * 🔴 datetime.now
 
 * 🔴 html (browser) markup viewer
     * 🔴 heading (1 level to keep simple at first)
@@ -102,6 +98,21 @@
         * 🔴 is true/false
         * 🔴 add/subtract
         * 🔴 datetime.now
+
+* 🔴 blender markup viewer
+    * 🔴 heading (1 level to keep simple at first)
+        * 🔴 paragraph
+        * 🔴 lists
+        * 🔴 model widgets
+            * 🔴 create
+            * 🔴 read
+            * 🔴 update
+            * 🔴 delete
+            * 🔴 list
+        * 🔴 expressions
+            * 🔴 is true/false
+            * 🔴 add/subtract
+            * 🔴 datetime.now
 
 * 🟡 python tkinter
     * 🟢 index

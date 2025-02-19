@@ -142,6 +142,7 @@ def client_read_user(ctx:dict, id:str) -> User:
     read a user from the server, verifying it before returning.
 
     args ::
+        ctx :: dict of the client context.
         id :: str of the id of the user to read.
     
     return :: user object if it exists
@@ -162,7 +163,7 @@ def client_read_user(ctx:dict, id:str) -> User:
     
     except HTTPError as e:
         if e.code == 401:
-            raise AuthenticationError('Error reading user: invalid username or password')
+            raise AuthenticationError('Error reading user: authentication error')
         elif e.code == 403:
             raise ForbiddenError('Error reading user: forbidden')
         elif e.code == 404:
@@ -175,14 +176,15 @@ def client_read_user(ctx:dict, id:str) -> User:
 
     return User.from_json(response_body).validate()
     
-def client_update_user(ctx:dict, obj:User) -> None:
+def client_update_user(ctx:dict, obj:User) -> User:
     """
     update a user on the server, verifying the data first.
 
     args ::
+        ctx :: dict of the client context.
         obj :: user object
     
-    return :: None
+    return :: User object
 
     raises :: ConfigError, MSpecError, NotFoundError
     """
@@ -201,9 +203,17 @@ def client_update_user(ctx:dict, obj:User) -> None:
     try:
         request = Request(url, headers=ctx['headers'], method='PUT', data=request_body)
 
-        with urlopen(request) as response:
-            if response.status == 404:
-                raise NotFoundError(f'user {_id} not found')
+        with urlopen(request) as _response:
+            return obj
+        
+    except HTTPError as e:
+        if e.code == 401:
+            raise AuthenticationError('Error updating user: authentication error')
+        elif e.code == 403:
+            raise ForbiddenError('Error updating user: forbidden')
+        elif e.code == 404:
+            raise NotFoundError(f'user {id} not found')
+        raise MSpecError(f'error updating user: {e.__class__.__name__}: {e}')
             
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
@@ -216,6 +226,7 @@ def client_delete_user(ctx:dict, id:str) -> None:
     delete a user from the server.
 
     args ::
+        ctx :: dict of the client context.
         id :: str of the id of the user to delete.
     
     return :: None
@@ -231,7 +242,7 @@ def client_delete_user(ctx:dict, id:str) -> None:
     try:
         request = Request(url, headers=ctx['headers'], method='DELETE')
 
-        with urlopen(request) as _:
+        with urlopen(request) as _response:
             """we don't need the response"""
 
     except (json.JSONDecodeError, KeyError) as e:
@@ -248,7 +259,7 @@ def client_list_users(ctx:dict, offset:int=0, limit:int=50) -> list[User]:
         offset :: int of the number of users to skip.
         limit :: int of the number of users to return.
     
-    return :: list of dicts of the users.
+    return :: list of User objects
 
     raises :: ConfigError, MSpecError
     """
@@ -279,6 +290,7 @@ def client_create_profile(ctx:dict, obj:Profile) -> Profile:
     create a profile on the server, verifying the data first.
     
     args ::
+        ctx :: dict of the client context.
         obj :: profile object to create.
     
     return :: profile object with new id
@@ -310,6 +322,7 @@ def client_read_profile(ctx:dict, id:str) -> Profile:
     read a profile from the server, verifying it first.
 
     args ::
+        ctx :: dict of the client context.
         id :: str of the id of the profile to read.
     
     return :: profile object if it exists
@@ -322,31 +335,34 @@ def client_read_profile(ctx:dict, id:str) -> Profile:
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
-    request = Request(url, headers=ctx['headers'], method='GET')
-
     try:
 
+        request = Request(url, headers=ctx['headers'], method='GET')
+
         with urlopen(request) as response:
-            if response.status == 404:
-                raise NotFoundError(f'profile {id} not found')
             response_body = response.read().decode('utf-8')
-        
-        return Profile.from_json(response_body).validate()
-    
+
     except HTTPError as e:
-        if e.code == 404:
+        if e.code == 401:
+            raise AuthenticationError('Error reading profile: invalid username or password')
+        elif e.code == 403:
+            raise ForbiddenError('Error reading profile: forbidden')
+        elif e.code == 404:
             raise NotFoundError(f'profile {id} not found')
         raise MSpecError(f'error reading profile: {e.__class__.__name__}: {e}')
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
         raise MSpecError(f'error reading profile: {e.__class__.__name__}: {e}')
+
+    return Profile.from_json(response_body).validate()
     
 def client_update_profile(ctx:dict, obj:Profile) -> None:
     """
     update a profile on the server, verifying the data first.
 
     args ::
+        ctx :: dict of the client context.
         obj :: profile object
     
     return :: None
@@ -384,6 +400,7 @@ def client_delete_profile(ctx:dict, id:str) -> None:
     delete a profile from the server.
 
     args ::
+        ctx :: dict of the client context.
         id :: str of the id of the profile to delete.
     
     return :: None
@@ -413,6 +430,7 @@ def client_list_profile(ctx:dict, offset:int=0, limit:int=50) -> list[Profile]:
     list profiles from the server, verifying each.
 
     args ::
+        ctx :: dict of the client context.
         offset :: int of the number of profiles to skip.
         limit :: int of the number of profiles to return.
     

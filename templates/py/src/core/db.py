@@ -112,7 +112,7 @@ def db_read_user(ctx:dict, id:str) -> User:
         db_entry['id'] = str(db_entry.pop('_id'))
         return User(**db_entry).validate()
 
-def db_update_user(ctx:dict, obj:User) -> None:
+def db_update_user(ctx:dict, obj:User) -> User:
     """
     update a user in the database, and verify the data first.
 
@@ -120,17 +120,18 @@ def db_update_user(ctx:dict, obj:User) -> None:
         ctx :: dict containing the database client
         obj :: the data to update the user with.
 
-    return :: None
+    return :: user object
     raises :: NotFoundError if the user does not exist
     """
-    obj.validate()
-    data = obj.to_dict()
+    data = obj.validate().to_dict()
     _id = data.pop('id')
 
     users:Collection = ctx['db']['client']['msample']['core.user']
     result = users.update_one({'_id': ObjectId(_id)}, {'$set': data})
     if result.matched_count == 0:
         raise NotFoundError(f'user {_id} not found')
+    
+    return obj
 
 def db_delete_user(ctx:dict, id:str) -> None:
     """
@@ -142,7 +143,7 @@ def db_delete_user(ctx:dict, id:str) -> None:
 
     return :: None
     """
-    users = ctx['db']['client']['msample']['core.user']
+    users:Collection = ctx['db']['client']['msample']['core.user']
     users.delete_one({'_id': ObjectId(id)})
 
 def db_list_user(ctx:dict, offset:int=0, limit:int=25) -> list[User]:
@@ -154,11 +155,12 @@ def db_list_user(ctx:dict, offset:int=0, limit:int=25) -> list[User]:
 
     return :: list of user objects
     """
-    users = ctx['db']['client']['msample']['core.user']
+    users:Collection = ctx['db']['client']['msample']['core.user']
     items = []
-    for item in users.find().skip(offset).limit(limit):
+    for item in users.find(skip=offset, limit=limit):
         item['id'] = str(item.pop('_id'))
         items.append(User(**item).validate())
+        
     return items
 
 # user session #
@@ -368,7 +370,7 @@ def db_read_profile(ctx:dict, id:str) -> Profile:
         db_entry['id'] = str(db_entry.pop('_id'))
         return Profile(**db_entry).validate()
     
-def db_update_profile(ctx:dict, obj:Profile) -> None:
+def db_update_profile(ctx:dict, obj:Profile) -> Profile:
     """
     update a profile in the database, and verify the data first.
 
@@ -376,7 +378,7 @@ def db_update_profile(ctx:dict, obj:Profile) -> None:
         ctx :: dict containing the database client
         obj :: the data to update the profile with.
 
-    return :: None
+    return :: profile object
     raises :: NotFoundError if the profile does not exist
     """
     obj.validate()
@@ -387,6 +389,8 @@ def db_update_profile(ctx:dict, obj:Profile) -> None:
     result = profiles.update_one({'_id': ObjectId(_id)}, {'$set': data})
     if result.matched_count == 0:
         raise NotFoundError(f'profile {_id} not found')
+    
+    return obj
     
 def db_delete_profile(ctx:dict, id:str) -> None:
     """
@@ -412,11 +416,12 @@ def db_list_profile(ctx:dict, offset:int=0, limit:int=25) -> list[Profile]:
 
     return :: list of profile objects.
     """
-    profiles = ctx['db']['client']['msample']['core.profile']
+    profiles:Collection = ctx['db']['client']['msample']['core.profile']
     items = []
-    for item in profiles.find().skip(offset).limit(limit):
+    for item in profiles.find(skip=offset, limit=limit):
         item['id'] = str(item.pop('_id'))
         items.append(Profile(**item).validate())
+
     return items
 
 # acl #
