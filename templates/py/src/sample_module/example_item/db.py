@@ -1,5 +1,6 @@
-from sample_module.example_item.model import ExampleItem
 from core.exceptions import NotFoundError
+
+from sample_module.example_item.model import ExampleItem
 
 from pymongo.collection import Collection
 from bson import ObjectId

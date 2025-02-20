@@ -16,7 +16,6 @@ class TestModels(unittest.TestCase):
     def test_user_validate(self):
 
         user_good = User.example()
-
         user_validated = user_good.validate()
         self.assertEqual(user_good, user_validated)
 
@@ -72,7 +71,10 @@ class TestModels(unittest.TestCase):
         user_read.id = created_user_id
         user_read.email = 'test.user.2@nice.com'
         user_read.validate()
-        client_update_user(test_ctx, user_read)
+        
+        updated_user = client_update_user(test_ctx, user_read)
+        self.assertTrue(isinstance(updated_user, User))
+        self.assertEqual(user_read, updated_user)
 
         read_after_update = client_read_user(test_ctx, created_user_id)
         self.assertTrue(isinstance(read_after_update, User))
@@ -80,7 +82,8 @@ class TestModels(unittest.TestCase):
         self.assertEqual(read_after_update, user_read)
 
         # delete #
-        client_delete_user(test_ctx, created_user_id)
+        delete_return = client_delete_user(test_ctx, created_user_id)
+        self.assertIsNone(delete_return)
         self.assertRaises(NotFoundError, client_read_user, test_ctx, created_user_id)
 
     def _disabled_test_user_list(self):

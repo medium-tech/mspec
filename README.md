@@ -68,19 +68,18 @@
         * 🔴 add login sessions/logout
         * 🔴 add acls to endpoints/models
     * 🟡 refactor sample_module to match core module
-        * 🟡 refactor code
+        * 🟢 refactor code
         * 🟡 refactor templating
-        * 🔴 tests passing
-            * 🔴 sample app
-                * 🔴 client/server
-                * 🔴 browser gui
-                * 🔴 tkinter gui
+        * 🟡 tests passing
+            * 🟡 sample app
+                * 🟢 client/server
+                * 🟡 browser gui
             * 🔴 generated app
                 * 🔴 client/server
                 * 🔴 browser gui
-                * 🔴 tkinter gui
 
     * 🔴 add cid to example_item
+    * 🔴 unittess for tkinter app
 
 ### guis
 

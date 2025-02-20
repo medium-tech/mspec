@@ -49,7 +49,7 @@ def client_create_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
     except Exception as e:
         raise MSpecError(f'error creating example item: {e.__class__.__name__}: {e}')
 
-def client_read_example_item(ctx:dict, id:str) -> dict:
+def client_read_example_item(ctx:dict, id:str) -> ExampleItem:
     """
     read a example item from the server, verifying it first.
 
@@ -104,6 +104,9 @@ def client_update_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
     try:
         _id = obj.id
     except KeyError:
+        raise ValueError('invalid data, missing id')
+
+    if _id is None:
         raise ValueError('invalid data, missing id')
 
     try:

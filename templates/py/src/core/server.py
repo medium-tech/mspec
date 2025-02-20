@@ -6,11 +6,12 @@ from traceback import format_exc
 from urllib.parse import parse_qs
 
 from core.auth import create_new_user, login_user, get_user_from_token
+from core.types import to_json
 from core.models import *
 from core.db import *
 from core.exceptions import RequestError, JSONResponse, NotFoundError, AuthenticationError, ForbiddenError
-# for :: {% for module in modules.values() %} :: {"sample_module": "module.name.snake_case"}
-from sample_module import sample_module_routes
+# for :: {% for modle in modles.values() %} :: {"sample_module": "modle.module_name.snake_case", "example_item": "model.name.snake_case"}
+from sample_module.example_item.server import example_item_routes
 # end for ::
 
 import uwsgi
@@ -61,13 +62,13 @@ def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
                 raise RequestError('400 Bad Request', 'user is missing id')
             
             try:
-                db_update_user(ctx, incoming_user)
+                updated_user = db_update_user(ctx, incoming_user)
             except NotFoundError:
                 ctx['log'](f'PUT core.user/{instance_id} - Not Found')
                 raise RequestError('404 Not Found', f'not found core.user.{instance_id}')
             
             ctx['log'](f'PUT core.user/{instance_id}')
-            raise JSONResponse('204 No Content')
+            raise JSONResponse('200 Ok', updated_user.to_dict())
         
         elif env['REQUEST_METHOD'] == 'DELETE':
             db_delete_user(ctx, instance_id)
@@ -127,13 +128,13 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
                 raise RequestError('400 Bad Request', 'user is missing id')
             
             try:
-                db_update_profile(ctx, incoming_profile)
+                updated_profile = db_update_profile(ctx, incoming_profile)
             except NotFoundError:
                 ctx['log'](f'PUT core.profile/{instance_id} - Not Found')
                 raise RequestError('404 Not Found', f'not found core.profile.{instance_id}')
             
             ctx['log'](f'PUT core.profile/{instance_id}')
-            raise JSONResponse('204 No Content')
+            raise JSONResponse('200 Ok', updated_profile.to_dict())
         
         elif env['REQUEST_METHOD'] == 'DELETE':
             db_delete_profile(ctx, instance_id)
@@ -148,17 +149,16 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
 
     elif re.match(r'/api/core/profile', env['PATH_INFO']):
         if env['REQUEST_METHOD'] == 'POST':
-            ctx['log'](raw_req_body.decode('utf-8'))
             incoming_profile = Profile.from_json(raw_req_body.decode('utf-8'))
-            ctx['log'](f'POST core.profile - {type(incoming_profile.meta)} {incoming_profile.meta}')
             item = db_create_profile(ctx, incoming_profile)
+
             ctx['log'](f'POST core.profile - id: {item.id}')
             raise JSONResponse('200 OK', item.to_dict())
         
         elif env['REQUEST_METHOD'] == 'GET':
             query = parse_qs(env['QUERY_STRING'])
             offset = query.get('offset', [0])[0]
-            limit = query.get('limit', [10])[0]
+            limit = query.get('limit', [25])[0]
 
             items = db_list_profile(ctx, int(offset), int(limit))
             ctx['log'](f'GET core.profile')
@@ -176,12 +176,11 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
 route_list = [
     auth_routes,
     user_routes,
-    profile_routes
+    profile_routes,
+    # for :: {% for model in modles.values() %} :: {"example_item": "modle.name.snake_case"}
+    example_item_routes,
+    # end for ::
 ]
-
-# for :: {% for module in modules.values() %} :: {"sample_module": "module.name.snake_case"}
-route_list.extend(sample_module_routes)
-# end for ::
 
 server_ctx = {
     'log': uwsgi.log
@@ -247,4 +246,4 @@ def application(env, start_response):
     start_response(status_code, [('Content-Type','application/json')])
 
     uwsgi.log(f'RESPONSE - {status_code}')
-    return [json.dumps(body).encode('utf-8')]
+    return [to_json(body).encode('utf-8')]

@@ -1,6 +1,6 @@
 import re
 from urllib.parse import parse_qs
-from sample_module.example_item import example_item_from_json
+from sample_module.example_item.model import ExampleItem
 from sample_module.example_item.db import *
 
 from core.exceptions import NotFoundError, RequestError, JSONResponse
@@ -26,20 +26,28 @@ def example_item_routes(ctx:dict, env:dict, raw_req_body:bytes):
             try:
                 item = db_read_example_item(ctx, instance_id)
                 ctx['log'](f'GET sample-module.example-item/{instance_id}')
-                raise JSONResponse('200 OK', item)
+                raise JSONResponse('200 OK', item.to_dict())
             except NotFoundError:
                 ctx['log'](f'GET sample-module.example-item/{instance_id} - Not Found')
                 raise RequestError('404 Not Found', f'not found sample-module.example-item.{instance_id}')
 
         elif env['REQUEST_METHOD'] == 'PUT':
-            req_body = example_item_from_json(raw_req_body.decode('utf-8'))
+            incoming_item = ExampleItem.from_json(raw_req_body.decode('utf-8'))
+
             try:
-                db_update_example_item(ctx, instance_id, req_body)
+                if instance_id != incoming_item.id:
+                    raise RequestError('400 Bad Request', 'example item id mismatch')
+            except KeyError:
+                raise RequestError('400 Bad Request', 'example item is missing id')
+
+            try:
+                updated_item = db_update_example_item(ctx, incoming_item)
             except NotFoundError:
                 ctx['log'](f'PUT sample-module.example-item/{instance_id} - Not Found')
                 raise RequestError('404 Not Found', f'not found sample-module.example-item.{instance_id}')
+            
             ctx['log'](f'PUT sample-module.example-item/{instance_id}')
-            raise JSONResponse('204 No Content')
+            raise JSONResponse('200 OK', updated_item.to_dict())
 
         elif env['REQUEST_METHOD'] == 'DELETE':
             db_delete_example_item(ctx, instance_id)
@@ -54,10 +62,11 @@ def example_item_routes(ctx:dict, env:dict, raw_req_body:bytes):
 
     elif re.match(r'/api/sample-module/example-item', env['PATH_INFO']):
         if env['REQUEST_METHOD'] == 'POST':
-            req_body = example_item_from_json(raw_req_body.decode('utf-8'))
-            result_id = db_create_example_item(ctx, req_body)
-            ctx['log'](f'POST sample-module.example-item - id: {result_id}')
-            raise JSONResponse('200 OK', {'id': result_id})
+            incoming_item = ExampleItem.from_json(raw_req_body.decode('utf-8'))
+            item = db_create_example_item(ctx, incoming_item)
+
+            ctx['log'](f'POST sample-module.example-item - id: {item.id}')
+            raise JSONResponse('200 OK', item.to_dict())
         
         elif env['REQUEST_METHOD'] == 'GET':
             query = parse_qs(env['QUERY_STRING'])
@@ -67,7 +76,7 @@ def example_item_routes(ctx:dict, env:dict, raw_req_body:bytes):
             items = db_list_example_item(ctx, offset=int(offset), limit=int(limit))
             ctx['log'](f'GET sample-module.example-item')
 
-            raise JSONResponse('200 OK', {'items': items})
+            raise JSONResponse('200 OK', [ExampleItem.to_dict(item) for item in items])
     
         else:
             ctx['log'](f'ERROR 405 sample-module.example-item')

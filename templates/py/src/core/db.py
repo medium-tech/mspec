@@ -3,10 +3,6 @@ import atexit
 from core.models import *
 from core.exceptions import NotFoundError
 
-# for :: {% for module in modules.values() %} :: {"sample_module": "module.name.snake_case", "Sample": "module.name.camel_case"}
-from sample_module import sample_module_db
-# end for ::
-
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from bson import ObjectId
@@ -160,7 +156,7 @@ def db_list_user(ctx:dict, offset:int=0, limit:int=25) -> list[User]:
     for item in users.find(skip=offset, limit=limit):
         item['id'] = str(item.pop('_id'))
         items.append(User(**item).validate())
-        
+
     return items
 
 # user session #
