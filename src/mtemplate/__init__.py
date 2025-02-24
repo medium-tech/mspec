@@ -11,12 +11,15 @@ from dataclasses import dataclass
 from jinja2 import Environment, FunctionLoader, StrictUndefined, TemplateError, TemplateSyntaxError
 
 __all__ = [
+    'iso_format_string',
     'MTemplateProject',
     'MTemplateExtractor',
     'MTemplateMacro',
     'MTemplateError',
     'sort_dict_by_key_length'
 ]
+
+iso_format_string = '%Y-%m-%dT%H:%M:%S.%f'
 
 class MTemplateError(Exception):
     pass

@@ -53,12 +53,8 @@ modules:
 
             examples:
               - red
-              - orange
-              - yellow
               - green
               - blue
-              - indigo
-              - violet
 
       more_data:
         name:
@@ -76,6 +72,19 @@ modules:
             examples:
               - 3.6
               - 10.1
+
+          expiration:
+            type: datetime
+            examples:
+              - 2000-01-11T12:34:000000
+              - 2020-10-02T15:30:123456
+
+          tags:
+            type: list
+            element_type: string
+            examples:
+              - ['tag1', 'tag2']
+              - ['tag3', 'tag4']
 
   social_media:
     name:

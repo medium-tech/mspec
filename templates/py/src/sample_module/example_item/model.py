@@ -100,6 +100,14 @@ class ExampleItem:
 
         except KeyError:
             pass
+
+        # macro :: py_verify_datetime :: {"stuff": "field"}
+        try:
+            if not isinstance(self.when, datetime):
+                raise TypeError('when must be a datetime')
+        except KeyError:
+            pass
+        
         # end macro ::
         
         return self   

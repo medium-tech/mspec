@@ -1,5 +1,6 @@
-from mtemplate import MTemplateProject, MTemplateError
+from mtemplate import MTemplateProject, MTemplateError, iso_format_string
 from pathlib import Path
+from datetime import datetime
 
 
 __all__ = ['MTemplateHTMLProject']
@@ -44,6 +45,8 @@ class MTemplatePyProject(MTemplateProject):
             elif field['type'] == 'list':
                 item_display = lambda i: f"'{i}'" if isinstance(i, str) else str(i)
                 value = '[' + ', '.join([item_display(item) for item in example]) + ']'
+            elif field['type'] == 'datetime':
+                value = f"datetime.strptime('{example}', '{iso_format_string}')"
             else:
                 raise MTemplateError(f'field "{name}" has unsupported type "{field["type"]}"')
 

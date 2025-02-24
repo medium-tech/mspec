@@ -74,9 +74,9 @@
             * 🟢 sample app
                 * 🟢 client/server
                 * 🟢 browser gui
-            * 🔴 generated app
-                * 🔴 client/server
-                * 🔴 browser gui
+            * 🟡 generated app
+                * 🟡 client/server
+                * 🟡 browser gui
 
     * 🔴 add cid to example_item
     * 🔴 unittess for tkinter app
