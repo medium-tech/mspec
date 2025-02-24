@@ -30,12 +30,18 @@ class ExampleItem:
 
     def __post_init__(self):
         # lower resolution of datetime for mongo compatibility
+        print(f'ExampleItem.__post_init__() 1 {self.when}')
         if isinstance(self.when, str):
             dt, millis = self.when.split('.')
-            self.when = datetime.fromisoformat(f'{dt}.{millis[0:3]}')
+            new_ts = f'{dt}.{millis[0:3]}'
+            
         else:
-            dt, millis = self.when.isoformat().split('.')
-            self.when = datetime.fromisoformat(f'{dt}.{millis[0:3]}')
+            dt, millis = self.when.strftime(iso_format_str).split('.')
+            new_ts = f'{dt}.{millis[0:3]}'
+        
+        print(f'ExampleItem.__post_init__() 2 {new_ts}')
+        self.when = datetime.strptime(new_ts, iso_format_str)
+        print(f'ExampleItem.__post_init__() 3 {self.when}')
 
     def validate(self) -> 'ExampleItem':
         

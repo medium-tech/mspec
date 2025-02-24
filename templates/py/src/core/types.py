@@ -9,22 +9,48 @@ from dataclasses import dataclass, field, asdict
 from hashlib import sha3_256
 from datetime import datetime
 
+__all__ = [
+    'iso_format_str',
+    'email_regex',
+
+    'MSpecJsonEncoder',
+    'to_json',
+
+    'CID',
+    'Tags',
+    'Hierarchy',
+    'Hierarchies',
+    'Meta',
+    'Context',
+
+    'entity_types',
+    'Entity',
+    'ACL',
+    'permission_types',
+    'Permission',
+]
+
 
 try:
     import boto3
 except ImportError:
     pass
 
+iso_format_str = '%Y-%m-%dT%H:%M:%S.%f'
+email_regex = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+
 #
 # json encoder
 #
+
+
 
 class MSpecJsonEncoder(json.JSONEncoder):
 
     def default(self, obj):
 
         if isinstance(obj, datetime):
-            return obj.isoformat()
+            return obj.strftime(iso_format_str)
         elif isinstance(obj, CID):
             return str(obj)
         elif isinstance(obj, Path):
@@ -340,4 +366,3 @@ class Permission:
         elif self.delete not in permission_types:
             raise ValueError(f'Invalid delete permission type: {self.delete}')
         
-email_regex = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")

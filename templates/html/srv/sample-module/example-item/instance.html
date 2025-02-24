@@ -29,6 +29,13 @@
                 window.document.getElementById('example-item-update').hidden = false;
             }
 
+            function updateExampleItemStatus(status, className) {
+                const statusSpan = document.getElementById('update-example-item-status')
+                statusSpan.hidden = false
+                statusSpan.innerText = status
+                statusSpan.className = className
+            }
+
             function showExampleItemDeleteView() {
                 window.document.getElementById('example-item-read').hidden = true;
                 window.document.getElementById('example-item-update').hidden = true;
@@ -57,7 +64,7 @@
                     })
                     .then(text => {
                         console.log(text);
-                        const data = JSON.parse(text);
+                        const data = initExampleItem(JSON.parse(text));
                         document.getElementById('example-item-not-found').hidden = true;
 
                         const readTBody = document.querySelector('#example-item-read-tbody');
@@ -95,9 +102,18 @@
 
                 console.log(`updating exampleItem ${id}`);
 
+                updateExampleItemStatus('loading...', '')
+
                 clientUpdateExampleItem(id, data)
-                    .then(response => {console.log(`exampleItem ${id} updated`)})
-                    .catch(error => {console.error(error)});
+                    .then(response => {
+                        const status = 'updated at ' + new Date().toLocaleTimeString()
+                        updateExampleItemStatus(status, 'success')
+                        console.log(`exampleItem ${id} updated`)
+                    })
+                    .catch(error => {
+                        updateExampleItemStatus('error', 'error')
+                        console.error(error)
+                    });
 
             }
 
@@ -164,6 +180,8 @@
             <button onclick="updateExampleItem()">save</button>
             &emsp;|&emsp;
             <button onclick="showExampleItemReadView()">cancel</button>
+            &emsp;|&emsp;
+            <span id="update-example-item-status" hidden></span>
 
             <table>
                 <thead>

@@ -67,7 +67,7 @@
 
             function resetExampleItemInput() {
                 const createTBody = document.querySelector('#example-item-create-tbody');
-                exampleItemToInputTBody(defaultExampleItem, createTBody)
+                exampleItemToInputTBody(exampleExampleItem(), createTBody)
             }
 
             function exampleItemNavigatorEnterKey(e) {
@@ -110,13 +110,14 @@
                 console.log(`loadItems(offset=${offset}, size=${size})`)
 
                 clientListExampleItems(offset, size)
-                    .then(items => {
+                    .then(data => {
+                        const items = data.map(item => initExampleItem(item))
                         console.log(items)
-                        document.getElementById('example-item-list-count').innerText = items['items'].length
-                        exampleItemListToDisplayTBody(items['items'], document.querySelector('#example-item-list-tbody'))
+                        document.getElementById('example-item-list-count').innerText = items.length
+                        exampleItemListToDisplayTBody(items, document.querySelector('#example-item-list-tbody'))
 
                         if (offset > 0) prevPage.disabled = false
-                        if (items['items'].length === size) nextPage.disabled = false
+                        if (items.length === size) nextPage.disabled = false
 
                         listExampleItemStatus('success', 'success')
                     })
@@ -272,7 +273,8 @@
                         <th>color</th>
                         <th>count</th>
                         <th>score</th>
-                        <th>tags</th>
+                        <th>stuff</th>
+                        <th>when</th>
                         <!-- end replace :: -->
                     </tr>
                 </thead>

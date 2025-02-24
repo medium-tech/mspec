@@ -5,13 +5,22 @@
 // data functions
 //
 
-const defaultExampleItem = {
-    description: '',
-    verified: false,
-    color: 'red',
-    count: 42,
-    score: 9.9,
-    tags: []
+function initExampleItem(data) {
+    const when = new Date(data.when);
+    return {...data, when}
+}
+
+function exampleExampleItem() {
+    const data = {
+        description: '',
+        verified: false,
+        color: 'red',
+        count: 42,
+        score: 9.9,
+        stuff: ['mountain', 'river', 'forest'],
+        when: new Date()
+    }
+    return {...data}
 }
 
 function randomExampleItem() {
@@ -26,8 +35,10 @@ function randomExampleItem() {
         count: randomInt(),
         // macro :: html_random_float :: {"score": "field"}
         score: randomFloat(),
-        // macro :: html_random_list :: {"tags": "field"}
-        tags: randomList()
+        // macro :: html_random_list :: {"stuff": "field"}
+        stuff: randomList(),
+        // macro :: html_random_datetime :: {"when": "field"}
+        when: randomDatetime()
         // end macro ::
         // insert :: macro.html_random_fields(model.fields)
     }
@@ -73,12 +84,18 @@ function verifyExampleItem(data) {
         result.valid = false;
     }
 
-    // macro :: html_verify_list :: {"tags": "field"}
-    if (!Array.isArray(data.tags)) {
-        result.error.tags = 'tags must be an array';
+    // macro :: html_verify_list :: {"stuff": "field", "string": "element_type"}
+    if (!Array.isArray(data.stuff)) {
+        result.error.stuff = 'stuff must be an array';
         result.valid = false;
-    }else if (data.tags.some(tag => typeof tag !== 'string')) {
-        result.error.tags = 'tags must be an array of strings';
+    }else if (data.stuff.some(tag => typeof tag !== 'string')) {
+        result.error.stuff = 'stuff must be an array with element type: string';
+        result.valid = false;
+    }
+
+    // macro :: html_verify_datetime :: {"when": "field"}
+    if (Object.prototype.toString.call(data.when) !== '[object Date]') {
+        result.error.when = 'when must be a datetime';
         result.valid = false;
     }
     // end macro ::
@@ -90,6 +107,13 @@ function verifyExampleItem(data) {
 
 function exampleItemFromInputTBody(tbody) {   
     const data = {};
+
+    // parse id if exists
+
+    const idInput = tbody.querySelector('input[name="id"]');
+    if (idInput) {
+        data.id = idInput.value;
+    }
 
     // macro :: html_from_input_tbody_str :: {"description": "field"}
     const descriptionInput = tbody.querySelector('input[name="description"]');
@@ -111,9 +135,15 @@ function exampleItemFromInputTBody(tbody) {
     const scoreInput = tbody.querySelector('input[name="score"]');
     data.score = parseFloat(scoreInput.value);
 
-    // macro :: html_from_input_tbody_list :: {"tags": "field"}
-    const tagsInput = tbody.querySelector('input[name="tags"]');
-    data.tags = JSON.parse(tagsInput.getAttribute('valueAsJSON'));
+    // macro :: html_from_input_tbody_list :: {"stuff": "field"}
+    const stuffInput = tbody.querySelector('input[name="stuff"]');
+    data.stuff = JSON.parse(stuffInput.getAttribute('valueAsJSON'));
+
+    // macro :: html_from_input_tbody_datetime :: {"when": "field"}
+    const whenInput = tbody.querySelector('input[name="when"]');
+    data.when = new Date(whenInput.value);
+    console.log('parsed when', whenInput.value, data.when, data.when.toISOString());
+
     // end macro ::
     // insert :: macro.html_from_input_tbody_fields(model.fields)
 
@@ -122,6 +152,31 @@ function exampleItemFromInputTBody(tbody) {
 
 function exampleItemToInputTBody(data, tbody) {
     tbody.innerHTML = '';
+
+    // show id if present
+
+    if (typeof data.id !== 'undefined') {
+        const idTdKey = document.createElement('td');
+        idTdKey.textContent = 'id';
+
+        const idTdInput = document.createElement('td');
+        const idInput = document.createElement('input');
+        idInput.name = 'id';
+        idInput.value = data.id;
+        idInput.size = 35;
+        idInput.readOnly = true;
+        idTdInput.appendChild(idInput);
+
+        const idTdOther = document.createElement('td');
+        idTdOther.textContent = '-';
+
+        const idTr = document.createElement('tr');
+        idTr.appendChild(idTdKey);
+        idTr.appendChild(idTdInput);
+        idTr.appendChild(idTdOther);
+
+        tbody.appendChild(idTr);
+    }
 
     // macro :: html_to_input_tbody_str :: {"description": "field"}
     const descriptionTdKey = document.createElement('td');
@@ -239,67 +294,89 @@ function exampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(scoreTr);
 
-    // macro :: html_to_input_tbody_list :: {"tags": "field"}
-    let tagsEntered = data.tags.slice();
+    // macro :: html_to_input_tbody_list :: {"stuff": "field"}
+    let stuffEntered = data.stuff.slice();
 
-    const tagsTdKey = document.createElement('td');
-    tagsTdKey.textContent = 'tags';
+    const stuffTdKey = document.createElement('td');
+    stuffTdKey.textContent = 'stuff';
 
-    const tagsTdInput = document.createElement('td');
+    const stuffTdInput = document.createElement('td');
     
-    const tagsInput = document.createElement('input');
-    tagsInput.name = 'tags';
-    tagsInput.value = '';
-    tagsInput.size = 35;
+    const stuffInput = document.createElement('input');
+    stuffInput.name = 'stuff';
+    stuffInput.value = '';
+    stuffInput.size = 35;
     // we store the actual data on valueAsJSON because we can't store an array in an input value with escaping 
     // and also so we can reset the input between each tag entered
-    tagsInput.setAttribute('valueAsJSON', JSON.stringify(tagsEntered));
-    tagsInput.placeholder = 'press enter after each tag';
+    stuffInput.setAttribute('valueAsJSON', JSON.stringify(stuffEntered));
+    stuffInput.placeholder = 'press enter after each tag';
 
-    const tagsTdOther = document.createElement('td');
+    const stuffTdOther = document.createElement('td');
     const renderTags = () => {
-        tagsTdOther.innerHTML = '';
+        stuffTdOther.innerHTML = '';
         let index = 0;
     
-        for (const tag of tagsEntered) {
+        for (const tag of stuffEntered) {
             const tagLink = document.createElement('a');
             tagLink.innerHTML = tag;
             tagLink.onclick = () => {
                 console.log('removing tag', tag);
-                tagsEntered = tagsEntered.filter(t => t !== tag);
-                tagsInput.setAttribute('valueAsJSON', JSON.stringify(tagsEntered));
+                stuffEntered = stuffEntered.filter(t => t !== tag);
+                stuffInput.setAttribute('valueAsJSON', JSON.stringify(stuffEntered));
                 renderTags();
             }
             const tagSpacer = document.createElement('span');
             tagSpacer.innerHTML = ', ';
 
-            tagsTdOther.appendChild(tagLink);
+            stuffTdOther.appendChild(tagLink);
 
-            if (index < tagsEntered.length - 1) tagsTdOther.appendChild(tagSpacer);
+            if (index < stuffEntered.length - 1) stuffTdOther.appendChild(tagSpacer);
             index++;
         }
     }
 
     renderTags();
 
-    tagsInput.addEventListener('keydown', (event) => {
+    stuffInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
-            tagsEntered.push(tagsInput.value);
-            tagsInput.value = ''
-            tagsInput.setAttribute('valueAsJSON', JSON.stringify(tagsEntered));
+            stuffEntered.push(stuffInput.value);
+            stuffInput.value = ''
+            stuffInput.setAttribute('valueAsJSON', JSON.stringify(stuffEntered));
             renderTags();
         }
     });
 
-    tagsTdInput.appendChild(tagsInput);
+    stuffTdInput.appendChild(stuffInput);
 
-    const tagsTr = document.createElement('tr');
-    tagsTr.appendChild(tagsTdKey);
-    tagsTr.appendChild(tagsTdInput);
-    tagsTr.appendChild(tagsTdOther);
+    const stuffTr = document.createElement('tr');
+    stuffTr.appendChild(stuffTdKey);
+    stuffTr.appendChild(stuffTdInput);
+    stuffTr.appendChild(stuffTdOther);
 
-    tbody.appendChild(tagsTr);
+    tbody.appendChild(stuffTr);
+
+    // macro :: html_to_input_tbody_datetime :: {"when": "field"}
+    const whenTdKey = document.createElement('td');
+    whenTdKey.textContent = 'when';
+
+    const whenTdInput = document.createElement('td');
+    const whenInput = document.createElement('input');
+    whenInput.name = 'when';
+    whenInput.type = 'datetime-local';
+    whenInput.value = data.when.toISOString().slice(0, 16);
+
+    whenTdInput.appendChild(whenInput);
+
+    const whenTdOther = document.createElement('td');
+    whenTdOther.textContent = '-';
+
+    const whenTr = document.createElement('tr');
+    whenTr.appendChild(whenTdKey);
+    whenTr.appendChild(whenTdInput);
+    whenTr.appendChild(whenTdOther);
+
+    tbody.appendChild(whenTr);
     // end macro ::
     // insert :: macro.html_to_input_tbody(model.fields)
 
@@ -389,18 +466,31 @@ function exampleItemToDisplayTBody(data, tbody) {
 
     tbody.appendChild(scoreTr);
 
-    // macro :: html_to_display_tbody_list :: {"tags": "field"}
-    const tagsTdKey = document.createElement('td');
-    tagsTdKey.textContent = 'tags';
+    // macro :: html_to_display_tbody_list :: {"stuff": "field"}
+    const stuffTdKey = document.createElement('td');
+    stuffTdKey.textContent = 'stuff';
 
-    const tagsTdValue = document.createElement('td');
-    tagsTdValue.textContent = data.tags.join(', ');
+    const stuffTdValue = document.createElement('td');
+    stuffTdValue.textContent = data.stuff.join(', ');
 
-    const tagsTr = document.createElement('tr');
-    tagsTr.appendChild(tagsTdKey);
-    tagsTr.appendChild(tagsTdValue);
+    const stuffTr = document.createElement('tr');
+    stuffTr.appendChild(stuffTdKey);
+    stuffTr.appendChild(stuffTdValue);
 
-    tbody.appendChild(tagsTr);
+    tbody.appendChild(stuffTr);
+
+    // macro :: html_to_display_tbody_datetime :: {"when": "field"}
+    const whenTdKey = document.createElement('td');
+    whenTdKey.textContent = 'when';
+
+    const whenTdValue = document.createElement('td');
+    whenTdValue.textContent = data.when.toISOString();
+
+    const whenTr = document.createElement('tr');
+    whenTr.appendChild(whenTdKey);
+    whenTr.appendChild(whenTdValue);
+
+    tbody.appendChild(whenTr);
     // end macro ::
     // insert :: macro.html_to_display_tbody(model.fields)
 
@@ -444,10 +534,16 @@ function exampleItemToTableRow(data) {
     scoreTd.textContent = data.score;
     tr.appendChild(scoreTd);
 
-    // macro :: html_to_table_row_list :: {"tags": "field"}
-    const tagsTd = document.createElement('td');
-    tagsTd.textContent = data.tags.join(', ');
-    tr.appendChild(tagsTd);
+    // macro :: html_to_table_row_list :: {"stuff": "field"}
+    const stuffTd = document.createElement('td');
+    stuffTd.textContent = data.stuff.join(', ');
+    tr.appendChild(stuffTd);
+    // end macro ::
+
+    // macro :: html_to_table_row_datetime :: {"when": "field"}
+    const whenTd = document.createElement('td');
+    whenTd.textContent = data.when.toISOString();
+    tr.appendChild(whenTd);
     // end macro ::
     // insert :: macro.html_to_table_row(model.fields)
 

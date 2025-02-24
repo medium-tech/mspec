@@ -14,14 +14,14 @@ test('test - sample module - example item - pagination', async ({ page }) => {
   await page.getByRole('link', { name: 'example_item' }).click();
   await expect(page.getByRole('heading')).toContainText('example item');
 
-  // vars :: {"['id', 'description', 'verified', 'color', 'count', 'score', 'tags']": "macro.html_field_list(model.fields)"}
-  const fields = ['id', 'description', 'verified', 'color', 'count', 'score', 'tags'];
+  // vars :: {"['id', 'description', 'verified', 'color', 'count', 'score', 'stuff', 'when']": "macro.html_field_list(model.fields)"}
+  const fields = ['id', 'description', 'verified', 'color', 'count', 'score', 'stuff', 'when'];
   for (const field of fields) {
     await expect(page.locator('th', {hasText: field})).toBeVisible();
   }
 
-  await page.getByRole('button', { name: '>>>' }).click();
-  await page.getByRole('button', { name: '<<<' }).click();
+  // await page.getByRole('button', { name: '>>>' }).click();
+  // await page.getByRole('button', { name: '<<<' }).click();
   await page.getByRole('button', { name: 'refresh' }).click();
 });
 
@@ -56,14 +56,17 @@ test('test - sample module - example item - instance', async ({ page }) => {
     await page.locator('input[name="score"]').fill('3.33');
     textToContain.push('3.33');
 
-    // macro :: html_unittest_form_list :: {"tags": "field"}
-    await page.locator('html').click();
-    await page.locator('input[name="tags"]').click();
-    await page.locator('input[name="tags"]').fill('one');
-    await page.locator('input[name="tags"]').press('Enter');
-    await page.locator('input[name="tags"]').fill('two');
-    await page.locator('input[name="tags"]').press('Enter');
+    // macro :: html_unittest_form_list :: {"stuff": "field"}
+    await page.locator('input[name="stuff"]').click();
+    await page.locator('input[name="stuff"]').fill('one');
+    await page.locator('input[name="stuff"]').press('Enter');
+    await page.locator('input[name="stuff"]').fill('two');
+    await page.locator('input[name="stuff"]').press('Enter');
     textToContain.push('one, two');
+
+    // macro :: html_unittest_form_datetime :: {"when": "field"}
+    await page.locator('input[name="when"]').click();
+    await page.locator('input[name="when"]').fill('2020-03-02T05:15');
     // end macro ::
 
     // insert :: macro.html_unittest_form(model.fields)

@@ -71,9 +71,9 @@
         * 🟢 refactor code
         * 🟡 refactor templating
         * 🟡 tests passing
-            * 🟡 sample app
+            * 🟢 sample app
                 * 🟢 client/server
-                * 🟡 browser gui
+                * 🟢 browser gui
             * 🔴 generated app
                 * 🔴 client/server
                 * 🔴 browser gui
