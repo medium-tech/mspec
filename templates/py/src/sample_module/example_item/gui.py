@@ -61,8 +61,8 @@ class ExampleItemIndexPage(tkinter.Frame):
         status_label = ttk.Label(self.controls, textvariable=self.list_status)
         status_label.grid(row=2, column=0, columnspan=2, sticky='w')
 
-        # vars :: {"['id', 'description', 'verified', 'color', 'count', 'score', 'tags']": "macro.py_field_list(model.fields)"}
-        self.field_names = ['id', 'description', 'verified', 'color', 'count', 'score', 'tags']
+        # vars :: {"['id', 'description', 'verified', 'color', 'count', 'score', 'stuff', 'when']": "macro.py_field_list(model.fields)"}
+        self.field_names = ['id', 'description', 'verified', 'color', 'count', 'score', 'stuff', 'when']
 
         self.table = ttk.Frame(self)
         self.table.grid(row=self.list_items_row_offset, column=0, columnspan=2, sticky='nsew')
@@ -104,7 +104,7 @@ class ExampleItemIndexPage(tkinter.Frame):
             except IndexError:
                 example_item = {}
 
-            example_item_id = example_item.get('id', '-')
+            example_item_id = getattr(example_item, 'id', '-')
 
             if example_item_id == '-':
                 go_widget = ttk.Label(self.table, text=example_item_id)
@@ -117,28 +117,32 @@ class ExampleItemIndexPage(tkinter.Frame):
             id_text.grid(row=n + self.list_items_row_offset, column=1, padx=padx)
 
             description_text = tkinter.Text(self.table, height=1, width=25, highlightthickness=0)
-            description_text.insert(tkinter.END, example_item.get('description', '-'))
+            description_text.insert(tkinter.END, getattr(example_item, 'description', '-'))
             description_text.grid(row=n + self.list_items_row_offset, column=2, padx=padx)
 
             verified_text = tkinter.Text(self.table, height=1, width=6, highlightthickness=0)
-            verified_text.insert(tkinter.END, str(example_item.get('verified', '-')).lower())
+            verified_text.insert(tkinter.END, str(getattr(example_item, 'verified', '-')).lower())
             verified_text.grid(row=n + self.list_items_row_offset, column=3, padx=padx)
 
             color_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
-            color_text.insert(tkinter.END, example_item.get('color', '-'))
+            color_text.insert(tkinter.END, getattr(example_item, 'color', '-'))
             color_text.grid(row=n + self.list_items_row_offset, column=4, padx=padx)
 
             count_text = tkinter.Text(self.table, height=1, width=7, highlightthickness=0)
-            count_text.insert(tkinter.END, str(example_item.get('count', '-')))
+            count_text.insert(tkinter.END, str(getattr(example_item,'count', '-')))
             count_text.grid(row=n + self.list_items_row_offset, column=5, padx=padx)
 
             score_text = tkinter.Text(self.table, height=1, width=7, highlightthickness=0)
-            score_text.insert(tkinter.END, str(example_item.get('score', '-')))
+            score_text.insert(tkinter.END, str(getattr(example_item, 'score', '-')))
             score_text.grid(row=n + self.list_items_row_offset, column=6, padx=padx)
 
-            tags_text = tkinter.Text(self.table, height=1, width=20, highlightthickness=0)
-            tags_text.insert(tkinter.END, ', '.join(example_item.get('tags', [])))
-            tags_text.grid(row=n + self.list_items_row_offset, column=7, padx=padx)
+            stuff_text = tkinter.Text(self.table, height=1, width=20, highlightthickness=0)
+            stuff_text.insert(tkinter.END, ', '.join(getattr(example_item, 'stuff', [])))
+            stuff_text.grid(row=n + self.list_items_row_offset, column=7, padx=padx)
+
+            when_text = tkinter.Text(self.table, height=1, width=25, highlightthickness=0)
+            when_text.insert(tkinter.END, getattr(example_item, 'when', '-'))
+            when_text.grid(row=n + self.list_items_row_offset, column=8, padx=padx)
 
         if self.list_offset == 0:
             self.prev_pg_button.state(['disabled'])

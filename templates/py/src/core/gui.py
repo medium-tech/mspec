@@ -2,9 +2,12 @@ import tkinter
 from tkinter import ttk
 
 from core.client import create_client_context
-from sample_module import SampleModuleIndexPage
-from sample_module.example_item.gui import *
-
+# for :: {% for module in modules.values() %} :: {"sample_module": "module.name.snake_case", "SampleModule": "module.name.pascal_case"}
+from sample_module.gui import SampleModuleIndexPage
+# end for ::
+# for :: {% for modle in modles.values() %} :: {"sample_module": "modle.module_name.snake_case", "example_item": "model.name.snake_case", "ExampleItem": "model.name.pascal_case"}
+from sample_module.example_item.gui import ExampleItemIndexPage, ExampleItemInstancePage
+# end for ::
 
 LARGEFONT = ('Verdana', 35)
   
@@ -12,7 +15,7 @@ LARGEFONT = ('Verdana', 35)
 #
 #
 
-def main(start_frame='MSpecIndexPage'):
+def gui_main(start_frame='MSpecIndexPage'):
     app = MSpecGUIApp(start_frame)
     app.mainloop()
     

@@ -7,7 +7,7 @@ from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
 # vars :: {"sample_module": "module.name.snake_case", "sample-module": "module.name.kebab_case"}
-# vars :: {"http://localhost:9009": "client.default_host", "example_item": "model.name.snake_case", "example item": "model.name.lower_case", "example-item": "model.name.kebab_case"}
+# vars :: {"example_item": "model.name.snake_case", "example item": "model.name.lower_case", "example-item": "model.name.kebab_case", "ExampleItem": "model.name.pascal_case"}
 
 __all__ = [
     'client_create_example_item',
