@@ -15,6 +15,7 @@ parser.add_argument('--spec', type=str, default='test-gen.yaml', help='spec file
 parser.add_argument('--source', type=Path, default=None, help='source to extract template from')
 parser.add_argument('--output', type=Path, default=None, help='output directory')
 parser.add_argument('--debug', action='store_true', help='print debug output')
+parser.add_argument('--disable-strict', action='store_true', help='disable jinja strict mode - discouraged but can be used for debugging')
 
 args = parser.parse_args()
 
@@ -32,9 +33,9 @@ if args.command == 'extract':
 elif args.command == 'render-py':
     if args.output is None:
         raise Exception('must supply output directory')
-    MTemplatePyProject.render(load_spec(args.spec), args.output, args.debug)
+    MTemplatePyProject.render(load_spec(args.spec), args.output, args.debug, args.disable_strict)
 
 elif args.command == 'render-html':
     if args.output is None:
         raise Exception('must supply output directory')
-    MTemplateHTMLProject.render(load_spec(args.spec), args.output, args.debug)
+    MTemplateHTMLProject.render(load_spec(args.spec), args.output, args.debug, args.disable_strict)

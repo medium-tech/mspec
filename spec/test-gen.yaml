@@ -1,13 +1,17 @@
 project:
-  author:
-    name: 'B rad C'
-    email: 'sample@email.com'
+  
   name:
     snake_case: 'test_gen'
     pascal_case: 'TestGen'
     camel_case: 'testGen'
     kebab_case: 'test-gen'
     lower_case: 'test gen'
+
+  description: 'A test project for mspec-alpha python app generator'
+
+  author:
+    name: 'B rad C'
+    email: 'sample@email.com'
 
 server:
   port: 7007

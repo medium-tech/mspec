@@ -6,7 +6,8 @@ from sample_module.example_item.db import *
 from core.exceptions import NotFoundError, RequestError, JSONResponse
 
 # vars :: {"sample_module": "module.name.snake_case", "sample-module": "module.name.kebab_case"}
-# vars :: {"example_item": "model.name.snake_case", "example item": "model.name.lower_case", "example-item": "model.name.kebab_case"}
+# vars :: {"example_item": "model.name.snake_case", "example item": "model.name.lower_case"}
+# vars :: {"example-item": "model.name.kebab_case", "ExampleItem": "model.name.pascal_case"}
 
 __all__ = [
     'example_item_routes'

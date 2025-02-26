@@ -4,10 +4,10 @@ from tkinter import ttk
 from core.client import create_client_context
 # for :: {% for module in modules.values() %} :: {"sample_module": "module.name.snake_case", "SampleModule": "module.name.pascal_case"}
 from sample_module.gui import SampleModuleIndexPage
-# end for ::
+# end for :: rstrip
 # for :: {% for item in all_models %} :: {"sample_module": "item.module.name.snake_case", "example_item": "item.model.name.snake_case", "ExampleItem": "item.model.name.pascal_case"}
 from sample_module.example_item.gui import ExampleItemIndexPage, ExampleItemInstancePage
-# end for ::
+# end for :: rstrip
 
 LARGEFONT = ('Verdana', 35)
   
@@ -26,18 +26,23 @@ class MSpecIndexPage(tkinter.Frame):
 
         label = ttk.Label(self, text='mspec', font=LARGEFONT)
         label.grid(row=0, column=0) 
-  
+
+        # for :: {% for module in modules.values() %} :: {"SampleModule": "module.name.pascal_case", "sample module": "module.name.lower_case", "1": "loop.index"}
         button1 = ttk.Button(self, text='sample module', command=lambda: controller.show_frame(SampleModuleIndexPage))
         button1.grid(row=1, column=0)
-
+        # end for ::
 
 class MSpecGUIApp(tkinter.Tk):
 
     frame_classes = (
         MSpecIndexPage, 
+        # for :: {% for module in modules.values() %} :: {"SampleModule": "module.name.pascal_case"}
         SampleModuleIndexPage,
+        # end for ::
+        # for :: {% for item in all_models %} :: {"ExampleItem": "item.model.name.pascal_case"}
         ExampleItemIndexPage,
         ExampleItemInstancePage
+        # end for ::
     )
 
     def __init__(self, start_frame='MSpecIndexPage'):

@@ -93,7 +93,7 @@ class MTemplatePyProject(MTemplateProject):
         keys = [f"'{name}'" for name in all_keys]
         return '[' + ', '.join(keys) + ']'
 
-    def macro_py_field_definitions(self, fields:dict, indent='\t') -> str:
+    def macro_py_field_definitions(self, fields:dict, indent='    ') -> str:
         out = ''
         for name, field in fields.items():
             if field['type'] == 'list':

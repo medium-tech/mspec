@@ -8,7 +8,7 @@ from pathlib import Path
 from collections import OrderedDict
 from dataclasses import dataclass
 
-from jinja2 import Environment, FunctionLoader, StrictUndefined, TemplateError, TemplateSyntaxError
+from jinja2 import Environment, FunctionLoader, StrictUndefined, TemplateError, Undefined
 
 __all__ = [
     'iso_format_string',
@@ -36,7 +36,7 @@ class MTemplateProject:
     # to be overriden by subclass, or supplying output_dir to render_templates
     dist_dir: None
         
-    def __init__(self, spec:dict, debug:bool=False):
+    def __init__(self, spec:dict, debug:bool=False, disable_strict:bool=False) -> None:
         self.spec = spec
         self.spec['macro'] = {}
         self.debug = debug
@@ -46,7 +46,7 @@ class MTemplateProject:
         self.jinja = Environment(
             autoescape=False,
             loader=FunctionLoader(self._jinja_loader),
-            undefined=StrictUndefined,
+            undefined=Undefined if disable_strict else StrictUndefined,
         )
 
     def template_source_paths(self) -> dict[str, list[dict[str, str]]]:
@@ -157,6 +157,7 @@ class MTemplateProject:
             jinja_template = self.jinja.get_template(rel_path)
             rendered_template = jinja_template.render(vars)
         except TemplateError as e:
+            breakpoint()
             raise TemplateError(f'{e.__class__.__name__}:{e} in template {out_path}')
         except MTemplateError as e:
             raise MTemplateError(f'{e.__class__.__name__}:{e} in template {out_path}')
@@ -221,8 +222,8 @@ class MTemplateProject:
         print(':: done')
 
     @classmethod
-    def render(cls, spec:dict, output_dir:str|Path=None, debug:bool=False) -> 'MTemplateProject':
-        template_proj = cls(spec, debug=debug)
+    def render(cls, spec:dict, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False) -> 'MTemplateProject':
+        template_proj = cls(spec, debug=debug, disable_strict=disable_strict)
         template_proj.extract_templates()
         template_proj.init_template_vars()
         template_proj.render_templates(output_dir)
@@ -280,7 +281,7 @@ class MTemplateExtractor:
         except json.JSONDecodeError as e:
             raise MTemplateError(f'JSONDecodeError:{e} in vars definition')
 
-    def _parse_for_lines(self, definition_line:str, lines:list[str]):
+    def _parse_for_lines(self, definition_line:str, lines:list[str], end_for_mods:list[str]):
 
         # parse for loop definition #
 
@@ -314,8 +315,8 @@ class MTemplateExtractor:
             for key, value in sort_dict_by_key_length(block_vars).items():
                 new_line = new_line.replace(key, '{{ ' + value + ' }}')
             self.template_lines.append(new_line)
-        
-        self.template_lines.append('{% endfor %}\n')
+        end_for = '{% endfor %}' if 'rstrip' in end_for_mods else '{% endfor %}\n'
+        self.template_lines.append(end_for)
     
     def _parse_macro(self, macro_def_line:str, lines:list[str]):
         macro_split = macro_def_line.split('::')
@@ -371,6 +372,7 @@ class MTemplateExtractor:
                 elif line_stripped.startswith(f'{self.prefix} for :: '):
                     for_lines = []
                     for_start_line_no = line_no
+                    end_for_mods = []
 
                     while True:
 
@@ -384,13 +386,18 @@ class MTemplateExtractor:
                         next_line_strippped = next_line.replace(self.postfix, '').strip()
                         line_no += 1
                         
-                        if next_line_strippped == f'{self.prefix} end for ::':
+                        if next_line_strippped.startswith(f'{self.prefix} end for ::'):
+                            try:
+                                _, mods = next_line_strippped.split('::')
+                            except ValueError:
+                                raise MTemplateError(f'invalid end for statement on line {line_no} of {self.path}')
+                            end_for_mods.extend(mods.strip().split())
                             break
 
                         for_lines.append(next_line)
                     
                     try:
-                        self._parse_for_lines(line_stripped, for_lines)
+                        self._parse_for_lines(line_stripped, for_lines, end_for_mods)
                     except MTemplateError as e:
                         raise MTemplateError(f'{e} on line {line_no} of {self.path}')
                 

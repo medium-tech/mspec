@@ -48,12 +48,6 @@ parser.add_argument('--count', type=int, default=101, help='number of items to s
 #
 
 args = parser.parse_args()
-
-def get_user_data():
-    if args.json is None:
-        raise Exception('must supply data via json argument')
-    else:
-        return ExampleItem.from_json(args.json)
     
 if args.seed is not None:
     random.seed(args.seed)
@@ -84,13 +78,17 @@ elif args.command == 'example-example-item':
     result = ExampleItem.example().to_json()
 
 elif args.command == 'db-create-example-item':
-    result = db_create_example_item(cli_ctx, get_user_data())
+    if args.json is None:
+        raise Exception('must supply data via json argument')
+    result = db_create_example_item(cli_ctx, ExampleItem.from_json(args.json))
 
 elif args.command == 'db-read-example-item':
     result = db_read_example_item(cli_ctx, args.id)
 
 elif args.command == 'db-update-example-item':
-    result = db_update_example_item(cli_ctx, args.id, get_user_data())
+    if args.json is None:
+        raise Exception('must supply data via json argument')
+    result = db_update_example_item(cli_ctx, args.id, ExampleItem.from_json(args.json))
 
 elif args.command == 'db-delete-example-item':
     result = db_delete_example_item(cli_ctx, args.id)
@@ -99,7 +97,9 @@ elif args.command == 'db-list-example-item':
     result = db_list_example_item(cli_ctx, args.offset, args.limit)
 
 elif args.command == 'client-create-example-item':
-    result = client_create_example_item(cli_ctx, get_user_data())
+    if args.json is None:
+        raise Exception('must supply data via json argument')
+    result = client_create_example_item(cli_ctx, ExampleItem.from_json(args.json))
 
 elif args.command == 'client-read-example-item':
     result = client_read_example_item(cli_ctx, )
