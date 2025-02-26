@@ -69,13 +69,16 @@ class MTemplatePyProject(MTemplateProject):
     def macro_py_verify_fields(self, fields:dict, indent='\t') -> str:
         out = ''
         for name, field in fields.items():
-            vars = {'field': deepcopy(field)}
-            vars['field']['name'] = name
+            vars = deepcopy(field)
+            vars['name'] = name
 
             if 'enum' in field:
                 enum_values = [f"'{value}'" for value in field['enum']]
                 vars['enum_value_list'] = '[' + ', '.join(enum_values) + ']'
                 field_type = 'str_enum'
+            elif field['type'] == 'list':
+                vars['element_type'] = field['element_type']
+                field_type = 'list'
             else:
                 field_type = field['type']
 
