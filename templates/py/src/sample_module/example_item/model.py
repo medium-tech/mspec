@@ -50,7 +50,7 @@ class ExampleItem:
 
         # insert :: macro.py_verify_fields(model.fields)
 
-        # macro :: py_verify_str :: {"description": "field"}
+        # macro :: py_verify_str :: {"description": "field.name"}
         try:
             if not isinstance(self.description, str):
                 raise TypeError('description must be a string')
@@ -64,7 +64,7 @@ class ExampleItem:
         except KeyError:
             pass
         
-        # macro :: py_verify_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
+        # macro :: py_verify_str_enum :: {"color": "field.name", "['red', 'green', 'blue']": "field.enum_value_list"}
         try:
             if not isinstance(self.color, str):
                 raise TypeError('color must be a string')
@@ -73,21 +73,21 @@ class ExampleItem:
         except KeyError:
             pass
 
-        # macro :: py_verify_int :: {"count": "field"}
+        # macro :: py_verify_int :: {"count": "field.name"}
         try:
             if not isinstance(self.count, int):
                 raise TypeError('count must be an integer')
         except KeyError:
             pass
 
-        # macro :: py_verify_float :: {"score": "field"}
+        # macro :: py_verify_float :: {"score": "field.name"}
         try:
             if not isinstance(self.score, float):
                 raise TypeError('score must be a float')
         except KeyError:
             pass
 
-        # macro :: py_verify_list :: {"stuff": "field", "str": "element_type"}
+        # macro :: py_verify_list :: {"stuff": "field.name", "str": "field.element_type"}
         try:
             if not isinstance(self.stuff, list):
                 raise TypeError('stuff must be a list')
@@ -98,7 +98,7 @@ class ExampleItem:
         except KeyError:
             pass
 
-        # macro :: py_verify_datetime :: {"stuff": "field"}
+        # macro :: py_verify_datetime :: {"stuff": "field.name"}
         try:
             if not isinstance(self.when, datetime):
                 raise TypeError('when must be a datetime')

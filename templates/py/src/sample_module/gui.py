@@ -4,7 +4,7 @@ from tkinter import ttk
 from sample_module.example_item.gui import ExampleItemIndexPage
 # end for ::
 
-# vars :: {"sample_module": "module.name.snake_case", "SampleModule": "module.name.pascal_case"}}
+# vars :: {"sample_module": "module.name.snake_case", "SampleModule": "module.name.pascal_case"}
 
 __all__ = [
     'SampleModuleIndexPage'

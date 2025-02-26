@@ -3,6 +3,10 @@ project:
     name: 'B rad C'
     email: 'sample@email.com'
   name:
+    snake_case: 'test_gen'
+    pascal_case: 'TestGen'
+    camel_case: 'testGen'
+    kebab_case: 'test-gen'
     lower_case: 'test gen'
 
 server:
@@ -81,10 +85,19 @@ modules:
 
           tags:
             type: list
-            element_type: string
+            element_type: str
             examples:
               - ['tag1', 'tag2']
-              - ['tag3', 'tag4']
+              - ['tag1', 'tag3']
+              - ['tag2', 'tag4']
+
+          values:
+            type: list
+            element_type: int
+            examples:
+              - [3, 4]
+              - [42, 16, 109, 4]
+              - [6]
 
   social_media:
     name:
@@ -104,7 +117,7 @@ modules:
 
           tags:
             type: list
-            element_type: string
+            element_type: str
             examples:
               - ['tag1', 'tag2']
               - ['tag3', 'tag4']

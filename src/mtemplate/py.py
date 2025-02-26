@@ -1,6 +1,7 @@
 from mtemplate import MTemplateProject, MTemplateError, iso_format_string
 from pathlib import Path
 from datetime import datetime
+from copy import deepcopy
 
 
 __all__ = ['MTemplateHTMLProject']
@@ -27,6 +28,7 @@ class MTemplatePyProject(MTemplateProject):
             'py_random_fields': self.macro_py_random_fields,
             'py_verify_fields': self.macro_py_verify_fields,
             'py_field_list': self.macro_py_field_list,
+            'py_field_definitions': self.macro_py_field_definitions,
         })
     
     def macro_py_example_fields(self, fields:dict, indent='\t') -> str:
@@ -67,12 +69,14 @@ class MTemplatePyProject(MTemplateProject):
     def macro_py_verify_fields(self, fields:dict, indent='\t') -> str:
         out = ''
         for name, field in fields.items():
-            vars = {'field': name}
-            try:
+            vars = {'field': deepcopy(field)}
+            vars['field']['name'] = name
+
+            if 'enum' in field:
                 enum_values = [f"'{value}'" for value in field['enum']]
                 vars['enum_value_list'] = '[' + ', '.join(enum_values) + ']'
-                field_type = 'enum'
-            except KeyError:
+                field_type = 'str_enum'
+            else:
                 field_type = field['type']
 
             try:
@@ -86,3 +90,12 @@ class MTemplatePyProject(MTemplateProject):
         keys = [f"'{name}'" for name in all_keys]
         return '[' + ', '.join(keys) + ']'
 
+    def macro_py_field_definitions(self, fields:dict, indent='\t') -> str:
+        out = ''
+        for name, field in fields.items():
+            if field['type'] == 'list':
+                type_def = f'list[' + field['element_type'] + ']'
+            else:
+                type_def = field['type']
+            out += f'{indent}{name}: {type_def}\n'
+        return out

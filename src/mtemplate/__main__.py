@@ -10,7 +10,7 @@ import json
 # parser #
 
 parser = argparse.ArgumentParser(description='mtemplate - cli')
-parser.add_argument('command', choices=['extract', 'render-all', 'render-py', 'render-html'], help='command to run')
+parser.add_argument('command', choices=['extract', 'render-py', 'render-html'], help='command to run')
 parser.add_argument('--spec', type=str, default='test-gen.yaml', help='spec file pattern')
 parser.add_argument('--source', type=Path, default=None, help='source to extract template from')
 parser.add_argument('--output', type=Path, default=None, help='output directory')
@@ -30,7 +30,11 @@ if args.command == 'extract':
             f.write(template.create_template())
 
 elif args.command == 'render-py':
+    if args.output is None:
+        raise Exception('must supply output directory')
     MTemplatePyProject.render(load_spec(args.spec), args.output, args.debug)
 
 elif args.command == 'render-html':
+    if args.output is None:
+        raise Exception('must supply output directory')
     MTemplateHTMLProject.render(load_spec(args.spec), args.output, args.debug)

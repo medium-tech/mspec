@@ -5,7 +5,7 @@ from core.client import create_client_context
 # for :: {% for module in modules.values() %} :: {"sample_module": "module.name.snake_case", "SampleModule": "module.name.pascal_case"}
 from sample_module.gui import SampleModuleIndexPage
 # end for ::
-# for :: {% for modle in modles.values() %} :: {"sample_module": "modle.module_name.snake_case", "example_item": "model.name.snake_case", "ExampleItem": "model.name.pascal_case"}
+# for :: {% for item in all_models %} :: {"sample_module": "item.module.name.snake_case", "example_item": "item.model.name.snake_case", "ExampleItem": "item.model.name.pascal_case"}
 from sample_module.example_item.gui import ExampleItemIndexPage, ExampleItemInstancePage
 # end for ::
 

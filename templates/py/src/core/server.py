@@ -10,7 +10,7 @@ from core.types import to_json
 from core.models import *
 from core.db import *
 from core.exceptions import RequestError, JSONResponse, NotFoundError, AuthenticationError, ForbiddenError
-# for :: {% for modle in modles.values() %} :: {"sample_module": "modle.module_name.snake_case", "example_item": "model.name.snake_case"}
+# for :: {% for item in all_models %} :: {"sample_module": "item.module.name.snake_case", "example_item": "item.model.name.snake_case"}
 from sample_module.example_item.server import example_item_routes
 # end for ::
 
@@ -177,7 +177,7 @@ route_list = [
     auth_routes,
     user_routes,
     profile_routes,
-    # for :: {% for model in modles.values() %} :: {"example_item": "modle.name.snake_case"}
+    # for :: {% for item in all_models %} :: {"example_item": "item.model.name.snake_case"}
     example_item_routes,
     # end for ::
 ]

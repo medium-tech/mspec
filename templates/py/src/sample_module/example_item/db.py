@@ -5,7 +5,7 @@ from sample_module.example_item.model import ExampleItem
 from pymongo.collection import Collection
 from bson import ObjectId
 
-# vars :: {"sample_module": "module.name.snake_case", "example_item": "model.name.snake_case", "ExampleItem": "model.name.pascal_case". "msample": "project.name.snake_case"}
+# vars :: {"sample_module": "module.name.snake_case", "example_item": "model.name.snake_case", "ExampleItem": "model.name.pascal_case", "msample": "project.name.snake_case"}
 
 __all__ = [
     'db_create_example_item', 

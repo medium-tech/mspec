@@ -32,6 +32,9 @@ def sort_dict_by_key_length(dictionary:dict) -> OrderedDict:
 
 
 class MTemplateProject:
+
+    # to be overriden by subclass, or supplying output_dir to render_templates
+    dist_dir: None
         
     def __init__(self, spec:dict, debug:bool=False):
         self.spec = spec
@@ -113,7 +116,7 @@ class MTemplateProject:
             self.spec['macro'].update(template.macros)
 
         self.jinja.globals.update(self.spec)
-    
+
     def extract_templates(self) -> dict:
         template_paths = self.template_source_paths()
         try:
@@ -155,17 +158,23 @@ class MTemplateProject:
             rendered_template = jinja_template.render(vars)
         except TemplateError as e:
             raise TemplateError(f'{e.__class__.__name__}:{e} in template {out_path}')
+        except MTemplateError as e:
+            raise MTemplateError(f'{e.__class__.__name__}:{e} in template {out_path}')
         
         self.write_file(out_path, rendered_template)
 
     def render_templates(self, output_dir:str|Path=None):
-        
+
         if output_dir is None:
             output_dir = self.dist_dir
 
         if not self.debug:
-            shutil.rmtree(output_dir, ignore_errors=True)
-
+            print(f':: removing old output dir: {output_dir}')
+            try:
+                shutil.rmtree(output_dir, ignore_errors=True)
+            except TypeError:
+                raise ValueError(f'Invalid output dir')
+            
         print(':: app')
         for template in self.template_paths['app']:
             app_output = output_dir / template['rel']
@@ -259,19 +268,19 @@ class MTemplateExtractor:
         else:
             return json.loads(data)
 
-    def _parse_vars_line(self, line:str, line_no:int):
+    def _parse_vars_line(self, line:str):
         try:
             vars_str = line.split('::')[1].strip()
             vars_decoded = self._load_json(vars_str)
             if not isinstance(vars_decoded, dict):
-                raise MTemplateError(f'vars must be a json object not "{type(vars_decoded).__name__}" on line {line_no}')
+                raise MTemplateError(f'vars must be a object not "{type(vars_decoded).__name__}"')
             
             self.template_vars.update(vars_decoded)
 
         except json.JSONDecodeError as e:
-            raise MTemplateError(f'caught JSONDecodeError in vars definition on line {line_no} | {e}')
+            raise MTemplateError(f'JSONDecodeError:{e} in vars definition')
 
-    def _parse_for_lines(self, definition_line:str, lines:list[str], start_line_no:int):
+    def _parse_for_lines(self, definition_line:str, lines:list[str]):
 
         # parse for loop definition #
 
@@ -280,7 +289,7 @@ class MTemplateExtractor:
             jinja_line = definition_split[1]
 
         except IndexError:
-            raise MTemplateError(f'for loop definition mmissing jinja loop syntax on {start_line_no}')
+            raise MTemplateError(f'for loop definition missing jinja loop syntax')
         
         # parse block vars #
 
@@ -291,10 +300,10 @@ class MTemplateExtractor:
             try:
                 block_vars = eval(definition_split[2].strip())
             except Exception as e:
-                raise MTemplateError(f'error parsing block vars on line {start_line_no} of {self.path} | {e}')
+                raise MTemplateError(f'{e.__class__.__name__}:{e} parsing block vars')
         
         if not isinstance(block_vars, dict):
-            raise MTemplateError(f'vars must be a dict not "{type(block_vars).__name__}" on line {start_line_no} of {self.path}')
+            raise MTemplateError(f'vars must be a dict not {type(block_vars).__name__}')
         
         # append lines to template #
 
@@ -308,17 +317,17 @@ class MTemplateExtractor:
         
         self.template_lines.append('{% endfor %}\n')
     
-    def _parse_macro(self, macro_def_line:str, lines:list[str], start_line_no:int):
+    def _parse_macro(self, macro_def_line:str, lines:list[str]):
         macro_split = macro_def_line.split('::')
         try:
             macro_name = macro_split[1].strip()
         except IndexError:
-            raise MTemplateError(f'macro definition missing name on line {start_line_no}')
+            raise MTemplateError(f'macro definition missing name')
         
         try:
             macro_vars = self._load_json(macro_split[2].strip())
         except json.JSONDecodeError as e:
-            raise MTemplateError(f'error parsing macro vars on line {start_line_no} | {e}')
+            raise MTemplateError(f'JSONDecodeError:{e} parsing macro vars')
         except IndexError:
             macro_vars = {}
 
@@ -352,7 +361,10 @@ class MTemplateExtractor:
                 # vars line #
 
                 if line_stripped.startswith(f'{self.prefix} vars :: '):
-                    self._parse_vars_line(line_stripped, line_no)
+                    try:
+                        self._parse_vars_line(line_stripped)
+                    except MTemplateError as e:
+                        raise MTemplateError(f'{e} on line {line_no} of {self.path}')
 
                 # for loop #
 
@@ -377,8 +389,11 @@ class MTemplateExtractor:
 
                         for_lines.append(next_line)
                     
-                    self._parse_for_lines(line_stripped, for_lines, for_start_line_no)
-
+                    try:
+                        self._parse_for_lines(line_stripped, for_lines)
+                    except MTemplateError as e:
+                        raise MTemplateError(f'{e} on line {line_no} of {self.path}')
+                
                 # end for #
                 
                 elif line_stripped.startswith(f'{self.prefix} end for ::'):
@@ -450,17 +465,19 @@ class MTemplateExtractor:
                         next_line_strippped = next_line.replace(self.postfix, '').strip()
                         line_no += 1
 
-                        if next_line_strippped == f'{self.prefix} end macro ::':
-                            self._parse_macro(macro_def_line, macro_lines, macro_start_line_no)
-                            break
-                        elif next_line_strippped.startswith(f'{self.prefix} macro ::'):
-                            self._parse_macro(macro_def_line, macro_lines, macro_start_line_no)
-                            macro_start_line_no = line_no
-                            macro_def_line = next_line_strippped
-                            macro_lines = []
-                            continue
-                        else:
-                            macro_lines.append(next_line)
+                        try:
+                            if next_line_strippped == f'{self.prefix} end macro ::':
+                                self._parse_macro(macro_def_line, macro_lines)
+                                break
+                            elif next_line_strippped.startswith(f'{self.prefix} macro ::'):
+                                self._parse_macro(macro_def_line, macro_lines)
+                                macro_def_line = next_line_strippped
+                                macro_lines = []
+                                continue
+                            else:
+                                macro_lines.append(next_line)
+                        except MTemplateError as e:
+                            raise MTemplateError(f'{e} on line {line_no} of {self.path}')
                             
                 # end of loop, ignore the line or add it to template #
 
