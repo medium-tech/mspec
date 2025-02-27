@@ -157,7 +157,6 @@ class MTemplateProject:
             jinja_template = self.jinja.get_template(rel_path)
             rendered_template = jinja_template.render(vars)
         except TemplateError as e:
-            breakpoint()
             raise TemplateError(f'{e.__class__.__name__}:{e} in template {out_path}')
         except MTemplateError as e:
             raise MTemplateError(f'{e.__class__.__name__}:{e} in template {out_path}')
@@ -202,7 +201,6 @@ class MTemplateProject:
                 print('\t\t\t', model['name']['lower_case'])
 
                 for template in self.template_paths['model']:
-                    #breakpoint()
                     model_output = (output_dir / template['rel']).as_posix()
                     model_output = model_output.replace('{{ model.name.snake_case }}', model['name']['snake_case'])
                     model_output = model_output.replace('{{ model.name.kebab_case }}', model['name']['kebab_case'])
@@ -213,8 +211,6 @@ class MTemplateProject:
                     model_output = model_output.replace('{{ module.name.kebab_case }}', module['name']['kebab_case'])
                     model_output = model_output.replace('{{ module.name.pascal_case }}', module['name']['pascal_case'])
                     model_output = model_output.replace('{{ module.name.camel_case }}', module['name']['camel_case'])
-
-                    #breakpoint()
 
                     print('\t\t\t\t', model_output)
                     self.render_template({'module': module, 'model': model}, template['rel'], model_output)

@@ -1,5 +1,6 @@
 {
     "python.analysis.extraPaths": [
-        "./templates/py/src"
+        "./templates/py/src",
+        "./dist/py/src"
     ]
 }

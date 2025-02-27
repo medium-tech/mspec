@@ -52,7 +52,7 @@ class MTemplatePyProject(MTemplateProject):
             else:
                 raise MTemplateError(f'field "{name}" has unsupported type "{field["type"]}"')
 
-            lines.append(f"{indent * 2}'{name}': {value}")
+            lines.append(f"{indent * 3}{name}={value}")
 
         return ',\n'.join(lines)
 

@@ -29,6 +29,11 @@ class ExampleItem:
     id: Optional[str] = None
 
     def __post_init__(self):
+        """post init"""
+
+        # insert :: macro.py_post_init(model.fields)
+
+        # macro :: py_post_init_datetime :: {"when": "name"}
         # lower resolution of datetime for mongo compatibility
         if isinstance(self.when, str):
             dt, millis = self.when.split('.')
@@ -39,6 +44,7 @@ class ExampleItem:
             new_ts = f'{dt}.{millis[0:3]}'
         
         self.when = datetime.strptime(new_ts, iso_format_str)
+        # end macro ::
 
     def validate(self) -> 'ExampleItem':
         
@@ -125,6 +131,7 @@ class ExampleItem:
     @classmethod
     def example(cls) -> 'ExampleItem':
         return cls(
+            # replace :: macro.py_example_fields(model.fields)
             description='a large thing',
             verified=True,
             color='red',
@@ -132,6 +139,7 @@ class ExampleItem:
             score=7.3,
             stuff=['apple', 'banana', 'pear'],
             when=datetime.now()
+            # end replace ::
         ) 
 
     @classmethod

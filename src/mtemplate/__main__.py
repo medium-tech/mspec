@@ -31,11 +31,7 @@ if args.command == 'extract':
             f.write(template.create_template())
 
 elif args.command == 'render-py':
-    if args.output is None:
-        raise Exception('must supply output directory')
     MTemplatePyProject.render(load_spec(args.spec), args.output, args.debug, args.disable_strict)
 
 elif args.command == 'render-html':
-    if args.output is None:
-        raise Exception('must supply output directory')
     MTemplateHTMLProject.render(load_spec(args.spec), args.output, args.debug, args.disable_strict)
