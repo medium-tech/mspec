@@ -8,10 +8,10 @@ test('test - sample module - example item - pagination', async ({ page }) => {
   await page.goto('http://localhost:9009/');
 
   await expect(page.locator('h1')).toContainText('mspec');
-  await page.getByRole('link', { name: 'sample_module' }).click();
+  await page.getByRole('link', { name: 'sample module' }).click();
 
   await expect(page.locator('h1')).toContainText('sample module');
-  await page.getByRole('link', { name: 'example_item' }).click();
+  await page.getByRole('link', { name: 'example item' }).click();
   await expect(page.getByRole('heading')).toContainText('example item');
 
   // vars :: {"['id', 'description', 'verified', 'color', 'count', 'score', 'stuff', 'when']": "macro.html_field_list(model.fields)"}

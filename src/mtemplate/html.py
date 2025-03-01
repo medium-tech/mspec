@@ -70,6 +70,11 @@ class MTemplateHTMLProject(MTemplateProject):
         for name, field in fields.items():
             vars = {'field': name}
             field_type = 'enum' if 'enum' in field else field['type']
+            try:
+                vars['element_type'] = field['element_type']
+                vars['element_type_capitalized'] = field['element_type'].capitalize()
+            except KeyError:
+                pass
 
             try:
                 out += self.spec['macro'][f'html_to_input_tbody_{field_type}'](vars) + '\n'

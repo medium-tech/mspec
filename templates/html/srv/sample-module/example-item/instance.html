@@ -51,7 +51,6 @@
                 console.log(`fetching exampleItem ${id}`);
                 clientReadExampleItem(id)
                     .then(response => {
-                        console.log(response)
                         if (response.ok) {
                             return response.text();
                         } else {
@@ -81,6 +80,9 @@
                 console.log(`deleting exampleItem ${id}`);
                 clientDeleteExampleItem(id)
                     .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`exampleItem ${id} delete failed`);
+                        }
                         console.log(`exampleItem ${id} deleted`)
                         window.location.reload();
                     })
@@ -106,6 +108,9 @@
 
                 clientUpdateExampleItem(id, data)
                     .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`exampleItem ${id} update failed`);
+                        }
                         const status = 'updated at ' + new Date().toLocaleTimeString()
                         updateExampleItemStatus(status, 'success')
                         console.log(`exampleItem ${id} updated`)

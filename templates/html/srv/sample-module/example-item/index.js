@@ -1,13 +1,56 @@
 // vars :: {"sample-module": "module.name.kebab_case"}
 // vars :: {"ExampleItem": "model.name.pascal_case", "exampleItem": "model.name.camel_case", "example-item": "model.name.kebab_case"}
 
+const trueBoolStrings = ['1', 'true', 't', 'yes', 'y', 'on'];
+
+function convertListElementBool(input) {
+    return trueBoolStrings.includes(input.toLowerCase());
+}
+
+function convertListElementInt(input) {
+    return parseInt(input);
+}
+
+function convertListElementFloat(input) {
+    return parseFloat(input);
+}
+
+function convertListElementEnum(input) {
+    return input;
+}
+
+function convertListElementStr(str) {
+    return str;
+}
+
 //
 // data functions
 //
 
 function initExampleItem(data) {
-    const when = new Date(data.when);
-    return {...data, when}
+    let result = {
+        // macro :: html_init_str :: {"description": "field"}
+        description: data.description,
+        // macro :: html_init_bool :: {"verified": "field"}
+        verified: data.verified,
+        // macro :: html_init_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
+        color: data.color,
+        // macro :: html_init_int :: {"count": "field"}
+        count: data.count,
+        // macro :: html_init_float :: {"score": "field"}
+        score: data.score,
+        // macro :: html_init_list :: {"stuff": "field"}
+        stuff: data.stuff,
+        // macro :: html_init_datetime :: {"when": "field"}
+        when: new Date(data.when),
+        // end macro ::
+        // insert :: macro.html_init_fields(model.fields)
+    }
+
+    if (typeof data.id !== 'undefined') {
+        result.id = data.id;
+    }
+    return result;
 }
 
 function exampleExampleItem() {
@@ -308,7 +351,7 @@ function exampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(scoreTr);
 
-    // macro :: html_to_input_tbody_list :: {"stuff": "field", "str": "element_type"}
+    // macro :: html_to_input_tbody_list :: {"stuff": "field", "Str": "element_type_capitalized"}
 
     // stuff - list
 
@@ -363,27 +406,7 @@ function exampleItemToInputTBody(data, tbody) {
     stuffInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
-            let newValue;
-
-            switch ('str') {
-                case 'str':
-                    newValue = stuffInput.value.trim();
-                    break;
-                // @ts-ignore
-                case 'int':
-                    newValue = parseInt(stuffInput.value.trim());
-                    break;
-                // @ts-ignore
-                case 'float':
-                    newValue = parseFloat(stuffInput.value.trim());
-                    break;
-                // @ts-ignore
-                case 'bool':
-                    newValue = stuffInput.value.trim() === 'true';
-                    break;
-            }
-
-            stuffEntered.push(newValue);
+            stuffEntered.push(convertListElementStr(stuffInput.value));
             stuffInput.value = ''
             stuffInput.setAttribute('valueAsJSON', JSON.stringify(stuffEntered));
             stuffEntriesRender();
@@ -625,7 +648,6 @@ function clientCreateExampleItem(data) {
         },
         body: JSON.stringify(data),
     })
-    .then(response => response.json())
 }
 
 function clientReadExampleItem(id) {
@@ -660,5 +682,4 @@ function clientListExampleItems(offset, size) {
     return fetch(`/api/sample-module/example-item?offset=${offset}&size=${size}`, {
         method: 'GET',
     })
-    .then(response => response.json())
 }

@@ -110,9 +110,16 @@
                 console.log(`loadItems(offset=${offset}, size=${size})`)
 
                 clientListExampleItems(offset, size)
-                    .then(data => {
+                    .then(response => {
+                        if (!response.ok) {
+                            console.error(response)
+                            throw new Error('exampleItem list failed')
+                        }
+                        return response.json()
+                    }).then(data => {
+                        console.log(data)
                         const items = data.map(item => initExampleItem(item))
-                        console.log(items)
+
                         document.getElementById('example-item-list-count').innerText = items.length
                         exampleItemListToDisplayTBody(items, document.querySelector('#example-item-list-tbody'))
 
@@ -172,7 +179,13 @@
 
                 clientCreateExampleItem(data)
                     .then(response => {
-                        const newItemId = response['id']
+                        if (!response.ok) {
+                            console.error(response)
+                            throw new Error('exampleItem create failed')
+                        }
+                        return response.json()
+                    }).then(data => {
+                        const newItemId = data['id']
                         console.log(`created exampleItem ${newItemId}`)
 
                         const newItemLi = document.createElement('li')
