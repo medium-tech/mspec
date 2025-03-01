@@ -75,7 +75,7 @@
                 * 🟢 client/server
                 * 🟢 browser gui
             * 🟡 generated app
-                * 🟡 client/server
+                * 🟢 client/server
                 * 🟡 browser gui
     * 🔴 add cid to example_item
 

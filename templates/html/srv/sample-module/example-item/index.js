@@ -179,13 +179,15 @@ function exampleItemToInputTBody(data, tbody) {
     }
 
     // macro :: html_to_input_tbody_str :: {"description": "field"}
+
+    // description - str
     const descriptionTdKey = document.createElement('td');
     descriptionTdKey.textContent = 'description';
 
     const descriptionTdInput = document.createElement('td');
     const descriptionInput = document.createElement('input');
     descriptionInput.name = 'description';
-    descriptionInput.value = data.description;
+    descriptionInput.value = data.description || '';
     descriptionInput.size = 35;
     descriptionTdInput.appendChild(descriptionInput);
 
@@ -200,6 +202,9 @@ function exampleItemToInputTBody(data, tbody) {
     tbody.appendChild(descriptionTr);
 
     // macro :: html_to_input_tbody_bool :: {"verified": "field"}
+
+    // verified - bool
+
     const verifiedTdKey = document.createElement('td');
     verifiedTdKey.textContent = 'verified';
 
@@ -221,6 +226,9 @@ function exampleItemToInputTBody(data, tbody) {
     tbody.appendChild(verifiedTr);
 
     // macro :: html_to_input_tbody_enum :: {"color": "field"}
+
+    // color - enum
+
     const colorTdKey = document.createElement('td');
     colorTdKey.textContent = 'color';
 
@@ -250,6 +258,9 @@ function exampleItemToInputTBody(data, tbody) {
     tbody.appendChild(colorTr);
 
     // macro :: html_to_input_tbody_int :: {"count": "field"}
+
+    // count - int
+
     const countTdKey = document.createElement('td');
     countTdKey.textContent = 'count';
 
@@ -272,6 +283,9 @@ function exampleItemToInputTBody(data, tbody) {
     tbody.appendChild(countTr);
 
     // macro :: html_to_input_tbody_float :: {"score": "field"}
+
+    // score - float
+
     const scoreTdKey = document.createElement('td');
     scoreTdKey.textContent = 'score';
 
@@ -294,8 +308,17 @@ function exampleItemToInputTBody(data, tbody) {
 
     tbody.appendChild(scoreTr);
 
-    // macro :: html_to_input_tbody_list :: {"stuff": "field"}
-    let stuffEntered = data.stuff.slice();
+    // macro :: html_to_input_tbody_list :: {"stuff": "field", "str": "element_type"}
+
+    // stuff - list
+
+    let stuffEntered;
+
+    try {
+        stuffEntered = data.stuff.slice()
+    }catch {
+        stuffEntered = [];
+    }
 
     const stuffTdKey = document.createElement('td');
     stuffTdKey.textContent = 'stuff';
@@ -309,10 +332,10 @@ function exampleItemToInputTBody(data, tbody) {
     // we store the actual data on valueAsJSON because we can't store an array in an input value with escaping 
     // and also so we can reset the input between each tag entered
     stuffInput.setAttribute('valueAsJSON', JSON.stringify(stuffEntered));
-    stuffInput.placeholder = 'press enter after each tag';
+    stuffInput.placeholder = 'press enter after each item';
 
     const stuffTdOther = document.createElement('td');
-    const renderTags = () => {
+    const stuffEntriesRender = () => {
         stuffTdOther.innerHTML = '';
         let index = 0;
     
@@ -323,7 +346,7 @@ function exampleItemToInputTBody(data, tbody) {
                 console.log('removing tag', tag);
                 stuffEntered = stuffEntered.filter(t => t !== tag);
                 stuffInput.setAttribute('valueAsJSON', JSON.stringify(stuffEntered));
-                renderTags();
+                stuffEntriesRender();
             }
             const tagSpacer = document.createElement('span');
             tagSpacer.innerHTML = ', ';
@@ -335,15 +358,35 @@ function exampleItemToInputTBody(data, tbody) {
         }
     }
 
-    renderTags();
+    stuffEntriesRender();
 
     stuffInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
-            stuffEntered.push(stuffInput.value);
+            let newValue;
+
+            switch ('str') {
+                case 'str':
+                    newValue = stuffInput.value.trim();
+                    break;
+                // @ts-ignore
+                case 'int':
+                    newValue = parseInt(stuffInput.value.trim());
+                    break;
+                // @ts-ignore
+                case 'float':
+                    newValue = parseFloat(stuffInput.value.trim());
+                    break;
+                // @ts-ignore
+                case 'bool':
+                    newValue = stuffInput.value.trim() === 'true';
+                    break;
+            }
+
+            stuffEntered.push(newValue);
             stuffInput.value = ''
             stuffInput.setAttribute('valueAsJSON', JSON.stringify(stuffEntered));
-            renderTags();
+            stuffEntriesRender();
         }
     });
 
@@ -357,6 +400,9 @@ function exampleItemToInputTBody(data, tbody) {
     tbody.appendChild(stuffTr);
 
     // macro :: html_to_input_tbody_datetime :: {"when": "field"}
+
+    // when - datetime
+
     const whenTdKey = document.createElement('td');
     whenTdKey.textContent = 'when';
 
@@ -364,8 +410,11 @@ function exampleItemToInputTBody(data, tbody) {
     const whenInput = document.createElement('input');
     whenInput.name = 'when';
     whenInput.type = 'datetime-local';
-    whenInput.value = data.when.toISOString().slice(0, 16);
-
+    try {
+        whenInput.value = data.when.toISOString().slice(0, 16);
+    }catch {
+        whenInput.value = '';
+    }
     whenTdInput.appendChild(whenInput);
 
     const whenTdOther = document.createElement('td');

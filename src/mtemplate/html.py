@@ -119,17 +119,36 @@ class MTemplateHTMLProject(MTemplateProject):
         out = ''
         for name, field in fields.items():
             vars = {'field': name}
-            try:
+
+            if 'enum' in field:
                 enum_values = [f"'{value}'" for value in field['enum']]
                 vars['enum_value_list'] = '[' + ', '.join(enum_values) + ']'
                 field_type = 'enum'
-            except KeyError:
+
+            elif field['type'] == 'list':
+
+                if field['element_type'] == 'str':
+                    js_element_type = 'string'
+                elif field['element_type'] == 'bool':
+                    js_element_type = 'boolean'
+                elif field['element_type'] == 'int':
+                    js_element_type = 'number'
+                elif field['element_type'] == 'float':
+                    js_element_type = 'number'
+                else:
+                    raise MTemplateError(f'field "{name}" has unsupported element_type "{field["element_type"]}"')
+                
+                vars['element_type'] = js_element_type
+                field_type = 'list'
+
+            else:
                 field_type = field['type']
 
             try:
                 out += self.spec['macro'][f'html_verify_{field_type}'](vars) + '\n'
             except KeyError:
                 raise MTemplateError(f'field {name} does not have type "{field_type}"')
+            
         return out
     
     def macro_html_field_list(self, fields:dict) -> str:

@@ -24,12 +24,22 @@ class MTemplatePyProject(MTemplateProject):
     def init_template_vars(self):
         super().init_template_vars()
         self.spec['macro'].update({
+            'py_post_init': self.macro_py_post_init,
             'py_example_fields': self.macro_py_example_fields,
             'py_random_fields': self.macro_py_random_fields,
             'py_verify_fields': self.macro_py_verify_fields,
             'py_field_list': self.macro_py_field_list,
             'py_field_definitions': self.macro_py_field_definitions,
         })
+
+    def macro_py_post_init(self, fields:dict, indent='\t') -> str:
+        out = ''
+        for name, field in fields.items():
+            if field['type'] == 'datetime':
+                vars = deepcopy(field)
+                vars['name'] = name
+                out += self.spec['macro']['py_post_init_datetime'](vars) + '\n'
+        return out
     
     def macro_py_example_fields(self, fields:dict, indent='\t') -> str:
         lines = []

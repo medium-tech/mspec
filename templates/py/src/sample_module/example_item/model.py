@@ -34,7 +34,7 @@ class ExampleItem:
         # insert :: macro.py_post_init(model.fields)
 
         # macro :: py_post_init_datetime :: {"when": "name"}
-        # lower resolution of datetime for mongo compatibility
+        # init when - lower resolution of datetime for mongo compatibility
         if isinstance(self.when, str):
             dt, millis = self.when.split('.')
             new_ts = f'{dt}.{millis[0:3]}'
@@ -104,7 +104,7 @@ class ExampleItem:
         except KeyError:
             pass
 
-        # macro :: py_verify_datetime :: {"stuff": "name"}
+        # macro :: py_verify_datetime :: {"when": "name"}
         try:
             if not isinstance(self.when, datetime):
                 raise TypeError('when must be a datetime')
