@@ -56,7 +56,7 @@ test('test - sample module - example item - instance', async ({ page }) => {
     await page.locator('input[name="score"]').fill('3.33');
     textToContain.push('3.33');
 
-    // macro :: html_unittest_form_list :: {"stuff": "field"}
+    // macro :: html_unittest_form_list :: {"stuff": "field", "one": "list_element_1", "two": "list_element_2"}
     await page.locator('input[name="stuff"]').click();
     await page.locator('input[name="stuff"]').fill('one');
     await page.locator('input[name="stuff"]').press('Enter');

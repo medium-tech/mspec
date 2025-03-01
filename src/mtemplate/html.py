@@ -22,6 +22,7 @@ class MTemplateHTMLProject(MTemplateProject):
     def init_template_vars(self):
         super().init_template_vars()
         self.spec['macro'].update({
+            'html_init_fields': self.macro_html_init_fields,
             'html_unittest_form': self.macro_html_unittest_form,
             'html_random_fields': self.macro_html_random_fields,
             'html_verify_fields': self.macro_html_verify_fields,
@@ -32,6 +33,24 @@ class MTemplateHTMLProject(MTemplateProject):
             'html_list_table_headers': self.macro_html_list_table_headers,
             'html_field_list': self.macro_html_field_list,
         })
+
+    def macro_html_init_fields(self, fields:dict, indent='\t') -> str:
+        out = ''
+        for name, field in fields.items():
+            vars = {'field': name}
+            try:
+                vars['element_type'] = field['element_type']
+                vars['element_type_capitalized'] = field['element_type'].capitalize()
+            except KeyError:
+                pass
+
+            field_type = 'enum' if 'enum' in field else field['type']
+
+            try:
+                out += self.spec['macro'][f'html_init_{field_type}'](vars) + '\n'
+            except KeyError:
+                raise MTemplateError(f'field {name} does not have type "{field_type}"')
+        return out
 
     def macro_html_list_table_headers(self, fields:dict, indent='\t') -> str:
         out = ''
@@ -103,6 +122,22 @@ class MTemplateHTMLProject(MTemplateProject):
                 field_type = 'enum'
             except KeyError:
                 field_type = field['type']
+
+            if field_type == 'list':
+                if field['element_type'] == 'str':
+                    vars['list_element_1'] = 'one'
+                    vars['list_element_2'] = 'two'
+                elif field['element_type'] == 'bool':
+                    vars['list_element_1'] = 'true'
+                    vars['list_element_2'] = 'false'
+                elif field['element_type'] == 'int':
+                    vars['list_element_1'] = '1'
+                    vars['list_element_2'] = '2'
+                elif field['element_type'] == 'float':
+                    vars['list_element_1'] = '1.0'
+                    vars['list_element_2'] = '2.0'
+                else:
+                    raise MTemplateError(f'field "{name}" has unsupported element_type "{field["element_type"]}"')
 
             try:
                 out += self.spec['macro'][f'html_unittest_form_{field_type}'](vars) + '\n'

@@ -67,17 +67,18 @@
         * 🔴 add salt to pw
         * 🔴 add login sessions/logout
         * 🔴 add acls to endpoints/models
-    * 🟡 refactor sample_module to match core module
+    * 🟢 refactor sample_module to match core module
         * 🟢 refactor code
-        * 🟡 refactor templating
-        * 🟡 tests passing
+        * 🟢 refactor templating
+        * 🟢 tests passing
             * 🟢 sample app
                 * 🟢 client/server
                 * 🟢 browser gui
-            * 🟡 generated app
+            * 🟢 generated app
                 * 🟢 client/server
-                * 🟡 browser gui
+                * 🟢 browser gui
     * 🔴 add cid to example_item
+    * 🔴 replace mongo with sqlite
 
 ### guis
 

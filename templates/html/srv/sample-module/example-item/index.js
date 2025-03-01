@@ -33,7 +33,7 @@ function initExampleItem(data) {
         description: data.description,
         // macro :: html_init_bool :: {"verified": "field"}
         verified: data.verified,
-        // macro :: html_init_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
+        // macro :: html_init_enum :: {"color": "field"}
         color: data.color,
         // macro :: html_init_int :: {"count": "field"}
         count: data.count,
