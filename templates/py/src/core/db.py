@@ -86,7 +86,7 @@ def create_db_tables(ctx:dict) -> None:
     # for :: {% for item in all_models %} :: {"example_item": "item.model.name.snake_case", "'description', 'verified', 'color', 'count', 'score', 'when'": "item.model.field_list"}
     cursor.execute("CREATE TABLE IF NOT EXISTS example_item(id INTEGER PRIMARY KEY, 'description', 'verified', 'color', 'count', 'score', 'when')")
     # end for ::
-    cursor.execute("CREATE TABLE IF NOT EXISTS example_item_stuff(id INTEGER PRIMARY KEY, value, position, example_item_id INTEGER REFERENCES example_item(id) ON DELETE CASCADE)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS example_item_stuff(id INTEGER PRIMARY KEY, value, position, example_item_id INTEGER REFERENCES example_item(id))")
     cursor.execute('CREATE INDEX IF NOT EXISTS example_item_stuff_index ON example_item_stuff(example_item_id);')
 
     ctx['db']['commit']()

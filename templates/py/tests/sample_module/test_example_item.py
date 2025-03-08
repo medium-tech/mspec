@@ -36,23 +36,12 @@ class TestExampleItem(unittest.TestCase):
 
         self.assertEqual(created_example_item, test_example_item)
 
-        # print('created example item:', created_example_item)
-        # breakpoint()
-
         # read #
 
         example_item_read = client_read_example_item(test_ctx, created_example_item.id)
         self.assertTrue(isinstance(example_item_read, ExampleItem))
         example_item_read.validate()
-        try:
-            self.assertEqual(example_item_read, test_example_item)
-        except AssertionError as e:
-            print(e)
-            breakpoint()
-            raise
-
-        # print('read example item:', example_item_read)
-        # breakpoint()
+        self.assertEqual(example_item_read, test_example_item)
             
         # update #
 
@@ -60,9 +49,6 @@ class TestExampleItem(unittest.TestCase):
         self.assertTrue(isinstance(updated_example_item, ExampleItem))
         updated_example_item.validate()
         self.assertEqual(example_item_read, updated_example_item)
-
-        # print('updated example item:', updated_example_item)
-        # breakpoint()
 
         # delete #
         delete_return = client_delete_example_item(test_ctx, created_example_item.id)

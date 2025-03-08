@@ -126,7 +126,11 @@ def db_delete_example_item(ctx:dict, id:str) -> None:
 
     cursor:sqlite3.Cursor = ctx['db']['cursor']
     cursor.execute(f"DELETE FROM example_item WHERE id=?", (id,))
+    print(f'{cursor.rowcount=}')
 
+    cursor.execute(f"DELETE FROM example_item_stuff WHERE example_item_id=?", (id,))
+    print(f'{cursor.rowcount=}')
+    
     ctx['db']['commit']()
 
 def db_list_example_item(ctx:dict, offset:int=0, limit:int=25) -> list[ExampleItem]:
