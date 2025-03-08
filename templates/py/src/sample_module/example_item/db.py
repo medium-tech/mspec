@@ -2,8 +2,7 @@ from core.exceptions import NotFoundError
 
 from sample_module.example_item.model import ExampleItem
 
-from pymongo.collection import Collection
-from bson import ObjectId
+import sqlite3
 
 # vars :: {"sample_module": "module.name.snake_case", "example_item": "model.name.snake_case", "ExampleItem": "model.name.pascal_case", "msample": "project.name.snake_case"}
 
@@ -25,9 +24,26 @@ def db_create_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
 
     return :: and ExampleItem object with the new id.
     """
-    example_items:Collection = ctx['db']['client']['msample']['sample_module.example_item']
-    result = example_items.insert_one(obj.validate().to_dict())
-    obj.id = str(result.inserted_id)
+    if obj.id is not None:
+        raise ValueError('id must be null to create a new item')
+    
+    obj.validate()
+    
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
+    result = cursor.execute(
+        "INSERT INTO example_item('description', 'verified', 'color', 'count', 'score', 'when') VALUES(?, ?, ?, ?, ?, ?)",
+        (obj.description, obj.verified, obj.color, obj.count, obj.score, obj.when.isoformat())
+    )
+    assert result.rowcount == 1
+    assert result.lastrowid is not None
+    obj.id = str(result.lastrowid)
+
+    result = cursor.executemany(
+        "INSERT INTO example_item_stuff(value, position, example_item_id) VALUES(?, ?, ?)",
+        ((value, position, result.lastrowid) for position, value in enumerate(obj.stuff))
+    )
+    
+    ctx['db']['commit']()
     return obj
 
 def db_read_example_item(ctx:dict, id:str) -> ExampleItem:
@@ -41,13 +57,26 @@ def db_read_example_item(ctx:dict, id:str) -> ExampleItem:
     return :: the ExampleItem object.
     raises :: NotFoundError if the item is not found.
     """
-    example_items:Collection = ctx['db']['client']['msample']['sample_module.example_item']
-    db_entry = example_items.find_one({'_id': ObjectId(id)})
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
+    result = cursor.execute(f"SELECT * FROM example_item WHERE id=?", (id,))
+    db_entry = result.fetchone()
     if db_entry is None:
         raise NotFoundError(f'example item {id} not found')
-    else:
-        db_entry['id'] = str(db_entry.pop('_id'))
-        return ExampleItem(**db_entry).validate()
+    
+    stuff_result = cursor.execute(f"SELECT value FROM example_item_stuff WHERE example_item_id=? ORDER BY position", (id,))
+    stuff = [row[0] for row in stuff_result.fetchall()]
+
+    return ExampleItem(
+        id=str(db_entry[0]),
+        description=db_entry[1],
+        verified=bool(db_entry[2]),
+        color=db_entry[3],
+        count=db_entry[4],
+        score=db_entry[5],
+        stuff=stuff,
+        when=db_entry[6]
+        
+    ).validate()
 
 def db_update_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
     """
@@ -60,13 +89,27 @@ def db_update_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
     return :: the ExampleItem object.
     raises :: NotFoundError if the item is not found
     """
-    data = obj.validate().to_dict()
-    _id = data.pop('id')
+    obj.validate()
 
-    example_items:Collection = ctx['db']['client']['msample']['sample_module.example_item']
-    result = example_items.update_one({'_id': ObjectId(_id)}, {'$set': data})
-    if result.matched_count == 0:
-        raise NotFoundError(f'example item {_id} not found')
+    if obj.id is None:
+        raise ValueError('id must not be null to update an item')
+
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
+    result = cursor.execute(
+        "UPDATE example_item SET 'description'=?, 'verified'=?, 'color'=?, 'count'=?, 'score'=?, 'when'=? WHERE id=?",
+        (obj.description, obj.verified, obj.color, obj.count, obj.score, obj.when.isoformat(), obj.id)
+    )
+    if result.rowcount == 0:
+        raise NotFoundError(f'example item {obj.id} not found')
+    
+    cursor.execute(f"DELETE FROM example_item_stuff WHERE example_item_id=?", (obj.id))
+
+    cursor.executemany(
+        "INSERT INTO example_item_stuff(value, position, example_item_id) VALUES(?, ?, ?)",
+        ((value, position, obj.id) for position, value in enumerate(obj.stuff))
+    )
+    
+    ctx['db']['commit']()
     
     return obj
 
@@ -81,8 +124,10 @@ def db_delete_example_item(ctx:dict, id:str) -> None:
     return :: None
     """
 
-    example_items:Collection = ctx['db']['client']['msample']['sample_module.example_item']
-    example_items.delete_one({'_id': ObjectId(id)})
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
+    cursor.execute(f"DELETE FROM example_item WHERE id=?", (id,))
+
+    ctx['db']['commit']()
 
 def db_list_example_item(ctx:dict, offset:int=0, limit:int=25) -> list[ExampleItem]:
     """
@@ -95,11 +140,20 @@ def db_list_example_item(ctx:dict, offset:int=0, limit:int=25) -> list[ExampleIt
     
     return :: list of each item as a dict.
     """
-    example_items:Collection = ctx['db']['client']['msample']['sample_module.example_item']
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
     items = []
 
-    for item in example_items.find(skip=offset, limit=limit):
-        item['id'] = str(item.pop('_id'))
-        items.append(ExampleItem(**item).validate())
+    for row in cursor.execute("SELECT id, * FROM example_item ORDER BY id LIMIT ? OFFSET ?", (limit, offset)):
+
+        items.append(ExampleItem(
+            id=row[0],
+            description=row['description'],
+            verified=row['verified'],
+            color=row['color'],
+            count=row['count'],
+            score=row['score'],
+            stuff=row['stuff'],
+            when=row['when']
+        ).validate())
 
     return items

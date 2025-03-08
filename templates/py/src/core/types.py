@@ -10,7 +10,7 @@ from hashlib import sha3_256
 from datetime import datetime
 
 __all__ = [
-    'iso_format_str',
+    'datetime_format_str',
     'email_regex',
 
     'MSpecJsonEncoder',
@@ -36,21 +36,19 @@ try:
 except ImportError:
     pass
 
-iso_format_str = '%Y-%m-%dT%H:%M:%S.%f'
+datetime_format_str = '%Y-%m-%dT%H:%M:%S'
 email_regex = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
 #
 # json encoder
 #
 
-
-
 class MSpecJsonEncoder(json.JSONEncoder):
 
     def default(self, obj):
 
         if isinstance(obj, datetime):
-            return obj.strftime(iso_format_str)
+            return obj.strftime(datetime_format_str)
         elif isinstance(obj, CID):
             return str(obj)
         elif isinstance(obj, Path):

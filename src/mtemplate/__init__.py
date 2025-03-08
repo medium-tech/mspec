@@ -109,6 +109,7 @@ class MTemplateProject:
         all_models = []
         for module in self.spec['modules'].values():
             for model in module['models'].values():
+                model['field_list'] = ', '.join(model['fields'].keys())
                 all_models.append({'module': module, 'model': model})
         self.spec['all_models'] = all_models
 

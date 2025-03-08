@@ -13,7 +13,6 @@ description = 'msample sample project'
 readme = 'README.md'
 requires-python = '>=3.7'
 dependencies = [
-    'pymongo == 4.9.1',
     'uwsgi == 2.0.27',
     'passlib[bcrypt]',
     'python-jose[cryptography]'

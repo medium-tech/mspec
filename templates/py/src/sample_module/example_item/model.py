@@ -30,20 +30,13 @@ class ExampleItem:
 
     def __post_init__(self):
         """post init"""
-
         # insert :: macro.py_post_init(model.fields)
-
         # macro :: py_post_init_datetime :: {"when": "name"}
-        # init when - lower resolution of datetime for mongo compatibility
+        # when - datetime
         if isinstance(self.when, str):
-            dt, millis = self.when.split('.')
-            new_ts = f'{dt}.{millis[0:3]}'
-            
-        else:
-            dt, millis = self.when.strftime(iso_format_str).split('.')
-            new_ts = f'{dt}.{millis[0:3]}'
-        
-        self.when = datetime.strptime(new_ts, iso_format_str)
+            self.when = datetime.strptime(self.when, datetime_format_str).replace(microsecond=0)
+        elif isinstance(self.when, datetime):
+            self.when = self.when.replace(microsecond=0)
         # end macro ::
 
     def validate(self) -> 'ExampleItem':
@@ -57,6 +50,7 @@ class ExampleItem:
         # insert :: macro.py_verify_fields(model.fields)
 
         # macro :: py_verify_str :: {"description": "name"}
+        # description - str
         try:
             if not isinstance(self.description, str):
                 raise TypeError('description must be a string')
@@ -64,6 +58,7 @@ class ExampleItem:
             pass
         
         # macro :: py_verify_bool :: {"verified": "name"}
+        # verified - bool
         try:
             if not isinstance(self.verified, bool):
                 raise TypeError('verified must be a boolean')
@@ -71,6 +66,7 @@ class ExampleItem:
             pass
         
         # macro :: py_verify_str_enum :: {"color": "name", "['red', 'green', 'blue']": "enum_value_list"}
+        # color - str enum
         try:
             if not isinstance(self.color, str):
                 raise TypeError('color must be a string')
@@ -80,6 +76,7 @@ class ExampleItem:
             pass
 
         # macro :: py_verify_int :: {"count": "name"}
+        # count - int
         try:
             if not isinstance(self.count, int):
                 raise TypeError('count must be an integer')
@@ -87,6 +84,7 @@ class ExampleItem:
             pass
 
         # macro :: py_verify_float :: {"score": "name"}
+        # score - float
         try:
             if not isinstance(self.score, float):
                 raise TypeError('score must be a float')
@@ -94,6 +92,7 @@ class ExampleItem:
             pass
 
         # macro :: py_verify_list :: {"stuff": "name", "str": "element_type"}
+        # stuff - list of str
         try:
             if not isinstance(self.stuff, list):
                 raise TypeError('stuff must be a list')
@@ -105,6 +104,7 @@ class ExampleItem:
             pass
 
         # macro :: py_verify_datetime :: {"when": "name"}
+        # when - datetime
         try:
             if not isinstance(self.when, datetime):
                 raise TypeError('when must be a datetime')
@@ -144,21 +144,21 @@ class ExampleItem:
 
     @classmethod
     def random(cls) -> 'ExampleItem':
-        return {
+        return cls(
             # insert :: macro.py_random_fields(model.fields)
             # macro :: py_random_str :: {"description": "field"}
-            'description': random_str(),
+            description=random_str(),
             # macro :: py_random_bool :: {"verified": "field"}
-            'verified': random_bool(),
+            verified=random_bool(),
             # macro :: py_random_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
-            'color': random_enum(['red', 'green', 'blue']),
+            color=random_enum(['red', 'green', 'blue']),
             # macro :: py_random_int :: {"count": "field"}
-            'count': random_int(),
+            count=random_int(),
             # macro :: py_random_float :: {"score": "field"}
-            'score': random_float(),
+            score=random_float(),
             # macro :: py_random_list :: {"tags": "field", "str": "element_type"}
-            'stuff': random_list('str'),
+            stuff=random_list('str'),
             # macro :: py_random_datetime :: {"when": "field"}
-            'when': random_datetime(),
+            when=random_datetime(),
             # end macro ::
-        }
+        )

@@ -8,5 +8,11 @@ args = parser.parse_args()
 if args.command == 'gui':
     from core.gui import gui_main
     gui_main(args.start_frame)
+
+elif args.command == 'setup':
+    from core.db import create_db_context, create_db_tables
+    db_ctx = create_db_context()
+    create_db_tables(db_ctx)
+
 else:
     parser.print_help()

@@ -190,6 +190,7 @@ server_ctx = {
 def initialize():
     global server_ctx
     server_ctx.update(create_db_context())
+    create_db_tables(server_ctx)
     uwsgi.log(f'INITIALIZED - pid: {os.getpid()}')
 
 def get_user(env:dict) -> User:

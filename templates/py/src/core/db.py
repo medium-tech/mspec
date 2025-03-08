@@ -1,17 +1,15 @@
 import atexit
+import os
+import sqlite3
+from pathlib import Path
 
 from core.models import *
 from core.exceptions import NotFoundError
 
-from pymongo import MongoClient
-from pymongo.collection import Collection
-from bson import ObjectId
-
-
-# vars :: {"mongodb://127.0.0.1:27017": "db.default_url", "MSpec": "project.name.camel_case"}
-
 __all__ = [
+    'MSPEC_DB_URL',
     'create_db_context',
+    'create_db_tables',
 
     'db_create_user',
     'db_read_user',
@@ -50,21 +48,48 @@ __all__ = [
     'db_list_acl_entry'
 ]
 
-def create_db_context(client:MongoClient=None) -> dict:
+_default_db_path = Path(__file__).parent / 'db.sqlite3'
+
+MSPEC_DB_URL = os.environ.get('MSPEC_DB_URL', f'file:{_default_db_path}')
+
+def create_db_context() -> dict:
     """
     initialize the database client.
+    
+    return :: dict
+    """
+
+    connection = sqlite3.connect(MSPEC_DB_URL, uri=True)
+    atexit.register(lambda: connection.close())
+
+    return {
+        'db': {
+            'url': MSPEC_DB_URL,
+            'connection': connection,
+            'cursor': connection.cursor(),
+            'commit': connection.commit
+        }
+    }
+
+def create_db_tables(ctx:dict) -> None:
+    """
+    create the database tables if they do not exist.
 
     args ::
-        client :: the client to use, if None, a new client will be created with default settings.
-    
-    return :: None
+        ctx :: dict containing the database client
     """
-    if client is None:
-        client = MongoClient('mongodb://127.0.0.1:27017', serverSelectionTimeoutMS=3_000)
 
-    atexit.register(client.close)
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
+    cursor.execute("CREATE TABLE IF NOT EXISTS user(id INTEGER PRIMARY KEY, name, email, profile)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS profile(id INTEGER PRIMARY KEY, name, bio)")
 
-    return {'db': {'client': client}}
+    # for :: {% for item in all_models %} :: {"example_item": "item.model.name.snake_case", "'description', 'verified', 'color', 'count', 'score', 'when'": "item.model.field_list"}
+    cursor.execute("CREATE TABLE IF NOT EXISTS example_item(id INTEGER PRIMARY KEY, 'description', 'verified', 'color', 'count', 'score', 'when')")
+    # end for ::
+    cursor.execute("CREATE TABLE IF NOT EXISTS example_item_stuff(id INTEGER PRIMARY KEY, value, position, example_item_id INTEGER REFERENCES example_item(id) ON DELETE CASCADE)")
+    cursor.execute('CREATE INDEX IF NOT EXISTS example_item_stuff_index ON example_item_stuff(example_item_id);')
+
+    ctx['db']['commit']()
 
 #
 # model crud ops
@@ -84,9 +109,14 @@ def db_create_user(ctx:dict, obj:User) -> User:
     """
     if obj.id is not None:
         raise ValueError('cannot use user with id to create new user')
-    users:Collection = ctx['db']['client']['msample']['core.user']
-    result = users.insert_one(obj.validate().to_dict())
-    obj.id = str(result.inserted_id)
+    
+    obj.validate()
+    
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
+    result = cursor.execute("INSERT INTO user(name, email, profile) VALUES(?, ?, ?)", (obj.name, obj.email, obj.profile))
+    assert result.rowcount == 1
+
+    obj.id = str(result.lastrowid)
     return obj
 
 def db_read_user(ctx:dict, id:str) -> User:

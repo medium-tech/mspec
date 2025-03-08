@@ -78,7 +78,7 @@
                 * 🟢 client/server
                 * 🟢 browser gui
     * 🔴 add cid to example_item
-    * 🔴 replace mongo with sqlite
+    * 🟡 replace mongo with sqlite
 
 ### guis
 
