@@ -102,7 +102,7 @@ def db_update_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
     if result.rowcount == 0:
         raise NotFoundError(f'example item {obj.id} not found')
     
-    cursor.execute(f"DELETE FROM example_item_stuff WHERE example_item_id=?", (obj.id))
+    cursor.execute(f"DELETE FROM example_item_stuff WHERE example_item_id=?", (obj.id,))
 
     cursor.executemany(
         "INSERT INTO example_item_stuff(value, position, example_item_id) VALUES(?, ?, ?)",
@@ -130,7 +130,7 @@ def db_delete_example_item(ctx:dict, id:str) -> None:
 
     cursor.execute(f"DELETE FROM example_item_stuff WHERE example_item_id=?", (id,))
     print(f'{cursor.rowcount=}')
-    
+
     ctx['db']['commit']()
 
 def db_list_example_item(ctx:dict, offset:int=0, limit:int=25) -> list[ExampleItem]:
@@ -147,17 +147,16 @@ def db_list_example_item(ctx:dict, offset:int=0, limit:int=25) -> list[ExampleIt
     cursor:sqlite3.Cursor = ctx['db']['cursor']
     items = []
 
-    for row in cursor.execute("SELECT id, * FROM example_item ORDER BY id LIMIT ? OFFSET ?", (limit, offset)):
-
+    for row in cursor.execute("SELECT * FROM example_item ORDER BY id LIMIT ? OFFSET ?", (limit, offset)):
         items.append(ExampleItem(
-            id=row[0],
-            description=row['description'],
-            verified=row['verified'],
-            color=row['color'],
-            count=row['count'],
-            score=row['score'],
-            stuff=row['stuff'],
-            when=row['when']
+            id=str(row[0]),
+            description=row[1],
+            verified=bool(row[2]),
+            color=row[3],
+            count=row[4],
+            score=row[5],
+            stuff=[],
+            when=row[6]
         ).validate())
 
     return items

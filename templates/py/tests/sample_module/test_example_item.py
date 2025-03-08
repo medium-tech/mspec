@@ -51,13 +51,71 @@ class TestExampleItem(unittest.TestCase):
         self.assertEqual(example_item_read, updated_example_item)
 
         # delete #
+
         delete_return = client_delete_example_item(test_ctx, created_example_item.id)
         self.assertIsNone(delete_return)
         self.assertRaises(NotFoundError, client_read_example_item, test_ctx, created_example_item.id)
 
         cursor:sqlite3.Cursor = test_ctx['db']['cursor']
+        fetched_item = cursor.execute(f"SELECT * FROM example_item WHERE id=?", (created_example_item.id,)).fetchone()
+        self.assertIsNone(fetched_item)
         stuff_result = cursor.execute(f"SELECT value FROM example_item_stuff WHERE example_item_id=? ORDER BY position", (created_example_item.id,))
         self.assertEqual(len(stuff_result.fetchall()), 0)
+
+    def test_example_item_pagination(self):
+
+        # seed data #
+
+        items = client_list_example_item(test_ctx,offset=0, limit=51)
+        items_len = len(items)
+        if items_len > 50:
+            raise Exception('excpecting 50 items or less, delete db and restart test')
+        elif items_len < 50:
+            difference = 50 - items_len
+            for _ in range(difference):
+                item = ExampleItem.random()
+                item = client_create_example_item(test_ctx, item)
+
+        test_example_item = ExampleItem.example()
+        test_example_item.validate()
+
+        # paginate #
+
+        pg_configs = [
+            {'page_size': 10, 'expected_pages': 5},
+            # {'page_size': 20, 'expected_pages': 3},
+            {'page_size': 25, 'expected_pages': 2},
+            {'page_size': 50, 'expected_pages': 1}
+        ]
+
+        for pg_config in pg_configs:
+            page_size = pg_config['page_size']
+            expected_pages = pg_config['expected_pages']
+
+            offset = 0
+            item_ids = []
+            pages = 0
+            while True:
+                items = client_list_example_item(test_ctx, offset=offset, limit=page_size)
+                items_len = 0
+                for item in items:
+                    items_len += 1
+                    item.validate()
+
+                    self.assertTrue(isinstance(item, ExampleItem))
+                    item_ids.append(item.id)
+
+                if items_len < page_size:
+                    break
+                self.assertTrue(items_len <= page_size)
+
+                offset += page_size
+                pages += 1
+            
+            self.assertEqual(pages, expected_pages)
+            self.assertEqual(len(item_ids), 50)
+            self.assertEqual(len(set(item_ids)), 50)
+            
 
 if __name__ == '__main__':
     unittest.main()

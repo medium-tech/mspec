@@ -119,8 +119,8 @@ def client_update_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
     try:
         request = Request(url, headers=ctx['headers'], method='PUT', data=request_body)
 
-        with urlopen(request) as _response:
-            return obj
+        with urlopen(request) as response:
+            response_body = response.read().decode('utf-8')
     
     except HTTPError as e:
         if e.code == 401:
@@ -136,6 +136,8 @@ def client_update_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
     
     except Exception as e:
         raise MSpecError(f'error updating example item: {e.__class__.__name__}: {e}')
+    
+    return ExampleItem.from_json(response_body).validate()
 
 def client_delete_example_item(ctx:dict, id:str) -> None:
     """
@@ -158,8 +160,8 @@ def client_delete_example_item(ctx:dict, id:str) -> None:
     try:
         request = Request(url, headers=ctx['headers'], method='DELETE')
 
-        with urlopen(request) as _response:
-            """we don't need the response"""
+        with urlopen(request) as response:
+            _ = response.read().decode('utf-8')
 
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
