@@ -83,7 +83,7 @@ class TestExampleItem(unittest.TestCase):
 
         pg_configs = [
             {'page_size': 10, 'expected_pages': 5},
-            # {'page_size': 20, 'expected_pages': 3},
+            {'page_size': 20, 'expected_pages': 3},
             {'page_size': 25, 'expected_pages': 2},
             {'page_size': 50, 'expected_pages': 1}
         ]
@@ -94,7 +94,7 @@ class TestExampleItem(unittest.TestCase):
 
             offset = 0
             item_ids = []
-            pages = 0
+            num_pages = 0
             while True:
                 items = client_list_example_item(test_ctx, offset=offset, limit=page_size)
                 items_len = 0
@@ -105,14 +105,17 @@ class TestExampleItem(unittest.TestCase):
                     self.assertTrue(isinstance(item, ExampleItem))
                     item_ids.append(item.id)
 
+                if items_len > 0:
+                    num_pages += 1
+
                 if items_len < page_size:
                     break
+
                 self.assertTrue(items_len <= page_size)
 
                 offset += page_size
-                pages += 1
-            
-            self.assertEqual(pages, expected_pages)
+                
+            self.assertEqual(num_pages, expected_pages)
             self.assertEqual(len(item_ids), 50)
             self.assertEqual(len(set(item_ids)), 50)
             
