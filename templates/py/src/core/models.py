@@ -14,6 +14,7 @@ __all__ = [
     'user_session_validate',
     'AccessToken',
     'NewPassword',
+    'validate_new_passwords',
     'CreateUser',
     'UserPasswordHash',
     'Profile',
@@ -144,38 +145,32 @@ class AccessToken:
     def from_json(cls, access_token_json:str):
         return cls(**json.loads(access_token_json))
 
-# new password #
 
-@dataclass
-class NewPassword:
-    password1: str
-    password2: str
-
-    def validate(self):
-        if self.password1 != self.password2:
-            raise ValueError('new_password passwords do not match')
-        
-        if len(self.password1) < 8:
-            raise ValueError('new_password password must be at least 8 characters')
-        
-        if not isinstance(self.password1, str):
-            raise ValueError('new_password password1 must be a string')
-        
-        if not isinstance(self.password2, str):
-            raise ValueError('new_password password2 must be a string')
-        
-        return self
+def validate_new_passwords(pw1:str, pw2:str) -> bool:
+    """return true if passwords are valid, else raise ValueError"""
+    if not isinstance(pw1, str):
+        raise ValueError('new_password password1 must be a string')
+    
+    if not isinstance(pw2, str):
+        raise ValueError('new_password password2 must be a string')
+    
+    if pw1 != pw2:
+        raise ValueError('new_password passwords do not match')
+    
+    if len(pw1) < 8:
+        raise ValueError('new_password password must be at least 8 characters')
+    
+    return True
     
 @dataclass
 class CreateUser:
     name: str
     email: str
-    password: NewPassword
+    password1: str
+    password2: str
 
     def __post_init__(self):
         self.email = self.email.lower()
-        if isinstance(self.password, dict):
-            self.password = NewPassword(**self.password)
 
     def validate(self) :
         if not isinstance(self.name, str):
@@ -184,7 +179,8 @@ class CreateUser:
             raise ValueError('create_user_form email must be a string')
         if not email_regex.fullmatch(self.email):
             raise ValueError('create_user_form email is invalid')
-        self.password.validate()
+        
+        assert validate_new_passwords(self.password1, self.password2) is True
         
         return self
     
@@ -214,7 +210,7 @@ class CreateUser:
 @dataclass
 class UserPasswordHash:
 
-    user: str
+    user_id: str
     hash: str
 
     id: Optional[str] = None
@@ -223,7 +219,7 @@ class UserPasswordHash:
         if not isinstance(self.id, str) and self.id is not None:
             raise ValueError('invalid user_password_hash id')
         
-        if not isinstance(self.user, str):
+        if not isinstance(self.user_id, str):
             raise ValueError('user_password_hash user must be a string')
         
         if not isinstance(self.hash, str):

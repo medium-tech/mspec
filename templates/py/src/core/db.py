@@ -4,7 +4,7 @@ import sqlite3
 from pathlib import Path
 
 from core.models import *
-from core.exceptions import NotFoundError
+from core.exceptions import NotFoundError, ForbiddenError
 
 __all__ = [
     'MSPEC_DB_URL',
@@ -17,12 +17,6 @@ __all__ = [
     'db_delete_user',
     'db_list_user',
 
-    'db_create_user_session',
-    'db_read_user_session',
-    'db_update_user_session',
-    'db_delete_user_session',
-    'db_list_user_session',
-
     'db_create_user_password_hash',
     'db_read_user_password_hash',
     'db_update_user_password_hash',
@@ -33,19 +27,7 @@ __all__ = [
     'db_read_profile',
     'db_update_profile',
     'db_delete_profile',
-    'db_list_profile',
-
-    'db_create_acl',
-    'db_read_acl',
-    'db_update_acl',
-    'db_delete_acl',
-    'db_list_acl',
-
-    'db_create_acl_entry',
-    'db_read_acl_entry',
-    'db_update_acl_entry',
-    'db_delete_acl_entry',
-    'db_list_acl_entry'
+    'db_list_profile'
 ]
 
 _default_db_path = Path(__file__).parent / 'db.sqlite3'
@@ -81,7 +63,8 @@ def create_db_tables(ctx:dict) -> None:
 
     cursor:sqlite3.Cursor = ctx['db']['cursor']
     cursor.execute("CREATE TABLE IF NOT EXISTS user(id INTEGER PRIMARY KEY, name, email, profile)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS profile(id INTEGER PRIMARY KEY, name, bio)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS user_password_hash(id INTEGER PRIMARY KEY, user_id INTEGER REFERENCES user(id), hash)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS profile(id INTEGER PRIMARY KEY, user_id INTEGER REFERENCES user(id), name, bio)")
 
     # for :: {% for item in all_models %} :: {"example_item": "item.model.name.snake_case", "'description', 'verified', 'color', 'count', 'score', 'when'": "item.model.field_list"}
     cursor.execute("CREATE TABLE IF NOT EXISTS example_item(id INTEGER PRIMARY KEY, 'description', 'verified', 'color', 'count', 'score', 'when')")
@@ -101,6 +84,9 @@ def db_create_user(ctx:dict, obj:User) -> User:
     """
     create a user in the database, verifying the data first.
 
+    this should not be called directly, use auth.create_new_user which 
+    will create a user and a password hash and verify the email is not in use.
+
     args ::
         ctx :: dict containing the database client
         obj :: the data to create the user with.
@@ -116,6 +102,8 @@ def db_create_user(ctx:dict, obj:User) -> User:
     result = cursor.execute("INSERT INTO user(name, email, profile) VALUES(?, ?, ?)", (obj.name, obj.email, obj.profile))
     assert result.rowcount == 1
 
+    ctx['db']['commit']()
+
     obj.id = str(result.lastrowid)
     return obj
 
@@ -130,13 +118,18 @@ def db_read_user(ctx:dict, id:str) -> User:
     return :: user object
     raises :: NotFoundError if the user does not exist
     """
-    users:Collection = ctx['db']['client']['msample']['core.user']
-    db_entry = users.find_one({'_id': ObjectId(id)})
+
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
+    db_entry = cursor.execute("SELECT * FROM user WHERE id = ?", (id,)).fetchone()
     if db_entry is None:
         raise NotFoundError(f'user {id} not found')
     else:
-        db_entry['id'] = str(db_entry.pop('_id'))
-        return User(**db_entry).validate()
+        return User(
+            id=str(db_entry[0]),
+            name=db_entry[1],
+            email=db_entry[2],
+            profile=db_entry[3]
+        ).validate()
 
 def db_update_user(ctx:dict, obj:User) -> User:
     """
@@ -149,14 +142,21 @@ def db_update_user(ctx:dict, obj:User) -> User:
     return :: user object
     raises :: NotFoundError if the user does not exist
     """
-    data = obj.validate().to_dict()
-    _id = data.pop('id')
+    obj.validate()
 
-    users:Collection = ctx['db']['client']['msample']['core.user']
-    result = users.update_one({'_id': ObjectId(_id)}, {'$set': data})
-    if result.matched_count == 0:
-        raise NotFoundError(f'user {_id} not found')
+    if obj.id is None:
+        raise ValueError('cannot update user without id')
     
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
+    result = cursor.execute(
+        "UPDATE user SET name = ?, email = ?, profile = ? WHERE id = ?",
+        (obj.name, obj.email, obj.profile, obj.id)
+    )
+    if result.rowcount == 0:
+        raise NotFoundError(f'user {obj.id} not found')
+    
+    ctx['db']['commit']()
+
     return obj
 
 def db_delete_user(ctx:dict, id:str) -> None:
@@ -169,8 +169,12 @@ def db_delete_user(ctx:dict, id:str) -> None:
 
     return :: None
     """
-    users:Collection = ctx['db']['client']['msample']['core.user']
-    users.delete_one({'_id': ObjectId(id)})
+
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
+    cursor.execute("DELETE FROM user WHERE id = ?", (id,))
+    cursor.execute("DELETE FROM user_password_hash WHERE user_id = ?", (id,))
+    cursor.execute("DELETE FROM profile WHERE user_id = ?", (id,))
+    ctx['db']['commit']()
 
 def db_list_user(ctx:dict, offset:int=0, limit:int=25) -> list[User]:
     """
@@ -181,184 +185,35 @@ def db_list_user(ctx:dict, offset:int=0, limit:int=25) -> list[User]:
 
     return :: list of user objects
     """
-    users:Collection = ctx['db']['client']['msample']['core.user']
+
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
     items = []
-    for item in users.find(skip=offset, limit=limit):
-        item['id'] = str(item.pop('_id'))
-        items.append(User(**item).validate())
-
-    return items
-
-# user session #
-
-def db_create_user_session(ctx:dict, data:dict) -> dict:
-    """
-    create a user session in the database, verifying the data first.
-
-    args ::
-        ctx :: dict containing the database client
-        data :: the data to create the user session with.
-    return :: dict of the created user session.
-    """
-    user_sessions = ctx['db']['client']['msample']['core.user_session']
-    result = user_sessions.insert_one(user_session_validate(data))
-    data['id'] = str(result.inserted_id)
-    return data 
-
-def db_read_user_session(ctx:dict, id:str) -> dict:
-    """
-    read a user session from the database and verify it.
-
-    args ::
-        ctx :: dict containing the database client
-        id :: the id of the user session to read.
+    for item in cursor.execute("SELECT * FROM user ORDER BY id DESC LIMIT ? OFFSET ?", (limit, offset)):
+        items.append(User(
+            id=str(item[0]),
+            name=item[1],
+            email=item[2],
+            profile=item[3]
+        ).validate())
     
-    return :: dict of the user session
-    raises :: NotFoundError if the user session does not exist
-    """
-    user_sessions = ctx['db']['client']['msample']['core.user_session']
-    db_entry = user_sessions.find_one({'_id': ObjectId(id)})
-    if db_entry is None:
-        raise NotFoundError(f'user session {id} not found')
-    else:
-        db_entry['id'] = str(db_entry.pop('_id'))
-        return user_session_validate(db_entry)
-
-def db_update_user_session(ctx:dict, data:dict) -> None:
-    """
-    update a user session in the database, and verify the data first.
-
-    args ::
-        ctx :: dict containing the database client
-        data :: the data to update the user session with.
-
-    return :: None
-    raises :: NotFoundError if the user session does not exist
-    """
-    user_session_validate(data)
-    _id = data.pop('id')
-    user_sessions = ctx['db']['client']['msample']['core.user_session']
-    result = user_sessions.update_one({'_id': ObjectId(_id)}, {'$set': data})
-    if result.matched_count == 0:
-        raise NotFoundError(f'user session {id} not found')
-
-def db_delete_user_session(ctx:dict, id:str) -> None:
-    """
-    delete a user session from the database.
-
-    args ::
-        ctx :: dict containing the database client
-        id :: the id of the user session to delete.
-
-    return :: None
-    """
-    user_sessions = ctx['db']['client']['msample']['core.user_session']
-    user_sessions.delete_one({'_id': ObjectId(id)})
-
-def db_list_user_session(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
-    """
-    list user sessions from the database and verify them.
-
-    args ::
-        ctx :: dict containing the database client
-        offset :: the offset to start listing from.
-        limit :: the maximum number of items to list.
-
-    return :: list of all user sessions.
-    """
-    user_sessions = ctx['db']['client']['msample']['core.user_session']
-    items = []
-    for item in user_sessions.find().skip(offset).limit(limit):
-        item['id'] = str(item.pop('_id'))
-        items.append(user_session_validate(item))
     return items
 
 # user password hash #
 
-def db_create_user_password_hash(ctx:dict, data:UserPasswordHash) -> UserPasswordHash:
-    """
-    create a user password hash in the database, verifying the data first.
-
-    args ::
-        ctx :: dict containing the database client
-        data :: the data to create the user password hash with.
-
-    return :: dict of the created user password hash.
-    """
-    user_password_hashes = ctx['db']['client']['msample']['core.user_password_hash']
-    data_for_mongo = data.validate().to_dict()
-    data_for_mongo['user'] = ObjectId(data_for_mongo['user'])
-    result = user_password_hashes.insert_one(data_for_mongo)
-    data.id = str(result.inserted_id)
-    return data 
+def db_create_user_password_hash(ctx:dict, pw_hash:UserPasswordHash) -> UserPasswordHash:
+    raise ForbiddenError('user password hash is not creatable')
 
 def db_read_user_password_hash(ctx:dict, id:str) -> dict:
-    """
-    read a user password hash from the database and verify it.
-
-    args ::
-        ctx :: dict containing the database client
-        id :: the id of the user password hash to read.
+    raise ForbiddenError('user password hash is not readable')
     
-    return :: dict of the user password hash
-    raises :: NotFoundError if the user password hash does not exist
-    """
-    user_password_hashes = ctx['db']['client']['msample']['core.user_password_hash']
-    db_entry = user_password_hashes.find_one({'_id': ObjectId(id)})
-    if db_entry is None:
-        raise NotFoundError(f'user password hash {id} not found')
-    else:
-        db_entry['id'] = str(db_entry.pop('_id'))
-        return user_password_hash_validate(db_entry)
-    
-def db_update_user_password_hash(ctx:dict, data:dict) -> None:
-    """
-    update a user password hash in the database, and verify the data first.
-
-    args ::
-        ctx :: dict containing the database client
-        data :: the data to update the user password hash with.
-
-    return :: None
-    raises :: NotFoundError if the user password hash does not exist
-    """
-    user_password_hash_validate(data)
-    _id = data.pop('id')
-    user_password_hashes = ctx['db']['client']['msample']['core.user_password_hash']
-    result = user_password_hashes.update_one({'_id': ObjectId(_id)}, {'$set': data})
-    if result.matched_count == 0:
-        raise NotFoundError(f'user password hash {id} not found')
+def db_update_user_password_hash(ctx:dict, pw_hash:UserPasswordHash) -> UserPasswordHash:
+    raise ForbiddenError('user password hash is not updatable')
 
 def db_delete_user_password_hash(ctx:dict, id:str) -> None:
-    """
-    delete a user password hash from the database.
-
-    args ::
-        ctx :: dict containing the database client
-        id :: the id of the user password hash to delete.
-
-    return :: None
-    """
-    user_password_hashes = ctx['db']['client']['msample']['core.user_password_hash']
-    user_password_hashes.delete_one({'_id': ObjectId(id)})
+    raise ForbiddenError('user password hash is not deletable')
 
 def db_list_user_password_hash(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
-    """
-    list user password hashes from the database and verify them.
-
-    args ::
-        ctx :: dict containing the database client
-        offset :: the offset to start listing from.
-        limit :: the maximum number of items to list.
-    
-    return :: list of dicts of all user password hashes.
-    """
-    user_password_hashes = ctx['db']['client']['msample']['core.user_password_hash']
-    items = []
-    for item in user_password_hashes.find().skip(offset).limit(limit):
-        item['id'] = str(item.pop('_id'))
-        items.append(user_password_hash_validate(item))
-    return items
+    raise ForbiddenError('user password hash is not readable')
 
 # profile #
 
@@ -372,8 +227,8 @@ def db_create_profile(ctx:dict, obj:Profile) -> Profile:
 
     return :: profile object with new id
     """
-    profiles:Collection = ctx['db']['client']['msample']['core.profile']
-    result = profiles.insert_one(obj.validate().to_dict())
+
+    obj.validate()
     obj.id = str(result.inserted_id)
     return obj 
 
@@ -388,12 +243,11 @@ def db_read_profile(ctx:dict, id:str) -> Profile:
     return :: profile object if it exists
     raises :: NotFoundError if the profile does not exist
     """
-    profiles:Collection = ctx['db']['client']['msample']['core.profile']
+    
     db_entry = profiles.find_one({'_id': ObjectId(id)})
     if db_entry is None:
         raise NotFoundError(f'profile {id} not found')
     else:
-        db_entry['id'] = str(db_entry.pop('_id'))
         return Profile(**db_entry).validate()
     
 def db_update_profile(ctx:dict, obj:Profile) -> Profile:
@@ -408,10 +262,8 @@ def db_update_profile(ctx:dict, obj:Profile) -> Profile:
     raises :: NotFoundError if the profile does not exist
     """
     obj.validate()
-    data = obj.to_dict()
-    _id = data.pop('id')
 
-    profiles:Collection = ctx['db']['client']['msample']['core.profile']
+    
     result = profiles.update_one({'_id': ObjectId(_id)}, {'$set': data})
     if result.matched_count == 0:
         raise NotFoundError(f'profile {_id} not found')
@@ -428,7 +280,7 @@ def db_delete_profile(ctx:dict, id:str) -> None:
 
     return :: None
     """
-    profiles = ctx['db']['client']['msample']['core.profile']
+    
     profiles.delete_one({'_id': ObjectId(id)})
 
 def db_list_profile(ctx:dict, offset:int=0, limit:int=25) -> list[Profile]:
@@ -442,179 +294,9 @@ def db_list_profile(ctx:dict, offset:int=0, limit:int=25) -> list[Profile]:
 
     return :: list of profile objects.
     """
-    profiles:Collection = ctx['db']['client']['msample']['core.profile']
+    
     items = []
     for item in profiles.find(skip=offset, limit=limit):
-        item['id'] = str(item.pop('_id'))
         items.append(Profile(**item).validate())
 
     return items
-
-# acl #
-
-def db_create_acl(ctx:dict, data:dict) -> dict:
-    """
-    create a acl in the database, verifying the data first.
-
-    args ::
-        ctx :: dict containing the database client
-        data :: the data to create the acl with.
-
-    return :: dict of the created acl.
-    """
-    acls = ctx['db']['client']['msample']['core.acl']
-    result = acls.insert_one(acl_validate(data))
-    data['id'] = str(result.inserted_id)
-    return data 
-
-def db_read_acl(ctx:dict, id:str) -> dict:
-    """
-    read a acl from the database and verify it.
-
-    args ::
-        ctx :: dict containing the database client
-        id :: the id of the acl to read.
-    
-    return :: dict of the acl if it exists
-    raises :: NotFoundError if the acl does not exist
-    """
-    acls = ctx['db']['client']['msample']['core.acl']
-    db_entry = acls.find_one({'_id': ObjectId(id)})
-    if db_entry is None:
-        raise NotFoundError(f'acl {id} not found')
-    else:
-        db_entry['id'] = str(db_entry.pop('_id'))
-        return acl_validate(db_entry)
-    
-def db_update_acl(ctx:dict, data:dict) -> None:
-    """
-    update a acl in the database, and verify the data first.
-
-    args ::
-        ctx :: dict containing the database client
-        data :: the data to update the acl with.
-
-    return :: None
-    raises :: NotFoundError if the acl does not exist
-    """
-    acl_validate(data)
-    _id = data.pop('id')
-    acls = ctx['db']['client']['msample']['core.acl']
-    result = acls.update_one({'_id': ObjectId(_id)}, {'$set': data})
-    if result.matched_count == 0:
-        raise NotFoundError(f'acl {id} not found')
-    
-def db_delete_acl(ctx:dict, id:str) -> None:
-    """
-    delete a acl from the database.
-
-    args ::
-        ctx :: dict containing the database client
-        id :: the id of the acl to delete.
-
-    return :: None
-    """
-    acls = ctx['db']['client']['msample']['core.acl']
-    acls.delete_one({'_id': ObjectId(id)})
-
-def db_list_acl(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
-    """
-    list acls from the database and verify them.
-
-    args ::
-        ctx :: dict containing the database client
-        offset :: the offset to start listing from.
-        limit :: the maximum number of items to list.
-
-    return :: list of all acls.
-    """
-    acls = ctx['db']['client']['msample']['core.acl']
-    items = []
-    for item in acls.find().skip(offset).limit(limit):
-        item['id'] = str(item.pop('_id'))
-        items.append(acl_validate(item))
-    return items
-
-# acl entry #
-
-def db_create_acl_entry(ctx:dict, data:dict) -> dict:
-    """
-    create a acl entry in the database, verifying the data first.
-
-    args ::
-        ctx :: dict containing the database client
-        data :: the data to create the acl entry with.
-    return :: dict of the created acl entry.
-    """
-    acl_entries = ctx['db']['client']['msample']['core.acl_entry']
-    result = acl_entries.insert_one(acl_entry_validate(data))
-    data['id'] = str(result.inserted_id)
-    return data 
-
-def db_read_acl_entry(ctx:dict, id:str) -> dict:
-    """
-    read a acl entry from the database and verify it.
-
-    args ::
-        ctx :: dict containing the database client
-        id :: the id of the acl entry to read.
-    
-    return :: dict of the acl entry
-    raises :: NotFoundError if the acl entry does not exist
-    """
-    acl_entries = ctx['db']['client']['msample']['core.acl_entry']
-    db_entry = acl_entries.find_one({'_id': ObjectId(id)})
-    if db_entry is None:
-        raise NotFoundError(f'acl entry {id} not found')
-    else:
-        db_entry['id'] = str(db_entry.pop('_id'))
-        return acl_entry_validate(db_entry)
-    
-def db_update_acl_entry(ctx:dict, data:dict) -> None:
-    """
-    update a acl entry in the database, and verify the data first.
-
-    args ::
-        ctx :: dict containing the database client
-        data :: the data to update the acl entry with.
-
-    return :: None
-    """
-    acl_entry_validate(data)
-    _id = data.pop('id')
-    acl_entries = ctx['db']['client']['msample']['core.acl_entry']
-    result = acl_entries.update_one({'_id': ObjectId(_id)}, {'$set': data})
-    if result.matched_count == 0:
-        raise NotFoundError(f'acl entry {id} not found')
-    
-def db_delete_acl_entry(ctx:dict, id:str) -> None:
-    """
-    delete a acl entry from the database.
-
-    args ::
-        ctx :: dict containing the database client
-        id :: the id of the acl entry to delete.
-
-    return :: None
-    """
-    acl_entries = ctx['db']['client']['msample']['core.acl_entry']
-    acl_entries.delete_one({'_id': ObjectId(id)})
-
-def db_list_acl_entry(ctx:dict, offset:int=0, limit:int=25) -> list[dict]:
-    """
-    list acl entries from the database and verify them.
-
-    args ::
-        ctx :: dict containing the database client
-        offset :: the offset to start listing from.
-        limit :: the maximum number of items to list.
-
-    return :: list of all acl entries.
-    """
-    acl_entries = ctx['db']['client']['msample']['core.acl_entry']
-    items = []
-    for item in acl_entries.find().skip(offset).limit(limit):
-        item['id'] = str(item.pop('_id'))
-        items.append(acl_entry_validate(item))
-    return items
-

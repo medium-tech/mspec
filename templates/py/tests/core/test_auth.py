@@ -1,12 +1,10 @@
 import unittest
+import time
 
 from core.exceptions import *
 from core.models import *
 from core.client import *
 from core.db import *
-from core.types import Meta
-
-from pymongo.collection import Collection
 
 test_ctx = create_db_context()
 test_ctx.update(create_client_context())
@@ -14,17 +12,12 @@ test_ctx.update(create_client_context())
 class TestAuth(unittest.TestCase):
 
     def test_user_auth(self):
-        user_col:Collection = test_ctx['db']['client']['msample']['core.user']
-        user_col.delete_many({})
-
-        pw_hash_col:Collection = test_ctx['db']['client']['msample']['core.user_password_hash']
-        pw_hash_col.delete_many({})
 
         # create user #
 
         new_user = CreateUser(
             name='Test User auth',
-            email='test-user-auth@email.com',
+            email=f'test-user-auth-{time.time()}@email.com',
             password=NewPassword(
                 password1='my-test-password',
                 password2='my-test-password'
@@ -51,7 +44,7 @@ class TestAuth(unittest.TestCase):
 
         other_user_form = CreateUser(
             name='Other Test User auth',
-            email='other-test-user-auth@email.com',
+            email=f'other-test-user-auth-{time.time()}@email.com',
             password=NewPassword(
                 password1='my-test-password',
                 password2='my-test-password'

@@ -1,15 +1,13 @@
 import os
+import sqlite3
 
-from core.db import db_read_user, db_create_user_password_hash, db_create_user
-from core.exceptions import AuthenticationError, NotFoundError
-from core.models import User, UserPasswordHash, Profile, AccessToken, CreateUser
+from core.db import db_read_user, db_create_user_password_hash, db_create_user, validate_new_passwords
+from core.exceptions import AuthenticationError, NotFoundError, ForbiddenError
+from core.models import User, UserPasswordHash, AccessToken, CreateUser
 from datetime import datetime, timedelta, timezone
-from typing import Annotated
 
 from jose import jwt, JWTError
 from passlib.context import CryptContext
-from pymongo.collection import Collection
-from bson import ObjectId
 
 
 __all__ = [
@@ -55,26 +53,44 @@ def get_password_hash(password:str) -> str:
     return pwd_context.hash(password)
 
 
+def check_user_credentials(ctx: dict, email: str, password: str) -> str:
+    """
+    returns user id if credentials are valid, else raises AuthenticationError
+
+    args ::
+        ctx :: dict containing the database client
+        email :: user email
+        password :: user password
+    
+    return :: str of user id
+    raises :: AuthenticationError
+    """
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
+    user_id_result = cursor.execute(
+        "SELECT id FROM user WHERE email = ?",
+        (email.lower(),)
+    ).fetchone()
+
+    if user_id_result is None:
+        raise AuthenticationError('Invalid username or password')
+    
+    pw_hash_result = cursor.execute(
+        "SELECT hash FROM user_password_hash WHERE user_id = ?", 
+        (user_id_result[0],)
+    ).fetchone()
+
+    if pw_hash_result is None:
+        raise AuthenticationError('Invalid username or password')
+
+    if not verify_password(password, pw_hash_result[0]):
+        raise AuthenticationError('Invalid username or password')
+    
+    return user_id_result[0]
+
 def login_user(ctx:dict, email: str, password: str) -> AccessToken:
-    users:Collection = ctx['db']['client']['msample']['core.user']
-
-    user_db_result = users.find_one({'email': email.lower()})
-    try:
-        user_id = str(user_db_result['_id'])
-    except AttributeError:
-        """user_id is None - user id not found"""
-        raise AuthenticationError('Invalid username or password')
-
-    user_pw_hashes:Collection = ctx['db']['client']['msample']['core.user_password_hash']
-    
-    try:
-        user_pw_db_result = user_pw_hashes.find_one({'user': ObjectId(user_id)})
-    except IndexError:
-        raise AuthenticationError('Invalid username or password')
-
-    if not verify_password(password, user_pw_db_result['hash']):
-        raise AuthenticationError('Invalid username or password')
-    
+    user_id = check_user_credentials(ctx, email, password)
+    assert user_id is str
+    assert user_id != ''
     return create_access_token(data={'sub': str(user_id)})
 
 
@@ -91,16 +107,27 @@ def create_access_token(data: dict):
     return AccessToken(access_token=token, token_type='bearer')
 
 
-def create_new_user(ctx:dict, data:CreateUser) -> User:
-    users:Collection = ctx['db']['client']['msample']['core.user']
+def create_new_user(ctx:dict, new_user:CreateUser) -> User:
 
-    if users.find_one({'email': data.email}) is not None:
-        raise AuthenticationError('Email already registered')
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
+    user_id_result = cursor.execute(
+        "SELECT id FROM user WHERE email = ?",
+        (new_user.email.lower(),)
+    ).fetchone()
 
-    new_user = User(name=data.name, email=data.email)
+    if user_id_result is not None:
+        raise ForbiddenError('Email already registered')
+
+    new_user = User(name=new_user.name, email=new_user.email)
     new_user = db_create_user(ctx, new_user)
 
-    hash = UserPasswordHash(user=new_user.id, hash=get_password_hash(data.password.password1))
-    hash = db_create_user_password_hash(ctx, hash)
+    pw_hash = UserPasswordHash(user_id=new_user.id, hash=get_password_hash(new_user.password1))
+    pw_hash.validate()
+    
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
+    result = cursor.execute("INSERT INTO user_password_hash(user_id, hash) VALUES(?, ?)", (pw_hash.user_id, pw_hash.hash))
+    assert result.rowcount == 1
+
+    ctx['db']['commit']()
 
     return new_user

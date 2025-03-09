@@ -65,6 +65,8 @@
         * 🔴 add root authorzation
         * 🔴 add auth to profile endpoints
         * 🔴 add salt to pw
+        * 🔴 reset password by email code
+        * 🔴 change password
         * 🔴 add login sessions/logout
         * 🔴 add acls to endpoints/models
     * 🟢 refactor sample_module to match core module
