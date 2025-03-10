@@ -5,7 +5,7 @@ import os
 from traceback import format_exc
 from urllib.parse import parse_qs
 
-from core.auth import create_new_user, login_user, get_user_from_token
+from core.auth import create_new_user, login_user, _get_user_from_token
 from core.types import to_json
 from core.models import *
 from core.db import *
@@ -208,7 +208,7 @@ def get_user(env:dict) -> User:
         raise AuthenticationError('Not logged in')
     
     token = auth_header[7:]
-    return get_user_from_token(server_ctx, token)
+    return _get_user_from_token(server_ctx, token)
 
 def application(env, start_response):
 

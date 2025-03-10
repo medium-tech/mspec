@@ -11,13 +11,8 @@ from passlib.context import CryptContext
 
 
 __all__ = [
-    'verify_password',
-    'get_password_hash',
-    'login_user',
-    'create_access_token',
     'create_new_user',
-    'delete_user',
-    'delete_profile'
+    'login_user'
 ]
 
 
@@ -26,10 +21,9 @@ MSTACK_AUTH_ALGORITHM = os.environ.get('MSTACK_AUTH_ALGORITHM', 'HS256')
 MSTACK_AUTH_LOGIN_EXPIRATION_MINUTES = os.environ.get('MSTACK_AUTH_LOGIN_EXPIRATION_MINUTES', 60 * 24 * 7)
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
-# oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/v0/core/auth/login')
 
 
-def get_user_from_token(ctx:dict, token:str):
+def _get_user_from_token(ctx:dict, token:str):
     try:
         payload = jwt.decode(token, MSTACK_AUTH_SECRET_KEY, algorithms=[MSTACK_AUTH_ALGORITHM])
         user_id: str = payload.get('sub')
@@ -44,16 +38,13 @@ def get_user_from_token(ctx:dict, token:str):
     except NotFoundError:
         raise AuthenticationError('Could not validate credentials')
 
-
-def verify_password(plain_password:str, hashed_password:str) -> bool:
+def _verify_password(plain_password:str, hashed_password:str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
-
-def get_password_hash(password:str) -> str:
+def _get_password_hash(password:str) -> str:
     return pwd_context.hash(password)
 
-
-def check_user_credentials(ctx: dict, email: str, password: str) -> str:
+def _check_user_credentials(ctx: dict, email: str, password: str) -> str:
     """
     returns user id if credentials are valid, else raises AuthenticationError
 
@@ -82,20 +73,12 @@ def check_user_credentials(ctx: dict, email: str, password: str) -> str:
     if pw_hash_result is None:
         raise AuthenticationError('Invalid username or password')
 
-    if not verify_password(password, pw_hash_result[0]):
+    if not _verify_password(password, pw_hash_result[0]):
         raise AuthenticationError('Invalid username or password')
     
     return str(user_id_result[0])
 
-def login_user(ctx:dict, email: str, password: str) -> AccessToken:
-    user_id = check_user_credentials(ctx, email, password)
-    print(f'login_user: {user_id} {type(user_id)}')
-    assert isinstance(user_id, str)
-    assert user_id != ''
-    return create_access_token(data={'sub': str(user_id)})
-
-
-def create_access_token(data: dict):
+def _create_access_token(data: dict):
     expires = datetime.now(timezone.utc) + timedelta(minutes=MSTACK_AUTH_LOGIN_EXPIRATION_MINUTES)
 
     data_to_encode = data.copy()
@@ -107,6 +90,9 @@ def create_access_token(data: dict):
     token = jwt.encode(data_to_encode, MSTACK_AUTH_SECRET_KEY, algorithm=MSTACK_AUTH_ALGORITHM)
     return AccessToken(access_token=token, token_type='bearer')
 
+#
+# external methods
+#
 
 def create_new_user(ctx:dict, incoming_user:CreateUser) -> User:
 
@@ -121,7 +107,7 @@ def create_new_user(ctx:dict, incoming_user:CreateUser) -> User:
 
     created_user = db_create_user(ctx, incoming_user.get_user_obj())
 
-    pw_hash = UserPasswordHash(user_id=created_user.id, hash=get_password_hash(incoming_user.password1))
+    pw_hash = UserPasswordHash(user_id=created_user.id, hash=_get_password_hash(incoming_user.password1))
     pw_hash.validate()
     
     cursor:sqlite3.Cursor = ctx['db']['cursor']
@@ -131,3 +117,10 @@ def create_new_user(ctx:dict, incoming_user:CreateUser) -> User:
     ctx['db']['commit']()
 
     return created_user
+
+def login_user(ctx:dict, email: str, password: str) -> AccessToken:
+    user_id = _check_user_credentials(ctx, email, password)
+    print(f'login_user: {user_id} {type(user_id)}')
+    assert isinstance(user_id, str)
+    assert user_id != ''
+    return _create_access_token(data={'sub': str(user_id)})
