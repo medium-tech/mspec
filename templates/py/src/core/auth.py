@@ -85,11 +85,12 @@ def check_user_credentials(ctx: dict, email: str, password: str) -> str:
     if not verify_password(password, pw_hash_result[0]):
         raise AuthenticationError('Invalid username or password')
     
-    return user_id_result[0]
+    return str(user_id_result[0])
 
 def login_user(ctx:dict, email: str, password: str) -> AccessToken:
     user_id = check_user_credentials(ctx, email, password)
-    assert user_id is str
+    print(f'login_user: {user_id} {type(user_id)}')
+    assert isinstance(user_id, str)
     assert user_id != ''
     return create_access_token(data={'sub': str(user_id)})
 
@@ -107,21 +108,20 @@ def create_access_token(data: dict):
     return AccessToken(access_token=token, token_type='bearer')
 
 
-def create_new_user(ctx:dict, new_user:CreateUser) -> User:
+def create_new_user(ctx:dict, incoming_user:CreateUser) -> User:
 
     cursor:sqlite3.Cursor = ctx['db']['cursor']
     user_id_result = cursor.execute(
         "SELECT id FROM user WHERE email = ?",
-        (new_user.email.lower(),)
+        (incoming_user.email,)
     ).fetchone()
 
     if user_id_result is not None:
         raise ForbiddenError('Email already registered')
 
-    new_user = User(name=new_user.name, email=new_user.email)
-    new_user = db_create_user(ctx, new_user)
+    created_user = db_create_user(ctx, incoming_user.get_user_obj())
 
-    pw_hash = UserPasswordHash(user_id=new_user.id, hash=get_password_hash(new_user.password1))
+    pw_hash = UserPasswordHash(user_id=created_user.id, hash=get_password_hash(incoming_user.password1))
     pw_hash.validate()
     
     cursor:sqlite3.Cursor = ctx['db']['cursor']
@@ -130,4 +130,4 @@ def create_new_user(ctx:dict, new_user:CreateUser) -> User:
 
     ctx['db']['commit']()
 
-    return new_user
+    return created_user

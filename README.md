@@ -81,7 +81,8 @@
                 * 🟢 browser gui
     * 🔴 add cid to example_item
     * 🟡 replace mongo with sqlite
-
+        * 🟢 template tests passing
+        * 🟡 generated app tests passing
 ### guis
 
 * 🔴 html (browser) markup viewer

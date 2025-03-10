@@ -4,7 +4,7 @@ import base64
 import json
 
 from pathlib import Path
-from typing import ClassVar, BinaryIO, Union, Dict
+from typing import ClassVar, BinaryIO, Union, Dict, Optional
 from dataclasses import dataclass, field, asdict
 from hashlib import sha3_256
 from datetime import datetime

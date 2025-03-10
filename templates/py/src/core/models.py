@@ -13,7 +13,6 @@ __all__ = [
     'user_session_from_json',
     'user_session_validate',
     'AccessToken',
-    'NewPassword',
     'validate_new_passwords',
     'CreateUser',
     'UserPasswordHash',
@@ -184,6 +183,12 @@ class CreateUser:
         
         return self
     
+    def get_user_obj(self) -> User:
+        return User(
+            name=self.name,
+            email=self.email
+        )
+    
     def to_dict(self) -> dict:
         return asdict(self)
         
@@ -199,10 +204,8 @@ class CreateUser:
         return cls(
             name='Test User',
             email='my@email.com',
-            password=NewPassword(
-                password1='my-test-password',
-                password2='my-test-password'
-            )
+            password1='my-test-password',
+            password2='my-test-password'
         )
 
 # user password hash #
@@ -257,6 +260,7 @@ class Profile:
     bio: str
     meta: Meta
 
+    user_id: Optional[str] = None
     id: Optional[str] = None
 
     def __post_init__(self):

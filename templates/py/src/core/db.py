@@ -3,6 +3,7 @@ import os
 import sqlite3
 from pathlib import Path
 
+from core.types import Meta
 from core.models import *
 from core.exceptions import NotFoundError, ForbiddenError
 
@@ -62,9 +63,13 @@ def create_db_tables(ctx:dict) -> None:
     """
 
     cursor:sqlite3.Cursor = ctx['db']['cursor']
+
     cursor.execute("CREATE TABLE IF NOT EXISTS user(id INTEGER PRIMARY KEY, name, email, profile)")
     cursor.execute("CREATE TABLE IF NOT EXISTS user_password_hash(id INTEGER PRIMARY KEY, user_id INTEGER REFERENCES user(id), hash)")
     cursor.execute("CREATE TABLE IF NOT EXISTS profile(id INTEGER PRIMARY KEY, user_id INTEGER REFERENCES user(id), name, bio)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS profile_meta_data(id INTEGER PRIMARY KEY, profile_id INTEGER REFERENCES profile(id), key, value_bool, value_int, value_float, value_str)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS profile_meta_tags(id INTEGER PRIMARY KEY, profile_id INTEGER REFERENCES profile(id), value, position)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS profile_meta_hierarchies(id INTEGER PRIMARY KEY, profile_id INTEGER REFERENCES profile(id), value, position)")
 
     # for :: {% for item in all_models %} :: {"example_item": "item.model.name.snake_case", "'description', 'verified', 'color', 'count', 'score', 'when'": "item.model.field_list"}
     cursor.execute("CREATE TABLE IF NOT EXISTS example_item(id INTEGER PRIMARY KEY, 'description', 'verified', 'color', 'count', 'score', 'when')")
@@ -228,9 +233,56 @@ def db_create_profile(ctx:dict, obj:Profile) -> Profile:
     return :: profile object with new id
     """
 
+    if obj.id is not None:
+        raise ValueError('cannot use profile with id to create new profile')
+
     obj.validate()
-    obj.id = str(result.inserted_id)
-    return obj 
+
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
+
+    # profile
+    result = cursor.execute(
+        "INSERT INTO profile(user_id, name, bio) VALUES(?, ?, ?)", 
+        (obj.user_id, obj.name, obj.bio)
+    )
+    assert result.rowcount == 1
+    assert result.lastrowid is not None
+    obj.id = str(result.lastrowid)
+
+    # profile.meta.data
+    meta_data_rows = []
+    for key, value in obj.meta.data.items():
+        if isinstance(value, bool):
+            meta_data_rows.append((obj.id, key, value, None, None, None))
+        elif isinstance(value, int):
+            meta_data_rows.append((obj.id, key, None, value, None, None))
+        elif isinstance(value, float):
+            meta_data_rows.append((obj.id, key, None, None, value, None))
+        elif isinstance(value, str):
+            meta_data_rows.append((obj.id, key, None, None, None, value))
+        else:
+            raise ValueError(f'unknown type for meta data value: {type(value)}')
+    cursor.executemany(
+        "INSERT INTO profile_meta_data(profile_id, key, value_bool, value_int, value_float, value_str) VALUES(?, ?, ?, ?, ?, ?)",
+        meta_data_rows
+    )
+
+    # profile.meta.tags
+    cursor.executemany(
+        "INSERT INTO profile_meta_tags(profile_id, value, position) VALUES(?, ?, ?)", 
+        [(obj.id, value, position) for position, value in enumerate(obj.meta.tags)]
+    )
+
+    # profile.meta.hierarchies
+    cursor.executemany(
+        "INSERT INTO profile_meta_hierarchies(profile_id, value, position) VALUES(?, ?, ?)", 
+        [(obj.id, value, position) for position, value in enumerate(obj.meta.hierarchies)]
+    )
+
+    ctx['db']['commit']()
+    return obj
+
+
 
 def db_read_profile(ctx:dict, id:str) -> Profile:
     """
@@ -244,12 +296,46 @@ def db_read_profile(ctx:dict, id:str) -> Profile:
     raises :: NotFoundError if the profile does not exist
     """
     
-    db_entry = profiles.find_one({'_id': ObjectId(id)})
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
+    db_entry = cursor.execute("SELECT * FROM profile WHERE id = ?", (id,)).fetchone()
     if db_entry is None:
         raise NotFoundError(f'profile {id} not found')
-    else:
-        return Profile(**db_entry).validate()
     
+    # profile.meta.data
+    meta_data = {}
+    for item in cursor.execute("SELECT * FROM profile_meta_data WHERE profile_id = ?", (id,)):
+        key = item[2]
+        
+        # iterate over all values to find first non-null value
+        for n, value in enumerate(item[3:]):
+            if value is not None:
+                # only bools need to be converted from sqlite3
+                meta_data[key] = bool(value) if n == 0 else value
+                break
+
+    # profile.meta.tags
+    meta_tags = []
+    for item in cursor.execute("SELECT value FROM profile_meta_tags WHERE profile_id = ? ORDER BY position", (id,)):
+        meta_tags.append(item[0])
+
+    # profile.meta.hierarchies
+    meta_hierarchies = []
+    for item in cursor.execute("SELECT value FROM profile_meta_hierarchies WHERE profile_id = ? ORDER BY position", (id,)):
+        meta_hierarchies.append(item[0])
+
+    return Profile(
+        id=str(db_entry[0]),
+        user_id=str(db_entry[1]),
+        name=db_entry[2],
+        bio=db_entry[3],
+        meta=Meta(
+            data=meta_data,
+            tags=meta_tags,
+            hierarchies=meta_hierarchies
+        )
+    ).validate()
+
+
 def db_update_profile(ctx:dict, obj:Profile) -> Profile:
     """
     update a profile in the database, and verify the data first.
@@ -263,12 +349,54 @@ def db_update_profile(ctx:dict, obj:Profile) -> Profile:
     """
     obj.validate()
 
+    if obj.id is None:
+        raise ValueError('cannot update profile without id')
     
-    result = profiles.update_one({'_id': ObjectId(_id)}, {'$set': data})
-    if result.matched_count == 0:
-        raise NotFoundError(f'profile {_id} not found')
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
+    result = cursor.execute(
+        "UPDATE profile SET user_id = ?, name = ?, bio = ? WHERE id = ?",
+        (obj.user_id, obj.name, obj.bio, obj.id)
+    )
+    if result.rowcount == 0:
+        raise NotFoundError(f'profile {obj.id} not found')
     
+    # profile.meta.data
+    cursor.execute("DELETE FROM profile_meta_data WHERE profile_id = ?", (obj.id,))
+    meta_data_rows = []
+    for key, value in obj.meta.data.items():
+        if isinstance(value, bool):
+            meta_data_rows.append((obj.id, key, value, None, None, None))
+        elif isinstance(value, int):
+            meta_data_rows.append((obj.id, key, None, value, None, None))
+        elif isinstance(value, float):
+            meta_data_rows.append((obj.id, key, None, None, value, None))
+        elif isinstance(value, str):
+            meta_data_rows.append((obj.id, key, None, None, None, value))
+        else:
+            raise ValueError(f'unknown type for meta data value: {type(value)}')
+        
+    cursor.executemany(
+        "INSERT INTO profile_meta_data(profile_id, key, value_bool, value_int, value_float, value_str) VALUES(?, ?, ?, ?, ?, ?)",
+        [(obj.id, key, value) for key, value in obj.meta.data.items()]
+    )
+
+    # profile.meta.tags
+    cursor.execute("DELETE FROM profile_meta_tags WHERE profile_id = ?", (obj.id,))
+    cursor.executemany(
+        "INSERT INTO profile_meta_tags(profile_id, value, position) VALUES(?, ?, ?)", 
+        [(obj.id, value, position) for position, value in enumerate(obj.meta.tags)]
+    )
+    
+    # profile.meta.hierarchies
+    cursor.execute("DELETE FROM profile_meta_hierarchies WHERE profile_id = ?", (obj.id,))
+    cursor.executemany(
+        "INSERT INTO profile_meta_hierarchies(profile_id, value, position) VALUES(?, ?, ?)", 
+        [(obj.id, value, position) for position, value in enumerate(obj.meta.hierarchies)]
+    )
+
+    ctx['db']['commit']()
     return obj
+
     
 def db_delete_profile(ctx:dict, id:str) -> None:
     """
@@ -281,7 +409,13 @@ def db_delete_profile(ctx:dict, id:str) -> None:
     return :: None
     """
     
-    profiles.delete_one({'_id': ObjectId(id)})
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
+    cursor.execute("DELETE FROM profile WHERE id = ?", (id,))
+    cursor.execute("DELETE FROM profile_meta_data WHERE profile_id = ?", (id,))
+    cursor.execute("DELETE FROM profile_meta_tags WHERE profile_id = ?", (id,))
+    cursor.execute("DELETE FROM profile_meta_hierarchies WHERE profile_id = ?", (id,))
+    ctx['db']['commit']()
+
 
 def db_list_profile(ctx:dict, offset:int=0, limit:int=25) -> list[Profile]:
     """
@@ -295,8 +429,40 @@ def db_list_profile(ctx:dict, offset:int=0, limit:int=25) -> list[Profile]:
     return :: list of profile objects.
     """
     
+    cursor:sqlite3.Cursor = ctx['db']['cursor']
     items = []
-    for item in profiles.find(skip=offset, limit=limit):
-        items.append(Profile(**item).validate())
 
-    return items
+    for row in cursor.execute("SELECT * FROM profile ORDER BY id LIMIT ? OFFSET ?", (limit, offset)):
+        # profile.meta.data
+        meta_data = {}
+        for item in cursor.execute("SELECT * FROM profile_meta_data WHERE profile_id = ?", (row[0],)):
+            key = item[1]
+            
+            # iterate over all values to find first non-null value
+            for n, value in enumerate(item[2:]):
+                if value is not None:
+                    # only bools need to be converted from sqlite3
+                    meta_data[key] = bool(value) if n == 0 else value
+                    break
+
+        # profile.meta.tags
+        meta_tags = []
+        for item in cursor.execute("SELECT value FROM profile_meta_tags WHERE profile_id = ? ORDER BY position", (row[0],)):
+            meta_tags.append(item[0])
+
+        # profile.meta.hierarchies
+        meta_hierarchies = []
+        for item in cursor.execute("SELECT value FROM profile_meta_hierarchies WHERE profile_id = ? ORDER BY position", (row[0],)):
+            meta_hierarchies.append(item[0])
+
+        items.append(Profile(
+            id=str(row[0]),
+            user_id=str(row[1]),
+            name=row[2],
+            bio=row[3],
+            meta=Meta(
+                data=meta_data,
+                tags=meta_tags,
+                hierarchies=meta_hierarchies
+            )
+        ).validate())

@@ -66,7 +66,7 @@ class TestExampleItem(unittest.TestCase):
 
         # seed data #
 
-        items = client_list_example_item(test_ctx,offset=0, limit=51)
+        items = client_list_example_item(test_ctx, offset=0, limit=51)
         items_len = len(items)
         if items_len > 50:
             raise Exception('excpecting 50 items or less, delete db and restart test')

@@ -126,10 +126,8 @@ def db_delete_example_item(ctx:dict, id:str) -> None:
 
     cursor:sqlite3.Cursor = ctx['db']['cursor']
     cursor.execute(f"DELETE FROM example_item WHERE id=?", (id,))
-    print(f'{cursor.rowcount=}')
 
     cursor.execute(f"DELETE FROM example_item_stuff WHERE example_item_id=?", (id,))
-    print(f'{cursor.rowcount=}')
 
     ctx['db']['commit']()
 
@@ -145,9 +143,14 @@ def db_list_example_item(ctx:dict, offset:int=0, limit:int=25) -> list[ExampleIt
     return :: list of each item as a dict.
     """
     cursor:sqlite3.Cursor = ctx['db']['cursor']
+    
     items = []
+    user_query = cursor.execute("SELECT * FROM example_item ORDER BY id LIMIT ? OFFSET ?", (limit, offset))
 
-    for row in cursor.execute("SELECT * FROM example_item ORDER BY id LIMIT ? OFFSET ?", (limit, offset)):
+    for row in user_query.fetchall():
+        stuff_query = cursor.execute(f"SELECT value FROM example_item_stuff WHERE example_item_id=? ORDER BY position", (row[0],))
+        stuff = [row[0] for row in stuff_query.fetchall()]
+
         items.append(ExampleItem(
             id=str(row[0]),
             description=row[1],
@@ -155,7 +158,7 @@ def db_list_example_item(ctx:dict, offset:int=0, limit:int=25) -> list[ExampleIt
             color=row[3],
             count=row[4],
             score=row[5],
-            stuff=[],
+            stuff=stuff,
             when=row[6]
         ).validate())
 

@@ -41,10 +41,11 @@ def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
     if (instance := re.match(r'/api/core/user/(.+)', env['PATH_INFO'])) is not None:
         instance_id = instance.group(1)
         cur_user:User = env['get_user']()
+
         if cur_user.id != instance_id:
             raise ForbiddenError('Resource is not accessible')
+        
         if env['REQUEST_METHOD'] == 'GET':
-            
             try:
                 item = db_read_user(ctx, instance_id)
                 ctx['log'](f'GET core.user/{instance_id}')
@@ -90,14 +91,7 @@ def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
             raise JSONResponse('200 OK', item.to_dict())
         
         elif env['REQUEST_METHOD'] == 'GET':
-            query = parse_qs(env['QUERY_STRING'])
-            offset = query.get('offset', [0])[0]
-            limit = query.get('limit', [10])[0]
-
-            items = db_list_user(ctx, int(offset), int(limit))
-            ctx['log'](f'GET core.user')
-
-            raise JSONResponse('200 OK', [User.to_dict(item) for item in items])
+            raise ForbiddenError('Resource is not accessible')
         
         else:
             ctx['log'](f'ERROR 405 core.user')
@@ -121,6 +115,10 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
         elif env['REQUEST_METHOD'] == 'PUT':
             incoming_profile = Profile.from_json(raw_req_body.decode('utf-8'))
 
+            cur_user:User = env['get_user']()
+            if incoming_profile.user_id != cur_user.id:
+                raise ForbiddenError('Resource is not accessible')
+
             try:
                 if instance_id != incoming_profile.id:
                     raise RequestError('400 Bad Request', 'user id mismatch')
@@ -137,6 +135,10 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
             raise JSONResponse('200 Ok', updated_profile.to_dict())
         
         elif env['REQUEST_METHOD'] == 'DELETE':
+            cur_user:User = env['get_user']()
+            if incoming_profile.user_id != cur_user.id:
+                raise ForbiddenError('Resource is not accessible')
+            
             db_delete_profile(ctx, instance_id)
             ctx['log'](f'DELETE core.profile/{instance_id}')
             raise JSONResponse('204 No Content')
@@ -149,7 +151,12 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
 
     elif re.match(r'/api/core/profile', env['PATH_INFO']):
         if env['REQUEST_METHOD'] == 'POST':
+            cur_user:User = env['get_user']()
+            
             incoming_profile = Profile.from_json(raw_req_body.decode('utf-8'))
+            if incoming_profile.user_id != cur_user.id:
+                raise ForbiddenError('Resource is not accessible')
+            
             item = db_create_profile(ctx, incoming_profile)
 
             ctx['log'](f'POST core.profile - id: {item.id}')

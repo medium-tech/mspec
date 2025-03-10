@@ -385,9 +385,17 @@ def client_update_profile(ctx:dict, obj:Profile) -> None:
     try:
         request = Request(url, headers=ctx['headers'], method='PUT', data=request_body)
 
-        with urlopen(request) as response:
-            if response.status == 404:
-                raise NotFoundError(f'profile {_id} not found')
+        with urlopen(request) as _response:
+            pass
+    
+    except HTTPError as e:
+        if e.code == 401:
+            raise AuthenticationError('Error reading profile: invalid username or password')
+        elif e.code == 403:
+            raise ForbiddenError('Error reading profile: forbidden')
+        elif e.code == 404:
+            raise NotFoundError(f'profile {id} not found')
+        raise MSpecError(f'error reading profile: {e.__class__.__name__}: {e}')
             
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
