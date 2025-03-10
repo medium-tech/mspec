@@ -63,7 +63,6 @@ def create_db_tables(ctx:dict) -> None:
     """
 
     cursor:sqlite3.Cursor = ctx['db']['cursor']
-
     cursor.execute("CREATE TABLE IF NOT EXISTS user(id INTEGER PRIMARY KEY, name, email, profile)")
     cursor.execute("CREATE TABLE IF NOT EXISTS user_password_hash(id INTEGER PRIMARY KEY, user_id INTEGER REFERENCES user(id), hash)")
     cursor.execute("CREATE TABLE IF NOT EXISTS profile(id INTEGER PRIMARY KEY, user_id INTEGER REFERENCES user(id), name, bio)")
@@ -71,11 +70,15 @@ def create_db_tables(ctx:dict) -> None:
     cursor.execute("CREATE TABLE IF NOT EXISTS profile_meta_tags(id INTEGER PRIMARY KEY, profile_id INTEGER REFERENCES profile(id), value, position)")
     cursor.execute("CREATE TABLE IF NOT EXISTS profile_meta_hierarchies(id INTEGER PRIMARY KEY, profile_id INTEGER REFERENCES profile(id), value, position)")
 
-    # for :: {% for item in all_models %} :: {"example_item": "item.model.name.snake_case", "'description', 'verified', 'color', 'count', 'score', 'when'": "item.model.field_list"}
+    # macro :: py_create_model_table :: {"example_item": "model.name.snake_case", "'description', 'verified', 'color', 'count', 'score', 'when'": "fields"}
     cursor.execute("CREATE TABLE IF NOT EXISTS example_item(id INTEGER PRIMARY KEY, 'description', 'verified', 'color', 'count', 'score', 'when')")
-    # end for ::
+    # end macro ::
+    # macro :: py_create_model_table_list :: {"example_item": "model.name.snake_case", "stuff": "field"}
     cursor.execute("CREATE TABLE IF NOT EXISTS example_item_stuff(id INTEGER PRIMARY KEY, value, position, example_item_id INTEGER REFERENCES example_item(id))")
-    cursor.execute('CREATE INDEX IF NOT EXISTS example_item_stuff_index ON example_item_stuff(example_item_id);')
+    cursor.execute('CREATE INDEX IF NOT EXISTS example_item_stuff_index ON example_item_stuff(example_item_id)')
+    # end macro ::
+
+    # insert :: macro.py_create_tables()
 
     ctx['db']['commit']()
 
@@ -282,8 +285,6 @@ def db_create_profile(ctx:dict, obj:Profile) -> Profile:
     ctx['db']['commit']()
     return obj
 
-
-
 def db_read_profile(ctx:dict, id:str) -> Profile:
     """
     read a profile from the database and verify it.
@@ -334,7 +335,6 @@ def db_read_profile(ctx:dict, id:str) -> Profile:
             hierarchies=meta_hierarchies
         )
     ).validate()
-
 
 def db_update_profile(ctx:dict, obj:Profile) -> Profile:
     """
@@ -397,7 +397,6 @@ def db_update_profile(ctx:dict, obj:Profile) -> Profile:
     ctx['db']['commit']()
     return obj
 
-    
 def db_delete_profile(ctx:dict, id:str) -> None:
     """
     delete a profile from the database.
@@ -415,7 +414,6 @@ def db_delete_profile(ctx:dict, id:str) -> None:
     cursor.execute("DELETE FROM profile_meta_tags WHERE profile_id = ?", (id,))
     cursor.execute("DELETE FROM profile_meta_hierarchies WHERE profile_id = ?", (id,))
     ctx['db']['commit']()
-
 
 def db_list_profile(ctx:dict, offset:int=0, limit:int=25) -> list[Profile]:
     """

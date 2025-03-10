@@ -1,8 +1,7 @@
 import json
 
-from copy import copy
 from datetime import datetime
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, asdict
 from typing import Optional
 
 from core.types import to_json, Meta, email_regex, Entity

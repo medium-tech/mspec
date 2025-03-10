@@ -83,6 +83,7 @@
     * 🟡 replace mongo with sqlite
         * 🟢 template tests passing
         * 🟡 generated app tests passing
+    * 🔴 refactor/separate core and auth modules
 ### guis
 
 * 🔴 html (browser) markup viewer

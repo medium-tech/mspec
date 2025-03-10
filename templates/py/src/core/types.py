@@ -4,7 +4,7 @@ import base64
 import json
 
 from pathlib import Path
-from typing import ClassVar, BinaryIO, Union, Dict, Optional
+from typing import ClassVar, BinaryIO, Union, Dict
 from dataclasses import dataclass, field, asdict
 from hashlib import sha3_256
 from datetime import datetime
@@ -363,4 +363,3 @@ class Permission:
             self.delete.validate()
         elif self.delete not in permission_types:
             raise ValueError(f'Invalid delete permission type: {self.delete}')
-        

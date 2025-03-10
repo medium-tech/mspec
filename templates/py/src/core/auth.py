@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-from core.db import db_read_user, db_create_user_password_hash, db_create_user, validate_new_passwords
+from core.db import db_read_user, db_create_user
 from core.exceptions import AuthenticationError, NotFoundError, ForbiddenError
 from core.models import User, UserPasswordHash, AccessToken, CreateUser
 from datetime import datetime, timedelta, timezone

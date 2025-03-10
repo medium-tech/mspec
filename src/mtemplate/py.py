@@ -24,6 +24,7 @@ class MTemplatePyProject(MTemplateProject):
     def init_template_vars(self):
         super().init_template_vars()
         self.spec['macro'].update({
+            'py_create_tables': self.macro_py_create_tables,
             'py_post_init': self.macro_py_post_init,
             'py_example_fields': self.macro_py_example_fields,
             'py_random_fields': self.macro_py_random_fields,
@@ -31,6 +32,9 @@ class MTemplatePyProject(MTemplateProject):
             'py_field_list': self.macro_py_field_list,
             'py_field_definitions': self.macro_py_field_definitions,
         })
+
+    def macro_py_create_tables(self) -> str:
+        raise NotImplementedError('macro_py_create_tables not yet implemented')
 
     def macro_py_post_init(self, fields:dict, indent='\t') -> str:
         out = ''
