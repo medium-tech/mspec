@@ -33,8 +33,32 @@ class MTemplatePyProject(MTemplateProject):
             'py_field_definitions': self.macro_py_field_definitions,
         })
 
-    def macro_py_create_tables(self) -> str:
-        raise NotImplementedError('macro_py_create_tables not yet implemented')
+    def macro_py_create_tables(self, all_models:list[dict], indent='\t') -> str:
+        out = ''
+        for item in all_models:
+
+            non_list_fields = []
+            list_tables = ''
+
+            for name, field in item['model']['fields'].items():
+                # list fields have their own tables
+                # all other fields are added to the main table
+                if field['type'] == 'list':
+                    # concat list table macro
+                    list_vars = deepcopy(item)
+                    list_vars['name'] = name
+                    list_tables += self.spec['macro']['py_create_model_table_list'](list_vars) + '\n'
+                else:
+                    # append non list fields to create table macro
+                    non_list_fields.append(f"'{name}'")
+
+            table_vars = deepcopy(item)
+            table_vars['field_list'] = ', '.join(non_list_fields)
+            out += self.spec['macro']['py_create_model_table'](table_vars) + '\n'
+            out += list_tables + '\n'
+
+        return out
+
 
     def macro_py_post_init(self, fields:dict, indent='\t') -> str:
         out = ''

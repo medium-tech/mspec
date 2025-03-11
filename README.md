@@ -62,7 +62,6 @@
         * 🟢 client/server unittests for profile/user
         * 🟢 onboarding working, new user/profile/password
         * 🟢 login workflow
-        * 🔴 add root authorzation
         * 🔴 add auth to profile endpoints
         * 🔴 add salt to pw
         * 🔴 reset password by email code
@@ -79,10 +78,11 @@
             * 🟢 generated app
                 * 🟢 client/server
                 * 🟢 browser gui
-    * 🔴 add cid to example_item
     * 🟡 replace mongo with sqlite
         * 🟢 template tests passing
         * 🟡 generated app tests passing
+    * 🔴 add cid to example_item
+    * 🔴 add meta to example_item
     * 🔴 refactor/separate core and auth modules
 ### guis
 

@@ -74,6 +74,9 @@ class MTemplateProject:
             for name in files:
                 if name == '.DS_Store':
                     continue
+
+                if name.endswith('.sqlite3'):
+                    continue
                 
                 rel_path = os.path.relpath(os.path.join(root, name), self.template_dir)
                 rel_path = rel_path.replace('example-item', '{{ model.name.kebab_case }}')
@@ -87,7 +90,6 @@ class MTemplateProject:
                 rel_path = rel_path.replace('SampleModule', '{{ module.name.pascal_case }}')
                 
                 template = {'src': os.path.join(root, name), 'rel': rel_path}
-
 
                 if root in self.model_prefixes:
                     paths['model'].append(template)
@@ -109,7 +111,7 @@ class MTemplateProject:
         all_models = []
         for module in self.spec['modules'].values():
             for model in module['models'].values():
-                model['field_list'] = ', '.join(model['fields'].keys())
+                # model['field_list'] = ', '.join(model['fields'].keys())
                 all_models.append({'module': module, 'model': model})
         self.spec['all_models'] = all_models
 
