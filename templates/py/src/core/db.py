@@ -70,12 +70,12 @@ def create_db_tables(ctx:dict) -> None:
     cursor.execute("CREATE TABLE IF NOT EXISTS profile_meta_tags(id INTEGER PRIMARY KEY, profile_id INTEGER REFERENCES profile(id), value, position)")
     cursor.execute("CREATE TABLE IF NOT EXISTS profile_meta_hierarchies(id INTEGER PRIMARY KEY, profile_id INTEGER REFERENCES profile(id), value, position)")
 
-    # macro :: py_create_model_table :: {"example_item": "model.name.snake_case", "'description', 'verified', 'color', 'count', 'score', 'when'": "field_list"}
+    # macro :: py_create_model_table :: {"example_item": "model_name_snake_case", "'description', 'verified', 'color', 'count', 'score', 'when'": "field_list"}
     # example_item - tables
 
     cursor.execute("CREATE TABLE IF NOT EXISTS example_item(id INTEGER PRIMARY KEY, 'description', 'verified', 'color', 'count', 'score', 'when')")
     # end macro ::
-    # macro :: py_create_model_table_list :: {"example_item": "model.name.snake_case", "stuff": "name"}
+    # macro :: py_create_model_table_list :: {"example_item": "model_name_snake_case", "stuff": "field_name"}
     cursor.execute("CREATE TABLE IF NOT EXISTS example_item_stuff(id INTEGER PRIMARY KEY, value, position, example_item_id INTEGER REFERENCES example_item(id))")
     cursor.execute('CREATE INDEX IF NOT EXISTS example_item_stuff_index ON example_item_stuff(example_item_id)')
     # end macro ::

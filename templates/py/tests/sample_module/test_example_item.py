@@ -59,8 +59,12 @@ class TestExampleItem(unittest.TestCase):
         cursor:sqlite3.Cursor = test_ctx['db']['cursor']
         fetched_item = cursor.execute(f"SELECT * FROM example_item WHERE id=?", (created_example_item.id,)).fetchone()
         self.assertIsNone(fetched_item)
+
+        # insert :: macro.py_test_crud_delete(model)
+        # macro :: py_test_sql_delete :: {"example_item": "model_name_snake_case", "stuff": "field_name"}
         stuff_result = cursor.execute(f"SELECT value FROM example_item_stuff WHERE example_item_id=? ORDER BY position", (created_example_item.id,))
         self.assertEqual(len(stuff_result.fetchall()), 0)
+        # end macro ::
 
     def test_example_item_pagination(self):
 

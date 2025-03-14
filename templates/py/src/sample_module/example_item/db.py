@@ -28,8 +28,10 @@ def db_create_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
         raise ValueError('id must be null to create a new item')
     
     obj.validate()
-    
     cursor:sqlite3.Cursor = ctx['db']['cursor']
+
+    # insert :: macro.py_db_create(model)
+    # macro :: py_sql_create :: {"example_item": "model_name_snake_case", "'description', 'verified', 'color', 'count', 'score', 'when'": "fields_sql", "?, ?, ?, ?, ?, ?": "sql_values", "obj.description, obj.verified, obj.color, obj.count, obj.score, obj.when.isoformat()": "fields_py"}
     result = cursor.execute(
         "INSERT INTO example_item('description', 'verified', 'color', 'count', 'score', 'when') VALUES(?, ?, ?, ?, ?, ?)",
         (obj.description, obj.verified, obj.color, obj.count, obj.score, obj.when.isoformat())
@@ -37,11 +39,12 @@ def db_create_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
     assert result.rowcount == 1
     assert result.lastrowid is not None
     obj.id = str(result.lastrowid)
-
+    # macro :: py_sql_create_list :: {"example_item": "model_name_snake_case", "stuff": "field_name"}
     result = cursor.executemany(
         "INSERT INTO example_item_stuff(value, position, example_item_id) VALUES(?, ?, ?)",
         ((value, position, result.lastrowid) for position, value in enumerate(obj.stuff))
     )
+    # end macro ::
     
     ctx['db']['commit']()
     return obj
@@ -57,25 +60,30 @@ def db_read_example_item(ctx:dict, id:str) -> ExampleItem:
     return :: the ExampleItem object.
     raises :: NotFoundError if the item is not found.
     """
+
+    # insert :: macro.py_db_read(model)
+    # macro :: py_sql_read :: {"example_item": "model_name_snake_case"}
     cursor:sqlite3.Cursor = ctx['db']['cursor']
     result = cursor.execute(f"SELECT * FROM example_item WHERE id=?", (id,))
-    db_entry = result.fetchone()
-    if db_entry is None:
+    entry = result.fetchone()
+    if entry is None:
         raise NotFoundError(f'example item {id} not found')
+    # macro :: py_sql_read_list :: {"example_item": "model_name_snake_case", "stuff": "field_name"}
+    stuff_cursor = cursor.execute(f"SELECT value FROM example_item_stuff WHERE example_item_id=? ORDER BY position", (id,))
+    stuff = [row[0] for row in stuff_cursor.fetchall()]
+    # end macro ::
     
-    stuff_result = cursor.execute(f"SELECT value FROM example_item_stuff WHERE example_item_id=? ORDER BY position", (id,))
-    stuff = [row[0] for row in stuff_result.fetchall()]
-
     return ExampleItem(
-        id=str(db_entry[0]),
-        description=db_entry[1],
-        verified=bool(db_entry[2]),
-        color=db_entry[3],
-        count=db_entry[4],
-        score=db_entry[5],
+        id=str(entry[0]),
+        # replace :: macro.py_sql_convert(model.fields)
+        description=entry[1],
+        verified=bool(entry[2]),
+        color=entry[3],
+        count=entry[4],
+        score=entry[5],
         stuff=stuff,
-        when=db_entry[6]
-        
+        when=entry[6]
+        # end replace ::
     ).validate()
 
 def db_update_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
@@ -89,28 +97,28 @@ def db_update_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
     return :: the ExampleItem object.
     raises :: NotFoundError if the item is not found
     """
-    obj.validate()
-
     if obj.id is None:
         raise ValueError('id must not be null to update an item')
-
+    
+    obj.validate()
     cursor:sqlite3.Cursor = ctx['db']['cursor']
+
+    # insert :: macro.py_db_update(model)
+    # macro :: py_sql_update :: {"example_item": "model_name_snake_case", "'description'=?, 'verified'=?, 'color'=?, 'count'=?, 'score'=?, 'when'=?": "fields_sql", "obj.description, obj.verified, obj.color, obj.count, obj.score, obj.when.isoformat()": "fields_py"}
     result = cursor.execute(
         "UPDATE example_item SET 'description'=?, 'verified'=?, 'color'=?, 'count'=?, 'score'=?, 'when'=? WHERE id=?",
         (obj.description, obj.verified, obj.color, obj.count, obj.score, obj.when.isoformat(), obj.id)
     )
     if result.rowcount == 0:
         raise NotFoundError(f'example item {obj.id} not found')
-    
+    # macro :: py_sql_update_list :: {"example_item": "model_name_snake_case", "stuff": "field_name"}
     cursor.execute(f"DELETE FROM example_item_stuff WHERE example_item_id=?", (obj.id,))
-
     cursor.executemany(
         "INSERT INTO example_item_stuff(value, position, example_item_id) VALUES(?, ?, ?)",
         ((value, position, obj.id) for position, value in enumerate(obj.stuff))
     )
-    
+    # end macro ::
     ctx['db']['commit']()
-    
     return obj
 
 def db_delete_example_item(ctx:dict, id:str) -> None:
@@ -125,10 +133,12 @@ def db_delete_example_item(ctx:dict, id:str) -> None:
     """
 
     cursor:sqlite3.Cursor = ctx['db']['cursor']
+    # insert :: macro.py_db_delete(model)
+    # macro :: py_sql_delete :: {"example_item": "model_name_snake_case"}
     cursor.execute(f"DELETE FROM example_item WHERE id=?", (id,))
-
+    # macro :: py_sql_delete_list :: {"example_item": "model_name_snake_case", "stuff": "field_name"}
     cursor.execute(f"DELETE FROM example_item_stuff WHERE example_item_id=?", (id,))
-
+    # end macro ::
     ctx['db']['commit']()
 
 def db_list_example_item(ctx:dict, offset:int=0, limit:int=25) -> list[ExampleItem]:
@@ -145,21 +155,25 @@ def db_list_example_item(ctx:dict, offset:int=0, limit:int=25) -> list[ExampleIt
     cursor:sqlite3.Cursor = ctx['db']['cursor']
     
     items = []
-    user_query = cursor.execute("SELECT * FROM example_item ORDER BY id LIMIT ? OFFSET ?", (limit, offset))
+    query = cursor.execute("SELECT * FROM example_item ORDER BY id LIMIT ? OFFSET ?", (limit, offset))
 
-    for row in user_query.fetchall():
-        stuff_query = cursor.execute(f"SELECT value FROM example_item_stuff WHERE example_item_id=? ORDER BY position", (row[0],))
-        stuff = [row[0] for row in stuff_query.fetchall()]
-
+    for entry in query.fetchall():
+        # insert :: macro.py_db_list_lists(model)
+        # macro :: py_sql_list_list :: {"example_item": "model_name_snake_case", "stuff": "field_name"}
+        stuff_cursor = cursor.execute(f"SELECT value FROM example_item_stuff WHERE example_item_id=? ORDER BY position", (entry[0],))
+        stuff = [row[0] for row in stuff_cursor.fetchall()]
+        # end macro ::
         items.append(ExampleItem(
-            id=str(row[0]),
-            description=row[1],
-            verified=bool(row[2]),
-            color=row[3],
-            count=row[4],
-            score=row[5],
+            id=str(entry[0]),
+            # replace :: macro.py_sql_convert(model.fields)
+            description=entry[1],
+            verified=bool(entry[2]),
+            color=entry[3],
+            count=entry[4],
+            score=entry[5],
             stuff=stuff,
-            when=row[6]
+            when=entry[6]
+            # end replace ::
         ).validate())
 
     return items

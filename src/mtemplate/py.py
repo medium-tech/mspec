@@ -24,7 +24,14 @@ class MTemplatePyProject(MTemplateProject):
     def init_template_vars(self):
         super().init_template_vars()
         self.spec['macro'].update({
+            'py_db_create': self.macro_py_db_create,
+            'py_db_read': self.macro_py_db_read,
+            'py_db_update': self.macro_py_db_update,
+            'py_db_delete': self.macro_py_db_delete,
+            'py_db_list_lists': self.macro_py_db_list_lists,
+            'py_sql_convert': self.macro_py_sql_convert,
             'py_create_tables': self.macro_py_create_tables,
+            'py_test_crud_delete': self.macro_py_test_crud_delete,
             'py_post_init': self.macro_py_post_init,
             'py_example_fields': self.macro_py_example_fields,
             'py_random_fields': self.macro_py_random_fields,
@@ -32,6 +39,136 @@ class MTemplatePyProject(MTemplateProject):
             'py_field_list': self.macro_py_field_list,
             'py_field_definitions': self.macro_py_field_definitions,
         })
+
+    def macro_py_db_create(self, model:dict, indent='\t\t') -> str:
+        out = ''
+
+        list_fields = []
+        non_list_fields = []
+        num_non_list_fields = 0
+
+        for name, field in model['fields'].items():
+            if field['type'] == 'list':
+                list_fields.append(name)
+            else:
+                non_list_fields.append(name)
+                num_non_list_fields += 1
+        
+        non_list_fields.sort()
+
+        fields_py = ''
+        for field_name in non_list_fields:
+            if model['fields'][field_name]['type'] == 'datetime':
+                fields_py += f"obj.{field_name}.isoformat(), "
+            else:
+                fields_py += f"obj.{field_name}, "
+
+        create_vars = {
+            'model_name_snake_case': model['name']['snake_case'],
+            'fields_sql': ', '.join([f"'{name}'" for name in non_list_fields]),
+            'sql_values': ', '.join(['?'] * num_non_list_fields),
+            'fields_py': fields_py.strip()
+        }
+
+        out += self.spec['macro']['py_sql_create'](create_vars) + '\n'
+
+        for field_name in list_fields:
+            list_vars = {
+                'model_name_snake_case': model['name']['snake_case'],
+                'field_name': field_name,
+            }
+            out += self.spec['macro']['py_sql_create_list'](list_vars) + '\n'
+
+        return out
+
+    def macro_py_db_read(self, model:dict, indent='\t\t') -> str:
+        read_vars = {'model_name_snake_case': model['name']['snake_case']}
+        out = self.spec['macro']['py_sql_read'](read_vars) + '\n'
+
+        for name, field in model['fields'].items():
+            if field['type'] == 'list':
+                read_list_vars = {
+                    'model_name_snake_case': model['name']['snake_case'],
+                    'field_name': name,
+                }
+                out += self.spec['macro']['py_sql_read_list'](read_list_vars) + '\n'
+
+        return out
+    
+    def macro_py_db_update(self, model:dict, indent='\t\t') -> str:
+        fields_sql = []
+        fields_py = []
+        list_updates = ''
+
+        for field_name in sorted(model['fields'].keys()):
+            field = model['fields'][field_name]
+            if field['type'] == 'list':
+                list_vars = {
+                    'model_name_snake_case': model['name']['snake_case'],
+                    'field_name': field_name,
+                }
+                list_updates += self.spec['macro']['py_sql_update_list'](list_vars) + '\n'
+            elif field['type'] == 'datetime':
+                fields_sql.append(f"'{field_name}'=?")
+                fields_py.append(f"obj.{field_name}.isoformat()")
+            else:
+                fields_sql.append(f"'{field_name}'=?")
+                fields_py.append(f"obj.{field_name}")
+        
+        vars = {
+            'model_name_snake_case': model['name']['snake_case'],
+            'fields_sql': ', '.join(fields_sql),
+            'fields_py': ', '.join(fields_py),
+        }
+
+        out = self.spec['macro']['py_sql_update'](vars) + '\n'
+        out += list_updates
+        return out
+
+    def macro_py_db_delete(self, model:dict, indent='\t\t') -> str:
+        vars = {'model_name_snake_case': model['name']['snake_case']}
+        out = self.spec['macro']['py_sql_delete'](vars) + '\n'
+
+        for name, field in model['fields'].items():
+            if field['type'] == 'list':
+                list_vars = {
+                    'model_name_snake_case': model['name']['snake_case'],
+                    'field_name': name,
+                }
+                out += self.spec['macro']['py_sql_delete_list'](list_vars) + '\n'
+
+        return out
+
+    def macro_py_db_list_lists(self, model:dict, indent='\t\t') -> str:
+        out = ''
+        for name, field in model['fields'].items():
+            if field['type'] == 'list':
+                list_vars = {
+                    'model_name_snake_case': model['name']['snake_case'],
+                    'field_name': name,
+                }
+                out += self.spec['macro']['py_sql_list_list'](list_vars) + '\n'
+        return out
+
+    def macro_py_sql_convert(self, fields:dict, indent='\t\t\t') -> str:
+        out = ''
+        index = 1
+
+        for field_name in sorted(fields.keys()):
+            if fields[field_name]['type'] == 'bool':
+                value = f'bool(entry[{index}])'
+                index += 1
+
+            elif fields[field_name]['type'] == 'list':
+                value = field_name
+
+            else:
+                value = f'entry[{index}]'
+                index += 1
+
+            out += f"{indent}{field_name}={value},\n"
+
+        return out
 
     def macro_py_create_tables(self, all_models:list[dict], indent='\t') -> str:
         out = ''
@@ -45,20 +182,35 @@ class MTemplatePyProject(MTemplateProject):
                 # all other fields are added to the main table
                 if field['type'] == 'list':
                     # concat list table macro
-                    list_vars = deepcopy(item)
-                    list_vars['name'] = name
+                    list_vars = {
+                        'model_name_snake_case': item['model']['name']['snake_case'],
+                        'field_name': name,
+                    }
                     list_tables += self.spec['macro']['py_create_model_table_list'](list_vars) + '\n'
                 else:
                     # append non list fields to create table macro
                     non_list_fields.append(f"'{name}'")
 
-            table_vars = deepcopy(item)
-            table_vars['field_list'] = ', '.join(non_list_fields)
+            table_vars = {
+                'model_name_snake_case': item['model']['name']['snake_case'],
+                'field_list': ', '.join(sorted(non_list_fields))
+            }
             out += self.spec['macro']['py_create_model_table'](table_vars) + '\n'
             out += list_tables + '\n'
 
         return out
 
+    def macro_py_test_crud_delete(self, model:dict, indent='\t\t') -> str:
+        out = ''
+        for name, field in model['fields'].items():
+            if field['type'] == 'list':
+                list_vars = {
+                    'model_name_snake_case': model['name']['snake_case'],
+                    'field_name': name,
+                }
+                out += self.spec['macro']['py_test_sql_delete'](list_vars) + '\n'
+
+        return out
 
     def macro_py_post_init(self, fields:dict, indent='\t') -> str:
         out = ''
@@ -69,7 +221,7 @@ class MTemplatePyProject(MTemplateProject):
                 out += self.spec['macro']['py_post_init_datetime'](vars) + '\n'
         return out
     
-    def macro_py_example_fields(self, fields:dict, indent='\t') -> str:
+    def macro_py_example_fields(self, fields:dict, indent='\t\t\t') -> str:
         lines = []
 
         for name, field in fields.items():
@@ -90,18 +242,36 @@ class MTemplatePyProject(MTemplateProject):
             else:
                 raise MTemplateError(f'field "{name}" has unsupported type "{field["type"]}"')
 
-            lines.append(f"{indent * 3}{name}={value}")
+            lines.append(f"{indent}{name}={value}")
 
         return ',\n'.join(lines)
 
-    def macro_py_random_fields(self, fields:dict, indent='\t') -> str:
+    def macro_py_random_fields(self, fields:dict, indent='\t\t\t') -> str:
         lines = []
         for name, field in fields.items():
-            field_type = 'enum' if 'enum' in field else field['type']
+            
+            # configure macro #
+
+            if field['type'] == 'list':
+                field_type = field['type']
+                args = f"'{field['element_type']}'"
+
+            elif 'enum' in field:
+                field_type = 'enum'
+                enum_values = [f"'{value}'" for value in field['enum']]
+                args = '[' + ', '.join(enum_values) + ']'
+
+            else:
+                field_type = field['type']
+                args = ''
+
+            # run macro #
+
             try:
-                lines.append(f"{indent * 2}'{name}': random_{field_type}()")
+                lines.append(f"{indent}{name}=random_{field_type}({args})")
             except KeyError:
-                raise MTemplateError(f'field {name} does not have a type')  
+                raise MTemplateError(f'field {name} does not have a type')
+            
         return ',\n'.join(lines)
 
     def macro_py_verify_fields(self, fields:dict, indent='\t') -> str:

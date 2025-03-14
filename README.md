@@ -78,12 +78,15 @@
             * 🟢 generated app
                 * 🟢 client/server
                 * 🟢 browser gui
-    * 🟡 replace mongo with sqlite
+    * 🟢 replace mongo with sqlite
         * 🟢 template tests passing
-        * 🟡 generated app tests passing
+        * 🟢 generated app tests passing
+    * 🔴 get rid of __post_init__ to standardize type conversion
+    * 🔴 refactor python vs. templating logic
     * 🔴 add cid to example_item
     * 🔴 add meta to example_item
     * 🔴 refactor/separate core and auth modules
+    * 🔴 clean up whitespace in generated apps
 ### guis
 
 * 🔴 html (browser) markup viewer

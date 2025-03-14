@@ -51,9 +51,9 @@ def random_list(element_type:str) -> list:
     items = []
     for _ in range(random.randint(0, 5)):
         if element_type == 'str':
-            items.append(random.choice(random_adjectives))
+            items.append(random.choice(random_words))
         else:
-            items.append(globals[f'random_{element_type}']())
+            items.append(globals()[f'random_{element_type}']())
     return items
 
 def random_datetime() -> datetime:
