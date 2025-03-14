@@ -185,7 +185,6 @@ function exampleItemFromInputTBody(tbody) {
     // macro :: html_from_input_tbody_datetime :: {"when": "field"}
     const whenInput = tbody.querySelector('input[name="when"]');
     data.when = new Date(whenInput.value);
-    console.log('parsed when', whenInput.value, data.when, data.when.toISOString());
 
     // end macro ::
     // insert :: macro.html_from_input_tbody_fields(model.fields)
@@ -434,7 +433,7 @@ function exampleItemToInputTBody(data, tbody) {
     whenInput.name = 'when';
     whenInput.type = 'datetime-local';
     try {
-        whenInput.value = data.when.toISOString().slice(0, 16);
+        whenInput.value = data.when.toISOString().split('.')[0].slice(0, 16);
     }catch {
         whenInput.value = '';
     }
@@ -556,7 +555,7 @@ function exampleItemToDisplayTBody(data, tbody) {
     whenTdKey.textContent = 'when';
 
     const whenTdValue = document.createElement('td');
-    whenTdValue.textContent = data.when.toISOString();
+    whenTdValue.textContent = data.when.toISOString().split('.')[0];
 
     const whenTr = document.createElement('tr');
     whenTr.appendChild(whenTdKey);
@@ -614,7 +613,7 @@ function exampleItemToTableRow(data) {
 
     // macro :: html_to_table_row_datetime :: {"when": "field"}
     const whenTd = document.createElement('td');
-    whenTd.textContent = data.when.toISOString();
+    whenTd.textContent = data.when.toISOString().split('.')[0];
     tr.appendChild(whenTd);
     // end macro ::
     // insert :: macro.html_to_table_row(model.fields)
@@ -633,6 +632,24 @@ function exampleItemListToDisplayTBody(exampleItemList, tbody) {
 
     return tbody;
 
+}
+
+//
+// serialize functions
+//
+
+function exampleItemForJSON(data) {
+    // convert an items types to be ready to JSON
+
+    let result = {}
+    for (const field in data) {
+        if (Object.prototype.toString.call(data[field]) === '[object Date]') {
+            result[field] = data[field].toISOString().split('.')[0];
+        }else{
+            result[field] = data[field];
+        }
+    }
+    return result;
 }
 
 //

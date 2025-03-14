@@ -81,6 +81,7 @@
     * 🟢 replace mongo with sqlite
         * 🟢 template tests passing
         * 🟢 generated app tests passing
+    * 🟢 fix ui handling of dates
     * 🔴 get rid of __post_init__ to standardize type conversion
     * 🔴 refactor python vs. templating logic
     * 🔴 add cid to example_item

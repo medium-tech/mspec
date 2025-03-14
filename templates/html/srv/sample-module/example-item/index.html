@@ -177,7 +177,7 @@
 
                 createExampleItemStatus('creating...', '')
 
-                clientCreateExampleItem(data)
+                clientCreateExampleItem(exampleItemForJSON(data))
                     .then(response => {
                         if (!response.ok) {
                             console.error(response)
