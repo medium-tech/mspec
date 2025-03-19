@@ -65,7 +65,6 @@
         * 🔴 add auth to profile endpoints
         * 🔴 add salt to pw
         * 🔴 reset password by email code
-        * 🔴 change password
         * 🔴 add login sessions/logout
         * 🔴 add acls to endpoints/models
     * 🟢 refactor sample_module to match core module
@@ -82,6 +81,7 @@
         * 🟢 template tests passing
         * 🟢 generated app tests passing
     * 🟢 fix ui handling of dates
+    * 🟡 performance testing
     * 🔴 get rid of __post_init__ to standardize type conversion
     * 🔴 refactor python vs. templating logic
     * 🔴 add cid to example_item
