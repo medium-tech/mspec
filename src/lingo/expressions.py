@@ -1,14 +1,32 @@
+import operator
+
 from copy import deepcopy
 from dataclasses import dataclass
-from datetime import datetime, date
+from datetime import datetime
 from random import randint
 from typing import Any, Optional
 
 lingo_function_lookup = {
-    # built-in functions #
     'bool': {'func': bool, 'args': {'object': {'type': Any}}},
+    'not': {'func': operator.not_, 'args': {'object': {'type': Any}}},
+    'neg': {'func': operator.neg, 'args': {'object': {'type': Any}}},
 
-    # standard library functions #
+    'and': {'func': operator.and_, 'args': {'a': {'type': Any}, 'b': {'type': Any}}},
+    'or': {'func': operator.or_, 'args': {'a': {'type': Any}, 'b': {'type': Any}}},
+    
+    'add': {'func': operator.add, 'args': {'a': {'type': (int, float)}, 'b': {'type': (int, float)}}},
+    'sub': {'func': operator.sub, 'args': {'a': {'type': (int, float)}, 'b': {'type': (int, float)}}},
+    'mul': {'func': operator.mul, 'args': {'a': {'type': (int, float)}, 'b': {'type': (int, float)}}},
+    'div': {'func': operator.truediv, 'args': {'a': {'type': (int, float)}, 'b': {'type': (int, float)}}},
+    'pow': {'func': operator.pow, 'args': {'a': {'type': (int, float)}, 'b': {'type': (int, float)}}},
+
+    'eq': {'func': operator.eq, 'args': {'a': {'type': (int, float, str)}, 'b': {'type': (int, float, str)}}},
+    'ne': {'func': lambda a, b: operator.ne(a, b), 'args': {'a': {'type': (int, float, str)}, 'b': {'type': (int, float, str)}}},
+    'lt': {'func': operator.lt, 'args': {'a': {'type': (int, float, str)}, 'b': {'type': (int, float, str)}}},
+    'le': {'func': operator.le, 'args': {'a': {'type': (int, float, str)}, 'b': {'type': (int, float, str)}}},
+    'gt': {'func': operator.gt, 'args': {'a': {'type': (int, float, str)}, 'b': {'type': (int, float, str)}}},
+    'ge': {'func': operator.ge, 'args': {'a': {'type': (int, float, str)}, 'b': {'type': (int, float, str)}}},
+
     'current': {
         'weekday': {'func': lambda: datetime.now().weekday(), 'args': {}}
     },
@@ -54,7 +72,6 @@ def lingo_update_state(app:LingoApp, ctx: Optional[dict]=None) -> None:
         else:
             new_value = lingo_execute(app, calc, ctx)
             if value['type'] != new_value.__class__.__name__:
-                breakpoint()
                 raise ValueError(f'state - {key} - expression returned type: ' + new_value.__class__.__name__)
             app.state[key] = new_value
 
@@ -78,8 +95,17 @@ def lingo_execute(app:LingoApp, expression:Any, ctx:Optional[dict]=None) -> Any:
             return render_op(app, expression, ctx)
         elif 'call' in expression:
             return render_call(app, expression, ctx)
+        elif 'block' in expression:
+            return render_block(app, expression, ctx)
+        elif 'lingo' in expression:
+            return render_lingo(app, expression, ctx)
+        elif 'branch' in expression:
+            return render_branch(app, expression, ctx)
+        elif 'switch' in expression:
+            return render_switch(app, expression, ctx)
         else:
-            return render_element(app, expression, ctx)
+            # print('warning - unrecognized expression type:', expression)
+            return expression
     else:
         return expression
     
@@ -89,31 +115,28 @@ def render_document(app:LingoApp, ctx:Optional[dict]=None) -> list[dict]:
     app.buffer = []
     for n, element in enumerate(app.spec['document']):
         try:
-            app.buffer.append(render_element(app, element, ctx))
+            rendered = lingo_execute(app, element, ctx)
+            if isinstance(rendered, dict):
+                app.buffer.append(rendered)
+            elif isinstance(rendered, list):
+                for item in rendered:
+                    if isinstance(item, dict):
+                        app.buffer.append(item)
+                    else:
+                        raise ValueError(f'Rendered output item is not a dict: {item.__class__.__name__} - document {n}')
+            else:
+                raise ValueError(f'Rendered output is not a dict or list: {rendered.__class__.__name__} - document {n}')
         except ValueError as e:
             raise ValueError(f'Render error - document {n} - {e}')
         except Exception as e:
             raise ValueError(f'Render error - document {n} - {e.__class__.__name__}{e}')
     return app.buffer
 
-def render_element(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
-
-    if 'block' in element:
-        return render_block(app, element, ctx)
-    elif 'lingo' in element:
-        return render_lingo(app, element, ctx)
-    elif 'branch' in element:
-        return render_branch(app, element, ctx)
-    elif 'switch' in element:
-        return render_switch(app, element, ctx)
-    else:
-        return element
-
 def render_block(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
     elements = []
     for n, child_element in enumerate(element['block']):
         try:
-            elements.append(render_element(app, child_element, ctx))
+            elements.append(lingo_execute(app, child_element, ctx))
         except ValueError as e:
             raise ValueError(f'block error, element {n}: {e}')
     return elements
@@ -170,7 +193,8 @@ def render_branch(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
 
         if condition:
             try:
-                return lingo_execute(app, then, ctx)
+                value = lingo_execute(app, then, ctx)
+                return value
             except Exception as e:
                 raise ValueError(f'branch {n} - error processing then expression') from e
 
@@ -196,11 +220,11 @@ def render_switch(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> No
     for case in cases:
         try:
             if value == case['case']:
-                return render_element(app, case['then'], ctx)
+                return lingo_execute(app, case['then'], ctx)
         except Exception as e:
             raise ValueError(f'switch - error processing case') from e
     
-    return render_element(app, default, ctx)
+    return lingo_execute(app, default, ctx)
     
 # state and input #
 
@@ -278,17 +302,9 @@ def render_state(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
     # get value #
     
     try:
-        value = app.state[field_name]
+        return app.state[field_name]
     except KeyError:
-        breakpoint()
         raise ValueError(f'state - field not found: {field_name}')
-    
-    # return #
-    
-    if isinstance(value, dict):
-        return value
-    else:
-        return {'text': str(value)}
 
 # expressions #
 
@@ -353,15 +369,20 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
         raise ValueError(f'call - undefined func: {func_name}')
         
     # validate args #
-    for arg_name, arg_value in args.items():
+    rendered_args = {}
+    for arg_name, arg_expression in args.items():
         try:
             arg_type = args_def[arg_name]['type']
         except KeyError:
             raise ValueError(f'call - unknown arg: {arg_name}')
-        if not isinstance(arg_value, arg_type):
-            raise ValueError(f'call - arg {arg_name} - expected type {arg_type}, got {arg_value.__class__.__name__}')
+        
+        value = lingo_execute(app, arg_expression, ctx)
+        if arg_type is not Any:
+            if not isinstance(value, arg_type):
+                raise ValueError(f'call - arg {arg_name} - expected type {arg_type}, got {value.__class__.__name__}')
+        rendered_args[arg_name] = value
 
-    return function(**args)
+    return function(**rendered_args)
 
         
 example_spec = {
@@ -410,7 +431,7 @@ example_spec = {
             {"break": 1},
 
             {"text": "Please tell us your name: "},
-            {"input": {"type": "text"}, "state": {"name": {}}},
+            {"input": {"type": "text"}, "bind": {"state": {"name": {}}}},
             {"break": 1},
 
             {"text": "Here's a random number: "},
@@ -423,8 +444,8 @@ example_spec = {
 
             {"lingo": {"state": {"greeting": {}}}},
             {"branch": [
-                {"if": {"call": "random.randint", "args": {"a": 0, "b": 1}}, "then": {"text": "Silly person"}},
-                {"elif": {"state": {"name": {"ne": ""}}}, "then": {"lingo": {"state": {"name": {}}}}},
+                # {"if": {"call": "random.randint", "args": {"a": 0, "b": 1}}, "then": {"text": "Silly person"}},
+                {"if": {"call": "ne", "args": {"a": {"state": {"name": {}}}, "b": ""}}, "then": {"lingo": {"state": {"name": {}}}}},
                 {"else": {"text": "Unknown person"}}
             ]},
             {"text": "!"},
