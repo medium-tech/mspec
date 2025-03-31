@@ -8,7 +8,7 @@ from lingo.expressions import *
 class TestLingoApp(unittest.TestCase):
 
     def test_example_app_first_visit(self):
-        app = LingoApp.init(example_spec, first_visit=True)
+        app = lingo_app(example_spec, first_visit=True)
         app.state['name'] = 'Alice'
         doc = render_document(app)
 
@@ -18,10 +18,10 @@ class TestLingoApp(unittest.TestCase):
         name = doc[15]['text']
         self.assertEqual(name, 'Alice')
 
-        self._test_doc(doc)
+        self._test_doc(doc, debug=True)
 
     def test_example_app_not_first_visit(self):
-        app = LingoApp.init(example_spec, first_visit=False)
+        app = lingo_app(example_spec, first_visit=False)
         app.state['name'] = 'Bob'
         doc = render_document(app)
 
@@ -31,13 +31,23 @@ class TestLingoApp(unittest.TestCase):
         name = doc[15]['text']
         self.assertEqual(name, 'Bob')
         
-        self._test_doc(doc)
+        self._test_doc(doc, debug=False)
 
-    def _test_doc(self, doc:list[dict]):      
+    def _test_doc(self, doc:list[dict], debug=False):      
         self.assertIsInstance(doc, list)
 
-        # for n, element in enumerate(doc):
-        #     print(n, element)
+        if debug:
+            for n, element in enumerate(doc):
+                print(n, element)
+            keys = []
+            for element in doc:
+                keys.extend(element.keys())
+            keys = set(keys)
+            pprint(keys)
+
+        heading = doc[0]
+        self.assertEqual(heading['heading'], 'Example document')
+        self.assertEqual(heading['level'], 1)
 
         timestamp = datetime.fromisoformat(doc[2]['text'])
         self.assertIsInstance(timestamp, datetime)

@@ -45,15 +45,15 @@ class LingoApp:
     state: dict[str, Any]
     buffer: list[dict]
 
-    @classmethod
-    def init(cls, spec: dict, **params) -> 'LingoApp':
-        instance = cls(spec=deepcopy(spec), params=params, state={}, buffer=[])
 
-        for arg_name in params.keys():
-            if arg_name not in instance.spec['params']:
-                raise ValueError(f'argument {arg_name} not defined in spec')
+def lingo_app(spec: dict, **params) -> LingoApp:
+    instance = LingoApp(spec=deepcopy(spec), params=params, state={}, buffer=[])
 
-        return lingo_update_state(instance)
+    for arg_name in params.keys():
+        if arg_name not in instance.spec['params']:
+            raise ValueError(f'argument {arg_name} not defined in spec')
+
+    return lingo_update_state(instance)
 
 
 def lingo_update_state(app:LingoApp, ctx: Optional[dict]=None) -> None:
@@ -103,6 +103,9 @@ def lingo_execute(app:LingoApp, expression:Any, ctx:Optional[dict]=None) -> Any:
             return render_branch(app, expression, ctx)
         elif 'switch' in expression:
             return render_switch(app, expression, ctx)
+        elif 'heading' in expression:
+            # heading is a special case for rendering headings
+            return render_heading(app, expression, ctx)
         else:
             # print('warning - unrecognized expression type:', expression)
             return expression
@@ -321,6 +324,34 @@ def render_lingo(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
         return result
     else:
         raise ValueError(f'lingo - invalid result type: {_type}')
+    
+def render_heading(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> dict:
+    
+    try:
+        if not 1 <= element['level'] <= 6:
+            raise ValueError('heading - level must be between 1 and 6')
+    except KeyError:
+        raise ValueError('heading - missing level key')
+    
+    try:
+        heading = lingo_execute(app, element['heading'], ctx)
+    except Exception as e:
+        raise ValueError('heading - error processing heading expression') from e
+    
+    try:
+        heading_text = heading['text']
+    except KeyError:
+        if isinstance(heading, str):
+            heading_text = heading
+        elif isinstance(heading, (bool, int, float)):
+            heading_text = str(heading)
+        else:
+            raise ValueError(f'heading - invalid heading type: {heading.__class__.__name__} - expected str or dict with text key')
+    
+    try:
+        return {'heading': heading_text, 'level': element['level']}
+    except KeyError:
+        raise ValueError('heading - missing level key')
 
 def render_op(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
     # input #
