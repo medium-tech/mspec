@@ -6,6 +6,8 @@ from datetime import datetime
 from random import randint
 from typing import Any, Optional
 
+datetime_format_str = '%Y-%m-%dT%H:%M:%S'
+
 lingo_function_lookup = {
     'bool': {'func': bool, 'args': {'object': {'type': Any}}},
     'not': {'func': operator.not_, 'args': {'object': {'type': Any}}},
@@ -319,7 +321,7 @@ def render_lingo(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
     elif _type == int or _type == float or _type == bool:
         return {'text': str(result)}
     elif _type == datetime:
-        return {'text': result.isoformat()}
+        return {'text': result.strftime(datetime_format_str)}
     elif _type == dict:
         return result
     else:
@@ -482,7 +484,7 @@ example_spec = {
             {"text": "!"},
             {"break": 2},
 
-            {"text": " Happy "},
+            {"text": "Happy "},
 
             {"switch": {
                 "expression": {"call": "current.weekday"},
@@ -499,9 +501,9 @@ example_spec = {
             {"text": "!"},
             {"break": 1},
 
-            {"text": "This is the culmination of many late nights."},
+            {"text": "This is the culmination of many late nights. "},
             {"link": "https://shop.coavacoffee.com/cdn/shop/files/RayosDelSol_Retail_drip_1_680x@2x.png?v=1718728683", "text": "coffee, yum, yum"},
-            {"text": "well anyway, enjoy!"},
+            {"text": ", well anyway, enjoy! "},
             {"link": "https://miro.medium.com/v2/resize:fit:1152/format:webp/1*Cvj9qvbKh1LmLSGEwwwZCQ.jpeg"}
         ]}
     ]
