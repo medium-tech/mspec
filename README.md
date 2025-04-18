@@ -82,7 +82,7 @@
         * 🟢 generated app tests passing
     * 🟢 fix ui handling of dates
     * 🟡 performance testing
-    * 🔴 get rid of __post_init__ to standardize type conversion
+    * 🔴 get rid of __post_init__ and use type conversion only where needed
     * 🔴 refactor python vs. templating logic
     * 🔴 add cid to example_item
     * 🔴 add meta to example_item
@@ -137,20 +137,14 @@
     * 🔴 unittests
     * 🔴 make network requests async
 
-    * 🔴 markup viewer
-        * 🔴 heading (1 level to keep simple at first)
-        * 🔴 paragraph
-        * 🔴 lists
+    * 🟡 markup viewer
+        * 🟢 render example spec
         * 🔴 model widgets
             * 🔴 create
             * 🔴 read
             * 🔴 update
             * 🔴 delete
             * 🔴 list
-        * 🔴 expressions
-            * 🔴 is true/false
-            * 🔴 add/subtract
-            * 🔴 datetime.now
 
 * 🔴 c 
     * 🔴 index

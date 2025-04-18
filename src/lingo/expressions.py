@@ -58,7 +58,7 @@ def lingo_app(spec: dict, **params) -> LingoApp:
     return lingo_update_state(instance)
 
 
-def lingo_update_state(app:LingoApp, ctx: Optional[dict]=None) -> None:
+def lingo_update_state(app:LingoApp, ctx: Optional[dict]=None) -> LingoApp:
     for key, value in app.spec['state'].items():
         try:
             calc = value['calc']
@@ -108,6 +108,8 @@ def lingo_execute(app:LingoApp, expression:Any, ctx:Optional[dict]=None) -> Any:
         elif 'heading' in expression:
             # heading is a special case for rendering headings
             return render_heading(app, expression, ctx)
+        elif 'args' in expression:
+            return render_args(app, expression, ctx)
         else:
             # print('warning - unrecognized expression type:', expression)
             return expression
@@ -381,9 +383,9 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
 
     # init #
     try:
-        args = expression['args']
+        _args = expression['args']
     except KeyError:
-        args = {}
+        _args = {}
 
     name_split = expression['call'].split('.')
     name_depth = len(name_split)
@@ -403,7 +405,7 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
         
     # validate args #
     rendered_args = {}
-    for arg_name, arg_expression in args.items():
+    for arg_name, arg_expression in _args.items():
         try:
             arg_type = args_def[arg_name]['type']
         except KeyError:
@@ -412,10 +414,18 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
         value = lingo_execute(app, arg_expression, ctx)
         if arg_type is not Any:
             if not isinstance(value, arg_type):
+                breakpoint()
                 raise ValueError(f'call - arg {arg_name} - expected type {arg_type}, got {value.__class__.__name__}')
         rendered_args[arg_name] = value
 
     return function(**rendered_args)
+
+def render_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
+    arg_name = expression['args']
+    try:
+        return ctx[arg_name]
+    except KeyError:
+        raise ValueError(f'args - undefined arg: {arg_name}')
 
         
 example_spec = {

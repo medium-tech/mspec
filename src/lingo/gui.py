@@ -1,6 +1,7 @@
 import tkinter
+import webbrowser
 from tkinter import ttk
-from lingo.expressions import lingo_app, example_spec, render_document, lingo_execute
+from lingo.expressions import lingo_app, example_spec, render_document, lingo_execute, lingo_update_state
 
 HEADING = {
     1: ('Verdana', 35),
@@ -20,42 +21,30 @@ TEXT = ('Verdana', 12)
 def gui_main(start_frame='LingoPage'):
     app = LingoGUIApp(start_frame)
     app.mainloop()
+
     
 class LingoPage(tkinter.Frame):
      
     def __init__(self, parent): 
         super().__init__(parent)
 
-        self._text_buffer_open = False
-        self._text_buffer = None
-        self._text_first_row = -1
-        self._text_row_count = 0
+        self._text_buffer:tkinter.Text = None
+        self._text_row = 0
+        self.link_count = 0
 
         self.app = lingo_app(example_spec)
         self.render_document()
 
-    def _render_line_buffer(self):
-        self._text_buffer.grid(row=self._line_buffer_row, column=0, padx=0)
-        self._text_buffer.tag_configure('link', foreground='blue', underline=1)
-        self._text_buffer.config(state=tkinter.DISABLED)
-
-    def _open_line_buffer(self, row:int):
-        if not self._text_buffer_open:
-            self._text_buffer_open = True
-            self._text_buffer = tkinter.Text(self, font=TEXT, wrap='word', height=10, width=100, highlightthickness=0)
-            self._line_buffer_row = row
-        else:
-            self._text_row_count += 1
-
-    def _close_line_buffer(self):
-        if self._text_buffer_open:
-            self._render_line_buffer()
-            self._text_buffer_open = False
-            self._text_first_row = -1
-            self._text_row_count = 0
-
+    def _tk_row(self):
+        return f'{self._text_row}.end'
+    
     def render_document(self):
-        doc = render_document(self.app)
+        doc = render_document(lingo_update_state(self.app))
+
+        self._text_buffer = tkinter.Text(self, font=TEXT, wrap='word', height=25, width=100, highlightthickness=0)
+        self._text_row = 1
+        self.link_count = 0
+        self.entries = {}
 
         for n, element in enumerate(doc):
             if 'heading' in element:
@@ -72,30 +61,80 @@ class LingoPage(tkinter.Frame):
                 self.render_text(n, element)
             else:
                 raise ValueError('Unknown element type')
+            
+            self._text_row += 1
         
-        self._close_line_buffer()
+        self._text_buffer.grid(row=0, column=0, padx=0)
+        self._text_buffer.tag_configure('heading-1', font=HEADING[1])
+        self._text_buffer.tag_configure('heading-2', font=HEADING[2])
+        self._text_buffer.tag_configure('heading-3', font=HEADING[3])
+        self._text_buffer.tag_configure('heading-4', font=HEADING[4])
+        self._text_buffer.tag_configure('heading-5', font=HEADING[5])
+        self._text_buffer.tag_configure('heading-6', font=HEADING[6])
+        self._text_buffer.config(state=tkinter.DISABLED)
 
     def render_heading(self, row:int, element:dict):
-        self._close_line_buffer()
-        label = ttk.Label(self, text=element['heading'], font=HEADING[element['level']])
-        label.grid(row=row, column=0) 
+        self._text_buffer.insert(self._tk_row(), element['heading'], (f'heading-{element["level"]}'))
+        self._text_buffer.insert(self._tk_row(), '\n')
 
     def render_text(self, row:int, element:dict):
-        self._open_line_buffer(row)
-        self._text_buffer.insert(tkinter.END, element['text'])
+        self._text_buffer.insert(self._tk_row(), element['text'])
 
     def render_break(self, row:int, element:dict):
-        self._open_line_buffer(row)
-        self._text_buffer.insert(tkinter.END, '\n' * element['break'])
+        self._text_buffer.insert(self._tk_row(), '\n' * element['break'])
 
     def render_button(self, row:int, element:dict):
-        self._close_line_buffer()
-        button = ttk.Button(self, text=element['text'], command=lambda: lingo_execute(self.app, element['button']))
-        button.grid(row=row, column=0, padx=5)
+        def on_click():
+            print(f'button clicked: {element["text"]}')
+            lingo_execute(self.app, element['button'])
+            self.render_document()
+            
+        button = ttk.Button(self._text_buffer, text=element['text'], command=on_click)
+        self._text_buffer.window_create(self._tk_row(), window=button)
 
     def render_input(self, row:int, element:dict):
-        self._close_line_buffer()
-        self.render_text(row, {'text': '* input place holder *'})
+
+        try:
+            state_field_name = list(element['bind']['state'].keys())[0]
+        except (KeyError, IndexError):
+            raise ValueError('Input element must bind to a state state')
+        
+        field_type = self.app.spec['state'][state_field_name]['type']
+        if field_type == 'str':
+            convert = lambda x: x
+        elif field_type == 'int':
+            convert = lambda x: int(x)
+        elif field_type == 'float':
+            convert = lambda x: float(x)
+        elif field_type == 'bool':
+            convert = lambda x: bool(x)
+        else:
+            raise ValueError(f'Input element cannot bind to unknown state field type: {field_type}')
+        
+        if state_field_name not in self.app.state:
+            raise ValueError(f'Input element cannot bind to unknown state field: {state_field_name}')
+
+        str_variable = tkinter.StringVar()
+        def my_callback(*args):
+            value = convert(str_variable.get())
+            print(f'setting state.{state_field_name} to: {value}')
+            self.app.state[state_field_name] = value
+            self.render_document()
+
+        str_variable.set(self.app.state[state_field_name])
+        str_variable.trace_add('write', my_callback)
+        
+        entry = tkinter.Entry(
+            self._text_buffer, 
+            width=element.get('width', 25), 
+            borderwidth=1, 
+            relief='solid',
+            textvariable=str_variable,
+        )
+        entry.bind('<Return>', lambda *args: my_callback(*args))
+        
+        self._text_buffer.window_create(self._tk_row(), window=entry)
+
 
     def render_link(self, row:int, element:dict):
         try:
@@ -103,9 +142,18 @@ class LingoPage(tkinter.Frame):
         except KeyError:
             display_text = element['link']
 
-        self._open_line_buffer(row)
-        self._text_buffer.insert(tkinter.END, display_text, ('link',))
+        tag = f'link-{self.link_count}'
+        self._text_buffer.insert(self._tk_row(), display_text, (tag,))
+        self._text_buffer.tag_configure(tag, foreground='blue', underline=1)
 
+        on_click = lambda _button_press: self._open_link(_button_press, element['link'])
+        self._text_buffer.tag_bind(tag, '<Button-1>', on_click)
+
+        self.link_count += 1
+
+    def _open_link(self, _button_press, link):
+        print(link)
+        webbrowser.open_new(link)
 
 
 class LingoGUIApp(tkinter.Tk):
