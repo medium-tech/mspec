@@ -48,17 +48,17 @@ class LingoPage(tkinter.Frame):
 
         for n, element in enumerate(doc):
             if 'heading' in element:
-                self.render_heading(n, element)
+                self.render_heading(element)
             elif 'link' in element:
-                self.render_link(n, element)
+                self.render_link(element)
             elif 'button' in element:
-                self.render_button(n, element)
+                self.render_button(element)
             elif 'break' in element:
-                self.render_break(n, element)
+                self.render_break(element)
             elif 'input' in element:
-                self.render_input(n, element)
+                self.render_input(element)
             elif 'text' in element:
-                self.render_text(n, element)
+                self.render_text(element)
             else:
                 raise ValueError('Unknown element type')
             
@@ -73,17 +73,17 @@ class LingoPage(tkinter.Frame):
         self._text_buffer.tag_configure('heading-6', font=HEADING[6])
         self._text_buffer.config(state=tkinter.DISABLED)
 
-    def render_heading(self, row:int, element:dict):
+    def render_heading(self, element:dict):
         self._text_buffer.insert(self._tk_row(), element['heading'], (f'heading-{element["level"]}'))
         self._text_buffer.insert(self._tk_row(), '\n')
 
-    def render_text(self, row:int, element:dict):
+    def render_text(self, element:dict):
         self._text_buffer.insert(self._tk_row(), element['text'])
 
-    def render_break(self, row:int, element:dict):
+    def render_break(self, element:dict):
         self._text_buffer.insert(self._tk_row(), '\n' * element['break'])
 
-    def render_button(self, row:int, element:dict):
+    def render_button(self, element:dict):
         def on_click():
             print(f'button clicked: {element["text"]}')
             lingo_execute(self.app, element['button'])
@@ -92,7 +92,7 @@ class LingoPage(tkinter.Frame):
         button = ttk.Button(self._text_buffer, text=element['text'], command=on_click)
         self._text_buffer.window_create(self._tk_row(), window=button)
 
-    def render_input(self, row:int, element:dict):
+    def render_input(self, element:dict):
 
         try:
             state_field_name = list(element['bind']['state'].keys())[0]
@@ -136,7 +136,7 @@ class LingoPage(tkinter.Frame):
         self._text_buffer.window_create(self._tk_row(), window=entry)
 
 
-    def render_link(self, row:int, element:dict):
+    def render_link(self, element:dict):
         try:
             display_text = element['text']
         except KeyError:
