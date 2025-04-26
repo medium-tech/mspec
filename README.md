@@ -14,29 +14,54 @@ I believe the answer is to generate apps using code templating. This means we do
 
 Jinja is used for code templating (while generated apps have no deps, this library does have a couple). This library also attempts to make writing the templates easier by providing template exctration from syntacticly valid code. The jinja templating syntax is incompatible with Python syntax meaning you can't run your template directly to test if it works. Templating syntax is embedded in code comments in a working app with unittests.
 
-The following code comment will replace the string `http://localhost:9009` with the jinja template variable `client.default_host`.
+Take the following example:
 
-    # vars :: {"http://localhost:9009": "client.default_host"}
+    # vars :: {"hello.world": "template_variable"}
+
+    my_variable = 'hello.world'
+
+The template extractor will read the source code file and dynamically create a jinja template by replacing each instance of the string `http://localhost:9009` with the jinja template variable `client.default_host`. The generated template would be a valid jinja template that looks like this:
+
+    my_variable = '{{ template_variable }}'
 
 ### how is this different than other code templating projects?
-I speculate that other approaches such as openapi haven't resulted in a robust templating culture because they are too complex. Instead of focusing on abstracting everything a developer could need, this project will focus on the most common boiler plate code and a consistent developer exprience across multiple languages. If the developer needs an additional type not supported by this library then they'll have an easy way of extending the generated app, or they could just modify the generated code directly.
+I speculate that other approaches such as openapi haven't resulted in a robust templating culture because they are too complex. Instead of focusing on abstracting everything a developer could possibly need, this project will focus on the most common boiler plate code and a consistent developer exprience across multiple languages. If you generate an app with a Go backend an a python GUI and JS webpage the apps will all be laid out similarly reducing the learning curve. If the developer needs an additional types not supported by this library then they'll have an easy way of extending the generated app, or they could just modify the generated code directly.
 
 ## browser 2.0
 
-The browsing protocol is an attempt to make a language independency browsing protocol. Modern web pages are required to use html and can also use CSS and Javascript and/or other Javascript~ish languages like JSX and TS. But why not Go, python or C? The language stack goes: machine code -> assembly -> C -> JS -> TS -> JS. This is overengineering. You combine that with the fact that browsers are not fully compatible with one another and you get a nightmare of development and support process. The solution is to make a simpler markup language. When HTML and Javascript were created we didn't know where they were going and how they would change the world. Now that we've seen that, its time to make version 2 of the web browser. One that is language independent, more secure, faster, and doesn't let developers create all the the things that we hate about using a web browser.
+The browsing protocol is an attempt to make a language independency browsing protocol. Modern web pages are required to use html and can also use CSS and Javascript and/or other Javascript~ish languages like JSX and TS. But why not Go, python or C? The language stack goes: machine code -> assembly -> C -> JS -> TS -> JS. This u-turn is overengineering. You combine that with the fact that browsers are not fully compatible with one another and you get a nightmare of development and support process. The solution is to make a simpler markup language. When HTML and Javascript were created we didn't know where they were going and how they would change the world. Now that we've seen that, its time to make version 2 of the web browser. One that is language independent, more secure, faster, and doesn't let developers create all the the things that we hate about using a web browser.
 
 This is built for the user, not the developer. I cannot stand most websites. It takes 8 seconds to load, then I have to click the cookie monster button, then I have to search for the close button on the prompt asking for my email. I finally find it and click it, but an image loaded and the button moved and I accidentally clicked another button and takes me to a different page. So then I click back and repoeat the process again. This markup protocol will be intentionally limited so that you can't fucking do that. It will force a product to be impressive on its on without flashy JS animations.
 
 It needs to be able to accomplish everything we need the browser to do without any of the other stuff.
 
-But it also needs to go above and beyond the web browser. This protocol will use content based addressing instead of location based addressing. The current browser is location based `github.com/path/to/my/project` ... but these urls break over time which make news articles and and written information degrade in quality over time. Content based addressing uses a file signature (checksum) to find and recall information, so that as a webpage is changed and modified over the years as long as they (or other server) continues to host the content it will always be available. This has the possibility of being as profound an improvement for the internet as the dewey decimal system was for libraries.
+But it also needs to go above and beyond the web browser. This protocol will use content based addressing instead of location based addressing. The current browser is location based `github.com/path/to/my/project` ... but these urls break over time which make news articles and and written information degrade in quality over time. Content based addressing uses a file signature (checksum) to find and recall information, so that as a webpage is changed and modified over the years as long as they (or other server) continues to host the content it will always be discoverable. This has the possibility of being as profound an improvement for the internet as the dewey decimal system was for libraries.
 
-## how are these projects related?
+# Development
 
+The `./src` folder contains three modules:
 
-### setup dev environment
+* `mtemplate` - extracts templates from template apps and using them to generate apps based on yaml definition files in `./spec`
+* `mspec` - parse yaml spec files in `./spec`
+* `lingo` - markup language and `tkinter` gui renderer for browser2.0
+
+The `./templates` folder contains template apps from which templates are extracted.
+
+## setup dev environment
 
     python3 -m venv .venv --upgrade-deps
     source .venv/bin/activate
     pip install -e .
     pip install -e templates/py
+
+## run template apps
+
+    ...
+
+## generate apps from spec files
+
+    ...
+
+## run and test generate apps
+
+    ...
