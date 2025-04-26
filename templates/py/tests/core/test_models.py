@@ -1,12 +1,8 @@
 import unittest
 
-from core.exceptions import NotFoundError
 from core.models import *
 from core.client import *
 from core.db import *
-from core.types import Meta
-
-from pymongo.collection import Collection
 
 test_ctx = create_db_context()
 test_ctx.update(create_client_context())
@@ -46,11 +42,6 @@ class TestModels(unittest.TestCase):
         
         self.assertRaises(ValueError, profile_bad_type.validate)
 
-
-    def test_profile_pagination(self):
-        pass
-
-    
 
 if __name__ == '__main__':
     unittest.main()

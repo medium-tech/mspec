@@ -1,6 +1,6 @@
 # mspec
 
-This project is two things: an app generator using code templating as an alternative to frameworks and a protocol for defining a language independent browsing protocol.
+This project is two things: an [app generator](#app-generator) using code templating as an alternative to frameworks and [browser 2.0](#browser-20): a protocol for defining a language independent browsing protocol.
 
 ## app generator
 
@@ -39,6 +39,7 @@ But it also needs to go above and beyond the web browser. This protocol will use
 
 # Development
 
+## code layout
 The `./src` folder contains three modules:
 
 * `mtemplate` - extracts templates from template apps and using them to generate apps based on yaml definition files in `./spec`
@@ -56,12 +57,56 @@ The `./templates` folder contains template apps from which templates are extract
 
 ## run template apps
 
-    ...
+The following apps are used to extract the templates from which are used to generate new apps.
+
+### To run the python server
+
+    cd templates/py
+
+Create a file `.env` file with the following variables:
+
+    MSTACK_AUTH_SECRET_KEY=my_auth_key
+    UWSGI_STATIC_SAFE=/path/to/static/files
+
+`MSTACK_AUTH_SECRET_KEY` - an auth key can be generated using a command like: `openssl rand -hex 32`
+
+`UWSGI_STATIC_SAFE` - uwsgi requires static files be configured with **absolute paths** for security reasons, set this value to the absolute path on your local system that points to the `templates/html/srv` directory in this repository.
+
+Then run the following command to start the web server:
+
+    ./server.sh 
+
+It uses `uwsgi` as the server, the main entry point for the web server is `./src/core/server.py`, and the config file is `./dev.yaml`.
+
+The api and frontend are served from the same server, you can access them at `http://localhost:9009`.
+
+To run unittests for the python backend, ensure the backend is running and then:
+
+    ./test.sh
+
+The frontend files are served staticly from `templates/html/srv`. No dependencies are needed for running the frontend however `npm` and `playwright` are used for testing.
+
+To run frontend tests, ensure the backend is running and then from the `templates/html` directory:
+
+    npm install
+    npm run test
+
+Or alternatively you can run the tests with a ui:
+
+    npm run test-ui
+
+Additionally, playwright provides a gui to help interactively create tests, you can access it using:
+
+    npm run test-gen
 
 ## generate apps from spec files
 
+    ... 
+
+## run and test generated apps
+
     ...
 
-## run and test generate apps
+## run browser 2.0
 
     ...
