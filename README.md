@@ -2,6 +2,8 @@
 
 This project is two things: an [app generator](#app-generator) using code templating as an alternative to frameworks and [browser 2.0](#browser-20): a protocol for defining a language independent browsing protocol.
 
+🚨 this project is currently in alpha and incomplete 🚨
+
 ## app generator
 
 The `mtemplate` module in this repository can be used to generate an app using code templating based off a user supplied yaml file. The generated app has an integration with sqlite, a web server, an http client, a cli and a gui frontend. Currently only python and html/js are implemented but eventually other languages such as Go and C/C++ will be supported [see TODO](./TODO.md). There is a pure python gui using python's built in tkinter library as well as an html/js frontend.
@@ -55,11 +57,22 @@ The `./templates` folder contains template apps from which templates are extract
     pip install -e .
     pip install -e templates/py
 
-## run template apps
+## template apps
 
-The following apps are used to extract the templates from which are used to generate new apps.
+The templating system enables you to create the following by defining a simple yaml file:
+* web server that has:
+    * an api for CRUD ops using sqlite as a database (more db flexibility planned in the future)
+    * html/js based frontend for CRUD ops
+* python gui frontend
+* python http client for CRUD ops
+* python client that directly accessess the db for CRUD ops
+* cli for CRUD ops
 
-### To run the python server
+The yaml config currently is not documented as it is expected to change, but you can look at `./spec/test-gen.yaml` for a workin' example.
+
+As mentioned, the templates are extracted from working apps in `./templates`, this allows you to run the templates directly for fast development and testing. The template extraction syntax is embedded into code comments to allow the template apps to run on their own, this syntax is not currently documented.
+
+### run the python server
 
     cd templates/py
 
@@ -70,7 +83,7 @@ Create a file `.env` file with the following variables:
 
 `MSTACK_AUTH_SECRET_KEY` - an auth key can be generated using a command like: `openssl rand -hex 32`
 
-`UWSGI_STATIC_SAFE` - uwsgi requires static files be configured with **absolute paths** for security reasons, set this value to the absolute path on your local system that points to the `templates/html/srv` directory in this repository.
+`UWSGI_STATIC_SAFE` - uwsgi requires static files be configured with **absolute paths** for security reasons. However, the uwsgi config in this project uses relative paths for portability. By setting this value to the **absolute path** on your local system that points to the `templates/html/srv` directory in this repository will allow the relative paths to work.
 
 Then run the following command to start the web server:
 
@@ -84,20 +97,28 @@ To run unittests for the python backend, ensure the backend is running and then:
 
     ./test.sh
 
-The frontend files are served staticly from `templates/html/srv`. No dependencies are needed for running the frontend however `npm` and `playwright` are used for testing.
+### html / js frontend
+
+The frontend files are served staticly from `templates/html/srv` and can be accessed at `http://localhost:9009`. No dependencies are needed for running the frontend however `playwright` is used for testing.
 
 To run frontend tests, ensure the backend is running and then from the `templates/html` directory:
 
     npm install
     npm run test
 
-Or alternatively you can run the tests with a ui:
+Alternatively, you can run the tests with a ui:
 
     npm run test-ui
 
 Additionally, playwright provides a gui to help interactively create tests, you can access it using:
 
     npm run test-gen
+
+### python frontend
+
+There is a (currently incomplete) front end implemented in python using the built in `tkinter` library. To run it:
+
+    python -m core gui
 
 ## generate apps from spec files
 
@@ -110,3 +131,4 @@ Additionally, playwright provides a gui to help interactively create tests, you 
 ## run browser 2.0
 
     ...
+
