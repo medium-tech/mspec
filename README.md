@@ -4,9 +4,29 @@ This project is two things: an [app generator](#app-generator) using code templa
 
 🚨 this project is currently in alpha and incomplete 🚨
 
+* [about this project](#mspec)
+    * [app generator](#app-generator)
+    * [browser 2.0](#browser-20)
+* [development](#development)
+    * [setup dev enviro](#setup-dev-environment)
+    * [run and edit template apps](#template-apps)
+    * [generate apps from templates](#generate-apps-from-spec-files)
+    * [run and test template apps](#run-and-test-generated-apps)
+    * [run browser 2.0](#run-browser-20)
+
 ## app generator
 
-The `mtemplate` module in this repository can be used to generate an app using code templating based off a user supplied yaml file. The generated app has an integration with sqlite, a web server, an http client, a cli and a gui frontend. Currently only python and html/js are implemented but eventually other languages such as Go and C/C++ will be supported [see TODO](./TODO.md). There is a pure python gui using python's built in tkinter library as well as an html/js frontend.
+The `mtemplate` module in this repository can be used to generate an app using code templating based off a user supplied yaml file. The yaml file describes data models and the generated apps will have:
+
+* a web server that has:
+    * an api for CRUD ops using sqlite as a database (more db flexibility planned in the future)
+    * html/js based frontend for CRUD ops
+* a python gui frontend (using built in tkinter module)
+* a python http client for CRUD ops
+* a python client that directly accessess the db for CRUD ops
+* a cli for CRUD ops
+
+Currently only python and html/js are implemented but eventually other languages such as Go will be supported [see TODO](./TODO.md). 
 
 The generated python app has 0 dependencies other than Python itself, and the generated html frontend also has no dependencies or build/packaging process. The generated html files are served staticly from the uwsgi server that also serves the python app.
 
@@ -25,6 +45,8 @@ Take the following example:
 The template extractor will read the source code file and dynamically create a jinja template by replacing each instance of the string `http://localhost:9009` with the jinja template variable `client.default_host`. It will generate a valid jinja template that looks like this:
 
     my_variable = '{{ template_variable }}'
+
+The template variables are replaced with values in the yaml spec file and then used to render the new app.
 
 ### how is this different than other code templating projects?
 I speculate that other approaches such as openapi haven't resulted in a robust templating culture because they are too complex. Instead of focusing on abstracting everything a developer could possibly need, this project will focus on the most common boiler plate code and a consistent developer exprience across multiple languages. If you generate an app with a Go backend an a python GUI and JS webpage the apps will all be laid out similarly reducing the learning curve. If the developer needs an additional types not supported by this library then they'll have an easy way of extending the generated app, or they could just modify the generated code directly.
@@ -63,6 +85,8 @@ The `./templates` folder contains template apps from which templates are extract
 
 ## setup dev environment
 
+    git clone https://github.com/medium-tech/mspec.git
+    cd mspec
     python3 -m venv .venv --upgrade-deps
     source .venv/bin/activate
     pip install -e .
@@ -70,18 +94,9 @@ The `./templates` folder contains template apps from which templates are extract
 
 ## template apps
 
-The templating system enables you to create the following by defining a simple yaml file:
-* web server that has:
-    * an api for CRUD ops using sqlite as a database (more db flexibility planned in the future)
-    * html/js based frontend for CRUD ops
-* python gui frontend
-* python http client for CRUD ops
-* python client that directly accessess the db for CRUD ops
-* cli for CRUD ops
+As mentioned, the templates are extracted from working apps in `./templates`, this allows you to run the templates directly for fast development and testing. This section explains how to run the apps from which templates are extracted. If you want to change the features that generated apps have you need to edit the template apps as described in this section. If you want to learn how to generate template apps from a yaml spec go to [generate apps from spec files](#generate-apps-from-spec-files).
 
-The yaml config currently is not documented as it is expected to change, but you can look at `./spec/test-gen.yaml` for a workin' example.
-
-As mentioned, the templates are extracted from working apps in `./templates`, this allows you to run the templates directly for fast development and testing. The template extraction syntax is embedded into code comments to allow the template apps to run on their own, this syntax is not currently documented.
+The template extraction syntax is embedded into code comments to allow the template apps to run on their own, this syntax is not currently documented. The yaml config spec is also not yet documented as it may change, but you can look at `./spec/test-gen.yaml` for a workin' example.
 
 ### run the python server
 
@@ -90,17 +105,17 @@ As mentioned, the templates are extracted from working apps in `./templates`, th
 Create a file `.env` file with the following variables:
 
     MSTACK_AUTH_SECRET_KEY=my_auth_key
-    UWSGI_STATIC_SAFE=/path/to/static/files
+    UWSGI_STATIC_SAFE=/path/to/mspec/templates/html/srv
 
 `MSTACK_AUTH_SECRET_KEY` - an auth key can be generated using a command like: `openssl rand -hex 32`
 
-`UWSGI_STATIC_SAFE` - uwsgi requires static files be configured with **absolute paths** for security reasons. However, the uwsgi config in this project uses relative paths for portability. By setting this value to the **absolute path** on your local system that points to the `templates/html/srv` directory in this repository will allow the relative paths to work.
+`UWSGI_STATIC_SAFE` - uwsgi requires static files be configured with **absolute paths** for security reasons. However, the uwsgi config in this project uses relative paths for portability. Setting this value to the **absolute path on your local system** that points to the root of this repository will allow the relative paths to work.
 
 Then run the following command to start the web server:
 
     ./server.sh 
 
-It uses `uwsgi` as the server, the main entry point for the web server is `./src/core/server.py`, and the config file is `./dev.yaml`.
+It uses `uwsgi` as the server, the main entry point for the web server is `./src/core/server.py`, and its config file is `./dev.yaml`.
 
 The api and frontend are served from the same server, you can access them at `http://localhost:9009`.
 
@@ -133,13 +148,59 @@ There is a (currently incomplete) front end implemented in python using the buil
 
 ## generate apps from spec files
 
-    ... 
+To generate apps from spec files, first follow steps in [setup dev environment](#setup-dev-environment).
+
+Then to render a python app:
+
+    python -m mtemplate render-py
+
+By default this will use the spec file `./spec/test-gen.yaml` and output the files in `./dist/py` but you can supply custom arguments like this:
+
+    python -m mtemplate render-py --spec <yaml spec file> --output <output dir>
+
+To render the html frontend files:
+
+    python -m mtemplate render-html
+
+By default it will use the spec file `./spec/test-gen.yaml` and output the files in `./dist/html`. If you customize the output path of the html files, they will need to be output to the same directory as the python app in order for the server to find them.
+
+With either mtemplate command you can also supply `--debug` and it will output the jinja template files for inspection and it will also not delete the existing output directory before generating files.
+
+Or for help:
+
+    python -m mtemplate -h
 
 ## run and test generated apps
 
-    ...
+After following the above steps to render the python and html files you can run the apps as follows.
+
+    cd dist
+    python3 -m venv .venv --upgrade-deps
+    source .venv/bin/activate
+    python -m pip install -e py
+
+Then to run the python server:
+
+    cd py
+    ./server.sh
+
+The server is now available at `http://localhost:7007` for the api and frontend. If you followed the above steps for running the [python template app](#run-the-python-server) the `.env` file you created will be copied over for you. If not, the app will not run. Follow the above instructions and create the `.env` file manually in this directory.
+
+Once the server is running you can run the python tests:
+
+    ./test.sh
+
+As with the template apps, 0 dependencies are required to deploy the app, however npm and playwright can be used to run tests:
+
+    cd ../html
+    npm install
+    npm run test
 
 ## run browser 2.0
 
-    ...
+After [setting up your dev environment](#setup-dev-environment) run the following:
+
+    python -m lingo.gui
+
+Currently this is hardcoded to run the example document in variable `example_spec` in the file `src/lingo/expressions.py`
 
