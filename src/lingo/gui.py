@@ -1,7 +1,7 @@
 import tkinter
 import webbrowser
 from tkinter import ttk
-from lingo.expressions import lingo_app, example_spec, render_document, lingo_execute, lingo_update_state
+from lingo.expressions import lingo_app, example_spec, render_output, lingo_execute, lingo_update_state
 
 HEADING = {
     1: ('Verdana', 35),
@@ -33,13 +33,13 @@ class LingoPage(tkinter.Frame):
         self.link_count = 0
 
         self.app = lingo_app(example_spec)
-        self.render_document()
+        self.render_output()
 
     def _tk_row(self):
         return f'{self._text_row}.end'
     
-    def render_document(self):
-        doc = render_document(lingo_update_state(self.app))
+    def render_output(self):
+        doc = render_output(lingo_update_state(self.app))
 
         self._text_buffer = tkinter.Text(self, font=TEXT, wrap='word', height=25, width=100, highlightthickness=0)
         self._text_row = 1
@@ -87,7 +87,7 @@ class LingoPage(tkinter.Frame):
         def on_click():
             print(f'button clicked: {element["text"]}')
             lingo_execute(self.app, element['button'])
-            self.render_document()
+            self.render_output()
             
         button = ttk.Button(self._text_buffer, text=element['text'], command=on_click)
         self._text_buffer.window_create(self._tk_row(), window=button)
@@ -119,7 +119,7 @@ class LingoPage(tkinter.Frame):
             value = convert(str_variable.get())
             print(f'setting state.{state_field_name} to: {value}')
             self.app.state[state_field_name] = value
-            self.render_document()
+            self.render_output()
 
         str_variable.set(self.app.state[state_field_name])
         str_variable.trace_add('write', my_callback)

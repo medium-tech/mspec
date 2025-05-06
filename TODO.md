@@ -78,6 +78,7 @@
     * 🔴 add meta to example_item
     * 🔴 refactor/separate core and auth modules
     * 🔴 clean up whitespace in generated apps
+    * 🔴 git rid of jinja dependency (do this after creating apps in several languages to determine full scope needed from templating)
     
 ### guis
 

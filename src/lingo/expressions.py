@@ -118,9 +118,9 @@ def lingo_execute(app:LingoApp, expression:Any, ctx:Optional[dict]=None) -> Any:
     
 # high level render #
 
-def render_document(app:LingoApp, ctx:Optional[dict]=None) -> list[dict]:
+def render_output(app:LingoApp, ctx:Optional[dict]=None) -> list[dict]:
     app.buffer = []
-    for n, element in enumerate(app.spec['document']):
+    for n, element in enumerate(app.spec['output']):
         try:
             rendered = lingo_execute(app, element, ctx)
             if isinstance(rendered, dict):
@@ -130,13 +130,13 @@ def render_document(app:LingoApp, ctx:Optional[dict]=None) -> list[dict]:
                     if isinstance(item, dict):
                         app.buffer.append(item)
                     else:
-                        raise ValueError(f'Rendered output item is not a dict: {item.__class__.__name__} - document {n}')
+                        raise ValueError(f'Rendered output item is not a dict: {item.__class__.__name__} - output {n}')
             else:
-                raise ValueError(f'Rendered output is not a dict or list: {rendered.__class__.__name__} - document {n}')
+                raise ValueError(f'Rendered output is not a dict or list: {rendered.__class__.__name__} - output {n}')
         except ValueError as e:
-            raise ValueError(f'Render error - document {n} - {e}')
+            raise ValueError(f'Render error - output {n} - {e}')
         except Exception as e:
-            raise ValueError(f'Render error - document {n} - {e.__class__.__name__}{e}')
+            raise ValueError(f'Render error - output {n} - {e.__class__.__name__}{e}')
     return app.buffer
 
 def render_block(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
@@ -465,7 +465,7 @@ example_spec = {
         }
     },
 
-    "document": [
+    "output": [
         {"heading": {"text": "Example document"}, "level": 1},
         {"block": [
             {"text": "The current date and time is "},

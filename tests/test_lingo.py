@@ -10,7 +10,7 @@ class TestLingoApp(unittest.TestCase):
     def test_example_app_first_visit(self):
         app = lingo_app(example_spec, first_visit=True)
         app.state['name'] = 'Alice'
-        doc = render_document(app)
+        doc = render_output(app)
 
         greeting = doc[14]['text']
         self.assertEqual(greeting, 'Welcome in, ')
@@ -23,7 +23,7 @@ class TestLingoApp(unittest.TestCase):
     def test_example_app_not_first_visit(self):
         app = lingo_app(example_spec, first_visit=False)
         app.state['name'] = 'Bob'
-        doc = render_document(app)
+        doc = render_output(app)
 
         greeting = doc[14]['text']
         self.assertEqual(greeting, 'Welcome back, ')

@@ -7,6 +7,7 @@ This project is two things: an [app generator](#app-generator) using code templa
 * [about this project](#mspec)
     * [app generator](#app-generator)
     * [browser 2.0](#browser-20)
+
 * [development](#development)
     * [setup dev enviro](#setup-dev-environment)
     * [run and edit template apps](#template-apps)
@@ -16,7 +17,7 @@ This project is two things: an [app generator](#app-generator) using code templa
 
 ## app generator
 
-The `mtemplate` module in this repository can be used to generate an app using code templating based off a user supplied yaml file. The yaml file describes data models and the generated apps will have:
+The `mtemplate` module in this repository can be used to [generate an app using code templating](#generate-apps-from-spec-files) based off a user supplied yaml file. The yaml file describes data models and the generated apps will have:
 
 * a web server that has:
     * an api for CRUD ops using sqlite as a database (more db flexibility planned in the future)
@@ -26,51 +27,81 @@ The `mtemplate` module in this repository can be used to generate an app using c
 * a python client that directly accessess the db for CRUD ops
 * a cli for CRUD ops
 
-Currently only python and html/js are implemented but eventually other languages such as Go will be supported [see TODO](./TODO.md). 
+Currently only python and html/js are implemented but eventually other languages such as Go and Haskell will be supported [see TODO](./TODO.md). 
 
 The generated python app has 0 dependencies other than Python itself, and the generated html frontend also has no dependencies or build/packaging process. The generated html files are served staticly from the uwsgi server that also serves the python app.
 
-The goal of this project is to provide an alternative to frameworks. I've found over the years that frameworks have their pros and cons. **Pro:** don't have to recreate all the wheels **Con:** the abstraction hides the lower level code from the developer and bloated dependencies become a liability as versions become incompatible with one other.
+The goal of this project is to provide an alternative to frameworks. I've found over the years that frameworks have their pros and cons. **Pro:** don't have to recreate all the wheels **Con:** the abstraction hides the lower level code from the developer and dependency creep becomes a liability. If you rebuild the wheel you can adjust any level of the stack however it takes longer to see results. I think a middle ground is to generate the wheel instead of rebuild it. This means we don't have to waste time on wheels but also never need to worry about this library changing versions because the generated code will always stand on its own without this library.
 
-I believe the answer is to generate apps using code templating. This means we don't have to recreate all the wheels but also never need to worry about this library changing versions because the generated code will always stand on its own without this library.
-
-Jinja is used for code templating (while generated apps have no deps, this library does have a couple). This library also attempts to make writing the templates easier by providing template exctration from syntacticly valid code. The jinja templating syntax is incompatible with Python syntax meaning you can't run your template directly to test if it works. Templating syntax is embedded in code comments in a working app with unittests.
+However, the process of working with templating is not ideal. This library also attempts to make writing templates easier by providing template exctration from syntacticly valid code. Jinja is used for code templating (while generated apps have no deps, this library does have a couple). The jinja templating syntax is incompatible with Python syntax meaning you can't run your template directly to test if it works. This library embeds templating syntax into comments so that the template itself is syntacticly valid.
 
 Take the following example:
 
-    # vars :: {"hello.world": "template_variable"}
+    # vars :: {"8080": "config.port"}
 
-    my_variable = 'hello.world'
+    port = 8080
 
-The template extractor will read the source code file and dynamically create a jinja template by replacing each instance of the string `http://localhost:9009` with the jinja template variable `client.default_host`. It will generate a valid jinja template that looks like this:
+The `#` begins a comment and then `vars` is a command to tell the `mtemplate` extractor to set template variables. The variables are supplied in json after the `::`. The template extractor will read the source code file and dynamically create a jinja template by replacing each instance of the string `8080` with the jinja template variable `config.port`. It will generate a file that is a valid jinja template but not valid python syntax:
 
-    my_variable = '{{ template_variable }}'
+    port = {{ config.port }}
 
-The template variables are replaced with values in the yaml spec file and then used to render the new app.
+The template variables are replaced with values in the yaml spec file, used to render the new app and then discarded.
 
 ### how is this different than other code templating projects?
-I speculate that other approaches such as openapi haven't resulted in a robust templating culture because they are too complex. Instead of focusing on abstracting everything a developer could possibly need, this project will focus on the most common boiler plate code and a consistent developer exprience across multiple languages. If you generate an app with a Go backend an a python GUI and JS webpage the apps will all be laid out similarly reducing the learning curve. If the developer needs an additional types not supported by this library then they'll have an easy way of extending the generated app, or they could just modify the generated code directly.
+I speculate that other approaches such as openapi and json schema haven't resulted in a robust templating culture because they are too complex. Instead of focusing on abstracting everything a developer could possibly need, this project will focus on the most common boiler plate code and a consistent developer exprience across multiple languages and front vs backend. If you generate an app with a Go backend an a python GUI and JS webpage the apps will all be laid out similarly reducing the learning curve. If the developer needs an additional types not supported by this library then they'll have an easy way of extending the generated app, or they could just modify the generated code directly.
 
 ## browser 2.0
 
-The browsing protocol is an attempt to make a language independency browsing protocol. Modern web pages are required to use html and can also use CSS and Javascript and/or other Javascript~ish languages like JSX and TS. But why not Go, python or Rust? The language stack goes: machine code -> assembly -> C -> JS -> TS -> JS. This u-turn is overengineering. You combine that with the fact that browsers are not fully compatible with one another and you get a nightmare of development and support process. The solution is to make a simpler markup language. When HTML and Javascript were created we didn't know where they were going and how they would change the world. Now that we've seen that, its time to make version 2 of the web browser. One that is language independent, more secure, faster, and doesn't let developers create all the the things that we hate about using a web browser.
+The browsing protocol is an attempt to make a language independent browsing protocol. Modern web pages are required to use html and can also use CSS and Javascript and/or other Javascript~ish languages like JSX and TS. But why not Go, python or Rust? The language stack goes: machine code -> assembly -> C -> JS -> TS -> JS. This u-turn is overengineering. You combine that with the fact that browsers are not fully compatible with one another and you get a nightmare of development and support process. The solution is to make a simpler markup language. When HTML and Javascript were created we didn't know where they were going and how they would change the world. Now that we've seen that, its time to make version 2 of the web browser. One that is language independent, more secure, faster, and doesn't let developers create all the the things that we hate about using a web browser.
 
-This is built for the user, not the developer. I cannot stand most websites. It takes 8 seconds to load, then I have to click the cookie monster button, then I have to search for the close button on the prompt asking for my email. I finally find it and click it, but an image loaded and the button moved and I accidentally clicked another button and takes me to a different page. So then I click back and repeat the process again. This markup protocol will be intentionally limited so that you can't fucking do that. It will force a product to be impressive on its on without flashy JS animations.
+This is built for the user, not the developer. As a user, I cannot stand most websites. It takes 8 seconds to load, then I have to click the cookie monster button, then I have to search for the close button on the prompt asking for my email. I finally find it and click it, but an image loaded and the button moved and I accidentally clicked another button and takes me to a different page. So then I click back and repeat the process again. This markup protocol will be intentionally limited so that you can't fucking do that. It will force a product to be impressive on its on without flashy animations.
 
-It needs to be able to accomplish everything we need the browser to do without any of the other stuff. What the user actually needs is different than what the developer and marketing teams believe the user needs.
+It needs to be able to accomplish everything we need the browser to do without any of the other stuff. What the user actually needs is different than what the developer and marketing teams believe the user needs. In order to do that this protocol has intentional limitations when compared to the legacy browser.
 
-But it also needs to go above and beyond the web browser.
+### protocol summary
+A JSON definition will define the app's data sctructure as well as logic with a built in scripting language. This language has no io operations and only allows safe operations such as math, comparison, logic, branching, date formatting, etc. Outside of scripting, IO operations are still possible but must be registered using model definitions. Models can have multiple fields and define their types such as bool, int, foat, str, or lists of these types.
+
+The scripting language will be purely functional and every operation has to return something. These limitations exist for (a) the functional bro memes and (b) to create front-end apps that "just work". What I found when working with Haskell is that is that when you remove looping (`for`, `while`, etc), side-effects and require that every code path return something, once you finish writing the code it pretty much just works. Combined with static typing the only place left for bugs to hide is bad logic that works but is incorrect. Haskell taught me that side-effects are not needed so by removing them you elimate possible bugs with them. Exit conditions with looping structures such as `for` and `while` can often have non-obvious edge cases, but there's nothing complicated about exiting an iteration from a `filter`, `map` or `accumulator` function.
+
+Model fields can define computed properties that are based on an expression. This expression has access to user input (forms) and application state models. User input from forms and button can trigger state updated.
+
+The style and layout will be realatively simple, a bit more advanced that markdown but not nearly as extensive as HTML/CSS. It will have text blocks such as paragraphs, headings, and lists, images, and audio/video players. Layout items such as grids and columns and font style and color options. This is not an exhaustive list but enough to get an idea of the document structure. Elements will also be able to be dynamically generated using scripting.
+
+The scripting, layout and styling will all be in one language instead JS, HTML and CSS respectively. The templating system will be able to generate an app from this JSON for quick bootstrapping.
 
 ### speed and reliability
 
-...
+A quick anecdote. When I was a kid we had a 56k modem that ran at 14.4k because we were so far away from the phone company and web pages took 10 seconds to load.
+Then we got satellite, which had better bandwidth but higher latency so web pages still took 10 seconds to load. Now, I have a fiber connection with 500Gbs up an down and a 9-14ms ping and web pages still take 10 seconds to load because they're downloading an initializing mountains of node modules or something.
+
+Of course anecdotes of high performance websites exist as well. But what if we made a protocol that if you make a valid app syntactically, not only will it "just work" but it will also "just be quick". I feel like most websites I use (aside from social media) actually only single digit MBs of text and perhaps several MBs of images.
+
+The internet should be almost instant today and yet it's not. It's only instant for doom scrollers that monetize attention.
+
+In theory most modern apps shouldn't be network network limited, so what is it? Slow backend? Slow frontend? I think it's because we're expecting the web browser to do too much. It doesn't need to do everything. The internet is a battlefield of people trying to hack your info, we don't want the browser to do everything. We want it to show us text, images and videos. We want it to be quick and reliable. The modern web stack has not demonstrated the ability to provide that experience consistently. Some devs can, but many can't, including "enterprise" devs.
+
+So let's not give devs the ability to write shitty apps. This protocol will not let you open so many media files that the page crashes.
+It won't let you make so many network requests for your spyware that it hangs the tab. If your app requires more than 1 a/v stream being played to the end user it doesn't belong in the web browser. The web browser is for browsing. It's for browsing text, media (images/audio/video), and viewing data and graphs. If you need more than that, write a native desktop or mobile app.
+
+In `$current_year` apps on the web browser should **"just work quickly"**.
 
 ### security and privacy
 
-...
+All inputs from users (ie. form data) will have model definitions. All requests and responses to and from servers, and application state (both short and long term storage) will also be defined. This eliminates bugs and security vulnerabilities caused by dynamic typing mistakes. It increases auditability. And by defining and registering "unsafe" operations the client could go into a "read only" mode where the application is read but not executed. Specific IO ops could be enabled on an ad-hoc basis.
+
+Apps can define backend operations in the same JSON making the document a full stack application definition. The backend could be remote or local, allowing the user to choose where to store the data. This puts the user in control of their data. But this is also the sticky spot because companies with websites really like their data and don't like their apps open sourced.
+
+### financial incentives
+
+The financial incentives shift from those who have a monopolistic platform to those who have ideas, information and engaging content. And to those who have good products and services where the digital interfaces with the real world. If it sounds far-fetched think about marrying wikipedia, crowd funding, gig economy and social media. It starts with small crowd funded creators then moves to small and large indepedents, and eventually even large corporate media conglomerates because platforms take a cut from them too. It's only the platforms and other data middle-men that lose in this. There's still piles of data out there, and it will most likely go to CDNs because the challenge of building a platform will go away. Content delivery will be reduced to simple primatives like db/file io and media files as one of a couple file or streaming formats.
+
+If AI is just a bunch of if statements then big tech is just a bunch of json.
 
 ### content based addressing
-Browser2.0 will use content based addressing instead of location based addressing. The current browser is location based `github.com/path/to/my/project` ... but these urls break over time which make news articles and and written information degrade in quality over time. Content based addressing uses a file signature (checksum) to find and recall information, so that as a webpage is changed and modified over the years as long as they (or other server) continues to host the content it will always be discoverable. This has the possibility of being as profound an improvement for the internet as the dewey decimal system was for libraries.
+
+Browser2.0 also goes above and beyond the web browser, it is also an attempt to minimize link rot. 
+
+Browser2.0 will use content based addressing instead of location based addressing. The current browser is location based `example.com/path/to/article` ... but these urls break over time which make news articles and and written information degrade in quality over time. Content based addressing uses a file signature (checksum) to find and recall information, so that as a webpage is changed and modified over the years as long as they (or other server) continues to host the content it will always be discoverable. Additionally documents will be versioned and links will convey versions and be able to quote passages in the documents. A client will be able to easily expand a quote to see full context and find current or former versions of the same document. As new versions of a document are released, other documents can be updated to reference the new version of the source. This is a manual process because the author should review the changes as their conclusions may warrant revision based on the new information.
 
 # Development
 
