@@ -1,6 +1,6 @@
 # mspec
 
-This project is two things: an [app generator](#app-generator) using code templating as an alternative to frameworks and [browser 2.0](#browser-20): a protocol for defining a language independent browsing protocol.
+This project is two things: an [app generator](#app-generator) using code templating as an alternative to frameworks and [browser 2.0](#browser-20): a language independent browsing protocol.
 
 🚨 this project is currently in alpha and incomplete 🚨
 
@@ -181,19 +181,20 @@ There is a (currently incomplete) front end implemented in python using the buil
 
 To generate apps from spec files, first follow steps in [setup dev environment](#setup-dev-environment).
 
-Then to render a python app:
+Then run:
+
+    python -m mtemplate render
+
+By default this will use the spec file `./spec/test-gen.yaml` and output the files in `./dist/test-gen` but you can supply custom arguments like this:
+
+    python -m mtemplate render --spec <yaml spec file> --output <output dir>
+
+Or render just the python or fromtend like this:
 
     python -m mtemplate render-py
-
-By default this will use the spec file `./spec/test-gen.yaml` and output the files in `./dist/py` but you can supply custom arguments like this:
-
-    python -m mtemplate render-py --spec <yaml spec file> --output <output dir>
-
-To render the html frontend files:
-
     python -m mtemplate render-html
 
-By default it will use the spec file `./spec/test-gen.yaml` and output the files in `./dist/html`. If you customize the output path of the html files, they will need to be output to the same directory as the python app in order for the server to find them.
+If you customize the output path of the html files, they will need to be output to the same directory as the python app in order for the server to find them.
 
 With either mtemplate command you can also supply `--debug` and it will output the jinja template files for inspection and it will also not delete the existing output directory before generating files.
 
@@ -203,9 +204,9 @@ Or for help:
 
 ## run and test generated apps
 
-After following the above steps to render the python and html files you can run the apps as follows.
+After following the above steps to render the python and html files you can run the apps as follows. You need to be in the output directory that contains the `html` and `py` directories which using the default spec and output is `dist/test-gen`
 
-    cd dist
+    cd dist/test-gen
     python3 -m venv .venv --upgrade-deps
     source .venv/bin/activate
     python -m pip install -e py

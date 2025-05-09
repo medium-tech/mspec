@@ -1,0 +1,89 @@
+project:
+    name:
+        snake_case: 'cms'
+        pascal_case: 'CMS'
+        camel_case: 'cms'
+        kebab_case: 'cms'
+        lower_case: 'cms'
+
+    description: 'A CMS module for mspec-alpha python app generator'
+
+    author:
+        name: 'B rad C'
+        email: 'sample@email.com'
+
+server:
+    port: 6006
+
+modules:
+
+    cms:
+        name:
+            lower_case: 'cms'
+
+        models:
+
+            file:
+                type: object
+                fields:
+
+                    name:
+                        type: str
+
+                    size:
+                        type: int
+
+                    hash:
+                        type: str
+
+                    file_cid:
+                        type: cid
+                        help: the file cid
+
+                    content_type:
+                        type: str
+
+                    created:
+                        type: datetime
+
+                    backup_policy:
+                        type: cid
+                        help: backup policy for this media object
+
+                    width:
+                        type: int
+
+                    height:
+                        type: int
+                    
+                    duration:
+                        type: int
+
+                    audio_bitrate:
+                        type: int
+
+                    audio_channels:
+                        type: int
+
+                    audio_sample_rate:
+                        type: int
+
+                    image_channels:
+                        type: int
+
+                    video_channels:
+                        type: int
+
+                    video_bitrate:
+                        type: int
+
+            backup_policy:
+                type: object
+                use_cid: true
+                fields:
+                    name:
+                        type: str
+                    repos:
+                        type: list
+                        element_type: str
+                        help: list of cid repos to backup to (http/ftp/file/s3/etc)

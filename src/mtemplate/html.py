@@ -8,7 +8,6 @@ __all__ = ['MTemplateHTMLProject']
 class MTemplateHTMLProject(MTemplateProject):
 
     template_dir = Path(__file__).parent.parent.parent / 'templates/html'
-    dist_dir = Path(__file__).parent.parent.parent / 'dist/html'
 
     module_prefixes = [
         str(template_dir / 'srv/sample-module')
@@ -18,6 +17,9 @@ class MTemplateHTMLProject(MTemplateProject):
         str(template_dir / 'tests/sample-module'),
         str(template_dir / 'srv/sample-module/example-item')
     ]
+
+    def default_dist_dir(self) -> Path:
+        return super().default_dist_dir() / 'html'
 
     def init_template_vars(self):
         super().init_template_vars()

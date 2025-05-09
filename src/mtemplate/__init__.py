@@ -32,9 +32,6 @@ def sort_dict_by_key_length(dictionary:dict) -> OrderedDict:
 
 
 class MTemplateProject:
-
-    # to be overriden by subclass, or supplying output_dir to render_templates
-    dist_dir: None
         
     def __init__(self, spec:dict, debug:bool=False, disable_strict:bool=False) -> None:
         self.spec = spec
@@ -48,6 +45,12 @@ class MTemplateProject:
             loader=FunctionLoader(self._jinja_loader),
             undefined=Undefined if disable_strict else StrictUndefined,
         )
+
+    def default_dist_dir(self) -> Path:
+        try:
+            return Path(__file__).parent.parent.parent / 'dist' / self.spec['project']['name']['kebab_case']
+        except KeyError:
+            raise MTemplateError('spec must define project.name.kebab_case')
 
     def template_source_paths(self) -> dict[str, list[dict[str, str]]]:
         paths = {
@@ -169,7 +172,7 @@ class MTemplateProject:
     def render_templates(self, output_dir:str|Path=None):
 
         if output_dir is None:
-            output_dir = self.dist_dir
+            output_dir = self.default_dist_dir()
 
         if not self.debug:
             print(f':: removing old output dir: {output_dir}')

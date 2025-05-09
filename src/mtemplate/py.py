@@ -10,7 +10,6 @@ __all__ = ['MTemplateHTMLProject']
 class MTemplatePyProject(MTemplateProject):
 
     template_dir = Path(__file__).parent.parent.parent / 'templates/py'
-    dist_dir = Path(__file__).parent.parent.parent / 'dist/py'
 
     module_prefixes = [
         str(template_dir / 'src/sample_module')
@@ -21,6 +20,9 @@ class MTemplatePyProject(MTemplateProject):
         str(template_dir / 'tests/sample_module')
     ]
 
+    def default_dist_dir(self) -> Path:
+        return super().default_dist_dir() / 'py'
+    
     def init_template_vars(self):
         super().init_template_vars()
         self.spec['macro'].update({

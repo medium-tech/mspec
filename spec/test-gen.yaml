@@ -15,7 +15,6 @@ project:
 
 server:
   port: 7007
-  static_root: '/Users/brad/Code/medium-tech/mspec-alpha/dist/html/srv'
 
 client:
   default_host: 'http://localhost:7007'
