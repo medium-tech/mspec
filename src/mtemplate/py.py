@@ -123,8 +123,12 @@ class MTemplatePyProject(MTemplateProject):
             'fields_py': ', '.join(fields_py),
         }
 
-        out = self.spec['macro']['py_sql_update'](vars) + '\n'
-        out += list_updates
+        if len(fields_py) > 0:
+            out = self.spec['macro']['py_sql_update'](vars)
+        else:
+            out = ''
+
+        out += '\n' + list_updates
         return out
 
     def macro_py_db_delete(self, model:dict, indent='\t\t') -> str:
@@ -193,9 +197,14 @@ class MTemplatePyProject(MTemplateProject):
                     # append non list fields to create table macro
                     non_list_fields.append(f"'{name}'")
 
+            if len(non_list_fields) == 0:
+                field_list = ''
+            else:
+                field_list = ', ' + ', '.join(sorted(non_list_fields))
+
             table_vars = {
                 'model_name_snake_case': item['model']['name']['snake_case'],
-                'field_list': ', '.join(sorted(non_list_fields))
+                'field_list': field_list
             }
             out += self.spec['macro']['py_create_model_table'](table_vars) + '\n'
             out += list_tables + '\n'
@@ -282,13 +291,15 @@ class MTemplatePyProject(MTemplateProject):
             vars = deepcopy(field)
             vars['name'] = name
 
-            if 'enum' in field:
+            if field['type'] == 'list':
+                vars['element_type'] = field['element_type']
+                field_type = 'list'
+
+            elif 'enum' in field:
                 enum_values = [f"'{value}'" for value in field['enum']]
                 vars['enum_value_list'] = '[' + ', '.join(enum_values) + ']'
                 field_type = 'str_enum'
-            elif field['type'] == 'list':
-                vars['element_type'] = field['element_type']
-                field_type = 'list'
+            
             else:
                 field_type = field['type']
 
