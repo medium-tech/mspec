@@ -32,6 +32,8 @@ def sort_dict_by_key_length(dictionary:dict) -> OrderedDict:
 
 
 class MTemplateProject:
+
+    app_name = ''
         
     def __init__(self, spec:dict, debug:bool=False, disable_strict:bool=False) -> None:
         self.spec = spec
@@ -47,8 +49,9 @@ class MTemplateProject:
         )
 
     def default_dist_dir(self) -> Path:
+        parent_dir = Path(__file__).parent.parent.parent
         try:
-            return Path(__file__).parent.parent.parent / 'dist' / self.spec['project']['name']['kebab_case']
+            return parent_dir / 'dist' / self.spec['project']['name']['kebab_case'] / self.app_name
         except KeyError:
             raise MTemplateError('spec must define project.name.kebab_case')
 
@@ -171,6 +174,8 @@ class MTemplateProject:
 
     def render_templates(self, output_dir:str|Path=None):
 
+        print(f':: rendering :: {self.spec["project"]["name"]["kebab_case"]} :: {self.app_name}')
+
         if output_dir is None:
             output_dir = self.default_dist_dir()
 
@@ -181,16 +186,18 @@ class MTemplateProject:
             except TypeError:
                 raise ValueError(f'Invalid output dir')
             
+        cwd = Path.cwd()
+            
         print(':: app')
         for template in self.template_paths['app']:
             app_output = output_dir / template['rel']
 
-            print('\t', app_output)
+            print('  ', Path(app_output).relative_to(cwd))
             self.render_template({}, template['rel'], app_output)
 
         print(':: modules')
         for module in self.spec['modules'].values():
-            print('\t', module['name']['lower_case'])
+            print('  ', module['name']['lower_case'])
             
             for template in self.template_paths['module']:
                 module_output = (output_dir / template['rel']).as_posix()
@@ -199,12 +206,12 @@ class MTemplateProject:
                 module_output = module_output.replace('{{ module.name.pascal_case }}', module['name']['pascal_case'])
                 module_output = module_output.replace('{{ module.name.camel_case }}', module['name']['camel_case'])
 
-                print('\t\t', module_output)
+                print('    ', Path(module_output).relative_to(cwd))
                 self.render_template({'module': module}, template['rel'], module_output)
 
-            print('\n\t\t:: models')
+            print('\n     models')
             for model in module['models'].values():
-                print('\t\t\t', model['name']['lower_case'])
+                print('      ', model['name']['lower_case'])
 
                 for template in self.template_paths['model']:
                     model_output = (output_dir / template['rel']).as_posix()
@@ -218,10 +225,10 @@ class MTemplateProject:
                     model_output = model_output.replace('{{ module.name.pascal_case }}', module['name']['pascal_case'])
                     model_output = model_output.replace('{{ module.name.camel_case }}', module['name']['camel_case'])
 
-                    print('\t\t\t\t', model_output)
+                    print('        ', Path(model_output).relative_to(cwd))
                     self.render_template({'module': module, 'model': model}, template['rel'], model_output)
 
-        print(':: done')
+        print(f':: done :: {self.spec["project"]["name"]["kebab_case"]} :: {self.app_name}')
 
     @classmethod
     def render(cls, spec:dict, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False) -> 'MTemplateProject':

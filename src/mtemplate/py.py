@@ -9,6 +9,8 @@ __all__ = ['MTemplateHTMLProject']
 
 class MTemplatePyProject(MTemplateProject):
 
+    app_name = 'py'
+
     template_dir = Path(__file__).parent.parent.parent / 'templates/py'
 
     module_prefixes = [
@@ -19,9 +21,6 @@ class MTemplatePyProject(MTemplateProject):
         str(template_dir / 'src/sample_module/example_item'),
         str(template_dir / 'tests/sample_module')
     ]
-
-    def default_dist_dir(self) -> Path:
-        return super().default_dist_dir() / 'py'
     
     def init_template_vars(self):
         super().init_template_vars()
@@ -65,10 +64,20 @@ class MTemplatePyProject(MTemplateProject):
             else:
                 fields_py += f"obj.{field_name}, "
 
+        if num_non_list_fields == 0:
+            fields_sql = ''
+            sql_values = 'DEFAULT VALUES'
+        else:
+            fields_sql = '(' + ', '.join([f"'{name}'" for name in non_list_fields]) + ')'
+
+            question_marks = ', '.join(['?'] * num_non_list_fields)
+            sql_values = f'VALUES({question_marks})'
+
+
         create_vars = {
             'model_name_snake_case': model['name']['snake_case'],
-            'fields_sql': ', '.join([f"'{name}'" for name in non_list_fields]),
-            'sql_values': ', '.join(['?'] * num_non_list_fields),
+            'fields_sql': fields_sql,
+            'sql_values': sql_values,
             'fields_py': fields_py.strip()
         }
 
@@ -92,6 +101,7 @@ class MTemplatePyProject(MTemplateProject):
                 read_list_vars = {
                     'model_name_snake_case': model['name']['snake_case'],
                     'field_name': name,
+                    'item': 'bool(row[0])' if field['element_type'] == 'bool' else 'row[0]',
                 }
                 out += self.spec['macro']['py_sql_read_list'](read_list_vars) + '\n'
 
@@ -152,6 +162,7 @@ class MTemplatePyProject(MTemplateProject):
                 list_vars = {
                     'model_name_snake_case': model['name']['snake_case'],
                     'field_name': name,
+                    'item': 'bool(row[0])' if field['element_type'] == 'bool' else 'row[0]',
                 }
                 out += self.spec['macro']['py_sql_list_list'](list_vars) + '\n'
         return out

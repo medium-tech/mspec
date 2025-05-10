@@ -7,7 +7,7 @@ This project is two things: an [app generator](#app-generator) using code templa
 * [about this project](#mspec)
     * [app generator](#app-generator)
     * [browser 2.0](#browser-20)
-
+* [documentation](#documentation)
 * [development](#development)
     * [setup dev enviro](#setup-dev-environment)
     * [run and edit template apps](#template-apps)
@@ -103,6 +103,10 @@ Browser2.0 also goes above and beyond the web browser, it is also an attempt to 
 
 Browser2.0 will use content based addressing instead of location based addressing. The current browser is location based `example.com/path/to/article` ... but these urls break over time which make news articles and and written information degrade in quality over time. Content based addressing uses a file signature (checksum) to find and recall information, so that as a webpage is changed and modified over the years as long as they (or other server) continues to host the content it will always be discoverable. Additionally documents will be versioned and links will convey versions and be able to quote passages in the documents. A client will be able to easily expand a quote to see full context and find current or former versions of the same document. As new versions of a document are released, other documents can be updated to reference the new version of the source. This is a manual process because the author should review the changes as their conclusions may warrant revision based on the new information.
 
+# Documentation
+
+Because this project is in alpha there is no documentation. However the code is designed to be simple enough to document itself. If you're interested in generating an app check `spec/unit-test.yaml` for the features of the app spec that are unittested on the `main` branch. See `example_spec` in `src/lingo/expressions.py` for an example of a browser2.0 page that is unittested. And the cli help for the template generator is available by running `python -m mtemplate -h` after [setting up the dev enviro](#setup-dev-environment).
+
 # Development
 
 ## code layout
@@ -127,7 +131,7 @@ The `./templates` folder contains template apps from which templates are extract
 
 As mentioned, the templates are extracted from working apps in `./templates`, this allows you to run the templates directly for fast development and testing. This section explains how to run the apps from which templates are extracted. If you want to change the features that generated apps have you need to edit the template apps as described in this section. If you want to learn how to generate template apps from a yaml spec go to [generate apps from spec files](#generate-apps-from-spec-files).
 
-The template extraction syntax is embedded into code comments to allow the template apps to run on their own, this syntax is not currently documented. The yaml config spec is also not yet documented as it may change, but you can look at `./spec/test-gen.yaml` for a workin' example.
+The template extraction syntax is embedded into code comments to allow the template apps to run on their own, this syntax is not currently documented. The yaml config spec is also not yet documented as it may change, but you can look at `./spec/unit-test.yaml` for a workin' example.
 
 ### run the python server
 
@@ -185,7 +189,7 @@ Then run:
 
     python -m mtemplate render
 
-By default this will use the spec file `./spec/test-gen.yaml` and output the files in `./dist/test-gen` but you can supply custom arguments like this:
+By default this will use the spec file `./spec/unit-test.yaml` and output the files in `./dist/unit-test` but you can supply custom arguments like this:
 
     python -m mtemplate render --spec <yaml spec file> --output <output dir>
 
@@ -204,9 +208,9 @@ Or for help:
 
 ## run and test generated apps
 
-After following the above steps to render the python and html files you can run the apps as follows. You need to be in the output directory that contains the `html` and `py` directories which using the default spec and output is `dist/test-gen`
+After following the above steps to render the python and html files you can run the apps as follows. You need to be in the output directory that contains the `html` and `py` directories which using the default spec and output is `dist/unit-test`
 
-    cd dist/test-gen
+    cd dist/unit-test
     python3 -m venv .venv --upgrade-deps
     source .venv/bin/activate
     python -m pip install -e py

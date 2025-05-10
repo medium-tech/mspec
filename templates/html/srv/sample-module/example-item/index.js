@@ -12,7 +12,16 @@ function convertListElementInt(input) {
 }
 
 function convertListElementFloat(input) {
-    return parseFloat(input);
+    const split = input.split('.');
+    if (split.length > 2) {
+        throw new Error('Invalid float');
+    }
+    let result = parseFloat(input)
+    if (parseInt(split[1]) === 0) {
+        result += 0.0000001;
+    }
+    
+    return result;
 }
 
 function convertListElementEnum(input) {

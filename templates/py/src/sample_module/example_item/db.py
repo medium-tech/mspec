@@ -31,7 +31,7 @@ def db_create_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
     cursor:sqlite3.Cursor = ctx['db']['cursor']
 
     # insert :: macro.py_db_create(model)
-    # macro :: py_sql_create :: {"example_item": "model_name_snake_case", "'description', 'verified', 'color', 'count', 'score', 'when'": "fields_sql", "?, ?, ?, ?, ?, ?": "sql_values", "obj.description, obj.verified, obj.color, obj.count, obj.score, obj.when.isoformat()": "fields_py"}
+    # macro :: py_sql_create :: {"example_item": "model_name_snake_case", "('description', 'verified', 'color', 'count', 'score', 'when')": "fields_sql", "VALUES(?, ?, ?, ?, ?, ?)": "sql_values", "obj.description, obj.verified, obj.color, obj.count, obj.score, obj.when.isoformat()": "fields_py"}
     result = cursor.execute(
         "INSERT INTO example_item('description', 'verified', 'color', 'count', 'score', 'when') VALUES(?, ?, ?, ?, ?, ?)",
         (obj.description, obj.verified, obj.color, obj.count, obj.score, obj.when.isoformat())
@@ -68,7 +68,7 @@ def db_read_example_item(ctx:dict, id:str) -> ExampleItem:
     entry = result.fetchone()
     if entry is None:
         raise NotFoundError(f'example item {id} not found')
-    # macro :: py_sql_read_list :: {"example_item": "model_name_snake_case", "stuff": "field_name"}
+    # macro :: py_sql_read_list :: {"example_item": "model_name_snake_case", "stuff": "field_name", "row[0]": "item"}
     stuff_cursor = cursor.execute(f"SELECT value FROM example_item_stuff WHERE example_item_id=? ORDER BY position", (id,))
     stuff = [row[0] for row in stuff_cursor.fetchall()]
     # end macro ::
@@ -159,7 +159,7 @@ def db_list_example_item(ctx:dict, offset:int=0, limit:int=25) -> list[ExampleIt
 
     for entry in query.fetchall():
         # insert :: macro.py_db_list_lists(model)
-        # macro :: py_sql_list_list :: {"example_item": "model_name_snake_case", "stuff": "field_name"}
+        # macro :: py_sql_list_list :: {"example_item": "model_name_snake_case", "stuff": "field_name", "row[0]": "item"}
         stuff_cursor = cursor.execute(f"SELECT value FROM example_item_stuff WHERE example_item_id=? ORDER BY position", (entry[0],))
         stuff = [row[0] for row in stuff_cursor.fetchall()]
         # end macro ::

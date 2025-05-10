@@ -7,6 +7,8 @@ __all__ = ['MTemplateHTMLProject']
 
 class MTemplateHTMLProject(MTemplateProject):
 
+    app_name = 'html'
+
     template_dir = Path(__file__).parent.parent.parent / 'templates/html'
 
     module_prefixes = [
@@ -17,9 +19,6 @@ class MTemplateHTMLProject(MTemplateProject):
         str(template_dir / 'tests/sample-module'),
         str(template_dir / 'srv/sample-module/example-item')
     ]
-
-    def default_dist_dir(self) -> Path:
-        return super().default_dist_dir() / 'html'
 
     def init_template_vars(self):
         super().init_template_vars()
@@ -136,8 +135,8 @@ class MTemplateHTMLProject(MTemplateProject):
                     vars['list_element_1'] = '1'
                     vars['list_element_2'] = '2'
                 elif field['element_type'] == 'float':
-                    vars['list_element_1'] = '1.0'
-                    vars['list_element_2'] = '2.0'
+                    vars['list_element_1'] = '1.4'
+                    vars['list_element_2'] = '2.34578'
                 else:
                     raise MTemplateError(f'field "{name}" has unsupported element_type "{field["element_type"]}"')
 

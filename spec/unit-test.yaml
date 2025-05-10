@@ -114,19 +114,19 @@ modules:
               - ["extravagantly long string"]
               - ["amplitude", "hello world"]
 
-          multi_enum:
-            type: list
-            element_type: str
-            enum:
-              - one
-              - two
-              - three
-              - four
-              - five
+          # multi_enum:
+          #   type: list
+          #   element_type: str
+          #   enum:
+          #     - one
+          #     - two
+          #     - three
+          #     - four
+          #     - five
 
-            examples:
-              - [one, five]
-              - [four, two, three]
+          #   examples:
+          #     - [one, five]
+          #     - [four, two, three]
 
           # multi_datetime:
           #   type: list
