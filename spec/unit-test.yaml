@@ -25,9 +25,9 @@ modules:
       lower_case: 'test module'
 
     models:
-      single_fields:
+      test_model:
         name:
-          lower_case: 'single fields'
+          lower_case: 'test model'
 
         fields:
 
@@ -79,12 +79,7 @@ modules:
             examples:
               - "2000-01-11T12:34:56.000000"
               - "2020-10-02T15:30:00.123456"
-      
-      multi_fields:
-        name:
-          lower_case: 'multi fields'
 
-        fields:
           multi_bool:
             type: list
             element_type: bool
@@ -134,21 +129,3 @@ modules:
           #   examples:
           #     - ["2000-01-11T12:34:56.000000"]
           #     - ["2020-10-02T15:30:00.123456", "2021-01-01T00:00:00.000000"]
-
-
-  second_module:
-    name:
-      lower_case: 'second module'
-
-    models:
-      sample_model:
-        name:
-          lower_case: 'sample model'
-
-        fields:
-          name:
-            type: str
-            examples:
-              - "a large thing"
-              - "a random thing"
-              - "another thing"

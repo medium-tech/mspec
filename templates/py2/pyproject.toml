@@ -1,0 +1,19 @@
+# vars :: {"unit_test":"project.name.snake_case", "B rad C":"project.author.name", "sample@email.com":"project.author.email", "A test project for mspec-alpha python app generator": "project.description"}
+[build-system]
+requires = ['setuptools>=61.0']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = 'unit_test'
+version = '0.0.1'
+authors = [
+  { name='B rad C', email='sample@email.com' },
+]
+description = 'A test project for mspec-alpha python app generator'
+readme = 'README.md'
+requires-python = '>=3.7'
+dependencies = [
+    'uwsgi == 2.0.27',
+    'passlib[bcrypt]',
+    'python-jose[cryptography]'
+]

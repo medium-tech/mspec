@@ -1,0 +1,18 @@
+# vars :: {"5005": "server.port"}
+uwsgi:
+  http: :5005
+  wsgi-file: src/core/server.py
+  # for :: {:: for item in all_models ::} :: {"test-module":"item.module.name.kebab_case", "test-model": "item.model.name.kebab_case"}
+
+  route: ^/test-module/test-model/create static:../html/srv/test-module/test-model/index.html
+  route: ^/test-module/test-model/index(.*) static:../html/srv/test-module/test-model/index$1
+  load-file-in-cache: ../html/srv/test-module/test-model/index.html
+  route: ^/test-module/test-model/(.*) static:../html/srv/test-module/test-model/instance.html
+  load-file-in-cache: ../html/srv/test-module/test-model/instance.html
+
+  # end for ::
+  static-map: /=../html/srv/
+  static-index: index.html
+  static-expires: /* 0
+  
+  py-auto-reload: 1

@@ -135,7 +135,7 @@ class MTemplateProject:
         
         for path in paths:
             try:
-                template = MTemplateExtractor.template_from_file(path['src'])
+                template = MTemplateExtractor.template_from_file(path['src'], emit_syntax=self.debug)
                 self.templates[path['rel']] = template
             except Exception as exc:
                 print(path['src'])
@@ -187,12 +187,17 @@ class MTemplateProject:
                 raise ValueError(f'Invalid output dir')
             
         cwd = Path.cwd()
+        def output_path(path:str) -> Path:
+            try:
+                return Path(path).relative_to(cwd)
+            except ValueError:
+                return Path(path)
             
         print(':: app')
         for template in self.template_paths['app']:
             app_output = output_dir / template['rel']
 
-            print('  ', Path(app_output).relative_to(cwd))
+            print('  ', output_path(app_output))
             self.render_template({}, template['rel'], app_output)
 
         print(':: modules')
@@ -206,7 +211,7 @@ class MTemplateProject:
                 module_output = module_output.replace('{{ module.name.pascal_case }}', module['name']['pascal_case'])
                 module_output = module_output.replace('{{ module.name.camel_case }}', module['name']['camel_case'])
 
-                print('    ', Path(module_output).relative_to(cwd))
+                print('    ', output_path(module_output))
                 self.render_template({'module': module}, template['rel'], module_output)
 
             print('\n     models')
@@ -225,7 +230,7 @@ class MTemplateProject:
                     model_output = model_output.replace('{{ module.name.pascal_case }}', module['name']['pascal_case'])
                     model_output = model_output.replace('{{ module.name.camel_case }}', module['name']['camel_case'])
 
-                    print('        ', Path(model_output).relative_to(cwd))
+                    print('        ', output_path(model_output))
                     self.render_template({'module': module, 'model': model}, template['rel'], model_output)
 
         print(f':: done :: {self.spec["project"]["name"]["kebab_case"]} :: {self.app_name}')
@@ -262,7 +267,7 @@ class MTemplateMacro:
 
 class MTemplateExtractor:
 
-    def __init__(self, path:str|Path, prefix='#', postfix='', single_quotes=False) -> None:
+    def __init__(self, path:str|Path, prefix='#', postfix='', single_quotes=False, emit_syntax=False) -> None:
         self.path = Path(path)
         self.prefix = prefix
         self.postfix = postfix
@@ -271,6 +276,7 @@ class MTemplateExtractor:
         self.template_lines = []
         self.template_vars = {}
         self.macros = {}
+        self.emit_syntax = emit_syntax
 
     def _load_json(self, data:str):
         if self.single_quotes:
@@ -355,6 +361,10 @@ class MTemplateExtractor:
         with open(path, 'w+') as f:
             f.write(self.create_template())
 
+    def _emit_syntax_line(self, line:str):
+        if self.emit_syntax:
+            self.template_lines.append(line.replace('{%', '{::').replace('%}', '::}'))
+
     def parse(self):
 
         ignoring = False
@@ -371,6 +381,7 @@ class MTemplateExtractor:
                 # vars line #
 
                 if line_stripped.startswith(f'{self.prefix} vars :: '):
+                    self._emit_syntax_line(line)
                     try:
                         self._parse_vars_line(line_stripped)
                     except MTemplateError as e:
@@ -379,9 +390,11 @@ class MTemplateExtractor:
                 # for loop #
 
                 elif line_stripped.startswith(f'{self.prefix} for :: '):
+                    self._emit_syntax_line(line)
                     for_lines = []
                     for_start_line_no = line_no
                     end_for_mods = []
+                    end_for_line = ''
 
                     while True:
 
@@ -396,6 +409,7 @@ class MTemplateExtractor:
                         line_no += 1
                         
                         if next_line_strippped.startswith(f'{self.prefix} end for ::'):
+                            end_for_line = next_line
                             try:
                                 _, mods = next_line_strippped.split('::')
                             except ValueError:
@@ -409,6 +423,9 @@ class MTemplateExtractor:
                         self._parse_for_lines(line_stripped, for_lines, end_for_mods)
                     except MTemplateError as e:
                         raise MTemplateError(f'{e} on line {line_no} of {self.path}')
+                    
+                    if end_for_line:
+                        self._emit_syntax_line(end_for_line)
                 
                 # end for #
                 
@@ -418,14 +435,17 @@ class MTemplateExtractor:
                 # ignore lines #
 
                 elif line_stripped.startswith(f'{self.prefix} ignore ::'):
+                    self._emit_syntax_line(line)
                     ignoring = True
 
                 elif line_stripped.startswith(f'{self.prefix} end ignore ::'):
+                    self._emit_syntax_line(line)
                     ignoring = False
 
                 # insert line #
 
                 elif line_stripped.startswith(f'{self.prefix} insert ::'): 
+                    self._emit_syntax_line(line)
                     try:
                         _, insert_stmt = line_stripped.split('::')
                     except ValueError:
@@ -436,6 +456,7 @@ class MTemplateExtractor:
                 # replace lines #
 
                 elif line_stripped.startswith(f'{self.prefix} replace ::'):
+                    self._emit_syntax_line(line)
                     replace_start_line_no = line_no
 
                     while True:
@@ -460,12 +481,14 @@ class MTemplateExtractor:
                         # insert replacement statement #
 
                         if next_line_strippped == f'{self.prefix} end replace ::':
+                            self._emit_syntax_line(next_line)
                             self.template_lines.append('{{ ' + replacement_stmt.strip() + ' }}\n')
                             break
                 
                 # macros #
 
                 elif line_stripped.startswith(f'{self.prefix} macro ::'):
+                    self._emit_syntax_line(line)
                     macro_start_line_no = line_no
                     macro_def_line = line_stripped
                     macro_lines = []
@@ -483,9 +506,11 @@ class MTemplateExtractor:
 
                         try:
                             if next_line_strippped == f'{self.prefix} end macro ::':
+                                self._emit_syntax_line(next_line)
                                 self._parse_macro(macro_def_line, macro_lines)
                                 break
                             elif next_line_strippped.startswith(f'{self.prefix} macro ::'):
+                                self._emit_syntax_line(next_line)
                                 self._parse_macro(macro_def_line, macro_lines)
                                 macro_def_line = next_line_strippped
                                 macro_lines = []
@@ -498,13 +523,14 @@ class MTemplateExtractor:
                 # end of loop, ignore the line or add it to template #
 
                 elif ignoring:
+                    self._emit_syntax_line(line)
                     continue
             
                 else:
                     self.template_lines.append(line)
 
     @classmethod
-    def template_from_file(cls, path:str|Path) -> 'MTemplateExtractor':
+    def template_from_file(cls, path:str|Path, emit_syntax:bool=False) -> 'MTemplateExtractor':
         path = Path(path)
 
         if path.suffix in ['.js', '.ts']:
@@ -528,6 +554,6 @@ class MTemplateExtractor:
             postfix = ''
             single_quotes = False
 
-        instance = cls(path, prefix=prefix, postfix=postfix, single_quotes=single_quotes)
+        instance = cls(path, prefix=prefix, postfix=postfix, single_quotes=single_quotes, emit_syntax=emit_syntax)
         instance.parse()
         return instance
