@@ -18,21 +18,17 @@ TEXT = ('Verdana', 12)
 #
 #
 
-def gui_main(start_frame='LingoPage'):
-    app = LingoGUIApp(start_frame)
-    app.mainloop()
-
     
 class LingoPage(tkinter.Frame):
      
-    def __init__(self, parent): 
+    def __init__(self, parent, spec:dict): 
         super().__init__(parent)
 
         self._text_buffer:tkinter.Text = None
         self._text_row = 0
         self.link_count = 0
 
-        self.app = lingo_app(example_spec)
+        self.app = lingo_app(spec)
         self.render_output()
 
     def _tk_row(self):
@@ -135,7 +131,6 @@ class LingoPage(tkinter.Frame):
         
         self._text_buffer.window_create(self._tk_row(), window=entry)
 
-
     def render_link(self, element:dict):
         try:
             display_text = element['text']
@@ -158,48 +153,29 @@ class LingoPage(tkinter.Frame):
 
 class LingoGUIApp(tkinter.Tk):
 
-    frame_classes = (
-        LingoPage,
-    )
-
-    def __init__(self, start_frame='LingoPage'):
+    def __init__(self, spec:dict):
         super().__init__()
-        self.title('lingo')
+        self.title('Browser2.0')
         self.geometry('1000x800')
-        
-        container = tkinter.Frame(self)
-        container.grid(column=0, row=0, sticky='nsew')
+        self.configure(background='white')
   
-        self.frames = {}
-        self.current_frame = None
-  
-        for frame_class in self.frame_classes:
-            self.frames[frame_class] = frame_class(container)
-            self.frames[frame_class].grid(row=0, column=0, sticky='nsew')
-            self.frames[frame_class].forget()
-  
-        self.show_frame_str(start_frame)
-  
-    def show_frame(self, frame_class, **kwargs):
-        frame = self.frames[frame_class]
-        frame.grid(row=0, column=0, sticky='nsew')
-        frame.tkraise()
+        self.page = LingoPage(self, spec)
+        self.page.grid(row=0, column=0, sticky='nsew')
+        self.page.tkraise()
 
-        try:
-            self.current_frame.forget()
-        except AttributeError:
-            """self.current_frame is None"""
 
-        try:
-            frame.on_show_frame(**kwargs)
-        except AttributeError:
-            pass
-
-        self.current_frame = frame
-
-    def show_frame_str(self, frame_class_str, **kwargs):
-        frame_class = globals()[frame_class_str]
-        self.show_frame(frame_class, **kwargs)
 
 if __name__ == '__main__':
-    gui_main()
+    import argparse
+    import json
+    parser = argparse.ArgumentParser(description='Run Browser2.0')
+    parser.add_argument('--spec', type=str, help='Path to the spec file')
+    args = parser.parse_args()
+    if args.spec:
+        with open(args.spec, 'r') as f:
+            spec = json.load(f)
+    else:
+        spec = example_spec
+
+    app = LingoGUIApp(spec)
+    app.mainloop()
