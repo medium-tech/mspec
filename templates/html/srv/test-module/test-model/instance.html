@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<!-- vars :: {"unit_test": "project.name.snake_case", "test-module": "module.name.kebab_case", "test_module": "module.name.snake_case"} -->
+<!-- vars :: {"test_model": "model.name.snake_case", "test-model": "model.name.kebab_case", "test model": "model.name.lower_case"} -->
+<!-- vars :: {"testModel": "model.name.camel_case", "TestModel": "model.name.pascal_case"} -->
+<html>
+
+    <head>
+        <title>unit_test.test_module.test_model.id</title>
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
+        <link rel="stylesheet" type="text/css" href="/style.css">
+        <script src="/test-module/test-model/index.js"></script>
+        <script type="text/javascript">
+
+            //
+            // views
+            //
+
+            function showTestModelReadView() {
+                window.document.getElementById('test-model-update').hidden = true;
+                window.document.getElementById('test-model-delete').hidden = true;
+                window.document.getElementById('test-model-read').hidden = false;
+            }
+
+            function showTestModelUpdateView() {
+                window.document.getElementById('test-model-read').hidden = true;
+                window.document.getElementById('test-model-delete').hidden = true;
+                window.document.getElementById('test-model-update').hidden = false;
+            }
+
+            function updateTestModelStatus(status, className) {
+                const statusSpan = document.getElementById('update-test-model-status')
+                statusSpan.hidden = false
+                statusSpan.innerText = status
+                statusSpan.className = className
+            }
+
+            function showTestModelDeleteView() {
+                window.document.getElementById('test-model-read').hidden = true;
+                window.document.getElementById('test-model-update').hidden = true;
+                window.document.getElementById('test-model-delete').hidden = false;
+            }
+
+            //
+            // server ops
+            //
+
+            function fetchTestModel() {
+                const id = testModelId();
+                console.log(`fetching testModel ${id}`);
+                clientReadTestModel(id)
+                    .then(response => {
+                        if (response.ok) {
+                            return response.text();
+                        } else {
+                            // if not found
+                            if (response.status === 404) {
+                                document.getElementById('test-model-not-found').hidden = false;
+                            }
+                            throw new Error(`testModel ${id} read failed`);
+                        }
+                    })
+                    .then(text => {
+                        console.log(text);
+                        const data = initTestModel(JSON.parse(text));
+                        document.getElementById('test-model-not-found').hidden = true;
+
+                        const readTBody = document.querySelector('#test-model-read-tbody');
+                        testModelToDisplayTBody(data, readTBody);
+
+                        const updateTBody = document.querySelector('#test-model-update-tbody');
+                        testModelToInputTBody(data, updateTBody);
+                    }).
+                    catch(error => {console.error(error)});
+            }
+
+            function deleteTestModel() {
+                const id = testModelId();
+                console.log(`deleting testModel ${id}`);
+                clientDeleteTestModel(id)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`testModel ${id} delete failed`);
+                        }
+                        console.log(`testModel ${id} deleted`)
+                        window.location.reload();
+                    })
+                    .catch(error => {console.error(error)});
+            }
+
+            function updateTestModel() {
+
+                const id = testModelId();
+                
+                const updateTBody = document.querySelector('#test-model-update-tbody');
+                const data = testModelFromInputTBody(updateTBody);
+
+                const verify = verifyTestModel(data);
+                if (verify.valid !== true) {
+                    console.error(verify);
+                    throw new Error(`testModel ${id} invalid`);
+                }
+
+                console.log(`updating testModel ${id}`);
+
+                updateTestModelStatus('loading...', '')
+
+                clientUpdateTestModel(id, data)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`testModel ${id} update failed`);
+                        }
+                        const status = 'updated at ' + new Date().toLocaleTimeString()
+                        updateTestModelStatus(status, 'success')
+                        console.log(`testModel ${id} updated`)
+                    })
+                    .catch(error => {
+                        updateTestModelStatus('error', 'error')
+                        console.error(error)
+                    });
+
+            }
+
+            //
+            // on load
+            //
+
+            function testModelId() {
+                return window.location.pathname.split('/').pop();
+            }
+
+            window.onload = () => {
+                const idBreadcrumb = document.getElementById('test-model-id-breadcrumb')
+                const idLink = document.createElement('a');
+                idLink.href = '/test-module/test-model/' + testModelId();
+                idLink.innerText = testModelId();
+                idBreadcrumb.appendChild(idLink);
+
+                fetchTestModel();
+            }
+
+        </script>
+    </head>
+
+    <body>
+        <h1>test model</h1>
+        <p>
+            <a href="/">unit_test</a> . <a href="/test-module">test_module</a> . <a href="/test-module/test-model">test_model</a> . <span id="test-model-id-breadcrumb"></span>
+        </p>
+
+        <!-- 
+        read view layout 
+        -->
+
+        <div id="test-model-read">
+            
+            <button onclick="fetchTestModel()">refresh</button>
+            &emsp;|&emsp;
+            <button onclick="showTestModelUpdateView()">edit</button>
+            &emsp;|&emsp;
+            <button onclick="showTestModelDeleteView()">delete</button>
+            &emsp;
+            <span id="test-model-not-found" hidden>item not found</span>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>field</th>
+                        <th>value</th>
+                    </tr>
+                </thead>
+                <tbody id="test-model-read-tbody">
+                </tbody>
+            </table>
+
+        </div>
+
+        <!-- 
+        update view layout 
+        -->
+
+        <div id="test-model-update" hidden>
+
+            <button onclick="updateTestModel()">save</button>
+            &emsp;|&emsp;
+            <button onclick="showTestModelReadView()">cancel</button>
+            &emsp;|&emsp;
+            <span id="update-test-model-status" hidden></span>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>field</th>
+                        <th>value</th>
+                        <th>other</th>
+                    </tr>
+                </thead>
+                <tbody id="test-model-update-tbody">
+                </tbody>
+            </table>
+
+        </div>
+
+        <!-- 
+        delete view layout 
+        -->
+
+        <div id="test-model-delete" hidden>
+
+            <p>confirm delete?</p>
+            <button onclick="deleteTestModel()">yes, please delete</button>
+            &emsp;|&emsp;
+            <button onclick="showTestModelReadView()">no, cancel</button>
+
+        </div>
+
+    </body>
+
+</html>
