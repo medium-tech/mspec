@@ -39,6 +39,7 @@ class MTemplatePyProject(MTemplateProject):
             'py_verify_fields': self.macro_py_verify_fields,
             'py_field_list': self.macro_py_field_list,
             'py_field_definitions': self.macro_py_field_definitions,
+            'py_enum_definitions': self.macro_py_enum_definitions,
         })
 
     def macro_py_db_create(self, model:dict, indent='\t\t') -> str:
@@ -54,6 +55,8 @@ class MTemplatePyProject(MTemplateProject):
             else:
                 non_list_fields.append(name)
                 num_non_list_fields += 1
+
+        # non list fields #
         
         non_list_fields.sort()
 
@@ -73,7 +76,6 @@ class MTemplatePyProject(MTemplateProject):
             question_marks = ', '.join(['?'] * num_non_list_fields)
             sql_values = f'VALUES({question_marks})'
 
-
         create_vars = {
             'model_name_snake_case': model['name']['snake_case'],
             'fields_sql': fields_sql,
@@ -83,12 +85,19 @@ class MTemplatePyProject(MTemplateProject):
 
         out += self.spec['macro']['py_sql_create'](create_vars) + '\n'
 
+        # list fields #
+
+        list_fields.sort()
+
         for field_name in list_fields:
             list_vars = {
                 'model_name_snake_case': model['name']['snake_case'],
                 'field_name': field_name,
             }
-            out += self.spec['macro']['py_sql_create_list'](list_vars) + '\n'
+            macro_name = 'py_sql_create_list_' + model['fields'][field_name]['type']
+            if 'enum' in model['fields'][field_name]:
+                macro_name += '_enum'
+            out += self.spec['macro'][macro_name](list_vars) + '\n'
 
         return out
 
@@ -100,10 +109,12 @@ class MTemplatePyProject(MTemplateProject):
             if field['type'] == 'list':
                 read_list_vars = {
                     'model_name_snake_case': model['name']['snake_case'],
-                    'field_name': name,
-                    'item': 'bool(row[0])' if field['element_type'] == 'bool' else 'row[0]',
+                    'field_name': name
                 }
-                out += self.spec['macro']['py_sql_read_list'](read_list_vars) + '\n'
+                macro_name = 'py_sql_read_list_' + field['type']
+                if 'enum' in field:
+                    macro_name += '_enum'
+                out += self.spec['macro'][macro_name](read_list_vars) + '\n'
 
         return out
     
@@ -119,7 +130,13 @@ class MTemplatePyProject(MTemplateProject):
                     'model_name_snake_case': model['name']['snake_case'],
                     'field_name': field_name,
                 }
-                list_updates += self.spec['macro']['py_sql_update_list'](list_vars) + '\n'
+
+                macro_name = 'py_sql_update_list_' + field['type']
+                if 'enum' in field:
+                    macro_name += '_enum'
+
+                list_updates += self.spec['macro'][macro_name](list_vars) + '\n'
+
             elif field['type'] == 'datetime':
                 fields_sql.append(f"'{field_name}'=?")
                 fields_py.append(f"obj.{field_name}.isoformat()")
@@ -169,21 +186,22 @@ class MTemplatePyProject(MTemplateProject):
 
     def macro_py_sql_convert(self, fields:dict, indent='\t\t\t') -> str:
         out = ''
-        index = 1
+        single_field_index = 1
 
         for field_name in sorted(fields.keys()):
-            if fields[field_name]['type'] == 'bool':
-                value = f'bool(entry[{index}])'
-                index += 1
-
-            elif fields[field_name]['type'] == 'list':
-                value = field_name
+            if fields[field_name]['type'] == 'list':
+                out += f"{indent}{field_name}={field_name},\n"
 
             else:
-                value = f'entry[{index}]'
-                index += 1
-
-            out += f"{indent}{field_name}={value},\n"
+                macro_vars = {
+                    'local_var': f'entry[{single_field_index}]',
+                    'field_name': field_name,
+                }
+                macro_name = 'py_sql_convert_' + fields[field_name]["type"]
+                if 'enum' in fields[field_name]:
+                    macro_name += '_enum'
+                out += self.spec['macro'][macro_name](macro_vars) + '\n'
+                single_field_index += 1
 
         return out
 
@@ -241,9 +259,24 @@ class MTemplatePyProject(MTemplateProject):
                 vars = deepcopy(field)
                 vars['name'] = name
                 out += self.spec['macro']['py_post_init_datetime'](vars) + '\n'
+
+            elif field['type'] == 'list' and field['element_type'] == 'datetime':
+                vars = deepcopy(field)
+                vars['name'] = name
+                out += self.spec['macro']['py_post_init_list_datetime'](vars) + '\n'
+                
         return out
     
     def macro_py_example_fields(self, fields:dict, indent='\t\t\t') -> str:
+
+        def convert_val(value, field_type):
+            if field_type in ['bool', 'int', 'float']:
+                return str(value)
+            elif field_type == 'str':
+                return f"'{value.replace("'", "\'")}'"
+            elif field_type == 'datetime':
+                return f"datetime.strptime('{value}', datetime_format_str)"
+
         lines = []
 
         for name, field in fields.items():
@@ -251,18 +284,15 @@ class MTemplatePyProject(MTemplateProject):
                 example = field["examples"][0]
             except (KeyError, IndexError):
                 raise MTemplateError(f'field {name} does not have an example')
+            
+            if field['type'] == 'list':
+                values = []
+                for item in example:
+                    values.append(convert_val(item, field['element_type']))
+                value = '[' + ', '.join(values) + ']'
 
-            if field['type'] in ['bool', 'int', 'float']:
-                value = str(example)
-            elif field['type'] == 'str':
-                value = f"'{example}'"
-            elif field['type'] == 'list':
-                item_display = lambda i: f"'{i}'" if isinstance(i, str) else str(i)
-                value = '[' + ', '.join([item_display(item) for item in example]) + ']'
-            elif field['type'] == 'datetime':
-                value = f"datetime.strptime('{example}', '{iso_format_string}')"
             else:
-                raise MTemplateError(f'field "{name}" has unsupported type "{field["type"]}"')
+                value = convert_val(example, field['type'])
 
             lines.append(f"{indent}{name}={value}")
 
@@ -278,14 +308,15 @@ class MTemplatePyProject(MTemplateProject):
                 field_type = field['type']
                 args = f"'{field['element_type']}'"
 
-            elif 'enum' in field:
-                field_type = 'enum'
-                enum_values = [f"'{value}'" for value in field['enum']]
-                args = '[' + ', '.join(enum_values) + ']'
+                if 'enum' in field:
+                    args += f", {name}_options"
 
             else:
                 field_type = field['type']
                 args = ''
+                if 'enum' in field:
+                    field_type += '_enum'
+                    args += f", {name}_options"
 
             # run macro #
 
@@ -303,16 +334,13 @@ class MTemplatePyProject(MTemplateProject):
             vars['name'] = name
 
             if field['type'] == 'list':
-                vars['element_type'] = field['element_type']
-                field_type = 'list'
-
-            elif 'enum' in field:
-                enum_values = [f"'{value}'" for value in field['enum']]
-                vars['enum_value_list'] = '[' + ', '.join(enum_values) + ']'
-                field_type = 'str_enum'
-            
+                field_type = 'list_' + field['element_type']
+             
             else:
                 field_type = field['type']
+
+            if 'enum' in field:
+                field_type += '_enum'
 
             try:
                 out += self.spec['macro'][f'py_verify_{field_type}'](vars) + '\n'
@@ -333,4 +361,16 @@ class MTemplatePyProject(MTemplateProject):
             else:
                 type_def = field['type']
             out += f'{indent}{name}: {type_def}\n'
+        return out
+
+    def macro_py_enum_definitions(self, fields:dict, indent='    ') -> str:
+        out = ''
+        for name, field in fields.items():
+            out += self.spec['macro'][f'py_enum_definition_begin'](field_name=name) + '\n'
+
+            for option in field['enum']:
+                out += self.spec['macro'][f'py_enum_definition_option'](option=option) + '\n'
+
+            out += self.spec['macro'][f'py_enum_definition_end']() + '\n'
+
         return out

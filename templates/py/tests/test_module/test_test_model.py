@@ -7,7 +7,7 @@ from core.exceptions import NotFoundError
 from test_module.test_model.model import TestModel
 from test_module.test_model.client import *
 
-# vars :: {"test_module": "module.name.snake_case", "test_model": "model.name.snake_case", "TestModel": "model.name.pascal_case", "unit_test": "project.name.snake_case"}
+# vars :: {"test_module": "module.name.snake_case", "test_model": "model.name.snake_case", "TestModel": "model.name.pascal_case"}
 
 test_ctx = create_db_context()
 test_ctx.update(create_client_context())
@@ -61,9 +61,12 @@ class TestTestModel(unittest.TestCase):
         self.assertIsNone(fetched_item)
 
         # insert :: macro.py_test_crud_delete(model)
+        # macro :: py_test_sql_delete :: {"test_model": "model_name_snake_case", "multi_bool": "field_name"}
         multi_bool_result = cursor.execute(f"SELECT value FROM test_model_multi_bool WHERE test_model_id=? ORDER BY position", (created_test_model.id,))
         self.assertEqual(len(multi_bool_result.fetchall()), 0)
+        # end macro ::
 
+        # ignore ::
         multi_int_result = cursor.execute(f"SELECT value FROM test_model_multi_int WHERE test_model_id=? ORDER BY position", (created_test_model.id,))
         self.assertEqual(len(multi_int_result.fetchall()), 0)
 
@@ -73,9 +76,13 @@ class TestTestModel(unittest.TestCase):
         multi_string_result = cursor.execute(f"SELECT value FROM test_model_multi_string WHERE test_model_id=? ORDER BY position", (created_test_model.id,))
         self.assertEqual(len(multi_string_result.fetchall()), 0)
 
+        multi_enum_result = cursor.execute(f"SELECT value FROM test_model_multi_enum WHERE test_model_id=? ORDER BY position", (created_test_model.id,))
+        self.assertEqual(len(multi_enum_result.fetchall()), 0)
 
-        # macro :: py_test_sql_delete :: {"test_model": "model_name_snake_case", "stuff": "field_name"}
-        # end macro ::
+        multi_datetime_result = cursor.execute(f"SELECT value FROM test_model_multi_datetime WHERE test_model_id=? ORDER BY position", (created_test_model.id,))
+        self.assertEqual(len(multi_datetime_result.fetchall()), 0)
+        # end ignore ::
+        
 
     def test_test_model_pagination(self):
 

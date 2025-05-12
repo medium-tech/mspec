@@ -14,7 +14,7 @@ __all__ = [
     'random_int',
     'random_float',
     'random_str',
-    'random_enum',
+    'random_str_enum',
     'random_list',
     'random_datetime',
     'random_cid',
@@ -44,13 +44,15 @@ def random_float(min:float=-100.0, max:float=100.0, round_to=2) -> float:
 def random_str() -> str:
     return ' '.join(random.choices(random_words, k=random.randint(1, 5)))
 
-def random_enum(enum:list) -> str:
+def random_str_enum(enum:list) -> str:
     return random.choice(enum)
 
-def random_list(element_type:str) -> list:
+def random_list(element_type:str, enum_choies=None) -> list:
     items = []
     for _ in range(random.randint(0, 5)):
-        if element_type == 'str':
+        if enum_choies is not None:
+            items.append(random.choice(enum_choies))
+        elif element_type == 'str':
             items.append(random.choice(random_words))
         else:
             items.append(globals()[f'random_{element_type}']())

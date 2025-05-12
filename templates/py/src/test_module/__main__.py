@@ -3,25 +3,24 @@ import random
 from pprint import pprint
 from core.db import create_db_context
 from core.client import create_client_context
-# for :: {:: for model in module.models.values() ::} :: {"example_item": "model.name.snake_case"}
-
+# for :: {% for model in module.models.values() %} :: {"test_model": "model.name.snake_case"}
 from test_module.test_model.client import *
 from test_module.test_model.db import *
 from test_module.test_model.model import *
-
 # end for ::
+
+# vars :: {"unit_test":"project.name.snake_case", "test_module":"module.name.snake_case", "test module":"module.name.lower_case"}
 
 #
 # define arguments
 #
 
-# vars :: {"unit_test":"project.name.snake_case", "test_module":"module.name.snake_case", "test module":"module.name.lower_case"}
+
 parser = argparse.ArgumentParser(description='unit_test - test module - cli')
 
 parser.add_argument('command', type=str, choices=[
     'data-seed',
-    # for :: {:: for model in module.models.values() ::} :: {"test-model": "model.name.kebab_case"}
-
+    # for :: {% for model in module.models.values() %} :: {"test-model": "model.name.kebab_case"}
     'verify-test-model',
     'random-test-model',
     'example-test-model',
@@ -35,7 +34,6 @@ parser.add_argument('command', type=str, choices=[
     'client-update-test-model',
     'client-delete-test-model',
     'client-list-test-model',
-
     # end for ::
 ])
 
@@ -60,21 +58,17 @@ cli_ctx = {}
 cli_ctx.update(create_db_context())
 cli_ctx.update(create_client_context())
 
-
 #
 # run program
 #
 
 if args.command == 'data-seed':
     for _ in range(args.count):
-        # for :: {:: for model in module.models.values() ::} :: {"example_item": "model.name.snake_case", "ExampleItem": "model.name.pascal_case"}
-
+        # for :: {% for model in module.models.values() %} :: {"test_model": "model.name.snake_case", "TestModel": "model.name.pascal_case"}
         db_create_test_model(cli_ctx, TestModel.random())
-
         # end for ::
 
-# for :: {:: for model in module.models.values() ::} :: {"test-model": "model.name.kebab_case", "example_item": "model.name.snake_case", "ExampleItem": "model.name.pascal_case"}
-
+# for :: {% for model in module.models.values() %} :: {"test-model": "model.name.kebab_case", "test_model": "model.name.snake_case", "TestModel": "model.name.pascal_case"}
 elif args.command == 'verify-test-model':
     result = TestModel.from_json(args.json).validate()
 
@@ -119,7 +113,6 @@ elif args.command == 'client-delete-test-model':
 
 elif args.command == 'client-list-test-model':
     result = client_list_test_model(cli_ctx, args.offset, args.limit)
-
 # end for ::
 
 #

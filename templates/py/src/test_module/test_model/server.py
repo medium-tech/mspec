@@ -1,9 +1,8 @@
 import re
 from urllib.parse import parse_qs
+from core.exceptions import NotFoundError, RequestError, JSONResponse
 from test_module.test_model.model import TestModel
 from test_module.test_model.db import *
-
-from core.exceptions import NotFoundError, RequestError, JSONResponse
 
 # vars :: {"test_module": "module.name.snake_case", "test-module": "module.name.kebab_case"}
 # vars :: {"test_model": "model.name.snake_case", "test model": "model.name.lower_case"}

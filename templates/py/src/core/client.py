@@ -27,14 +27,14 @@ __all__ = [
 ]
 
 
-# vars :: {"http://localhost:9009": "client.default_host"}
+# vars :: {"http://localhost:5005": "client.default_host"}
 
 """
 WARNING: urlib.request module is unsafe to use with os.fork on OSX
     ref: https://docs.python.org/3/library/urllib.request.html#urllib.request.urlopen
 """
 
-default_host = os.environ.get('MSPEC_CLIENT_HOST', 'http://localhost:9009')
+default_host = os.environ.get('MSPEC_CLIENT_HOST', 'http://localhost:5005')
 
 def create_client_context(host:str=default_host) -> dict:
     """

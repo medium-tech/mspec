@@ -29,11 +29,11 @@ The `mtemplate` module in this repository can be used to [generate an app using 
 
 Currently only python and html/js are implemented but eventually other languages such as Go and Haskell will be supported [see TODO](./TODO.md). 
 
-The generated python app has 0 dependencies other than Python itself, and the generated html frontend also has no dependencies or build/packaging process. The generated html files are served staticly from the uwsgi server that also serves the python app.
+The generated python app is lightweight only requiring 3 stable dependencies, and the generated html frontend also has no dependencies or build/packaging process. The generated html files are served staticly from the uwsgi server that also serves the python app.
 
 The goal of this project is to provide an alternative to frameworks. I've found over the years that frameworks have their pros and cons. **Pro:** don't have to recreate all the wheels **Con:** the abstraction hides the lower level code from the developer and dependency creep becomes a liability. If you rebuild the wheel you can adjust any level of the stack however it takes longer to see results. I think a middle ground is to generate the wheel instead of rebuild it. This means we don't have to waste time on wheels but also never need to worry about this library changing versions because the generated code will always stand on its own without this library.
 
-However, the process of working with templating is not ideal. This library also attempts to make writing templates easier by providing template exctration from syntacticly valid code. Jinja is used for code templating (while generated apps have no deps, this library does have a couple). The jinja templating syntax is incompatible with Python syntax meaning you can't run your template directly to test if it works. This library embeds templating syntax into comments so that the template itself is syntacticly valid.
+However, the process of working with templating is not ideal. This library also attempts to make writing templates easier by providing template exctration from syntacticly valid code. The jinja templating syntax is incompatible with Python syntax meaning you can't run your template directly to test if it works. This library embeds templating syntax into comments so that the template itself is syntacticly valid.
 
 Take the following example:
 
