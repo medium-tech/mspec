@@ -980,15 +980,12 @@ function testModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(idTr);
 
-    // macro :: html_to_display_tbody_str :: {"description": "field"}
-    // macro :: html_to_display_tbody_bool :: {"verified": "field"}
-    // macro :: html_to_display_tbody_enum :: {"color": "field"}
-    // macro :: html_to_display_tbody_int :: {"count": "field"}
-    // macro :: html_to_display_tbody_float :: {"score": "field"}
-    // macro :: html_to_display_tbody_list :: {"stuff": "field"}
-    // macro :: html_to_display_tbody_datetime :: {"when": "field"}
-    // end macro ::
     // insert :: macro.html_to_display_tbody(model.fields)
+    // macro :: html_to_display_tbody_bool :: {"single_bool": "field"}
+    //
+    // single_bool - bool
+    //
+
     const single_boolTdKey = document.createElement('td');
     single_boolTdKey.textContent = 'single_bool';
 
@@ -1001,6 +998,10 @@ function testModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(single_boolTr);
 
+    // macro :: html_to_display_tbody_int :: {"single_int": "field"}
+    //
+    // single_int - int
+    //
 
     const single_intTdKey = document.createElement('td');
     single_intTdKey.textContent = 'single_int';
@@ -1014,6 +1015,10 @@ function testModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(single_intTr);
 
+    // macro :: html_to_display_tbody_float :: {"single_float": "field"}
+    //
+    // single_float - float
+    //
 
     const single_floatTdKey = document.createElement('td');
     single_floatTdKey.textContent = 'single_float';
@@ -1027,6 +1032,10 @@ function testModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(single_floatTr);
 
+    // macro :: html_to_display_tbody_str :: {"single_string": "field"}
+    //
+    // single_string - str
+    //
 
     const single_stringTdKey = document.createElement('td');
     single_stringTdKey.textContent = 'single_string';
@@ -1040,6 +1049,10 @@ function testModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(single_stringTr);
 
+    // macro :: html_to_display_tbody_str_enum :: {"single_enum": "field"}
+    //
+    // single_enum - enum
+    //
 
     const single_enumTdKey = document.createElement('td');
     single_enumTdKey.textContent = 'single_enum';
@@ -1053,6 +1066,10 @@ function testModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(single_enumTr);
 
+    // macro :: html_to_display_tbody_datetime :: {"single_datetime": "field"}
+    //
+    // single_datetime - datetime
+    //
 
     const single_datetimeTdKey = document.createElement('td');
     single_datetimeTdKey.textContent = 'single_datetime';
@@ -1066,6 +1083,11 @@ function testModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(single_datetimeTr);
 
+    // macro :: html_to_display_tbody_list_bool :: {"multi_bool": "field"}
+    //
+    // multi_bool - list of bool
+    //
+
     const multi_boolTdKey = document.createElement('td');
     multi_boolTdKey.textContent = 'multi_bool';
 
@@ -1078,6 +1100,10 @@ function testModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(multi_boolTr);
 
+    // macro :: html_to_display_tbody_list_int :: {"multi_int": "field"}
+    //
+    // multi_int - list of int
+    //
 
     const multi_intTdKey = document.createElement('td');
     multi_intTdKey.textContent = 'multi_int';
@@ -1091,6 +1117,10 @@ function testModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(multi_intTr);
 
+    // macro :: html_to_display_tbody_list_float :: {"multi_float": "field"}
+    //
+    // multi_float - list of float
+    //
 
     const multi_floatTdKey = document.createElement('td');
     multi_floatTdKey.textContent = 'multi_float';
@@ -1104,6 +1134,10 @@ function testModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(multi_floatTr);
 
+    // macro :: html_to_display_tbody_list_str :: {"multi_string": "field"}
+    //
+    // multi_string - list of str
+    //
 
     const multi_stringTdKey = document.createElement('td');
     multi_stringTdKey.textContent = 'multi_string';
@@ -1117,8 +1151,40 @@ function testModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(multi_stringTr);
 
+    // macro :: html_to_display_tbody_list_str_enum :: {"multi_enum": "field"}
+    //
+    // multi_enum - list of enum
+    //
 
+    const multi_enumTdKey = document.createElement('td');
+    multi_enumTdKey.textContent = 'multi_enum';
 
+    const multi_enumTdValue = document.createElement('td');
+    multi_enumTdValue.textContent = data.multi_enum.join(', ');
+
+    const multi_enumTr = document.createElement('tr');
+    multi_enumTr.appendChild(multi_enumTdKey);
+    multi_enumTr.appendChild(multi_enumTdValue);
+
+    tbody.appendChild(multi_enumTr);
+
+    // macro :: html_to_display_tbody_list_datetime :: {"multi_datetime": "field"}
+    //
+    // multi_datetime - list of datetime
+    //
+
+    const multi_datetimeTdKey = document.createElement('td');
+    multi_datetimeTdKey.textContent = 'multi_datetime';
+
+    const multi_datetimeTdValue = document.createElement('td');
+    multi_datetimeTdValue.textContent = data.multi_datetime.map(d => d.toISOString().split('.')[0]).join(', ');
+
+    const multi_datetimeTr = document.createElement('tr');
+    multi_datetimeTr.appendChild(multi_datetimeTdKey);
+    multi_datetimeTr.appendChild(multi_datetimeTdValue);
+
+    tbody.appendChild(multi_datetimeTr);
+    // end macro ::
 
     return tbody;
 }
