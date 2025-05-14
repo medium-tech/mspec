@@ -369,7 +369,7 @@ class MTemplatePyProject(MTemplateProject):
             out += self.spec['macro'][f'py_enum_definition_begin'](field_name=name) + '\n'
 
             for option in field['enum']:
-                out += self.spec['macro'][f'py_enum_definition_option'](option=option) + '\n'
+                out += self.spec['macro'][f'py_enum_definition_option'](option=option.replace("'", "\'")) + '\n'
 
             out += self.spec['macro'][f'py_enum_definition_end']() + '\n'
 

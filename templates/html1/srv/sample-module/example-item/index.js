@@ -78,11 +78,11 @@ function exampleExampleItem() {
 function randomExampleItem() {
     return {
         // macro :: html_random_str :: {"description": "field"}
-        description: randomString(),
+        description: randomStr(),
         // macro :: html_random_bool :: {"verified": "field"}
         verified: randomBool(),
         // macro :: html_random_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
-        color: randomEnum(['red', 'green', 'blue']),
+        color: randomStrEnum(['red', 'green', 'blue']),
         // macro :: html_random_int :: {"count": "field"}
         count: randomInt(),
         // macro :: html_random_float :: {"score": "field"}

@@ -33,24 +33,28 @@ class MTemplateHTMLProject(MTemplateProject):
             'html_to_table_row': self.macro_html_to_table_row,
             'html_list_table_headers': self.macro_html_list_table_headers,
             'html_field_list': self.macro_html_field_list,
+            'html_enum_definitions': self.macro_html_enum_definitions,
+            'html_example_fields': self.macro_html_example_fields,
         })
 
     def macro_html_init_fields(self, fields:dict, indent='\t') -> str:
         out = ''
         for name, field in fields.items():
             vars = {'field': name}
-            try:
-                vars['element_type'] = field['element_type']
-                vars['element_type_capitalized'] = field['element_type'].capitalize()
-            except KeyError:
-                pass
 
-            field_type = 'enum' if 'enum' in field else field['type']
+            macro_name = f'html_init_{field["type"]}'
+
+            if macro_name == 'list':
+                macro_name += f"_{field['element_type']}"
+
+            if 'enum' in field:
+                macro_name += '_enum'
 
             try:
-                out += self.spec['macro'][f'html_init_{field_type}'](vars) + '\n'
+                out += self.spec['macro'][macro_name](vars) + '\n'
             except KeyError:
-                raise MTemplateError(f'field {name} does not have type "{field_type}"')
+                raise MTemplateError(f'field {name} does not have type "{macro_name}"')
+            
         return out
 
     def macro_html_list_table_headers(self, fields:dict, indent='\t') -> str:
@@ -161,34 +165,17 @@ class MTemplateHTMLProject(MTemplateProject):
         for name, field in fields.items():
             vars = {'field': name}
 
-            if 'enum' in field:
-                enum_values = [f"'{value}'" for value in field['enum']]
-                vars['enum_value_list'] = '[' + ', '.join(enum_values) + ']'
-                field_type = 'enum'
-
-            elif field['type'] == 'list':
-
-                if field['element_type'] == 'str':
-                    js_element_type = 'string'
-                elif field['element_type'] == 'bool':
-                    js_element_type = 'boolean'
-                elif field['element_type'] == 'int':
-                    js_element_type = 'number'
-                elif field['element_type'] == 'float':
-                    js_element_type = 'number'
-                else:
-                    raise MTemplateError(f'field "{name}" has unsupported element_type "{field["element_type"]}"')
-                
-                vars['element_type'] = js_element_type
-                field_type = 'list'
-
-            else:
-                field_type = field['type']
+            macro_name = f'html_verify_{field["type"]}'
 
             try:
-                out += self.spec['macro'][f'html_verify_{field_type}'](vars) + '\n'
+                macro_name += '_' + field['element_type']
             except KeyError:
-                raise MTemplateError(f'field {name} does not have type "{field_type}"')
+                pass
+
+            if 'enum' in field:
+                macro_name += '_enum'
+
+            out += self.spec['macro'][macro_name](vars) + '\n'
             
         return out
     
@@ -196,3 +183,46 @@ class MTemplateHTMLProject(MTemplateProject):
         all_keys = ['id'] + list(fields.keys())
         keys = [f"'{name}'" for name in all_keys]
         return '[' + ', '.join(keys) + ']'
+    
+    def macro_html_enum_definitions(self, fields:dict, indent='    ') -> str:
+        out = ''
+        for name, field in fields.items():
+            out += self.spec['macro'][f'html_enum_definition_begin'](field_name=name) + '\n'
+
+            for option in field['enum']:
+                out += self.spec['macro'][f'html_enum_definition_option'](option=option.replace("'", "\'")) + '\n'
+
+            out += self.spec['macro'][f'html_enum_definition_end']() + '\n'
+
+        return out
+    
+    def macro_html_example_fields(self, fields:dict, indent='\t\t\t') -> str:
+
+        def convert_val(value, field_type):
+            if field_type in ['bool', 'int', 'float']:
+                return str(value)
+            elif field_type == 'str':
+                return f"'{value.replace("'", "\'")}'"
+            elif field_type == 'datetime':
+                return f"new Date('{value}')"   # ex: 2023-01-01T00:00:00Z
+
+        lines = []
+
+        for name, field in fields.items():
+            try:
+                example = field["examples"][0]
+            except (KeyError, IndexError):
+                raise MTemplateError(f'field {name} does not have an example')
+            
+            if field['type'] == 'list':
+                values = []
+                for item in example:
+                    values.append(convert_val(item, field['element_type']))
+                value = '[' + ', '.join(values) + ']'
+
+            else:
+                value = convert_val(example, field['type'])
+
+            lines.append(f"{indent}{name}={value}")
+
+        return ',\n'.join(lines)

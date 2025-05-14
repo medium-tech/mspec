@@ -1,6 +1,10 @@
 // vars :: {"test-module": "module.name.kebab_case"}
 // vars :: {"TestModel": "model.name.pascal_case", "testModel": "model.name.camel_case", "test-model": "model.name.kebab_case"}
 
+//
+// convert
+//
+
 const trueBoolStrings = ['1', 'true', 't', 'yes', 'y', 'on'];
 
 function convertListElementBool(input) {
@@ -33,6 +37,30 @@ function convertListElementStr(str) {
 }
 
 //
+// defs
+//
+
+// insert :: macro.html_enum_definitions(model.fields)
+// macro :: html_enum_definition_begin :: {"single_enum": "field_name"}
+const single_enum_options = [
+// macro :: html_enum_definition_option :: {"red": "option"}
+    'red', 
+// end macro ::
+    'green', 
+    'blue',
+// macro :: html_enum_definition_end :: {}
+]
+// end macro ::
+
+// ignore ::
+const multi_enum_options = [
+    'giraffe', 
+    'elephant', 
+    'zebra'
+]
+// end ignore ::
+
+//
 // data functions
 //
 
@@ -47,7 +75,7 @@ function initTestModel(data) {
         single_float: data.single_float,
         // macro :: html_init_str :: {"single_string": "field"}
         single_string: data.single_string,
-        // macro :: html_init_enum :: {"single_enum": "field"}
+        // macro :: html_init_str_enum :: {"single_enum": "field"}
         single_enum: data.single_enum,
         // macro :: html_init_datetime :: {"single_datetime": "field"}
         single_datetime: new Date(data.single_datetime),
@@ -59,7 +87,7 @@ function initTestModel(data) {
         multi_float: data.multi_float,
         // macro :: html_init_list_str :: {"multi_string": "field"}
         multi_string: data.multi_string,
-        // macro :: html_init_list_enum :: {"multi_enum": "field"}
+        // macro :: html_init_list_str_enum :: {"multi_enum": "field"}
         mutli_enum: data.multi_enum,
         // macro :: html_init_list_datetime :: {"multi_datetime": "field"}
         multi_datetime: data.multi_datetime.map(d => new Date(d))
@@ -74,13 +102,20 @@ function initTestModel(data) {
 
 function exampleTestModel() {
     const data = {
-        description: '',
-        verified: false,
-        color: 'red',
-        count: 42,
-        score: 9.9,
-        stuff: ['mountain', 'river', 'forest'],
-        when: new Date()
+        // replace :: macro.html_example_fields(model.fields)
+        single_bool: true,
+        single_int: 1,
+        single_float: 1.1,
+        single_string: 'peaches',
+        single_enum: 'red',
+        single_datetime: new Date('2023-01-01T00:00:00Z'),
+        multi_bool: [true, false],
+        multi_int: [1, 2, 3],
+        multi_float: [1.1, 2.2, 3.3],
+        multi_string: ['sequence', 'of', 'words'],
+        multi_enum: ['giraffe', 'elephant', 'zebra'],
+        multi_datetime: [new Date('2023-01-01T00:00:00Z'), new Date('2023-01-02T00:00:00Z')],
+        // end replace ::
     }
     return {...data}
 }
@@ -88,16 +123,31 @@ function exampleTestModel() {
 function randomTestModel() {
     return {
         // insert :: macro.html_random_fields(model.fields)
+        // macro :: html_random_bool :: {"single_bool": "field"}
 		'single_bool': randomBool(),
+        // macro :: html_random_int :: {"single_int": "field"}
 		'single_int': randomInt(),
+        // macro :: html_random_float :: {"single_float": "field"}
 		'single_float': randomFloat(),
+        // macro :: html_random_str :: {"single_string": "field"}
 		'single_string': randomStr(),
-		'single_enum': randomEnum(),
+        // macro :: html_random_str_enum :: {"single_enum": "field"}
+		'single_enum': randomStrEnum(single_enum_options),
+        // macro :: html_random_datetime :: {"single_datetime": "field"}
 		'single_datetime': randomDatetime(),
-		'multi_bool': randomList(),
-		'multi_int': randomList(),
-		'multi_float': randomList(),
-		'multi_string': randomList()
+        // macro :: html_random_list_bool :: {"multi_bool": "field"}
+		'multi_bool': randomList(randomBool),
+        // macro :: html_random_list_int :: {"multi_int": "field"}
+		'multi_int': randomList(randomInt),
+        // macro :: html_random_list_float :: {"multi_float": "field"}
+		'multi_float': randomList(randomFloat),
+        // macro :: html_random_list_str :: {"multi_string": "field"}
+		'multi_string': randomList(randomStr),
+        // macro :: html_random_list_str_enum :: {"multi_enum": "field"}
+        'multi_enum': randomList(randomStrEnum(multi_enum_options)),
+        // macro :: html_random_list_datetime :: {"multi_datetime": "field"}
+        'multi_datetime': randomList(randomDatetime),
+        // end macro ::
     }
 }
 
@@ -108,53 +158,47 @@ function verifyTestModel(data) {
         errors: {}
     }
 
-    // macro :: html_verify_str :: {"description": "field"}
-    // macro :: html_verify_bool :: {"verified": "field"}
-    // macro :: html_verify_enum :: {"color": "field", "['red', 'green', 'blue']": "enum_value_list"}
-    // macro :: html_verify_int :: {"count": "field"}
-    // macro :: html_verify_float :: {"score": "field"}
-    // macro :: html_verify_list :: {"stuff": "field", "string": "element_type"}
-    // macro :: html_verify_datetime :: {"when": "field"}
-    // end macro ::
     // insert :: macro.html_verify_fields(model.fields)
+    // macro :: html_verify_bool :: {"single_bool": "field"}
     if (typeof data.single_bool !== 'boolean') {
         result.error.single_bool = 'single_bool must be a boolean';
         result.valid = false;
     }
 
-
+    // macro :: html_verify_int :: {"single_int": "field"}
     if (!Number.isInteger(data.single_int)) {
         result.error.single_int = 'single_int must be an integer';
         result.valid = false;
     }
 
-
+    // macro :: html_verify_float :: {"single_float": "field"}
     if (typeof data.single_float !== 'number') {
         result.error.single_float = 'single_float must be a float';
         result.valid = false;
     }
 
-
+    // macro :: html_verify_str :: {"single_string": "field"}
     if (typeof data.single_string !== 'string') {
         result.error.single_string = 'single_string must be a string';
         result.valid = false;
     }
 
-
+    // macro :: html_verify_str_enum :: {"single_enum": "field"}
     if (typeof data.single_enum !== 'string') {
         result.error.single_enum = 'single_enum must be a string';
         result.valid = false;
-    }else if (!['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'].includes(data.single_enum)) {
+    }else if (!single_enum_options.includes(data.single_enum)) {
         result.error.single_enum = 'invalid single_enum';
         result.valid = false;
     }
 
-
+    // macro :: html_verify_datetime :: {"single_datetime": "field"}
     if (Object.prototype.toString.call(data.single_datetime) !== '[object Date]') {
         result.error.single_datetime = 'single_datetime must be a datetime';
         result.valid = false;
     }
 
+    // macro :: html_verify_list_bool :: {"multi_bool": "field"}
     if (!Array.isArray(data.multi_bool)) {
         result.error.multi_bool = 'multi_bool must be an array';
         result.valid = false;
@@ -163,7 +207,7 @@ function verifyTestModel(data) {
         result.valid = false;
     }
 
-
+    // macro :: html_verify_list_int :: {"multi_int": "field"}
     if (!Array.isArray(data.multi_int)) {
         result.error.multi_int = 'multi_int must be an array';
         result.valid = false;
@@ -172,7 +216,7 @@ function verifyTestModel(data) {
         result.valid = false;
     }
 
-
+    // macro :: html_verify_list_float :: {"multi_float": "field"}
     if (!Array.isArray(data.multi_float)) {
         result.error.multi_float = 'multi_float must be an array';
         result.valid = false;
@@ -181,7 +225,7 @@ function verifyTestModel(data) {
         result.valid = false;
     }
 
-
+    // macro :: html_verify_list_str :: {"multi_string": "field"}
     if (!Array.isArray(data.multi_string)) {
         result.error.multi_string = 'multi_string must be an array';
         result.valid = false;
@@ -190,8 +234,25 @@ function verifyTestModel(data) {
         result.valid = false;
     }
 
+    // macro :: html_verify_list_str_enum :: {"multi_enum": "field"}
+    if (!Array.isArray(data.multi_enum)) {
+        result.error.multi_enum = 'multi_enum must be an array';
+        result.valid = false;
+    }else if (data.multi_enum.some(tag => typeof tag !== 'string' || !multi_enum_options.includes(tag))) {
+        
+        result.error.multi_enum = 'multi_enum elements must be strings from the predefined options';
+        result.valid = false;
+    }
 
-
+    // macro :: html_verify_list_datetime :: {"multi_datetime": "field"}
+    if(!Array.isArray(data.multi_datetime)) {
+        result.error.multi_datetime = 'multi_datetime must be an array';
+        result.valid = false;
+    }else if (data.multi_datetime.some(tag => Object.prototype.toString.call(tag) !== '[object Date]')) {
+        result.error.multi_datetime = 'multi_datetime must be an array with element type: datetime';
+        result.valid = false;
+    }
+    // end macro ::
 
     return result
 
