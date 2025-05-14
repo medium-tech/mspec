@@ -36,6 +36,14 @@ function convertListElementStr(str) {
     return str;
 }
 
+function convertListElementDatetime(input) {
+    const date = new Date(input);
+    if (isNaN(date.getTime())) {
+        throw new Error('Invalid datetime');
+    }
+    return date;
+}
+
 //
 // defs
 //
@@ -268,56 +276,55 @@ function testModelFromInputTBody(tbody) {
         data.id = idInput.value;
     }
 
-    // macro :: html_from_input_tbody_str :: {"description": "field"}
-    // macro :: html_from_input_tbody_bool :: {"verified": "field"}
-    // macro :: html_from_input_tbody_enum :: {"color": "field"}
-    // macro :: html_from_input_tbody_int :: {"count": "field"}
-    // macro :: html_from_input_tbody_float :: {"score": "field"}
-    // macro :: html_from_input_tbody_list :: {"stuff": "field"}
-    // macro :: html_from_input_tbody_datetime :: {"when": "field"}
-    // end macro ::
     // insert :: macro.html_from_input_tbody_fields(model.fields)
+    // macro :: html_from_input_tbody_bool :: {"single_bool": "field"}
     const single_boolInput = tbody.querySelector('input[name="single_bool"]');
     data.single_bool = single_boolInput.checked;
 
-
+    // macro :: html_from_input_tbody_int :: {"single_int": "field"}
     const single_intInput = tbody.querySelector('input[name="single_int"]');
     data.single_int = parseInt(single_intInput.value);
 
-
+    // macro :: html_from_input_tbody_float :: {"single_float": "field"}
     const single_floatInput = tbody.querySelector('input[name="single_float"]');
     data.single_float = parseFloat(single_floatInput.value);
 
-
+    // macro :: html_from_input_tbody_str :: {"single_string": "field"}
     const single_stringInput = tbody.querySelector('input[name="single_string"]');
     data.single_string = single_stringInput.value;
 
-
+    // macro :: html_from_input_tbody_str_enum :: {"single_enum": "field"}
     const single_enumInput = tbody.querySelector('select[name="single_enum"]');
     data.single_enum = single_enumInput.value;
 
-
+    // macro :: html_from_input_tbody_datetime :: {"single_datetime": "field"}
     const single_datetimeInput = tbody.querySelector('input[name="single_datetime"]');
     data.single_datetime = new Date(single_datetimeInput.value);
 
-
+    // macro :: html_from_input_tbody_list_bool :: {"multi_bool": "field"}
     const multi_boolInput = tbody.querySelector('input[name="multi_bool"]');
     data.multi_bool = JSON.parse(multi_boolInput.getAttribute('valueAsJSON'));
 
-
+    // macro :: html_from_input_tbody_list_int :: {"multi_int": "field"}
     const multi_intInput = tbody.querySelector('input[name="multi_int"]');
     data.multi_int = JSON.parse(multi_intInput.getAttribute('valueAsJSON'));
 
-
+    // macro :: html_from_input_tbody_list_float :: {"multi_float": "field"}
     const multi_floatInput = tbody.querySelector('input[name="multi_float"]');
     data.multi_float = JSON.parse(multi_floatInput.getAttribute('valueAsJSON'));
 
-
+    // macro :: html_from_input_tbody_list_str :: {"multi_string": "field"}
     const multi_stringInput = tbody.querySelector('input[name="multi_string"]');
     data.multi_string = JSON.parse(multi_stringInput.getAttribute('valueAsJSON'));
 
+    // macro :: html_from_input_tbody_list_str_enum :: {"multi_enum": "field"}
+    const multi_enumInput = tbody.querySelector('input[name="multi_enum"]');
+    data.multi_enum = JSON.parse(multi_enumInput.getAttribute('valueAsJSON'));
 
-
+    // macro :: html_from_input_tbody_list_datetime :: {"multi_datetime": "field"}
+    const multi_datetimeInput = tbody.querySelector('input[name="multi_datetime"]');
+    data.multi_datetime = JSON.parse(multi_datetimeInput.getAttribute('valueAsJSON'));
+    // end macro ::
 
     return data;
 }
@@ -350,17 +357,12 @@ function testModelToInputTBody(data, tbody) {
         tbody.appendChild(idTr);
     }
 
-    // macro :: html_to_input_tbody_str :: {"description": "field"}
-    // macro :: html_to_input_tbody_bool :: {"verified": "field"}
-    // macro :: html_to_input_tbody_enum :: {"color": "field"}
-    // macro :: html_to_input_tbody_int :: {"count": "field"}
-    // macro :: html_to_input_tbody_float :: {"score": "field"}
-    // macro :: html_to_input_tbody_list :: {"stuff": "field", "Str": "element_type_capitalized"}
-    // macro :: html_to_input_tbody_datetime :: {"when": "field"}
-    // end macro ::
-    // insert :: macro.html_to_input_tbody(model.fields)
 
+    // insert :: macro.html_to_input_tbody(model.fields)
+    // macro :: html_to_input_tbody_bool :: {"single_bool": "field"}
+    //
     // single_bool - bool
+    //
 
     const single_boolTdKey = document.createElement('td');
     single_boolTdKey.textContent = 'single_bool';
@@ -382,9 +384,10 @@ function testModelToInputTBody(data, tbody) {
 
     tbody.appendChild(single_boolTr);
 
-
-
+    // macro :: html_to_input_tbody_int :: {"single_int": "field"}
+    //
     // single_int - int
+    //
 
     const single_intTdKey = document.createElement('td');
     single_intTdKey.textContent = 'single_int';
@@ -407,9 +410,10 @@ function testModelToInputTBody(data, tbody) {
 
     tbody.appendChild(single_intTr);
 
-
-
+    // macro :: html_to_input_tbody_float :: {"single_float": "field"}
+    //
     // single_float - float
+    //
 
     const single_floatTdKey = document.createElement('td');
     single_floatTdKey.textContent = 'single_float';
@@ -433,9 +437,11 @@ function testModelToInputTBody(data, tbody) {
 
     tbody.appendChild(single_floatTr);
 
-
-
+    // macro :: html_to_input_tbody_str :: {"single_string": "field"}
+    //
     // single_string - str
+    //
+
     const single_stringTdKey = document.createElement('td');
     single_stringTdKey.textContent = 'single_string';
 
@@ -456,9 +462,10 @@ function testModelToInputTBody(data, tbody) {
 
     tbody.appendChild(single_stringTr);
 
-
-
+    // macro :: html_to_input_tbody_str_enum :: {"single_enum": "field"}
+    //
     // single_enum - enum
+    //
 
     const single_enumTdKey = document.createElement('td');
     single_enumTdKey.textContent = 'single_enum';
@@ -488,9 +495,10 @@ function testModelToInputTBody(data, tbody) {
 
     tbody.appendChild(single_enumTr);
 
-
-
+    // macro :: html_to_input_tbody_datetime :: {"single_datetime": "field"}
+    //
     // single_datetime - datetime
+    //
 
     const single_datetimeTdKey = document.createElement('td');
     single_datetimeTdKey.textContent = 'single_datetime';
@@ -516,8 +524,10 @@ function testModelToInputTBody(data, tbody) {
 
     tbody.appendChild(single_datetimeTr);
 
-
-    // multi_bool - list
+    // macro :: html_to_input_tbody_list_bool :: {"multi_bool": "field"}
+    //
+    // multi_bool - list of bool
+    //
 
     let multi_boolEntered;
 
@@ -586,9 +596,10 @@ function testModelToInputTBody(data, tbody) {
 
     tbody.appendChild(multi_boolTr);
 
-
-
-    // multi_int - list
+    // macro :: html_to_input_tbody_list_int :: {"multi_int": "field"}
+    //
+    // multi_int - list of int
+    //
 
     let multi_intEntered;
 
@@ -658,8 +669,10 @@ function testModelToInputTBody(data, tbody) {
     tbody.appendChild(multi_intTr);
 
 
-
-    // multi_float - list
+    // macro :: html_to_input_tbody_list_float :: {"multi_float": "field"}
+    //
+    // multi_float - list of float
+    //
 
     let multi_floatEntered;
 
@@ -729,8 +742,10 @@ function testModelToInputTBody(data, tbody) {
     tbody.appendChild(multi_floatTr);
 
 
-
-    // multi_string - list
+    // macro :: html_to_input_tbody_list_str :: {"multi_string": "field"}
+    //
+    // multi_string - list of str
+    //
 
     let multi_stringEntered;
 
@@ -799,8 +814,150 @@ function testModelToInputTBody(data, tbody) {
 
     tbody.appendChild(multi_stringTr);
 
+    // macro :: html_to_input_tbody_list_str_enum :: {"multi_enum": "field"}
+    //
+    // multi_enum - list of enum
+    //
 
+    let multi_enumEntered;
+    try {
+        multi_enumEntered = data.multi_enum.slice()
+    }
+    catch {
+        multi_enumEntered = [];
+    }
+    const multi_enumTdKey = document.createElement('td');
+    multi_enumTdKey.textContent = 'multi_enum';
 
+    const multi_enumTdInput = document.createElement('td');
+
+    const multi_enumInput = document.createElement('input');
+    multi_enumInput.name = 'multi_enum';
+    multi_enumInput.value = '';
+    multi_enumInput.size = 35;
+    // we store the actual data on valueAsJSON because we can't store an array in an input value with escaping
+    // and also so we can reset the input between each tag entered
+    multi_enumInput.setAttribute('valueAsJSON', JSON.stringify(multi_enumEntered));
+    multi_enumInput.placeholder = 'press enter after each item';
+
+    const multi_enumTdOther = document.createElement('td');
+    const multi_enumEntriesRender = () => {
+        multi_enumTdOther.innerHTML = '';
+        let index = 0;
+
+        for (const tag of multi_enumEntered) {
+            const tagLink = document.createElement('a');
+            tagLink.innerHTML = tag;
+            tagLink.onclick = () => {
+                console.log('removing tag', tag);
+                multi_enumEntered = multi_enumEntered.filter(t => t !== tag);
+                multi_enumInput.setAttribute('valueAsJSON', JSON.stringify(multi_enumEntered));
+                multi_enumEntriesRender();
+            }
+            const tagSpacer = document.createElement('span');
+            tagSpacer.innerHTML = ', ';
+
+            multi_enumTdOther.appendChild(tagLink);
+
+            if (index < multi_enumEntered.length - 1) multi_enumTdOther.appendChild(tagSpacer);
+            index++;
+        }
+    }
+    multi_enumEntriesRender();
+
+    multi_enumInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            multi_enumEntered.push(convertListElementEnum(multi_enumInput.value));
+            multi_enumInput.value = ''
+            multi_enumInput.setAttribute('valueAsJSON', JSON.stringify(multi_enumEntered));
+            multi_enumEntriesRender();
+        }
+    });
+
+    multi_enumTdInput.appendChild(multi_enumInput);
+
+    const multi_enumTr = document.createElement('tr');
+    multi_enumTr.appendChild(multi_enumTdKey);
+    multi_enumTr.appendChild(multi_enumTdInput);
+    multi_enumTr.appendChild(multi_enumTdOther);
+
+    tbody.appendChild(multi_enumTr);
+
+    // macro :: html_to_input_tbody_list_datetime :: {"multi_datetime": "field"}
+    //
+    // multi_datetime - list of datetime
+    //
+    
+    let multi_datetimeEntered;
+
+    try {
+        multi_datetimeEntered = data.multi_datetime.slice()
+    }
+    catch {
+        multi_datetimeEntered = [];
+    }
+
+    const multi_datetimeTdKey = document.createElement('td');
+    multi_datetimeTdKey.textContent = 'multi_datetime';
+
+    const multi_datetimeTdInput = document.createElement('td');
+
+    const multi_datetimeInput = document.createElement('input');
+    multi_datetimeInput.name = 'multi_datetime';
+    multi_datetimeInput.value = '';
+    multi_datetimeInput.size = 35;
+    // we store the actual data on valueAsJSON because we can't store an array in an input value with escaping
+    // and also so we can reset the input between each tag entered
+    multi_datetimeInput.setAttribute('valueAsJSON', JSON.stringify(multi_datetimeEntered));
+    multi_datetimeInput.placeholder = 'press enter after each item';
+
+    const multi_datetimeTdOther = document.createElement('td');
+    const multi_datetimeEntriesRender = () => {
+        multi_datetimeTdOther.innerHTML = '';
+        let index = 0;
+
+        for (const tag of multi_datetimeEntered) {
+            const tagLink = document.createElement('a');
+            const tagIsoString = tag.toISOString();
+            tagLink.innerHTML = tagIsoString.split('.')[0];
+            tagLink.onclick = () => {
+                console.log('removing tag', tag);
+                multi_datetimeEntered = multi_datetimeEntered.filter(t => t !== tag);
+                multi_datetimeInput.setAttribute('valueAsJSON', JSON.stringify(multi_datetimeEntered));
+                multi_datetimeEntriesRender();
+            }
+            const tagSpacer = document.createElement('span');
+            tagSpacer.innerHTML = ', ';
+
+            multi_datetimeTdOther.appendChild(tagLink);
+
+            if (index < multi_datetimeEntered.length - 1) multi_datetimeTdOther.appendChild(tagSpacer);
+            index++;
+        }
+    }
+
+    multi_datetimeEntriesRender();
+
+    multi_datetimeInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            multi_datetimeEntered.push(convertListElementDatetime(multi_datetimeInput.value));
+            multi_datetimeInput.value = ''
+            multi_datetimeInput.setAttribute('valueAsJSON', JSON.stringify(multi_datetimeEntered));
+            multi_datetimeEntriesRender();
+        }
+    });
+
+    multi_datetimeTdInput.appendChild(multi_datetimeInput);
+
+    const multi_datetimeTr = document.createElement('tr');
+    multi_datetimeTr.appendChild(multi_datetimeTdKey);
+    multi_datetimeTr.appendChild(multi_datetimeTdInput);
+    multi_datetimeTr.appendChild(multi_datetimeTdOther);
+
+    tbody.appendChild(multi_datetimeTr);
+    // end macro ::
 
     return tbody;
 

@@ -93,29 +93,38 @@ class MTemplateHTMLProject(MTemplateProject):
         out = ''
         for name, field in fields.items():
             vars = {'field': name}
-            field_type = 'enum' if 'enum' in field else field['type']
+
+            macro_name = f'html_to_input_tbody_{field["type"]}'
+
             try:
-                vars['element_type'] = field['element_type']
-                vars['element_type_capitalized'] = field['element_type'].capitalize()
+                macro_name += '_' + field['element_type']
             except KeyError:
                 pass
 
-            try:
-                out += self.spec['macro'][f'html_to_input_tbody_{field_type}'](vars) + '\n'
-            except KeyError:
-                raise MTemplateError(f'field {name} does not have type "{field_type}"')
+            if 'enum' in field:
+                macro_name += '_enum'
+
+            out += self.spec['macro'][macro_name](vars) + '\n'
+            
         return out
 
     def macro_html_from_input_tbody_fields(self, fields:dict, indent='\t') -> str:
         out = ''
         for name, field in fields.items():
             vars = {'field': name}
-            field_type = 'enum' if 'enum' in field else field['type']
+
+            macro_name = f'html_from_input_tbody_{field["type"]}'
 
             try:
-                out += self.spec['macro'][f'html_from_input_tbody_{field_type}'](vars) + '\n'
+                macro_name += '_' + field['element_type']
             except KeyError:
-                raise MTemplateError(f'field {name} does not have type "{field_type}"')
+                pass
+
+            if 'enum' in field:
+                macro_name += '_enum'
+
+            out += self.spec['macro'][macro_name](vars) + '\n'
+            
         return out
 
     def macro_html_unittest_form(self, fields:dict, indent='\t'):
