@@ -11,6 +11,7 @@
         <meta http-equiv="Expires" content="0" />
         <link rel="stylesheet" type="text/css" href="/style.css">
         <script src="/test-module/test-model/index.js"></script>
+        <script src="/index.js"></script>
 
         <script type="text/javascript">
 
@@ -66,6 +67,11 @@
             }
 
             function resetTestModelInput() {
+                const createTBody = document.querySelector('#test-model-create-tbody');
+                testModelToInputTBody({}, createTBody)
+            }
+
+            function exampleTestModelInput() {
                 const createTBody = document.querySelector('#test-model-create-tbody');
                 testModelToInputTBody(exampleTestModel(), createTBody)
             }
@@ -211,7 +217,6 @@
             //
 
             window.onload = function() {
-                // fill form with default values
                 resetTestModelInput()
 
                 const isCreatePage = window.location.pathname.endsWith('/create')
@@ -313,6 +318,8 @@
             <button onclick="createTestModel()">submit</button>
             &emsp;|&emsp;
             <button onclick="resetTestModelInput()">reset</button>
+            &emsp;|&emsp;
+            <button onclick="exampleTestModelInput()">example</button>
             &emsp;|&emsp;
             <button onclick="randomizeTestModel()">random</button>
 

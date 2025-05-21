@@ -96,7 +96,7 @@ function initTestModel(data) {
         // macro :: html_init_list_str :: {"multi_string": "field"}
         multi_string: data.multi_string,
         // macro :: html_init_list_str_enum :: {"multi_enum": "field"}
-        mutli_enum: data.multi_enum,
+        multi_enum: data.multi_enum,
         // macro :: html_init_list_datetime :: {"multi_datetime": "field"}
         multi_datetime: data.multi_datetime.map(d => new Date(d))
         // end macro ::
@@ -152,7 +152,7 @@ function randomTestModel() {
         // macro :: html_random_list_str :: {"multi_string": "field"}
 		'multi_string': randomList(randomStr),
         // macro :: html_random_list_str_enum :: {"multi_enum": "field"}
-        'multi_enum': randomList(randomStrEnum(multi_enum_options)),
+        'multi_enum': randomList(() => randomStrEnum(multi_enum_options)),
         // macro :: html_random_list_datetime :: {"multi_datetime": "field"}
         'multi_datetime': randomList(randomDatetime),
         // end macro ::
@@ -210,7 +210,7 @@ function verifyTestModel(data) {
     if (!Array.isArray(data.multi_bool)) {
         result.error.multi_bool = 'multi_bool must be an array';
         result.valid = false;
-    }else if (data.multi_bool.some(tag => typeof tag !== 'boolean')) {
+    }else if (data.multi_bool.some(item => typeof item !== 'boolean')) {
         result.error.multi_bool = 'multi_bool must be an array with element type: boolean';
         result.valid = false;
     }
@@ -219,7 +219,7 @@ function verifyTestModel(data) {
     if (!Array.isArray(data.multi_int)) {
         result.error.multi_int = 'multi_int must be an array';
         result.valid = false;
-    }else if (data.multi_int.some(tag => typeof tag !== 'number')) {
+    }else if (data.multi_int.some(item => typeof item !== 'number')) {
         result.error.multi_int = 'multi_int must be an array with element type: number';
         result.valid = false;
     }
@@ -228,7 +228,7 @@ function verifyTestModel(data) {
     if (!Array.isArray(data.multi_float)) {
         result.error.multi_float = 'multi_float must be an array';
         result.valid = false;
-    }else if (data.multi_float.some(tag => typeof tag !== 'number')) {
+    }else if (data.multi_float.some(item => typeof item !== 'number')) {
         result.error.multi_float = 'multi_float must be an array with element type: number';
         result.valid = false;
     }
@@ -237,7 +237,7 @@ function verifyTestModel(data) {
     if (!Array.isArray(data.multi_string)) {
         result.error.multi_string = 'multi_string must be an array';
         result.valid = false;
-    }else if (data.multi_string.some(tag => typeof tag !== 'string')) {
+    }else if (data.multi_string.some(item => typeof item !== 'string')) {
         result.error.multi_string = 'multi_string must be an array with element type: string';
         result.valid = false;
     }
@@ -246,7 +246,7 @@ function verifyTestModel(data) {
     if (!Array.isArray(data.multi_enum)) {
         result.error.multi_enum = 'multi_enum must be an array';
         result.valid = false;
-    }else if (data.multi_enum.some(tag => typeof tag !== 'string' || !multi_enum_options.includes(tag))) {
+    }else if (data.multi_enum.some(item => typeof item !== 'string' || !multi_enum_options.includes(item))) {
         
         result.error.multi_enum = 'multi_enum elements must be strings from the predefined options';
         result.valid = false;
@@ -256,7 +256,7 @@ function verifyTestModel(data) {
     if(!Array.isArray(data.multi_datetime)) {
         result.error.multi_datetime = 'multi_datetime must be an array';
         result.valid = false;
-    }else if (data.multi_datetime.some(tag => Object.prototype.toString.call(tag) !== '[object Date]')) {
+    }else if (data.multi_datetime.some(item => Object.prototype.toString.call(item) !== '[object Date]')) {
         result.error.multi_datetime = 'multi_datetime must be an array with element type: datetime';
         result.valid = false;
     }
@@ -473,8 +473,7 @@ function testModelToInputTBody(data, tbody) {
     const single_enumTdInput = document.createElement('td');
     const single_enumInput = document.createElement('select');
     single_enumInput.name = 'single_enum';
-    const single_enumOptions = ['red', 'green', 'blue'];
-    for (const option of single_enumOptions) {
+    for (const option of single_enum_options) {
         const single_enumOption = document.createElement('option');
         single_enumOption.value = option;
         single_enumOption.textContent = option;
@@ -547,31 +546,29 @@ function testModelToInputTBody(data, tbody) {
     multi_boolInput.value = '';
     multi_boolInput.size = 35;
     // we store the actual data on valueAsJSON because we can't store an array in an input value with escaping 
-    // and also so we can reset the input between each tag entered
+    // and also so we can reset the input between each item entered
     multi_boolInput.setAttribute('valueAsJSON', JSON.stringify(multi_boolEntered));
     multi_boolInput.placeholder = 'press enter after each item';
 
     const multi_boolTdOther = document.createElement('td');
     const multi_boolEntriesRender = () => {
         multi_boolTdOther.innerHTML = '';
-        let index = 0;
     
-        for (const tag of multi_boolEntered) {
-            const tagLink = document.createElement('a');
-            tagLink.innerHTML = tag;
-            tagLink.onclick = () => {
-                console.log('removing tag', tag);
-                multi_boolEntered = multi_boolEntered.filter(t => t !== tag);
+        for (const [index, item] of multi_boolEntered.entries()) {
+            const itemLink = document.createElement('a');
+            itemLink.innerHTML = item;
+            itemLink.onclick = () => {
+                console.log('removing multi_bool index: ' + index, item);
+                multi_boolEntered.splice(index, 1);
                 multi_boolInput.setAttribute('valueAsJSON', JSON.stringify(multi_boolEntered));
                 multi_boolEntriesRender();
             }
-            const tagSpacer = document.createElement('span');
-            tagSpacer.innerHTML = ', ';
+            const itemSpacer = document.createElement('span');
+            itemSpacer.innerHTML = ', ';
 
-            multi_boolTdOther.appendChild(tagLink);
+            multi_boolTdOther.appendChild(itemLink);
 
-            if (index < multi_boolEntered.length - 1) multi_boolTdOther.appendChild(tagSpacer);
-            index++;
+            if (index < multi_boolEntered.length - 1) multi_boolTdOther.appendChild(itemSpacer);
         }
     }
 
@@ -619,31 +616,29 @@ function testModelToInputTBody(data, tbody) {
     multi_intInput.value = '';
     multi_intInput.size = 35;
     // we store the actual data on valueAsJSON because we can't store an array in an input value with escaping 
-    // and also so we can reset the input between each tag entered
+    // and also so we can reset the input between each item entered
     multi_intInput.setAttribute('valueAsJSON', JSON.stringify(multi_intEntered));
     multi_intInput.placeholder = 'press enter after each item';
 
     const multi_intTdOther = document.createElement('td');
     const multi_intEntriesRender = () => {
         multi_intTdOther.innerHTML = '';
-        let index = 0;
     
-        for (const tag of multi_intEntered) {
-            const tagLink = document.createElement('a');
-            tagLink.innerHTML = tag;
-            tagLink.onclick = () => {
-                console.log('removing tag', tag);
-                multi_intEntered = multi_intEntered.filter(t => t !== tag);
+        for (const [index, item] of multi_intEntered.entries()) {
+            const itemLink = document.createElement('a');
+            itemLink.innerHTML = item;
+            itemLink.onclick = () => {
+                console.log('removing multi_int index: ' + index, item);
+                multi_intEntered.splice(index, 1);
                 multi_intInput.setAttribute('valueAsJSON', JSON.stringify(multi_intEntered));
                 multi_intEntriesRender();
             }
-            const tagSpacer = document.createElement('span');
-            tagSpacer.innerHTML = ', ';
+            const itemSpacer = document.createElement('span');
+            itemSpacer.innerHTML = ', ';
 
-            multi_intTdOther.appendChild(tagLink);
+            multi_intTdOther.appendChild(itemLink);
 
-            if (index < multi_intEntered.length - 1) multi_intTdOther.appendChild(tagSpacer);
-            index++;
+            if (index < multi_intEntered.length - 1) multi_intTdOther.appendChild(itemSpacer);
         }
     }
 
@@ -692,31 +687,29 @@ function testModelToInputTBody(data, tbody) {
     multi_floatInput.value = '';
     multi_floatInput.size = 35;
     // we store the actual data on valueAsJSON because we can't store an array in an input value with escaping 
-    // and also so we can reset the input between each tag entered
+    // and also so we can reset the input between each item entered
     multi_floatInput.setAttribute('valueAsJSON', JSON.stringify(multi_floatEntered));
     multi_floatInput.placeholder = 'press enter after each item';
 
     const multi_floatTdOther = document.createElement('td');
     const multi_floatEntriesRender = () => {
         multi_floatTdOther.innerHTML = '';
-        let index = 0;
     
-        for (const tag of multi_floatEntered) {
-            const tagLink = document.createElement('a');
-            tagLink.innerHTML = tag;
-            tagLink.onclick = () => {
-                console.log('removing tag', tag);
-                multi_floatEntered = multi_floatEntered.filter(t => t !== tag);
+        for (const [index, item] of multi_floatEntered.entries()) {
+            const itemLink = document.createElement('a');
+            itemLink.innerHTML = item;
+            itemLink.onclick = () => {
+                console.log('removing multi_float index: ' + index, item);
+                multi_floatEntered.splice(index, 1);
                 multi_floatInput.setAttribute('valueAsJSON', JSON.stringify(multi_floatEntered));
                 multi_floatEntriesRender();
             }
-            const tagSpacer = document.createElement('span');
-            tagSpacer.innerHTML = ', ';
+            const itemSpacer = document.createElement('span');
+            itemSpacer.innerHTML = ', ';
 
-            multi_floatTdOther.appendChild(tagLink);
+            multi_floatTdOther.appendChild(itemLink);
 
-            if (index < multi_floatEntered.length - 1) multi_floatTdOther.appendChild(tagSpacer);
-            index++;
+            if (index < multi_floatEntered.length - 1) multi_floatTdOther.appendChild(itemSpacer);
         }
     }
 
@@ -765,31 +758,29 @@ function testModelToInputTBody(data, tbody) {
     multi_stringInput.value = '';
     multi_stringInput.size = 35;
     // we store the actual data on valueAsJSON because we can't store an array in an input value with escaping 
-    // and also so we can reset the input between each tag entered
+    // and also so we can reset the input between each item entered
     multi_stringInput.setAttribute('valueAsJSON', JSON.stringify(multi_stringEntered));
     multi_stringInput.placeholder = 'press enter after each item';
 
     const multi_stringTdOther = document.createElement('td');
     const multi_stringEntriesRender = () => {
         multi_stringTdOther.innerHTML = '';
-        let index = 0;
     
-        for (const tag of multi_stringEntered) {
-            const tagLink = document.createElement('a');
-            tagLink.innerHTML = tag;
-            tagLink.onclick = () => {
-                console.log('removing tag', tag);
-                multi_stringEntered = multi_stringEntered.filter(t => t !== tag);
+        for (const [index, item] of multi_stringEntered.entries()) {
+            const itemLink = document.createElement('a');
+            itemLink.innerHTML = item;
+            itemLink.onclick = () => {
+                console.log('removing multi_string index: ' + index, item);
+                multi_stringEntered.splice(index, 1);
                 multi_stringInput.setAttribute('valueAsJSON', JSON.stringify(multi_stringEntered));
                 multi_stringEntriesRender();
             }
-            const tagSpacer = document.createElement('span');
-            tagSpacer.innerHTML = ', ';
+            const itemSpacer = document.createElement('span');
+            itemSpacer.innerHTML = ', ';
 
-            multi_stringTdOther.appendChild(tagLink);
+            multi_stringTdOther.appendChild(itemLink);
 
-            if (index < multi_stringEntered.length - 1) multi_stringTdOther.appendChild(tagSpacer);
-            index++;
+            if (index < multi_stringEntered.length - 1) multi_stringTdOther.appendChild(itemSpacer);
         }
     }
 
@@ -831,49 +822,56 @@ function testModelToInputTBody(data, tbody) {
 
     const multi_enumTdInput = document.createElement('td');
 
-    const multi_enumInput = document.createElement('input');
+    const multi_enumInput = document.createElement('select');
     multi_enumInput.name = 'multi_enum';
-    multi_enumInput.value = '';
-    multi_enumInput.size = 35;
-    // we store the actual data on valueAsJSON because we can't store an array in an input value with escaping
-    // and also so we can reset the input between each tag entered
-    multi_enumInput.setAttribute('valueAsJSON', JSON.stringify(multi_enumEntered));
-    multi_enumInput.placeholder = 'press enter after each item';
+    const multi_enum_null_option = document.createElement('option');
+    multi_enum_null_option.value = '';
+    multi_enum_null_option.textContent = 'select an option';
+    multi_enum_null_option.selected = true;
+    multi_enum_null_option.disabled = true;
+    multi_enumInput.appendChild(multi_enum_null_option);
 
-    const multi_enumTdOther = document.createElement('td');
-    const multi_enumEntriesRender = () => {
-        multi_enumTdOther.innerHTML = '';
-        let index = 0;
-
-        for (const tag of multi_enumEntered) {
-            const tagLink = document.createElement('a');
-            tagLink.innerHTML = tag;
-            tagLink.onclick = () => {
-                console.log('removing tag', tag);
-                multi_enumEntered = multi_enumEntered.filter(t => t !== tag);
-                multi_enumInput.setAttribute('valueAsJSON', JSON.stringify(multi_enumEntered));
-                multi_enumEntriesRender();
-            }
-            const tagSpacer = document.createElement('span');
-            tagSpacer.innerHTML = ', ';
-
-            multi_enumTdOther.appendChild(tagLink);
-
-            if (index < multi_enumEntered.length - 1) multi_enumTdOther.appendChild(tagSpacer);
-            index++;
-        }
+    for (const option of multi_enum_options) {
+        const multi_enumOption = document.createElement('option');
+        multi_enumOption.value = option;
+        multi_enumOption.textContent = option;
+        multi_enumInput.appendChild(multi_enumOption);
     }
-    multi_enumEntriesRender();
 
-    multi_enumInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            multi_enumEntered.push(convertListElementEnum(multi_enumInput.value));
-            multi_enumInput.value = ''
+    multi_enumInput.addEventListener('change', (event) => {
+        console.log('multi_enum change', event.target.value);
+        const selectedValue = event.target.value;
+        if (selectedValue) {
+            multi_enumEntered.push(convertListElementEnum(selectedValue));
+            multi_enumInput.value = '';
             multi_enumInput.setAttribute('valueAsJSON', JSON.stringify(multi_enumEntered));
             multi_enumEntriesRender();
         }
     });
+    multi_enumInput.setAttribute('valueAsJSON', JSON.stringify(multi_enumEntered));
+
+    const multi_enumTdOther = document.createElement('td');
+    const multi_enumEntriesRender = () => {
+        multi_enumTdOther.innerHTML = '';
+
+        for (const [index, item] of multi_enumEntered.entries()) {
+            const itemLink = document.createElement('a');
+            itemLink.innerHTML = item;
+            itemLink.onclick = () => {
+                console.log('removing multi_enum index: ' + index, item);
+                multi_enumEntered.splice(index, 1);
+                multi_enumInput.setAttribute('valueAsJSON', JSON.stringify(multi_enumEntered));
+                multi_enumEntriesRender();
+            }
+            const itemSpacer = document.createElement('span');
+            itemSpacer.innerHTML = ', ';
+
+            multi_enumTdOther.appendChild(itemLink);
+
+            if (index < multi_enumEntered.length - 1) multi_enumTdOther.appendChild(itemSpacer);
+        }
+    }
+    multi_enumEntriesRender();
 
     multi_enumTdInput.appendChild(multi_enumInput);
 
@@ -905,51 +903,53 @@ function testModelToInputTBody(data, tbody) {
 
     const multi_datetimeInput = document.createElement('input');
     multi_datetimeInput.name = 'multi_datetime';
-    multi_datetimeInput.value = '';
-    multi_datetimeInput.size = 35;
-    // we store the actual data on valueAsJSON because we can't store an array in an input value with escaping
-    // and also so we can reset the input between each tag entered
-    multi_datetimeInput.setAttribute('valueAsJSON', JSON.stringify(multi_datetimeEntered));
-    multi_datetimeInput.placeholder = 'press enter after each item';
+    multi_datetimeInput.type = 'datetime-local';
 
     const multi_datetimeTdOther = document.createElement('td');
     const multi_datetimeEntriesRender = () => {
         multi_datetimeTdOther.innerHTML = '';
-        let index = 0;
 
-        for (const tag of multi_datetimeEntered) {
-            const tagLink = document.createElement('a');
-            const tagIsoString = tag.toISOString();
-            tagLink.innerHTML = tagIsoString.split('.')[0];
-            tagLink.onclick = () => {
-                console.log('removing tag', tag);
-                multi_datetimeEntered = multi_datetimeEntered.filter(t => t !== tag);
+        for (const [index, item] of multi_datetimeEntered.entries()) {
+            const itemLink = document.createElement('a');
+            const itemIsoString = item.toISOString();
+            itemLink.innerHTML = itemIsoString.split('.')[0];
+            itemLink.onclick = () => {
+                console.log('removing multi_datetime index: ' + index, item);
+                multi_datetimeEntered.splice(index, 1);
                 multi_datetimeInput.setAttribute('valueAsJSON', JSON.stringify(multi_datetimeEntered));
                 multi_datetimeEntriesRender();
             }
-            const tagSpacer = document.createElement('span');
-            tagSpacer.innerHTML = ', ';
+            const itemSpacer = document.createElement('span');
+            itemSpacer.innerHTML = ', ';
 
-            multi_datetimeTdOther.appendChild(tagLink);
+            multi_datetimeTdOther.appendChild(itemLink);
 
-            if (index < multi_datetimeEntered.length - 1) multi_datetimeTdOther.appendChild(tagSpacer);
-            index++;
+            if (index < multi_datetimeEntered.length - 1) multi_datetimeTdOther.appendChild(itemSpacer);
         }
     }
 
     multi_datetimeEntriesRender();
 
-    multi_datetimeInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            multi_datetimeEntered.push(convertListElementDatetime(multi_datetimeInput.value));
-            multi_datetimeInput.value = ''
+    multi_datetimeTdInput.appendChild(multi_datetimeInput);
+
+    const multi_datetimeTdInputAddButton = document.createElement('button');
+    multi_datetimeTdInputAddButton.textContent = 'add';
+    multi_datetimeTdInputAddButton.onclick = () => {
+        console.log('multi_datetime add', multi_datetimeInput.value);
+        const selectedValue = multi_datetimeInput.value;
+        if (selectedValue) {
+            const selectedDate = new Date(selectedValue);
+            if (isNaN(selectedDate.getTime())) {
+                console.error('Invalid date:', selectedValue);
+                return;
+            }
+            multi_datetimeEntered.push(convertListElementDatetime(selectedDate));
+            multi_datetimeInput.value = '';
             multi_datetimeInput.setAttribute('valueAsJSON', JSON.stringify(multi_datetimeEntered));
             multi_datetimeEntriesRender();
-        }
-    });
-
-    multi_datetimeTdInput.appendChild(multi_datetimeInput);
+        }   
+    }
+    multi_datetimeTdInput.appendChild(multi_datetimeTdInputAddButton);
 
     const multi_datetimeTr = document.createElement('tr');
     multi_datetimeTr.appendChild(multi_datetimeTdKey);
@@ -1201,63 +1201,115 @@ function testModelToTableRow(data) {
     idTd.textContent = data.id;
     tr.appendChild(idTd);
 
-    // macro :: html_to_table_row_str :: {"description": "field"}
-    // macro :: html_to_table_row_bool :: {"verified": "field"}
-    // macro :: html_to_table_row_enum :: {"color": "field"}
-    // macro :: html_to_table_row_int :: {"count": "field"}
-    // macro :: html_to_table_row_float :: {"score": "field"}
-    // macro :: html_to_table_row_list :: {"stuff": "field"}
-    // end macro ::
-
-    // macro :: html_to_table_row_datetime :: {"when": "field"}
-    // end macro ::
     // insert :: macro.html_to_table_row(model.fields)
+    // macro :: html_to_table_row_bool :: {"single_bool": "field"}
+    //
+    // single_bool - bool
+    //
+
     const single_boolTd = document.createElement('td');
     single_boolTd.textContent = (data.single_bool) ? 'yes' : 'no';
     tr.appendChild(single_boolTd);
 
+    // macro :: html_to_table_row_int :: {"single_int": "field"}
+    // 
+    // single_int - int
+    //
 
     const single_intTd = document.createElement('td');
     single_intTd.textContent = data.single_int;
     tr.appendChild(single_intTd);
 
+    // macro :: html_to_table_row_float :: {"single_float": "field"}
+    //
+    // single_float - float
+    //
 
     const single_floatTd = document.createElement('td');
     single_floatTd.textContent = data.single_float;
     tr.appendChild(single_floatTd);
 
+    // macro :: html_to_table_row_str :: {"single_string": "field"}
+    //
+    // single_string - str
+    //
 
     const single_stringTd = document.createElement('td');
     single_stringTd.textContent = data.single_string;
     tr.appendChild(single_stringTd);
 
+    // macro :: html_to_table_row_str_enum :: {"single_enum": "field"}
+    //
+    // single_enum - enum
+    //
 
     const single_enumTd = document.createElement('td');
     single_enumTd.textContent = data.single_enum;
     tr.appendChild(single_enumTd);
 
-
+    // macro :: html_to_table_row_datetime :: {"single_datetime": "field"}
+    //
+    // single_datetime - datetime
+    //
+    
     const single_datetimeTd = document.createElement('td');
     single_datetimeTd.textContent = data.single_datetime.toISOString().split('.')[0];
     tr.appendChild(single_datetimeTd);
+
+    // macro :: html_to_table_row_list_bool :: {"multi_bool": "field"}
+    //
+    // multi_bool - list of bool
+    //
 
     const multi_boolTd = document.createElement('td');
     multi_boolTd.textContent = data.multi_bool.join(', ');
     tr.appendChild(multi_boolTd);
 
+    // macro :: html_to_table_row_list_int :: {"multi_int": "field"}
+    //
+    // multi_int - list of int
+    //
+
     const multi_intTd = document.createElement('td');
     multi_intTd.textContent = data.multi_int.join(', ');
     tr.appendChild(multi_intTd);
+
+    // macro :: html_to_table_row_list_float :: {"multi_float": "field"}
+    //
+    // multi_float - list of float
+    //
 
     const multi_floatTd = document.createElement('td');
     multi_floatTd.textContent = data.multi_float.join(', ');
     tr.appendChild(multi_floatTd);
 
+    // macro :: html_to_table_row_list_str :: {"multi_string": "field"}
+    //
+    // multi_string - list of str
+    //
+
     const multi_stringTd = document.createElement('td');
     multi_stringTd.textContent = data.multi_string.join(', ');
     tr.appendChild(multi_stringTd);
 
+    // macro :: html_to_table_row_list_str_enum :: {"multi_enum": "field"}
+    //
+    // multi_enum - list of enum
+    //
 
+    const multi_enumTd = document.createElement('td');
+    multi_enumTd.textContent = data.multi_enum.join(', ');
+    tr.appendChild(multi_enumTd);
+
+    // macro :: html_to_table_row_list_datetime :: {"multi_datetime": "field"}
+    //
+    // multi_datetime - list of datetime
+    //
+
+    const multi_datetimeTd = document.createElement('td');
+    multi_datetimeTd.textContent = data.multi_datetime.map(d => d.toISOString().split('.')[0]).join(', ');
+    tr.appendChild(multi_datetimeTd);
+    // end macro ::
 
     return tr;
 
