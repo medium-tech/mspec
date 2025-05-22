@@ -19,8 +19,10 @@ single_enum_options = [
 # macro :: py_enum_definition_option :: {"red": "option"}
     'red', 
 # end macro ::
+# ignore ::
     'green', 
     'blue',
+# end ignore ::    
 # macro :: py_enum_definition_end :: {}
 ]
 # end macro ::
@@ -218,6 +220,7 @@ class TestModel:
     def random(cls) -> 'TestModel':
         return cls(
             # insert :: macro.py_random_fields(model.fields)
+            # ignore ::
 			single_bool=random_bool(),
 			single_int=random_int(),
 			single_float=random_float(),
@@ -230,5 +233,5 @@ class TestModel:
 			multi_string=random_list('str'),
             multi_enum=random_list('str', multi_enum_options),
             multi_datetime=random_list('datetime'),
-            # end macro ::
+            # end ignore ::
         )

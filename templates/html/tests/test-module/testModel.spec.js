@@ -54,7 +54,7 @@ test('test - test module - test model - instance', async ({ page }) => {
     await page.locator('input[name="single_string"]').fill('this is a unittest');
     textToContain.push('this is a unittest');
 
-    // macro :: html_unittest_form_enum :: {"single_enum": "field", "red": "value"}
+    // macro :: html_unittest_form_str_enum :: {"single_enum": "field", "red": "value"}
     await page.locator('select[name="single_enum"]').selectOption('red');
     textToContain.push('red');
 
@@ -93,8 +93,20 @@ test('test - test module - test model - instance', async ({ page }) => {
     await page.locator('input[name="multi_string"]').fill('two');
     await page.locator('input[name="multi_string"]').press('Enter');
     textToContain.push('one, two');
+
+    // macro :: html_unittest_form_list_str_enum :: {"multi_enum": "field", "zebra": "list_element_1", "giraffe": "list_element_2"}
+    await page.locator('select[name="multi_enum"]').selectOption('zebra');
+    await page.locator('select[name="multi_enum"]').selectOption('giraffe');
+    textToContain.push('zebra, giraffe');
+
+    // macro :: html_unittest_form_list_datetime :: {"multi_datetime": "field", "2020-03-02T05:15": "list_element_1", "2022-11-22T12:45": "list_element_2"}
+    await page.locator('input[name="multi_datetime"]').click();
+    await page.locator('input[name="multi_datetime"]').fill('2020-03-02T05:15');
+    await page.getByRole('button', { name: 'add' }).click();
+    await page.locator('input[name="multi_datetime"]').fill('2022-11-22T12:45');
+    await page.getByRole('button', { name: 'add' }).click();
     // end macro ::
-    
+
     await page.getByRole('button', { name: 'submit' }).click();
 
     await expect(page.locator('#create-test-model-status')).toContainText('success');

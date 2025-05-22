@@ -34,6 +34,8 @@ def sort_dict_by_key_length(dictionary:dict) -> OrderedDict:
 class MTemplateProject:
 
     app_name = ''
+    model_prefixes = []
+    module_prefixes = []
         
     def __init__(self, spec:dict, debug:bool=False, disable_strict:bool=False) -> None:
         self.spec = spec
@@ -85,15 +87,15 @@ class MTemplateProject:
                     continue
                 
                 rel_path = os.path.relpath(os.path.join(root, name), self.template_dir)
-                rel_path = rel_path.replace('example-item', '{{ model.name.kebab_case }}')
-                rel_path = rel_path.replace('example_item', '{{ model.name.snake_case }}')
-                rel_path = rel_path.replace('exampleItem', '{{ model.name.camel_case }}')
-                rel_path = rel_path.replace('ExampleItem', '{{ model.name.pascal_case }}')
+                rel_path = rel_path.replace('test-model', '{{ model.name.kebab_case }}')
+                rel_path = rel_path.replace('test_model', '{{ model.name.snake_case }}')
+                rel_path = rel_path.replace('testModel', '{{ model.name.camel_case }}')
+                rel_path = rel_path.replace('TestModel', '{{ model.name.pascal_case }}')
 
-                rel_path = rel_path.replace('sample-module', '{{ module.name.kebab_case }}')
-                rel_path = rel_path.replace('sample_module', '{{ module.name.snake_case }}')
-                rel_path = rel_path.replace('sampleModule', '{{ module.name.camel_case }}')
-                rel_path = rel_path.replace('SampleModule', '{{ module.name.pascal_case }}')
+                rel_path = rel_path.replace('test-module', '{{ module.name.kebab_case }}')
+                rel_path = rel_path.replace('test_module', '{{ module.name.snake_case }}')
+                rel_path = rel_path.replace('testModule', '{{ module.name.camel_case }}')
+                rel_path = rel_path.replace('TestModule', '{{ module.name.pascal_case }}')
                 
                 template = {'src': os.path.join(root, name), 'rel': rel_path}
 
@@ -135,7 +137,7 @@ class MTemplateProject:
         
         for path in paths:
             try:
-                template = MTemplateExtractor.template_from_file(path['src'], emit_syntax=self.debug)
+                template = MTemplateExtractor.template_from_file(path['src'])
                 self.templates[path['rel']] = template
             except Exception as exc:
                 print(path['src'])

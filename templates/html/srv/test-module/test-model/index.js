@@ -267,6 +267,7 @@ function verifyTestModel(data) {
 }
 
 function testModelFromInputTBody(tbody) {   
+    console.log('testModelFromInputTBody', tbody);
     const data = {};
 
     // parse id if exists
@@ -318,12 +319,15 @@ function testModelFromInputTBody(tbody) {
     data.multi_string = JSON.parse(multi_stringInput.getAttribute('valueAsJSON'));
 
     // macro :: html_from_input_tbody_list_str_enum :: {"multi_enum": "field"}
-    const multi_enumInput = tbody.querySelector('input[name="multi_enum"]');
+    const multi_enumInput = tbody.querySelector('select[name="multi_enum"]');
+    console.log('multi_enumInput', multi_enumInput);
     data.multi_enum = JSON.parse(multi_enumInput.getAttribute('valueAsJSON'));
 
     // macro :: html_from_input_tbody_list_datetime :: {"multi_datetime": "field"}
     const multi_datetimeInput = tbody.querySelector('input[name="multi_datetime"]');
-    data.multi_datetime = JSON.parse(multi_datetimeInput.getAttribute('valueAsJSON'));
+    console.log('multi_datetimeInput', multi_datetimeInput);
+    const multie_datetimeItems = JSON.parse(multi_datetimeInput.getAttribute('valueAsJSON'));
+    data.multi_datetime = multie_datetimeItems.map(item => new Date(item));
     // end macro ::
 
     return data;
@@ -905,6 +909,8 @@ function testModelToInputTBody(data, tbody) {
     multi_datetimeInput.name = 'multi_datetime';
     multi_datetimeInput.type = 'datetime-local';
 
+    multi_datetimeInput.setAttribute('valueAsJSON', JSON.stringify(multi_datetimeEntered));
+
     const multi_datetimeTdOther = document.createElement('td');
     const multi_datetimeEntriesRender = () => {
         multi_datetimeTdOther.innerHTML = '';
@@ -1338,6 +1344,14 @@ function testModelForJSON(data) {
     for (const field in data) {
         if (Object.prototype.toString.call(data[field]) === '[object Date]') {
             result[field] = data[field].toISOString().split('.')[0];
+        }else if (Array.isArray(data[field])) {
+            result[field] = data[field].map((item) => {
+                if (Object.prototype.toString.call(item) === '[object Date]') {
+                    return item.toISOString().split('.')[0];
+                }else{
+                    return item;
+                }
+            });
         }else{
             result[field] = data[field];
         }

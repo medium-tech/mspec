@@ -12,12 +12,12 @@ class MTemplateHTMLProject(MTemplateProject):
     template_dir = Path(__file__).parent.parent.parent / 'templates/html'
 
     module_prefixes = [
-        str(template_dir / 'srv/sample-module')
+        str(template_dir / 'srv/test-module')
     ]
 
     model_prefixes = [
-        str(template_dir / 'tests/sample-module'),
-        str(template_dir / 'srv/sample-module/example-item')
+        str(template_dir / 'tests/test-module'),
+        str(template_dir / 'srv/test-module/test-model')
     ]
 
     def init_template_vars(self):
@@ -44,7 +44,7 @@ class MTemplateHTMLProject(MTemplateProject):
 
             macro_name = f'html_init_{field["type"]}'
 
-            if macro_name == 'list':
+            if field['type'] == 'list':
                 macro_name += f"_{field['element_type']}"
 
             if 'enum' in field:
@@ -70,9 +70,18 @@ class MTemplateHTMLProject(MTemplateProject):
         for name, field in fields.items():
             vars = {'field': name}
             field_type = field['type']
+            macro_name = f'html_to_table_row_{field_type}'
 
             try:
-                out += self.spec['macro'][f'html_to_table_row_{field_type}'](vars) + '\n'
+                macro_name += '_' + field['element_type']
+            except KeyError:
+                pass
+
+            if 'enum' in field:
+                macro_name += '_enum'
+
+            try:
+                out += self.spec['macro'][macro_name](vars) + '\n'
             except KeyError:
                 raise MTemplateError(f'field {name} does not have type "{field_type}"')
         return out
@@ -138,32 +147,64 @@ class MTemplateHTMLProject(MTemplateProject):
         out = ''
         for name, field in fields.items():
             vars = {'field': name}
-            try:
-                vars['enum_choice'] = field['enum'][0]
-                field_type = 'enum'
-            except KeyError:
-                field_type = field['type']
+            macro_name = f'html_unittest_form_{field["type"]}'
 
-            if field_type == 'list':
+            if field['type'] == 'list':
+
+                # list fields #
+
+                macro_name += '_' + field['element_type']
+
                 if field['element_type'] == 'str':
-                    vars['list_element_1'] = 'one'
-                    vars['list_element_2'] = 'two'
+                    if 'enum' in field:
+                        macro_name += '_enum'
+                        vars['list_element_1'] = field['enum'][0]
+                        vars['list_element_2'] = field['enum'][1]
+                    else:
+                        vars['list_element_1'] = 'grass'
+                        vars['list_element_2'] = 'trees'
+
                 elif field['element_type'] == 'bool':
                     vars['list_element_1'] = 'true'
                     vars['list_element_2'] = 'false'
                 elif field['element_type'] == 'int':
-                    vars['list_element_1'] = '1'
-                    vars['list_element_2'] = '2'
+                    vars['list_element_1'] = '66'
+                    vars['list_element_2'] = '81'
                 elif field['element_type'] == 'float':
-                    vars['list_element_1'] = '1.4'
-                    vars['list_element_2'] = '2.34578'
+                    vars['list_element_1'] = '4.9'
+                    vars['list_element_2'] = '8.1128'
+                elif field['element_type'] == 'datetime':
+                    vars['list_element_1'] = '1998-06-04T04:35'
+                    vars['list_element_2'] = '2023-01-01T00:00'
                 else:
                     raise MTemplateError(f'field "{name}" has unsupported element_type "{field["element_type"]}"')
+                
+            else:
+
+                # non-list fields #
+                
+                if field['type'] == 'str':
+                    if 'enum' in field:
+                        macro_name += '_enum'
+                        vars['value'] = field['enum'][0]
+                    else:
+                        vars['value'] = 'one'
+
+                elif field['type'] == 'bool':
+                    vars['value'] = 'true'
+                elif field['type'] == 'int':
+                    vars['value'] = '1'
+                elif field['type'] == 'float':
+                    vars['value'] = '1.4'
+                elif field['type'] == 'datetime':
+                    vars['value'] = '1998-06-04T04:35'
+                else:
+                    raise MTemplateError(f'field "{name}" has unsupported type "{field["type"]}"')
 
             try:
-                out += self.spec['macro'][f'html_unittest_form_{field_type}'](vars) + '\n'
-            except KeyError:
-                raise MTemplateError(f'field {name} does not have type "{field_type}"')
+                out += self.spec['macro'][macro_name](vars) + '\n'
+            except KeyError as e:
+                raise MTemplateError(f'field {name} does not have type "{field["type"]}"') from e
         return out
     
     def macro_html_random_fields(self, fields:dict, indent='\t') -> str:
@@ -203,12 +244,16 @@ class MTemplateHTMLProject(MTemplateProject):
     def macro_html_enum_definitions(self, fields:dict, indent='    ') -> str:
         out = ''
         for name, field in fields.items():
-            out += self.spec['macro'][f'html_enum_definition_begin'](field_name=name) + '\n'
+            if 'enum' not in field:
+                continue
+
+            out += self.spec['macro'][f'html_enum_definition_begin']({'field_name': name}) + '\n'
 
             for option in field['enum']:
-                out += self.spec['macro'][f'html_enum_definition_option'](option=option.replace("'", "\'")) + '\n'
+                option_value = option.replace("'", "\'")
+                out += self.spec['macro'][f'html_enum_definition_option']({'option': option_value}) + '\n'
 
-            out += self.spec['macro'][f'html_enum_definition_end']() + '\n'
+            out += self.spec['macro'][f'html_enum_definition_end']({}) + '\n'
 
         return out
     

@@ -14,12 +14,12 @@ class MTemplatePyProject(MTemplateProject):
     template_dir = Path(__file__).parent.parent.parent / 'templates/py'
 
     module_prefixes = [
-        str(template_dir / 'src/sample_module')
+        str(template_dir / 'src/test_module'),
     ]
 
     model_prefixes = [
-        str(template_dir / 'src/sample_module/example_item'),
-        str(template_dir / 'tests/sample_module')
+        str(template_dir / 'src/test_module/test_model'),
+        str(template_dir / 'tests/test_module')
     ]
     
     def init_template_vars(self):
@@ -94,7 +94,7 @@ class MTemplatePyProject(MTemplateProject):
                 'model_name_snake_case': model['name']['snake_case'],
                 'field_name': field_name,
             }
-            macro_name = 'py_sql_create_list_' + model['fields'][field_name]['type']
+            macro_name = 'py_sql_create_list_' + model['fields'][field_name]['element_type']
             if 'enum' in model['fields'][field_name]:
                 macro_name += '_enum'
             out += self.spec['macro'][macro_name](list_vars) + '\n'
@@ -111,7 +111,7 @@ class MTemplatePyProject(MTemplateProject):
                     'model_name_snake_case': model['name']['snake_case'],
                     'field_name': name
                 }
-                macro_name = 'py_sql_read_list_' + field['type']
+                macro_name = 'py_sql_read_list_' + field['element_type']
                 if 'enum' in field:
                     macro_name += '_enum'
                 out += self.spec['macro'][macro_name](read_list_vars) + '\n'
@@ -131,7 +131,7 @@ class MTemplatePyProject(MTemplateProject):
                     'field_name': field_name,
                 }
 
-                macro_name = 'py_sql_update_list_' + field['type']
+                macro_name = 'py_sql_update_list_' + field['element_type']
                 if 'enum' in field:
                     macro_name += '_enum'
 
@@ -178,10 +178,12 @@ class MTemplatePyProject(MTemplateProject):
             if field['type'] == 'list':
                 list_vars = {
                     'model_name_snake_case': model['name']['snake_case'],
-                    'field_name': name,
-                    'item': 'bool(row[0])' if field['element_type'] == 'bool' else 'row[0]',
+                    'field_name': name
                 }
-                out += self.spec['macro']['py_sql_list_list'](list_vars) + '\n'
+                macro_name = 'py_sql_list_' + field['element_type']
+                if 'enum' in field:
+                    macro_name += '_enum'
+                out += self.spec['macro'][macro_name](list_vars) + '\n'
         return out
 
     def macro_py_sql_convert(self, fields:dict, indent='\t\t\t') -> str:
@@ -316,7 +318,7 @@ class MTemplatePyProject(MTemplateProject):
                 args = ''
                 if 'enum' in field:
                     field_type += '_enum'
-                    args += f", {name}_options"
+                    args += f'{name}_options'
 
             # run macro #
 
@@ -366,11 +368,17 @@ class MTemplatePyProject(MTemplateProject):
     def macro_py_enum_definitions(self, fields:dict, indent='    ') -> str:
         out = ''
         for name, field in fields.items():
-            out += self.spec['macro'][f'py_enum_definition_begin'](field_name=name) + '\n'
+            try:
+                enum_values = field['enum']
+            except KeyError:
+                continue
 
-            for option in field['enum']:
-                out += self.spec['macro'][f'py_enum_definition_option'](option=option.replace("'", "\'")) + '\n'
+            out += self.spec['macro'][f'py_enum_definition_begin']({'field_name': name}) + '\n'
 
-            out += self.spec['macro'][f'py_enum_definition_end']() + '\n'
+            for option in enum_values:
+                args = {'option': option.replace("'", "\'")}
+                out += self.spec['macro'][f'py_enum_definition_option'](args) + '\n'
+
+            out += self.spec['macro'][f'py_enum_definition_end']({}) + '\n'
 
         return out

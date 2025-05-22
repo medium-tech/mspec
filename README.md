@@ -105,7 +105,7 @@ Browser2.0 will use content based addressing instead of location based addressin
 
 # Documentation
 
-Because this project is in alpha there is no documentation. However the code is designed to be simple enough to document itself. If you're interested in generating an app check `spec/unit-test.yaml` for the features of the app spec that are unittested on the `main` branch. See `example_spec` in `src/lingo/expressions.py` for an example of a browser2.0 page that is unittested. And the cli help for the template generator is available by running `python -m mtemplate -h` after [setting up the dev enviro](#setup-dev-environment).
+Because this project is in alpha there is no documentation. However the code is designed to be simple enough to document itself. If you're interested in generating an app check `spec/test-gen.yaml` for the features of the app spec that are unittested on the `main` branch. See `example_spec` in `src/lingo/expressions.py` for an example of a browser2.0 page that is unittested. And the cli help for the template generator is available by running `python -m mtemplate -h` after [setting up the dev enviro](#setup-dev-environment).
 
 # Development
 
@@ -131,7 +131,7 @@ The `./templates` folder contains template apps from which templates are extract
 
 As mentioned, the templates are extracted from working apps in `./templates`, this allows you to run the templates directly for fast development and testing. This section explains how to run the apps from which templates are extracted. If you want to change the features that generated apps have you need to edit the template apps as described in this section. If you want to learn how to generate template apps from a yaml spec go to [generate apps from spec files](#generate-apps-from-spec-files).
 
-The template extraction syntax is embedded into code comments to allow the template apps to run on their own, this syntax is not currently documented. The yaml config spec is also not yet documented as it may change, but you can look at `./spec/unit-test.yaml` for a workin' example.
+The template extraction syntax is embedded into code comments to allow the template apps to run on their own, this syntax is not currently documented. The yaml config spec is also not yet documented as it may change, but you can look at `./spec/test-gen.yaml` for a workin' example.
 
 ### run the python server
 
@@ -189,7 +189,7 @@ Then run:
 
     python -m mtemplate render
 
-By default this will use the spec file `./spec/unit-test.yaml` and output the files in `./dist/unit-test` but you can supply custom arguments like this:
+By default this will use the spec file `./spec/test-gen.yaml` and output the files in `./dist/test-gen` but you can supply custom arguments like this:
 
     python -m mtemplate render --spec <yaml spec file> --output <output dir>
 
@@ -208,9 +208,9 @@ Or for help:
 
 ## run and test generated apps
 
-After following the above steps to render the python and html files you can run the apps as follows. You need to be in the output directory that contains the `html` and `py` directories which using the default spec and output is `dist/unit-test`
+After following the above steps to render the python and html files you can run the apps as follows. You need to be in the output directory that contains the `html` and `py` directories which using the default spec and output is `dist/test-gen`
 
-    cd dist/unit-test
+    cd dist/test-gen
     python3 -m venv .venv --upgrade-deps
     source .venv/bin/activate
     python -m pip install -e py

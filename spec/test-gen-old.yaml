@@ -1,0 +1,123 @@
+project:
+  
+  name:
+    snake_case: 'test_gen'
+    pascal_case: 'TestGen'
+    camel_case: 'testGen'
+    kebab_case: 'test-gen'
+    lower_case: 'test gen'
+
+  description: 'A test project for mspec-alpha python app generator'
+
+  author:
+    name: 'B rad C'
+    email: 'sample@email.com'
+
+server:
+  port: 7007
+
+client:
+  default_host: 'http://localhost:7007'
+
+modules:
+  stuff:
+    name:
+      lower_case: 'stuff'
+
+    models:
+      favorites:
+        name:
+          lower_case: 'favorites'
+
+        fields:
+          word: 
+            type: str
+            examples:
+              - "banana"
+              - "amplitude"
+              - "courage"
+
+          number:
+            type: int
+            examples:
+              - 7
+              - 11
+              - 42
+
+          color:
+            type: str
+            enum:
+              - red
+              - orange
+              - yellow
+              - green
+              - blue
+              - indigo
+              - violet
+
+            examples:
+              - red
+              - green
+              - blue
+
+      more_data:
+        name:
+          lower_case: 'more data'
+
+        fields:
+          excited:
+            type: bool
+            examples:
+              - true
+              - false
+
+          points:
+            type: float
+            examples:
+              - 3.6
+              - 10.1
+
+          expiration:
+            type: datetime
+            examples:
+              - "2000-01-11T12:34:56.000000"
+              - "2020-10-02T15:30:00.123456"
+
+          tags:
+            type: list
+            element_type: str
+            examples:
+              - ['tag1', 'tag2']
+              - ['tag1', 'tag3']
+              - ['tag2', 'tag4']
+
+          values:
+            type: list
+            element_type: int
+            examples:
+              - [3, 4]
+              - [42, 16, 109, 4]
+              - [6]
+
+  social_media:
+    name:
+      lower_case: 'social media'
+
+    models:
+      post:
+        name:
+          lower_case: 'post'
+          
+        fields:
+          text: 
+            type: str
+            examples:
+              - "hello world"
+              - "this is my first post!"
+
+          tags:
+            type: list
+            element_type: str
+            examples:
+              - ['tag1', 'tag2']
+              - ['tag3', 'tag4']
