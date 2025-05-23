@@ -1,16 +1,18 @@
 import tkinter
 from tkinter import ttk, StringVar
+from test_module.test_model.client import client_list_test_model
 
-from sample_module.example_item.client import client_list_example_item
+# vars :: {"test_module": "module.name.snake_case"}
+# vars :: {"TestModel": "model.name.pascal_case", "test_model": "model.name.snake_case"}
 
 __all__ = [
-    'ExampleItemIndexPage',
-    'ExampleItemInstancePage'
+    'TestModelIndexPage',
+    'TestModelInstancePage'
 ]
 
 LARGEFONT = ('Verdana', 35)
 
-class ExampleItemIndexPage(tkinter.Frame):
+class TestModelIndexPage(tkinter.Frame):
      
     def __init__(self, parent_frame, app:tkinter.Tk):
         super().__init__(parent_frame)
@@ -35,7 +37,7 @@ class ExampleItemIndexPage(tkinter.Frame):
         back_button = ttk.Button(self, text='<-', command=lambda: self.app.show_frame_str('SampleModuleIndexPage'))
         back_button.grid(row=0, column=0)
 
-        label = ttk.Label(self, text='example item', font=LARGEFONT)
+        label = ttk.Label(self, text='test model', font=LARGEFONT)
         label.grid(row=0, column=1)
         label.bind('<Button-1>', lambda _: self.app.focus_set())
 
@@ -61,8 +63,8 @@ class ExampleItemIndexPage(tkinter.Frame):
         status_label = ttk.Label(self.controls, textvariable=self.list_status)
         status_label.grid(row=2, column=0, columnspan=2, sticky='w')
 
-        # vars :: {"['id', 'description', 'verified', 'color', 'count', 'score', 'stuff', 'when']": "macro.py_field_list(model.fields)"}
-        self.field_names = ['id', 'description', 'verified', 'color', 'count', 'score', 'stuff', 'when']
+        # vars :: {"['id', 'single_bool', 'single_int', 'single_float', 'single_string', 'single_enum', 'single_datetime', 'multi_bool', 'multi_int', 'multi_float', 'multi_string']": "macro.py_field_list(model.fields)"}
+        self.field_names = ['id', 'single_bool', 'single_int', 'single_float', 'single_string', 'single_enum', 'single_datetime', 'multi_bool', 'multi_int', 'multi_float', 'multi_string']
 
         self.table = ttk.Frame(self)
         self.table.grid(row=self.list_items_row_offset, column=0, columnspan=2, sticky='nsew')
@@ -84,64 +86,64 @@ class ExampleItemIndexPage(tkinter.Frame):
             header.grid(row=self.list_items_row_offset - 1, column=n)
 
         try:
-            example_items = client_list_example_item(self.app.ctx, offset=self.list_offset, limit=self.list_page_size)
+            test_models = client_list_test_model(self.app.ctx, offset=self.list_offset, limit=self.list_page_size)
         except Exception as e:
             print(e)
             self.list_status.set('status: 🔴')
             return
         
-        self.pagination_label.set(f'offset: {self.list_offset} limit: {self.list_page_size} results: {len(example_items)}')
+        self.pagination_label.set(f'offset: {self.list_offset} limit: {self.list_page_size} results: {len(test_models)}')
         
         self.list_status.set('status: 🟢')
 
-        go_to_item = lambda item: self.app.show_frame_str('ExampleItemInstancePage', item=item)
+        go_to_item = lambda item: self.app.show_frame_str('TestModelInstancePage', item=item)
         padx = 5
 
         for n in range(self.list_page_size):
             
             try:
-                example_item = example_items[n]
+                test_model = test_models[n]
             except IndexError:
-                example_item = {}
+                test_model = {}
 
-            example_item_id = getattr(example_item, 'id', '-')
+            test_model_id = getattr(test_model, 'id', '-')
 
-            if example_item_id == '-':
-                go_widget = ttk.Label(self.table, text=example_item_id)
+            if test_model_id == '-':
+                go_widget = ttk.Label(self.table, text=test_model_id)
             else:
-                go_widget = ttk.Button(self.table, text='go', command=lambda: go_to_item(example_item), width=3)
+                go_widget = ttk.Button(self.table, text='go', command=lambda: go_to_item(test_model), width=3)
             go_widget.grid(row=n + self.list_items_row_offset, column=0, padx=padx)
 
             id_text = tkinter.Text(self.table, height=1, width=25, highlightthickness=0)
-            id_text.insert(tkinter.END, example_item_id)
+            id_text.insert(tkinter.END, test_model_id)
             id_text.grid(row=n + self.list_items_row_offset, column=1, padx=padx)
 
             description_text = tkinter.Text(self.table, height=1, width=25, highlightthickness=0)
-            description_text.insert(tkinter.END, getattr(example_item, 'description', '-'))
+            description_text.insert(tkinter.END, getattr(test_model, 'description', '-'))
             description_text.grid(row=n + self.list_items_row_offset, column=2, padx=padx)
 
             verified_text = tkinter.Text(self.table, height=1, width=6, highlightthickness=0)
-            verified_text.insert(tkinter.END, str(getattr(example_item, 'verified', '-')).lower())
+            verified_text.insert(tkinter.END, str(getattr(test_model, 'verified', '-')).lower())
             verified_text.grid(row=n + self.list_items_row_offset, column=3, padx=padx)
 
             color_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
-            color_text.insert(tkinter.END, getattr(example_item, 'color', '-'))
+            color_text.insert(tkinter.END, getattr(test_model, 'color', '-'))
             color_text.grid(row=n + self.list_items_row_offset, column=4, padx=padx)
 
             count_text = tkinter.Text(self.table, height=1, width=7, highlightthickness=0)
-            count_text.insert(tkinter.END, str(getattr(example_item,'count', '-')))
+            count_text.insert(tkinter.END, str(getattr(test_model,'count', '-')))
             count_text.grid(row=n + self.list_items_row_offset, column=5, padx=padx)
 
             score_text = tkinter.Text(self.table, height=1, width=7, highlightthickness=0)
-            score_text.insert(tkinter.END, str(getattr(example_item, 'score', '-')))
+            score_text.insert(tkinter.END, str(getattr(test_model, 'score', '-')))
             score_text.grid(row=n + self.list_items_row_offset, column=6, padx=padx)
 
             stuff_text = tkinter.Text(self.table, height=1, width=20, highlightthickness=0)
-            stuff_text.insert(tkinter.END, ', '.join(getattr(example_item, 'stuff', [])))
+            stuff_text.insert(tkinter.END, ', '.join(getattr(test_model, 'stuff', [])))
             stuff_text.grid(row=n + self.list_items_row_offset, column=7, padx=padx)
 
             when_text = tkinter.Text(self.table, height=1, width=25, highlightthickness=0)
-            when_text.insert(tkinter.END, getattr(example_item, 'when', '-'))
+            when_text.insert(tkinter.END, getattr(test_model, 'when', '-'))
             when_text.grid(row=n + self.list_items_row_offset, column=8, padx=padx)
 
         if self.list_offset == 0:
@@ -149,7 +151,7 @@ class ExampleItemIndexPage(tkinter.Frame):
         else:
             self.prev_pg_button.state(['!disabled'])
 
-        if len(example_items) < self.list_page_size:
+        if len(test_models) < self.list_page_size:
             self.next_pg_button.state(['disabled'])
         else:
             self.next_pg_button.state(['!disabled'])
@@ -163,7 +165,7 @@ class ExampleItemIndexPage(tkinter.Frame):
         self._list_fetch()
 
 
-class ExampleItemInstancePage(tkinter.Frame):
+class TestModelInstancePage(tkinter.Frame):
      
     def __init__(self, parent, controller): 
         super().__init__(parent)
@@ -171,5 +173,5 @@ class ExampleItemInstancePage(tkinter.Frame):
         back_button = ttk.Button(self, text='<-', command=lambda: controller.show_frame_str('SampleModuleIndexPage'))
         back_button.grid(row=0, column=0)
 
-        label = ttk.Label(self, text='example item - <id>', font=LARGEFONT)
+        label = ttk.Label(self, text='test model - <id>', font=LARGEFONT)
         label.grid(row=0, column=1) 

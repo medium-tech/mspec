@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<!-- vars :: {"unit_test": "project.name.snake_case", "test-module": "module.name.kebab_case", "test_module": "module.name.snake_case", "test module": "module.name.lower_case"} -->
+<!-- vars :: {"test_model": "model.name.snake_case", "test-model": "model.name.kebab_case", "test model": "model.name.lower_case"} -->
+<!-- vars :: {"testModel": "model.name.camel_case", "TestModel": "model.name.pascal_case"} -->
+<html>
+
+    <head>
+        <title>unit_test.test_module.test_model</title>
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
+        <link rel="stylesheet" type="text/css" href="/style.css">
+        <script src="/test-module/test-model/index.js"></script>
+        <script src="/index.js"></script>
+
+        <script type="text/javascript">
+
+            //
+            // views
+            //
+
+            function showTestModelListView(pushState) {
+                document.getElementById('test-model-create').hidden = true;
+                document.getElementById('test-model-list').hidden = false;
+
+                // push state
+                if(pushState === true) {
+                    const url = new URL(window.location.href)
+                    url.pathname = '/test-module/test-model'
+
+                    const offset = parseInt(document.getElementById('test-model-list-offset').innerText)
+                    const size = parseInt(document.getElementById('test-model-list-size').innerText)
+                    url.searchParams.set('offset', offset)
+                    url.searchParams.set('size', size)
+
+                    window.history.pushState({}, '', url)
+                }
+            }
+
+            function showTestModelCreateView(pushState) {
+                document.getElementById('test-model-list').hidden = true;
+                document.getElementById('test-model-create').hidden = false;
+
+                // push state
+                if(pushState === true) {
+                    const url = new URL(window.location.href)
+                    url.pathname = '/test-module/test-model/create'
+                    url.searchParams.delete('offset')
+                    url.searchParams.delete('size')
+                    window.history.pushState({}, '', url)
+                    console.log('pushed state', url)
+                }
+            }
+
+            function showTestModelNavigateToId() {
+                const id = document.getElementById('test-model-get-id').value
+                if(id === '') {
+                    console.error('id is empty')
+                }else{
+                    window.location.href = `/test-module/test-model/${id}`
+                }
+            }
+
+            function randomizeTestModel() {
+                const createTBody = document.querySelector('#test-model-create-tbody');
+                testModelToInputTBody(randomTestModel(), createTBody)
+            }
+
+            function resetTestModelInput() {
+                const createTBody = document.querySelector('#test-model-create-tbody');
+                testModelToInputTBody({}, createTBody)
+            }
+
+            function exampleTestModelInput() {
+                const createTBody = document.querySelector('#test-model-create-tbody');
+                testModelToInputTBody(exampleTestModel(), createTBody)
+            }
+
+            function testModelNavigatorEnterKey(e) {
+                console.log('testModelNavigatorEnterKey', e)
+                if (e.key === 'Enter' || e.type === 'paste') {
+                    showTestModelNavigateToId()
+                }
+            }
+            
+            function createTestModelStatus(status, className) {
+                const statusP = document.getElementById('create-test-model-status')
+                statusP.hidden = false
+                statusP.innerText = status
+                statusP.className = className
+            }
+
+            function listTestModelStatus(status, className) {
+                const statusElement = document.getElementById('test-model-list-status')
+                statusElement.innerText = status
+                statusElement.className = className
+            }
+
+            //
+            // server ops
+            //
+
+            function loadItems() {
+
+                const prevPage = document.getElementById('test-model-prev-page')
+                const nextPage = document.getElementById('test-model-next-page')
+
+                prevPage.disabled = true
+                nextPage.disabled = true
+
+                const offset = parseInt(document.getElementById('test-model-list-offset').innerText)
+                const size = parseInt(document.getElementById('test-model-list-size').innerText)
+
+                listTestModelStatus('loading...', '')
+
+                console.log(`loadItems(offset=${offset}, size=${size})`)
+
+                clientListTestModels(offset, size)
+                    .then(response => {
+                        if (!response.ok) {
+                            console.error(response)
+                            throw new Error('testModel list failed')
+                        }
+                        return response.json()
+                    }).then(data => {
+                        console.log(data)
+                        const items = data.map(item => initTestModel(item))
+
+                        document.getElementById('test-model-list-count').innerText = items.length
+                        testModelListToDisplayTBody(items, document.querySelector('#test-model-list-tbody'))
+
+                        if (offset > 0) prevPage.disabled = false
+                        if (items.length === size) nextPage.disabled = false
+
+                        listTestModelStatus('success', 'success')
+                    })
+                    .catch(error => {
+                        console.error(error)
+                        listTestModelStatus('error', 'error')
+                    });
+            }
+
+            function changeListPage(direction) {
+
+                let offset = parseInt(document.getElementById('test-model-list-offset').innerText)
+                let size = parseInt(document.getElementById('test-model-list-size').innerText)
+
+                if (direction < 0) {
+                    offset -= size
+                    if (offset < 0) offset = 0
+                } else if (direction == 0) {
+                    offset = 0
+                } else {
+                    offset += size
+                }
+
+                document.getElementById('test-model-list-offset').innerText = offset
+                
+                // 
+
+                const url = new URL(window.location.href)
+                url.searchParams.set('offset', offset)
+                url.searchParams.set('size', size)
+                window.history.pushState({}, '', url)
+                
+                //
+
+                loadItems()
+            }
+
+            function createTestModel() {
+                console.log('createTestModel()')
+
+                const createTBody = document.querySelector('#test-model-create-tbody');
+                const data = testModelFromInputTBody(createTBody);
+
+                const verify = verifyTestModel(data);
+                if (verify.valid !== true) {
+                    console.error(verify);
+                    throw new Error('testModel invalid');
+                }
+
+                console.log('creating testModel', data);
+
+                createTestModelStatus('creating...', '')
+
+                clientCreateTestModel(testModelForJSON(data))
+                    .then(response => {
+                        if (!response.ok) {
+                            console.error(response)
+                            throw new Error('testModel create failed')
+                        }
+                        return response.json()
+                    }).then(data => {
+                        const newItemId = data['id']
+                        console.log(`created testModel ${newItemId}`)
+
+                        const newItemLi = document.createElement('li')
+                        const newItemLink = document.createElement('a')
+                        newItemLink.id = 'created-test-model'
+                        newItemLink.href = `/test-module/test-model/${newItemId}`
+                        newItemLink.innerText = newItemId
+                        
+                        const createdTestModels = document.getElementById('created-test-models')
+                        newItemLi.appendChild(newItemLink)
+                        createdTestModels.appendChild(newItemLi)
+
+                        createTestModelStatus(`success`, 'success')
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        createTestModelStatus('error', 'error')
+                    });
+            }
+
+            //
+            // on load
+            //
+
+            window.onload = function() {
+                resetTestModelInput()
+
+                const isCreatePage = window.location.pathname.endsWith('/create')
+
+                if(isCreatePage) {
+                    showTestModelCreateView(false)
+                }else{
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const urlOffsetParam = urlParams.get('offset')
+                    const urlSizeParam = urlParams.get('size')
+                    console.log(`url params :: offset: ${urlOffsetParam} size: ${urlSizeParam}`)
+
+                    if (urlOffsetParam !== null) {
+                        const listOffset = document.getElementById('test-model-list-offset')
+                        console.log('list offset', listOffset)
+                        listOffset.innerText = urlOffsetParam
+                    }
+                    if (urlSizeParam !== null) document.getElementById('test-model-list-size').innerText = urlSizeParam
+
+                    loadItems();
+                }
+            }
+
+        </script>
+    </head>
+
+    <body>
+        <h1>test model</h1>
+        <p>
+            <a href="/">unit_test</a> . <a href="/test-module">test module</a> . <a href="/test-module/test-model">test model</a>
+        </p>
+
+        <!-- 
+        list view layout 
+        -->
+
+        <div id="test-model-list">
+
+            status: <span id="test-model-list-status">intial</span>
+
+            <br>
+            
+            <button id="test-model-prev-page" onclick="changeListPage(-1)" disabled>&lt;&lt;&lt;</button>
+            <button onclick="loadItems()">refresh</button>
+            <button id="test-model-next-page" onclick="changeListPage(1)" disabled>&gt;&gt;&gt;</button>
+            &emsp;|&emsp;
+            <button onclick="showTestModelCreateView(true)">create</button>
+            &emsp;|&emsp;
+            <button onclick="showTestModelNavigateToId()">get</button>
+            <input id="test-model-get-id" type="text" placeholder="test model id" size="32" onkeypress="testModelNavigatorEnterKey(event)"/>
+            
+
+            <br>
+
+            offset: <span id="test-model-list-offset">0</span>
+            &emsp;
+            size: <span id="test-model-list-size">25</span>
+            &emsp;
+            count: <span id="test-model-list-count">-</span>
+            
+            <br>
+
+            <table>
+                <thead>
+                    <tr>
+                        <!-- macro :: html_list_table_header :: {"id": "field"} -->
+                         <th>id</th>
+                        <!-- end macro :: -->
+                        <!-- replace :: macro.html_list_table_headers(model.fields) -->
+                        <th>single_bool</th>
+                        <th>single_int</th>
+                        <th>single_float</th>
+                        <th>single_string</th>
+                        <th>single_enum</th>
+                        <th>single_datetime</th>
+                        <th>multi_bool</th>
+                        <th>multi_int</th>
+                        <th>multi_float</th>
+                        <th>multi_string</th>
+                        <th>multi_enum</th>
+                        <th>multi_datetime</th>
+                        <!-- end replace :: -->
+                    </tr>
+                </thead>
+
+                <tbody id="test-model-list-tbody">
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <!-- 
+        create view layout 
+        -->
+
+        <div id="test-model-create" hidden>
+
+            <button onclick="createTestModel()">submit</button>
+            &emsp;|&emsp;
+            <button onclick="resetTestModelInput()">reset</button>
+            &emsp;|&emsp;
+            <button onclick="exampleTestModelInput()">example</button>
+            &emsp;|&emsp;
+            <button onclick="randomizeTestModel()">random</button>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th width="15%">field</th>
+                        <th width="33%">value</th>
+                        <th>other</th>
+                    </tr>
+                </thead>
+                <tbody id="test-model-create-tbody">
+                </tbody>
+            </table>
+
+            <p id="create-test-model-status" hidden></p>
+
+            <ul id="created-test-models">
+            </ul>
+
+        </div>
+
+    </body>
+
+</html>

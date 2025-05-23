@@ -1,37 +1,37 @@
 from core.exceptions import MSpecError, ConfigError, NotFoundError, AuthenticationError, ForbiddenError
-from sample_module.example_item.model import ExampleItem
+from test_module.test_model.model import TestModel
 
 import json
 
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
-# vars :: {"sample_module": "module.name.snake_case", "sample-module": "module.name.kebab_case"}
-# vars :: {"example_item": "model.name.snake_case", "example item": "model.name.lower_case", "example-item": "model.name.kebab_case", "ExampleItem": "model.name.pascal_case"}
+# vars :: {"test_module": "module.name.snake_case", "test-module": "module.name.kebab_case"}
+# vars :: {"test_model": "model.name.snake_case", "test model": "model.name.lower_case", "test-model": "model.name.kebab_case", "TestModel": "model.name.pascal_case"}
 
 __all__ = [
-    'client_create_example_item',
-    'client_read_example_item',
-    'client_update_example_item',
-    'client_delete_example_item',
-    'client_list_example_item'
+    'client_create_test_model',
+    'client_read_test_model',
+    'client_update_test_model',
+    'client_delete_test_model',
+    'client_list_test_model'
 ]
 
-def client_create_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
+def client_create_test_model(ctx:dict, obj:TestModel) -> TestModel:
     """
-    create a example item on the server, verifying the data first.
+    create a test model on the server, verifying the data first.
     
     args ::
         ctx :: dict containing the client context.
-        obj :: the ExampleItem object to create.
+        obj :: the TestModel object to create.
     
-    return :: ExampleItem object with the new id.
+    return :: TestModel object with the new id.
 
     raises :: ConfigError, MSpecError
     """
 
     try:
-        url = f'{ctx["host"]}/api/sample-module/example-item'
+        url = f'{ctx["host"]}/api/test-module/test-model'
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
@@ -42,16 +42,16 @@ def client_create_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
 
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return ExampleItem.from_json(response_body)
+            return TestModel.from_json(response_body)
     
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
-        raise MSpecError(f'error creating example item: {e.__class__.__name__}: {e}')
+        raise MSpecError(f'error creating test model: {e.__class__.__name__}: {e}')
 
-def client_read_example_item(ctx:dict, id:str) -> ExampleItem:
+def client_read_test_model(ctx:dict, id:str) -> TestModel:
     """
-    read a example item from the server, verifying it first.
+    read a test model from the server, verifying it first.
 
     args ::
         ctx :: dict containing the client context.
@@ -63,7 +63,7 @@ def client_read_example_item(ctx:dict, id:str) -> ExampleItem:
     """
 
     try:
-        url = ctx['host'] + '/api/sample-module/example-item/' + id
+        url = ctx['host'] + '/api/test-module/test-model/' + id
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
@@ -76,28 +76,28 @@ def client_read_example_item(ctx:dict, id:str) -> ExampleItem:
 
     except HTTPError as e:
         if e.code == 401:
-            raise AuthenticationError('Error reading example item: invalid username or password')
+            raise AuthenticationError('Error reading test model: invalid username or password')
         elif e.code == 403:
-            raise ForbiddenError('Error reading example item: forbidden')
+            raise ForbiddenError('Error reading test model: forbidden')
         elif e.code == 404:
-            raise NotFoundError(f'example item {id} not found')
-        raise MSpecError(f'error reading example item: {e.__class__.__name__}: {e}')
+            raise NotFoundError(f'test model {id} not found')
+        raise MSpecError(f'error reading test model: {e.__class__.__name__}: {e}')
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
-        raise MSpecError(f'error reading example item: {e.__class__.__name__}: {e}')
+        raise MSpecError(f'error reading test model: {e.__class__.__name__}: {e}')
     
-    return ExampleItem.from_json(response_body).validate()
+    return TestModel.from_json(response_body).validate()
 
-def client_update_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
+def client_update_test_model(ctx:dict, obj:TestModel) -> TestModel:
     """
-    update a example item on the server, verifying the data first.
+    update a test model on the server, verifying the data first.
 
     args ::
         ctx :: dict containing the client context.
-        obj :: the ExampleItem object to update.
+        obj :: the TestModel object to update.
     
-    return :: ExampleItem object.
+    return :: TestModel object.
 
     raises :: ConfigError, MSpecError, NotFoundError
     """
@@ -110,7 +110,7 @@ def client_update_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
         raise ValueError('invalid data, missing id')
 
     try:
-        url = f'{ctx["host"]}/api/sample-module/example-item/{_id}'
+        url = f'{ctx["host"]}/api/test-module/test-model/{_id}'
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
@@ -124,24 +124,24 @@ def client_update_example_item(ctx:dict, obj:ExampleItem) -> ExampleItem:
     
     except HTTPError as e:
         if e.code == 401:
-            raise AuthenticationError('Error updating example item: authentication error')
+            raise AuthenticationError('Error updating test model: authentication error')
         elif e.code == 403:
-            raise ForbiddenError('Error updating example item: forbidden')
+            raise ForbiddenError('Error updating test model: forbidden')
         elif e.code == 404:
-            raise NotFoundError(f'example item {id} not found')
-        raise MSpecError(f'error updating example item: {e.__class__.__name__}: {e}')
+            raise NotFoundError(f'test model {id} not found')
+        raise MSpecError(f'error updating test model: {e.__class__.__name__}: {e}')
         
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     
     except Exception as e:
-        raise MSpecError(f'error updating example item: {e.__class__.__name__}: {e}')
+        raise MSpecError(f'error updating test model: {e.__class__.__name__}: {e}')
     
-    return ExampleItem.from_json(response_body).validate()
+    return TestModel.from_json(response_body).validate()
 
-def client_delete_example_item(ctx:dict, id:str) -> None:
+def client_delete_test_model(ctx:dict, id:str) -> None:
     """
-    delete a example item from the server.
+    delete a test model from the server.
 
     args ::
         ctx :: dict containing the client context.
@@ -153,7 +153,7 @@ def client_delete_example_item(ctx:dict, id:str) -> None:
     """
 
     try:
-        url = f'{ctx["host"]}/api/sample-module/example-item/{id}'
+        url = f'{ctx["host"]}/api/test-module/test-model/{id}'
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
@@ -167,24 +167,24 @@ def client_delete_example_item(ctx:dict, id:str) -> None:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     
     except Exception as e:
-        raise MSpecError(f'error deleting example item: {e.__class__.__name__}: {e}')
+        raise MSpecError(f'error deleting test model: {e.__class__.__name__}: {e}')
 
-def client_list_example_item(ctx:dict, offset:int=0, limit:int=50) -> list[ExampleItem]:
+def client_list_test_model(ctx:dict, offset:int=0, limit:int=50) -> list[TestModel]:
     """
-    list example items from the server, verifying each.
+    list test models from the server, verifying each.
 
     args ::
         ctx :: dict containing the client context.
         offset :: int of the offset to start listing from.
         limit :: int of the maximum number of items to list.
     
-    return :: list of ExampleItem objects.
+    return :: list of TestModel objects.
 
     raises :: ConfigError, MSpecError
     """
 
     try:
-        url = f'{ctx["host"]}/api/sample-module/example-item?offset={offset}&limit={limit}'
+        url = f'{ctx["host"]}/api/test-module/test-model?offset={offset}&limit={limit}'
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
@@ -194,10 +194,10 @@ def client_list_example_item(ctx:dict, offset:int=0, limit:int=50) -> list[Examp
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
 
-        return [ExampleItem(**item).validate() for item in json.loads(response_body)]
+        return [TestModel(**item).validate() for item in json.loads(response_body)]
 
     except (json.JSONDecodeError, TypeError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     
     except Exception as e:
-        raise MSpecError(f'error listing example items: {e.__class__.__name__}: {e}')
+        raise MSpecError(f'error listing test models: {e.__class__.__name__}: {e}')

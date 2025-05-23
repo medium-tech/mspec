@@ -1,13 +1,15 @@
-# vars :: {"9009": "server.port"}
+# vars :: {"5005": "server.port"}
 uwsgi:
-  http: :9009
+  http: :5005
   wsgi-file: src/core/server.py
-  # for :: {% for item in all_models %} :: {"sample-module":"item.module.name.kebab_case", "example-item": "item.model.name.kebab_case"}
-  route: ^/sample-module/example-item/create static:../html/srv/sample-module/example-item/index.html
-  route: ^/sample-module/example-item/index(.*) static:../html/srv/sample-module/example-item/index$1
-  load-file-in-cache: ../html/srv/sample-module/example-item/index.html
-  route: ^/sample-module/example-item/(.*) static:../html/srv/sample-module/example-item/instance.html
-  load-file-in-cache: ../html/srv/sample-module/example-item/instance.html
+  # for :: {% for item in all_models %} :: {"test-module":"item.module.name.kebab_case", "test-model": "item.model.name.kebab_case"}
+
+  route: ^/test-module/test-model/create static:../html/srv/test-module/test-model/index.html
+  route: ^/test-module/test-model/index(.*) static:../html/srv/test-module/test-model/index$1
+  load-file-in-cache: ../html/srv/test-module/test-model/index.html
+  route: ^/test-module/test-model/(.*) static:../html/srv/test-module/test-model/instance.html
+  load-file-in-cache: ../html/srv/test-module/test-model/instance.html
+
   # end for ::
   static-map: /=../html/srv/
   static-index: index.html

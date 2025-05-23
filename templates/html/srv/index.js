@@ -33,32 +33,44 @@ function randomFloat(min, max) {
     return Math.random() * (max - min) + min
 }
 
-function randomString() {
+function randomStr() {
     const max = randomInt(1, 5)
     const words = []
     for (let i = 0; i < max; i++) {
-        words.push(randomEnum(randomWords))
+        words.push(randomStrEnum(randomWords))
     }
     return words.join(' ')
 }
 
-function randomEnum(options) {
+function randomStrEnum(options) {
     return options[Math.floor(Math.random() * options.length)]
 }
 
-function randomList() {
+function randomList(randomElementCallback) {
     const max = randomInt(1, 5)
-    const words = []
+    const items = []
     for (let i = 0; i < max; i++) {
-        words.push(randomEnum(randomWords))
+        items.push(randomElementCallback())
     }
-    return words
+    return [...new Set(items)]
+}
+
+function randomDatetime() {
+    
+    return new Date(
+        randomInt(1970, 2030),
+        randomInt(0, 11),
+        randomInt(1, 27),
+        randomInt(0, 23),
+        randomInt(0, 59),
+        randomInt(0, 59)
+    )
 }
 
 function randomPersonName() {
-    const first = randomEnum(randomFirstNames)
-    const middle = randomEnum(randomFirstNames)
-    const last = randomEnum(randomLastNames)
+    const first = randomStrEnum(randomFirstNames)
+    const middle = randomStrEnum(randomFirstNames)
+    const last = randomStrEnum(randomLastNames)
 
     let name = ''
 
@@ -103,8 +115,8 @@ function randomThingName() {
     const numAdjectives = randomInt(1, 3)
     const adjectives = []
     for (let i = 0; i < numAdjectives; i++) {
-        adjectives.push(randomEnum(randomAdjectives))
+        adjectives.push(randomStrEnum(randomAdjectives))
     }
-    const noun = randomEnum(randomNouns)
+    const noun = randomStrEnum(randomNouns)
     return adjectives.join(' ') + ' ' + noun
 }

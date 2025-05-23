@@ -10,8 +10,8 @@ from core.types import to_json
 from core.models import *
 from core.db import *
 from core.exceptions import RequestError, JSONResponse, NotFoundError, AuthenticationError, ForbiddenError
-# for :: {% for item in all_models %} :: {"sample_module": "item.module.name.snake_case", "example_item": "item.model.name.snake_case"}
-from sample_module.example_item.server import example_item_routes
+# for :: {% for item in all_models %} :: {"test_module": "item.module.name.snake_case", "test_model": "item.model.name.snake_case"}
+from test_module.test_model.server import test_model_routes
 # end for ::
 
 import uwsgi
@@ -184,8 +184,8 @@ route_list = [
     auth_routes,
     user_routes,
     profile_routes,
-    # for :: {% for item in all_models %} :: {"example_item": "item.model.name.snake_case"}
-    example_item_routes,
+    # for :: {% for item in all_models %} :: {"test_model": "item.model.name.snake_case"}
+    test_model_routes,
     # end for ::
 ]
 

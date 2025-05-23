@@ -1,15 +1,15 @@
-# vars :: {"msample":"project.name.snake_case", "Brad Corlett":"project.author.name", "brad.corlett@gmail.com":"project.author.email", "msample sample project": "project.description"}
+# vars :: {"unit_test":"project.name.snake_case", "B rad C":"project.author.name", "sample@email.com":"project.author.email", "A test project for mspec-alpha python app generator": "project.description"}
 [build-system]
 requires = ['setuptools>=61.0']
 build-backend = 'setuptools.build_meta'
 
 [project]
-name = 'msample'
+name = 'unit_test'
 version = '0.0.1'
 authors = [
-  { name='Brad Corlett', email='brad.corlett@gmail.com' },
+  { name='B rad C', email='sample@email.com' },
 ]
-description = 'msample sample project'
+description = 'A test project for mspec-alpha python app generator'
 readme = 'README.md'
 requires-python = '>=3.7'
 dependencies = [
