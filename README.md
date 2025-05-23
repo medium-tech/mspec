@@ -1,8 +1,8 @@
 # mspec
 
-This project is two things: an [app generator](#app-generator) using code templating as an alternative to frameworks and [browser 2.0](#browser-20): a language independent browsing protocol.
+This project is two things: an [app generator](#app-generator) using code templating as an alternative to frameworks and [browser 2.0](#browser-20): a language independent browsing protocol designed to be a faster, safer more reliable web browsing experience.
 
-🚨 this project is currently in alpha and incomplete 🚨
+⚠️ this project is currently in alpha and incomplete ⚠️
 
 * [about this project](#mspec)
     * [app generator](#app-generator)
@@ -105,7 +105,15 @@ Browser2.0 will use content based addressing instead of location based addressin
 
 # Documentation
 
-Because this project is in alpha there is no documentation. However the code is designed to be simple enough to document itself. If you're interested in generating an app check `spec/test-gen.yaml` for the features of the app spec that are unittested on the `main` branch. See `example_spec` in `src/lingo/expressions.py` for an example of a browser2.0 page that is unittested. And the cli help for the template generator is available by running `python -m mtemplate -h` after [setting up the dev enviro](#setup-dev-environment).
+Because this project is in alpha there is no documentation. However the code is designed to be simple enough to document itself. 
+
+If you're interested in generating an app check `spec/test-gen.yaml` for an example app with all the features of the app spec that are unittested (on the `main` branch). 
+
+See `example_spec` in `src/lingo/expressions.py` for an example of a browser2.0 page that is unittested. 
+
+Run `python -m lingo.gui -h` for the cli help screen for browser2.0 (after [setting up the dev enviro](#setup-dev-environment)).
+
+Run `python -m mtemplate -h` for the cli help screen for the template generator (after [setting up the dev enviro](#setup-dev-environment)).
 
 # Development
 
@@ -240,3 +248,8 @@ After [setting up your dev environment](#setup-dev-environment) run the followin
 
 Currently this is hardcoded to run the example document in variable `example_spec` in the file `src/lingo/expressions.py`
 
+You can open any spec json file with this:
+
+    python -m lingo.gui --spec spec/page1.json
+
+⚠️ Be careful with untrusted input as this project is still in alpha phase. ⚠️
