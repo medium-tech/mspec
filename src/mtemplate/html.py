@@ -261,7 +261,7 @@ class MTemplateHTMLProject(MTemplateProject):
 
         def convert_val(value, field_type):
             if field_type in ['bool', 'int', 'float']:
-                return str(value)
+                return str(value).lower()
             elif field_type == 'str':
                 return f"'{value.replace("'", "\'")}'"
             elif field_type == 'datetime':
@@ -284,6 +284,6 @@ class MTemplateHTMLProject(MTemplateProject):
             else:
                 value = convert_val(example, field['type'])
 
-            lines.append(f"{indent}{name}={value}")
+            lines.append(f"{indent}{name}: {value}")
 
         return ',\n'.join(lines)

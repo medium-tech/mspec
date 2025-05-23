@@ -54,8 +54,10 @@ const single_enum_options = [
 // macro :: html_enum_definition_option :: {"red": "option"}
     'red', 
 // end macro ::
+// ignore ::
     'green', 
     'blue',
+// end ignore ::
 // macro :: html_enum_definition_end :: {}
 ]
 // end macro ::
