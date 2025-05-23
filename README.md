@@ -61,7 +61,7 @@ It needs to be able to accomplish everything we need the browser to do without a
 ### protocol summary
 A JSON definition will define the app's data sctructure as well as logic with a built in scripting language. This language has no io operations and only allows safe operations such as math, comparison, logic, branching, date formatting, etc. Outside of scripting, IO operations are still possible but must be registered using model definitions. Models can have multiple fields and define their types such as bool, int, foat, str, or lists of these types.
 
-The scripting language will be purely functional and every operation has to return something. These limitations exist for (a) the functional bro memes and (b) to create front-end apps that "just work". What I found when working with Haskell is that is that when you remove looping (`for`, `while`, etc), side-effects and require that every code path return something, once you finish writing the code it pretty much just works. Combined with static typing the only place left for bugs to hide is bad logic that works but is incorrect. Haskell taught me that side-effects are not needed so by removing them you elimate possible bugs with them. Exit conditions with looping structures such as `for` and `while` can often have non-obvious edge cases, but there's nothing complicated about exiting an iteration from a `filter`, `map` or `accumulator` function.
+The scripting language will be purely functional and every operation has to return something. These limitations exist for (a) the functional bro memes and (b) to create front-end apps that "just work". What I found when working with Haskell is that is that when you remove looping (`for`, `while`, etc), side-effects and require that every code path return something, once you finish writing the code it pretty much just works. Combined with static typing the only place left for bugs to hide is logic that works but is incorrect. Haskell taught me that side-effects are not needed and by removing them you elimate possible bugs with them. Exit conditions with looping structures such as `for` and `while` can often have non-obvious edge cases, but you can't exit an iteration from a `filter`, `map` or `accumulator` function incorrectly.
 
 Model fields can define computed properties that are based on an expression. This expression has access to user input (forms) and application state models. User input from forms and button can trigger state updated.
 
@@ -253,3 +253,5 @@ You can open any spec json file with this:
     python -m lingo.gui --spec spec/page1.json
 
 ⚠️ Be careful with untrusted input as this project is still in alpha phase. ⚠️
+
+[back to top of page](#mspec)
