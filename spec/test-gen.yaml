@@ -137,21 +137,46 @@ modules:
       lower_case: 'generated module b'
 
     models:
-      my_model:
+      custom_random_model:
         name:
-          lower_case: 'my model'
+          lower_case: 'custom random model'
 
         fields:
 
-          confirmed:
-            type: bool
-            examples:
-              - true
-              - false
-
-          msg:
+          name:
             type: str
             examples:
-              - "hello squid"
-              - "hello octopus"
-              - "hello crab"
+              - "Alice"
+              - "Bob"
+              - "Charlie"
+            random: random_person_name
+          
+          user_name:
+            type: str
+            examples:
+              - "alice123"
+              - "bob_the_builder"
+              - "charlie_brown"
+            random: random_user_name
+          
+          favorite_thing:
+            type: str
+            examples:
+              - "pizza"
+              - "sushi"
+              - "tacos"
+            random: random_thing_name
+          
+          email:
+            type: str
+            examples:
+              - "my@email.com"
+            random: random_email
+          
+          phone_number:
+            type: str
+            examples:
+              - "+1 (123) 456-7890"
+              - "+1 (987) 654-3210"
+            random: random_phone_number
+

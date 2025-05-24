@@ -8,7 +8,7 @@ test('test - test module - test model - pagination', async ({ page }) => {
   await page.goto('http://localhost:5005/');
 
   await expect(page.locator('h1')).toContainText('unit_test');
-  await page.getByRole('link', { name: 'test module' }).click();
+  await page.getByRole('link', { name: 'test module' }).last().click();
 
   await expect(page.locator('h1')).toContainText('test module');
   await page.getByRole('link', { name: 'test model' }).click();
@@ -17,7 +17,7 @@ test('test - test module - test model - pagination', async ({ page }) => {
   // vars :: {"['id', 'single_bool', 'single_int', 'single_float', 'single_string', 'single_enum', 'single_datetime', 'multi_bool', 'multi_int', 'multi_float', 'multi_string']": "macro.html_field_list(model.fields)"}
   const fields = ['id', 'single_bool', 'single_int', 'single_float', 'single_string', 'single_enum', 'single_datetime', 'multi_bool', 'multi_int', 'multi_float', 'multi_string'];
   for (const field of fields) {
-    await expect(page.locator('th', {hasText: field})).toBeVisible();
+    await expect(page.locator('th', {hasText: field}).first()).toBeVisible();
   }
 
   // await page.getByRole('button', { name: '>>>' }).click();
@@ -151,4 +151,14 @@ test('test - test module - test model - instance', async ({ page }) => {
     await page.getByRole('button', { name: 'delete' }).click();
     await page.getByRole('button', { name: 'yes, please delete' }).click();
     await expect(page.locator('#test-model-not-found')).toContainText('item not found');
+});
+
+test('test - test module - test model - create random', async ({ page }) => {
+  await page.goto('http://localhost:5005/test-module/test-model/create');
+  
+  await page.getByRole('button', { name: 'random' }).click();
+  await page.getByRole('button', { name: 'submit' }).click();
+
+  await expect(page.locator('#create-test-model-status')).toBeVisible();
+  await expect(page.locator('#create-test-model-status')).toContainText('success');
 });

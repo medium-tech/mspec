@@ -1,0 +1,137 @@
+project:
+  name:
+    snake_case: 'my_sample_store'
+    pascal_case: 'MySampleStore'
+    camel_case: 'mySampleStore'
+    kebab_case: 'my-sample-store'
+    lower_case: 'my sample store'
+
+  description: 'A sample project for mspec-alpha python app generator'
+
+  author:
+    name: 'B rad C'
+    email: 'sample@email.com'
+
+server:
+  port: 7007
+
+client:
+  default_host: 'http://localhost:7007'
+
+modules:
+  store:
+    name:
+      lower_case: 'store'
+
+    models:
+      products:
+        name:
+          lower_case: 'products'
+
+        fields:
+
+          product_name:
+            type: str
+            examples:
+              - 'Laptop'
+              - 'Smartphone'
+              - 'Tablet'
+
+            random: random_thing_name
+
+          price:
+            type: float
+            examples:
+              - 999.99
+              - 499.99
+              - 299.99
+
+          in_stock:
+            type: bool
+            examples:
+              - true
+              - false
+      
+      customers:
+        name:
+          lower_case: 'customers'
+
+        fields:
+
+          customer_name:
+            type: str
+            examples:
+              - 'Alice'
+              - 'Bob'
+              - 'Charlie'
+            random: random_person_name
+
+          email:
+            type: str
+            examples:
+              - 'alice@email.com'
+              - 'bob@email.com'
+            random: random_email
+
+          phone_number:
+            type: str
+            examples:
+              - '+1 (123) 456-7890'
+              - '+1 (987) 654-3210'
+            random: random_phone_number
+
+  admin:
+    name:
+      lower_case: 'admin'
+
+    models:
+      employees:
+        name:
+          lower_case: 'employees'
+
+        fields:
+
+          employee_name:
+            type: str
+            examples:
+              - 'David'
+              - 'Eve'
+              - 'Frank'
+            random: random_person_name
+
+          position:
+            type: str
+            enum:
+              - 'Manager'
+              - 'Sales'
+              - 'Support'
+            examples:
+              - 'Manager'
+              - 'Sales'
+              - 'Support'
+
+          hire_date:
+            type: str
+            examples:
+              - '2000-01-11T12:34:56'
+              - '2020-10-02T15:30:00'
+
+          email:
+            type: str
+            examples:
+              - 'my-name@email.com'
+            random: random_email
+
+          phone_number:
+            type: str
+            examples:
+              - '+1 (123) 456-7890'
+              - '+1 (987) 654-3210'
+            random: random_phone_number
+
+          salary:
+            type: float
+            examples:
+              - 60000.00
+              - 45000.00
+              - 35000.00

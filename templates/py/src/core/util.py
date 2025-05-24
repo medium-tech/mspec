@@ -22,7 +22,9 @@ __all__ = [
     'random_permission',
     'random_person_name',
     'random_user_name',
-    'random_thing_name'
+    'random_thing_name',
+    'random_email',
+    'random_phone_number'
 ]
 
 random_nouns = ['apple', 'banana', 'horse', 'iguana', 'jellyfish', 'kangaroo', 'lion', 'quail', 'rabbit', 'snake', 'tiger', 'x-ray', 'yak', 'zebra']
@@ -113,7 +115,7 @@ def random_user_name() -> str:
         name = random.choice(random_words).title()
         if random.randint(0, 2) == 0:
             name += f'_{random.randint(1, 100)}'
-    elif num == 4:
+    else:
         _words = []
         
         for i in range(random.randint(3, 4)):
@@ -126,6 +128,8 @@ def random_user_name() -> str:
         random.shuffle(_words)
         name = ' '.join(_words)
 
+    return name
+
 def random_thing_name() -> str:
     words = []
     for _ in range(random.randint(1, 3)):
@@ -134,3 +138,16 @@ def random_thing_name() -> str:
     words.append(random.choice(random_nouns))
 
     return ' '.join(words)
+
+def random_email() -> str:
+    user_name = random_user_name().replace(' ', '_')
+    domain = random.choice(random_words)
+    tld = random.choice(['com', 'net', 'org', 'io', 'ai'])
+    return f'{user_name}@{domain}.{tld}'
+
+def random_phone_number() -> str:
+    country_code = random.randint(1, 99)
+    area_code = random.randint(100, 999)
+    exchange = random.randint(100, 999)
+    number = random.randint(1000, 9999)
+    return f'+{country_code} ({area_code}) {exchange}-{number}'

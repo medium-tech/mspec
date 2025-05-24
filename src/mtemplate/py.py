@@ -303,27 +303,32 @@ class MTemplatePyProject(MTemplateProject):
     def macro_py_random_fields(self, fields:dict, indent='\t\t\t') -> str:
         lines = []
         for name, field in fields.items():
-            
+            field_type = field['type']
+            custom_function = field.get('random', None)
             # configure macro #
 
-            if field['type'] == 'list':
-                field_type = field['type']
+            if custom_function is not None:
+                func_name = custom_function
+                args = ''
+
+            elif field['type'] == 'list':
+                func_name = f'random_{field_type}'
                 args = f"'{field['element_type']}'"
 
                 if 'enum' in field:
                     args += f", {name}_options"
 
             else:
-                field_type = field['type']
+                func_name = f'random_{field_type}'
                 args = ''
                 if 'enum' in field:
-                    field_type += '_enum'
+                    func_name += '_enum'
                     args += f'{name}_options'
 
             # run macro #
 
             try:
-                lines.append(f"{indent}{name}=random_{field_type}({args})")
+                lines.append(f"{indent}{name}={func_name}({args})")
             except KeyError:
                 raise MTemplateError(f'field {name} does not have a type')
             

@@ -67,7 +67,7 @@ function randomDatetime() {
     )
 }
 
-function randomPersonName() {
+function random_person_name() {
     const first = randomStrEnum(randomFirstNames)
     const middle = randomStrEnum(randomFirstNames)
     const last = randomStrEnum(randomLastNames)
@@ -97,7 +97,7 @@ function randomPersonName() {
     return name
 }
 
-function randomUserName() {
+function random_user_name() {
     const numWordsInName = randomInt(1, 4)
     const nameWords = [];
     if (Math.random() < 0.33) nameWords.push('the');
@@ -111,7 +111,7 @@ function randomUserName() {
     return `${nameWords.join(nameSep)}${nameSuffix}`
 }
 
-function randomThingName() {
+function random_thing_name() {
     const numAdjectives = randomInt(1, 3)
     const adjectives = []
     for (let i = 0; i < numAdjectives; i++) {
@@ -119,4 +119,19 @@ function randomThingName() {
     }
     const noun = randomStrEnum(randomNouns)
     return adjectives.join(' ') + ' ' + noun
+}
+
+function random_email() {
+    const userName = random_user_name().replaceAll(' ', '_');
+    const domain = randomStrEnum(randomWords);
+    const tld = randomStrEnum(['com', 'net', 'org', 'io', 'co', 'info']);
+    return `${userName}@${domain}.${tld}`;
+}
+
+function random_phone_number() {
+    const countryCode = randomInt(1, 99);
+    const areaCode = randomInt(100, 999);
+    const exchange = randomInt(100, 999);
+    const number = randomInt(1000, 9999);
+    return `+${countryCode} (${areaCode}) ${exchange}-${number}`;
 }
