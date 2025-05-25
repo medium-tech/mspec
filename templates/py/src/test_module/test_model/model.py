@@ -61,20 +61,16 @@ class TestModel:
         # single_datetime - datetime
         if isinstance(self.single_datetime, str):
             self.single_datetime = datetime.strptime(self.single_datetime, datetime_format_str).replace(microsecond=0)
-        elif isinstance(self.single_datetime, datetime):
-            self.single_datetime = self.single_datetime.replace(microsecond=0)
         # end macro ::
-
         # macro :: py_post_init_list_datetime :: {"multi_datetime": "name"}
         # multi_datetime - list of datetime
         new_values = []
         for item in self.multi_datetime:
             if isinstance(item, str):
-                new_value = datetime.strptime(item, datetime_format_str).replace(microsecond=0)
-            elif isinstance(item, datetime):
-                new_value = item.replace(microsecond=0)
-            new_values.append(new_value)
-
+                new_values.append(datetime.strptime(item, datetime_format_str).replace(microsecond=0))
+            else:
+                new_values.append(item)
+            
         self.multi_datetime = new_values
         # end macro ::
 

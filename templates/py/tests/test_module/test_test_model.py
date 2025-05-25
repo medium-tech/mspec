@@ -88,15 +88,21 @@ class TestTestModel(unittest.TestCase):
 
         # seed data #
 
-        items = client_list_test_model(test_ctx, offset=0, limit=51)
+        items = client_list_test_model(test_ctx, offset=0, limit=101)
         items_len = len(items)
-        if items_len > 50:
-            raise Exception('excpecting 50 items or less, delete db and restart test')
-        elif items_len < 50:
+        if items_len > 100:
+            raise Exception('excpecting 100 items or less, delete db and restart test')
+        
+        if items_len < 50:
             difference = 50 - items_len
             for _ in range(difference):
                 item = TestModel.random()
                 item = client_create_test_model(test_ctx, item)
+        elif items_len > 50:
+            difference = items_len - 50
+            items_to_delete = items[:difference]
+            for item in items_to_delete:
+                client_delete_test_model(test_ctx, item.id)
 
         test_test_model = TestModel.example()
         test_test_model.validate()
