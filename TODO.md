@@ -6,111 +6,50 @@
 
 🟢 = finished
 
-### prototype (python backend + html browser gui)
-
-* 🟢 python unittests passing
-* 🟢 no cache for quick reloading of html files
-* 🟢 javascript/browser ui
-    * 🟢 pagination
-    * 🟢 create
-    * 🟢 read
-    * 🟢 update
-    * 🟢 delete
-    * 🟢 standardize urls (- vs _) and naming (sample vs. msample)
-    * 🟢 refactor code layout to prepare for more template projects
-    * 🟢 create js ui tests
-        * 🟢 refactor to:
-            * templates/html
-                * srv/
-                    * index.html
-                    * ...
-                * test/
-                    * ...
-                * package.json
-        * 🟢 create tests
-
-* 🟢 templating
-    * 🟢 refactor `src/sample/__init__.py` -> `src/sample/sample_item/__init__.py`
-    * 🟢 extract templates
-        * 🟢 add macro syntax
-        * 🟢 add insert syntax
-    * 🟢 generate py
-    * 🟢 generate html
-    * 🟢 generated app should have 2 modules and 3 total models, but not sample.sample_item
-    * 🟢 add html/css template extraction
-    * 🟢 add json template extraction
-    * 🟢 refactor template apps so that module and model names are both 2 words which enables proper templating for kebab-case, etc
-    * 🟢 template app and generated apps unittests are passing
-
-    * 🟢 refactor client / db modules
-    * 🟢 decouple db/client from global ns
-    * 🟢 add convience classes for db/client
-        * 🟢 in `sample/__init__.py` - alias db and client functions from `sample/db.py` and `sample/client.py`
-        * 🟢 in `core/db.py` and `core/client.py` - alias client and db classes from `sample/__init__.py`
-    * 🟢 rename example_item.age and example_item.name because those field names conflict with templating code
-    * 🟡 add auth/users/profile support
+### template prototype (python backend + html browser gui)
+* 🟡 add auth/users/profile support
+    * 🟡 python backend
         * 🟢 client/server unittests for profile/user
         * 🟢 onboarding working, new user/profile/password
         * 🟢 login workflow
-        * 🔴 add auth to profile endpoints
         * 🔴 add salt to pw
         * 🔴 reset password by email code
         * 🔴 add login sessions/logout
         * 🔴 add acls to endpoints/models
-    * 🟢 refactor sample_module to match core module
-        * 🟢 refactor code
-        * 🟢 refactor templating
-        * 🟢 tests passing
-            * 🟢 sample app
-                * 🟢 client/server
-                * 🟢 browser gui
-            * 🟢 generated app
-                * 🟢 client/server
-                * 🟢 browser gui
-    * 🟢 replace mongo with sqlite
-        * 🟢 template tests passing
-        * 🟢 generated app tests passing
-    * 🟢 fix ui handling of dates
-    * 🟡 performance testing
-    * 🔴 get rid of __post_init__ and use type conversion only where needed
-    * 🔴 refactor python vs. templating logic
-    * 🔴 add cid to example_item
-    * 🔴 add meta to example_item
-    * 🔴 refactor/separate core and auth modules
-    * 🔴 clean up whitespace in generated apps
-    * 🔴 git rid of jinja dependency (do this after creating apps in several languages to determine full scope needed from templating)
+    * 🔴 html ui
+        * 🔴 create user
+        * 🔴 view user
+        * 🔴 login
+        * 🔴 create profile
+        * 🔴 view profile
+* 🟢 refactor sample_module to match core module
+    * 🟢 refactor code
+    * 🟢 refactor templating
+    * 🟢 tests passing
+        * 🟢 sample app
+            * 🟢 client/server
+            * 🟢 browser gui
+        * 🟢 generated app
+            * 🟢 client/server
+            * 🟢 browser gui
+* 🟢 replace mongo with sqlite
+    * 🟢 template tests passing
+    * 🟢 generated app tests passing
+* 🟢 fix ui handling of dates
+* 🔴 refactor python vs. templating logic
+* 🔴 add foreign key id to test_model
+* 🔴 add cid to test_model
+* 🔴 add meta to test_model
+* 🟡 performance testing
+* 🔴 get rid of `__post_init__` and use type conversion explicitly where needed
+* 🔴 rename template apps
+    * 🔴 unittest -> template_app
+    * 🔴 test_module -> template_module
+    * 🔴 test_model -> template_model
+* 🔴 clean up whitespace in generated apps
+* 🔴 git rid of jinja dependency (do this after creating apps in several languages to determine full scope needed from templating)
     
-### guis
-
-* 🔴 html (browser) markup viewer
-    * 🔴 heading (1 level to keep simple at first)
-    * 🔴 paragraph
-    * 🔴 lists
-    * 🔴 model widgets
-        * 🔴 create
-        * 🔴 read
-        * 🔴 update
-        * 🔴 delete
-        * 🔴 list
-    * 🔴 expressions
-        * 🔴 is true/false
-        * 🔴 add/subtract
-        * 🔴 datetime.now
-
-* 🔴 blender markup viewer
-    * 🔴 heading (1 level to keep simple at first)
-        * 🔴 paragraph
-        * 🔴 lists
-        * 🔴 model widgets
-            * 🔴 create
-            * 🔴 read
-            * 🔴 update
-            * 🔴 delete
-            * 🔴 list
-        * 🔴 expressions
-            * 🔴 is true/false
-            * 🔴 add/subtract
-            * 🔴 datetime.now
+### template guis
 
 * 🟡 python tkinter
     * 🟢 index
@@ -128,15 +67,6 @@
     * 🔴 unittests
     * 🔴 make network requests async
 
-    * 🟡 markup viewer
-        * 🟢 render example spec
-        * 🔴 model widgets
-            * 🔴 create
-            * 🔴 read
-            * 🔴 update
-            * 🔴 delete
-            * 🔴 list
-
 * 🔴 c 
     * 🔴 index
     * 🔴 sample index
@@ -148,12 +78,6 @@
             * 🔴 update
             * 🔴 delete
 
-* 🔴 Gio UI (go lang) https://gioui.org
-
-* 🔴 micro controller guis
-    * 🔴 razz pi pico: https://www.youtube.com/watch?v=KSYjGul84aU&t=819s
-
-### servers
 * 🔴 go
     * 🔴 index
     * 🔴 sample index
@@ -165,11 +89,78 @@
             * 🔴 update
             * 🔴 delete
 
-## additional protocol/app features
-* 🔴 content ids
-* 🔴 date and time types
-* 🔴 string format email
-* 🔴 users / auth
-* 🔴 profiles
-* 🔴 files
-* 🔴 sqlite
+* 🔴 haskell
+    * 🔴 index
+    * 🔴 sample index
+    * 🔴 sample item
+        * 🔴 list
+        * 🔴 instance
+            * 🔴 create
+            * 🔴 read
+            * 🔴 update
+            * 🔴 delete
+
+### template servers
+* 🔴 go
+    * 🔴 index
+    * 🔴 sample index
+    * 🔴 sample item
+        * 🔴 list
+        * 🔴 instance
+            * 🔴 create
+            * 🔴 read
+            * 🔴 update
+            * 🔴 delete
+
+* 🔴 haskell
+    * 🔴 index
+    * 🔴 sample index
+    * 🔴 sample item
+        * 🔴 list
+        * 🔴 instance
+            * 🔴 create
+            * 🔴 read
+            * 🔴 update
+            * 🔴 delete
+
+### template clients
+* 🔴 go
+    * 🔴 user login
+    * 🔴 model
+        * 🔴 list
+        * 🔴 instance
+            * 🔴 create
+            * 🔴 read
+            * 🔴 update
+            * 🔴 delete
+
+# browser 2.0 GUIs
+* 🟡 python tkinter
+    * 🟢 render hello-world-page.json
+    * 🟢 render example_spec
+    * 🔴 model widgets
+        * 🔴 create
+        * 🔴 read
+        * 🔴 update
+        * 🔴 delete
+        * 🔴 list
+* 🔴 html
+    * 🔴 render hello-world-page.json
+    * 🔴 render example spec
+    * 🔴 model widgets
+* 🔴 Go
+    * 🔴 render hello-world-page.json
+    * 🔴 render example spec
+    * 🔴 model widgets
+* 🔴 blender app template
+    * 🔴 render hello-world-page.json
+    * 🔴 render example spec
+    * 🔴 model widgets
+* 🔴 C
+    * 🔴 render hello-world-page.json
+    * 🔴 render example spec
+    * 🔴 model widgets
+* 🔴 haskell
+    * 🔴 render hello-world-page.json
+    * 🔴 render example spec
+    * 🔴 model widgets

@@ -60,7 +60,7 @@ def random_list(element_type:str, enum_choies=None) -> list:
             items.append(globals()[f'random_{element_type}']())
     return items
 
-def random_datetime() -> datetime:
+def random_datetime() -> datetime.datetime:
     return datetime.datetime.fromtimestamp(random.randint(1705900793, 1768972793))
 
 def random_cid() -> CID:

@@ -4,7 +4,7 @@ from datetime import datetime
 from copy import deepcopy
 
 
-__all__ = ['MTemplateHTMLProject']
+__all__ = ['MTemplatePyProject']
 
 
 class MTemplatePyProject(MTemplateProject):

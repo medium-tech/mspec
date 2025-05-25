@@ -14,6 +14,7 @@ This project is two things: an [app generator](#app-generator) using code templa
     * [generate apps from templates](#generate-apps-from-spec-files)
     * [run and test template apps](#run-and-test-generated-apps)
     * [run browser 2.0](#run-browser-20)
+* [contributing](#contributing)
 
 ## app generator
 
@@ -250,8 +251,16 @@ Currently this is hardcoded to run the example document in variable `example_spe
 
 You can open any spec json file with this:
 
-    python -m lingo.gui --spec spec/page1.json
+    python -m lingo.gui --spec spec/hello-world-page.json
 
 ⚠️ Be careful with untrusted input as this project is still in alpha phase. ⚠️
+
+# Contributing
+* make branch from dev branch
+* make changes
+* update TODO.md by changing color of jewel next to item you're working on
+    * change to 🟡 if item is started but not completed
+    * change to 🟢 if item is complete and has passing unittests
+* create pull request to dev branch
 
 [back to top of page](#mspec)
