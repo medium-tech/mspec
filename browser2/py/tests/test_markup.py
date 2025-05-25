@@ -1,14 +1,20 @@
 import unittest
 import datetime
+import json
 
 from pprint import pprint
+from pathlib import Path
+from mspec.markup import *
 
-from lingo.expressions import *
+test_spec_path = Path(__file__).parent.parent.parent.parent / 'spec/test-page.json'
+
+with open(test_spec_path, 'r') as f:
+    test_spec = json.load(f)
 
 class TestLingoApp(unittest.TestCase):
 
     def test_example_app_first_visit(self):
-        app = lingo_app(example_spec, first_visit=True)
+        app = lingo_app(test_spec, first_visit=True)
         app.state['name'] = 'Alice'
         doc = render_output(app)
 
@@ -18,10 +24,10 @@ class TestLingoApp(unittest.TestCase):
         name = doc[15]['text']
         self.assertEqual(name, 'Alice')
 
-        self._test_doc(doc, debug=True)
+        self._test_doc(doc, debug=False)
 
     def test_example_app_not_first_visit(self):
-        app = lingo_app(example_spec, first_visit=False)
+        app = lingo_app(test_spec, first_visit=False)
         app.state['name'] = 'Bob'
         doc = render_output(app)
 

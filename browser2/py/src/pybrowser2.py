@@ -1,7 +1,8 @@
+#!/usr/bin/env python3
 import tkinter
 import webbrowser
 from tkinter import ttk
-from lingo.expressions import lingo_app, example_spec, render_output, lingo_execute, lingo_update_state
+from mspec.markup import lingo_app, example_spec, render_output, lingo_execute, lingo_update_state
 
 HEADING = {
     1: ('Verdana', 35),
@@ -13,10 +14,6 @@ HEADING = {
 }
 
 TEXT = ('Verdana', 12)
-  
-#
-#
-#
 
     
 class LingoPage(tkinter.Frame):

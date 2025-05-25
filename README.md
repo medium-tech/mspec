@@ -110,22 +110,23 @@ Because this project is in alpha there is no documentation. However the code is 
 
 If you're interested in generating an app check `spec/test-gen.yaml` for an example app with all the features of the app spec that are unittested (on the `main` branch). 
 
-See `example_spec` in `src/lingo/expressions.py` for an example of a browser2.0 page that is unittested. 
+See `spec/test-page.json` for an example of a browser2.0 page with all unittested features.
 
-Run `python -m lingo.gui -h` for the cli help screen for browser2.0 (after [setting up the dev enviro](#setup-dev-environment)).
+Run `./pybrowser2.py -h` in `browser2/py/src` for the cli help screen for browser2.0 (after [setting up the dev enviro](#setup-dev-environment)).
 
 Run `python -m mtemplate -h` for the cli help screen for the template generator (after [setting up the dev enviro](#setup-dev-environment)).
 
 # Development
 
 ## code layout
-The `./src` folder contains three modules:
+The `./src` folder contains two modules:
 
 * `mtemplate` - extracts templates from template apps and using them to generate apps based on yaml definition files in `./spec`
-* `mspec` - parse yaml spec files in `./spec`
-* `lingo` - markup language and `tkinter` gui renderer for browser2.0
+* `mspec` - parse yaml spec files in `./spec`, parse and process browser2.0 json pages
 
 The `./templates` folder contains template apps from which templates are extracted.
+
+The `browser2/py` file contains the tkinter window and renderer for the browser2.0 python implementation.
 
 ## setup dev environment
 
@@ -245,22 +246,40 @@ As with the template apps, 0 dependencies are required to deploy the app, howeve
 
 After [setting up your dev environment](#setup-dev-environment) run the following:
 
-    python -m lingo.gui
+    cd browser2/py/src
+    ./pybrowser2.py
 
-Currently this is hardcoded to run the example document in variable `example_spec` in the file `src/lingo/expressions.py`
+Currently this is hardcoded to run the example document in variable `example_spec` in the file `src/mspec/markup.py`
 
 You can open any spec json file with this:
 
-    python -m lingo.gui --spec spec/hello-world-page.json
+    ./pybrowser2.py --spec spec/hello-world-page.json
 
 ⚠️ Be careful with untrusted input as this project is still in alpha phase. ⚠️
 
 # Contributing
+
+## General steps
 * make branch from dev branch
 * make changes
 * update TODO.md by changing color of jewel next to item you're working on
     * change to 🟡 if item is started but not completed
     * change to 🟢 if item is complete and has passing unittests
 * create pull request to dev branch
+
+## template apps
+* python - backend and frontend are in `./templates/py`
+* legacy browser frontend is in `./templates/html`
+
+#### For new languages
+
+Create `./templates/<language>` and within it a readme file and anything needed for the application to be built and run.
+
+Applications should keep dependencies to a bare minimum, when possible use a built in solution. The python frontend has no deps and the backend is only dependent on a server protocol and 2 libs for passwords and cryptography. The legacy browser implementation is only dependent on a testing framework.
+
+#### browser2.0
+
+Browser2 implementations are in `./browser2/<language>`
+
 
 [back to top of page](#mspec)
