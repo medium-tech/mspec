@@ -33,12 +33,12 @@ The `mtemplate` module in this repository can be used to [generate an app using 
 * a web server that has:
     * an api for CRUD ops using sqlite as a database (more db flexibility planned in the future)
     * html/js based frontend for CRUD ops
-* a python gui frontend (using built in tkinter module)
-* a python http client for CRUD ops
-* a python client that directly accessess the db for CRUD ops
+* a gui frontend
+* a http client for CRUD ops against server
+* a client that directly accessess the db for CRUD ops
 * a cli for CRUD ops
 
-Currently only python and html/js are implemented but eventually other languages such as Go and Haskell will be supported [see TODO](./TODO.md). 
+The current proof of concept has a python backend/frontend and html/js frontend. Eventually other languages such as Go and Haskell will be supported [see TODO](./TODO.md).
 
 The generated python app is lightweight only requiring 3 stable dependencies, and the generated html frontend has no dependencies or build/packaging process. The generated html files are served staticly from the uwsgi server that also serves the python app.
 
@@ -275,15 +275,23 @@ You can open any spec json file with this:
 * python - backend and frontend are in `./templates/py`
 * legacy browser frontend is in `./templates/html`
 
+See [TODO.md](./TODO.md) for desired template app languages/features and current progress.
+
 #### For new languages
 
 Create `./templates/<language>` and within it a readme file and anything needed for the application to be built and run.
 
-Applications should keep dependencies to a bare minimum, when possible use a built in solution. The python frontend has no deps and the backend is only dependent on a server protocol and 2 libs for passwords and cryptography. The legacy browser implementation is only dependent on a testing framework.
+Applications should keep dependencies to a bare minimum, when possible use a built in solution. Frameworks and high level abstractions should be avoided if a lower level option is available and reduces the dependency footprint. The python frontend has no deps and the backend is only dependent on a server protocol and 2 libs for passwords and cryptography. The legacy browser implementation is only dependent on a testing suite. 0 dependencies is not the goal, simplicity, lightweight and maintainable are the goals.
 
-#### browser2.0
+To the extent possible by your language the code layout should be similar to the python one. All apps (server/gui/clients) should go under one folder for the language. 
 
-Browser2 implementations are in `./browser2/<language>`
+Because this is still a proof of concept documentation for the template syntax is unavailable, however this shouldn't be a limitation for community involvement. The template syntax is designed to be embedded in a working application's comments, so developers can contribute apps that do not have templating syntax and other developers can add the syntax later. This app can also be used later to help build a browser2 implementation in the same language.
 
+## browser2.0
 
+Browser2 implementations go in `./browser2/<language>`. For languages not yet implemented, a proof of concept app should be able to render the `spec/hello-world-page.json` hello world page. Full implementations should be able to render `spec/test-page.json` and have unittests. See the [python implementation](#run-browser-20) for an example implementation of what the product should look like.
+
+See [TODO.md](./TODO.md) for desired language implementation and current progress.
+
+---
 [back to top of page](#mspec)
