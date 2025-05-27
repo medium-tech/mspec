@@ -257,7 +257,7 @@ Currently this is hardcoded to run the example document in variable `example_spe
 
 You can open any spec json file with this:
 
-    ./pybrowser2.py --spec spec/hello-world-page.json
+    ./pybrowser2.py --spec ../../../spec/hello-world-page.json
 
 ⚠️ Be careful with untrusted input as this project is still in alpha phase. ⚠️
 

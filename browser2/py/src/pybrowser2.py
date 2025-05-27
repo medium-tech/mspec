@@ -2,7 +2,10 @@
 import tkinter
 import webbrowser
 from tkinter import ttk
-from mspec.markup import lingo_app, example_spec, render_output, lingo_execute, lingo_update_state
+from pathlib import Path
+from mspec.markup import lingo_app, render_output, lingo_execute, lingo_update_state
+
+default_page = str(Path(__file__).parent.parent.parent.parent / 'spec/test-page.json')
 
 HEADING = {
     1: ('Verdana', 35),
@@ -166,13 +169,11 @@ if __name__ == '__main__':
     import argparse
     import json
     parser = argparse.ArgumentParser(description='Run Browser2.0')
-    parser.add_argument('--spec', type=str, help='Path to the spec file')
+    parser.add_argument('--spec', type=str, default=default_page, help=f'Path to the spec file, default: {default_page}')
     args = parser.parse_args()
-    if args.spec:
-        with open(args.spec, 'r') as f:
-            spec = json.load(f)
-    else:
-        spec = example_spec
+
+    with open(args.spec, 'r') as f:
+        spec = json.load(f)
 
     app = LingoGUIApp(spec)
     app.mainloop()
