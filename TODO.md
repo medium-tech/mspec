@@ -27,11 +27,20 @@ The main prototype are the python + html browser template apps.
         * 🔴 reset password by email code
         * 🔴 add login sessions/logout
         * 🔴 add acls to endpoints/models
-    * 🔴 html ui user / profiles
+    * 🔴 html
+        * 🔴 create user
+        * 🔴 login
+        * 🔴 reset password
+        * 🔴 user page (w logout button)
+            * 🔴 edit profile
+            * 🔴 edit profile of logged in user
+        * 🔴 profiles
+            * 🔴 list profiles
+            * 🔴 view profile
 * 🔴 add foreign key id to test_model
 * 🔴 add cid to test_model
 * 🔴 add meta to test_model
-* 🔴 add fille ingest/upload
+* 🔴 add file ingest/upload
 * 🔴 rename template apps
     * 🔴 unittest -> template_app
     * 🔴 test_module -> template_module
