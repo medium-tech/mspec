@@ -15,3 +15,12 @@ dependencies = [
     'pyyaml == 6.0.2',
     'Jinja2 == 3.1.4'
 ]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+mspec = ["*.yaml", "*.yml", "*.json"]
