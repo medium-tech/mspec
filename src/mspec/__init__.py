@@ -3,7 +3,7 @@ import yaml
 
 __all__ = ['spec', 'sample_spec_dir', 'dist_dir']
 
-sample_spec_dir = Path(__file__).parent.parent / 'data'
+sample_spec_dir = Path(__file__).parent / 'data'
 dist_dir = Path(__file__).parent.parent.parent / 'dist'
 
 def generate_names(lower_case:str) -> dict:

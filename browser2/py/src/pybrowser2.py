@@ -2,7 +2,6 @@
 import tkinter
 import webbrowser
 from tkinter import ttk
-from pathlib import Path
 from mspec import sample_spec_dir
 from mspec.markup import lingo_app, render_output, lingo_execute, lingo_update_state
 
