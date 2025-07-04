@@ -1,4 +1,5 @@
 import tkinter
+from copy import deepcopy
 from tkinter import ttk, StringVar
 from test_module.test_model.client import client_list_test_model
 
@@ -96,7 +97,6 @@ class TestModelIndexPage(tkinter.Frame):
         
         self.list_status.set('status: 🟢')
 
-        go_to_item = lambda item: self.app.show_frame_str('TestModelInstancePage', item=item)
         padx = 5
 
         for n in range(self.list_page_size):
@@ -109,10 +109,16 @@ class TestModelIndexPage(tkinter.Frame):
             test_model_id = getattr(test_model, 'id', '-')
 
             if test_model_id == '-':
-                go_widget = ttk.Label(self.table, text=test_model_id)
+                view_widget = ttk.Label(self.table, text=test_model_id)
             else:
-                go_widget = ttk.Button(self.table, text='go', command=lambda: go_to_item(test_model), width=3)
-            go_widget.grid(row=n + self.list_items_row_offset, column=0, padx=padx)
+                def go_to_item(index):
+                    print(f"Going to item {index} with id {test_model_id}")
+                    # breakpoint()
+                    self.app.show_frame_str('TestModelInstancePage', item=test_models[int(index)])
+
+                view_widget = ttk.Button(self.table, text='view', command=lambda i=n: go_to_item(i), width=3)
+
+            view_widget.grid(row=n + self.list_items_row_offset, column=0, padx=padx)
 
             id_text = tkinter.Text(self.table, height=1, width=25, highlightthickness=0)
             id_text.insert(tkinter.END, test_model_id)
@@ -167,11 +173,25 @@ class TestModelIndexPage(tkinter.Frame):
 
 class TestModelInstancePage(tkinter.Frame):
      
-    def __init__(self, parent, controller): 
+    def __init__(self, parent, controller, item=None): 
         super().__init__(parent)
+        self.parent = parent
+        self.controller = controller
+        self.item = item
 
-        back_button = ttk.Button(self, text='<-', command=lambda: controller.show_frame_str('SampleModuleIndexPage'))
+    def _draw(self):
+        for widget in self.winfo_children():
+            widget.destroy()
+
+        back_button = ttk.Button(self, text='<-', command=lambda: self.controller.show_frame_str('TestModelIndexPage'))
         back_button.grid(row=0, column=0)
 
-        label = ttk.Label(self, text='test model - <id>', font=LARGEFONT)
-        label.grid(row=0, column=1) 
+        item_id = getattr(self.item, 'id', '-')
+
+        label = ttk.Label(self, text=f'test model - {item_id}', font=LARGEFONT)
+        label.grid(row=0, column=1)
+
+    def on_show_frame(self, item=None, **kwargs):
+        print(f"Showing TestModelInstancePage for item: {item}", kwargs)
+        self.item = item if item else self.item
+        self._draw()

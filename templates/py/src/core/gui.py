@@ -74,10 +74,11 @@ class MSpecGUIApp(tkinter.Tk):
         except AttributeError:
             """self.current_frame is None"""
 
-        try:
-            frame.on_show_frame(**kwargs)
-        except AttributeError:
-            pass
+        on_show_frame = getattr(frame, 'on_show_frame', None)
+        if on_show_frame:
+            on_show_frame(**kwargs)
+        else:
+            print(f"Frame {frame_class} has no on_show_frame method")
 
         self.current_frame = frame
 
