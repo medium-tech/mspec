@@ -1,9 +1,9 @@
 from pathlib import Path
 import yaml
 
-__all__ = ['spec', 'spec_dir', 'dist_dir']
+__all__ = ['spec', 'sample_spec_dir', 'dist_dir']
 
-spec_dir = Path(__file__).parent.parent.parent / 'spec'
+sample_spec_dir = Path(__file__).parent.parent / 'data'
 dist_dir = Path(__file__).parent.parent.parent / 'dist'
 
 def generate_names(lower_case:str) -> dict:
@@ -26,7 +26,7 @@ def load_spec(spec_file:str) -> dict:
         with open(spec_file) as f:
             spec = yaml.load(f, Loader=yaml.FullLoader)
     except FileNotFoundError:
-        with open(spec_dir / spec_file) as f:
+        with open(sample_spec_dir / spec_file) as f:
             spec = yaml.load(f, Loader=yaml.FullLoader)
 
     project = spec['project']

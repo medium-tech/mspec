@@ -9,6 +9,7 @@
 * [c template app](#c-template-app)
 * [haskell template app](#haskell-template-app)
 * [browser 2.0 clients](#browser-20-clients)
+* [low code node based gui](#low-code-node-based-gui)
 
 ### status colors
 |not started|in progress|finished|
@@ -365,7 +366,7 @@ The main prototype are the python + html browser template apps.
     * 🔴 render hello-world-page.json
     * 🔴 render example spec
     * 🔴 model widgets
-* 🔴 blender app template
+* 🔴 blender extension / app template
     * 🔴 render hello-world-page.json
     * 🔴 render example spec
     * 🔴 model widgets
@@ -377,3 +378,11 @@ The main prototype are the python + html browser template apps.
     * 🔴 render hello-world-page.json
     * 🔴 render example spec
     * 🔴 model widgets
+
+## low code node based gui
+A node based gui for low code generation of browser2.0 JSONs.
+
+* 🔴 blender extension / app template
+    * 🔴 generate hello-world-page.json
+    * 🔴 generate example spec
+    * 🔴 genereate widgets

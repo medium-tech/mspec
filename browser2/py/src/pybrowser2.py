@@ -3,9 +3,10 @@ import tkinter
 import webbrowser
 from tkinter import ttk
 from pathlib import Path
+from mspec import sample_spec_dir
 from mspec.markup import lingo_app, render_output, lingo_execute, lingo_update_state
 
-default_page = str(Path(__file__).parent.parent.parent.parent / 'spec/test-page.json')
+default_page = str(sample_spec_dir / 'test-page.json')
 
 HEADING = {
     1: ('Verdana', 35),
