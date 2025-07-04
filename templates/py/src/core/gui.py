@@ -16,7 +16,14 @@ LARGEFONT = ('Verdana', 35)
 
 def gui_main(start_frame='MSpecIndexPage'):
     app = MSpecGUIApp(start_frame)
-    app.mainloop()
+    try:
+        result = app.mainloop()
+        print(f"Mainloop exited with result: {result}")
+
+    except KeyboardInterrupt:
+        print("\nKeyboardInterrupt received. Exiting GUI...")
+        app.destroy()
+        raise
     
 class MSpecIndexPage(tkinter.Frame):
      
