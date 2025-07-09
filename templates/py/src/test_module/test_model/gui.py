@@ -1,7 +1,7 @@
 import tkinter
 from copy import deepcopy
 from tkinter import ttk, StringVar
-from test_module.test_model.model import TestModel
+from test_module.test_model.model import TestModel, field_list, longest_field_name_length
 from test_module.test_model.client import client_list_test_model
 
 # vars :: {"test_module": "module.name.snake_case"}
@@ -13,6 +13,7 @@ __all__ = [
 ]
 
 LARGEFONT = ('Verdana', 35)
+TEXT = ('Verdana', 12)
 
 class TestModelIndexPage(tkinter.Frame):
      
@@ -39,7 +40,7 @@ class TestModelIndexPage(tkinter.Frame):
         back_button = ttk.Button(self, text='<-', command=lambda: self.app.show_frame_str('SampleModuleIndexPage'))
         back_button.grid(row=0, column=0)
 
-        label = ttk.Label(self, text='...test model', font=LARGEFONT)
+        label = ttk.Label(self, text='test model', font=LARGEFONT)
         label.grid(row=0, column=1)
         label.bind('<Button-1>', lambda _: self.app.focus_set())
 
@@ -65,9 +66,6 @@ class TestModelIndexPage(tkinter.Frame):
         status_label = ttk.Label(self.controls, textvariable=self.list_status)
         status_label.grid(row=2, column=0, columnspan=2, sticky='w')
 
-        # vars :: {"['id', 'single_bool', 'single_int', 'single_float', 'single_string', 'single_enum', 'single_datetime', 'multi_bool', 'multi_int', 'multi_float', 'multi_string']": "macro.py_field_list(model.fields)"}
-        self.field_names = ['id', 'single_bool', 'single_int', 'single_float', 'single_string', 'single_enum', 'single_datetime', 'multi_bool', 'multi_int', 'multi_float', 'multi_string']
-
         self.table = ttk.Frame(self)
         self.table.grid(row=self.list_items_row_offset, column=0, columnspan=2, sticky='nsew')
 
@@ -83,7 +81,8 @@ class TestModelIndexPage(tkinter.Frame):
         for widget in self.table.winfo_children():
             widget.destroy()
 
-        for n, field_name in enumerate(self.field_names):
+        # headers
+        for n, field_name in enumerate(['', 'id'] + field_list):  # empty str for button column
             header = ttk.Label(self.table, text=field_name)
             header.grid(row=self.list_items_row_offset - 1, column=n)
 
@@ -109,6 +108,9 @@ class TestModelIndexPage(tkinter.Frame):
 
             test_model_id = getattr(test_model, 'id', '-')
 
+            # print(f'Listing test_model: {test_model_id}')
+            # print(test_model)
+
             if test_model_id == '-':
                 view_widget = ttk.Label(self.table, text=test_model_id)
             else:
@@ -121,37 +123,115 @@ class TestModelIndexPage(tkinter.Frame):
 
             view_widget.grid(row=n + self.list_items_row_offset, column=0, padx=padx)
 
-            id_text = tkinter.Text(self.table, height=1, width=25, highlightthickness=0)
+            # id - str
+            id_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
             id_text.insert(tkinter.END, test_model_id)
             id_text.grid(row=n + self.list_items_row_offset, column=1, padx=padx)
 
-            description_text = tkinter.Text(self.table, height=1, width=25, highlightthickness=0)
-            description_text.insert(tkinter.END, getattr(test_model, 'description', '-'))
-            description_text.grid(row=n + self.list_items_row_offset, column=2, padx=padx)
+            # macro :: py_tk_single_bool :: {"single_bool": "name"}
+            # single_bool - bool
+            single_bool_text = tkinter.Text(self.table, height=1, width=5, highlightthickness=0)
+            single_bool_text.insert(tkinter.END, str(getattr(test_model, 'single_bool', '-')).lower())
+            single_bool_text.grid(row=n + self.list_items_row_offset, column=2, padx=padx)
+            # end macro ::
 
-            verified_text = tkinter.Text(self.table, height=1, width=6, highlightthickness=0)
-            verified_text.insert(tkinter.END, str(getattr(test_model, 'verified', '-')).lower())
-            verified_text.grid(row=n + self.list_items_row_offset, column=3, padx=padx)
+            # macro :: py_tk_single_int :: {"single_int": "name"}
+            # single_int - int
+            single_int_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
+            single_int_text.insert(tkinter.END, str(getattr(test_model, 'single_int', '-')))
+            single_int_text.grid(row=n + self.list_items_row_offset, column=3, padx=padx)
+            # end macro ::
 
-            color_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
-            color_text.insert(tkinter.END, getattr(test_model, 'color', '-'))
-            color_text.grid(row=n + self.list_items_row_offset, column=4, padx=padx)
+            # macro :: py_tk_single_float :: {"single_float": "name"}
+            # single_float - float
+            single_float_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
+            single_float_text.insert(tkinter.END, str(getattr(test_model, 'single_float', '-')))
+            single_float_text.grid(row=n + self.list_items_row_offset, column=4, padx=padx)
+            # end macro ::
 
-            count_text = tkinter.Text(self.table, height=1, width=7, highlightthickness=0)
-            count_text.insert(tkinter.END, str(getattr(test_model,'count', '-')))
-            count_text.grid(row=n + self.list_items_row_offset, column=5, padx=padx)
+            # macro :: py_tk_single_string :: {"single_string": "name"}
+            # single_string - str
+            single_string_text = tkinter.Text(self.table, height=1, width=20, highlightthickness=0)
+            single_string_text.insert(tkinter.END, getattr(test_model, 'single_string', '-'))
+            single_string_text.grid(row=n + self.list_items_row_offset, column=5, padx=padx)
+            # end macro ::
 
-            score_text = tkinter.Text(self.table, height=1, width=7, highlightthickness=0)
-            score_text.insert(tkinter.END, str(getattr(test_model, 'score', '-')))
-            score_text.grid(row=n + self.list_items_row_offset, column=6, padx=padx)
+            # macro :: py_tk_single_enum :: {"single_enum": "name"}
+            # single_enum - str
+            single_enum_text = tkinter.Text(self.table, height=1, width=15, highlightthickness=0)
+            single_enum_text.insert(tkinter.END, getattr(test_model, 'single_enum', '-'))
+            single_enum_text.grid(row=n + self.list_items_row_offset, column=6, padx=padx)
+            # end macro ::
 
-            stuff_text = tkinter.Text(self.table, height=1, width=20, highlightthickness=0)
-            stuff_text.insert(tkinter.END, ', '.join(getattr(test_model, 'stuff', [])))
-            stuff_text.grid(row=n + self.list_items_row_offset, column=7, padx=padx)
+            # macro :: py_tk_single_datetime :: {"single_datetime": "name"}
+            # single_datetime - datetime
+            single_datetime_text = tkinter.Text(self.table, height=1, width=20, highlightthickness=0)
+            single_datetime_value = getattr(test_model, 'single_datetime', '-')
+            # if single_datetime_value != '-':
+            #     single_datetime_value = single_datetime_value.strftime('%Y-%m-%d %H:%M:%S')
+            single_datetime_text.insert(tkinter.END, str(single_datetime_value))
+            single_datetime_text.grid(row=n + self.list_items_row_offset, column=7, padx=padx)
+            # end macro ::
 
-            when_text = tkinter.Text(self.table, height=1, width=25, highlightthickness=0)
-            when_text.insert(tkinter.END, getattr(test_model, 'when', '-'))
-            when_text.grid(row=n + self.list_items_row_offset, column=8, padx=padx)
+            # macro :: py_tk_multi_bool :: {"multi_bool": "name"}
+            # multi_bool - list of bool
+            multi_bool_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
+            multi_bool_value = getattr(test_model, 'multi_bool', '-')
+            if isinstance(multi_bool_value, list):
+                multi_bool_value = ', '.join([str(v).lower() for v in multi_bool_value])
+            multi_bool_text.insert(tkinter.END, str(multi_bool_value))
+            multi_bool_text.grid(row=n + self.list_items_row_offset, column=8, padx=padx)
+            # end macro ::
+
+            # macro :: py_tk_multi_int :: {"multi_int": "name"}
+            # multi_int - list of int
+            multi_int_text = tkinter.Text(self.table, height=1, width=15, highlightthickness=0)
+            multi_int_value = getattr(test_model, 'multi_int', '-')
+            if isinstance(multi_int_value, list):
+                multi_int_value = ', '.join([str(v) for v in multi_int_value])
+            multi_int_text.insert(tkinter.END, str(multi_int_value))
+            multi_int_text.grid(row=n + self.list_items_row_offset, column=9, padx=padx)
+            # end macro ::
+
+            # macro :: py_tk_multi_float :: {"multi_float": "name"}
+            # multi_float - list of float
+            multi_float_text = tkinter.Text(self.table, height=1, width=15, highlightthickness=0)
+            multi_float_value = getattr(test_model, 'multi_float', '-')
+            if isinstance(multi_float_value, list):
+                multi_float_value = ', '.join([str(v) for v in multi_float_value])
+            multi_float_text.insert(tkinter.END, str(multi_float_value))
+            multi_float_text.grid(row=n + self.list_items_row_offset, column=10, padx=padx)
+            # end macro ::
+
+            # macro :: py_tk_multi_string :: {"multi_string": "name"}
+            # multi_string - list of str
+            multi_string_text = tkinter.Text(self.table, height=1, width=30, highlightthickness=0)
+            multi_string_value = getattr(test_model, 'multi_string', '-')
+            if isinstance(multi_string_value, list):
+                multi_string_value = ', '.join(multi_string_value)
+            multi_string_text.insert(tkinter.END, str(multi_string_value))
+            multi_string_text.grid(row=n + self.list_items_row_offset, column=11, padx=padx)
+            # end macro ::
+
+            # macro :: py_tk_multi_enum :: {"multi_enum": "name"}
+            # multi_enum - list of str (enums)
+            multi_enum_text = tkinter.Text(self.table, height=1, width=20, highlightthickness=0)
+            multi_enum_value = getattr(test_model, 'multi_enum', '-')
+            if isinstance(multi_enum_value, list):
+                multi_enum_value = ','.join(multi_enum_value)
+            multi_enum_text.insert(tkinter.END, str(multi_enum_value))
+            multi_enum_text.grid(row=n + self.list_items_row_offset, column=12, padx=padx)
+            # end macro ::
+
+            # macro :: py_tk_multi_datetime :: {"multi_datetime": "name"}
+            # multi_datetime - list of datetime
+            multi_datetime_text = tkinter.Text(self.table, height=1, width=30, highlightthickness=0)
+            multi_datetime_value = getattr(test_model, 'multi_datetime', '-')
+            if isinstance(multi_datetime_value, list):
+                multi_datetime_value = ', '.join([str(v) for v in multi_datetime_value])
+            multi_datetime_text.insert(tkinter.END, str(multi_datetime_value))
+            multi_datetime_text.grid(row=n + self.list_items_row_offset, column=13, padx=padx)
+            # end macro ::
 
         if self.list_offset == 0:
             self.prev_pg_button.state(['disabled'])
@@ -194,6 +274,15 @@ class TestModelInstancePage(tkinter.Frame):
 
         label = ttk.Label(self, text=f'test model - {self.item_id}', font=LARGEFONT)
         label.grid(row=0, column=1)
+
+        field_grid = tkinter.Text(self, font=TEXT, wrap='word', height=500, width=100, highlightthickness=0)
+        for n, field_name in enumerate(['id'] + field_list):
+            field_value = getattr(self.item, field_name, '-')
+            if isinstance(field_value, list):
+                field_value = ', '.join([str(v) for v in field_value])
+            field_display = f'{field_name}:'
+            field_grid.insert(tkinter.END, f'{field_display:<{longest_field_name_length + 2}} {field_value}\n\n')
+        field_grid.grid(row=1, column=0, columnspan=2)
 
     def on_show_frame(self, item=None, **kwargs):
         self._set_item(item)

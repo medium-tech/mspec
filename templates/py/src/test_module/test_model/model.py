@@ -35,6 +35,25 @@ multi_enum_options = [
 ]
 # end ignore ::
 
+field_list = [
+    # replace :: macro.py_field_list(model.fields)
+    'single_bool',
+    'single_int',
+    'single_float',
+    'single_string',
+    'single_enum',
+    'single_datetime',
+    'multi_bool',
+    'multi_int',
+    'multi_float',
+    'multi_string',
+    'multi_enum',
+    'multi_datetime',
+    # end replace ::
+]
+
+longest_field_name_length = max([len(name) for name in field_list])
+
 @dataclass
 class TestModel:
 
