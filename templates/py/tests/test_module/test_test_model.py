@@ -61,28 +61,6 @@ class TestTestModel(unittest.TestCase):
         self.assertIsNone(fetched_item)
 
         # insert :: macro.py_test_crud_delete(model)
-        # macro :: py_test_sql_delete :: {"test_model": "model_name_snake_case", "multi_bool": "field_name"}
-        multi_bool_result = cursor.execute(f"SELECT value FROM test_model_multi_bool WHERE test_model_id=? ORDER BY position", (created_test_model.id,))
-        self.assertEqual(len(multi_bool_result.fetchall()), 0)
-        # end macro ::
-
-        # ignore ::
-        multi_int_result = cursor.execute(f"SELECT value FROM test_model_multi_int WHERE test_model_id=? ORDER BY position", (created_test_model.id,))
-        self.assertEqual(len(multi_int_result.fetchall()), 0)
-
-        multi_float_result = cursor.execute(f"SELECT value FROM test_model_multi_float WHERE test_model_id=? ORDER BY position", (created_test_model.id,))
-        self.assertEqual(len(multi_float_result.fetchall()), 0)
-
-        multi_string_result = cursor.execute(f"SELECT value FROM test_model_multi_string WHERE test_model_id=? ORDER BY position", (created_test_model.id,))
-        self.assertEqual(len(multi_string_result.fetchall()), 0)
-
-        multi_enum_result = cursor.execute(f"SELECT value FROM test_model_multi_enum WHERE test_model_id=? ORDER BY position", (created_test_model.id,))
-        self.assertEqual(len(multi_enum_result.fetchall()), 0)
-
-        multi_datetime_result = cursor.execute(f"SELECT value FROM test_model_multi_datetime WHERE test_model_id=? ORDER BY position", (created_test_model.id,))
-        self.assertEqual(len(multi_datetime_result.fetchall()), 0)
-        # end ignore ::
-        
 
     def test_test_model_pagination(self):
 

@@ -60,13 +60,11 @@ class TestMultiModel(unittest.TestCase):
         fetched_item = cursor.execute(f"SELECT * FROM multi_model WHERE id=?", (created_test_multi_model.id,)).fetchone()
         self.assertIsNone(fetched_item)
 
-        # insert :: macro.py_test_crud_delete(model)
         # macro :: py_test_sql_delete :: {"test_model": "model_name_snake_case", "multi_bool": "field_name"}
         multi_bool_result = cursor.execute(f"SELECT value FROM multi_model_multi_bool WHERE multi_model_id=? ORDER BY position", (created_test_multi_model.id,))
         self.assertEqual(len(multi_bool_result.fetchall()), 0)
         # end macro ::
 
-        # ignore ::
         multi_int_result = cursor.execute(f"SELECT value FROM multi_model_multi_int WHERE multi_model_id=? ORDER BY position", (created_test_multi_model.id,))
         self.assertEqual(len(multi_int_result.fetchall()), 0)
 
@@ -81,7 +79,6 @@ class TestMultiModel(unittest.TestCase):
 
         multi_datetime_result = cursor.execute(f"SELECT value FROM multi_model_multi_datetime WHERE multi_model_id=? ORDER BY position", (created_test_multi_model.id,))
         self.assertEqual(len(multi_datetime_result.fetchall()), 0)
-        # end ignore ::
         
 
     def test_multi_model_pagination(self):

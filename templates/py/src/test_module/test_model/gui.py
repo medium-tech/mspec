@@ -173,66 +173,6 @@ class TestModelIndexPage(tkinter.Frame):
             single_datetime_text.grid(row=n + self.list_items_row_offset, column=7, padx=padx)
             # end macro ::
 
-            # macro :: py_tk_multi_bool :: {"multi_bool": "name"}
-            # multi_bool - list of bool
-            multi_bool_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
-            multi_bool_value = getattr(test_model, 'multi_bool', '-')
-            if isinstance(multi_bool_value, list):
-                multi_bool_value = ', '.join([str(v).lower() for v in multi_bool_value])
-            multi_bool_text.insert(tkinter.END, str(multi_bool_value))
-            multi_bool_text.grid(row=n + self.list_items_row_offset, column=8, padx=padx)
-            # end macro ::
-
-            # macro :: py_tk_multi_int :: {"multi_int": "name"}
-            # multi_int - list of int
-            multi_int_text = tkinter.Text(self.table, height=1, width=15, highlightthickness=0)
-            multi_int_value = getattr(test_model, 'multi_int', '-')
-            if isinstance(multi_int_value, list):
-                multi_int_value = ', '.join([str(v) for v in multi_int_value])
-            multi_int_text.insert(tkinter.END, str(multi_int_value))
-            multi_int_text.grid(row=n + self.list_items_row_offset, column=9, padx=padx)
-            # end macro ::
-
-            # macro :: py_tk_multi_float :: {"multi_float": "name"}
-            # multi_float - list of float
-            multi_float_text = tkinter.Text(self.table, height=1, width=15, highlightthickness=0)
-            multi_float_value = getattr(test_model, 'multi_float', '-')
-            if isinstance(multi_float_value, list):
-                multi_float_value = ', '.join([str(v) for v in multi_float_value])
-            multi_float_text.insert(tkinter.END, str(multi_float_value))
-            multi_float_text.grid(row=n + self.list_items_row_offset, column=10, padx=padx)
-            # end macro ::
-
-            # macro :: py_tk_multi_string :: {"multi_string": "name"}
-            # multi_string - list of str
-            multi_string_text = tkinter.Text(self.table, height=1, width=30, highlightthickness=0)
-            multi_string_value = getattr(test_model, 'multi_string', '-')
-            if isinstance(multi_string_value, list):
-                multi_string_value = ', '.join(multi_string_value)
-            multi_string_text.insert(tkinter.END, str(multi_string_value))
-            multi_string_text.grid(row=n + self.list_items_row_offset, column=11, padx=padx)
-            # end macro ::
-
-            # macro :: py_tk_multi_enum :: {"multi_enum": "name"}
-            # multi_enum - list of str (enums)
-            multi_enum_text = tkinter.Text(self.table, height=1, width=20, highlightthickness=0)
-            multi_enum_value = getattr(test_model, 'multi_enum', '-')
-            if isinstance(multi_enum_value, list):
-                multi_enum_value = ','.join(multi_enum_value)
-            multi_enum_text.insert(tkinter.END, str(multi_enum_value))
-            multi_enum_text.grid(row=n + self.list_items_row_offset, column=12, padx=padx)
-            # end macro ::
-
-            # macro :: py_tk_multi_datetime :: {"multi_datetime": "name"}
-            # multi_datetime - list of datetime
-            multi_datetime_text = tkinter.Text(self.table, height=1, width=30, highlightthickness=0)
-            multi_datetime_value = getattr(test_model, 'multi_datetime', '-')
-            if isinstance(multi_datetime_value, list):
-                multi_datetime_value = ', '.join([str(v) for v in multi_datetime_value])
-            multi_datetime_text.insert(tkinter.END, str(multi_datetime_value))
-            multi_datetime_text.grid(row=n + self.list_items_row_offset, column=13, padx=padx)
-            # end macro ::
-
         if self.list_offset == 0:
             self.prev_pg_button.state(['disabled'])
         else:

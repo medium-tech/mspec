@@ -108,9 +108,6 @@ class MultiModelIndexPage(tkinter.Frame):
 
             multi_model_id = getattr(multi_model, 'id', '-')
 
-            # print(f'Listing multi_model: {multi_model_id}')
-            # print(multi_model)
-
             if multi_model_id == '-':
                 view_widget = ttk.Label(self.table, text=multi_model_id)
             else:
@@ -127,51 +124,6 @@ class MultiModelIndexPage(tkinter.Frame):
             id_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
             id_text.insert(tkinter.END, multi_model_id)
             id_text.grid(row=n + self.list_items_row_offset, column=1, padx=padx)
-
-            # macro :: py_tk_single_bool :: {"single_bool": "name"}
-            # single_bool - bool
-            single_bool_text = tkinter.Text(self.table, height=1, width=5, highlightthickness=0)
-            single_bool_text.insert(tkinter.END, str(getattr(multi_model, 'single_bool', '-')).lower())
-            single_bool_text.grid(row=n + self.list_items_row_offset, column=2, padx=padx)
-            # end macro ::
-
-            # macro :: py_tk_single_int :: {"single_int": "name"}
-            # single_int - int
-            single_int_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
-            single_int_text.insert(tkinter.END, str(getattr(multi_model, 'single_int', '-')))
-            single_int_text.grid(row=n + self.list_items_row_offset, column=3, padx=padx)
-            # end macro ::
-
-            # macro :: py_tk_single_float :: {"single_float": "name"}
-            # single_float - float
-            single_float_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
-            single_float_text.insert(tkinter.END, str(getattr(multi_model, 'single_float', '-')))
-            single_float_text.grid(row=n + self.list_items_row_offset, column=4, padx=padx)
-            # end macro ::
-
-            # macro :: py_tk_single_string :: {"single_string": "name"}
-            # single_string - str
-            single_string_text = tkinter.Text(self.table, height=1, width=20, highlightthickness=0)
-            single_string_text.insert(tkinter.END, getattr(multi_model, 'single_string', '-'))
-            single_string_text.grid(row=n + self.list_items_row_offset, column=5, padx=padx)
-            # end macro ::
-
-            # macro :: py_tk_single_enum :: {"single_enum": "name"}
-            # single_enum - str
-            single_enum_text = tkinter.Text(self.table, height=1, width=15, highlightthickness=0)
-            single_enum_text.insert(tkinter.END, getattr(multi_model, 'single_enum', '-'))
-            single_enum_text.grid(row=n + self.list_items_row_offset, column=6, padx=padx)
-            # end macro ::
-
-            # macro :: py_tk_single_datetime :: {"single_datetime": "name"}
-            # single_datetime - datetime
-            single_datetime_text = tkinter.Text(self.table, height=1, width=20, highlightthickness=0)
-            single_datetime_value = getattr(multi_model, 'single_datetime', '-')
-            # if single_datetime_value != '-':
-            #     single_datetime_value = single_datetime_value.strftime('%Y-%m-%d %H:%M:%S')
-            single_datetime_text.insert(tkinter.END, str(single_datetime_value))
-            single_datetime_text.grid(row=n + self.list_items_row_offset, column=7, padx=padx)
-            # end macro ::
 
             # macro :: py_tk_multi_bool :: {"multi_bool": "name"}
             # multi_bool - list of bool
