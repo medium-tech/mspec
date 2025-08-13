@@ -14,6 +14,10 @@ from core.exceptions import RequestError, JSONResponse, NotFoundError, Authentic
 from test_module.test_model.server import test_model_routes
 # end for ::
 
+# ignore ::
+from test_module.multi_model.server import multi_model_routes
+# end ignore ::
+
 import uwsgi
 from uwsgidecorators import postfork
 
@@ -187,6 +191,9 @@ route_list = [
     # for :: {% for item in all_models %} :: {"test_model": "item.model.name.snake_case"}
     test_model_routes,
     # end for ::
+    # ignore
+    multi_model_routes,
+    # end ignore ::
 ]
 
 server_ctx = {

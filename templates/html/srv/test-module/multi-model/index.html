@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<!-- vars :: {"unit_test": "project.name.snake_case", "test-module": "module.name.kebab_case", "test_module": "module.name.snake_case", "test module": "module.name.lower_case"} -->
+<!-- vars :: {"multi_model": "model.name.snake_case", "multi-model": "model.name.kebab_case", "multi model": "model.name.lower_case"} -->
+<!-- vars :: {"multiModel": "model.name.camel_case", "MultiModel": "model.name.pascal_case"} -->
+<html>
+
+    <head>
+        <title>unit_test.test_module.multi_model</title>
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
+        <link rel="stylesheet" type="text/css" href="/style.css">
+        <script src="/test-module/multi-model/index.js"></script>
+        <script src="/index.js"></script>
+
+        <script type="text/javascript">
+
+            //
+            // views
+            //
+
+            function showMultiModelListView(pushState) {
+                document.getElementById('multi-model-create').hidden = true;
+                document.getElementById('multi-model-list').hidden = false;
+
+                // push state
+                if(pushState === true) {
+                    const url = new URL(window.location.href)
+                    url.pathname = '/test-module/multi-model'
+
+                    const offset = parseInt(document.getElementById('multi-model-list-offset').innerText)
+                    const size = parseInt(document.getElementById('multi-model-list-size').innerText)
+                    url.searchParams.set('offset', offset)
+                    url.searchParams.set('size', size)
+
+                    window.history.pushState({}, '', url)
+                }
+            }
+
+            function showMultiModelCreateView(pushState) {
+                document.getElementById('multi-model-list').hidden = true;
+                document.getElementById('multi-model-create').hidden = false;
+
+                // push state
+                if(pushState === true) {
+                    const url = new URL(window.location.href)
+                    url.pathname = '/test-module/multi-model/create'
+                    url.searchParams.delete('offset')
+                    url.searchParams.delete('size')
+                    window.history.pushState({}, '', url)
+                    console.log('pushed state', url)
+                }
+            }
+
+            function showMultiModelNavigateToId() {
+                const id = document.getElementById('multi-model-get-id').value
+                if(id === '') {
+                    console.error('id is empty')
+                }else{
+                    window.location.href = `/test-module/multi-model/${id}`
+                }
+            }
+
+            function randomizeMultiModel() {
+                const createTBody = document.querySelector('#multi-model-create-tbody');
+                multiModelToInputTBody(randomMultiModel(), createTBody)
+            }
+
+            function resetMultiModelInput() {
+                const createTBody = document.querySelector('#multi-model-create-tbody');
+                multiModelToInputTBody({}, createTBody)
+            }
+
+            function exampleMultiModelInput() {
+                const createTBody = document.querySelector('#multi-model-create-tbody');
+                multiModelToInputTBody(exampleMultiModel(), createTBody)
+            }
+
+            function multiModelNavigatorEnterKey(e) {
+                console.log('multiModelNavigatorEnterKey', e)
+                if (e.key === 'Enter' || e.type === 'paste') {
+                    showMultiModelNavigateToId()
+                }
+            }
+
+            function createMultiModelStatus(status, className) {
+                const statusP = document.getElementById('create-multi-model-status')
+                statusP.hidden = false
+                statusP.innerText = status
+                statusP.className = className
+            }
+
+            function listMultiModelStatus(status, className) {
+                const statusElement = document.getElementById('multi-model-list-status')
+                statusElement.innerText = status
+                statusElement.className = className
+            }
+
+            //
+            // server ops
+            //
+
+            function loadItems() {
+
+                const prevPage = document.getElementById('multi-model-prev-page')
+                const nextPage = document.getElementById('multi-model-next-page')
+
+                prevPage.disabled = true
+                nextPage.disabled = true
+
+                const offset = parseInt(document.getElementById('multi-model-list-offset').innerText)
+                const size = parseInt(document.getElementById('multi-model-list-size').innerText)
+
+                listMultiModelStatus('loading...', '')
+
+                console.log(`loadItems(offset=${offset}, size=${size})`)
+
+                clientListMultiModels(offset, size)
+                    .then(response => {
+                        if (!response.ok) {
+                            console.error(response)
+                            throw new Error('multiModel list failed')
+                        }
+                        return response.json()
+                    }).then(data => {
+                        console.log(data)
+                        const items = data.map(item => initMultiModel(item))
+
+                        document.getElementById('multi-model-list-count').innerText = items.length
+                        multiModelListToDisplayTBody(items, document.querySelector('#multi-model-list-tbody'))
+
+                        if (offset > 0) prevPage.disabled = false
+                        if (items.length === size) nextPage.disabled = false
+
+                        listMultiModelStatus('success', 'success')
+                    })
+                    .catch(error => {
+                        console.error(error)
+                        listMultiModelStatus('error', 'error')
+                    });
+            }
+
+            function changeListPage(direction) {
+
+                let offset = parseInt(document.getElementById('multi-model-list-offset').innerText)
+                let size = parseInt(document.getElementById('multi-model-list-size').innerText)
+
+                if (direction < 0) {
+                    offset -= size
+                    if (offset < 0) offset = 0
+                } else if (direction == 0) {
+                    offset = 0
+                } else {
+                    offset += size
+                }
+
+                document.getElementById('multi-model-list-offset').innerText = offset
+
+                //
+
+                const url = new URL(window.location.href)
+                url.searchParams.set('offset', offset)
+                url.searchParams.set('size', size)
+                window.history.pushState({}, '', url)
+                
+                //
+
+                loadItems()
+            }
+
+            function createMultiModel() {
+                console.log('createMultiModel()')
+
+                const createTBody = document.querySelector('#multi-model-create-tbody');
+                const data = multiModelFromInputTBody(createTBody);
+
+                const verify = verifyMultiModel(data);
+                if (verify.valid !== true) {
+                    console.error(verify);
+                    throw new Error('multiModel invalid');
+                }
+
+                console.log('creating multiModel', data);
+
+                createMultiModelStatus('creating...', '')
+
+                clientCreateMultiModel(multiModelForJSON(data))
+                    .then(response => {
+                        if (!response.ok) {
+                            console.error(response)
+                            throw new Error('multiModel create failed')
+                        }
+                        return response.json()
+                    }).then(data => {
+                        const newItemId = data['id']
+                        console.log(`created multiModel ${newItemId}`)
+
+                        const newItemLi = document.createElement('li')
+                        const newItemLink = document.createElement('a')
+                        newItemLink.id = 'created-multi-model'
+                        newItemLink.href = `/test-module/multi-model/${newItemId}`
+                        newItemLink.innerText = newItemId
+
+                        const createdMultiModels = document.getElementById('created-multi-models')
+                        newItemLi.appendChild(newItemLink)
+                        createdMultiModels.appendChild(newItemLi)
+
+                        createMultiModelStatus(`success`, 'success')
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        createMultiModelStatus('error', 'error')
+                    });
+            }
+
+            //
+            // on load
+            //
+
+            window.onload = function() {
+                resetMultiModelInput()
+
+                const isCreatePage = window.location.pathname.endsWith('/create')
+
+                if(isCreatePage) {
+                    showMultiModelCreateView(false)
+                }else{
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const urlOffsetParam = urlParams.get('offset')
+                    const urlSizeParam = urlParams.get('size')
+                    console.log(`url params :: offset: ${urlOffsetParam} size: ${urlSizeParam}`)
+
+                    if (urlOffsetParam !== null) {
+                        const listOffset = document.getElementById('multi-model-list-offset')
+                        console.log('list offset', listOffset)
+                        listOffset.innerText = urlOffsetParam
+                    }
+                    if (urlSizeParam !== null) document.getElementById('multi-model-list-size').innerText = urlSizeParam
+
+                    loadItems();
+                }
+            }
+
+        </script>
+    </head>
+
+    <body>
+        <h1>multi model</h1>
+        <p>
+            <a href="/">unit_test</a> . <a href="/test-module">test module</a> . <a href="/test-module/multi-model">multi model</a>
+        </p>
+
+        <!-- 
+        list view layout 
+        -->
+
+        <div id="multi-model-list">
+
+            status: <span id="multi-model-list-status">intial</span>
+
+            <br>
+
+            <button id="multi-model-prev-page" onclick="changeListPage(-1)" disabled>&lt;&lt;&lt;</button>
+            <button onclick="loadItems()">refresh</button>
+            <button id="multi-model-next-page" onclick="changeListPage(1)" disabled>&gt;&gt;&gt;</button>
+            &emsp;|&emsp;
+            <button onclick="showMultiModelCreateView(true)">create</button>
+            &emsp;|&emsp;
+            <button onclick="showMultiModelNavigateToId()">get</button>
+            <input id="multi-model-get-id" type="text" placeholder="multi model id" size="32" onkeypress="multiModelNavigatorEnterKey(event)"/>
+
+
+            <br>
+
+            offset: <span id="multi-model-list-offset">0</span>
+            &emsp;
+            size: <span id="multi-model-list-size">25</span>
+            &emsp;
+            count: <span id="multi-model-list-count">-</span>
+
+            <br>
+
+            <table>
+                <thead>
+                    <tr>
+                        <!-- macro :: html_list_table_header :: {"id": "field"} -->
+                         <th>id</th>
+                        <!-- end macro :: -->
+                        <!-- replace :: macro.html_list_table_headers(model.fields) -->
+                        <th>single_bool</th>
+                        <th>single_int</th>
+                        <th>single_float</th>
+                        <th>single_string</th>
+                        <th>single_enum</th>
+                        <th>single_datetime</th>
+                        <th>multi_bool</th>
+                        <th>multi_int</th>
+                        <th>multi_float</th>
+                        <th>multi_string</th>
+                        <th>multi_enum</th>
+                        <th>multi_datetime</th>
+                        <!-- end replace :: -->
+                    </tr>
+                </thead>
+
+                <tbody id="multi-model-list-tbody">
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <!-- 
+        create view layout 
+        -->
+
+        <div id="multi-model-create" hidden>
+
+            <button onclick="createMultiModel()">submit</button>
+            &emsp;|&emsp;
+            <button onclick="resetMultiModelInput()">reset</button>
+            &emsp;|&emsp;
+            <button onclick="exampleMultiModelInput()">example</button>
+            &emsp;|&emsp;
+            <button onclick="randomizeMultiModel()">random</button>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th width="15%">field</th>
+                        <th width="33%">value</th>
+                        <th>other</th>
+                    </tr>
+                </thead>
+                <tbody id="multi-model-create-tbody">
+                </tbody>
+            </table>
+
+            <p id="create-multi-model-status" hidden></p>
+
+            <ul id="created-multi-models">
+            </ul>
+
+        </div>
+
+    </body>
+
+</html>

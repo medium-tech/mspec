@@ -2,8 +2,9 @@
 uwsgi:
   http: :5005
   wsgi-file: src/core/server.py
-  # for :: {% for item in all_models %} :: {"test-module":"item.module.name.kebab_case", "test-model": "item.model.name.kebab_case"}
+  # for :: {% for item in all_models %} :: {"test-module":"item.module.name.kebab_case", "test-model": "item.model.name.kebab_case", "test model": "item.model.name.lower_case"}
 
+  # test model
   route: ^/test-module/test-model/create static:../html/srv/test-module/test-model/index.html
   route: ^/test-module/test-model/index(.*) static:../html/srv/test-module/test-model/index$1
   load-file-in-cache: ../html/srv/test-module/test-model/index.html
@@ -11,6 +12,16 @@ uwsgi:
   load-file-in-cache: ../html/srv/test-module/test-model/instance.html
 
   # end for ::
+
+  # ignore ::
+  # multi model
+  route: ^/test-module/multi-model/create static:../html/srv/test-module/multi-model/index.html
+  route: ^/test-module/multi-model/index(.*) static:../html/srv/test-module/multi-model/index$1
+  load-file-in-cache: ../html/srv/test-module/multi-model/index.html
+  route: ^/test-module/multi-model/(.*) static:../html/srv/test-module/multi-model/instance.html
+  load-file-in-cache: ../html/srv/test-module/multi-model/instance.html
+  # end ignore ::
+
   static-map: /=../html/srv/
   static-index: index.html
   static-expires: /* 0

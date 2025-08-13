@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<!-- vars :: {"unit_test": "project.name.snake_case", "test-module": "module.name.kebab_case", "test_module": "module.name.snake_case"} -->
+<!-- vars :: {"multi_model": "model.name.snake_case", "multi-model": "model.name.kebab_case", "multi model": "model.name.lower_case"} -->
+<!-- vars :: {"multiModel": "model.name.camel_case", "MultiModel": "model.name.pascal_case"} -->
+<html>
+
+    <head>
+        <title>unit_test.test_module.multi_model.id</title>
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
+        <link rel="stylesheet" type="text/css" href="/style.css">
+        <script src="/test-module/multi-model/index.js"></script>
+        <script type="text/javascript">
+
+            //
+            // views
+            //
+
+            function showMultiModelReadView() {
+                window.document.getElementById('multi-model-update').hidden = true;
+                window.document.getElementById('multi-model-delete').hidden = true;
+                window.document.getElementById('multi-model-read').hidden = false;
+            }
+
+            function showMultiModelUpdateView() {
+                window.document.getElementById('multi-model-read').hidden = true;
+                window.document.getElementById('multi-model-delete').hidden = true;
+                window.document.getElementById('multi-model-update').hidden = false;
+            }
+
+            function updateMultiModelStatus(status, className) {
+                const statusSpan = document.getElementById('update-multi-model-status')
+                statusSpan.hidden = false
+                statusSpan.innerText = status
+                statusSpan.className = className
+            }
+
+            function showMultiModelDeleteView() {
+                window.document.getElementById('multi-model-read').hidden = true;
+                window.document.getElementById('multi-model-update').hidden = true;
+                window.document.getElementById('multi-model-delete').hidden = false;
+            }
+
+            //
+            // server ops
+            //
+
+            function fetchMultiModel() {
+                const id = multiModelId();
+                console.log(`fetching multiModel ${id}`);
+                clientReadMultiModel(id)
+                    .then(response => {
+                        if (response.ok) {
+                            return response.text();
+                        } else {
+                            // if not found
+                            if (response.status === 404) {
+                                document.getElementById('multi-model-not-found').hidden = false;
+                            }
+                            throw new Error(`multiModel ${id} read failed`);
+                        }
+                    })
+                    .then(text => {
+                        console.log(text);
+                        const data = initMultiModel(JSON.parse(text));
+                        document.getElementById('multi-model-not-found').hidden = true;
+
+                        const readTBody = document.querySelector('#multi-model-read-tbody');
+                        multiModelToDisplayTBody(data, readTBody);
+
+                        const updateTBody = document.querySelector('#multi-model-update-tbody');
+                        multiModelToInputTBody(data, updateTBody);
+                    }).
+                    catch(error => {console.error(error)});
+            }
+
+            function deleteMultiModel() {
+                const id = multiModelId();
+                console.log(`deleting multiModel ${id}`);
+                clientDeleteMultiModel(id)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`multiModel ${id} delete failed`);
+                        }
+                        console.log(`multiModel ${id} deleted`)
+                        window.location.reload();
+                    })
+                    .catch(error => {console.error(error)});
+            }
+
+            function updateMultiModel() {
+
+                const id = multiModelId();
+
+                const updateTBody = document.querySelector('#multi-model-update-tbody');
+                const data = multiModelFromInputTBody(updateTBody);
+
+                const verify = verifyMultiModel(data);
+                if (verify.valid !== true) {
+                    console.error(verify);
+                    throw new Error(`multiModel ${id} invalid`);
+                }
+
+                console.log(`updating multiModel ${id}`);
+
+                updateMultiModelStatus('loading...', '')
+
+                clientUpdateMultiModel(id, data)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`multiModel ${id} update failed`);
+                        }
+                        const status = 'updated at ' + new Date().toLocaleTimeString()
+                        updateMultiModelStatus(status, 'success')
+                        console.log(`multiModel ${id} updated`)
+                    })
+                    .catch(error => {
+                        updateMultiModelStatus('error', 'error')
+                        console.error(error)
+                    });
+
+            }
+
+            //
+            // on load
+            //
+
+            function multiModelId() {
+                return window.location.pathname.split('/').pop();
+            }
+
+            window.onload = () => {
+                const idBreadcrumb = document.getElementById('multi-model-id-breadcrumb')
+                const idLink = document.createElement('a');
+                idLink.href = '/test-module/multi-model/' + multiModelId();
+                idLink.innerText = multiModelId();
+                idBreadcrumb.appendChild(idLink);
+
+                fetchMultiModel();
+            }
+
+        </script>
+    </head>
+
+    <body>
+        <h1>multi model</h1>
+        <p>
+            <a href="/">unit_test</a> . <a href="/test-module">test_module</a> . <a href="/test-module/multi-model">multi_model</a> . <span id="multi-model-id-breadcrumb"></span>
+        </p>
+
+        <!-- 
+        read view layout 
+        -->
+
+        <div id="multi-model-read">
+
+            <button onclick="fetchMultiModel()">refresh</button>
+            &emsp;|&emsp;
+            <button onclick="showMultiModelUpdateView()">edit</button>
+            &emsp;|&emsp;
+            <button onclick="showMultiModelDeleteView()">delete</button>
+            &emsp;
+            <span id="multi-model-not-found" hidden>item not found</span>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>field</th>
+                        <th>value</th>
+                    </tr>
+                </thead>
+                <tbody id="multi-model-read-tbody">
+                </tbody>
+            </table>
+
+        </div>
+
+        <!-- 
+        update view layout 
+        -->
+
+        <div id="multi-model-update" hidden>
+
+            <button onclick="updateMultiModel()">save</button>
+            &emsp;|&emsp;
+            <button onclick="showMultiModelReadView()">cancel</button>
+            &emsp;|&emsp;
+            <span id="update-multi-model-status" hidden></span>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>field</th>
+                        <th>value</th>
+                        <th>other</th>
+                    </tr>
+                </thead>
+                <tbody id="multi-model-update-tbody">
+                </tbody>
+            </table>
+
+        </div>
+
+        <!-- 
+        delete view layout 
+        -->
+
+        <div id="multi-model-delete" hidden>
+
+            <p>confirm delete?</p>
+            <button onclick="deleteMultiModel()">yes, please delete</button>
+            &emsp;|&emsp;
+            <button onclick="showMultiModelReadView()">no, cancel</button>
+
+        </div>
+
+    </body>
+
+</html>
