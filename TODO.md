@@ -27,6 +27,7 @@ The main prototype are the python + html browser template apps.
     * 🔴 test_model -> template_model
         * 🔴 separate model fields starting with `multi_` to another model in the same module called `template_multi_model`
         *(this will make previewing the gui template apps easier bc there are less fields)*
+    * 🔴 `html` (template app) -> `browser1`
 * 🔴 refactor python vs. templating logic
 * 🔴 add file ingest/upload
 

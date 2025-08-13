@@ -268,8 +268,8 @@ function verifyMultiModel(data) {
 
 }
 
-function testMultiModelFromInputTBody(tbody) {
-    console.log('testMultiModelFromInputTBody', tbody);
+function multiModelFromInputTBody(tbody) {
+    console.log('multiModelFromInputTBody', tbody);
     const data = {};
 
     // parse id if exists
@@ -335,7 +335,7 @@ function testMultiModelFromInputTBody(tbody) {
     return data;
 }
 
-function testMultiModelToInputTBody(data, tbody) {
+function multiModelToInputTBody(data, tbody) {
     tbody.innerHTML = '';
 
     // show id if present
