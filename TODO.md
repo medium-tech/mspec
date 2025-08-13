@@ -19,36 +19,27 @@
 ## main template prototype
 The main prototype are the python + html browser template apps.
 
-* 🟡 add auth/users/profile support
-    * 🟡 python backend
-        * 🟢 client/server unittests for profile/user
-        * 🟢 onboarding working, new user/profile/password
-        * 🟢 login workflow
-        * 🔴 add salt to pw
-        * 🔴 reset password by email code
-        * 🔴 add login sessions/logout
-        * 🔴 add acls to endpoints/models
-    * 🔴 html
-        * 🔴 create user
-        * 🔴 login
-        * 🔴 reset password
-        * 🔴 user page (w logout button)
-            * 🔴 edit profile
-            * 🔴 edit profile of logged in user
-        * 🔴 profiles
-            * 🔴 list profiles
-            * 🔴 view profile
-* 🔴 add foreign key id to test_model
-* 🔴 add cid to test_model
-* 🔴 add meta to test_model
-* 🔴 add file ingest/upload
-* 🔴 rename template apps
+### phase 1
+* 🔴 finish legacy browser todo list
+* 🔴 rename template apps (to disambiguate from testing libs)
     * 🔴 unittest -> template_app
     * 🔴 test_module -> template_module
     * 🔴 test_model -> template_model
-* 🟡 performance testing
+        * 🔴 separate model fields starting with `multi_` to another model in the same module called `template_multi_model`
+        *(this will make previewing the gui template apps easier bc there are less fields)*
 * 🔴 refactor python vs. templating logic
-* 🔴 get rid of `__post_init__` and use type conversion explicitly where needed
+* 🔴 add file ingest/upload
+
+### phase 2
+* 🔴 go backend
+* 🔴 implement cids
+
+### additional features
+* 🔴 add foreign key id to test_model
+* 🔴 add meta to test_model
+
+### misc
+* 🟡 performance testing
 * 🔴 clean up whitespace in generated apps
 
 ## python template app
@@ -87,6 +78,12 @@ The main prototype are the python + html browser template apps.
             * 🟢 update
             * 🟢 delete
     * 🟢 tests
+    * 🔴 improve auth
+        * 🔴 add salt to pw
+        * 🔴 reset password by email code
+        * 🔴 add login sessions/logout
+        * 🔴 add acls to endpoints/models
+    * 🔴 get rid of `__post_init__` and use type conversion explicitly where needed
 
 * 🟢 http client
     * 🟢 core (`templates/py/src/core/client.py`)
@@ -127,11 +124,15 @@ The main prototype are the python + html browser template apps.
 * 🟢 html/js
     * 🟢 index (`templates/html/srv/index.html`)
         * 🟢 list modules
-        * 🔴 create user/profile
-        * 🔴 login
-        * 🔴 user/profile page
-            * 🔴 read
-            * 🔴 edit
+        * 🔴 create user
+            * 🔴 login
+            * 🔴 reset password
+        * 🔴 user page (w logout button)
+            * 🔴 edit profile
+            * 🔴 edit profile of logged in user
+        * 🔴 profiles
+            * 🔴 list profiles
+            * 🔴 view profile
     * 🟢 module index (`templates/html/srv/test-module/index.html`)
     * 🟢 model
         * 🟢 list (`templates/html/srv/test-module/test-model/index.html`)
@@ -366,9 +367,9 @@ The main prototype are the python + html browser template apps.
     * 🔴 render hello-world-page.json
     * 🔴 render example spec
     * 🔴 model widgets
-* 🔴 blender extension / app template
-    * 🔴 render hello-world-page.json
-    * 🔴 render example spec
+* 🟡 blender extension / app template
+    * 🟢 render hello-world-page.json
+    * 🟡 render example spec
     * 🔴 model widgets
 * 🔴 C
     * 🔴 render hello-world-page.json
