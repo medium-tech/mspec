@@ -66,7 +66,8 @@ test('test - test module - test model - instance', async ({ page }) => {
     // single_datetime
     await page.locator('input[name="single_datetime"]').click();
     await page.locator('input[name="single_datetime"]').fill('2020-03-02T05:15');
-
+    // end macro ::
+    
     await page.getByRole('button', { name: 'submit' }).click();
 
     await expect(page.locator('#create-test-model-status')).toContainText('success');

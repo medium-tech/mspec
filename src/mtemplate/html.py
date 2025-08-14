@@ -209,7 +209,7 @@ class MTemplateHTMLProject(MTemplateProject):
             try:
                 out += self.spec['macro'][macro_name](vars) + '\n'
             except KeyError as e:
-                raise MTemplateError(f'field {name} does not have type "{field["type"]}"') from e
+                raise MTemplateError(f'field {name} missing macro {macro_name} for type "{field["type"]}"') from e
         return out
     
     def macro_html_random_fields(self, fields:dict, indent='\t\t') -> str:
