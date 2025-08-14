@@ -408,6 +408,7 @@ function testModelToInputTBody(data, tbody) {
     single_datetimeTr.appendChild(single_datetimeTdOther);
 
     tbody.appendChild(single_datetimeTr);
+    // end macro ::
 
     return tbody;
 
@@ -532,6 +533,7 @@ function testModelToDisplayTBody(data, tbody) {
     single_datetimeTr.appendChild(single_datetimeTdValue);
 
     tbody.appendChild(single_datetimeTr);
+    // end macro ::
 
     return tbody;
 }
@@ -602,6 +604,7 @@ function testModelToTableRow(data) {
     const single_datetimeTd = document.createElement('td');
     single_datetimeTd.textContent = data.single_datetime.toISOString().split('.')[0];
     tr.appendChild(single_datetimeTd);
+    // end macro ::
 
     return tr;
 
