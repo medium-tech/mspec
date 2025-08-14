@@ -1,5 +1,5 @@
 from core.exceptions import MSpecError, ConfigError, NotFoundError, AuthenticationError, ForbiddenError
-from test_module.test_model.model import TestModel
+from test_module.single_model.model import SingleModel
 
 import json
 
@@ -7,31 +7,31 @@ from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
 # vars :: {"test_module": "module.name.snake_case", "test-module": "module.name.kebab_case"}
-# vars :: {"test_model": "model.name.snake_case", "test model": "model.name.lower_case", "test-model": "model.name.kebab_case", "TestModel": "model.name.pascal_case"}
+# vars :: {"single_model": "model.name.snake_case", "single model": "model.name.lower_case", "single-model": "model.name.kebab_case", "SingleModel": "model.name.pascal_case"}
 
 __all__ = [
-    'client_create_test_model',
-    'client_read_test_model',
-    'client_update_test_model',
-    'client_delete_test_model',
-    'client_list_test_model'
+    'client_create_single_model',
+    'client_read_single_model',
+    'client_update_single_model',
+    'client_delete_single_model',
+    'client_list_single_model'
 ]
 
-def client_create_test_model(ctx:dict, obj:TestModel) -> TestModel:
+def client_create_single_model(ctx:dict, obj:SingleModel) -> SingleModel:
     """
-    create a test model on the server, verifying the data first.
+    create a single model on the server, verifying the data first.
     
     args ::
         ctx :: dict containing the client context.
-        obj :: the TestModel object to create.
+        obj :: the SingleModel object to create.
     
-    return :: TestModel object with the new id.
+    return :: SingleModel object with the new id.
 
     raises :: ConfigError, MSpecError
     """
 
     try:
-        url = f'{ctx["host"]}/api/test-module/test-model'
+        url = f'{ctx["host"]}/api/test-module/single-model'
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
@@ -42,16 +42,16 @@ def client_create_test_model(ctx:dict, obj:TestModel) -> TestModel:
 
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return TestModel.from_json(response_body)
+            return SingleModel.from_json(response_body)
     
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
-        raise MSpecError(f'error creating test model: {e.__class__.__name__}: {e}')
+        raise MSpecError(f'error creating single model: {e.__class__.__name__}: {e}')
 
-def client_read_test_model(ctx:dict, id:str) -> TestModel:
+def client_read_single_model(ctx:dict, id:str) -> SingleModel:
     """
-    read a test model from the server, verifying it first.
+    read a single model from the server, verifying it first.
 
     args ::
         ctx :: dict containing the client context.
@@ -63,7 +63,7 @@ def client_read_test_model(ctx:dict, id:str) -> TestModel:
     """
 
     try:
-        url = ctx['host'] + '/api/test-module/test-model/' + id
+        url = ctx['host'] + '/api/test-module/single-model/' + id
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
@@ -76,28 +76,28 @@ def client_read_test_model(ctx:dict, id:str) -> TestModel:
 
     except HTTPError as e:
         if e.code == 401:
-            raise AuthenticationError('Error reading test model: invalid username or password')
+            raise AuthenticationError('Error reading single model: invalid username or password')
         elif e.code == 403:
-            raise ForbiddenError('Error reading test model: forbidden')
+            raise ForbiddenError('Error reading single model: forbidden')
         elif e.code == 404:
-            raise NotFoundError(f'test model {id} not found')
-        raise MSpecError(f'error reading test model: {e.__class__.__name__}: {e}')
+            raise NotFoundError(f'single model {id} not found')
+        raise MSpecError(f'error reading single model: {e.__class__.__name__}: {e}')
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
-        raise MSpecError(f'error reading test model: {e.__class__.__name__}: {e}')
+        raise MSpecError(f'error reading single model: {e.__class__.__name__}: {e}')
     
-    return TestModel.from_json(response_body).validate()
+    return SingleModel.from_json(response_body).validate()
 
-def client_update_test_model(ctx:dict, obj:TestModel) -> TestModel:
+def client_update_single_model(ctx:dict, obj:SingleModel) -> SingleModel:
     """
-    update a test model on the server, verifying the data first.
+    update a single model on the server, verifying the data first.
 
     args ::
         ctx :: dict containing the client context.
-        obj :: the TestModel object to update.
+        obj :: the SingleModel object to update.
     
-    return :: TestModel object.
+    return :: SingleModel object.
 
     raises :: ConfigError, MSpecError, NotFoundError
     """
@@ -110,7 +110,7 @@ def client_update_test_model(ctx:dict, obj:TestModel) -> TestModel:
         raise ValueError('invalid data, missing id')
 
     try:
-        url = f'{ctx["host"]}/api/test-module/test-model/{_id}'
+        url = f'{ctx["host"]}/api/test-module/single-model/{_id}'
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
@@ -124,24 +124,24 @@ def client_update_test_model(ctx:dict, obj:TestModel) -> TestModel:
     
     except HTTPError as e:
         if e.code == 401:
-            raise AuthenticationError('Error updating test model: authentication error')
+            raise AuthenticationError('Error updating single model: authentication error')
         elif e.code == 403:
-            raise ForbiddenError('Error updating test model: forbidden')
+            raise ForbiddenError('Error updating single model: forbidden')
         elif e.code == 404:
-            raise NotFoundError(f'test model {id} not found')
-        raise MSpecError(f'error updating test model: {e.__class__.__name__}: {e}')
+            raise NotFoundError(f'single model {id} not found')
+        raise MSpecError(f'error updating single model: {e.__class__.__name__}: {e}')
         
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     
     except Exception as e:
-        raise MSpecError(f'error updating test model: {e.__class__.__name__}: {e}')
+        raise MSpecError(f'error updating single model: {e.__class__.__name__}: {e}')
     
-    return TestModel.from_json(response_body).validate()
+    return SingleModel.from_json(response_body).validate()
 
-def client_delete_test_model(ctx:dict, id:str) -> None:
+def client_delete_single_model(ctx:dict, id:str) -> None:
     """
-    delete a test model from the server.
+    delete a single model from the server.
 
     args ::
         ctx :: dict containing the client context.
@@ -153,7 +153,7 @@ def client_delete_test_model(ctx:dict, id:str) -> None:
     """
 
     try:
-        url = f'{ctx["host"]}/api/test-module/test-model/{id}'
+        url = f'{ctx["host"]}/api/test-module/single-model/{id}'
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
@@ -167,24 +167,24 @@ def client_delete_test_model(ctx:dict, id:str) -> None:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     
     except Exception as e:
-        raise MSpecError(f'error deleting test model: {e.__class__.__name__}: {e}')
+        raise MSpecError(f'error deleting single model: {e.__class__.__name__}: {e}')
 
-def client_list_test_model(ctx:dict, offset:int=0, limit:int=50) -> list[TestModel]:
+def client_list_single_model(ctx:dict, offset:int=0, limit:int=50) -> list[SingleModel]:
     """
-    list test models from the server, verifying each.
+    list single models from the server, verifying each.
 
     args ::
         ctx :: dict containing the client context.
         offset :: int of the offset to start listing from.
         limit :: int of the maximum number of items to list.
     
-    return :: list of TestModel objects.
+    return :: list of SingleModel objects.
 
     raises :: ConfigError, MSpecError
     """
 
     try:
-        url = f'{ctx["host"]}/api/test-module/test-model?offset={offset}&limit={limit}'
+        url = f'{ctx["host"]}/api/test-module/single-model?offset={offset}&limit={limit}'
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
@@ -194,10 +194,10 @@ def client_list_test_model(ctx:dict, offset:int=0, limit:int=50) -> list[TestMod
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
 
-        return [TestModel(**item).validate() for item in json.loads(response_body)]
+        return [SingleModel(**item).validate() for item in json.loads(response_body)]
 
     except (json.JSONDecodeError, TypeError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     
     except Exception as e:
-        raise MSpecError(f'error listing test models: {e.__class__.__name__}: {e}')
+        raise MSpecError(f'error listing single models: {e.__class__.__name__}: {e}')

@@ -15,11 +15,12 @@ class MTemplatePyProject(MTemplateProject):
 
     module_prefixes = [
         str(template_dir / 'src/test_module'),
+        str(template_dir / 'tests/test_module/__init__.py')
     ]
 
     model_prefixes = [
-        str(template_dir / 'src/test_module/test_model'),
-        str(template_dir / 'tests/test_module')
+        str(template_dir / 'src/test_module/single_model'),
+        str(template_dir / 'tests/test_module'),
     ]
 
     macro_only_prefixes = [

@@ -1,21 +1,21 @@
 import tkinter
 from copy import deepcopy
 from tkinter import ttk, StringVar
-from test_module.test_model.model import TestModel, field_list, longest_field_name_length
-from test_module.test_model.client import client_list_test_model
+from test_module.single_model.model import SingleModel, field_list, longest_field_name_length
+from test_module.single_model.client import client_list_single_model
 
 # vars :: {"test_module": "module.name.snake_case"}
-# vars :: {"TestModel": "model.name.pascal_case", "test_model": "model.name.snake_case"}
+# vars :: {"SingleModel": "model.name.pascal_case", "single_model": "model.name.snake_case"}
 
 __all__ = [
-    'TestModelIndexPage',
-    'TestModelInstancePage'
+    'SingleModelIndexPage',
+    'SingleModelInstancePage'
 ]
 
 LARGEFONT = ('Verdana', 35)
 TEXT = ('Verdana', 12)
 
-class TestModelIndexPage(tkinter.Frame):
+class SingleModelIndexPage(tkinter.Frame):
      
     def __init__(self, parent_frame, app:tkinter.Tk):
         super().__init__(parent_frame)
@@ -40,7 +40,7 @@ class TestModelIndexPage(tkinter.Frame):
         back_button = ttk.Button(self, text='<-', command=lambda: self.app.show_frame_str('SampleModuleIndexPage'))
         back_button.grid(row=0, column=0)
 
-        label = ttk.Label(self, text='test model', font=LARGEFONT)
+        label = ttk.Label(self, text='single model', font=LARGEFONT)
         label.grid(row=0, column=1)
         label.bind('<Button-1>', lambda _: self.app.focus_set())
 
@@ -87,13 +87,13 @@ class TestModelIndexPage(tkinter.Frame):
             header.grid(row=self.list_items_row_offset - 1, column=n)
 
         try:
-            test_models = client_list_test_model(self.app.ctx, offset=self.list_offset, limit=self.list_page_size)
+            single_models = client_list_single_model(self.app.ctx, offset=self.list_offset, limit=self.list_page_size)
         except Exception as e:
             print(e)
             self.list_status.set('status: 🔴')
             return
         
-        self.pagination_label.set(f'offset: {self.list_offset} limit: {self.list_page_size} results: {len(test_models)}')
+        self.pagination_label.set(f'offset: {self.list_offset} limit: {self.list_page_size} results: {len(single_models)}')
         
         self.list_status.set('status: 🟢')
 
@@ -102,67 +102,67 @@ class TestModelIndexPage(tkinter.Frame):
         for n in range(self.list_page_size):
             
             try:
-                test_model = test_models[n]
+                single_model = single_models[n]
             except IndexError:
-                test_model = {}
+                single_model = {}
 
-            test_model_id = getattr(test_model, 'id', '-')
+            single_model_id = getattr(single_model, 'id', '-')
 
-            if test_model_id == '-':
-                view_widget = ttk.Label(self.table, text=test_model_id)
+            if single_model_id == '-':
+                view_widget = ttk.Label(self.table, text=single_model_id)
             else:
                 def go_to_item(item):
-                    print(f"Going to item {item.id} in TestModelInstancePage")
-                    self.app.show_frame_str('TestModelInstancePage', item=item)
+                    print(f"Going to item {item.id} in SingleModelInstancePage")
+                    self.app.show_frame_str('SingleModelInstancePage', item=item)
 
-                view_widget = ttk.Button(self.table, text='view', command=lambda i=n: go_to_item(test_models[i]), width=3)
+                view_widget = ttk.Button(self.table, text='view', command=lambda i=n: go_to_item(single_models[i]), width=3)
 
             view_widget.grid(row=n + self.list_items_row_offset, column=0, padx=padx)
 
             # id - str
             id_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
-            id_text.insert(tkinter.END, test_model_id)
+            id_text.insert(tkinter.END, single_model_id)
             id_text.grid(row=n + self.list_items_row_offset, column=1, padx=padx)
 
             # macro :: py_tk_single_bool :: {"single_bool": "name"}
             # single_bool - bool
             single_bool_text = tkinter.Text(self.table, height=1, width=5, highlightthickness=0)
-            single_bool_text.insert(tkinter.END, str(getattr(test_model, 'single_bool', '-')).lower())
+            single_bool_text.insert(tkinter.END, str(getattr(single_model, 'single_bool', '-')).lower())
             single_bool_text.grid(row=n + self.list_items_row_offset, column=2, padx=padx)
             # end macro ::
 
             # macro :: py_tk_single_int :: {"single_int": "name"}
             # single_int - int
             single_int_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
-            single_int_text.insert(tkinter.END, str(getattr(test_model, 'single_int', '-')))
+            single_int_text.insert(tkinter.END, str(getattr(single_model, 'single_int', '-')))
             single_int_text.grid(row=n + self.list_items_row_offset, column=3, padx=padx)
             # end macro ::
 
             # macro :: py_tk_single_float :: {"single_float": "name"}
             # single_float - float
             single_float_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
-            single_float_text.insert(tkinter.END, str(getattr(test_model, 'single_float', '-')))
+            single_float_text.insert(tkinter.END, str(getattr(single_model, 'single_float', '-')))
             single_float_text.grid(row=n + self.list_items_row_offset, column=4, padx=padx)
             # end macro ::
 
             # macro :: py_tk_single_string :: {"single_string": "name"}
             # single_string - str
             single_string_text = tkinter.Text(self.table, height=1, width=20, highlightthickness=0)
-            single_string_text.insert(tkinter.END, getattr(test_model, 'single_string', '-'))
+            single_string_text.insert(tkinter.END, getattr(single_model, 'single_string', '-'))
             single_string_text.grid(row=n + self.list_items_row_offset, column=5, padx=padx)
             # end macro ::
 
             # macro :: py_tk_single_enum :: {"single_enum": "name"}
             # single_enum - str
             single_enum_text = tkinter.Text(self.table, height=1, width=15, highlightthickness=0)
-            single_enum_text.insert(tkinter.END, getattr(test_model, 'single_enum', '-'))
+            single_enum_text.insert(tkinter.END, getattr(single_model, 'single_enum', '-'))
             single_enum_text.grid(row=n + self.list_items_row_offset, column=6, padx=padx)
             # end macro ::
 
             # macro :: py_tk_single_datetime :: {"single_datetime": "name"}
             # single_datetime - datetime
             single_datetime_text = tkinter.Text(self.table, height=1, width=20, highlightthickness=0)
-            single_datetime_value = getattr(test_model, 'single_datetime', '-')
+            single_datetime_value = getattr(single_model, 'single_datetime', '-')
             # if single_datetime_value != '-':
             #     single_datetime_value = single_datetime_value.strftime('%Y-%m-%d %H:%M:%S')
             single_datetime_text.insert(tkinter.END, str(single_datetime_value))
@@ -174,7 +174,7 @@ class TestModelIndexPage(tkinter.Frame):
         else:
             self.prev_pg_button.state(['!disabled'])
 
-        if len(test_models) < self.list_page_size:
+        if len(single_models) < self.list_page_size:
             self.next_pg_button.state(['disabled'])
         else:
             self.next_pg_button.state(['!disabled'])
@@ -188,13 +188,13 @@ class TestModelIndexPage(tkinter.Frame):
         self._list_fetch()
 
 
-class TestModelInstancePage(tkinter.Frame):
+class SingleModelInstancePage(tkinter.Frame):
      
     def __init__(self, parent, controller, item=None): 
         super().__init__(parent)
         self.parent = parent
         self.controller = controller
-        self.item:TestModel = None
+        self.item:SingleModel = None
         self.item_id = '-'
 
     def _set_item(self, item):
@@ -205,10 +205,10 @@ class TestModelInstancePage(tkinter.Frame):
         for widget in self.winfo_children():
             widget.destroy()
 
-        back_button = ttk.Button(self, text='<-', command=lambda: self.controller.show_frame_str('TestModelIndexPage'))
+        back_button = ttk.Button(self, text='<-', command=lambda: self.controller.show_frame_str('SingleModelIndexPage'))
         back_button.grid(row=0, column=0)
 
-        label = ttk.Label(self, text=f'test model - {self.item_id}', font=LARGEFONT)
+        label = ttk.Label(self, text=f'single model - {self.item_id}', font=LARGEFONT)
         label.grid(row=0, column=1)
 
         field_grid = tkinter.Text(self, font=TEXT, wrap='word', height=500, width=100, highlightthickness=0)
@@ -222,5 +222,5 @@ class TestModelInstancePage(tkinter.Frame):
 
     def on_show_frame(self, item=None, **kwargs):
         self._set_item(item)
-        print(f'Showing TestModelInstancePage for item: {self.item_id}')
+        print(f'Showing SingleModelInstancePage for item: {self.item_id}')
         self._draw()

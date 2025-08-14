@@ -1,7 +1,7 @@
 import tkinter
 from tkinter import ttk
-# for :: {% for model in module.models.values() %} :: {"test_model": "model.name.snake_case", "TestModel": "model.name.pascal_case"}
-from test_module.test_model.gui import TestModelIndexPage
+# for :: {% for model in module.models.values() %} :: {"single_model": "model.name.snake_case", "SingleModel": "model.name.pascal_case"}
+from test_module.single_model.gui import SingleModelIndexPage
 # end for ::
 
 # vars :: {"test_module": "module.name.snake_case", "TestModule": "module.name.pascal_case"}
@@ -15,8 +15,8 @@ LARGEFONT = ('Verdana', 35)
 class TestModuleIndexPage(tkinter.Frame):
 
     index_pages = (
-        # for :: {% for model in module.models.values() %} :: {"TestModel": "model.name.pascal_case", "test model": "model.name.lower_case"}
-        (TestModelIndexPage, 'test model'),
+        # for :: {% for model in module.models.values() %} :: {"SingleModel": "model.name.pascal_case", "single model": "model.name.lower_case"}
+        (SingleModelIndexPage, 'single model'),
         # end for ::
     )
 

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<!-- vars :: {"unit_test": "project.name.snake_case", "test-module": "module.name.kebab_case", "test_module": "module.name.snake_case"} -->
+<!-- vars :: {"single_model": "model.name.snake_case", "single-model": "model.name.kebab_case", "single model": "model.name.lower_case"} -->
+<!-- vars :: {"singleModel": "model.name.camel_case", "SingleModel": "model.name.pascal_case"} -->
+<html>
+
+    <head>
+        <title>unit_test.test_module.single_model.id</title>
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
+        <link rel="stylesheet" type="text/css" href="/style.css">
+        <script src="/test-module/single-model/index.js"></script>
+        <script type="text/javascript">
+
+            //
+            // views
+            //
+
+            function showSingleModelReadView() {
+                window.document.getElementById('single-model-update').hidden = true;
+                window.document.getElementById('single-model-delete').hidden = true;
+                window.document.getElementById('single-model-read').hidden = false;
+            }
+
+            function showSingleModelUpdateView() {
+                window.document.getElementById('single-model-read').hidden = true;
+                window.document.getElementById('single-model-delete').hidden = true;
+                window.document.getElementById('single-model-update').hidden = false;
+            }
+
+            function updateSingleModelStatus(status, className) {
+                const statusSpan = document.getElementById('update-single-model-status')
+                statusSpan.hidden = false
+                statusSpan.innerText = status
+                statusSpan.className = className
+            }
+
+            function showSingleModelDeleteView() {
+                window.document.getElementById('single-model-read').hidden = true;
+                window.document.getElementById('single-model-update').hidden = true;
+                window.document.getElementById('single-model-delete').hidden = false;
+            }
+
+            //
+            // server ops
+            //
+
+            function fetchSingleModel() {
+                const id = singleModelId();
+                console.log(`fetching singleModel ${id}`);
+                clientReadSingleModel(id)
+                    .then(response => {
+                        if (response.ok) {
+                            return response.text();
+                        } else {
+                            // if not found
+                            if (response.status === 404) {
+                                document.getElementById('single-model-not-found').hidden = false;
+                            }
+                            throw new Error(`singleModel ${id} read failed`);
+                        }
+                    })
+                    .then(text => {
+                        console.log(text);
+                        const data = initSingleModel(JSON.parse(text));
+                        document.getElementById('single-model-not-found').hidden = true;
+
+                        const readTBody = document.querySelector('#single-model-read-tbody');
+                        singleModelToDisplayTBody(data, readTBody);
+
+                        const updateTBody = document.querySelector('#single-model-update-tbody');
+                        singleModelToInputTBody(data, updateTBody);
+                    }).
+                    catch(error => {console.error(error)});
+            }
+
+            function deleteSingleModel() {
+                const id = singleModelId();
+                console.log(`deleting singleModel ${id}`);
+                clientDeleteSingleModel(id)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`singleModel ${id} delete failed`);
+                        }
+                        console.log(`singleModel ${id} deleted`)
+                        window.location.reload();
+                    })
+                    .catch(error => {console.error(error)});
+            }
+
+            function updateSingleModel() {
+
+                const id = singleModelId();
+                
+                const updateTBody = document.querySelector('#single-model-update-tbody');
+                const data = singleModelFromInputTBody(updateTBody);
+
+                const verify = verifySingleModel(data);
+                if (verify.valid !== true) {
+                    console.error(verify);
+                    throw new Error(`singleModel ${id} invalid`);
+                }
+
+                console.log(`updating singleModel ${id}`);
+
+                updateSingleModelStatus('loading...', '')
+
+                clientUpdateSingleModel(id, data)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`singleModel ${id} update failed`);
+                        }
+                        const status = 'updated at ' + new Date().toLocaleTimeString()
+                        updateSingleModelStatus(status, 'success')
+                        console.log(`singleModel ${id} updated`)
+                    })
+                    .catch(error => {
+                        updateSingleModelStatus('error', 'error')
+                        console.error(error)
+                    });
+
+            }
+
+            //
+            // on load
+            //
+
+            function singleModelId() {
+                return window.location.pathname.split('/').pop();
+            }
+
+            window.onload = () => {
+                const idBreadcrumb = document.getElementById('single-model-id-breadcrumb')
+                const idLink = document.createElement('a');
+                idLink.href = '/test-module/single-model/' + singleModelId();
+                idLink.innerText = singleModelId();
+                idBreadcrumb.appendChild(idLink);
+
+                fetchSingleModel();
+            }
+
+        </script>
+    </head>
+
+    <body>
+        <h1>single model</h1>
+        <p>
+            <a href="/">unit_test</a> . <a href="/test-module">test_module</a> . <a href="/test-module/single-model">single_model</a> . <span id="single-model-id-breadcrumb"></span>
+        </p>
+
+        <!-- 
+        read view layout 
+        -->
+
+        <div id="single-model-read">
+            
+            <button onclick="fetchSingleModel()">refresh</button>
+            &emsp;|&emsp;
+            <button onclick="showSingleModelUpdateView()">edit</button>
+            &emsp;|&emsp;
+            <button onclick="showSingleModelDeleteView()">delete</button>
+            &emsp;
+            <span id="single-model-not-found" hidden>item not found</span>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>field</th>
+                        <th>value</th>
+                    </tr>
+                </thead>
+                <tbody id="single-model-read-tbody">
+                </tbody>
+            </table>
+
+        </div>
+
+        <!-- 
+        update view layout 
+        -->
+
+        <div id="single-model-update" hidden>
+
+            <button onclick="updateSingleModel()">save</button>
+            &emsp;|&emsp;
+            <button onclick="showSingleModelReadView()">cancel</button>
+            &emsp;|&emsp;
+            <span id="update-single-model-status" hidden></span>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>field</th>
+                        <th>value</th>
+                        <th>other</th>
+                    </tr>
+                </thead>
+                <tbody id="single-model-update-tbody">
+                </tbody>
+            </table>
+
+        </div>
+
+        <!-- 
+        delete view layout 
+        -->
+
+        <div id="single-model-delete" hidden>
+
+            <p>confirm delete?</p>
+            <button onclick="deleteSingleModel()">yes, please delete</button>
+            &emsp;|&emsp;
+            <button onclick="showSingleModelReadView()">no, cancel</button>
+
+        </div>
+
+    </body>
+
+</html>

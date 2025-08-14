@@ -2,14 +2,14 @@
 uwsgi:
   http: :5005
   wsgi-file: src/core/server.py
-  # for :: {% for item in all_models %} :: {"test-module":"item.module.name.kebab_case", "test-model": "item.model.name.kebab_case", "test model": "item.model.name.lower_case"}
+  # for :: {% for item in all_models %} :: {"test-module":"item.module.name.kebab_case", "single-model": "item.model.name.kebab_case", "single model": "item.model.name.lower_case"}
 
-  # test model
-  route: ^/test-module/test-model/create static:../html/srv/test-module/test-model/index.html
-  route: ^/test-module/test-model/index(.*) static:../html/srv/test-module/test-model/index$1
-  load-file-in-cache: ../html/srv/test-module/test-model/index.html
-  route: ^/test-module/test-model/(.*) static:../html/srv/test-module/test-model/instance.html
-  load-file-in-cache: ../html/srv/test-module/test-model/instance.html
+  # single model
+  route: ^/test-module/single-model/create static:../html/srv/test-module/single-model/index.html
+  route: ^/test-module/single-model/index(.*) static:../html/srv/test-module/single-model/index$1
+  load-file-in-cache: ../html/srv/test-module/single-model/index.html
+  route: ^/test-module/single-model/(.*) static:../html/srv/test-module/single-model/instance.html
+  load-file-in-cache: ../html/srv/test-module/single-model/instance.html
 
   # end for ::
 

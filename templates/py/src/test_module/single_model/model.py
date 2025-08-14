@@ -8,10 +8,10 @@ from datetime import datetime
 from typing import Optional
 
 __all__ = [
-    'TestModel'
+    'SingleModel'
 ]
 
-# vars :: {"TestModel": "model.name.pascal_case"}
+# vars :: {"SingleModel": "model.name.pascal_case"}
 
 # insert :: macro.py_enum_definitions(model.fields)
 # macro :: py_enum_definition_begin :: {"single_enum": "field_name"}
@@ -43,7 +43,7 @@ field_list = [
 longest_field_name_length = max([len(name) for name in field_list])
 
 @dataclass
-class TestModel:
+class SingleModel:
 
     # replace :: macro.py_field_definitions(model.fields)
     single_bool: bool
@@ -64,7 +64,7 @@ class TestModel:
             self.single_datetime = datetime.strptime(self.single_datetime, datetime_format_str).replace(microsecond=0)
         # end macro ::
 
-    def validate(self) -> 'TestModel':
+    def validate(self) -> 'SingleModel':
         
         if not isinstance(self.id, str) and self.id is not None:
             raise TypeError('invalid type for id')
@@ -120,11 +120,11 @@ class TestModel:
         return to_json(self.to_dict())
     
     @classmethod
-    def from_json(cls, json_string:str) -> 'TestModel':
+    def from_json(cls, json_string:str) -> 'SingleModel':
         return cls(**json.loads(json_string))
 
     @classmethod
-    def example(cls) -> 'TestModel':
+    def example(cls) -> 'SingleModel':
         return cls(
             # replace :: macro.py_example_fields(model.fields)
 			single_bool=True,
@@ -137,7 +137,7 @@ class TestModel:
         ) 
 
     @classmethod
-    def random(cls) -> 'TestModel':
+    def random(cls) -> 'SingleModel':
         return cls(
             # insert :: macro.py_random_fields(model.fields)
             # ignore ::

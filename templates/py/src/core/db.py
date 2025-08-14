@@ -71,33 +71,33 @@ def create_db_tables(ctx:dict) -> None:
     cursor.execute("CREATE TABLE IF NOT EXISTS profile_meta_hierarchies(id INTEGER PRIMARY KEY, profile_id INTEGER REFERENCES profile(id), value, position)")
 
     # insert :: macro.py_create_tables(all_models)
-    # macro :: py_create_model_table :: {"test_model": "model_name_snake_case", ", 'single_bool', 'single_datetime', 'single_enum', 'single_float', 'single_int', 'single_string'": "field_list"}
+    # macro :: py_create_model_table :: {"single_model": "model_name_snake_case", ", 'single_bool', 'single_datetime', 'single_enum', 'single_float', 'single_int', 'single_string'": "field_list"}
     #
-    # test model
+    # single model
     #
 
-    cursor.execute("CREATE TABLE IF NOT EXISTS test_model(id INTEGER PRIMARY KEY, 'single_bool', 'single_datetime', 'single_enum', 'single_float', 'single_int', 'single_string')")
+    cursor.execute("CREATE TABLE IF NOT EXISTS single_model(id INTEGER PRIMARY KEY, 'single_bool', 'single_datetime', 'single_enum', 'single_float', 'single_int', 'single_string')")
     # end macro ::
-    # macro :: py_create_model_table_list :: {"test_model": "model_name_snake_case", "multi_bool": "field_name"}
-    cursor.execute("CREATE TABLE IF NOT EXISTS test_model_multi_bool(id INTEGER PRIMARY KEY, value, position, test_model_id INTEGER REFERENCES test_model(id))")
-    cursor.execute('CREATE INDEX IF NOT EXISTS test_model_multi_bool_index ON test_model_multi_bool(test_model_id)')
+    # macro :: py_create_model_table_list :: {"single_model": "model_name_snake_case", "multi_bool": "field_name"}
+    cursor.execute("CREATE TABLE IF NOT EXISTS single_model_multi_bool(id INTEGER PRIMARY KEY, value, position, single_model_id INTEGER REFERENCES single_model(id))")
+    cursor.execute('CREATE INDEX IF NOT EXISTS single_model_multi_bool_index ON single_model_multi_bool(single_model_id)')
     # end macro ::
 
     # ignore ::
-    cursor.execute("CREATE TABLE IF NOT EXISTS test_model_multi_int(id INTEGER PRIMARY KEY, value, position, test_model_id INTEGER REFERENCES test_model(id))")
-    cursor.execute('CREATE INDEX IF NOT EXISTS test_model_multi_int_index ON test_model_multi_int(test_model_id)')
+    cursor.execute("CREATE TABLE IF NOT EXISTS single_model_multi_int(id INTEGER PRIMARY KEY, value, position, single_model_id INTEGER REFERENCES single_model(id))")
+    cursor.execute('CREATE INDEX IF NOT EXISTS single_model_multi_int_index ON single_model_multi_int(single_model_id)')
 
-    cursor.execute("CREATE TABLE IF NOT EXISTS test_model_multi_float(id INTEGER PRIMARY KEY, value, position, test_model_id INTEGER REFERENCES test_model(id))")
-    cursor.execute('CREATE INDEX IF NOT EXISTS test_model_multi_float_index ON test_model_multi_float(test_model_id)')
+    cursor.execute("CREATE TABLE IF NOT EXISTS single_model_multi_float(id INTEGER PRIMARY KEY, value, position, single_model_id INTEGER REFERENCES single_model(id))")
+    cursor.execute('CREATE INDEX IF NOT EXISTS single_model_multi_float_index ON single_model_multi_float(single_model_id)')
 
-    cursor.execute("CREATE TABLE IF NOT EXISTS test_model_multi_string(id INTEGER PRIMARY KEY, value, position, test_model_id INTEGER REFERENCES test_model(id))")
-    cursor.execute('CREATE INDEX IF NOT EXISTS test_model_multi_string_index ON test_model_multi_string(test_model_id)')
+    cursor.execute("CREATE TABLE IF NOT EXISTS single_model_multi_string(id INTEGER PRIMARY KEY, value, position, single_model_id INTEGER REFERENCES single_model(id))")
+    cursor.execute('CREATE INDEX IF NOT EXISTS single_model_multi_string_index ON single_model_multi_string(single_model_id)')
 
-    cursor.execute("CREATE TABLE IF NOT EXISTS test_model_multi_enum(id INTEGER PRIMARY KEY, value, position, test_model_id INTEGER REFERENCES test_model(id))")
-    cursor.execute('CREATE INDEX IF NOT EXISTS test_model_multi_enum_index ON test_model_multi_enum(test_model_id)')
+    cursor.execute("CREATE TABLE IF NOT EXISTS single_model_multi_enum(id INTEGER PRIMARY KEY, value, position, single_model_id INTEGER REFERENCES single_model(id))")
+    cursor.execute('CREATE INDEX IF NOT EXISTS single_model_multi_enum_index ON single_model_multi_enum(single_model_id)')
 
-    cursor.execute("CREATE TABLE IF NOT EXISTS test_model_multi_datetime(id INTEGER PRIMARY KEY, value, position, test_model_id INTEGER REFERENCES test_model(id))")
-    cursor.execute('CREATE INDEX IF NOT EXISTS test_model_multi_datetime_index ON test_model_multi_datetime(test_model_id)')
+    cursor.execute("CREATE TABLE IF NOT EXISTS single_model_multi_datetime(id INTEGER PRIMARY KEY, value, position, single_model_id INTEGER REFERENCES single_model(id))")
+    cursor.execute('CREATE INDEX IF NOT EXISTS single_model_multi_datetime_index ON single_model_multi_datetime(single_model_id)')
 
     # end ignore ::
     # ignore ::

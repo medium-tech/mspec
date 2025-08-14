@@ -7,7 +7,7 @@ from core.db import *
 test_ctx = create_db_context()
 test_ctx.update(create_client_context())
 
-class TestModels(unittest.TestCase):
+class SingleModels(unittest.TestCase):
 
     def test_user_validate(self):
 

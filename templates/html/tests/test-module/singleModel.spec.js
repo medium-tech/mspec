@@ -2,17 +2,17 @@ import { test, expect } from '@playwright/test';
 
 // vars :: {"unit_test":"project.name.snake_case", "http://localhost:5005": "client.default_host"}
 // vars :: {"test-module": "module.name.kebab_case", "test module": "module.name.lower_case"}
-// vars :: {"test model": "model.name.lower_case", "test-model": "model.name.kebab_case", "test_model": "model.name.snake_case"}
+// vars :: {"single model": "model.name.lower_case", "single-model": "model.name.kebab_case", "single_model": "model.name.snake_case"}
 
-test('test - test module - test model - pagination', async ({ page }) => {
+test('test - test module - single model - pagination', async ({ page }) => {
   await page.goto('http://localhost:5005/');
 
   await expect(page.locator('h1')).toContainText('unit_test');
   await page.getByRole('link', { name: 'test module' }).last().click();
 
   await expect(page.locator('h1')).toContainText('test module');
-  await page.getByRole('link', { name: 'test model' }).click();
-  await expect(page.getByRole('heading')).toContainText('test model');
+  await page.getByRole('link', { name: 'single model' }).click();
+  await expect(page.getByRole('heading')).toContainText('single model');
 
   // vars :: {"['id', 'single_bool', 'single_int', 'single_float', 'single_string', 'single_enum', 'single_datetime']": "macro.html_field_list(model.fields)"}
   const fields = ['id', 'single_bool', 'single_int', 'single_float', 'single_string', 'single_enum', 'single_datetime'];
@@ -26,13 +26,13 @@ test('test - test module - test model - pagination', async ({ page }) => {
 });
 
 
-test('test - test module - test model - instance', async ({ page }) => {
+test('test - test module - single model - instance', async ({ page }) => {
 
     const textToContain = []
 
     // create item
 
-    await page.goto('http://localhost:5005/test-module/test-model');
+    await page.goto('http://localhost:5005/test-module/single-model');
     await page.getByRole('button', { name: 'create' }).click();
     
     // insert :: macro.html_unittest_form(model.fields)
@@ -70,16 +70,16 @@ test('test - test module - test model - instance', async ({ page }) => {
     
     await page.getByRole('button', { name: 'submit' }).click();
 
-    await expect(page.locator('#create-test-model-status')).toContainText('success');
+    await expect(page.locator('#create-single-model-status')).toContainText('success');
 
-    const createdItem = await page.locator('#created-test-model');
+    const createdItem = await page.locator('#created-single-model');
     const createdItemId = await createdItem.innerText();
     textToContain.push(createdItemId);
     
     await createdItem.click();
 
     for (const text of textToContain) {
-        await expect(page.locator('#test-model-read-tbody')).toContainText(text);
+        await expect(page.locator('#single-model-read-tbody')).toContainText(text);
     }
 
     await page.getByRole('button', { name: 'edit' }).click();
@@ -88,27 +88,27 @@ test('test - test module - test model - instance', async ({ page }) => {
     
     await page.getByRole('button', { name: 'delete' }).click();
     await page.getByRole('button', { name: 'no, cancel' }).click();
-    await page.getByRole('link', { name: 'test_model' }).click();
+    await page.getByRole('link', { name: 'single_model' }).click();
     
-    await page.getByPlaceholder('test model id').click();
-    await page.getByPlaceholder('test model id').fill(createdItemId);
+    await page.getByPlaceholder('single model id').click();
+    await page.getByPlaceholder('single model id').fill(createdItemId);
     await page.getByRole('button', { name: 'get' }).click();
 
     for (const text of textToContain) {
-        await expect(page.locator('#test-model-read-tbody')).toContainText(text);
+        await expect(page.locator('#single-model-read-tbody')).toContainText(text);
     }
 
     await page.getByRole('button', { name: 'delete' }).click();
     await page.getByRole('button', { name: 'yes, please delete' }).click();
-    await expect(page.locator('#test-model-not-found')).toContainText('item not found');
+    await expect(page.locator('#single-model-not-found')).toContainText('item not found');
 });
 
-test('test - test module - test model - create random', async ({ page }) => {
-  await page.goto('http://localhost:5005/test-module/test-model/create');
+test('test - test module - single model - create random', async ({ page }) => {
+  await page.goto('http://localhost:5005/test-module/single-model/create');
   
   await page.getByRole('button', { name: 'random' }).click();
   await page.getByRole('button', { name: 'submit' }).click();
 
-  await expect(page.locator('#create-test-model-status')).toBeVisible();
-  await expect(page.locator('#create-test-model-status')).toContainText('success');
+  await expect(page.locator('#create-single-model-status')).toBeVisible();
+  await expect(page.locator('#create-single-model-status')).toContainText('success');
 });

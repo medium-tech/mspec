@@ -5,12 +5,12 @@ from test_module.multi_model.model import MultiModel
 
 # vars :: {"test_module": "module.name.snake_case", "multi_model": "model.name.snake_case", "MultiModel": "model.name.pascal_case"}
 
-def perf_test_model_validate(repeat:int=5, number:int=10_000) -> float:
+def perf_single_model_validate(repeat:int=5, number:int=10_000) -> float:
     test_multi_model = MultiModel.example()
 
     return timeit.repeat(test_multi_model.validate, repeat=repeat, number=number)
 
-def perf_test_model_init_example(repeat:int=5, number:int=10_000) -> float:
+def perf_single_model_init_example(repeat:int=5, number:int=10_000) -> float:
     return timeit.repeat(MultiModel.example, repeat=repeat, number=number)
 
 

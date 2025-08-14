@@ -17,7 +17,7 @@ class MTemplateHTMLProject(MTemplateProject):
 
     model_prefixes = [
         str(template_dir / 'tests/test-module'),
-        str(template_dir / 'srv/test-module/test-model')
+        str(template_dir / 'srv/test-module/single-model')
     ]
 
     macro_only_prefixes = [

@@ -92,10 +92,10 @@ class MTemplateProject:
                 src = os.path.join(root, name)
 
                 rel_path = os.path.relpath(src, self.template_dir)
-                rel_path = rel_path.replace('test-model', '{{ model.name.kebab_case }}')
-                rel_path = rel_path.replace('test_model', '{{ model.name.snake_case }}')
-                rel_path = rel_path.replace('testModel', '{{ model.name.camel_case }}')
-                rel_path = rel_path.replace('TestModel', '{{ model.name.pascal_case }}')
+                rel_path = rel_path.replace('single-model', '{{ model.name.kebab_case }}')
+                rel_path = rel_path.replace('single_model', '{{ model.name.snake_case }}')
+                rel_path = rel_path.replace('singleModel', '{{ model.name.camel_case }}')
+                rel_path = rel_path.replace('SingleModel', '{{ model.name.pascal_case }}')
 
                 rel_path = rel_path.replace('test-module', '{{ module.name.kebab_case }}')
                 rel_path = rel_path.replace('test_module', '{{ module.name.snake_case }}')

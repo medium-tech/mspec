@@ -4,8 +4,8 @@ from core.client import create_client_context
 # for :: {% for module in modules.values() %} :: {"test_module": "module.name.snake_case", "TestModule": "module.name.pascal_case"}
 from test_module.gui import TestModuleIndexPage
 # end for :: rstrip
-# for :: {% for item in all_models %} :: {"test_module": "item.module.name.snake_case", "test_model": "item.model.name.snake_case", "TestModel": "item.model.name.pascal_case"}
-from test_module.test_model.gui import TestModelIndexPage, TestModelInstancePage
+# for :: {% for item in all_models %} :: {"test_module": "item.module.name.snake_case", "single_model": "item.model.name.snake_case", "SingleModel": "item.model.name.pascal_case"}
+from test_module.single_model.gui import SingleModelIndexPage, SingleModelInstancePage
 # end for :: rstrip
 
 LARGEFONT = ('Verdana', 35)
@@ -38,9 +38,9 @@ class MSpecGUIApp(tkinter.Tk):
         # for :: {% for module in modules.values() %} :: {"TestModule": "module.name.pascal_case"}
         TestModuleIndexPage,
         # end for ::
-        # for :: {% for item in all_models %} :: {"TestModel": "item.model.name.pascal_case"}
-        TestModelIndexPage,
-        TestModelInstancePage
+        # for :: {% for item in all_models %} :: {"SingleModel": "item.model.name.pascal_case"}
+        SingleModelIndexPage,
+        SingleModelInstancePage
         # end for ::
     )
 

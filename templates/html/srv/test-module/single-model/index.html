@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <!-- vars :: {"unit_test": "project.name.snake_case", "test-module": "module.name.kebab_case", "test_module": "module.name.snake_case", "test module": "module.name.lower_case"} -->
-<!-- vars :: {"test_model": "model.name.snake_case", "test-model": "model.name.kebab_case", "test model": "model.name.lower_case"} -->
-<!-- vars :: {"testModel": "model.name.camel_case", "TestModel": "model.name.pascal_case"} -->
+<!-- vars :: {"single_model": "model.name.snake_case", "single-model": "model.name.kebab_case", "single model": "model.name.lower_case"} -->
+<!-- vars :: {"singleModel": "model.name.camel_case", "SingleModel": "model.name.pascal_case"} -->
 <html>
 
     <head>
-        <title>unit_test.test_module.test_model</title>
+        <title>unit_test.test_module.single_model</title>
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta http-equiv="Pragma" content="no-cache" />
         <meta http-equiv="Expires" content="0" />
         <link rel="stylesheet" type="text/css" href="/style.css">
-        <script src="/test-module/test-model/index.js"></script>
+        <script src="/test-module/single-model/index.js"></script>
         <script src="/index.js"></script>
 
         <script type="text/javascript">
@@ -19,17 +19,17 @@
             // views
             //
 
-            function showTestModelListView(pushState) {
-                document.getElementById('test-model-create').hidden = true;
-                document.getElementById('test-model-list').hidden = false;
+            function showSingleModelListView(pushState) {
+                document.getElementById('single-model-create').hidden = true;
+                document.getElementById('single-model-list').hidden = false;
 
                 // push state
                 if(pushState === true) {
                     const url = new URL(window.location.href)
-                    url.pathname = '/test-module/test-model'
+                    url.pathname = '/test-module/single-model'
 
-                    const offset = parseInt(document.getElementById('test-model-list-offset').innerText)
-                    const size = parseInt(document.getElementById('test-model-list-size').innerText)
+                    const offset = parseInt(document.getElementById('single-model-list-offset').innerText)
+                    const size = parseInt(document.getElementById('single-model-list-size').innerText)
                     url.searchParams.set('offset', offset)
                     url.searchParams.set('size', size)
 
@@ -37,14 +37,14 @@
                 }
             }
 
-            function showTestModelCreateView(pushState) {
-                document.getElementById('test-model-list').hidden = true;
-                document.getElementById('test-model-create').hidden = false;
+            function showSingleModelCreateView(pushState) {
+                document.getElementById('single-model-list').hidden = true;
+                document.getElementById('single-model-create').hidden = false;
 
                 // push state
                 if(pushState === true) {
                     const url = new URL(window.location.href)
-                    url.pathname = '/test-module/test-model/create'
+                    url.pathname = '/test-module/single-model/create'
                     url.searchParams.delete('offset')
                     url.searchParams.delete('size')
                     window.history.pushState({}, '', url)
@@ -52,46 +52,46 @@
                 }
             }
 
-            function showTestModelNavigateToId() {
-                const id = document.getElementById('test-model-get-id').value
+            function showSingleModelNavigateToId() {
+                const id = document.getElementById('single-model-get-id').value
                 if(id === '') {
                     console.error('id is empty')
                 }else{
-                    window.location.href = `/test-module/test-model/${id}`
+                    window.location.href = `/test-module/single-model/${id}`
                 }
             }
 
-            function randomizeTestModel() {
-                const createTBody = document.querySelector('#test-model-create-tbody');
-                testModelToInputTBody(randomTestModel(), createTBody)
+            function randomizeSingleModel() {
+                const createTBody = document.querySelector('#single-model-create-tbody');
+                singleModelToInputTBody(randomSingleModel(), createTBody)
             }
 
-            function resetTestModelInput() {
-                const createTBody = document.querySelector('#test-model-create-tbody');
-                testModelToInputTBody({}, createTBody)
+            function resetSingleModelInput() {
+                const createTBody = document.querySelector('#single-model-create-tbody');
+                singleModelToInputTBody({}, createTBody)
             }
 
-            function exampleTestModelInput() {
-                const createTBody = document.querySelector('#test-model-create-tbody');
-                testModelToInputTBody(exampleTestModel(), createTBody)
+            function exampleSingleModelInput() {
+                const createTBody = document.querySelector('#single-model-create-tbody');
+                singleModelToInputTBody(exampleSingleModel(), createTBody)
             }
 
-            function testModelNavigatorEnterKey(e) {
-                console.log('testModelNavigatorEnterKey', e)
+            function singleModelNavigatorEnterKey(e) {
+                console.log('singleModelNavigatorEnterKey', e)
                 if (e.key === 'Enter' || e.type === 'paste') {
-                    showTestModelNavigateToId()
+                    showSingleModelNavigateToId()
                 }
             }
             
-            function createTestModelStatus(status, className) {
-                const statusP = document.getElementById('create-test-model-status')
+            function createSingleModelStatus(status, className) {
+                const statusP = document.getElementById('create-single-model-status')
                 statusP.hidden = false
                 statusP.innerText = status
                 statusP.className = className
             }
 
-            function listTestModelStatus(status, className) {
-                const statusElement = document.getElementById('test-model-list-status')
+            function listSingleModelStatus(status, className) {
+                const statusElement = document.getElementById('single-model-list-status')
                 statusElement.innerText = status
                 statusElement.className = className
             }
@@ -102,48 +102,48 @@
 
             function loadItems() {
 
-                const prevPage = document.getElementById('test-model-prev-page')
-                const nextPage = document.getElementById('test-model-next-page')
+                const prevPage = document.getElementById('single-model-prev-page')
+                const nextPage = document.getElementById('single-model-next-page')
 
                 prevPage.disabled = true
                 nextPage.disabled = true
 
-                const offset = parseInt(document.getElementById('test-model-list-offset').innerText)
-                const size = parseInt(document.getElementById('test-model-list-size').innerText)
+                const offset = parseInt(document.getElementById('single-model-list-offset').innerText)
+                const size = parseInt(document.getElementById('single-model-list-size').innerText)
 
-                listTestModelStatus('loading...', '')
+                listSingleModelStatus('loading...', '')
 
                 console.log(`loadItems(offset=${offset}, size=${size})`)
 
-                clientListTestModels(offset, size)
+                clientListSingleModels(offset, size)
                     .then(response => {
                         if (!response.ok) {
                             console.error(response)
-                            throw new Error('testModel list failed')
+                            throw new Error('singleModel list failed')
                         }
                         return response.json()
                     }).then(data => {
                         console.log(data)
-                        const items = data.map(item => initTestModel(item))
+                        const items = data.map(item => initSingleModel(item))
 
-                        document.getElementById('test-model-list-count').innerText = items.length
-                        testModelListToDisplayTBody(items, document.querySelector('#test-model-list-tbody'))
+                        document.getElementById('single-model-list-count').innerText = items.length
+                        singleModelListToDisplayTBody(items, document.querySelector('#single-model-list-tbody'))
 
                         if (offset > 0) prevPage.disabled = false
                         if (items.length === size) nextPage.disabled = false
 
-                        listTestModelStatus('success', 'success')
+                        listSingleModelStatus('success', 'success')
                     })
                     .catch(error => {
                         console.error(error)
-                        listTestModelStatus('error', 'error')
+                        listSingleModelStatus('error', 'error')
                     });
             }
 
             function changeListPage(direction) {
 
-                let offset = parseInt(document.getElementById('test-model-list-offset').innerText)
-                let size = parseInt(document.getElementById('test-model-list-size').innerText)
+                let offset = parseInt(document.getElementById('single-model-list-offset').innerText)
+                let size = parseInt(document.getElementById('single-model-list-size').innerText)
 
                 if (direction < 0) {
                     offset -= size
@@ -154,7 +154,7 @@
                     offset += size
                 }
 
-                document.getElementById('test-model-list-offset').innerText = offset
+                document.getElementById('single-model-list-offset').innerText = offset
                 
                 // 
 
@@ -168,48 +168,48 @@
                 loadItems()
             }
 
-            function createTestModel() {
-                console.log('createTestModel()')
+            function createSingleModel() {
+                console.log('createSingleModel()')
 
-                const createTBody = document.querySelector('#test-model-create-tbody');
-                const data = testModelFromInputTBody(createTBody);
+                const createTBody = document.querySelector('#single-model-create-tbody');
+                const data = singleModelFromInputTBody(createTBody);
 
-                const verify = verifyTestModel(data);
+                const verify = verifySingleModel(data);
                 if (verify.valid !== true) {
                     console.error(verify);
-                    throw new Error('testModel invalid');
+                    throw new Error('singleModel invalid');
                 }
 
-                console.log('creating testModel', data);
+                console.log('creating singleModel', data);
 
-                createTestModelStatus('creating...', '')
+                createSingleModelStatus('creating...', '')
 
-                clientCreateTestModel(testModelForJSON(data))
+                clientCreateSingleModel(singleModelForJSON(data))
                     .then(response => {
                         if (!response.ok) {
                             console.error(response)
-                            throw new Error('testModel create failed')
+                            throw new Error('singleModel create failed')
                         }
                         return response.json()
                     }).then(data => {
                         const newItemId = data['id']
-                        console.log(`created testModel ${newItemId}`)
+                        console.log(`created singleModel ${newItemId}`)
 
                         const newItemLi = document.createElement('li')
                         const newItemLink = document.createElement('a')
-                        newItemLink.id = 'created-test-model'
-                        newItemLink.href = `/test-module/test-model/${newItemId}`
+                        newItemLink.id = 'created-single-model'
+                        newItemLink.href = `/test-module/single-model/${newItemId}`
                         newItemLink.innerText = newItemId
                         
-                        const createdTestModels = document.getElementById('created-test-models')
+                        const createdSingleModels = document.getElementById('created-single-models')
                         newItemLi.appendChild(newItemLink)
-                        createdTestModels.appendChild(newItemLi)
+                        createdSingleModels.appendChild(newItemLi)
 
-                        createTestModelStatus(`success`, 'success')
+                        createSingleModelStatus(`success`, 'success')
                     })
                     .catch(error => {
                         console.error(error);
-                        createTestModelStatus('error', 'error')
+                        createSingleModelStatus('error', 'error')
                     });
             }
 
@@ -218,12 +218,12 @@
             //
 
             window.onload = function() {
-                resetTestModelInput()
+                resetSingleModelInput()
 
                 const isCreatePage = window.location.pathname.endsWith('/create')
 
                 if(isCreatePage) {
-                    showTestModelCreateView(false)
+                    showSingleModelCreateView(false)
                 }else{
                     const urlParams = new URLSearchParams(window.location.search);
                     const urlOffsetParam = urlParams.get('offset')
@@ -231,11 +231,11 @@
                     console.log(`url params :: offset: ${urlOffsetParam} size: ${urlSizeParam}`)
 
                     if (urlOffsetParam !== null) {
-                        const listOffset = document.getElementById('test-model-list-offset')
+                        const listOffset = document.getElementById('single-model-list-offset')
                         console.log('list offset', listOffset)
                         listOffset.innerText = urlOffsetParam
                     }
-                    if (urlSizeParam !== null) document.getElementById('test-model-list-size').innerText = urlSizeParam
+                    if (urlSizeParam !== null) document.getElementById('single-model-list-size').innerText = urlSizeParam
 
                     loadItems();
                 }
@@ -245,38 +245,38 @@
     </head>
 
     <body>
-        <h1>test model</h1>
+        <h1>single model</h1>
         <p>
-            <a href="/">unit_test</a> . <a href="/test-module">test module</a> . <a href="/test-module/test-model">test model</a>
+            <a href="/">unit_test</a> . <a href="/test-module">test module</a> . <a href="/test-module/single-model">single model</a>
         </p>
 
         <!-- 
         list view layout 
         -->
 
-        <div id="test-model-list">
+        <div id="single-model-list">
 
-            status: <span id="test-model-list-status">intial</span>
+            status: <span id="single-model-list-status">intial</span>
 
             <br>
             
-            <button id="test-model-prev-page" onclick="changeListPage(-1)" disabled>&lt;&lt;&lt;</button>
+            <button id="single-model-prev-page" onclick="changeListPage(-1)" disabled>&lt;&lt;&lt;</button>
             <button onclick="loadItems()">refresh</button>
-            <button id="test-model-next-page" onclick="changeListPage(1)" disabled>&gt;&gt;&gt;</button>
+            <button id="single-model-next-page" onclick="changeListPage(1)" disabled>&gt;&gt;&gt;</button>
             &emsp;|&emsp;
-            <button onclick="showTestModelCreateView(true)">create</button>
+            <button onclick="showSingleModelCreateView(true)">create</button>
             &emsp;|&emsp;
-            <button onclick="showTestModelNavigateToId()">get</button>
-            <input id="test-model-get-id" type="text" placeholder="test model id" size="32" onkeypress="testModelNavigatorEnterKey(event)"/>
+            <button onclick="showSingleModelNavigateToId()">get</button>
+            <input id="single-model-get-id" type="text" placeholder="single model id" size="32" onkeypress="singleModelNavigatorEnterKey(event)"/>
             
 
             <br>
 
-            offset: <span id="test-model-list-offset">0</span>
+            offset: <span id="single-model-list-offset">0</span>
             &emsp;
-            size: <span id="test-model-list-size">25</span>
+            size: <span id="single-model-list-size">25</span>
             &emsp;
-            count: <span id="test-model-list-count">-</span>
+            count: <span id="single-model-list-count">-</span>
             
             <br>
 
@@ -297,7 +297,7 @@
                     </tr>
                 </thead>
 
-                <tbody id="test-model-list-tbody">
+                <tbody id="single-model-list-tbody">
                 </tbody>
 
             </table>
@@ -308,15 +308,15 @@
         create view layout 
         -->
 
-        <div id="test-model-create" hidden>
+        <div id="single-model-create" hidden>
 
-            <button onclick="createTestModel()">submit</button>
+            <button onclick="createSingleModel()">submit</button>
             &emsp;|&emsp;
-            <button onclick="resetTestModelInput()">reset</button>
+            <button onclick="resetSingleModelInput()">reset</button>
             &emsp;|&emsp;
-            <button onclick="exampleTestModelInput()">example</button>
+            <button onclick="exampleSingleModelInput()">example</button>
             &emsp;|&emsp;
-            <button onclick="randomizeTestModel()">random</button>
+            <button onclick="randomizeSingleModel()">random</button>
 
             <table>
                 <thead>
@@ -326,13 +326,13 @@
                         <th>other</th>
                     </tr>
                 </thead>
-                <tbody id="test-model-create-tbody">
+                <tbody id="single-model-create-tbody">
                 </tbody>
             </table>
 
-            <p id="create-test-model-status" hidden></p>
+            <p id="create-single-model-status" hidden></p>
 
-            <ul id="created-test-models">
+            <ul id="created-single-models">
             </ul>
 
         </div>

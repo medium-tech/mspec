@@ -4,17 +4,17 @@ import sqlite3
 from core.db import create_db_context
 from core.client import create_client_context
 from core.exceptions import NotFoundError
-from test_module.test_model.model import TestModel
-from test_module.test_model.client import *
+from test_module.single_model.model import SingleModel
+from test_module.single_model.client import *
 
-# vars :: {"test_module": "module.name.snake_case", "test_model": "model.name.snake_case", "TestModel": "model.name.pascal_case"}
+# vars :: {"test_module": "module.name.snake_case", "single_model": "model.name.snake_case", "SingleModel": "model.name.pascal_case"}
 
 test_ctx = create_db_context()
 test_ctx.update(create_client_context())
 
-class TestTestModel(unittest.TestCase):
+class TestSingleModel(unittest.TestCase):
 
-    def test_test_model_crud(self):
+    def test_single_model_crud(self):
         """
         only need to test the client, which by also tests the server and other modules
 
@@ -24,49 +24,49 @@ class TestTestModel(unittest.TestCase):
         + delete
         """
 
-        test_test_model = TestModel.example()
-        test_test_model.validate()
+        test_single_model = SingleModel.example()
+        test_single_model.validate()
 
         # create #
         
-        created_test_model = client_create_test_model(test_ctx, test_test_model)
-        self.assertTrue(isinstance(created_test_model, TestModel))
-        created_test_model.validate()
-        test_test_model.id = created_test_model.id
+        created_single_model = client_create_single_model(test_ctx, test_single_model)
+        self.assertTrue(isinstance(created_single_model, SingleModel))
+        created_single_model.validate()
+        test_single_model.id = created_single_model.id
 
-        self.assertEqual(created_test_model, test_test_model)
+        self.assertEqual(created_single_model, test_single_model)
 
         # read #
 
-        test_model_read = client_read_test_model(test_ctx, created_test_model.id)
-        self.assertTrue(isinstance(test_model_read, TestModel))
-        test_model_read.validate()
-        self.assertEqual(test_model_read, test_test_model)
+        single_model_read = client_read_single_model(test_ctx, created_single_model.id)
+        self.assertTrue(isinstance(single_model_read, SingleModel))
+        single_model_read.validate()
+        self.assertEqual(single_model_read, test_single_model)
             
         # update #
 
-        updated_test_model = client_update_test_model(test_ctx, test_model_read)
-        self.assertTrue(isinstance(updated_test_model, TestModel))
-        updated_test_model.validate()
-        self.assertEqual(test_model_read, updated_test_model)
+        updated_single_model = client_update_single_model(test_ctx, single_model_read)
+        self.assertTrue(isinstance(updated_single_model, SingleModel))
+        updated_single_model.validate()
+        self.assertEqual(single_model_read, updated_single_model)
 
         # delete #
 
-        delete_return = client_delete_test_model(test_ctx, created_test_model.id)
+        delete_return = client_delete_single_model(test_ctx, created_single_model.id)
         self.assertIsNone(delete_return)
-        self.assertRaises(NotFoundError, client_read_test_model, test_ctx, created_test_model.id)
+        self.assertRaises(NotFoundError, client_read_single_model, test_ctx, created_single_model.id)
 
         cursor:sqlite3.Cursor = test_ctx['db']['cursor']
-        fetched_item = cursor.execute(f"SELECT * FROM test_model WHERE id=?", (created_test_model.id,)).fetchone()
+        fetched_item = cursor.execute(f"SELECT * FROM single_model WHERE id=?", (created_single_model.id,)).fetchone()
         self.assertIsNone(fetched_item)
 
         # insert :: macro.py_test_crud_delete(model)
 
-    def test_test_model_pagination(self):
+    def test_single_model_pagination(self):
 
         # seed data #
 
-        items = client_list_test_model(test_ctx, offset=0, limit=101)
+        items = client_list_single_model(test_ctx, offset=0, limit=101)
         items_len = len(items)
         if items_len > 100:
             raise Exception('excpecting 100 items or less, delete db and restart test')
@@ -74,16 +74,16 @@ class TestTestModel(unittest.TestCase):
         if items_len < 50:
             difference = 50 - items_len
             for _ in range(difference):
-                item = TestModel.random()
-                item = client_create_test_model(test_ctx, item)
+                item = SingleModel.random()
+                item = client_create_single_model(test_ctx, item)
         elif items_len > 50:
             difference = items_len - 50
             items_to_delete = items[:difference]
             for item in items_to_delete:
-                client_delete_test_model(test_ctx, item.id)
+                client_delete_single_model(test_ctx, item.id)
 
-        test_test_model = TestModel.example()
-        test_test_model.validate()
+        test_single_model = SingleModel.example()
+        test_single_model.validate()
 
         # paginate #
 
@@ -102,13 +102,13 @@ class TestTestModel(unittest.TestCase):
             item_ids = []
             num_pages = 0
             while True:
-                items = client_list_test_model(test_ctx, offset=offset, limit=page_size)
+                items = client_list_single_model(test_ctx, offset=offset, limit=page_size)
                 items_len = 0
                 for item in items:
                     items_len += 1
                     item.validate()
 
-                    self.assertTrue(isinstance(item, TestModel))
+                    self.assertTrue(isinstance(item, SingleModel))
                     item_ids.append(item.id)
 
                 if items_len > 0:

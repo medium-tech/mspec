@@ -1,5 +1,5 @@
 // vars :: {"test-module": "module.name.kebab_case"}
-// vars :: {"TestModel": "model.name.pascal_case", "testModel": "model.name.camel_case", "test-model": "model.name.kebab_case"}
+// vars :: {"SingleModel": "model.name.pascal_case", "singleModel": "model.name.camel_case", "single-model": "model.name.kebab_case"}
 
 //
 // convert
@@ -66,7 +66,7 @@ const single_enum_options = [
 // data functions
 //
 
-function initTestModel(data) {
+function initSingleModel(data) {
     let result = {
         // insert :: macro.html_init_fields(model.fields)
         // macro :: html_init_bool :: {"single_bool": "field"}
@@ -90,7 +90,7 @@ function initTestModel(data) {
     return result;
 }
 
-function exampleTestModel() {
+function exampleSingleModel() {
     const data = {
         // replace :: macro.html_example_fields(model.fields)
         single_bool: true,
@@ -104,7 +104,7 @@ function exampleTestModel() {
     return {...data}
 }
 
-function randomTestModel() {
+function randomSingleModel() {
     return {
         // insert :: macro.html_random_fields(model.fields)
         // macro :: html_random_bool :: {"single_bool": "field"}
@@ -123,7 +123,7 @@ function randomTestModel() {
     }
 }
 
-function verifyTestModel(data) {
+function verifySingleModel(data) {
 
     let result = {
         valid: true,
@@ -175,8 +175,8 @@ function verifyTestModel(data) {
 
 }
 
-function testModelFromInputTBody(tbody) {   
-    console.log('testModelFromInputTBody', tbody);
+function singleModelFromInputTBody(tbody) {   
+    console.log('singleModelFromInputTBody', tbody);
     const data = {};
 
     // parse id if exists
@@ -215,7 +215,7 @@ function testModelFromInputTBody(tbody) {
     return data;
 }
 
-function testModelToInputTBody(data, tbody) {
+function singleModelToInputTBody(data, tbody) {
     tbody.innerHTML = '';
 
     // show id if present
@@ -414,7 +414,7 @@ function testModelToInputTBody(data, tbody) {
 
 }
 
-function testModelToDisplayTBody(data, tbody) {
+function singleModelToDisplayTBody(data, tbody) {
     tbody.innerHTML = '';
 
     // id - string
@@ -538,11 +538,11 @@ function testModelToDisplayTBody(data, tbody) {
     return tbody;
 }
 
-function testModelToTableRow(data) {
+function singleModelToTableRow(data) {
 
     const tr = document.createElement('tr');
     tr.style.cursor = 'pointer';
-    tr.onclick = () => window.location.href = `/test-module/test-model/${data.id}`
+    tr.onclick = () => window.location.href = `/test-module/single-model/${data.id}`
 
     // id - string
 
@@ -610,12 +610,12 @@ function testModelToTableRow(data) {
 
 }
 
-function testModelListToDisplayTBody(testModelList, tbody) {
+function singleModelListToDisplayTBody(singleModelList, tbody) {
 
     tbody.innerHTML = '';
 
-    for (const testModel of testModelList) {
-        tbody.appendChild(testModelToTableRow(testModel));
+    for (const singleModel of singleModelList) {
+        tbody.appendChild(singleModelToTableRow(singleModel));
     }
 
     return tbody;
@@ -626,7 +626,7 @@ function testModelListToDisplayTBody(testModelList, tbody) {
 // serialize functions
 //
 
-function testModelForJSON(data) {
+function singleModelForJSON(data) {
     // convert an items types to be ready to JSON
 
     let result = {}
@@ -652,9 +652,9 @@ function testModelForJSON(data) {
 // client functions
 //
 
-function clientCreateTestModel(data) {
+function clientCreateSingleModel(data) {
     
-    return fetch('/api/test-module/test-model', {
+    return fetch('/api/test-module/single-model', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -663,16 +663,16 @@ function clientCreateTestModel(data) {
     })
 }
 
-function clientReadTestModel(id) {
+function clientReadSingleModel(id) {
 
-    return fetch(`/api/test-module/test-model/${id}`, {
+    return fetch(`/api/test-module/single-model/${id}`, {
         method: 'GET',
     })
 }
 
-function clientUpdateTestModel(id, data) {
+function clientUpdateSingleModel(id, data) {
 
-    return fetch(`/api/test-module/test-model/${id}`, {
+    return fetch(`/api/test-module/single-model/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -682,17 +682,17 @@ function clientUpdateTestModel(id, data) {
 
 }
 
-function clientDeleteTestModel(id) {
+function clientDeleteSingleModel(id) {
 
-    return fetch(`/api/test-module/test-model/${id}`, {
+    return fetch(`/api/test-module/single-model/${id}`, {
         method: 'DELETE',
     })
 
 }
 
-function clientListTestModels(offset, size) {
+function clientListSingleModels(offset, size) {
 
-    return fetch(`/api/test-module/test-model?offset=${offset}&size=${size}`, {
+    return fetch(`/api/test-module/single-model?offset=${offset}&size=${size}`, {
         method: 'GET',
     })
 }
