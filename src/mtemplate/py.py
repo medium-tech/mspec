@@ -21,7 +21,13 @@ class MTemplatePyProject(MTemplateProject):
         str(template_dir / 'src/test_module/test_model'),
         str(template_dir / 'tests/test_module')
     ]
-    
+
+    macro_only_prefixes = [
+        str(template_dir / 'src/test_module/multi_model'),
+        str(template_dir / 'tests/test_module/test_multi'),
+        str(template_dir / 'tests/test_module/perf_multi')
+    ]
+
     def init_template_vars(self):
         super().init_template_vars()
         self.spec['macro'].update({
@@ -351,8 +357,8 @@ class MTemplatePyProject(MTemplateProject):
 
             try:
                 out += self.spec['macro'][f'py_verify_{field_type}'](vars) + '\n'
-            except KeyError:
-                raise MTemplateError(f'field {name} does not have a type')
+            except KeyError as e:
+                raise MTemplateError(f'field {name} does not have type "{field_type}" - KeyError: {e}')
         return out
 
     def macro_py_field_list(self, fields:dict) -> str:

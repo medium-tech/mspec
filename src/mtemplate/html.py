@@ -20,6 +20,11 @@ class MTemplateHTMLProject(MTemplateProject):
         str(template_dir / 'srv/test-module/test-model')
     ]
 
+    macro_only_prefixes = [
+        str(template_dir / 'srv/test-module/multi-model'),
+        str(template_dir / 'tests/test-module/multiModel')
+    ]
+
     def init_template_vars(self):
         super().init_template_vars()
         self.spec['macro'].update({

@@ -1,5 +1,3 @@
-// vars :: {"test-module": "module.name.kebab_case"}
-// vars :: {"MultiModel": "model.name.pascal_case", "multiModel": "model.name.camel_case", "multi-model": "model.name.kebab_case"}
 
 //
 // convert

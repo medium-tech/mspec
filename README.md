@@ -207,7 +207,7 @@ By default this will use the spec file `./spec/test-gen.yaml` and output the fil
 
     python -m mtemplate render --spec <yaml spec file> --output <output dir>
 
-Or render just the python or fromtend like this:
+Or render just the python or frontend like this:
 
     python -m mtemplate render-py
     python -m mtemplate render-html

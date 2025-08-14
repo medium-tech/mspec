@@ -108,15 +108,11 @@ class TestModelIndexPage(tkinter.Frame):
 
             test_model_id = getattr(test_model, 'id', '-')
 
-            # print(f'Listing test_model: {test_model_id}')
-            # print(test_model)
-
             if test_model_id == '-':
                 view_widget = ttk.Label(self.table, text=test_model_id)
             else:
                 def go_to_item(item):
                     print(f"Going to item {item.id} in TestModelInstancePage")
-                    # breakpoint()
                     self.app.show_frame_str('TestModelInstancePage', item=item)
 
                 view_widget = ttk.Button(self.table, text='view', command=lambda i=n: go_to_item(test_models[i]), width=3)

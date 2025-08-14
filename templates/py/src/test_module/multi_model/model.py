@@ -11,8 +11,6 @@ __all__ = [
     'MultiModel'
 ]
 
-# vars :: {"MultiModel": "model.name.pascal_case"}
-
 multi_enum_options = [
     'giraffe', 
     'elephant', 

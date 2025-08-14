@@ -4,9 +4,6 @@ from tkinter import ttk, StringVar
 from test_module.multi_model.model import MultiModel, field_list, longest_field_name_length
 from test_module.multi_model.client import client_list_multi_model
 
-# vars :: {"test_module": "module.name.snake_case"}
-# vars :: {"MultiModel": "model.name.pascal_case", "multi_model": "model.name.snake_case"}
-
 __all__ = [
     'MultiModelIndexPage',
     'MultiModelInstancePage'
@@ -113,7 +110,6 @@ class MultiModelIndexPage(tkinter.Frame):
             else:
                 def go_to_item(item):
                     print(f"Going to item {item.id} in MultiModelInstancePage")
-                    # breakpoint()
                     self.app.show_frame_str('MultiModelInstancePage', item=item)
 
                 view_widget = ttk.Button(self.table, text='view', command=lambda i=n: go_to_item(multi_models[i]), width=3)

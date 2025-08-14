@@ -7,6 +7,7 @@ from copy import copy
 from pathlib import Path
 from collections import OrderedDict
 from dataclasses import dataclass
+from pprint import pprint
 
 from jinja2 import Environment, FunctionLoader, StrictUndefined, TemplateError, Undefined
 
@@ -36,7 +37,8 @@ class MTemplateProject:
     app_name = ''
     model_prefixes = []
     module_prefixes = []
-        
+    macro_only_prefixes = []
+
     def __init__(self, spec:dict, debug:bool=False, disable_strict:bool=False) -> None:
         self.spec = spec
         self.spec['macro'] = {}
@@ -61,7 +63,8 @@ class MTemplateProject:
         paths = {
             'app': [],
             'module': [],
-            'model': []
+            'model': [],
+            'macro_only': []
         }
         for root, _, files in os.walk(self.template_dir):
             if 'node_modules' in root:
@@ -85,8 +88,10 @@ class MTemplateProject:
 
                 if name.endswith('.sqlite3'):
                     continue
-                
-                rel_path = os.path.relpath(os.path.join(root, name), self.template_dir)
+
+                src = os.path.join(root, name)
+
+                rel_path = os.path.relpath(src, self.template_dir)
                 rel_path = rel_path.replace('test-model', '{{ model.name.kebab_case }}')
                 rel_path = rel_path.replace('test_model', '{{ model.name.snake_case }}')
                 rel_path = rel_path.replace('testModel', '{{ model.name.camel_case }}')
@@ -97,11 +102,13 @@ class MTemplateProject:
                 rel_path = rel_path.replace('testModule', '{{ module.name.camel_case }}')
                 rel_path = rel_path.replace('TestModule', '{{ module.name.pascal_case }}')
                 
-                template = {'src': os.path.join(root, name), 'rel': rel_path}
+                template = {'src': src, 'rel': rel_path}
 
-                if root in self.model_prefixes:
+                if any([src.startswith(prefix) for prefix in self.macro_only_prefixes]):
+                    paths['macro_only'].append(template)
+                elif any([src.startswith(prefix) for prefix in self.model_prefixes]):
                     paths['model'].append(template)
-                elif root in self.module_prefixes:
+                elif any([src.startswith(prefix) for prefix in self.module_prefixes]):
                     paths['module'].append(template)
                 else:
                     paths['app'].append(template)
@@ -131,7 +138,7 @@ class MTemplateProject:
     def extract_templates(self) -> dict:
         template_paths = self.template_source_paths()
         try:
-            paths = template_paths['app'] + template_paths['module'] + template_paths['model']
+            paths = template_paths['app'] + template_paths['module'] + template_paths['model'] + template_paths['macro_only']
         except KeyError:
             raise MTemplateError('template_paths must contain app, module and model keys')
         
@@ -244,7 +251,28 @@ class MTemplateProject:
         template_proj.init_template_vars()
         template_proj.render_templates(output_dir)
         return template_proj
+    
+    @classmethod
+    def tree(cls, spec:dict) -> 'MTemplateProject':
+        template_proj = cls(spec)
+        template_proj.extract_templates()
+        template_proj.init_template_vars()
+        
+        print(':: spec.macro')
+        for name in sorted(template_proj.spec['macro'].keys()):
+            print(f'    {name}')
 
+        print(':: templates')
+        for name, template in template_proj.templates.items():
+            print(f'    {name}')
+
+        print(':: template paths')
+        for key in template_proj.template_paths.keys():
+            print(f'    :: {key}')
+            for item in template_proj.template_paths[key]:
+                print(f'      {item["src"]}')
+
+        print(':: done')
 
 @dataclass
 class MTemplateMacro:

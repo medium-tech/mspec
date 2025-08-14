@@ -4,10 +4,6 @@ from core.exceptions import NotFoundError, RequestError, JSONResponse
 from test_module.multi_model.model import MultiModel
 from test_module.multi_model.db import *
 
-# vars :: {"test_module": "module.name.snake_case", "test-module": "module.name.kebab_case"}
-# vars :: {"multi_model": "model.name.snake_case", "multi model": "model.name.lower_case"}
-# vars :: {"multi-model": "model.name.kebab_case", "MultiModel": "model.name.pascal_case"}
-
 __all__ = [
     'multi_model_routes'
 ]

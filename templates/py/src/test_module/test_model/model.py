@@ -106,8 +106,9 @@ class TestModel:
 
         if not isinstance(self.single_datetime, datetime):
             raise TypeError('single_datetime must be a datetime')
-        
-        return self   
+        # end macro ::
+
+        return self
 
     def to_dict(self) -> dict:
         data = asdict(self)

@@ -6,9 +6,6 @@ import json
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
-# vars :: {"test_module": "module.name.snake_case", "test-module": "module.name.kebab_case"}
-# vars :: {"multi_model": "model.name.snake_case", "multi model": "model.name.lower_case", "multi-model": "model.name.kebab_case", "MultiModel": "model.name.pascal_case"}
-
 __all__ = [
     'client_create_multi_model',
     'client_read_multi_model',

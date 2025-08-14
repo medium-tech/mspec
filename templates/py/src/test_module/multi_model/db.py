@@ -4,8 +4,6 @@ from core.types import datetime_format_str
 from core.exceptions import NotFoundError
 from test_module.multi_model.model import MultiModel
 
-# vars :: {"test_module": "module.name.snake_case", "multi_model": "model.name.snake_case", "MultiModel": "model.name.pascal_case"}
-
 __all__ = [
     'db_create_multi_model', 
     'db_read_multi_model',
