@@ -191,7 +191,7 @@ route_list = [
     # for :: {% for item in all_models %} :: {"test_model": "item.model.name.snake_case"}
     test_model_routes,
     # end for ::
-    # ignore
+    # ignore ::
     multi_model_routes,
     # end ignore ::
 ]
