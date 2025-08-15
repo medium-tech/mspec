@@ -5,24 +5,24 @@ uwsgi:
   # for :: {% for item in all_models %} :: {"template-module":"item.module.name.kebab_case", "single-model": "item.model.name.kebab_case", "single model": "item.model.name.lower_case"}
 
   # single model
-  route: ^/template-module/single-model/create static:../html/srv/template-module/single-model/index.html
-  route: ^/template-module/single-model/index(.*) static:../html/srv/template-module/single-model/index$1
-  load-file-in-cache: ../html/srv/template-module/single-model/index.html
-  route: ^/template-module/single-model/(.*) static:../html/srv/template-module/single-model/instance.html
-  load-file-in-cache: ../html/srv/template-module/single-model/instance.html
+  route: ^/template-module/single-model/create static:../browser1/srv/template-module/single-model/index.html
+  route: ^/template-module/single-model/index(.*) static:../browser1/srv/template-module/single-model/index$1
+  load-file-in-cache: ../browser1/srv/template-module/single-model/index.html
+  route: ^/template-module/single-model/(.*) static:../browser1/srv/template-module/single-model/instance.html
+  load-file-in-cache: ../browser1/srv/template-module/single-model/instance.html
 
   # end for ::
 
   # ignore ::
   # multi model
-  route: ^/template-module/multi-model/create static:../html/srv/template-module/multi-model/index.html
-  route: ^/template-module/multi-model/index(.*) static:../html/srv/template-module/multi-model/index$1
-  load-file-in-cache: ../html/srv/template-module/multi-model/index.html
-  route: ^/template-module/multi-model/(.*) static:../html/srv/template-module/multi-model/instance.html
-  load-file-in-cache: ../html/srv/template-module/multi-model/instance.html
+  route: ^/template-module/multi-model/create static:../browser1/srv/template-module/multi-model/index.html
+  route: ^/template-module/multi-model/index(.*) static:../browser1/srv/template-module/multi-model/index$1
+  load-file-in-cache: ../browser1/srv/template-module/multi-model/index.html
+  route: ^/template-module/multi-model/(.*) static:../browser1/srv/template-module/multi-model/instance.html
+  load-file-in-cache: ../browser1/srv/template-module/multi-model/instance.html
   # end ignore ::
 
-  static-map: /=../html/srv/
+  static-map: /=../browser1/srv/
   static-index: index.html
   static-expires: /* 0
   

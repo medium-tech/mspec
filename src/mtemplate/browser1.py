@@ -2,14 +2,14 @@ from mtemplate import MTemplateProject, MTemplateError
 from pathlib import Path
 
 
-__all__ = ['MTemplateHTMLProject']
+__all__ = ['MTemplateBrowser1Project']
 
 
-class MTemplateHTMLProject(MTemplateProject):
+class MTemplateBrowser1Project(MTemplateProject):
 
-    app_name = 'html'
+    app_name = 'browser1'
 
-    template_dir = Path(__file__).parent.parent.parent / 'templates/html'
+    template_dir = Path(__file__).parent.parent.parent / 'templates/browser1'
 
     module_prefixes = [
         str(template_dir / 'srv/template-module')
@@ -28,26 +28,26 @@ class MTemplateHTMLProject(MTemplateProject):
     def init_template_vars(self):
         super().init_template_vars()
         self.spec['macro'].update({
-            'html_init_fields': self.macro_html_init_fields,
-            'html_unittest_form': self.macro_html_unittest_form,
-            'html_random_fields': self.macro_html_random_fields,
-            'html_verify_fields': self.macro_html_verify_fields,
-            'html_from_input_tbody_fields': self.macro_html_from_input_tbody_fields,
-            'html_to_input_tbody': self.macro_html_to_input_tbody,
-            'html_to_display_tbody': self.macro_html_to_display_tbody,
-            'html_to_table_row': self.macro_html_to_table_row,
-            'html_list_table_headers': self.macro_html_list_table_headers,
-            'html_field_list': self.macro_html_field_list,
-            'html_enum_definitions': self.macro_html_enum_definitions,
-            'html_example_fields': self.macro_html_example_fields,
+            'browser1_init_fields': self.macro_browser1_init_fields,
+            'browser1_unittest_form': self.macro_browser1_unittest_form,
+            'browser1_random_fields': self.macro_browser1_random_fields,
+            'browser1_verify_fields': self.macro_browser1_verify_fields,
+            'browser1_from_input_tbody_fields': self.macro_browser1_from_input_tbody_fields,
+            'browser1_to_input_tbody': self.macro_browser1_to_input_tbody,
+            'browser1_to_display_tbody': self.macro_browser1_to_display_tbody,
+            'browser1_to_table_row': self.macro_browser1_to_table_row,
+            'browser1_list_table_headers': self.macro_browser1_list_table_headers,
+            'browser1_field_list': self.macro_browser1_field_list,
+            'browser1_enum_definitions': self.macro_browser1_enum_definitions,
+            'browser1_example_fields': self.macro_browser1_example_fields,
         })
 
-    def macro_html_init_fields(self, fields:dict, indent='\t') -> str:
+    def macro_browser1_init_fields(self, fields:dict, indent='\t') -> str:
         out = ''
         for name, field in fields.items():
             vars = {'field': name}
 
-            macro_name = f'html_init_{field["type"]}'
+            macro_name = f'browser1_init_{field["type"]}'
 
             if field['type'] == 'list':
                 macro_name += f"_{field['element_type']}"
@@ -62,20 +62,20 @@ class MTemplateHTMLProject(MTemplateProject):
             
         return out
 
-    def macro_html_list_table_headers(self, fields:dict, indent='\t') -> str:
+    def macro_browser1_list_table_headers(self, fields:dict, indent='\t') -> str:
         out = ''
         all_keys = ['id'] + list(fields.keys())
         for name in all_keys:
             vars = {'field': name}
-            out += self.spec['macro'][f'html_list_table_header'](vars) + '\n'
+            out += self.spec['macro'][f'browser1_list_table_header'](vars) + '\n'
         return out
 
-    def macro_html_to_table_row(self, fields:dict, indent='\t') -> str:
+    def macro_browser1_to_table_row(self, fields:dict, indent='\t') -> str:
         out = ''
         for name, field in fields.items():
             vars = {'field': name}
             field_type = field['type']
-            macro_name = f'html_to_table_row_{field_type}'
+            macro_name = f'browser1_to_table_row_{field_type}'
 
             try:
                 macro_name += '_' + field['element_type']
@@ -91,12 +91,12 @@ class MTemplateHTMLProject(MTemplateProject):
                 raise MTemplateError(f'field {name} does not have type "{field_type}"')
         return out
 
-    def macro_html_to_display_tbody(self, fields:dict, indent='\t') -> str:
+    def macro_browser1_to_display_tbody(self, fields:dict, indent='\t') -> str:
         out = ''
         for name, field in fields.items():
             vars = {'field': name}
 
-            macro_name = f'html_to_display_tbody_{field["type"]}'
+            macro_name = f'browser1_to_display_tbody_{field["type"]}'
 
             try:
                 macro_name += '_' + field['element_type']
@@ -110,12 +110,12 @@ class MTemplateHTMLProject(MTemplateProject):
             
         return out
 
-    def macro_html_to_input_tbody(self, fields:dict, indent='\t') -> str:
+    def macro_browser1_to_input_tbody(self, fields:dict, indent='\t') -> str:
         out = ''
         for name, field in fields.items():
             vars = {'field': name}
 
-            macro_name = f'html_to_input_tbody_{field["type"]}'
+            macro_name = f'browser1_to_input_tbody_{field["type"]}'
 
             try:
                 macro_name += '_' + field['element_type']
@@ -129,12 +129,12 @@ class MTemplateHTMLProject(MTemplateProject):
             
         return out
 
-    def macro_html_from_input_tbody_fields(self, fields:dict, indent='\t') -> str:
+    def macro_browser1_from_input_tbody_fields(self, fields:dict, indent='\t') -> str:
         out = ''
         for name, field in fields.items():
             vars = {'field': name}
 
-            macro_name = f'html_from_input_tbody_{field["type"]}'
+            macro_name = f'browser1_from_input_tbody_{field["type"]}'
 
             try:
                 macro_name += '_' + field['element_type']
@@ -148,11 +148,11 @@ class MTemplateHTMLProject(MTemplateProject):
             
         return out
 
-    def macro_html_unittest_form(self, fields:dict, indent='\t'):
+    def macro_browser1_unittest_form(self, fields:dict, indent='\t'):
         out = ''
         for name, field in fields.items():
             vars = {'field': name}
-            macro_name = f'html_unittest_form_{field["type"]}'
+            macro_name = f'browser1_unittest_form_{field["type"]}'
 
             if field['type'] == 'list':
 
@@ -212,7 +212,7 @@ class MTemplateHTMLProject(MTemplateProject):
                 raise MTemplateError(f'field {name} missing macro {macro_name} for type "{field["type"]}"') from e
         return out
     
-    def macro_html_random_fields(self, fields:dict, indent='\t\t') -> str:
+    def macro_browser1_random_fields(self, fields:dict, indent='\t\t') -> str:
         lines = []
         for name, field in fields.items():
             custom_function = field.get('random', None)
@@ -221,7 +221,7 @@ class MTemplateHTMLProject(MTemplateProject):
 
             else:
                 vars = {'field': name}
-                macro_name = f'html_random_{field["type"]}'
+                macro_name = f'browser1_random_{field["type"]}'
                 try:
                     macro_name += '_' + field['element_type']
                 except KeyError:
@@ -234,12 +234,12 @@ class MTemplateHTMLProject(MTemplateProject):
 
         return '\n'.join(lines)
     
-    def macro_html_verify_fields(self, fields:dict, indent='\t') -> str:
+    def macro_browser1_verify_fields(self, fields:dict, indent='\t') -> str:
         out = ''
         for name, field in fields.items():
             vars = {'field': name}
 
-            macro_name = f'html_verify_{field["type"]}'
+            macro_name = f'browser1_verify_{field["type"]}'
 
             try:
                 macro_name += '_' + field['element_type']
@@ -253,28 +253,28 @@ class MTemplateHTMLProject(MTemplateProject):
             
         return out
     
-    def macro_html_field_list(self, fields:dict) -> str:
+    def macro_browser1_field_list(self, fields:dict) -> str:
         all_keys = ['id'] + list(fields.keys())
         keys = [f"'{name}'" for name in all_keys]
         return '[' + ', '.join(keys) + ']'
     
-    def macro_html_enum_definitions(self, fields:dict, indent='    ') -> str:
+    def macro_browser1_enum_definitions(self, fields:dict, indent='    ') -> str:
         out = ''
         for name, field in fields.items():
             if 'enum' not in field:
                 continue
 
-            out += self.spec['macro'][f'html_enum_definition_begin']({'field_name': name}) + '\n'
+            out += self.spec['macro'][f'browser1_enum_definition_begin']({'field_name': name}) + '\n'
 
             for option in field['enum']:
                 option_value = option.replace("'", "\'")
-                out += self.spec['macro'][f'html_enum_definition_option']({'option': option_value}) + '\n'
+                out += self.spec['macro'][f'browser1_enum_definition_option']({'option': option_value}) + '\n'
 
-            out += self.spec['macro'][f'html_enum_definition_end']({}) + '\n'
+            out += self.spec['macro'][f'browser1_enum_definition_end']({}) + '\n'
 
         return out
     
-    def macro_html_example_fields(self, fields:dict, indent='\t\t\t') -> str:
+    def macro_browser1_example_fields(self, fields:dict, indent='\t\t\t') -> str:
 
         def convert_val(value, field_type):
             if field_type in ['bool', 'int', 'float']:

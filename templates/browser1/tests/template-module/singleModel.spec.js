@@ -14,7 +14,7 @@ test('test - template module - single model - pagination', async ({ page }) => {
   await page.getByRole('link', { name: 'single model' }).click();
   await expect(page.getByRole('heading')).toContainText('single model');
 
-  // vars :: {"['id', 'single_bool', 'single_int', 'single_float', 'single_string', 'single_enum', 'single_datetime']": "macro.html_field_list(model.fields)"}
+  // vars :: {"['id', 'single_bool', 'single_int', 'single_float', 'single_string', 'single_enum', 'single_datetime']": "macro.browser1_field_list(model.fields)"}
   const fields = ['id', 'single_bool', 'single_int', 'single_float', 'single_string', 'single_enum', 'single_datetime'];
   for (const field of fields) {
     await expect(page.locator('th', {hasText: field}).first()).toBeVisible();
@@ -35,34 +35,34 @@ test('test - template module - single model - instance', async ({ page }) => {
     await page.goto('http://localhost:5005/template-module/single-model');
     await page.getByRole('button', { name: 'create' }).click();
     
-    // insert :: macro.html_unittest_form(model.fields)
-    // macro :: html_unittest_form_bool :: {"single_bool": "field", "__ignored__": "value"}
+    // insert :: macro.browser1_unittest_form(model.fields)
+    // macro :: browser1_unittest_form_bool :: {"single_bool": "field", "__ignored__": "value"}
     // single_bool
     await page.locator('input[name="single_bool"]').check();
     textToContain.push('yes');
 
-    // macro :: html_unittest_form_int :: {"single_int": "field", "55": "value"}
+    // macro :: browser1_unittest_form_int :: {"single_int": "field", "55": "value"}
     // single_int
     await page.locator('input[name="single_int"]').fill('55');
     textToContain.push('55');
 
-    // macro :: html_unittest_form_float :: {"single_float": "field", "3.33": "value"}
+    // macro :: browser1_unittest_form_float :: {"single_float": "field", "3.33": "value"}
     // single_float
     await page.locator('input[name="single_float"]').fill('3.33');
     textToContain.push('3.33');
 
-    // macro :: html_unittest_form_str :: {"single_string": "field", "this is a unittest": "value"}
+    // macro :: browser1_unittest_form_str :: {"single_string": "field", "this is a unittest": "value"}
     // single_string
     await page.locator('input[name="single_string"]').click();
     await page.locator('input[name="single_string"]').fill('this is a unittest');
     textToContain.push('this is a unittest');
 
-    // macro :: html_unittest_form_str_enum :: {"single_enum": "field", "red": "value"}
+    // macro :: browser1_unittest_form_str_enum :: {"single_enum": "field", "red": "value"}
     // single_enum
     await page.locator('select[name="single_enum"]').selectOption('red');
     textToContain.push('red');
 
-    // macro :: html_unittest_form_datetime :: {"single_datetime": "field", "2020-03-02T05:15": "value"}
+    // macro :: browser1_unittest_form_datetime :: {"single_datetime": "field", "2020-03-02T05:15": "value"}
     // single_datetime
     await page.locator('input[name="single_datetime"]').click();
     await page.locator('input[name="single_datetime"]').fill('2020-03-02T05:15');

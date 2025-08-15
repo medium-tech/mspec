@@ -58,17 +58,17 @@ const multi_enum_options = [
 
 function initMultiModel(data) {
     let result = {
-        // macro :: html_init_list_bool :: {"multi_bool": "field"}
+        // macro :: browser1_init_list_bool :: {"multi_bool": "field"}
         multi_bool: data.multi_bool,
-        // macro :: html_init_list_int :: {"multi_int": "field"}
+        // macro :: browser1_init_list_int :: {"multi_int": "field"}
         multi_int: data.multi_int,
-        // macro :: html_init_list_float :: {"multi_float": "field"}
+        // macro :: browser1_init_list_float :: {"multi_float": "field"}
         multi_float: data.multi_float,
-        // macro :: html_init_list_str :: {"multi_string": "field"}
+        // macro :: browser1_init_list_str :: {"multi_string": "field"}
         multi_string: data.multi_string,
-        // macro :: html_init_list_str_enum :: {"multi_enum": "field"}
+        // macro :: browser1_init_list_str_enum :: {"multi_enum": "field"}
         multi_enum: data.multi_enum,
-        // macro :: html_init_list_datetime :: {"multi_datetime": "field"}
+        // macro :: browser1_init_list_datetime :: {"multi_datetime": "field"}
         multi_datetime: data.multi_datetime.map(d => new Date(d))
         // end macro ::
     }
@@ -93,17 +93,17 @@ function exampleMultiModel() {
 
 function randomMultiModel() {
     return {
-        // macro :: html_random_list_bool :: {"multi_bool": "field"}
+        // macro :: browser1_random_list_bool :: {"multi_bool": "field"}
 		'multi_bool': randomList(randomBool),
-        // macro :: html_random_list_int :: {"multi_int": "field"}
+        // macro :: browser1_random_list_int :: {"multi_int": "field"}
 		'multi_int': randomList(randomInt),
-        // macro :: html_random_list_float :: {"multi_float": "field"}
+        // macro :: browser1_random_list_float :: {"multi_float": "field"}
 		'multi_float': randomList(randomFloat),
-        // macro :: html_random_list_str :: {"multi_string": "field"}
+        // macro :: browser1_random_list_str :: {"multi_string": "field"}
 		'multi_string': randomList(randomStr),
-        // macro :: html_random_list_str_enum :: {"multi_enum": "field"}
+        // macro :: browser1_random_list_str_enum :: {"multi_enum": "field"}
         'multi_enum': randomList(() => randomStrEnum(multi_enum_options)),
-        // macro :: html_random_list_datetime :: {"multi_datetime": "field"}
+        // macro :: browser1_random_list_datetime :: {"multi_datetime": "field"}
         'multi_datetime': randomList(randomDatetime),
         // end macro ::
     }
@@ -116,7 +116,7 @@ function verifyMultiModel(data) {
         errors: {}
     }
 
-    // macro :: html_verify_list_bool :: {"multi_bool": "field"}
+    // macro :: browser1_verify_list_bool :: {"multi_bool": "field"}
     if (!Array.isArray(data.multi_bool)) {
         result.error.multi_bool = 'multi_bool must be an array';
         result.valid = false;
@@ -125,7 +125,7 @@ function verifyMultiModel(data) {
         result.valid = false;
     }
 
-    // macro :: html_verify_list_int :: {"multi_int": "field"}
+    // macro :: browser1_verify_list_int :: {"multi_int": "field"}
     if (!Array.isArray(data.multi_int)) {
         result.error.multi_int = 'multi_int must be an array';
         result.valid = false;
@@ -134,7 +134,7 @@ function verifyMultiModel(data) {
         result.valid = false;
     }
 
-    // macro :: html_verify_list_float :: {"multi_float": "field"}
+    // macro :: browser1_verify_list_float :: {"multi_float": "field"}
     if (!Array.isArray(data.multi_float)) {
         result.error.multi_float = 'multi_float must be an array';
         result.valid = false;
@@ -143,7 +143,7 @@ function verifyMultiModel(data) {
         result.valid = false;
     }
 
-    // macro :: html_verify_list_str :: {"multi_string": "field"}
+    // macro :: browser1_verify_list_str :: {"multi_string": "field"}
     if (!Array.isArray(data.multi_string)) {
         result.error.multi_string = 'multi_string must be an array';
         result.valid = false;
@@ -152,7 +152,7 @@ function verifyMultiModel(data) {
         result.valid = false;
     }
 
-    // macro :: html_verify_list_str_enum :: {"multi_enum": "field"}
+    // macro :: browser1_verify_list_str_enum :: {"multi_enum": "field"}
     if (!Array.isArray(data.multi_enum)) {
         result.error.multi_enum = 'multi_enum must be an array';
         result.valid = false;
@@ -162,7 +162,7 @@ function verifyMultiModel(data) {
         result.valid = false;
     }
 
-    // macro :: html_verify_list_datetime :: {"multi_datetime": "field"}
+    // macro :: browser1_verify_list_datetime :: {"multi_datetime": "field"}
     if(!Array.isArray(data.multi_datetime)) {
         result.error.multi_datetime = 'multi_datetime must be an array';
         result.valid = false;
@@ -187,28 +187,28 @@ function multiModelFromInputTBody(tbody) {
         data.id = idInput.value;
     }
 
-    // macro :: html_from_input_tbody_list_bool :: {"multi_bool": "field"}
+    // macro :: browser1_from_input_tbody_list_bool :: {"multi_bool": "field"}
     const multi_boolInput = tbody.querySelector('input[name="multi_bool"]');
     data.multi_bool = JSON.parse(multi_boolInput.getAttribute('valueAsJSON'));
 
-    // macro :: html_from_input_tbody_list_int :: {"multi_int": "field"}
+    // macro :: browser1_from_input_tbody_list_int :: {"multi_int": "field"}
     const multi_intInput = tbody.querySelector('input[name="multi_int"]');
     data.multi_int = JSON.parse(multi_intInput.getAttribute('valueAsJSON'));
 
-    // macro :: html_from_input_tbody_list_float :: {"multi_float": "field"}
+    // macro :: browser1_from_input_tbody_list_float :: {"multi_float": "field"}
     const multi_floatInput = tbody.querySelector('input[name="multi_float"]');
     data.multi_float = JSON.parse(multi_floatInput.getAttribute('valueAsJSON'));
 
-    // macro :: html_from_input_tbody_list_str :: {"multi_string": "field"}
+    // macro :: browser1_from_input_tbody_list_str :: {"multi_string": "field"}
     const multi_stringInput = tbody.querySelector('input[name="multi_string"]');
     data.multi_string = JSON.parse(multi_stringInput.getAttribute('valueAsJSON'));
 
-    // macro :: html_from_input_tbody_list_str_enum :: {"multi_enum": "field"}
+    // macro :: browser1_from_input_tbody_list_str_enum :: {"multi_enum": "field"}
     const multi_enumInput = tbody.querySelector('select[name="multi_enum"]');
     console.log('multi_enumInput', multi_enumInput);
     data.multi_enum = JSON.parse(multi_enumInput.getAttribute('valueAsJSON'));
 
-    // macro :: html_from_input_tbody_list_datetime :: {"multi_datetime": "field"}
+    // macro :: browser1_from_input_tbody_list_datetime :: {"multi_datetime": "field"}
     const multi_datetimeInput = tbody.querySelector('input[name="multi_datetime"]');
     console.log('multi_datetimeInput', multi_datetimeInput);
     const multie_datetimeItems = JSON.parse(multi_datetimeInput.getAttribute('valueAsJSON'));
@@ -246,7 +246,7 @@ function multiModelToInputTBody(data, tbody) {
         tbody.appendChild(idTr);
     }
 
-    // macro :: html_to_input_tbody_list_bool :: {"multi_bool": "field"}
+    // macro :: browser1_to_input_tbody_list_bool :: {"multi_bool": "field"}
     //
     // multi_bool - list of bool
     //
@@ -316,7 +316,7 @@ function multiModelToInputTBody(data, tbody) {
 
     tbody.appendChild(multi_boolTr);
 
-    // macro :: html_to_input_tbody_list_int :: {"multi_int": "field"}
+    // macro :: browser1_to_input_tbody_list_int :: {"multi_int": "field"}
     //
     // multi_int - list of int
     //
@@ -387,7 +387,7 @@ function multiModelToInputTBody(data, tbody) {
     tbody.appendChild(multi_intTr);
 
 
-    // macro :: html_to_input_tbody_list_float :: {"multi_float": "field"}
+    // macro :: browser1_to_input_tbody_list_float :: {"multi_float": "field"}
     //
     // multi_float - list of float
     //
@@ -458,7 +458,7 @@ function multiModelToInputTBody(data, tbody) {
     tbody.appendChild(multi_floatTr);
 
 
-    // macro :: html_to_input_tbody_list_str :: {"multi_string": "field"}
+    // macro :: browser1_to_input_tbody_list_str :: {"multi_string": "field"}
     //
     // multi_string - list of str
     //
@@ -528,7 +528,7 @@ function multiModelToInputTBody(data, tbody) {
 
     tbody.appendChild(multi_stringTr);
 
-    // macro :: html_to_input_tbody_list_str_enum :: {"multi_enum": "field"}
+    // macro :: browser1_to_input_tbody_list_str_enum :: {"multi_enum": "field"}
     //
     // multi_enum - list of enum
     //
@@ -605,7 +605,7 @@ function multiModelToInputTBody(data, tbody) {
 
     tbody.appendChild(multi_enumTr);
 
-    // macro :: html_to_input_tbody_list_datetime :: {"multi_datetime": "field"}
+    // macro :: browser1_to_input_tbody_list_datetime :: {"multi_datetime": "field"}
     //
     // multi_datetime - list of datetime
     //
@@ -705,7 +705,7 @@ function multiModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(idTr);
 
-    // macro :: html_to_display_tbody_list_bool :: {"multi_bool": "field"}
+    // macro :: browser1_to_display_tbody_list_bool :: {"multi_bool": "field"}
     //
     // multi_bool - list of bool
     //
@@ -722,7 +722,7 @@ function multiModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(multi_boolTr);
 
-    // macro :: html_to_display_tbody_list_int :: {"multi_int": "field"}
+    // macro :: browser1_to_display_tbody_list_int :: {"multi_int": "field"}
     //
     // multi_int - list of int
     //
@@ -739,7 +739,7 @@ function multiModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(multi_intTr);
 
-    // macro :: html_to_display_tbody_list_float :: {"multi_float": "field"}
+    // macro :: browser1_to_display_tbody_list_float :: {"multi_float": "field"}
     //
     // multi_float - list of float
     //
@@ -756,7 +756,7 @@ function multiModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(multi_floatTr);
 
-    // macro :: html_to_display_tbody_list_str :: {"multi_string": "field"}
+    // macro :: browser1_to_display_tbody_list_str :: {"multi_string": "field"}
     //
     // multi_string - list of str
     //
@@ -773,7 +773,7 @@ function multiModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(multi_stringTr);
 
-    // macro :: html_to_display_tbody_list_str_enum :: {"multi_enum": "field"}
+    // macro :: browser1_to_display_tbody_list_str_enum :: {"multi_enum": "field"}
     //
     // multi_enum - list of enum
     //
@@ -790,7 +790,7 @@ function multiModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(multi_enumTr);
 
-    // macro :: html_to_display_tbody_list_datetime :: {"multi_datetime": "field"}
+    // macro :: browser1_to_display_tbody_list_datetime :: {"multi_datetime": "field"}
     //
     // multi_datetime - list of datetime
     //
@@ -823,7 +823,7 @@ function multiModelToTableRow(data) {
     idTd.textContent = data.id;
     tr.appendChild(idTd);
 
-    // macro :: html_to_table_row_list_bool :: {"multi_bool": "field"}
+    // macro :: browser1_to_table_row_list_bool :: {"multi_bool": "field"}
     //
     // multi_bool - list of bool
     //
@@ -832,7 +832,7 @@ function multiModelToTableRow(data) {
     multi_boolTd.textContent = data.multi_bool.join(', ');
     tr.appendChild(multi_boolTd);
 
-    // macro :: html_to_table_row_list_int :: {"multi_int": "field"}
+    // macro :: browser1_to_table_row_list_int :: {"multi_int": "field"}
     //
     // multi_int - list of int
     //
@@ -841,7 +841,7 @@ function multiModelToTableRow(data) {
     multi_intTd.textContent = data.multi_int.join(', ');
     tr.appendChild(multi_intTd);
 
-    // macro :: html_to_table_row_list_float :: {"multi_float": "field"}
+    // macro :: browser1_to_table_row_list_float :: {"multi_float": "field"}
     //
     // multi_float - list of float
     //
@@ -850,7 +850,7 @@ function multiModelToTableRow(data) {
     multi_floatTd.textContent = data.multi_float.join(', ');
     tr.appendChild(multi_floatTd);
 
-    // macro :: html_to_table_row_list_str :: {"multi_string": "field"}
+    // macro :: browser1_to_table_row_list_str :: {"multi_string": "field"}
     //
     // multi_string - list of str
     //
@@ -859,7 +859,7 @@ function multiModelToTableRow(data) {
     multi_stringTd.textContent = data.multi_string.join(', ');
     tr.appendChild(multi_stringTd);
 
-    // macro :: html_to_table_row_list_str_enum :: {"multi_enum": "field"}
+    // macro :: browser1_to_table_row_list_str_enum :: {"multi_enum": "field"}
     //
     // multi_enum - list of enum
     //
@@ -868,7 +868,7 @@ function multiModelToTableRow(data) {
     multi_enumTd.textContent = data.multi_enum.join(', ');
     tr.appendChild(multi_enumTd);
 
-    // macro :: html_to_table_row_list_datetime :: {"multi_datetime": "field"}
+    // macro :: browser1_to_table_row_list_datetime :: {"multi_datetime": "field"}
     //
     // multi_datetime - list of datetime
     //

@@ -48,17 +48,17 @@ function convertListElementDatetime(input) {
 // defs
 //
 
-// insert :: macro.html_enum_definitions(model.fields)
-// macro :: html_enum_definition_begin :: {"single_enum": "field_name"}
+// insert :: macro.browser1_enum_definitions(model.fields)
+// macro :: browser1_enum_definition_begin :: {"single_enum": "field_name"}
 const single_enum_options = [
-// macro :: html_enum_definition_option :: {"red": "option"}
+// macro :: browser1_enum_definition_option :: {"red": "option"}
     'red', 
 // end macro ::
 // ignore ::
     'green', 
     'blue',
 // end ignore ::
-// macro :: html_enum_definition_end :: {}
+// macro :: browser1_enum_definition_end :: {}
 ]
 // end macro ::
 
@@ -68,18 +68,18 @@ const single_enum_options = [
 
 function initSingleModel(data) {
     let result = {
-        // insert :: macro.html_init_fields(model.fields)
-        // macro :: html_init_bool :: {"single_bool": "field"}
+        // insert :: macro.browser1_init_fields(model.fields)
+        // macro :: browser1_init_bool :: {"single_bool": "field"}
         single_bool: data.single_bool,
-        // macro :: html_init_int :: {"single_int": "field"}
+        // macro :: browser1_init_int :: {"single_int": "field"}
         single_int: data.single_int,
-        // macro :: html_init_float :: {"single_float": "field"}
+        // macro :: browser1_init_float :: {"single_float": "field"}
         single_float: data.single_float,
-        // macro :: html_init_str :: {"single_string": "field"}
+        // macro :: browser1_init_str :: {"single_string": "field"}
         single_string: data.single_string,
-        // macro :: html_init_str_enum :: {"single_enum": "field"}
+        // macro :: browser1_init_str_enum :: {"single_enum": "field"}
         single_enum: data.single_enum,
-        // macro :: html_init_datetime :: {"single_datetime": "field"}
+        // macro :: browser1_init_datetime :: {"single_datetime": "field"}
         single_datetime: new Date(data.single_datetime),
         // end macro ::
     }
@@ -92,7 +92,7 @@ function initSingleModel(data) {
 
 function exampleSingleModel() {
     const data = {
-        // replace :: macro.html_example_fields(model.fields)
+        // replace :: macro.browser1_example_fields(model.fields)
         single_bool: true,
         single_int: 1,
         single_float: 1.1,
@@ -106,18 +106,18 @@ function exampleSingleModel() {
 
 function randomSingleModel() {
     return {
-        // insert :: macro.html_random_fields(model.fields)
-        // macro :: html_random_bool :: {"single_bool": "field"}
+        // insert :: macro.browser1_random_fields(model.fields)
+        // macro :: browser1_random_bool :: {"single_bool": "field"}
 		'single_bool': randomBool(),
-        // macro :: html_random_int :: {"single_int": "field"}
+        // macro :: browser1_random_int :: {"single_int": "field"}
 		'single_int': randomInt(),
-        // macro :: html_random_float :: {"single_float": "field"}
+        // macro :: browser1_random_float :: {"single_float": "field"}
 		'single_float': randomFloat(),
-        // macro :: html_random_str :: {"single_string": "field"}
+        // macro :: browser1_random_str :: {"single_string": "field"}
 		'single_string': randomStr(),
-        // macro :: html_random_str_enum :: {"single_enum": "field"}
+        // macro :: browser1_random_str_enum :: {"single_enum": "field"}
 		'single_enum': randomStrEnum(single_enum_options),
-        // macro :: html_random_datetime :: {"single_datetime": "field"}
+        // macro :: browser1_random_datetime :: {"single_datetime": "field"}
 		'single_datetime': randomDatetime(),
         // end macro ::
     }
@@ -130,32 +130,32 @@ function verifySingleModel(data) {
         errors: {}
     }
 
-    // insert :: macro.html_verify_fields(model.fields)
-    // macro :: html_verify_bool :: {"single_bool": "field"}
+    // insert :: macro.browser1_verify_fields(model.fields)
+    // macro :: browser1_verify_bool :: {"single_bool": "field"}
     if (typeof data.single_bool !== 'boolean') {
         result.error.single_bool = 'single_bool must be a boolean';
         result.valid = false;
     }
 
-    // macro :: html_verify_int :: {"single_int": "field"}
+    // macro :: browser1_verify_int :: {"single_int": "field"}
     if (!Number.isInteger(data.single_int)) {
         result.error.single_int = 'single_int must be an integer';
         result.valid = false;
     }
 
-    // macro :: html_verify_float :: {"single_float": "field"}
+    // macro :: browser1_verify_float :: {"single_float": "field"}
     if (typeof data.single_float !== 'number') {
         result.error.single_float = 'single_float must be a float';
         result.valid = false;
     }
 
-    // macro :: html_verify_str :: {"single_string": "field"}
+    // macro :: browser1_verify_str :: {"single_string": "field"}
     if (typeof data.single_string !== 'string') {
         result.error.single_string = 'single_string must be a string';
         result.valid = false;
     }
 
-    // macro :: html_verify_str_enum :: {"single_enum": "field"}
+    // macro :: browser1_verify_str_enum :: {"single_enum": "field"}
     if (typeof data.single_enum !== 'string') {
         result.error.single_enum = 'single_enum must be a string';
         result.valid = false;
@@ -164,7 +164,7 @@ function verifySingleModel(data) {
         result.valid = false;
     }
 
-    // macro :: html_verify_datetime :: {"single_datetime": "field"}
+    // macro :: browser1_verify_datetime :: {"single_datetime": "field"}
     if (Object.prototype.toString.call(data.single_datetime) !== '[object Date]') {
         result.error.single_datetime = 'single_datetime must be a datetime';
         result.valid = false;
@@ -186,28 +186,28 @@ function singleModelFromInputTBody(tbody) {
         data.id = idInput.value;
     }
 
-    // insert :: macro.html_from_input_tbody_fields(model.fields)
-    // macro :: html_from_input_tbody_bool :: {"single_bool": "field"}
+    // insert :: macro.browser1_from_input_tbody_fields(model.fields)
+    // macro :: browser1_from_input_tbody_bool :: {"single_bool": "field"}
     const single_boolInput = tbody.querySelector('input[name="single_bool"]');
     data.single_bool = single_boolInput.checked;
 
-    // macro :: html_from_input_tbody_int :: {"single_int": "field"}
+    // macro :: browser1_from_input_tbody_int :: {"single_int": "field"}
     const single_intInput = tbody.querySelector('input[name="single_int"]');
     data.single_int = parseInt(single_intInput.value);
 
-    // macro :: html_from_input_tbody_float :: {"single_float": "field"}
+    // macro :: browser1_from_input_tbody_float :: {"single_float": "field"}
     const single_floatInput = tbody.querySelector('input[name="single_float"]');
     data.single_float = parseFloat(single_floatInput.value);
 
-    // macro :: html_from_input_tbody_str :: {"single_string": "field"}
+    // macro :: browser1_from_input_tbody_str :: {"single_string": "field"}
     const single_stringInput = tbody.querySelector('input[name="single_string"]');
     data.single_string = single_stringInput.value;
 
-    // macro :: html_from_input_tbody_str_enum :: {"single_enum": "field"}
+    // macro :: browser1_from_input_tbody_str_enum :: {"single_enum": "field"}
     const single_enumInput = tbody.querySelector('select[name="single_enum"]');
     data.single_enum = single_enumInput.value;
 
-    // macro :: html_from_input_tbody_datetime :: {"single_datetime": "field"}
+    // macro :: browser1_from_input_tbody_datetime :: {"single_datetime": "field"}
     const single_datetimeInput = tbody.querySelector('input[name="single_datetime"]');
     data.single_datetime = new Date(single_datetimeInput.value);
     // end macro ::
@@ -244,8 +244,8 @@ function singleModelToInputTBody(data, tbody) {
     }
 
 
-    // insert :: macro.html_to_input_tbody(model.fields)
-    // macro :: html_to_input_tbody_bool :: {"single_bool": "field"}
+    // insert :: macro.browser1_to_input_tbody(model.fields)
+    // macro :: browser1_to_input_tbody_bool :: {"single_bool": "field"}
     //
     // single_bool - bool
     //
@@ -270,7 +270,7 @@ function singleModelToInputTBody(data, tbody) {
 
     tbody.appendChild(single_boolTr);
 
-    // macro :: html_to_input_tbody_int :: {"single_int": "field"}
+    // macro :: browser1_to_input_tbody_int :: {"single_int": "field"}
     //
     // single_int - int
     //
@@ -296,7 +296,7 @@ function singleModelToInputTBody(data, tbody) {
 
     tbody.appendChild(single_intTr);
 
-    // macro :: html_to_input_tbody_float :: {"single_float": "field"}
+    // macro :: browser1_to_input_tbody_float :: {"single_float": "field"}
     //
     // single_float - float
     //
@@ -323,7 +323,7 @@ function singleModelToInputTBody(data, tbody) {
 
     tbody.appendChild(single_floatTr);
 
-    // macro :: html_to_input_tbody_str :: {"single_string": "field"}
+    // macro :: browser1_to_input_tbody_str :: {"single_string": "field"}
     //
     // single_string - str
     //
@@ -348,7 +348,7 @@ function singleModelToInputTBody(data, tbody) {
 
     tbody.appendChild(single_stringTr);
 
-    // macro :: html_to_input_tbody_str_enum :: {"single_enum": "field"}
+    // macro :: browser1_to_input_tbody_str_enum :: {"single_enum": "field"}
     //
     // single_enum - enum
     //
@@ -380,7 +380,7 @@ function singleModelToInputTBody(data, tbody) {
 
     tbody.appendChild(single_enumTr);
 
-    // macro :: html_to_input_tbody_datetime :: {"single_datetime": "field"}
+    // macro :: browser1_to_input_tbody_datetime :: {"single_datetime": "field"}
     //
     // single_datetime - datetime
     //
@@ -431,8 +431,8 @@ function singleModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(idTr);
 
-    // insert :: macro.html_to_display_tbody(model.fields)
-    // macro :: html_to_display_tbody_bool :: {"single_bool": "field"}
+    // insert :: macro.browser1_to_display_tbody(model.fields)
+    // macro :: browser1_to_display_tbody_bool :: {"single_bool": "field"}
     //
     // single_bool - bool
     //
@@ -449,7 +449,7 @@ function singleModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(single_boolTr);
 
-    // macro :: html_to_display_tbody_int :: {"single_int": "field"}
+    // macro :: browser1_to_display_tbody_int :: {"single_int": "field"}
     //
     // single_int - int
     //
@@ -466,7 +466,7 @@ function singleModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(single_intTr);
 
-    // macro :: html_to_display_tbody_float :: {"single_float": "field"}
+    // macro :: browser1_to_display_tbody_float :: {"single_float": "field"}
     //
     // single_float - float
     //
@@ -483,7 +483,7 @@ function singleModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(single_floatTr);
 
-    // macro :: html_to_display_tbody_str :: {"single_string": "field"}
+    // macro :: browser1_to_display_tbody_str :: {"single_string": "field"}
     //
     // single_string - str
     //
@@ -500,7 +500,7 @@ function singleModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(single_stringTr);
 
-    // macro :: html_to_display_tbody_str_enum :: {"single_enum": "field"}
+    // macro :: browser1_to_display_tbody_str_enum :: {"single_enum": "field"}
     //
     // single_enum - enum
     //
@@ -517,7 +517,7 @@ function singleModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(single_enumTr);
 
-    // macro :: html_to_display_tbody_datetime :: {"single_datetime": "field"}
+    // macro :: browser1_to_display_tbody_datetime :: {"single_datetime": "field"}
     //
     // single_datetime - datetime
     //
@@ -550,8 +550,8 @@ function singleModelToTableRow(data) {
     idTd.textContent = data.id;
     tr.appendChild(idTd);
 
-    // insert :: macro.html_to_table_row(model.fields)
-    // macro :: html_to_table_row_bool :: {"single_bool": "field"}
+    // insert :: macro.browser1_to_table_row(model.fields)
+    // macro :: browser1_to_table_row_bool :: {"single_bool": "field"}
     //
     // single_bool - bool
     //
@@ -560,7 +560,7 @@ function singleModelToTableRow(data) {
     single_boolTd.textContent = (data.single_bool) ? 'yes' : 'no';
     tr.appendChild(single_boolTd);
 
-    // macro :: html_to_table_row_int :: {"single_int": "field"}
+    // macro :: browser1_to_table_row_int :: {"single_int": "field"}
     // 
     // single_int - int
     //
@@ -569,7 +569,7 @@ function singleModelToTableRow(data) {
     single_intTd.textContent = data.single_int;
     tr.appendChild(single_intTd);
 
-    // macro :: html_to_table_row_float :: {"single_float": "field"}
+    // macro :: browser1_to_table_row_float :: {"single_float": "field"}
     //
     // single_float - float
     //
@@ -578,7 +578,7 @@ function singleModelToTableRow(data) {
     single_floatTd.textContent = data.single_float;
     tr.appendChild(single_floatTd);
 
-    // macro :: html_to_table_row_str :: {"single_string": "field"}
+    // macro :: browser1_to_table_row_str :: {"single_string": "field"}
     //
     // single_string - str
     //
@@ -587,7 +587,7 @@ function singleModelToTableRow(data) {
     single_stringTd.textContent = data.single_string;
     tr.appendChild(single_stringTd);
 
-    // macro :: html_to_table_row_str_enum :: {"single_enum": "field"}
+    // macro :: browser1_to_table_row_str_enum :: {"single_enum": "field"}
     //
     // single_enum - enum
     //
@@ -596,7 +596,7 @@ function singleModelToTableRow(data) {
     single_enumTd.textContent = data.single_enum;
     tr.appendChild(single_enumTd);
 
-    // macro :: html_to_table_row_datetime :: {"single_datetime": "field"}
+    // macro :: browser1_to_table_row_datetime :: {"single_datetime": "field"}
     //
     // single_datetime - datetime
     //

@@ -14,7 +14,7 @@ test('test - template module - multi model - pagination', async ({ page }) => {
   await page.getByRole('link', { name: 'multi model' }).click();
   await expect(page.getByRole('heading')).toContainText('multi model');
 
-  // vars :: {"['id', 'multi_bool', 'multi_int', 'multi_float', 'multi_string']": "macro.html_field_list(model.fields)"}
+  // vars :: {"['id', 'multi_bool', 'multi_int', 'multi_float', 'multi_string']": "macro.browser1_field_list(model.fields)"}
   const fields = ['id', 'multi_bool', 'multi_int', 'multi_float', 'multi_string'];
   for (const field of fields) {
     await expect(page.locator('th', {hasText: field}).first()).toBeVisible();
@@ -35,7 +35,7 @@ test('test - template module - multi model - instance', async ({ page }) => {
     await page.goto('http://localhost:5005/template-module/multi-model');
     await page.getByRole('button', { name: 'create' }).click();
 
-    // macro :: html_unittest_form_list_bool :: {"multi_bool": "field", "true": "list_element_1", "false": "list_element_2"}
+    // macro :: browser1_unittest_form_list_bool :: {"multi_bool": "field", "true": "list_element_1", "false": "list_element_2"}
     // multi_bool
     await page.locator('input[name="multi_bool"]').click();
     await page.locator('input[name="multi_bool"]').fill('true');
@@ -44,7 +44,7 @@ test('test - template module - multi model - instance', async ({ page }) => {
     await page.locator('input[name="multi_bool"]').press('Enter');
     textToContain.push('true, false');
 
-    // macro :: html_unittest_form_list_int :: {"multi_int": "field", "1": "list_element_1", "2": "list_element_2"}
+    // macro :: browser1_unittest_form_list_int :: {"multi_int": "field", "1": "list_element_1", "2": "list_element_2"}
     // multi_int
     await page.locator('input[name="multi_int"]').click();
     await page.locator('input[name="multi_int"]').fill('1');
@@ -53,7 +53,7 @@ test('test - template module - multi model - instance', async ({ page }) => {
     await page.locator('input[name="multi_int"]').press('Enter');
     textToContain.push('1, 2');
 
-    // macro :: html_unittest_form_list_float :: {"multi_float": "field", "1.4": "list_element_1", "2.34578": "list_element_2"}
+    // macro :: browser1_unittest_form_list_float :: {"multi_float": "field", "1.4": "list_element_1", "2.34578": "list_element_2"}
     // multi_float
     await page.locator('input[name="multi_float"]').click();
     await page.locator('input[name="multi_float"]').fill('1.4');
@@ -62,7 +62,7 @@ test('test - template module - multi model - instance', async ({ page }) => {
     await page.locator('input[name="multi_float"]').press('Enter');
     textToContain.push('1.4, 2.34578');
 
-    // macro :: html_unittest_form_list_str :: {"multi_string": "field", "one": "list_element_1", "two": "list_element_2"}
+    // macro :: browser1_unittest_form_list_str :: {"multi_string": "field", "one": "list_element_1", "two": "list_element_2"}
     // multi_string
     await page.locator('input[name="multi_string"]').click();
     await page.locator('input[name="multi_string"]').fill('one');
@@ -71,13 +71,13 @@ test('test - template module - multi model - instance', async ({ page }) => {
     await page.locator('input[name="multi_string"]').press('Enter');
     textToContain.push('one, two');
 
-    // macro :: html_unittest_form_list_str_enum :: {"multi_enum": "field", "zebra": "list_element_1", "giraffe": "list_element_2"}
+    // macro :: browser1_unittest_form_list_str_enum :: {"multi_enum": "field", "zebra": "list_element_1", "giraffe": "list_element_2"}
     // multi_enum
     await page.locator('select[name="multi_enum"]').selectOption('zebra');
     await page.locator('select[name="multi_enum"]').selectOption('giraffe');
     textToContain.push('zebra, giraffe');
 
-    // macro :: html_unittest_form_list_datetime :: {"multi_datetime": "field", "2020-03-02T05:15": "list_element_1", "2022-11-22T12:45": "list_element_2"}
+    // macro :: browser1_unittest_form_list_datetime :: {"multi_datetime": "field", "2020-03-02T05:15": "list_element_1", "2022-11-22T12:45": "list_element_2"}
     // multi_datetime
     await page.locator('input[name="multi_datetime"]').click();
     await page.locator('input[name="multi_datetime"]').fill('2020-03-02T05:15');

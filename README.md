@@ -154,7 +154,7 @@ The template extraction syntax is embedded into code comments to allow the templ
 Create a file `.env` file with the following variables:
 
     MSTACK_AUTH_SECRET_KEY=my_auth_key
-    UWSGI_STATIC_SAFE=/path/to/mspec/templates/html/srv
+    UWSGI_STATIC_SAFE=/path/to/mspec/templates/browser1/srv
 
 `MSTACK_AUTH_SECRET_KEY` - an auth key can be generated using a command like: `openssl rand -hex 32`
 
@@ -166,7 +166,7 @@ Then run the following command to start the web server:
 
 It uses `uwsgi` as the server, the main entry point for the web server is `./src/core/server.py`, and its config file is `./dev.yaml`.
 
-The api and frontend are served from the same server, you can access them at `http://localhost:9009`.
+The api and frontend are served from the same server, you can access them at `http://localhost:5005`.
 
 To run unittests for the python backend, ensure the backend is running and then:
 
@@ -174,9 +174,9 @@ To run unittests for the python backend, ensure the backend is running and then:
 
 ### html / js frontend
 
-The frontend files are served staticly from `templates/html/srv` and can be accessed at `http://localhost:9009`. No dependencies are needed for running the frontend however `playwright` is used for testing.
+The frontend files are served staticly from `templates/browser1/srv` and can be accessed at `http://localhost:5005`. No dependencies are needed for running the frontend however `playwright` is used for testing.
 
-To run frontend tests, ensure the backend is running and then from the `templates/html` directory:
+To run frontend tests, ensure the backend is running and then from the `templates/browser1` directory:
 
     npm install
     npm run test
@@ -210,9 +210,9 @@ By default this will use the spec file `./spec/test-gen.yaml` and output the fil
 Or render just the python or frontend like this:
 
     python -m mtemplate render-py
-    python -m mtemplate render-html
+    python -m mtemplate render-browser1
 
-If you customize the output path of the html files, they will need to be output to the same directory as the python app in order for the server to find them.
+If you customize the output path of the browser1 files, they will need to be output to the same directory as the python app in order for the server to find them.
 
 With either mtemplate command you can also supply `--debug` and it will output the jinja template files for inspection and it will also not delete the existing output directory before generating files.
 
@@ -222,7 +222,7 @@ Or for help:
 
 ## run and test generated apps
 
-After following the above steps to render the python and html files you can run the apps as follows. You need to be in the output directory that contains the `html` and `py` directories which using the default spec and output is `dist/test-gen`
+After following the above steps to render the python and browser1 files you can run the apps as follows. You need to be in the output directory that contains the `browser1` and `py` directories which using the default spec and output is `dist/test-gen`
 
     cd dist/test-gen
     python3 -m venv .venv --upgrade-deps
@@ -234,7 +234,7 @@ Then to run the python server:
     cd py
     ./server.sh
 
-The server is now available at `http://localhost:7007` for the api and frontend. If you followed the above steps for running the [python template app](#run-the-python-server) the `.env` file you created will be copied over for you. If not, the app will not run. Follow the above instructions and create the `.env` file manually in this directory.
+The server is now available at `http://localhost:6006` for the api and frontend *(the port number is configured in the spec file, it may not always be 6006)*. If you followed the above steps for running the [python template app](#run-the-python-server) the `.env` file you created will be copied over for you. If not, the app will not run. Follow the above instructions and create the `.env` file manually in this directory.
 
 Once the server is running you can run the python tests:
 
@@ -242,7 +242,7 @@ Once the server is running you can run the python tests:
 
 As with the template apps, 0 dependencies are required to deploy the app, however npm and playwright can be used to run tests:
 
-    cd ../html
+    cd ../browser1
     npm install
     npm run test
 
@@ -273,7 +273,7 @@ You can open any spec json file with this:
 
 ## template apps
 * python - backend and frontend are in `./templates/py`
-* legacy browser frontend is in `./templates/html`
+* legacy browser frontend is in `./templates/browser1`
 
 See [TODO.md](./TODO.md) for desired template app languages/features and current progress.
 
