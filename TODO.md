@@ -4,7 +4,7 @@
 
 * [main prototype](#main-template-prototype)
 * [python template app](#python-template-app)
-* [legacy browser template app](#legacy-browser-template-app-html)
+* [browser1 template app](#browser-1-template-app)
 * [go template app](#go-template-app)
 * [c template app](#c-template-app)
 * [haskell template app](#haskell-template-app)
@@ -17,7 +17,7 @@
 |🔴|🟡|🟢|
 
 ## main template prototype
-The main prototype are the python + html browser template apps.
+The main prototype are the python + browser 1 browser template apps.
 
 ### phase 1
 * 🔴 finish legacy browser todo list
@@ -121,9 +121,9 @@ The main prototype are the python + html browser template apps.
     * 🔴 tests
     * 🔴 make network requests async
 
-## legacy browser template app (html)
+## browser 1 template app
 * 🟢 html/js
-    * 🟢 index (`templates/html/srv/index.html`)
+    * 🟢 index (`templates/browser 1/srv/index.html`)
         * 🟢 list modules
         * 🔴 create user
             * 🔴 login
@@ -134,17 +134,17 @@ The main prototype are the python + html browser template apps.
         * 🔴 profiles
             * 🔴 list profiles
             * 🔴 view profile
-    * 🟢 module index (`templates/html/srv/test-module/index.html`)
+    * 🟢 module index (`templates/browser 1/srv/test-module/index.html`)
     * 🟢 model
-        * 🟢 list (`templates/html/srv/test-module/test-model/index.html`)
-        * 🟢 create (`templates/html/srv/test-module/test-model/index.html`)
+        * 🟢 list (`templates/browser 1/srv/test-module/test-model/index.html`)
+        * 🟢 create (`templates/browser 1/srv/test-module/test-model/index.html`)
         * 🟢 instance
-            * 🟢 instance (`templates/html/srv/test-module/test-model/instance.html`)
+            * 🟢 instance (`templates/browser 1/srv/test-module/test-model/instance.html`)
                 * 🟢 read
                 * 🟢 update
                 * 🟢 delete
     * 🟢 template extraction 
-    * 🟢 unittests (`templates/html/tests/test-module/testModel.spec.js`)
+    * 🟢 unittests (`templates/browser 1/tests/test-module/testModel.spec.js`)
 
 ## go template app
 * 🔴 sql/sqllite3 client
@@ -360,7 +360,7 @@ The main prototype are the python + html browser template apps.
         * 🔴 update
         * 🔴 delete
         * 🔴 list
-* 🔴 html
+* 🔴 browser 1
     * 🔴 render hello-world-page.json
     * 🔴 render example spec
     * 🔴 model widgets
