@@ -79,6 +79,9 @@ class SingleModelIndexPage(tkinter.Frame):
 
         for widget in self.table.winfo_children():
             widget.destroy()
+        
+        self.update()
+        self.update_idletasks()
 
         # headers
         for n, field_name in enumerate(['', 'id'] + field_list):  # empty str for button column
@@ -103,7 +106,7 @@ class SingleModelIndexPage(tkinter.Frame):
             try:
                 single_model = single_models[n]
             except IndexError:
-                single_model = {}
+                break
 
             single_model_id = getattr(single_model, 'id', '-')
 

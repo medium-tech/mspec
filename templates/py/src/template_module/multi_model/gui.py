@@ -77,6 +77,9 @@ class MultiModelIndexPage(tkinter.Frame):
         for widget in self.table.winfo_children():
             widget.destroy()
 
+        self.update()
+        self.update_idletasks()
+
         # headers
         for n, field_name in enumerate(['', 'id'] + field_list):  # empty str for button column
             header = ttk.Label(self.table, text=field_name)
@@ -100,7 +103,7 @@ class MultiModelIndexPage(tkinter.Frame):
             try:
                 multi_model = multi_models[n]
             except IndexError:
-                multi_model = {}
+                break
 
             multi_model_id = getattr(multi_model, 'id', '-')
 

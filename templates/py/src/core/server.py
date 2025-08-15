@@ -1,6 +1,6 @@
-import json
 import re
 import os
+import time
 
 from traceback import format_exc
 from urllib.parse import parse_qs
@@ -9,7 +9,7 @@ from core.auth import create_new_user, login_user, _get_user_from_token
 from core.types import to_json
 from core.models import *
 from core.db import *
-from core.exceptions import RequestError, JSONResponse, NotFoundError, AuthenticationError, ForbiddenError
+from core.exceptions import RequestError, JSONResponse, PlainTextResponse, NotFoundError, AuthenticationError, ForbiddenError
 # for :: {% for item in all_models %} :: {"template_module": "item.module.name.snake_case", "single_model": "item.model.name.snake_case"}
 from template_module.single_model.server import single_model_routes
 # end for ::
@@ -24,6 +24,17 @@ from uwsgidecorators import postfork
 #
 # routes
 #
+
+def debug_routes(ctx:dict, env:dict, raw_req_body:bytes):
+    output = ''
+    keys = sorted(env.keys())
+    longest_key_len = max(len(key) for key in keys)
+    for key in keys:
+        output += f'{key:<{longest_key_len}}: {env[key]}\n'
+
+    debug_delay = os.environ.get('DEBUG_DELAY', None)
+    output += f'\nDEBUG_DELAY: {debug_delay}\n'
+    raise PlainTextResponse('200 OK', output)
 
 def auth_routes(ctx:dict, env:dict, raw_req_body:bytes):
     if re.match(r'/api/auth/login', env['PATH_INFO']):
@@ -193,6 +204,7 @@ route_list = [
     # end for ::
     # ignore ::
     multi_model_routes,
+    debug_routes
     # end ignore ::
 ]
 
@@ -225,6 +237,12 @@ def application(env, start_response):
 
     env['get_user'] = lambda: get_user(env)
 
+    try:
+        debug_delay = float(os.environ['DEBUG_DELAY'])
+        time.sleep(debug_delay)
+    except KeyError:
+        pass
+
     for route in route_list:
         try:
             route(server_ctx, env, req_body)
@@ -232,33 +250,48 @@ def application(env, start_response):
         except AuthenticationError as e:
             body = {'error': 'Unauthorized'}
             status_code = '401 Unauthorized'
+            content_type = JSONResponse.content_type
             break
 
         except ForbiddenError as e:
             body = {'error': 'Forbidden'}
             status_code = '403 Forbidden'
+            content_type = JSONResponse.content_type
             break
 
         except RequestError as e:
             body = {'error': e.msg}
             status_code = e.status
+            content_type = JSONResponse.content_type 
+            break
+
+        except PlainTextResponse as e:
+            body = e.text
+            status_code = e.status
+            content_type = e.content_type
             break
 
         except JSONResponse as e:
             body = e.data
             status_code = e.status
+            content_type = e.content_type
             break
 
         except Exception as e:
             body = {'error': 'internal server error'}
             status_code = '500 Internal Server Error'
+            content_type = JSONResponse.content_type
             uwsgi.log(f'ERROR - {e.__class__.__name__} - {e} \n' + format_exc())
             break
     else:
         body = {'error': f'not found: ' + env['PATH_INFO']}
         status_code = '404 Not Found'
-    
-    start_response(status_code, [('Content-Type','application/json')])
+        content_type = JSONResponse.content_type
+
+    start_response(status_code, [('Content-Type', content_type)])
 
     uwsgi.log(f'RESPONSE - {status_code}')
-    return [to_json(body).encode('utf-8')]
+    if content_type == JSONResponse.content_type:
+        return [to_json(body).encode('utf-8')]
+    else:
+        return [body.encode('utf-8')]

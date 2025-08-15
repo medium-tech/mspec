@@ -113,7 +113,7 @@ The main prototype are the python + browser 1 browser template apps.
         * 🟢 list
         * 🟡 instance
             * 🟡 create
-            * 🟡 read
+            * 🟢 read
             * 🟡 update
             * 🟡 delete
     * 🔴 template extraction 
