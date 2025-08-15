@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<!-- vars :: {"template_app": "project.name.snake_case", "test-module": "module.name.kebab_case", "test_module": "module.name.snake_case", "test module": "module.name.lower_case"} -->
+<!-- vars :: {"template_app": "project.name.snake_case", "template-module": "module.name.kebab_case", "template_module": "module.name.snake_case", "template module": "module.name.lower_case"} -->
 <!-- vars :: {"single_model": "model.name.snake_case", "single-model": "model.name.kebab_case", "single model": "model.name.lower_case"} -->
 <!-- vars :: {"singleModel": "model.name.camel_case", "SingleModel": "model.name.pascal_case"} -->
 <html>
 
     <head>
-        <title>template_app.test_module.single_model</title>
+        <title>template_app.template_module.single_model</title>
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta http-equiv="Pragma" content="no-cache" />
         <meta http-equiv="Expires" content="0" />
         <link rel="stylesheet" type="text/css" href="/style.css">
-        <script src="/test-module/single-model/index.js"></script>
+        <script src="/template-module/single-model/index.js"></script>
         <script src="/index.js"></script>
 
         <script type="text/javascript">
@@ -26,7 +26,7 @@
                 // push state
                 if(pushState === true) {
                     const url = new URL(window.location.href)
-                    url.pathname = '/test-module/single-model'
+                    url.pathname = '/template-module/single-model'
 
                     const offset = parseInt(document.getElementById('single-model-list-offset').innerText)
                     const size = parseInt(document.getElementById('single-model-list-size').innerText)
@@ -44,7 +44,7 @@
                 // push state
                 if(pushState === true) {
                     const url = new URL(window.location.href)
-                    url.pathname = '/test-module/single-model/create'
+                    url.pathname = '/template-module/single-model/create'
                     url.searchParams.delete('offset')
                     url.searchParams.delete('size')
                     window.history.pushState({}, '', url)
@@ -57,7 +57,7 @@
                 if(id === '') {
                     console.error('id is empty')
                 }else{
-                    window.location.href = `/test-module/single-model/${id}`
+                    window.location.href = `/template-module/single-model/${id}`
                 }
             }
 
@@ -198,7 +198,7 @@
                         const newItemLi = document.createElement('li')
                         const newItemLink = document.createElement('a')
                         newItemLink.id = 'created-single-model'
-                        newItemLink.href = `/test-module/single-model/${newItemId}`
+                        newItemLink.href = `/template-module/single-model/${newItemId}`
                         newItemLink.innerText = newItemId
                         
                         const createdSingleModels = document.getElementById('created-single-models')
@@ -247,7 +247,7 @@
     <body>
         <h1>single model</h1>
         <p>
-            <a href="/">template_app</a> . <a href="/test-module">test module</a> . <a href="/test-module/single-model">single model</a>
+            <a href="/">template_app</a> . <a href="/template-module">template module</a> . <a href="/template-module/single-model">single model</a>
         </p>
 
         <!-- 

@@ -13,12 +13,12 @@ terms = {
     'TestModule': 'TemplateModule'
 }
 
-terms = {
-    'unittest': 'template_app',
-    'unit test': 'template app',
-    'unit-test': 'template-app',
-    'unit_test': 'template_app'
-}
+# terms = {
+#     'unittest': 'template_app',
+#     'unit test': 'template app',
+#     'unit-test': 'template-app',
+#     'unit_test': 'template_app'
+# }
 
 def replace_terms(s:str) -> str:
     for old, new in terms.items():

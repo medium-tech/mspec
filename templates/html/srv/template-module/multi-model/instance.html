@@ -2,12 +2,12 @@
 <html>
 
     <head>
-        <title>template_app.test_module.multi_model.id</title>
+        <title>template_app.template_module.multi_model.id</title>
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta http-equiv="Pragma" content="no-cache" />
         <meta http-equiv="Expires" content="0" />
         <link rel="stylesheet" type="text/css" href="/style.css">
-        <script src="/test-module/multi-model/index.js"></script>
+        <script src="/template-module/multi-model/index.js"></script>
         <script type="text/javascript">
 
             //
@@ -130,7 +130,7 @@
             window.onload = () => {
                 const idBreadcrumb = document.getElementById('multi-model-id-breadcrumb')
                 const idLink = document.createElement('a');
-                idLink.href = '/test-module/multi-model/' + multiModelId();
+                idLink.href = '/template-module/multi-model/' + multiModelId();
                 idLink.innerText = multiModelId();
                 idBreadcrumb.appendChild(idLink);
 
@@ -143,7 +143,7 @@
     <body>
         <h1>multi model</h1>
         <p>
-            <a href="/">template_app</a> . <a href="/test-module">test_module</a> . <a href="/test-module/multi-model">multi_model</a> . <span id="multi-model-id-breadcrumb"></span>
+            <a href="/">template_app</a> . <a href="/template-module">template_module</a> . <a href="/template-module/multi-model">multi_model</a> . <span id="multi-model-id-breadcrumb"></span>
         </p>
 
         <!-- 

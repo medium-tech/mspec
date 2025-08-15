@@ -2,9 +2,9 @@ import sqlite3
 from datetime import datetime
 from core.types import datetime_format_str
 from core.exceptions import NotFoundError
-from test_module.single_model.model import SingleModel
+from template_module.single_model.model import SingleModel
 
-# vars :: {"test_module": "module.name.snake_case", "single_model": "model.name.snake_case", "SingleModel": "model.name.pascal_case"}
+# vars :: {"template_module": "module.name.snake_case", "single_model": "model.name.snake_case", "SingleModel": "model.name.pascal_case"}
 
 __all__ = [
     'db_create_single_model', 

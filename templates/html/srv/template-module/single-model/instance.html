@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<!-- vars :: {"template_app": "project.name.snake_case", "test-module": "module.name.kebab_case", "test_module": "module.name.snake_case"} -->
+<!-- vars :: {"template_app": "project.name.snake_case", "template-module": "module.name.kebab_case", "template_module": "module.name.snake_case"} -->
 <!-- vars :: {"single_model": "model.name.snake_case", "single-model": "model.name.kebab_case", "single model": "model.name.lower_case"} -->
 <!-- vars :: {"singleModel": "model.name.camel_case", "SingleModel": "model.name.pascal_case"} -->
 <html>
 
     <head>
-        <title>template_app.test_module.single_model.id</title>
+        <title>template_app.template_module.single_model.id</title>
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta http-equiv="Pragma" content="no-cache" />
         <meta http-equiv="Expires" content="0" />
         <link rel="stylesheet" type="text/css" href="/style.css">
-        <script src="/test-module/single-model/index.js"></script>
+        <script src="/template-module/single-model/index.js"></script>
         <script type="text/javascript">
 
             //
@@ -133,7 +133,7 @@
             window.onload = () => {
                 const idBreadcrumb = document.getElementById('single-model-id-breadcrumb')
                 const idLink = document.createElement('a');
-                idLink.href = '/test-module/single-model/' + singleModelId();
+                idLink.href = '/template-module/single-model/' + singleModelId();
                 idLink.innerText = singleModelId();
                 idBreadcrumb.appendChild(idLink);
 
@@ -146,7 +146,7 @@
     <body>
         <h1>single model</h1>
         <p>
-            <a href="/">template_app</a> . <a href="/test-module">test_module</a> . <a href="/test-module/single-model">single_model</a> . <span id="single-model-id-breadcrumb"></span>
+            <a href="/">template_app</a> . <a href="/template-module">template_module</a> . <a href="/template-module/single-model">single_model</a> . <span id="single-model-id-breadcrumb"></span>
         </p>
 
         <!-- 

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import timeit
 
-from test_module.single_model.model import SingleModel
+from template_module.single_model.model import SingleModel
 
-# vars :: {"test_module": "module.name.snake_case", "single_model": "model.name.snake_case", "SingleModel": "model.name.pascal_case"}
+# vars :: {"template_module": "module.name.snake_case", "single_model": "model.name.snake_case", "SingleModel": "model.name.pascal_case"}
 
 def perf_single_model_validate(repeat:int=5, number:int=10_000) -> float:
     test_single_model = SingleModel.example()

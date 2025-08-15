@@ -1,11 +1,11 @@
 import tkinter
 from tkinter import ttk
 from core.client import create_client_context
-# for :: {% for module in modules.values() %} :: {"test_module": "module.name.snake_case", "TestModule": "module.name.pascal_case"}
-from test_module.gui import TestModuleIndexPage
+# for :: {% for module in modules.values() %} :: {"template_module": "module.name.snake_case", "TemplateModule": "module.name.pascal_case"}
+from template_module.gui import TemplateModuleIndexPage
 # end for :: rstrip
-# for :: {% for item in all_models %} :: {"test_module": "item.module.name.snake_case", "single_model": "item.model.name.snake_case", "SingleModel": "item.model.name.pascal_case"}
-from test_module.single_model.gui import SingleModelIndexPage, SingleModelInstancePage
+# for :: {% for item in all_models %} :: {"template_module": "item.module.name.snake_case", "single_model": "item.model.name.snake_case", "SingleModel": "item.model.name.pascal_case"}
+from template_module.single_model.gui import SingleModelIndexPage, SingleModelInstancePage
 # end for :: rstrip
 
 LARGEFONT = ('Verdana', 35)
@@ -26,8 +26,8 @@ class MSpecIndexPage(tkinter.Frame):
         label = ttk.Label(self, text='mspec', font=LARGEFONT)
         label.grid(row=0, column=0) 
 
-        # for :: {% for module in modules.values() %} :: {"TestModule": "module.name.pascal_case", "test module": "module.name.lower_case", "1": "loop.index"}
-        button1 = ttk.Button(self, text='test module', command=lambda: controller.show_frame(TestModuleIndexPage))
+        # for :: {% for module in modules.values() %} :: {"TemplateModule": "module.name.pascal_case", "template module": "module.name.lower_case", "1": "loop.index"}
+        button1 = ttk.Button(self, text='template module', command=lambda: controller.show_frame(TemplateModuleIndexPage))
         button1.grid(row=1, column=0)
         # end for ::
 
@@ -35,8 +35,8 @@ class MSpecGUIApp(tkinter.Tk):
 
     frame_classes = (
         MSpecIndexPage, 
-        # for :: {% for module in modules.values() %} :: {"TestModule": "module.name.pascal_case"}
-        TestModuleIndexPage,
+        # for :: {% for module in modules.values() %} :: {"TemplateModule": "module.name.pascal_case"}
+        TemplateModuleIndexPage,
         # end for ::
         # for :: {% for item in all_models %} :: {"SingleModel": "item.model.name.pascal_case"}
         SingleModelIndexPage,

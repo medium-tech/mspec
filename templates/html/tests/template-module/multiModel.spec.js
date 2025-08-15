@@ -1,16 +1,16 @@
 import { test, expect } from '@playwright/test';
 
 // vars :: {"template_app":"project.name.snake_case", "http://localhost:5005": "client.default_host"}
-// vars :: {"test-module": "module.name.kebab_case", "test module": "module.name.lower_case"}
+// vars :: {"template-module": "module.name.kebab_case", "template module": "module.name.lower_case"}
 // vars :: {"multi model": "model.name.lower_case", "multi-model": "model.name.kebab_case", "multi_model": "model.name.snake_case"}
 
-test('test - test module - multi model - pagination', async ({ page }) => {
+test('test - template module - multi model - pagination', async ({ page }) => {
   await page.goto('http://localhost:5005/');
 
   await expect(page.locator('h1')).toContainText('template_app');
-  await page.getByRole('link', { name: 'test module' }).last().click();
+  await page.getByRole('link', { name: 'template module' }).last().click();
 
-  await expect(page.locator('h1')).toContainText('test module');
+  await expect(page.locator('h1')).toContainText('template module');
   await page.getByRole('link', { name: 'multi model' }).click();
   await expect(page.getByRole('heading')).toContainText('multi model');
 
@@ -26,13 +26,13 @@ test('test - test module - multi model - pagination', async ({ page }) => {
 });
 
 
-test('test - test module - multi model - instance', async ({ page }) => {
+test('test - template module - multi model - instance', async ({ page }) => {
 
     const textToContain = []
 
     // create item
 
-    await page.goto('http://localhost:5005/test-module/multi-model');
+    await page.goto('http://localhost:5005/template-module/multi-model');
     await page.getByRole('button', { name: 'create' }).click();
 
     // macro :: html_unittest_form_list_bool :: {"multi_bool": "field", "true": "list_element_1", "false": "list_element_2"}
@@ -121,8 +121,8 @@ test('test - test module - multi model - instance', async ({ page }) => {
     await expect(page.locator('#multi-model-not-found')).toContainText('item not found');
 });
 
-test('test - test module - multi model - create random', async ({ page }) => {
-  await page.goto('http://localhost:5005/test-module/multi-model/create');
+test('test - template module - multi model - create random', async ({ page }) => {
+  await page.goto('http://localhost:5005/template-module/multi-model/create');
 
   await page.getByRole('button', { name: 'random' }).click();
   await page.getByRole('button', { name: 'submit' }).click();

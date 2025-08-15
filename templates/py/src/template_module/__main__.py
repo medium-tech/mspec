@@ -4,19 +4,19 @@ from pprint import pprint
 from core.db import create_db_context
 from core.client import create_client_context
 # for :: {% for model in module.models.values() %} :: {"single_model": "model.name.snake_case"}
-from test_module.single_model.client import *
-from test_module.single_model.db import *
-from test_module.single_model.model import *
+from template_module.single_model.client import *
+from template_module.single_model.db import *
+from template_module.single_model.model import *
 # end for ::
 
-# vars :: {"template_app":"project.name.snake_case", "test_module":"module.name.snake_case", "test module":"module.name.lower_case"}
+# vars :: {"template_app":"project.name.snake_case", "template_module":"module.name.snake_case", "template module":"module.name.lower_case"}
 
 #
 # define arguments
 #
 
 
-parser = argparse.ArgumentParser(description='template_app - test module - cli')
+parser = argparse.ArgumentParser(description='template_app - template module - cli')
 
 parser.add_argument('command', type=str, choices=[
     'data-seed',

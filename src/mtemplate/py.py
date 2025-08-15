@@ -14,19 +14,19 @@ class MTemplatePyProject(MTemplateProject):
     template_dir = Path(__file__).parent.parent.parent / 'templates/py'
 
     module_prefixes = [
-        str(template_dir / 'src/test_module'),
-        str(template_dir / 'tests/test_module/__init__.py')
+        str(template_dir / 'src/template_module'),
+        str(template_dir / 'tests/template_module/__init__.py')
     ]
 
     model_prefixes = [
-        str(template_dir / 'src/test_module/single_model'),
-        str(template_dir / 'tests/test_module'),
+        str(template_dir / 'src/template_module/single_model'),
+        str(template_dir / 'tests/template_module'),
     ]
 
     macro_only_prefixes = [
-        str(template_dir / 'src/test_module/multi_model'),
-        str(template_dir / 'tests/test_module/test_multi'),
-        str(template_dir / 'tests/test_module/perf_multi')
+        str(template_dir / 'src/template_module/multi_model'),
+        str(template_dir / 'tests/template_module/test_multi'),
+        str(template_dir / 'tests/template_module/perf_multi')
     ]
 
     def init_template_vars(self):

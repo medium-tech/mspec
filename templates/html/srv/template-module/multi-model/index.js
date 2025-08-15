@@ -815,7 +815,7 @@ function multiModelToTableRow(data) {
 
     const tr = document.createElement('tr');
     tr.style.cursor = 'pointer';
-    tr.onclick = () => window.location.href = `/test-module/multi-model/${data.id}`
+    tr.onclick = () => window.location.href = `/template-module/multi-model/${data.id}`
 
     // id - string
 
@@ -926,7 +926,7 @@ function multiModelForJSON(data) {
 
 function clientCreateMultiModel(data) {
 
-    return fetch('/api/test-module/multi-model', {
+    return fetch('/api/template-module/multi-model', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -937,14 +937,14 @@ function clientCreateMultiModel(data) {
 
 function clientReadMultiModel(id) {
 
-    return fetch(`/api/test-module/multi-model/${id}`, {
+    return fetch(`/api/template-module/multi-model/${id}`, {
         method: 'GET',
     })
 }
 
 function clientUpdateMultiModel(id, data) {
 
-    return fetch(`/api/test-module/multi-model/${id}`, {
+    return fetch(`/api/template-module/multi-model/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -956,7 +956,7 @@ function clientUpdateMultiModel(id, data) {
 
 function clientDeleteMultiModel(id) {
 
-    return fetch(`/api/test-module/multi-model/${id}`, {
+    return fetch(`/api/template-module/multi-model/${id}`, {
         method: 'DELETE',
     })
 
@@ -964,7 +964,7 @@ function clientDeleteMultiModel(id) {
 
 function clientListMultiModels(offset, size) {
 
-    return fetch(`/api/test-module/multi-model?offset=${offset}&size=${size}`, {
+    return fetch(`/api/template-module/multi-model?offset=${offset}&size=${size}`, {
         method: 'GET',
     })
 }

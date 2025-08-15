@@ -12,17 +12,17 @@ class MTemplateHTMLProject(MTemplateProject):
     template_dir = Path(__file__).parent.parent.parent / 'templates/html'
 
     module_prefixes = [
-        str(template_dir / 'srv/test-module')
+        str(template_dir / 'srv/template-module')
     ]
 
     model_prefixes = [
-        str(template_dir / 'tests/test-module'),
-        str(template_dir / 'srv/test-module/single-model')
+        str(template_dir / 'tests/template-module'),
+        str(template_dir / 'srv/template-module/single-model')
     ]
 
     macro_only_prefixes = [
-        str(template_dir / 'srv/test-module/multi-model'),
-        str(template_dir / 'tests/test-module/multiModel')
+        str(template_dir / 'srv/template-module/multi-model'),
+        str(template_dir / 'tests/template-module/multiModel')
     ]
 
     def init_template_vars(self):

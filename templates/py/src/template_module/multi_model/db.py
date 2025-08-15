@@ -2,7 +2,7 @@ import sqlite3
 from datetime import datetime
 from core.types import datetime_format_str
 from core.exceptions import NotFoundError
-from test_module.multi_model.model import MultiModel
+from template_module.multi_model.model import MultiModel
 
 __all__ = [
     'db_create_multi_model', 

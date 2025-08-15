@@ -4,10 +4,10 @@ import sqlite3
 from core.db import create_db_context
 from core.client import create_client_context
 from core.exceptions import NotFoundError
-from test_module.multi_model.model import MultiModel
-from test_module.multi_model.client import *
+from template_module.multi_model.model import MultiModel
+from template_module.multi_model.client import *
 
-# vars :: {"test_module": "module.name.snake_case", "multi_model": "model.name.snake_case", "MultiModel": "model.name.pascal_case"}
+# vars :: {"template_module": "module.name.snake_case", "multi_model": "model.name.snake_case", "MultiModel": "model.name.pascal_case"}
 
 test_ctx = create_db_context()
 test_ctx.update(create_client_context())

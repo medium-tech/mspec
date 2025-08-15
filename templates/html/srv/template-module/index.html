@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- vars :: {"template_app": "project.name.snake_case", "test_module": "module.name.snake_case", "test module": "module.name.lower_case", "test-module": "module.name.kebab_case"} -->
+<!-- vars :: {"template_app": "project.name.snake_case", "template_module": "module.name.snake_case", "template module": "module.name.lower_case", "template-module": "module.name.kebab_case"} -->
 <html>
 
     <head>
@@ -12,18 +12,18 @@
     </head>
 
     <body>
-        <h1>test module</h1>
+        <h1>template module</h1>
         <p>
-            <a href="/">template_app</a> . <a href="/test-module">test module</a>
+            <a href="/">template_app</a> . <a href="/template-module">template module</a>
         </p>
 
         <h2>sub sections</h2>
         <ul>
             <!-- for :: {% for model in module.models.values() %} :: {"single-model": "model.name.kebab_case", "single model": "model.name.lower_case"} -->
-            <li><a href="/test-module/single-model">single model</a></li>
+            <li><a href="/template-module/single-model">single model</a></li>
             <!-- end for :: -->
             <!-- ignore :: -->
-            <li><a href="/test-module/multi-model">multi model</a></li>
+            <li><a href="/template-module/multi-model">multi model</a></li>
             <!-- end ignore :: -->
         </ul>
     </body>

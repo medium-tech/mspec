@@ -97,10 +97,10 @@ class MTemplateProject:
                 rel_path = rel_path.replace('singleModel', '{{ model.name.camel_case }}')
                 rel_path = rel_path.replace('SingleModel', '{{ model.name.pascal_case }}')
 
-                rel_path = rel_path.replace('test-module', '{{ module.name.kebab_case }}')
-                rel_path = rel_path.replace('test_module', '{{ module.name.snake_case }}')
-                rel_path = rel_path.replace('testModule', '{{ module.name.camel_case }}')
-                rel_path = rel_path.replace('TestModule', '{{ module.name.pascal_case }}')
+                rel_path = rel_path.replace('template-module', '{{ module.name.kebab_case }}')
+                rel_path = rel_path.replace('template_module', '{{ module.name.snake_case }}')
+                rel_path = rel_path.replace('templateModule', '{{ module.name.camel_case }}')
+                rel_path = rel_path.replace('TemplateModule', '{{ module.name.pascal_case }}')
                 
                 template = {'src': src, 'rel': rel_path}
 

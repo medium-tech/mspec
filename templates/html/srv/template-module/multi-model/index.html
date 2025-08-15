@@ -2,12 +2,12 @@
 <html>
 
     <head>
-        <title>template_app.test_module.multi_model</title>
+        <title>template_app.template_module.multi_model</title>
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta http-equiv="Pragma" content="no-cache" />
         <meta http-equiv="Expires" content="0" />
         <link rel="stylesheet" type="text/css" href="/style.css">
-        <script src="/test-module/multi-model/index.js"></script>
+        <script src="/template-module/multi-model/index.js"></script>
         <script src="/index.js"></script>
 
         <script type="text/javascript">
@@ -23,7 +23,7 @@
                 // push state
                 if(pushState === true) {
                     const url = new URL(window.location.href)
-                    url.pathname = '/test-module/multi-model'
+                    url.pathname = '/template-module/multi-model'
 
                     const offset = parseInt(document.getElementById('multi-model-list-offset').innerText)
                     const size = parseInt(document.getElementById('multi-model-list-size').innerText)
@@ -41,7 +41,7 @@
                 // push state
                 if(pushState === true) {
                     const url = new URL(window.location.href)
-                    url.pathname = '/test-module/multi-model/create'
+                    url.pathname = '/template-module/multi-model/create'
                     url.searchParams.delete('offset')
                     url.searchParams.delete('size')
                     window.history.pushState({}, '', url)
@@ -54,7 +54,7 @@
                 if(id === '') {
                     console.error('id is empty')
                 }else{
-                    window.location.href = `/test-module/multi-model/${id}`
+                    window.location.href = `/template-module/multi-model/${id}`
                 }
             }
 
@@ -195,7 +195,7 @@
                         const newItemLi = document.createElement('li')
                         const newItemLink = document.createElement('a')
                         newItemLink.id = 'created-multi-model'
-                        newItemLink.href = `/test-module/multi-model/${newItemId}`
+                        newItemLink.href = `/template-module/multi-model/${newItemId}`
                         newItemLink.innerText = newItemId
 
                         const createdMultiModels = document.getElementById('created-multi-models')
@@ -244,7 +244,7 @@
     <body>
         <h1>multi model</h1>
         <p>
-            <a href="/">template_app</a> . <a href="/test-module">test module</a> . <a href="/test-module/multi-model">multi model</a>
+            <a href="/">template_app</a> . <a href="/template-module">template module</a> . <a href="/template-module/multi-model">multi model</a>
         </p>
 
         <!-- 

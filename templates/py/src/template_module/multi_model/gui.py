@@ -1,8 +1,8 @@
 import tkinter
 from copy import deepcopy
 from tkinter import ttk, StringVar
-from test_module.multi_model.model import MultiModel, field_list, longest_field_name_length
-from test_module.multi_model.client import client_list_multi_model
+from template_module.multi_model.model import MultiModel, field_list, longest_field_name_length
+from template_module.multi_model.client import client_list_multi_model
 
 __all__ = [
     'MultiModelIndexPage',

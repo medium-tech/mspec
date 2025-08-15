@@ -1,10 +1,10 @@
 import tkinter
 from copy import deepcopy
 from tkinter import ttk, StringVar
-from test_module.single_model.model import SingleModel, field_list, longest_field_name_length
-from test_module.single_model.client import client_list_single_model
+from template_module.single_model.model import SingleModel, field_list, longest_field_name_length
+from template_module.single_model.client import client_list_single_model
 
-# vars :: {"test_module": "module.name.snake_case"}
+# vars :: {"template_module": "module.name.snake_case"}
 # vars :: {"SingleModel": "model.name.pascal_case", "single_model": "model.name.snake_case"}
 
 __all__ = [

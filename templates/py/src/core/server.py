@@ -10,12 +10,12 @@ from core.types import to_json
 from core.models import *
 from core.db import *
 from core.exceptions import RequestError, JSONResponse, NotFoundError, AuthenticationError, ForbiddenError
-# for :: {% for item in all_models %} :: {"test_module": "item.module.name.snake_case", "single_model": "item.model.name.snake_case"}
-from test_module.single_model.server import single_model_routes
+# for :: {% for item in all_models %} :: {"template_module": "item.module.name.snake_case", "single_model": "item.model.name.snake_case"}
+from template_module.single_model.server import single_model_routes
 # end for ::
 
 # ignore ::
-from test_module.multi_model.server import multi_model_routes
+from template_module.multi_model.server import multi_model_routes
 # end ignore ::
 
 import uwsgi

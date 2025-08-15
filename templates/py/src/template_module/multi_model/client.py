@@ -1,37 +1,34 @@
 from core.exceptions import MSpecError, ConfigError, NotFoundError, AuthenticationError, ForbiddenError
-from test_module.single_model.model import SingleModel
+from template_module.multi_model.model import MultiModel
 
 import json
 
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
-# vars :: {"test_module": "module.name.snake_case", "test-module": "module.name.kebab_case"}
-# vars :: {"single_model": "model.name.snake_case", "single model": "model.name.lower_case", "single-model": "model.name.kebab_case", "SingleModel": "model.name.pascal_case"}
-
 __all__ = [
-    'client_create_single_model',
-    'client_read_single_model',
-    'client_update_single_model',
-    'client_delete_single_model',
-    'client_list_single_model'
+    'client_create_multi_model',
+    'client_read_multi_model',
+    'client_update_multi_model',
+    'client_delete_multi_model',
+    'client_list_multi_model'
 ]
 
-def client_create_single_model(ctx:dict, obj:SingleModel) -> SingleModel:
+def client_create_multi_model(ctx:dict, obj:MultiModel) -> MultiModel:
     """
-    create a single model on the server, verifying the data first.
-    
+    create a multi model on the server, verifying the data first.
+
     args ::
         ctx :: dict containing the client context.
-        obj :: the SingleModel object to create.
-    
-    return :: SingleModel object with the new id.
+        obj :: the MultiModel object to create.
+
+    return :: MultiModel object with the new id.
 
     raises :: ConfigError, MSpecError
     """
 
     try:
-        url = f'{ctx["host"]}/api/test-module/single-model'
+        url = f'{ctx["host"]}/api/template-module/multi-model'
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
@@ -42,16 +39,16 @@ def client_create_single_model(ctx:dict, obj:SingleModel) -> SingleModel:
 
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return SingleModel.from_json(response_body)
+            return MultiModel.from_json(response_body)
     
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
-        raise MSpecError(f'error creating single model: {e.__class__.__name__}: {e}')
+        raise MSpecError(f'error creating multi model: {e.__class__.__name__}: {e}')
 
-def client_read_single_model(ctx:dict, id:str) -> SingleModel:
+def client_read_multi_model(ctx:dict, id:str) -> MultiModel:
     """
-    read a single model from the server, verifying it first.
+    read a multi model from the server, verifying it first.
 
     args ::
         ctx :: dict containing the client context.
@@ -63,7 +60,7 @@ def client_read_single_model(ctx:dict, id:str) -> SingleModel:
     """
 
     try:
-        url = ctx['host'] + '/api/test-module/single-model/' + id
+        url = ctx['host'] + '/api/template-module/multi-model/' + id
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
@@ -76,28 +73,28 @@ def client_read_single_model(ctx:dict, id:str) -> SingleModel:
 
     except HTTPError as e:
         if e.code == 401:
-            raise AuthenticationError('Error reading single model: invalid username or password')
+            raise AuthenticationError('Error reading multi model: invalid username or password')
         elif e.code == 403:
-            raise ForbiddenError('Error reading single model: forbidden')
+            raise ForbiddenError('Error reading multi model: forbidden')
         elif e.code == 404:
-            raise NotFoundError(f'single model {id} not found')
-        raise MSpecError(f'error reading single model: {e.__class__.__name__}: {e}')
+            raise NotFoundError(f'multi model {id} not found')
+        raise MSpecError(f'error reading multi model: {e.__class__.__name__}: {e}')
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
-        raise MSpecError(f'error reading single model: {e.__class__.__name__}: {e}')
-    
-    return SingleModel.from_json(response_body).validate()
+        raise MSpecError(f'error reading multi model: {e.__class__.__name__}: {e}')
 
-def client_update_single_model(ctx:dict, obj:SingleModel) -> SingleModel:
+    return MultiModel.from_json(response_body).validate()
+
+def client_update_multi_model(ctx:dict, obj:MultiModel) -> MultiModel:
     """
-    update a single model on the server, verifying the data first.
+    update a multi model on the server, verifying the data first.
 
     args ::
         ctx :: dict containing the client context.
-        obj :: the SingleModel object to update.
+        obj :: the MultiModel object to update.
     
-    return :: SingleModel object.
+    return :: MultiModel object.
 
     raises :: ConfigError, MSpecError, NotFoundError
     """
@@ -110,7 +107,7 @@ def client_update_single_model(ctx:dict, obj:SingleModel) -> SingleModel:
         raise ValueError('invalid data, missing id')
 
     try:
-        url = f'{ctx["host"]}/api/test-module/single-model/{_id}'
+        url = f'{ctx["host"]}/api/template-module/multi-model/{_id}'
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
@@ -124,24 +121,24 @@ def client_update_single_model(ctx:dict, obj:SingleModel) -> SingleModel:
     
     except HTTPError as e:
         if e.code == 401:
-            raise AuthenticationError('Error updating single model: authentication error')
+            raise AuthenticationError('Error updating multi model: authentication error')
         elif e.code == 403:
-            raise ForbiddenError('Error updating single model: forbidden')
+            raise ForbiddenError('Error updating multi model: forbidden')
         elif e.code == 404:
-            raise NotFoundError(f'single model {id} not found')
-        raise MSpecError(f'error updating single model: {e.__class__.__name__}: {e}')
+            raise NotFoundError(f'multi model {id} not found')
+        raise MSpecError(f'error updating multi model: {e.__class__.__name__}: {e}')
         
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     
     except Exception as e:
-        raise MSpecError(f'error updating single model: {e.__class__.__name__}: {e}')
-    
-    return SingleModel.from_json(response_body).validate()
+        raise MSpecError(f'error updating multi model: {e.__class__.__name__}: {e}')
 
-def client_delete_single_model(ctx:dict, id:str) -> None:
+    return MultiModel.from_json(response_body).validate()
+
+def client_delete_multi_model(ctx:dict, id:str) -> None:
     """
-    delete a single model from the server.
+    delete a multi model from the server.
 
     args ::
         ctx :: dict containing the client context.
@@ -153,7 +150,7 @@ def client_delete_single_model(ctx:dict, id:str) -> None:
     """
 
     try:
-        url = f'{ctx["host"]}/api/test-module/single-model/{id}'
+        url = f'{ctx["host"]}/api/template-module/multi-model/{id}'
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
@@ -167,24 +164,24 @@ def client_delete_single_model(ctx:dict, id:str) -> None:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     
     except Exception as e:
-        raise MSpecError(f'error deleting single model: {e.__class__.__name__}: {e}')
+        raise MSpecError(f'error deleting multi model: {e.__class__.__name__}: {e}')
 
-def client_list_single_model(ctx:dict, offset:int=0, limit:int=50) -> list[SingleModel]:
+def client_list_multi_model(ctx:dict, offset:int=0, limit:int=50) -> list[MultiModel]:
     """
-    list single models from the server, verifying each.
+    list multi models from the server, verifying each.
 
     args ::
         ctx :: dict containing the client context.
         offset :: int of the offset to start listing from.
         limit :: int of the maximum number of items to list.
     
-    return :: list of SingleModel objects.
+    return :: list of MultiModel objects.
 
     raises :: ConfigError, MSpecError
     """
 
     try:
-        url = f'{ctx["host"]}/api/test-module/single-model?offset={offset}&limit={limit}'
+        url = f'{ctx["host"]}/api/template-module/multi-model?offset={offset}&limit={limit}'
     except KeyError:
         raise ConfigError('invalid context, missing host')
 
@@ -194,10 +191,10 @@ def client_list_single_model(ctx:dict, offset:int=0, limit:int=50) -> list[Singl
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
 
-        return [SingleModel(**item).validate() for item in json.loads(response_body)]
+        return [MultiModel(**item).validate() for item in json.loads(response_body)]
 
     except (json.JSONDecodeError, TypeError) as e:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     
     except Exception as e:
-        raise MSpecError(f'error listing single models: {e.__class__.__name__}: {e}')
+        raise MSpecError(f'error listing multi models: {e.__class__.__name__}: {e}')

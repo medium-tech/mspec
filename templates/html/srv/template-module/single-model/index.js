@@ -1,4 +1,4 @@
-// vars :: {"test-module": "module.name.kebab_case"}
+// vars :: {"template-module": "module.name.kebab_case"}
 // vars :: {"SingleModel": "model.name.pascal_case", "singleModel": "model.name.camel_case", "single-model": "model.name.kebab_case"}
 
 //
@@ -542,7 +542,7 @@ function singleModelToTableRow(data) {
 
     const tr = document.createElement('tr');
     tr.style.cursor = 'pointer';
-    tr.onclick = () => window.location.href = `/test-module/single-model/${data.id}`
+    tr.onclick = () => window.location.href = `/template-module/single-model/${data.id}`
 
     // id - string
 
@@ -654,7 +654,7 @@ function singleModelForJSON(data) {
 
 function clientCreateSingleModel(data) {
     
-    return fetch('/api/test-module/single-model', {
+    return fetch('/api/template-module/single-model', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -665,14 +665,14 @@ function clientCreateSingleModel(data) {
 
 function clientReadSingleModel(id) {
 
-    return fetch(`/api/test-module/single-model/${id}`, {
+    return fetch(`/api/template-module/single-model/${id}`, {
         method: 'GET',
     })
 }
 
 function clientUpdateSingleModel(id, data) {
 
-    return fetch(`/api/test-module/single-model/${id}`, {
+    return fetch(`/api/template-module/single-model/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -684,7 +684,7 @@ function clientUpdateSingleModel(id, data) {
 
 function clientDeleteSingleModel(id) {
 
-    return fetch(`/api/test-module/single-model/${id}`, {
+    return fetch(`/api/template-module/single-model/${id}`, {
         method: 'DELETE',
     })
 
@@ -692,7 +692,7 @@ function clientDeleteSingleModel(id) {
 
 function clientListSingleModels(offset, size) {
 
-    return fetch(`/api/test-module/single-model?offset=${offset}&size=${size}`, {
+    return fetch(`/api/template-module/single-model?offset=${offset}&size=${size}`, {
         method: 'GET',
     })
 }

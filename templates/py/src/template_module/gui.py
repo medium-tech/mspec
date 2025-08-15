@@ -1,18 +1,18 @@
 import tkinter
 from tkinter import ttk
 # for :: {% for model in module.models.values() %} :: {"single_model": "model.name.snake_case", "SingleModel": "model.name.pascal_case"}
-from test_module.single_model.gui import SingleModelIndexPage
+from template_module.single_model.gui import SingleModelIndexPage
 # end for ::
 
-# vars :: {"test_module": "module.name.snake_case", "TestModule": "module.name.pascal_case"}
+# vars :: {"template_module": "module.name.snake_case", "TemplateModule": "module.name.pascal_case"}
 
 __all__ = [
-    'TestModuleIndexPage'
+    'TemplateModuleIndexPage'
 ]
 
 LARGEFONT = ('Verdana', 35)
 
-class TestModuleIndexPage(tkinter.Frame):
+class TemplateModuleIndexPage(tkinter.Frame):
 
     index_pages = (
         # for :: {% for model in module.models.values() %} :: {"SingleModel": "model.name.pascal_case", "single model": "model.name.lower_case"}
@@ -27,7 +27,7 @@ class TestModuleIndexPage(tkinter.Frame):
         back_button = ttk.Button(self, text='<-', command=lambda: controller.show_index_frame())
         back_button.grid(row=0, column=0)
 
-        label = ttk.Label(self, text='test module', font=LARGEFONT)
+        label = ttk.Label(self, text='template module', font=LARGEFONT)
         label.grid(row=0, column=1) 
 
         for n, item in enumerate(self.index_pages, start=1):

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import timeit
 
-from test_module.multi_model.model import MultiModel
+from template_module.multi_model.model import MultiModel
 
-# vars :: {"test_module": "module.name.snake_case", "multi_model": "model.name.snake_case", "MultiModel": "model.name.pascal_case"}
+# vars :: {"template_module": "module.name.snake_case", "multi_model": "model.name.snake_case", "MultiModel": "model.name.pascal_case"}
 
 def perf_single_model_validate(repeat:int=5, number:int=10_000) -> float:
     test_multi_model = MultiModel.example()
