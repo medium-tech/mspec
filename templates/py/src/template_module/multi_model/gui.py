@@ -1,5 +1,4 @@
 import tkinter
-from copy import deepcopy
 from tkinter import ttk, StringVar
 from template_module.multi_model.model import MultiModel, field_list, longest_field_name_length
 from template_module.multi_model.client import client_list_multi_model
@@ -34,7 +33,7 @@ class MultiModelIndexPage(tkinter.Frame):
 
         # header #
 
-        back_button = ttk.Button(self, text='<-', command=lambda: self.app.show_frame_str('SampleModuleIndexPage'))
+        back_button = ttk.Button(self, text='<-', command=lambda: self.app.show_frame_str('TemplateModuleIndexPage'))
         back_button.grid(row=0, column=0)
 
         label = ttk.Label(self, text='multi model', font=LARGEFONT)
@@ -128,7 +127,7 @@ class MultiModelIndexPage(tkinter.Frame):
             if isinstance(multi_bool_value, list):
                 multi_bool_value = ', '.join([str(v).lower() for v in multi_bool_value])
             multi_bool_text.insert(tkinter.END, str(multi_bool_value))
-            multi_bool_text.grid(row=n + self.list_items_row_offset, column=8, padx=padx)
+            multi_bool_text.grid(row=n + self.list_items_row_offset, column=2, padx=padx)
             # end macro ::
 
             # macro :: py_tk_multi_int :: {"multi_int": "name"}
@@ -138,7 +137,7 @@ class MultiModelIndexPage(tkinter.Frame):
             if isinstance(multi_int_value, list):
                 multi_int_value = ', '.join([str(v) for v in multi_int_value])
             multi_int_text.insert(tkinter.END, str(multi_int_value))
-            multi_int_text.grid(row=n + self.list_items_row_offset, column=9, padx=padx)
+            multi_int_text.grid(row=n + self.list_items_row_offset, column=3, padx=padx)
             # end macro ::
 
             # macro :: py_tk_multi_float :: {"multi_float": "name"}
@@ -148,7 +147,7 @@ class MultiModelIndexPage(tkinter.Frame):
             if isinstance(multi_float_value, list):
                 multi_float_value = ', '.join([str(v) for v in multi_float_value])
             multi_float_text.insert(tkinter.END, str(multi_float_value))
-            multi_float_text.grid(row=n + self.list_items_row_offset, column=10, padx=padx)
+            multi_float_text.grid(row=n + self.list_items_row_offset, column=4, padx=padx)
             # end macro ::
 
             # macro :: py_tk_multi_string :: {"multi_string": "name"}
@@ -158,7 +157,7 @@ class MultiModelIndexPage(tkinter.Frame):
             if isinstance(multi_string_value, list):
                 multi_string_value = ', '.join(multi_string_value)
             multi_string_text.insert(tkinter.END, str(multi_string_value))
-            multi_string_text.grid(row=n + self.list_items_row_offset, column=11, padx=padx)
+            multi_string_text.grid(row=n + self.list_items_row_offset, column=5, padx=padx)
             # end macro ::
 
             # macro :: py_tk_multi_enum :: {"multi_enum": "name"}
@@ -168,7 +167,7 @@ class MultiModelIndexPage(tkinter.Frame):
             if isinstance(multi_enum_value, list):
                 multi_enum_value = ','.join(multi_enum_value)
             multi_enum_text.insert(tkinter.END, str(multi_enum_value))
-            multi_enum_text.grid(row=n + self.list_items_row_offset, column=12, padx=padx)
+            multi_enum_text.grid(row=n + self.list_items_row_offset, column=6, padx=padx)
             # end macro ::
 
             # macro :: py_tk_multi_datetime :: {"multi_datetime": "name"}
@@ -178,7 +177,7 @@ class MultiModelIndexPage(tkinter.Frame):
             if isinstance(multi_datetime_value, list):
                 multi_datetime_value = ', '.join([str(v) for v in multi_datetime_value])
             multi_datetime_text.insert(tkinter.END, str(multi_datetime_value))
-            multi_datetime_text.grid(row=n + self.list_items_row_offset, column=13, padx=padx)
+            multi_datetime_text.grid(row=n + self.list_items_row_offset, column=7, padx=padx)
             # end macro ::
 
         if self.list_offset == 0:

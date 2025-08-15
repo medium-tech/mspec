@@ -1,5 +1,4 @@
 import tkinter
-from copy import deepcopy
 from tkinter import ttk, StringVar
 from template_module.single_model.model import SingleModel, field_list, longest_field_name_length
 from template_module.single_model.client import client_list_single_model
@@ -37,7 +36,7 @@ class SingleModelIndexPage(tkinter.Frame):
 
         # header #
 
-        back_button = ttk.Button(self, text='<-', command=lambda: self.app.show_frame_str('SampleModuleIndexPage'))
+        back_button = ttk.Button(self, text='<-', command=lambda: self.app.show_frame_str('TemplateModuleIndexPage'))
         back_button.grid(row=0, column=0)
 
         label = ttk.Label(self, text='single model', font=LARGEFONT)

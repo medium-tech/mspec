@@ -7,13 +7,12 @@ from template_module.gui import TemplateModuleIndexPage
 # for :: {% for item in all_models %} :: {"template_module": "item.module.name.snake_case", "single_model": "item.model.name.snake_case", "SingleModel": "item.model.name.pascal_case"}
 from template_module.single_model.gui import SingleModelIndexPage, SingleModelInstancePage
 # end for :: rstrip
+# ignore ::
+from template_module.multi_model.gui import MultiModelIndexPage, MultiModelInstancePage
+# end ignore ::
 
 LARGEFONT = ('Verdana', 35)
   
-#
-#
-#
-
 def gui_main(start_frame='MSpecIndexPage'):
     app = MSpecGUIApp(start_frame)
     app.mainloop()
@@ -40,8 +39,12 @@ class MSpecGUIApp(tkinter.Tk):
         # end for ::
         # for :: {% for item in all_models %} :: {"SingleModel": "item.model.name.pascal_case"}
         SingleModelIndexPage,
-        SingleModelInstancePage
+        SingleModelInstancePage,
         # end for ::
+        # ignore ::
+        MultiModelIndexPage,
+        MultiModelInstancePage
+        # end ignore ::
     )
 
     def __init__(self, start_frame='MSpecIndexPage'):
@@ -88,3 +91,14 @@ class MSpecGUIApp(tkinter.Tk):
 
     def show_index_frame(self, **kwargs):
         self.show_frame(MSpecIndexPage, **kwargs)
+
+if __name__ == '__main__':
+
+    import argparse
+
+    _default_start_frame = 'MSpecIndexPage'
+    parser = argparse.ArgumentParser(description='Run the gui')
+    parser.add_argument('--start-frame', help=f'start frame for gui, default: {_default_start_frame}', default=_default_start_frame)
+    args = parser.parse_args()
+
+    gui_main(args.start_frame)

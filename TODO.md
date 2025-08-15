@@ -112,11 +112,10 @@ The main prototype are the python + browser 1 browser template apps.
     * 🟢 model  (`templates/py/src/test_module/test_model/gui.py`)
         * 🟢 list
         * 🟡 instance
-            * 🟡 instance
-                * 🟡 create
-                * 🟡 read
-                * 🟡 update
-                * 🟡 delete
+            * 🟡 create
+            * 🟡 read
+            * 🟡 update
+            * 🟡 delete
     * 🔴 template extraction 
     * 🔴 tests
     * 🔴 make network requests async
