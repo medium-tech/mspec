@@ -6,19 +6,9 @@ a find and replace tool that looks for strings to replace in both file paths and
 """
 
 terms = {
-    'test module': 'template module',
-    'test_module': 'template_module',
-    'test-module': 'template-module',
-    'testModule': 'templateModule',
-    'TestModule': 'TemplateModule'
+    'html': 'browser1',
+    'HTML': 'Browser1'
 }
-
-# terms = {
-#     'unittest': 'template_app',
-#     'unit test': 'template app',
-#     'unit-test': 'template-app',
-#     'unit_test': 'template_app'
-# }
 
 def replace_terms(s:str) -> str:
     for old, new in terms.items():
