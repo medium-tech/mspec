@@ -1,13 +1,13 @@
 import { test, expect } from '@playwright/test';
 
-// vars :: {"unit_test":"project.name.snake_case", "http://localhost:5005": "client.default_host"}
+// vars :: {"template_app":"project.name.snake_case", "http://localhost:5005": "client.default_host"}
 // vars :: {"test-module": "module.name.kebab_case", "test module": "module.name.lower_case"}
 // vars :: {"single model": "model.name.lower_case", "single-model": "model.name.kebab_case", "single_model": "model.name.snake_case"}
 
 test('test - test module - single model - pagination', async ({ page }) => {
   await page.goto('http://localhost:5005/');
 
-  await expect(page.locator('h1')).toContainText('unit_test');
+  await expect(page.locator('h1')).toContainText('template_app');
   await page.getByRole('link', { name: 'test module' }).last().click();
 
   await expect(page.locator('h1')).toContainText('test module');

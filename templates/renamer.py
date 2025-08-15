@@ -6,11 +6,18 @@ a find and replace tool that looks for strings to replace in both file paths and
 """
 
 terms = {
-    'test model': 'single model',
-    'test_model': 'single_model',
-    'test-model': 'single-model',
-    'testModel': 'singleModel',
-    'TestModel': 'SingleModel'
+    'test module': 'template module',
+    'test_module': 'template_module',
+    'test-module': 'template-module',
+    'testModule': 'templateModule',
+    'TestModule': 'TemplateModule'
+}
+
+terms = {
+    'unittest': 'template_app',
+    'unit test': 'template app',
+    'unit-test': 'template-app',
+    'unit_test': 'template_app'
 }
 
 def replace_terms(s:str) -> str:
@@ -35,6 +42,9 @@ def main(root:str, dry_run:bool):
         if 'test-results' in dirpath:
             continue
 
+        if replace_terms(dirpath) != dirpath:
+            print(f'DIR:      {dirpath}')
+
         for filename in filenames:
             if filename == '.DS_Store':
                 continue
@@ -44,6 +54,9 @@ def main(root:str, dry_run:bool):
                 continue
             if filename == '.env':
                 continue
+
+            if replace_terms(filename) != filename:
+                print(f'FILE:      {filename}')
 
             filepath = os.path.join(dirpath, filename)
             try:
@@ -59,7 +72,8 @@ def main(root:str, dry_run:bool):
                 if new_content != content:
                     print(f'replace:   {filepath}')
                 else:
-                    print(f'no change: {filepath}')
+                    pass
+                    # print(f'no change: {filepath}')
             else:
                 with open(filepath, 'w', encoding='utf-8') as file:
                     file.write(new_content)

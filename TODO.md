@@ -22,7 +22,7 @@ The main prototype are the python + html browser template apps.
 ### phase 1
 * 🔴 finish legacy browser todo list
 * 🟡 rename template apps (to disambiguate from testing libs)
-    * 🔴 unittest -> template_app
+    * 🟢 unittest -> template_app
     * 🔴 test_module -> template_module
     * 🟢 test_model -> single_model
     * 🟢 separate model fields starting with `multi_` to another model in the same module called `template_multi_model`

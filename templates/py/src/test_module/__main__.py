@@ -9,14 +9,14 @@ from test_module.single_model.db import *
 from test_module.single_model.model import *
 # end for ::
 
-# vars :: {"unit_test":"project.name.snake_case", "test_module":"module.name.snake_case", "test module":"module.name.lower_case"}
+# vars :: {"template_app":"project.name.snake_case", "test_module":"module.name.snake_case", "test module":"module.name.lower_case"}
 
 #
 # define arguments
 #
 
 
-parser = argparse.ArgumentParser(description='unit_test - test module - cli')
+parser = argparse.ArgumentParser(description='template_app - test module - cli')
 
 parser.add_argument('command', type=str, choices=[
     'data-seed',

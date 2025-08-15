@@ -1,6 +1,6 @@
 {
-    "_": " vars :: {'unit_test': 'project.name.snake_case', 'http://localhost:5005': 'client.default_host'}",
-    "name": "unit_test-js",
+    "_": " vars :: {'template_app': 'project.name.snake_case', 'http://localhost:5005': 'client.default_host'}",
+    "name": "template_app",
     "version": "0.0.1",
     "type": "module",
     "scripts": {
@@ -10,7 +10,7 @@
       "test-gen": "npx playwright codegen http://localhost:5005"
     },
     "devDependencies": {
-      "@playwright/test": "^1.40.1"
+      "@playwright/test": "1.52.0"
     },
     "dependencies": {
     }
