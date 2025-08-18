@@ -363,3 +363,8 @@ class Permission:
             self.delete.validate()
         elif self.delete not in permission_types:
             raise ValueError(f'Invalid delete permission type: {self.delete}')
+
+
+class Fonts:
+    heading1 = ('Courier', 35)
+    text = ('Courier', 12)

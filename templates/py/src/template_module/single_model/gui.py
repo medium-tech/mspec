@@ -1,5 +1,6 @@
 import tkinter
 from tkinter import ttk, StringVar
+from core.types import Fonts
 from template_module.single_model.model import SingleModel, field_list, longest_field_name_length
 from template_module.single_model.client import client_list_single_model
 
@@ -10,9 +11,6 @@ __all__ = [
     'SingleModelIndexPage',
     'SingleModelInstancePage'
 ]
-
-LARGEFONT = ('Verdana', 35)
-TEXT = ('Verdana', 12)
 
 class SingleModelIndexPage(tkinter.Frame):
      
@@ -39,7 +37,7 @@ class SingleModelIndexPage(tkinter.Frame):
         back_button = ttk.Button(self, text='<-', command=lambda: self.app.show_frame_str('TemplateModuleIndexPage'))
         back_button.grid(row=0, column=0)
 
-        label = ttk.Label(self, text='single model', font=LARGEFONT)
+        label = ttk.Label(self, text='single model', font=Fonts.heading1)
         label.grid(row=0, column=1)
         label.bind('<Button-1>', lambda _: self.app.focus_set())
 
@@ -210,10 +208,10 @@ class SingleModelInstancePage(tkinter.Frame):
         back_button = ttk.Button(self, text='<-', command=lambda: self.controller.show_frame_str('SingleModelIndexPage'))
         back_button.grid(row=0, column=0)
 
-        label = ttk.Label(self, text=f'single model - {self.item_id}', font=LARGEFONT)
+        label = ttk.Label(self, text=f'single model - {self.item_id}', font=Fonts.heading1)
         label.grid(row=0, column=1)
 
-        field_grid = tkinter.Text(self, font=TEXT, wrap='word', height=500, width=100, highlightthickness=0)
+        field_grid = tkinter.Text(self, font=Fonts.text, wrap='word', height=500, width=100, highlightthickness=0)
         for n, field_name in enumerate(['id'] + field_list):
             field_value = getattr(self.item, field_name, '-')
             if isinstance(field_value, list):

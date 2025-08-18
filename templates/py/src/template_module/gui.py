@@ -1,5 +1,6 @@
 import tkinter
 from tkinter import ttk
+from core.types import Fonts
 # for :: {% for model in module.models.values() %} :: {"single_model": "model.name.snake_case", "SingleModel": "model.name.pascal_case"}
 from template_module.single_model.gui import SingleModelIndexPage
 # end for ::
@@ -12,8 +13,6 @@ from template_module.multi_model.gui import MultiModelIndexPage
 __all__ = [
     'TemplateModuleIndexPage'
 ]
-
-LARGEFONT = ('Verdana', 35)
 
 class TemplateModuleIndexPage(tkinter.Frame):
 
@@ -33,8 +32,8 @@ class TemplateModuleIndexPage(tkinter.Frame):
         back_button = ttk.Button(self, text='<-', command=lambda: controller.show_index_frame())
         back_button.grid(row=0, column=0)
 
-        label = ttk.Label(self, text='template module', font=LARGEFONT)
-        label.grid(row=0, column=1) 
+        label = ttk.Label(self, text='template module', font=Fonts.heading1)
+        label.grid(row=0, column=1)
 
         for n, item in enumerate(self.index_pages, start=1):
             button = ttk.Button(self, text=item[1], command=lambda frame=item[0]: controller.show_frame(frame))

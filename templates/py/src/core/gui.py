@@ -2,6 +2,7 @@ import tkinter
 from tkinter import ttk
 from core.client import create_client_context
 # for :: {% for module in modules.values() %} :: {"template_module": "module.name.snake_case", "TemplateModule": "module.name.pascal_case"}
+from core.types import Fonts
 from template_module.gui import TemplateModuleIndexPage
 # end for :: rstrip
 # for :: {% for item in all_models %} :: {"template_module": "item.module.name.snake_case", "single_model": "item.model.name.snake_case", "SingleModel": "item.model.name.pascal_case"}
@@ -11,8 +12,6 @@ from template_module.single_model.gui import SingleModelIndexPage, SingleModelIn
 from template_module.multi_model.gui import MultiModelIndexPage, MultiModelInstancePage
 # end ignore ::
 
-LARGEFONT = ('Verdana', 35)
-  
 def gui_main(start_frame='MSpecIndexPage'):
     app = MSpecGUIApp(start_frame)
     app.mainloop()
@@ -22,8 +21,8 @@ class MSpecIndexPage(tkinter.Frame):
     def __init__(self, parent, controller:'MSpecGUIApp'): 
         super().__init__(parent)
 
-        label = ttk.Label(self, text='mspec', font=LARGEFONT)
-        label.grid(row=0, column=0) 
+        label = ttk.Label(self, text='mspec', font=Fonts.heading1)
+        label.grid(row=0, column=0)
 
         # for :: {% for module in modules.values() %} :: {"TemplateModule": "module.name.pascal_case", "template module": "module.name.lower_case", "1": "loop.index"}
         button1 = ttk.Button(self, text='template module', command=lambda: controller.show_frame(TemplateModuleIndexPage))

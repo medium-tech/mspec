@@ -1,5 +1,6 @@
 import tkinter
 from tkinter import ttk, StringVar
+from core.types import Fonts
 from template_module.multi_model.model import MultiModel, field_list, longest_field_name_length
 from template_module.multi_model.client import client_list_multi_model
 
@@ -7,9 +8,6 @@ __all__ = [
     'MultiModelIndexPage',
     'MultiModelInstancePage'
 ]
-
-LARGEFONT = ('Verdana', 35)
-TEXT = ('Verdana', 12)
 
 class MultiModelIndexPage(tkinter.Frame):
 
@@ -36,7 +34,7 @@ class MultiModelIndexPage(tkinter.Frame):
         back_button = ttk.Button(self, text='<-', command=lambda: self.app.show_frame_str('TemplateModuleIndexPage'))
         back_button.grid(row=0, column=0)
 
-        label = ttk.Label(self, text='multi model', font=LARGEFONT)
+        label = ttk.Label(self, text='multi model', font=Fonts.heading1)
         label.grid(row=0, column=1)
         label.bind('<Button-1>', lambda _: self.app.focus_set())
 
@@ -222,16 +220,17 @@ class MultiModelInstancePage(tkinter.Frame):
         back_button = ttk.Button(self, text='<-', command=lambda: self.controller.show_frame_str('MultiModelIndexPage'))
         back_button.grid(row=0, column=0)
 
-        label = ttk.Label(self, text=f'multi model - {self.item_id}', font=LARGEFONT)
+        label = ttk.Label(self, text=f'multi model - {self.item_id}', font=Fonts.heading1)
         label.grid(row=0, column=1)
 
-        field_grid = tkinter.Text(self, font=TEXT, wrap='word', height=500, width=100, highlightthickness=0)
+        field_grid = tkinter.Text(self, font=Fonts.text, wrap='word', height=500, width=100, highlightthickness=0)
         for n, field_name in enumerate(['id'] + field_list):
             field_value = getattr(self.item, field_name, '-')
             if isinstance(field_value, list):
                 field_value = ', '.join([str(v) for v in field_value])
-            field_display = f'{field_name}:'
-            field_grid.insert(tkinter.END, f'{field_display:<{longest_field_name_length + 2}} {field_value}\n\n')
+            field_display = f'{field_name}:'.ljust(longest_field_name_length + 2)
+            field_grid.insert(tkinter.END, f'{field_display} ')
+            field_grid.insert(tkinter.END, f'{field_value}\n\n')
         field_grid.grid(row=1, column=0, columnspan=2)
 
     def on_show_frame(self, item=None, **kwargs):
