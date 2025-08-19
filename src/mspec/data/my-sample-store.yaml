@@ -1,9 +1,5 @@
 project:
   name:
-    snake_case: 'my_sample_store'
-    pascal_case: 'MySampleStore'
-    camel_case: 'mySampleStore'
-    kebab_case: 'my-sample-store'
     lower_case: 'my sample store'
 
   description: 'A sample project for mspec-alpha python app generator'
