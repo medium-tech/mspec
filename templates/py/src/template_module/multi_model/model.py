@@ -39,9 +39,8 @@ class MultiModel:
     multi_datetime: list[datetime]
     id: Optional[str] = None
 
-    def __post_init__(self):
-        """post init"""
-        # macro :: py_post_init_list_datetime :: {"multi_datetime": "name"}
+    def convert_types(self) -> 'MultiModel':
+        # macro :: py_convert_types_list_datetime :: {"multi_datetime": "name"}
         # multi_datetime - list of datetime
         new_values = []
         for item in self.multi_datetime:
@@ -52,6 +51,7 @@ class MultiModel:
             
         self.multi_datetime = new_values
         # end macro ::
+        return self
 
     def validate(self) -> 'MultiModel':
 
@@ -129,10 +129,6 @@ class MultiModel:
     
     def to_json(self) -> str:
         return to_json(self.to_dict())
-    
-    @classmethod
-    def from_json(cls, json_string:str) -> 'MultiModel':
-        return cls(**json.loads(json_string))
 
     @classmethod
     def example(cls) -> 'MultiModel':

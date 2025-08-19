@@ -55,14 +55,14 @@ class SingleModel:
     # end replace ::
     id: Optional[str] = None
 
-    def __post_init__(self):
-        """post init"""
-        # insert :: macro.py_post_init(model.fields)
-        # macro :: py_post_init_datetime :: {"single_datetime": "name"}
+    def convert_types(self) -> 'SingleModel':
+        # insert :: macro.py_convert_types(model.fields)
+        # macro :: py_convert_types_datetime :: {"single_datetime": "name"}
         # single_datetime - datetime
         if isinstance(self.single_datetime, str):
             self.single_datetime = datetime.strptime(self.single_datetime, datetime_format_str).replace(microsecond=0)
         # end macro ::
+        return self
 
     def validate(self) -> 'SingleModel':
         
@@ -118,10 +118,6 @@ class SingleModel:
     
     def to_json(self) -> str:
         return to_json(self.to_dict())
-    
-    @classmethod
-    def from_json(cls, json_string:str) -> 'SingleModel':
-        return cls(**json.loads(json_string))
 
     @classmethod
     def example(cls) -> 'SingleModel':

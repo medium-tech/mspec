@@ -42,10 +42,10 @@ def client_create_single_model(ctx:dict, obj:SingleModel) -> SingleModel:
 
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return SingleModel.from_json(response_body)
-    
+            return SingleModel(**json.loads(response_body)).convert_types()
+
     except (json.JSONDecodeError, KeyError) as e:
-        raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
+        raise MSpecError(f'invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
         raise MSpecError(f'error creating single model: {e.__class__.__name__}: {e}')
 
@@ -86,8 +86,8 @@ def client_read_single_model(ctx:dict, id:str) -> SingleModel:
         raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
         raise MSpecError(f'error reading single model: {e.__class__.__name__}: {e}')
-    
-    return SingleModel.from_json(response_body).validate()
+
+    return SingleModel(**json.loads(response_body)).convert_types()
 
 def client_update_single_model(ctx:dict, obj:SingleModel) -> SingleModel:
     """
@@ -136,8 +136,8 @@ def client_update_single_model(ctx:dict, obj:SingleModel) -> SingleModel:
     
     except Exception as e:
         raise MSpecError(f'error updating single model: {e.__class__.__name__}: {e}')
-    
-    return SingleModel.from_json(response_body).validate()
+
+    return SingleModel(**json.loads(response_body)).convert_types()
 
 def client_delete_single_model(ctx:dict, id:str) -> None:
     """
@@ -194,10 +194,10 @@ def client_list_single_model(ctx:dict, offset:int=0, limit:int=50) -> list[Singl
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
 
-        return [SingleModel(**item).validate() for item in json.loads(response_body)]
+        return [SingleModel(**item).convert_types() for item in json.loads(response_body)]
 
     except (json.JSONDecodeError, TypeError) as e:
-        raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
-    
+        raise MSpecError(f'invalid response from server, {e.__class__.__name__}: {e}')
+
     except Exception as e:
         raise MSpecError(f'error listing single models: {e.__class__.__name__}: {e}')

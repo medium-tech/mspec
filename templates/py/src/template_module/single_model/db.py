@@ -155,7 +155,7 @@ def db_list_single_model(ctx:dict, offset:int=0, limit:int=25) -> list[SingleMod
             id=str(entry[0]),
             # replace :: macro.py_sql_convert(model.fields)
 			single_bool=bool(entry[1]),
-			single_datetime=entry[2],
+			single_datetime=datetime.strptime(entry[2], datetime_format_str).replace(microsecond=0),
 			single_enum=entry[3],
 			single_float=entry[4],
 			single_int=entry[5],

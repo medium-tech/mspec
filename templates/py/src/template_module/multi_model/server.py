@@ -1,3 +1,4 @@
+import json
 import re
 from urllib.parse import parse_qs
 from core.exceptions import NotFoundError, RequestError, JSONResponse
@@ -28,7 +29,7 @@ def multi_model_routes(ctx:dict, env:dict, raw_req_body:bytes):
                 raise RequestError('404 Not Found', f'not found template-module.multi-model.{instance_id}')
 
         elif env['REQUEST_METHOD'] == 'PUT':
-            incoming_item = MultiModel.from_json(raw_req_body.decode('utf-8'))
+            incoming_item = MultiModel(**json.loads(raw_req_body.decode('utf-8'))).convert_types()
 
             try:
                 if instance_id != incoming_item.id:
@@ -58,7 +59,7 @@ def multi_model_routes(ctx:dict, env:dict, raw_req_body:bytes):
 
     elif re.match(r'/api/template-module/multi-model', env['PATH_INFO']):
         if env['REQUEST_METHOD'] == 'POST':
-            incoming_item = MultiModel.from_json(raw_req_body.decode('utf-8'))
+            incoming_item = MultiModel(**json.loads(raw_req_body.decode('utf-8'))).convert_types()
             item = db_create_multi_model(ctx, incoming_item)
 
             ctx['log'](f'POST template-module.multi-model - id: {item.id}')

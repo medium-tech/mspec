@@ -40,7 +40,7 @@ class MTemplatePyProject(MTemplateProject):
             'py_sql_convert': self.macro_py_sql_convert,
             'py_create_tables': self.macro_py_create_tables,
             'py_test_crud_delete': self.macro_py_test_crud_delete,
-            'py_post_init': self.macro_py_post_init,
+            'py_convert_types': self.macro_py_convert_types,
             'py_example_fields': self.macro_py_example_fields,
             'py_random_fields': self.macro_py_random_fields,
             'py_verify_fields': self.macro_py_verify_fields,
@@ -261,18 +261,18 @@ class MTemplatePyProject(MTemplateProject):
 
         return out
 
-    def macro_py_post_init(self, fields:dict, indent='\t') -> str:
+    def macro_py_convert_types(self, fields:dict, indent='\t') -> str:
         out = ''
         for name, field in fields.items():
             if field['type'] == 'datetime':
                 vars = deepcopy(field)
                 vars['name'] = name
-                out += self.spec['macro']['py_post_init_datetime'](vars) + '\n'
+                out += self.spec['macro']['py_convert_types_datetime'](vars) + '\n'
 
             elif field['type'] == 'list' and field['element_type'] == 'datetime':
                 vars = deepcopy(field)
                 vars['name'] = name
-                out += self.spec['macro']['py_post_init_list_datetime'](vars) + '\n'
+                out += self.spec['macro']['py_convert_types_list_datetime'](vars) + '\n'
                 
         return out
     

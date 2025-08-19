@@ -84,7 +84,7 @@ The main prototype are the python + browser 1 browser template apps.
         * 🔴 reset password by email code
         * 🔴 add login sessions/logout
         * 🔴 add acls to endpoints/models
-    * 🔴 get rid of `__post_init__` and use type conversion explicitly where needed
+    * 🟢 get rid of `__post_init__` and use type conversion explicitly where needed
 
 * 🟢 http client
     * 🟢 core (`templates/py/src/core/client.py`)

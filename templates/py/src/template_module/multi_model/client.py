@@ -39,10 +39,10 @@ def client_create_multi_model(ctx:dict, obj:MultiModel) -> MultiModel:
 
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return MultiModel.from_json(response_body)
-    
+            return MultiModel(**json.loads(response_body)).convert_types()
+
     except (json.JSONDecodeError, KeyError) as e:
-        raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
+        raise MSpecError(f'invalid response from server, {e.__class__.__name__}: {e}')
     except Exception as e:
         raise MSpecError(f'error creating multi model: {e.__class__.__name__}: {e}')
 
@@ -84,7 +84,7 @@ def client_read_multi_model(ctx:dict, id:str) -> MultiModel:
     except Exception as e:
         raise MSpecError(f'error reading multi model: {e.__class__.__name__}: {e}')
 
-    return MultiModel.from_json(response_body).validate()
+    return MultiModel(**json.loads(response_body)).convert_types()
 
 def client_update_multi_model(ctx:dict, obj:MultiModel) -> MultiModel:
     """
@@ -129,12 +129,12 @@ def client_update_multi_model(ctx:dict, obj:MultiModel) -> MultiModel:
         raise MSpecError(f'error updating multi model: {e.__class__.__name__}: {e}')
         
     except (json.JSONDecodeError, KeyError) as e:
-        raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
+        raise MSpecError(f'invalid response from server, {e.__class__.__name__}: {e}')
     
     except Exception as e:
         raise MSpecError(f'error updating multi model: {e.__class__.__name__}: {e}')
 
-    return MultiModel.from_json(response_body).validate()
+    return MultiModel(**json.loads(response_body)).convert_types()
 
 def client_delete_multi_model(ctx:dict, id:str) -> None:
     """
@@ -191,10 +191,10 @@ def client_list_multi_model(ctx:dict, offset:int=0, limit:int=50) -> list[MultiM
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
 
-        return [MultiModel(**item).validate() for item in json.loads(response_body)]
+        return [MultiModel(**item).convert_types() for item in json.loads(response_body)]
 
     except (json.JSONDecodeError, TypeError) as e:
-        raise MSpecError('invalid response from server, {e.__class__.__name__}: {e}')
+        raise MSpecError(f'invalid response from server, {e.__class__.__name__}: {e}')
     
     except Exception as e:
         raise MSpecError(f'error listing multi models: {e.__class__.__name__}: {e}')

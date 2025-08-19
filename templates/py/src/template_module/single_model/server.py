@@ -1,3 +1,4 @@
+import json
 import re
 from urllib.parse import parse_qs
 from core.exceptions import NotFoundError, RequestError, JSONResponse
@@ -32,7 +33,7 @@ def single_model_routes(ctx:dict, env:dict, raw_req_body:bytes):
                 raise RequestError('404 Not Found', f'not found template-module.single-model.{instance_id}')
 
         elif env['REQUEST_METHOD'] == 'PUT':
-            incoming_item = SingleModel.from_json(raw_req_body.decode('utf-8'))
+            incoming_item = SingleModel(**json.loads(raw_req_body.decode('utf-8'))).convert_types()
 
             try:
                 if instance_id != incoming_item.id:
@@ -62,7 +63,7 @@ def single_model_routes(ctx:dict, env:dict, raw_req_body:bytes):
 
     elif re.match(r'/api/template-module/single-model', env['PATH_INFO']):
         if env['REQUEST_METHOD'] == 'POST':
-            incoming_item = SingleModel.from_json(raw_req_body.decode('utf-8'))
+            incoming_item = SingleModel(**json.loads(raw_req_body.decode('utf-8'))).convert_types()
             item = db_create_single_model(ctx, incoming_item)
 
             ctx['log'](f'POST template-module.single-model - id: {item.id}')
