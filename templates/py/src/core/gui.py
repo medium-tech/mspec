@@ -1,8 +1,8 @@
 import tkinter
 from tkinter import ttk
 from core.client import create_client_context
-# for :: {% for module in modules.values() %} :: {"template_module": "module.name.snake_case", "TemplateModule": "module.name.pascal_case"}
 from core.types import Fonts
+# for :: {% for module in modules.values() %} :: {"template_module": "module.name.snake_case", "TemplateModule": "module.name.pascal_case"}
 from template_module.gui import TemplateModuleIndexPage
 # end for :: rstrip
 # for :: {% for item in all_models %} :: {"template_module": "item.module.name.snake_case", "single_model": "item.model.name.snake_case", "SingleModel": "item.model.name.pascal_case"}
@@ -12,27 +12,29 @@ from template_module.single_model.gui import SingleModelIndexPage, SingleModelIn
 from template_module.multi_model.gui import MultiModelIndexPage, MultiModelInstancePage
 # end ignore ::
 
-def gui_main(start_frame='MSpecIndexPage'):
-    app = MSpecGUIApp(start_frame)
+# vars :: {"TemplateApp": "project.name.pascal_case", "template app": "project.name.lower_case"}
+
+def gui_main(start_frame='TemplateAppIndexPage'):
+    app = TemplateAppGUI(start_frame)
     app.mainloop()
     
-class MSpecIndexPage(tkinter.Frame):
+class TemplateAppIndexPage(tkinter.Frame):
      
-    def __init__(self, parent, controller:'MSpecGUIApp'): 
+    def __init__(self, parent, controller:'TemplateAppGUI'): 
         super().__init__(parent)
 
-        label = ttk.Label(self, text='mspec', font=Fonts.heading1)
+        label = ttk.Label(self, text='template app', font=Fonts.heading1, style='Custom.TButton')
         label.grid(row=0, column=0)
 
-        # for :: {% for module in modules.values() %} :: {"TemplateModule": "module.name.pascal_case", "template module": "module.name.lower_case", "1": "loop.index"}
-        button1 = ttk.Button(self, text='template module', command=lambda: controller.show_frame(TemplateModuleIndexPage))
+        # for :: {% for module in modules.values() %} :: {"1": "loop.index", "template module": "module.name.lower_case", "TemplateModule": "module.name.pascal_case"}
+        button1 = ttk.Button(self, text='template module', command=lambda: controller.show_frame(TemplateModuleIndexPage), style='Custom.TButton')
         button1.grid(row=1, column=0)
         # end for ::
 
-class MSpecGUIApp(tkinter.Tk):
+class TemplateAppGUI(tkinter.Tk):
 
     frame_classes = (
-        MSpecIndexPage, 
+        TemplateAppIndexPage, 
         # for :: {% for module in modules.values() %} :: {"TemplateModule": "module.name.pascal_case"}
         TemplateModuleIndexPage,
         # end for ::
@@ -46,14 +48,19 @@ class MSpecGUIApp(tkinter.Tk):
         # end ignore ::
     )
 
-    def __init__(self, start_frame='MSpecIndexPage'):
+    def __init__(self, start_frame='TemplateAppIndexPage'):
         super().__init__()
-        self.title('mspec')
+        self.title('template app')
         self.geometry('1000x800')
 
         self.ctx = create_client_context()
-        
-        container = tkinter.Frame(self)
+
+        style = ttk.Style()
+        style.theme_use('classic')
+        style.configure('Custom.TButton')
+
+        container = ttk.Frame(self)
+        container.config(style='Custom.TButton')
         container.grid(column=0, row=0, sticky='nsew')
   
         self.frames = {}
@@ -89,13 +96,13 @@ class MSpecGUIApp(tkinter.Tk):
         self.show_frame(frame_class, **kwargs)
 
     def show_index_frame(self, **kwargs):
-        self.show_frame(MSpecIndexPage, **kwargs)
+        self.show_frame(TemplateAppIndexPage, **kwargs)
 
 if __name__ == '__main__':
 
     import argparse
 
-    _default_start_frame = 'MSpecIndexPage'
+    _default_start_frame = 'TemplateAppIndexPage'
     parser = argparse.ArgumentParser(description='Run the gui')
     parser.add_argument('--start-frame', help=f'start frame for gui, default: {_default_start_frame}', default=_default_start_frame)
     args = parser.parse_args()

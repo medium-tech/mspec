@@ -1,5 +1,6 @@
 import tkinter
 from tkinter import ttk, StringVar
+
 from core.types import Fonts
 from template_module.multi_model.model import MultiModel, field_list, longest_field_name_length
 from template_module.multi_model.client import client_list_multi_model
@@ -84,13 +85,13 @@ class MultiModelIndexPage(tkinter.Frame):
             header.grid(row=self.list_items_row_offset - 1, column=n)
 
         try:
-            multi_models = client_list_multi_model(self.app.ctx, offset=self.list_offset, limit=self.list_page_size)
+            items = client_list_multi_model(self.app.ctx, offset=self.list_offset, limit=self.list_page_size)
         except Exception as e:
             print(e)
             self.list_status.set('status: 🔴')
             return
 
-        self.pagination_label.set(f'offset: {self.list_offset} limit: {self.list_page_size} results: {len(multi_models)}')
+        self.pagination_label.set(f'offset: {self.list_offset} limit: {self.list_page_size} results: {len(items)}')
 
         self.list_status.set('status: 🟢')
 
@@ -99,82 +100,82 @@ class MultiModelIndexPage(tkinter.Frame):
         for n in range(self.list_page_size):
             
             try:
-                multi_model = multi_models[n]
+                item = items[n]
             except IndexError:
                 break
 
-            multi_model_id = getattr(multi_model, 'id', '-')
+            item_id = getattr(item, 'id', '-')
 
-            if multi_model_id == '-':
-                view_widget = ttk.Label(self.table, text=multi_model_id)
+            if item_id == '-':
+                view_widget = ttk.Label(self.table, text=item_id)
             else:
-                def go_to_item(item):
-                    print(f"Going to item {item.id} in MultiModelInstancePage")
-                    self.app.show_frame_str('MultiModelInstancePage', item=item)
+                def go_to_item(_item):
+                    print(f"Going to item {_item.id} in MultiModelInstancePage")
+                    self.app.show_frame_str('MultiModelInstancePage', item=_item)
 
-                view_widget = ttk.Button(self.table, text='view', command=lambda i=n: go_to_item(multi_models[i]), width=3)
+                view_widget = ttk.Button(self.table, text='view', command=lambda i=n: go_to_item(items[i]), width=3)
 
             view_widget.grid(row=n + self.list_items_row_offset, column=0, padx=padx)
 
             # id - str
             id_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
-            id_text.insert(tkinter.END, multi_model_id)
+            id_text.insert(tkinter.END, item_id)
             id_text.grid(row=n + self.list_items_row_offset, column=1, padx=padx)
 
-            # macro :: py_tk_multi_bool :: {"multi_bool": "name"}
+            # macro :: py_tk_field_table_list_bool :: {"multi_bool": "name"}
             # multi_bool - list of bool
             multi_bool_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
-            multi_bool_value = getattr(multi_model, 'multi_bool', '-')
+            multi_bool_value = getattr(item, 'multi_bool', '-')
             if isinstance(multi_bool_value, list):
                 multi_bool_value = ', '.join([str(v).lower() for v in multi_bool_value])
             multi_bool_text.insert(tkinter.END, str(multi_bool_value))
             multi_bool_text.grid(row=n + self.list_items_row_offset, column=2, padx=padx)
             # end macro ::
 
-            # macro :: py_tk_multi_int :: {"multi_int": "name"}
+            # macro :: py_tk_field_table_list_int :: {"multi_int": "name"}
             # multi_int - list of int
             multi_int_text = tkinter.Text(self.table, height=1, width=15, highlightthickness=0)
-            multi_int_value = getattr(multi_model, 'multi_int', '-')
+            multi_int_value = getattr(item, 'multi_int', '-')
             if isinstance(multi_int_value, list):
                 multi_int_value = ', '.join([str(v) for v in multi_int_value])
             multi_int_text.insert(tkinter.END, str(multi_int_value))
             multi_int_text.grid(row=n + self.list_items_row_offset, column=3, padx=padx)
             # end macro ::
 
-            # macro :: py_tk_multi_float :: {"multi_float": "name"}
+            # macro :: py_tk_field_table_list_float :: {"multi_float": "name"}
             # multi_float - list of float
             multi_float_text = tkinter.Text(self.table, height=1, width=15, highlightthickness=0)
-            multi_float_value = getattr(multi_model, 'multi_float', '-')
+            multi_float_value = getattr(item, 'multi_float', '-')
             if isinstance(multi_float_value, list):
                 multi_float_value = ', '.join([str(v) for v in multi_float_value])
             multi_float_text.insert(tkinter.END, str(multi_float_value))
             multi_float_text.grid(row=n + self.list_items_row_offset, column=4, padx=padx)
             # end macro ::
 
-            # macro :: py_tk_multi_string :: {"multi_string": "name"}
+            # macro :: py_tk_field_table_list_str :: {"multi_string": "name"}
             # multi_string - list of str
             multi_string_text = tkinter.Text(self.table, height=1, width=30, highlightthickness=0)
-            multi_string_value = getattr(multi_model, 'multi_string', '-')
+            multi_string_value = getattr(item, 'multi_string', '-')
             if isinstance(multi_string_value, list):
                 multi_string_value = ', '.join(multi_string_value)
             multi_string_text.insert(tkinter.END, str(multi_string_value))
             multi_string_text.grid(row=n + self.list_items_row_offset, column=5, padx=padx)
             # end macro ::
 
-            # macro :: py_tk_multi_enum :: {"multi_enum": "name"}
+            # macro :: py_tk_field_table_list_enum :: {"multi_enum": "name"}
             # multi_enum - list of str (enums)
             multi_enum_text = tkinter.Text(self.table, height=1, width=20, highlightthickness=0)
-            multi_enum_value = getattr(multi_model, 'multi_enum', '-')
+            multi_enum_value = getattr(item, 'multi_enum', '-')
             if isinstance(multi_enum_value, list):
                 multi_enum_value = ','.join(multi_enum_value)
             multi_enum_text.insert(tkinter.END, str(multi_enum_value))
             multi_enum_text.grid(row=n + self.list_items_row_offset, column=6, padx=padx)
             # end macro ::
 
-            # macro :: py_tk_multi_datetime :: {"multi_datetime": "name"}
+            # macro :: py_tk_field_table_list_datetime :: {"multi_datetime": "name"}
             # multi_datetime - list of datetime
             multi_datetime_text = tkinter.Text(self.table, height=1, width=30, highlightthickness=0)
-            multi_datetime_value = getattr(multi_model, 'multi_datetime', '-')
+            multi_datetime_value = getattr(item, 'multi_datetime', '-')
             if isinstance(multi_datetime_value, list):
                 multi_datetime_value = ', '.join([str(v) for v in multi_datetime_value])
             multi_datetime_text.insert(tkinter.END, str(multi_datetime_value))
@@ -186,7 +187,7 @@ class MultiModelIndexPage(tkinter.Frame):
         else:
             self.prev_pg_button.state(['!disabled'])
 
-        if len(multi_models) < self.list_page_size:
+        if len(items) < self.list_page_size:
             self.next_pg_button.state(['disabled'])
         else:
             self.next_pg_button.state(['!disabled'])

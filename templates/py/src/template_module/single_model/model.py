@@ -1,11 +1,10 @@
-from core.types import *
-from core.util import *
-
-import json
-
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from typing import Optional
+
+from core.types import *
+from core.util import *
+
 
 __all__ = [
     'SingleModel'

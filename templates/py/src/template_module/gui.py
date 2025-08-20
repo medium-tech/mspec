@@ -28,6 +28,7 @@ class TemplateModuleIndexPage(tkinter.Frame):
     def __init__(self, parent, controller): 
         super().__init__(parent)
         self.controller = controller
+        #self.config(background='white')
 
         back_button = ttk.Button(self, text='<-', command=lambda: controller.show_index_frame())
         back_button.grid(row=0, column=0)

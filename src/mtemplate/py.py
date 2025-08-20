@@ -47,6 +47,7 @@ class MTemplatePyProject(MTemplateProject):
             'py_field_list': self.macro_py_field_list,
             'py_field_definitions': self.macro_py_field_definitions,
             'py_enum_definitions': self.macro_py_enum_definitions,
+            'py_tk_field_table': self.macro_py_tk_field_table,
         })
 
     def macro_py_db_create(self, model:dict, indent='\t\t') -> str:
@@ -260,6 +261,22 @@ class MTemplatePyProject(MTemplateProject):
                 out += self.spec['macro']['py_test_sql_delete'](list_vars) + '\n'
 
         return out
+    
+    def macro_py_tk_field_table(self, fields:dict, indent='\t') -> str:
+        out = ''
+        column = 2
+        for name, field in fields.items():
+            macro_name = f'py_tk_field_table_{field["type"]}'
+            if field['type'] == 'list':
+                macro_name += f'_{field["element_type"]}'
+
+            vars = deepcopy(field)
+            vars['name'] = name
+            vars['column'] = str(column)
+            out += self.spec['macro'][macro_name](vars) + '\n'
+            column += 1
+
+        return out
 
     def macro_py_convert_types(self, fields:dict, indent='\t') -> str:
         out = ''
@@ -362,10 +379,18 @@ class MTemplatePyProject(MTemplateProject):
                 raise MTemplateError(f'field {name} does not have type "{field_type}" - KeyError: {e}')
         return out
 
-    def macro_py_field_list(self, fields:dict) -> str:
-        all_keys = ['id'] + list(fields.keys())
-        keys = [f"'{name}'" for name in all_keys]
-        return '[' + ', '.join(keys) + ']'
+    def macro_py_field_list(self, fields:dict, indent='\t') -> str:
+        out = ''
+
+        field_names = list(fields.keys())
+        last_field_index = len(field_names) - 1
+
+        for n, name in enumerate(sorted(field_names)):
+            out += f"{indent}'{name}'"
+            if n < last_field_index:
+                out += ',\n'
+
+        return out
 
     def macro_py_field_definitions(self, fields:dict, indent='    ') -> str:
         out = ''
@@ -385,11 +410,11 @@ class MTemplatePyProject(MTemplateProject):
             except KeyError:
                 continue
 
-            out += self.spec['macro'][f'py_enum_definition_begin']({'field_name': name}) + '\n'
+            out += self.spec['macro'][f'py_enum_definition_begin']({'field_name': name})
 
             for option in enum_values:
                 args = {'option': option.replace("'", "\'")}
-                out += self.spec['macro'][f'py_enum_definition_option'](args) + '\n'
+                out += self.spec['macro'][f'py_enum_definition_option'](args)
 
             out += self.spec['macro'][f'py_enum_definition_end']({}) + '\n'
 

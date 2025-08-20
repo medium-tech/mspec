@@ -116,7 +116,7 @@ The main prototype are the python + browser 1 browser template apps.
             * 🟢 read
             * 🟡 update
             * 🟡 delete
-    * 🔴 template extraction 
+    * 🟡 template extraction 
     * 🔴 tests
     * 🔴 make network requests async
 
