@@ -1,0 +1,158 @@
+{
+    "params": {},
+    "state": {
+        "test_bool_true": {
+            "type": "bool",
+            "calc": {"call": "bool", "args": {"object": 1}}
+        },
+        "test_bool_false": {
+            "type": "bool", 
+            "calc": {"call": "bool", "args": {"object": 0}}
+        },
+        "test_not_true": {
+            "type": "bool",
+            "calc": {"call": "not", "args": {"object": true}}
+        },
+        "test_not_false": {
+            "type": "bool",
+            "calc": {"call": "not", "args": {"object": false}}
+        },
+        "test_neg": {
+            "type": "int",
+            "calc": {"call": "neg", "args": {"object": 5}}
+        },
+        "test_and_true": {
+            "type": "bool",
+            "calc": {"call": "and", "args": {"a": true, "b": true}}
+        },
+        "test_and_false": {
+            "type": "bool", 
+            "calc": {"call": "and", "args": {"a": true, "b": false}}
+        },
+        "test_or_true": {
+            "type": "bool",
+            "calc": {"call": "or", "args": {"a": false, "b": true}}
+        },
+        "test_or_false": {
+            "type": "bool",
+            "calc": {"call": "or", "args": {"a": false, "b": false}}
+        },
+        "test_add": {
+            "type": "int",
+            "calc": {"call": "add", "args": {"a": 10, "b": 5}}
+        },
+        "test_sub": {
+            "type": "int", 
+            "calc": {"call": "sub", "args": {"a": 10, "b": 3}}
+        },
+        "test_mul": {
+            "type": "int",
+            "calc": {"call": "mul", "args": {"a": 4, "b": 7}}
+        },
+        "test_div": {
+            "type": "float",
+            "calc": {"call": "div", "args": {"a": 15, "b": 3}}
+        },
+        "test_pow": {
+            "type": "int",
+            "calc": {"call": "pow", "args": {"a": 2, "b": 3}}
+        },
+        "test_eq_true": {
+            "type": "bool",
+            "calc": {"call": "eq", "args": {"a": 5, "b": 5}}
+        },
+        "test_eq_false": {
+            "type": "bool",
+            "calc": {"call": "eq", "args": {"a": 5, "b": 3}}
+        },
+        "test_ne_true": {
+            "type": "bool",
+            "calc": {"call": "ne", "args": {"a": 5, "b": 3}}
+        },
+        "test_ne_false": {
+            "type": "bool",
+            "calc": {"call": "ne", "args": {"a": 5, "b": 5}}
+        },
+        "test_lt_true": {
+            "type": "bool",
+            "calc": {"call": "lt", "args": {"a": 3, "b": 5}}
+        },
+        "test_lt_false": {
+            "type": "bool",
+            "calc": {"call": "lt", "args": {"a": 5, "b": 3}}
+        },
+        "test_le_true": {
+            "type": "bool",
+            "calc": {"call": "le", "args": {"a": 5, "b": 5}}
+        },
+        "test_le_false": {
+            "type": "bool",
+            "calc": {"call": "le", "args": {"a": 7, "b": 5}}
+        },
+        "test_gt_true": {
+            "type": "bool",
+            "calc": {"call": "gt", "args": {"a": 7, "b": 5}}
+        },
+        "test_gt_false": {
+            "type": "bool",
+            "calc": {"call": "gt", "args": {"a": 3, "b": 5}}
+        },
+        "test_ge_true": {
+            "type": "bool",
+            "calc": {"call": "ge", "args": {"a": 5, "b": 5}}
+        },
+        "test_ge_false": {
+            "type": "bool",
+            "calc": {"call": "ge", "args": {"a": 3, "b": 5}}
+        }
+    },
+    "ops": {},
+    "output": [
+        {"heading": {"text": "Function Tests"}, "level": 1},
+        {"block": [
+            {"text": "Boolean Functions:"},
+            {"break": 1},
+            {"text": "bool(1) = "}, {"lingo": {"state": {"test_bool_true": {}}}}, {"break": 1},
+            {"text": "bool(0) = "}, {"lingo": {"state": {"test_bool_false": {}}}}, {"break": 1},
+            {"text": "not(true) = "}, {"lingo": {"state": {"test_not_true": {}}}}, {"break": 1},
+            {"text": "not(false) = "}, {"lingo": {"state": {"test_not_false": {}}}}, {"break": 1},
+            {"text": "neg(5) = "}, {"lingo": {"state": {"test_neg": {}}}}, {"break": 2},
+            
+            {"text": "Logical Functions:"},
+            {"break": 1},
+            {"text": "and(true, true) = "}, {"lingo": {"state": {"test_and_true": {}}}}, {"break": 1},
+            {"text": "and(true, false) = "}, {"lingo": {"state": {"test_and_false": {}}}}, {"break": 1},
+            {"text": "or(false, true) = "}, {"lingo": {"state": {"test_or_true": {}}}}, {"break": 1},
+            {"text": "or(false, false) = "}, {"lingo": {"state": {"test_or_false": {}}}}, {"break": 2},
+            
+            {"text": "Math Functions:"},
+            {"break": 1},
+            {"text": "add(10, 5) = "}, {"lingo": {"state": {"test_add": {}}}}, {"break": 1},
+            {"text": "sub(10, 3) = "}, {"lingo": {"state": {"test_sub": {}}}}, {"break": 1},
+            {"text": "mul(4, 7) = "}, {"lingo": {"state": {"test_mul": {}}}}, {"break": 1},
+            {"text": "div(15, 3) = "}, {"lingo": {"state": {"test_div": {}}}}, {"break": 1},
+            {"text": "pow(2, 3) = "}, {"lingo": {"state": {"test_pow": {}}}}, {"break": 2},
+            
+            {"text": "Comparison Functions:"},
+            {"break": 1},
+            {"text": "eq(5, 5) = "}, {"lingo": {"state": {"test_eq_true": {}}}}, {"break": 1},
+            {"text": "eq(5, 3) = "}, {"lingo": {"state": {"test_eq_false": {}}}}, {"break": 1},
+            {"text": "ne(5, 3) = "}, {"lingo": {"state": {"test_ne_true": {}}}}, {"break": 1},
+            {"text": "ne(5, 5) = "}, {"lingo": {"state": {"test_ne_false": {}}}}, {"break": 1},
+            {"text": "lt(3, 5) = "}, {"lingo": {"state": {"test_lt_true": {}}}}, {"break": 1},
+            {"text": "lt(5, 3) = "}, {"lingo": {"state": {"test_lt_false": {}}}}, {"break": 1},
+            {"text": "le(5, 5) = "}, {"lingo": {"state": {"test_le_true": {}}}}, {"break": 1},
+            {"text": "le(7, 5) = "}, {"lingo": {"state": {"test_le_false": {}}}}, {"break": 1},
+            {"text": "gt(7, 5) = "}, {"lingo": {"state": {"test_gt_true": {}}}}, {"break": 1},
+            {"text": "gt(3, 5) = "}, {"lingo": {"state": {"test_gt_false": {}}}}, {"break": 1},
+            {"text": "ge(5, 5) = "}, {"lingo": {"state": {"test_ge_true": {}}}}, {"break": 1},
+            {"text": "ge(3, 5) = "}, {"lingo": {"state": {"test_ge_false": {}}}}, {"break": 2},
+            
+            {"text": "Time Functions:"},
+            {"break": 1},
+            {"text": "current.weekday() = "}, {"lingo": {"call": "current.weekday"}}, {"break": 1},
+            {"text": "datetime.now() = "}, {"lingo": {"call": "datetime.now"}}, {"break": 1},
+            {"text": "random.randint(1, 10) = "}, {"lingo": {"call": "random.randint", "args": {"a": 1, "b": 10}}}, {"break": 1}
+        ]}
+    ]
+}
