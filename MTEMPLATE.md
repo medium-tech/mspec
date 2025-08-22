@@ -14,9 +14,7 @@ mtemplate is a code templating system that allows you to extract dynamic templat
   - [insert](#insert-command)
   - [replace](#replace-command)
   - [macro](#macro-command)
-- [Usage Examples](#usage-examples)
 - [CLI Usage](#cli-usage)
-- [Best Practices](#best-practices)
 
 ## Overview
 
@@ -39,6 +37,8 @@ port = {{ config.port }}
 ```
 
 ## How It Works
+
+Currently this project is tightly coupled to the template apps in `./templates`, they have custom code in the `mtemplate` module that helps dynamically generate them. 
 
 1. **Template Applications**: You create working applications in `templates/` directories that can be run and tested
 2. **Templating Commands**: You embed mtemplate commands in code comments
@@ -105,6 +105,8 @@ JSON:
     "name": "template_app"
 }
 ```
+
+JSON doesn't have comments so we hack the system by defining the comment prefix to `"_": "` and comment ending to `",`
 
 ### for Command
 
@@ -256,81 +258,10 @@ This creates a macro that can be called like:
 # insert :: macro.py_create_model_table({"model_name_snake_case": "user", "field_names": "name, email"})
 ```
 
-## Usage Examples
-
-### Simple Variable Replacement
-
-Template file (`template_app.py`):
-```python
-# vars :: {"template_app": "project.name.snake_case", "5000": "config.port"}
-
-def main():
-    app_name = "template_app"
-    port = 5000
-    print(f"Starting {app_name} on port {port}")
-```
-
-Generated template:
-```python
-def main():
-    app_name = "{{ project.name.snake_case }}"
-    port = {{ config.port }}
-    print(f"Starting {app_name} on port {port}")
-```
-
-### Complex Loop with Multiple Replacements
-
-Template file (`models.py`):
-```python
-# for :: {% for model in module.models.values() %} :: {"SingleModel": "model.name.pascal_case", "single_model": "model.name.snake_case"}
-class SingleModel:
-    def __init__(self):
-        self.name = "single_model"
-        
-def create_single_model():
-    return SingleModel()
-# end for ::
-```
-
-With spec data containing models `User` and `Product`, this generates:
-```python
-{% for model in module.models.values() %}
-class {{ model.name.pascal_case }}:
-    def __init__(self):
-        self.name = "{{ model.name.snake_case }}"
-        
-def create_{{ model.name.snake_case }}():
-    return {{ model.name.pascal_case }}()
-{% endfor %}
-```
-
-### HTML Template with Multiple Commands
-
-Template file (`index.html`):
-```html
-<!-- vars :: {"My Application": "project.name.title_case", "template-module": "module.name.kebab_case"} -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>My Application</title>
-</head>
-<body>
-    <h1>My Application Modules</h1>
-    <ul>
-        <!-- for :: {% for module in project.modules.values() %} :: {"template-module": "module.name.kebab_case", "Module Name": "module.name.title_case"} -->
-        <li><a href="/template-module">Module Name</a></li>
-        <!-- end for :: -->
-        <!-- ignore :: -->
-        <li><a href="/admin">Admin Panel (template only)</a></li>
-        <!-- end ignore :: -->
-    </ul>
-</body>
-</html>
-```
 
 ## CLI Usage
 
-The mtemplate CLI provides several commands for working with templates:
+The mtemplate CLI provides several commands for working with templates.
 
 ```bash
 # Show template structure
@@ -351,58 +282,3 @@ python -m mtemplate render-browser1 --spec spec.yaml
 # Debug mode (saves .jinja2 files and doesn't clear output)
 python -m mtemplate render --spec spec.yaml --debug
 ```
-
-## Best Practices
-
-### 1. Keep Template Apps Functional
-Always ensure your template applications can run and be tested independently. This allows for faster development and easier debugging.
-
-### 2. Use Descriptive Variable Names
-Choose clear, descriptive names for your template variables:
-```python
-# Good
-# vars :: {"UserModel": "model.name.pascal_case", "user_table": "model.name.snake_case"}
-
-# Less clear  
-# vars :: {"X": "model.name.pascal_case", "y": "model.name.snake_case"}
-```
-
-### 3. Group Related Commands
-Keep related template commands together and add comments for clarity:
-```python
-# Template variables for model names
-# vars :: {"SingleModel": "model.name.pascal_case", "single_model": "model.name.snake_case"}
-
-# Template variables for project configuration  
-# vars :: {"template_app": "project.name.snake_case", "5000": "config.port"}
-```
-
-### 4. Test Template Extraction
-Use the `--debug` flag to inspect generated Jinja2 templates and verify they're correct:
-```bash
-python -m mtemplate render --spec spec.yaml --debug
-```
-
-### 5. Minimize Template Complexity
-Keep template logic simple. Complex operations should be handled in Python code (macros) rather than in Jinja2 templates.
-
-### 6. Use Macros for Repeated Patterns
-When you find yourself repeating similar code blocks, extract them into reusable macros:
-```python
-# macro :: create_crud_endpoints :: {"model_name": "model_snake_case"}
-@app.route('/model_name', methods=['GET'])
-def list_model_name():
-    return jsonify(get_all_model_name())
-
-@app.route('/model_name', methods=['POST']) 
-def create_model_name():
-    return jsonify(create_model_name(request.json))
-# end macro ::
-```
-
-### 7. Document Template Behavior
-Add comments explaining complex template logic, especially in macro definitions and complex for loops.
-
----
-
-For more information about the mspec project and app generation, see the main [README.md](./README.md).

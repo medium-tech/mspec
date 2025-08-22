@@ -303,7 +303,7 @@ Applications should keep dependencies to a bare minimum, when possible use a bui
 
 To the extent possible by your language the code layout should be similar to the python one. All apps (server/gui/clients) should go under one folder for the language. 
 
-The template syntax is documented in **[MTEMPLATE.md](./MTEMPLATE.md)**. The syntax is designed to be embedded in a working application's comments, so developers can contribute apps that do not have templating syntax and other developers can add the syntax later. This app can also be used later to help build a browser2 implementation in the same language.
+The template syntax is documented in **[MTEMPLATE.md](./MTEMPLATE.md)**.
 
 ## browser2.0
 
