@@ -110,11 +110,21 @@ Browser2.0 will use content based addressing instead of location based addressin
 
 # Documentation
 
-Because this project is in alpha there is no documentation. However the code is designed to be simple enough to document itself. 
+## Browser2.0 JSON Pages
+
+See **[BROWSER2.md](./BROWSER2.md)** for comprehensive documentation on creating Browser2.0 JSON pages, including:
+- Complete reference for all top-level keys (params, state, ops, output)
+- Built-in functions and data types
+- UI elements and control flow
+- Working examples and demos
+
+## App Generator
+
+Because this project is in alpha there is limited documentation for the app generator. However the code is designed to be simple enough to document itself. 
 
 If you're interested in generating an app check `spec/test-gen.yaml` for an example app with all the features of the app spec that are unittested (on the `main` branch). 
 
-See `spec/test-page.json` for an example of a browser2.0 page with all unittested features.
+## CLI Help
 
 Run `./pybrowser2.py -h` in `browser2/py/src` for the cli help screen for browser2.0 (after [setting up the dev enviro](#setup-dev-environment)).
 
@@ -257,7 +267,9 @@ Currently this is hardcoded to run the example document in variable `example_spe
 
 You can open any spec json file with this:
 
-    ./pybrowser2.py --spec ../../../spec/hello-world-page.json
+    ./pybrowser2.py --spec ../../../src/mspec/data/hello-world-page.json
+
+For more examples and complete documentation on creating JSON pages, see **[BROWSER2.md](./BROWSER2.md)**.
 
 ⚠️ Be careful with untrusted input as this project is still in alpha phase. ⚠️
 
@@ -289,7 +301,9 @@ Because this is still a proof of concept documentation for the template syntax i
 
 ## browser2.0
 
-Browser2 implementations go in `./browser2/<language>`. For languages not yet implemented, a proof of concept app should be able to render the `spec/hello-world-page.json` hello world page. Full implementations should be able to render `spec/test-page.json` and have unittests. See the [python implementation](#run-browser-20) for an example implementation of what the product should look like.
+Browser2 implementations go in `./browser2/<language>`. For languages not yet implemented, a proof of concept app should be able to render the `src/mspec/data/hello-world-page.json` hello world page. Full implementations should be able to render `src/mspec/data/test-page.json` and have unittests. See the [python implementation](#run-browser-20) for an example implementation of what the product should look like.
+
+For complete documentation on the Browser2.0 JSON page format, see **[BROWSER2.md](./BROWSER2.md)**.
 
 See [TODO.md](./TODO.md) for desired language implementation and current progress.
 
