@@ -9,6 +9,8 @@ This project is two things: an [app generator](#app-generator) using code templa
     * [app generator](#app-generator)
     * [browser 2.0](#browser-20)
 * [documentation](#documentation)
+    * [mtemplate documentation](./MTEMPLATE.md)
+    * [browser2.0 documentation](./BROWSER2.md)
 * [development](#development)
     * [setup dev enviro](#setup-dev-environment)
     * [run and edit template apps](#template-apps)
@@ -118,9 +120,13 @@ See **[BROWSER2.md](./BROWSER2.md)** for comprehensive documentation on creating
 - UI elements and control flow
 - Working examples and demos
 
-## App Generator
+## App Generator and mtemplate
 
-Because this project is in alpha there is limited documentation for the app generator. However the code is designed to be simple enough to document itself. 
+See **[MTEMPLATE.md](./MTEMPLATE.md)** for comprehensive documentation on the mtemplate templating system, including:
+- Complete reference for all template commands (vars, for, ignore, insert, replace, macro)
+- Comment syntax for different programming languages
+- Usage examples and best practices
+- CLI usage guide
 
 If you're interested in generating an app check `spec/test-gen.yaml` for an example app with all the features of the app spec that are unittested (on the `main` branch). 
 
@@ -297,7 +303,7 @@ Applications should keep dependencies to a bare minimum, when possible use a bui
 
 To the extent possible by your language the code layout should be similar to the python one. All apps (server/gui/clients) should go under one folder for the language. 
 
-Because this is still a proof of concept documentation for the template syntax is unavailable, however this shouldn't be a limitation for community involvement. The template syntax is designed to be embedded in a working application's comments, so developers can contribute apps that do not have templating syntax and other developers can add the syntax later. This app can also be used later to help build a browser2 implementation in the same language.
+The template syntax is documented in **[MTEMPLATE.md](./MTEMPLATE.md)**.
 
 ## browser2.0
 
