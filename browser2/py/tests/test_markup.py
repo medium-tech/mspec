@@ -163,8 +163,8 @@ class TestLingoApp(unittest.TestCase):
         datetime_found = False
         weekday_found = False
         random_found = False
-        
-        for element in doc:
+
+        for n, element in enumerate(doc):
             if 'text' in element:
                 text = element['text']
                 # Check for datetime output (should be a datetime object converted to string)
@@ -174,12 +174,17 @@ class TestLingoApp(unittest.TestCase):
                     weekday_found = True
                 elif 'random.randint(1, 10)' in text:
                     random_found = True
-                elif text.isdigit() and 'weekday()' in str(doc[doc.index(element) - 1]):
+                elif text.isdigit() and 'weekday()' in str(doc[n - 1]):
                     # Weekday should be 0-6
                     weekday_val = int(text)
                     self.assertGreaterEqual(weekday_val, 0)
                     self.assertLessEqual(weekday_val, 6)
-                elif text.isdigit() and 'randint(1, 10)' in str(doc[doc.index(element) - 1]):
+                elif text.isdigit() and 'weekday()' in str(doc[n - 1]):
+                    # Weekday should be 0-6
+                    weekday_val = int(text)
+                    self.assertGreaterEqual(weekday_val, 0)
+                    self.assertLessEqual(weekday_val, 6)
+                elif text.isdigit() and 'randint(1, 10)' in str(doc[n - 1]):
                     # Random number should be 1-10
                     random_val = int(text)
                     self.assertGreaterEqual(random_val, 1)
