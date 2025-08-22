@@ -157,6 +157,22 @@ The `browser2/py` file contains the tkinter window and renderer for the browser2
     pip install -e .
     pip install -e templates/py
 
+## testing
+
+To run the app generator tests that verify the mtemplate functionality:
+
+    python -m unittest discover tests -v
+
+Or use the provided test runner:
+
+    python run_tests.py --verbose
+
+The tests verify that:
+- The mtemplate system can generate py and browser1 apps from the test-gen.yaml spec
+- Generated apps have the correct file structure and content
+- Template syntax is properly resolved without errors
+- Both individual and combined app generation work correctly
+
 ## template apps
 
 As mentioned, the templates are extracted from working apps in `./templates`, this allows you to run the templates directly for fast development and testing. This section explains how to run the apps from which templates are extracted. If you want to change the features that generated apps have you need to edit the template apps as described in this section. If you want to learn how to generate template apps from a yaml spec go to [generate apps from spec files](#generate-apps-from-spec-files).
