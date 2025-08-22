@@ -418,9 +418,10 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
                 raise ValueError(f'call - arg {arg_name} - expected type {arg_type}, got {value.__class__.__name__}')
         rendered_args[arg_name] = value
 
-    # Check if function is from operator module and needs positional args
-    if hasattr(function, '__module__') and function.__module__ == '_operator':
-        # For operator functions, convert to positional arguments in the order defined
+    # Check if function is from operator module or built-in and needs positional args
+    if (hasattr(function, '__module__') and function.__module__ == '_operator') or \
+       (hasattr(function, '__module__') and function.__module__ == 'builtins'):
+        # For operator and built-in functions, convert to positional arguments in the order defined
         args_list = []
         for arg_name in args_def.keys():
             if arg_name in rendered_args:
