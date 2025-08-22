@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser 2.0 - JavaScript Renderer</title>
+    <style>
+        body {
+            font-family: Verdana, sans-serif;
+            font-size: 12px;
+            margin: 20px;
+            background-color: white;
+            max-width: 1000px;
+        }
+        
+        h1 { font-size: 35px; }
+        h2 { font-size: 30px; }
+        h3 { font-size: 25px; }
+        h4 { font-size: 20px; }
+        h5 { font-size: 18px; }
+        h6 { font-size: 16px; }
+        
+        .lingo-container {
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        input[type="text"] {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            width: 200px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background-color: #f5f5f5;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #e5e5e5;
+        }
+        
+        a {
+            color: blue;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        
+        .debug {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div id="lingo-app" class="lingo-container">
+        <p>Loading Browser 2.0...</p>
+    </div>
+    
+    <div id="debug" class="debug" style="display: none;">
+        <h4>Debug Information</h4>
+        <div id="debug-content"></div>
+    </div>
+    
+    <script src="markup.js"></script>
+    <script>
+        // Hello World Page JSON - embedded for this proof of concept
+        const helloWorldPage = {
+            "params": {},
+            "state": {},
+            "ops": {},
+            "output": [
+                {"heading": {"text": "Hello World"}, "level": 1},
+                {"block": [
+                    {"text": "I am a sample page."}
+                ]}
+            ]
+        };
+        
+        // Test Page JSON - more complex example
+        const testPage = {
+            "params": {
+                "first_visit": {"type": "bool", "default": false}
+            },
+            "state": {
+                "greeting": {
+                    "type": "str",
+                    "default": "",
+                    "calc": {
+                        "branch": [
+                            {"if": {"params": {"first_visit": {}}}, "then": "Welcome in, "},
+                            {"else": "Welcome back, "}
+                        ]
+                    }
+                },
+                "n": {
+                    "type": "int",
+                    "default": 0
+                },
+                "name": {
+                    "type": "str",
+                    "default": ""
+                }
+            },
+            "ops": {
+                "randomize_number": {
+                    "args": {"max": {"type": "int"}},
+                    "func": {
+                        "set": {"state": {"n": {}}},
+                        "to": {"call": "random.randint", "args": {"a": 0, "b": {"args": "max"}}}
+                    }
+                }
+            },
+            "output": [
+                {"heading": {"text": "Example document"}, "level": 1},
+                {"block": [
+                    {"text": "The current date and time is "},
+                    {"lingo": {"call": "datetime.now"}},
+                    {"text": "."},
+                    {"break": 1},
+                    
+                    {"text": "Please tell us your name: "},
+                    {"input": {"type": "text"}, "bind": {"state": {"name": {}}}},
+                    {"break": 1},
+                    
+                    {"text": "Here's a random number: "},
+                    {"lingo": {"state": {"n": {}}}},
+                    {"text": "."},
+                    {"break": 1},
+                    
+                    {"button": {"op": {"randomize_number": {"max": 100}}}, "text": "Randomize"},
+                    {"break": 1},
+                    
+                    {"lingo": {"state": {"greeting": {}}}},
+                    {"branch": [
+                        {"if": {"call": "ne", "args": {"a": {"state": {"name": {}}}, "b": ""}}, "then": {"lingo": {"state": {"name": {}}}}},
+                        {"else": {"text": "Unknown person"}}
+                    ]},
+                    {"text": "!"},
+                    {"break": 2},
+                    
+                    {"text": "Happy "},
+                    {"switch": {
+                        "expression": {"call": "current.weekday"},
+                        "cases": [
+                            {"case": 0, "then": {"text": "Monday"}},
+                            {"case": 1, "then": {"text": "Tuesday"}},
+                            {"case": 2, "then": {"text": "Wednesday"}},
+                            {"case": 3, "then": {"text": "Thursday"}},
+                            {"case": 4, "then": {"text": "Friday"}}
+                        ],
+                        "default": {"text": "Weekend"}
+                    }},
+                    {"text": "!"},
+                    {"break": 1},
+                    
+                    {"text": "This is the culmination of many late nights. "},
+                    {"link": "https://shop.coavacoffee.com/cdn/shop/files/RayosDelSol_Retail_drip_1_680x@2x.png?v=1718728683", "text": "coffee, yum, yum"},
+                    {"text": ", well anyway, enjoy! "},
+                    {"link": "https://miro.medium.com/v2/resize:fit:1152/format:webp/1*Cvj9qvbKh1LmLSGEwwwZCQ.jpeg"}
+                ]}
+            ]
+        };
+        
+        // Initialize the app
+        let currentApp = null;
+        
+        function toggleDebug() {
+            const debugDiv = document.getElementById('debug');
+            debugDiv.style.display = debugDiv.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function showDebugInfo(app) {
+            const debugContent = document.getElementById('debug-content');
+            debugContent.innerHTML = `
+                <p><strong>State:</strong> ${JSON.stringify(app.state, null, 2)}</p>
+                <p><strong>Buffer length:</strong> ${app.buffer.length}</p>
+                <p><strong>Buffer:</strong></p>
+                <pre>${JSON.stringify(app.buffer, null, 2)}</pre>
+            `;
+        }
+        
+        function runHelloWorld() {
+            try {
+                currentApp = lingoApp(helloWorldPage);
+                renderLingoApp(currentApp, document.getElementById('lingo-app'));
+                showDebugInfo(currentApp);
+                console.log('Hello World app loaded successfully');
+            } catch (error) {
+                console.error('Error loading Hello World app:', error);
+                document.getElementById('lingo-app').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+        
+        function runTestPage() {
+            try {
+                currentApp = lingoApp(testPage, {first_visit: true});
+                renderLingoApp(currentApp, document.getElementById('lingo-app'));
+                showDebugInfo(currentApp);
+                console.log('Test page app loaded successfully');
+            } catch (error) {
+                console.error('Error loading test page app:', error);
+                document.getElementById('lingo-app').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Start with Hello World by default
+        window.addEventListener('load', () => {
+            try {
+                runHelloWorld();
+            } catch (error) {
+                console.error('Failed to initialize:', error);
+                document.getElementById('lingo-app').innerHTML = `
+                    <p style="color: red;">Failed to initialize: ${error.message}</p>
+                    <p>Check the console for more details.</p>
+                `;
+            }
+        });
+        
+        // Add controls
+        document.addEventListener('DOMContentLoaded', () => {
+            const controls = document.createElement('div');
+            controls.style.marginBottom = '20px';
+            controls.innerHTML = `
+                <button onclick="runHelloWorld()">Load Hello World</button>
+                <button onclick="runTestPage()">Load Test Page</button>
+                <button onclick="toggleDebug()">Toggle Debug</button>
+            `;
+            document.body.insertBefore(controls, document.body.firstChild);
+        });
+    </script>
+</body>
+</html>
