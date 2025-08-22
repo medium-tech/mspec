@@ -6,7 +6,7 @@ from pprint import pprint
 from pathlib import Path
 from mspec.markup import *
 
-test_spec_path = Path(__file__).parent.parent.parent.parent / 'spec/test-page.json'
+test_spec_path = Path(__file__).parent.parent.parent.parent / 'src/mspec/data/test-page.json'
 
 with open(test_spec_path, 'r') as f:
     test_spec = json.load(f)
