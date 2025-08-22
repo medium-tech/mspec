@@ -580,7 +580,26 @@ function renderArgs(app, expression, ctx = null) {
 /**
  * Render the LingoApp to a DOM container
  */
-function renderLingoApp(app, container) {
+function renderLingoApp(app, container, preserveFocus = false) {
+    // Store focused element info before re-rendering
+    let focusedElement = null;
+    let focusedElementState = null;
+    
+    if (preserveFocus) {
+        focusedElement = document.activeElement;
+        if (focusedElement && focusedElement.tagName === 'INPUT' && container.contains(focusedElement)) {
+            // Store the state field this input is bound to
+            const stateFieldName = focusedElement.getAttribute('data-state-field');
+            if (stateFieldName) {
+                focusedElementState = {
+                    fieldName: stateFieldName,
+                    selectionStart: focusedElement.selectionStart,
+                    selectionEnd: focusedElement.selectionEnd
+                };
+            }
+        }
+    }
+    
     // Update state and render output
     lingoUpdateState(app);
     const buffer = renderOutput(app);
@@ -593,6 +612,16 @@ function renderLingoApp(app, container) {
         const domElement = createDOMElement(app, element);
         if (domElement) {
             container.appendChild(domElement);
+        }
+    }
+    
+    // Restore focus if needed
+    if (focusedElementState) {
+        const newInputs = container.querySelectorAll(`input[data-state-field="${focusedElementState.fieldName}"]`);
+        if (newInputs.length > 0) {
+            const newInput = newInputs[0];
+            newInput.focus();
+            newInput.setSelectionRange(focusedElementState.selectionStart, focusedElementState.selectionEnd);
         }
     }
 }
@@ -678,6 +707,9 @@ function createInputElement(app, element) {
         const stateFieldName = Object.keys(element.bind.state)[0];
         const fieldType = app.spec.state[stateFieldName].type;
         
+        // Store state field name as data attribute for focus restoration
+        input.setAttribute('data-state-field', stateFieldName);
+        
         // Set initial value
         input.value = app.state[stateFieldName] || '';
         
@@ -696,7 +728,7 @@ function createInputElement(app, element) {
                 }
                 
                 app.state[stateFieldName] = value;
-                renderLingoApp(app, input.closest('.lingo-container'));
+                renderLingoApp(app, input.closest('.lingo-container'), true);
             } catch (error) {
                 console.error('Input change error:', error);
             }
