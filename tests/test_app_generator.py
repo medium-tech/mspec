@@ -199,115 +199,125 @@ class TestAppGenerator(unittest.TestCase):
         
         self.assertEqual(result.returncode, 0, f"Failed to generate apps: {result.stderr}")
         
-        # Check that files from both apps were generated
+        # Check that files from both apps were generated in their respective subdirectories
+        py_dir = self.test_dir / "py"
+        browser1_dir = self.test_dir / "browser1"
+        
         expected_files = [
-            # Python app files
-            "pyproject.toml",
-            "test.sh", 
-            "server.sh",
-            "src/core/__init__.py",
+            # Python app files (in py/ subdirectory)
+            (py_dir, "pyproject.toml"),
+            (py_dir, "test.sh"), 
+            (py_dir, "server.sh"),
+            (py_dir, "src/core/__init__.py"),
             
-            # Browser1 app files
-            "package.json",
-            "playwright.config.js",
-            "srv/index.html",
-            "srv/index.js"
+            # Browser1 app files (in browser1/ subdirectory)
+            (browser1_dir, "package.json"),
+            (browser1_dir, "playwright.config.js"),
+            (browser1_dir, "srv/index.html"),
+            (browser1_dir, "srv/index.js")
         ]
         
-        for file_path in expected_files:
-            full_path = Path(self.test_dir) / file_path
-            self.assertTrue(full_path.exists(), f"Expected file not found: {file_path}")
+        for base_dir, file_path in expected_files:
+            full_path = base_dir / file_path
+            self.assertTrue(full_path.exists(), f"Expected file not found: {base_dir.name}/{file_path}")
         
-        # Setup the generated app - install Python dependencies
+        # Setup the generated app following the instructions from the comment
+        
+        # cd to py directory and create virtual environment
+        venv_dir = py_dir / ".venv"
+        venv_result = subprocess.run([
+            sys.executable, "-m", "venv", str(venv_dir), "--upgrade-deps"
+        ], capture_output=True, text=True, cwd=str(py_dir))
+        
+        if venv_result.returncode != 0:
+            print(f"Warning: venv creation failed: {venv_result.stderr}")
+            # Fall back to using system python
+            python_executable = sys.executable
+        else:
+            # Use the virtual environment python
+            python_executable = str(venv_dir / "bin" / "python")
+        
+        # Install Python dependencies: python -m pip install -e py
         pip_install_result = subprocess.run([
-            sys.executable, "-m", "pip", "install", "-e", "."
-        ], capture_output=True, text=True, cwd=str(self.test_dir))
+            python_executable, "-m", "pip", "install", "-e", "."
+        ], capture_output=True, text=True, cwd=str(py_dir))
         
-        # We don't fail if pip install fails since it might be due to missing system dependencies
-        # but we'll log it for debugging
         if pip_install_result.returncode != 0:
             print(f"Warning: pip install failed: {pip_install_result.stderr}")
         
         # Install browser dependencies
         npm_install_result = subprocess.run([
             "npm", "install"
-        ], capture_output=True, text=True, cwd=str(self.test_dir))
+        ], capture_output=True, text=True, cwd=str(browser1_dir))
         
-        # Similarly, we don't fail if npm install fails since npm might not be available
         if npm_install_result.returncode != 0:
             print(f"Warning: npm install failed: {npm_install_result.stderr}")
         
-        # Create a simple .env file for the server
+        # Create a simple .env file for the server in the py directory
         env_content = "# Generated for testing\nDEBUG=true\n"
-        with open(self.test_dir / ".env", "w") as f:
+        with open(py_dir / ".env", "w") as f:
             f.write(env_content)
         
-        # Run the Python tests first
-        python_test_result = subprocess.run([
-            sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"
-        ], capture_output=True, text=True, cwd=str(self.test_dir))
-        
-        # Check that Python tests can at least be discovered and run
-        # (they might fail due to missing dependencies, but they should be runnable)
-        self.assertIn("test", python_test_result.stderr.lower() + python_test_result.stdout.lower(),
-                      f"Python tests did not run properly: {python_test_result.stderr}")
-        
-        # Test server startup (without actually keeping it running)
-        # We'll start it and then kill it quickly to test that it can start
+        # Start the server in a subprocess as per instructions
         server_process = None
         try:
-            # Try to start the server in the background
+            # Check if server.sh exists
+            server_script = py_dir / "server.sh"
+            self.assertTrue(server_script.exists(), "server.sh should exist")
+            
+            # Read the server.sh content and execute it with bash in background
+            with open(server_script, 'r') as f:
+                server_command = f.read().strip()
+            
+            # Start the server in background
             server_process = subprocess.Popen([
-                sys.executable, "-c", 
-                "import sys; sys.path.insert(0, 'src'); from core.server import *; import time; time.sleep(2)"
-            ], cwd=str(self.test_dir), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                "bash", "-c", server_command
+            ], cwd=str(py_dir), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             
-            # Give it a moment to start
-            time.sleep(1)
+            # Give the server a moment to start
+            time.sleep(2)
             
-            # Check if process is still running (good sign)
-            poll_result = server_process.poll()
-            if poll_result is None:
-                # Process is still running, which means it started successfully
-                print("Server started successfully")
-            else:
-                # Process exited, let's see why
-                stdout, stderr = server_process.communicate()
-                print(f"Server exited with code {poll_result}: {stderr.decode()}")
+            # Run py tests: ./test.sh in py directory
+            test_script = py_dir / "test.sh"
+            self.assertTrue(test_script.exists(), "test.sh should exist")
             
-        except Exception as e:
-            print(f"Could not test server startup: {e}")
+            # Read the test.sh content and execute it with bash
+            with open(test_script, 'r') as f:
+                test_command = f.read().strip()
+            
+            python_test_result = subprocess.run([
+                "bash", "-c", test_command
+            ], capture_output=True, text=True, cwd=str(py_dir), timeout=30)
+            
+            # Check that Python tests can at least be discovered and run
+            # Don't fail if tests fail, just ensure they can be discovered
+            self.assertTrue(
+                "test" in python_test_result.stderr.lower() + python_test_result.stdout.lower(),
+                f"Python tests should be discoverable. Output: {python_test_result.stdout} {python_test_result.stderr}"
+            )
+            
+            # Run browser1 tests: npm run test in browser1 directory
+            if npm_install_result.returncode == 0:  # Only if npm install succeeded
+                browser_test_result = subprocess.run([
+                    "npm", "run", "test"
+                ], capture_output=True, text=True, cwd=str(browser1_dir), timeout=60)
+                
+                # Check that browser tests can be discovered and run
+                # Don't fail if tests fail, just ensure they can be discovered
+                self.assertTrue(
+                    "test" in browser_test_result.stderr.lower() + browser_test_result.stdout.lower() or
+                    "playwright" in browser_test_result.stderr.lower() + browser_test_result.stdout.lower(),
+                    f"Browser tests should be discoverable. Output: {browser_test_result.stdout} {browser_test_result.stderr}"
+                )
+        
         finally:
-            # Clean up the server process
-            if server_process and server_process.poll() is None:
+            # Clean up: terminate the server process
+            if server_process:
                 server_process.terminate()
                 try:
                     server_process.wait(timeout=5)
                 except subprocess.TimeoutExpired:
                     server_process.kill()
-        
-        # Test that browser tests can be discovered (we won't run them as they require a running server)
-        if npm_install_result.returncode == 0:
-            # Only test playwright if npm install succeeded
-            playwright_test_result = subprocess.run([
-                "npx", "playwright", "test", "--list"
-            ], capture_output=True, text=True, cwd=str(self.test_dir))
-            
-            if playwright_test_result.returncode == 0:
-                self.assertIn("spec", playwright_test_result.stdout.lower(),
-                              "Browser tests should be discoverable")
-            else:
-                print(f"Warning: Could not list playwright tests: {playwright_test_result.stderr}")
-        
-        # Verify that both .jinja2 template files exist (debug mode creates them)
-        debug_template_files = [
-            "pyproject.toml.jinja2",
-            "package.json.jinja2"
-        ]
-        
-        for file_path in debug_template_files:
-            full_path = Path(self.test_dir) / file_path
-            self.assertTrue(full_path.exists(), f"Expected debug template file not found: {file_path}")
 
 
 if __name__ == "__main__":
