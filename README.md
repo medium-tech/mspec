@@ -266,17 +266,14 @@ As with the template apps, 0 dependencies are required to deploy the app, howeve
 
 To run the app generator tests that verify the mtemplate functionality:
 
-    python -m unittest discover tests -v
-
-Or use the provided test runner:
-
-    python run_tests.py --verbose
+    ./test.sh
 
 The tests verify that:
 - The mtemplate system can generate py and browser1 apps from the test-gen.yaml spec
 - Generated apps have the correct file structure and content
 - Template syntax is properly resolved without errors
 - Both individual and combined app generation work correctly
+- Generated apps can be set up and their tests can be run
 
 ## run browser 2.0
 

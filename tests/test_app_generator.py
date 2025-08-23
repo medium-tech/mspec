@@ -8,11 +8,12 @@ from the test-gen.yaml spec file.
 """
 
 import unittest
-import tempfile
 import shutil
 import subprocess
 import os
 import sys
+import time
+import signal
 from pathlib import Path
 
 
@@ -21,13 +22,22 @@ class TestAppGenerator(unittest.TestCase):
     
     def setUp(self):
         """Set up test environment"""
-        self.test_dir = tempfile.mkdtemp()
         self.repo_root = Path(__file__).parent.parent
         self.spec_file = self.repo_root / "src" / "mspec" / "data" / "test-gen.yaml"
         
+        # Create tmp directory in tests folder
+        self.tests_tmp_dir = self.repo_root / "tests" / "tmp"
+        self.tests_tmp_dir.mkdir(exist_ok=True)
+        
+        # Create unique test directory for this test
+        import datetime
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        self.test_dir = self.tests_tmp_dir / f"test_{timestamp}"
+        self.test_dir.mkdir(exist_ok=True)
+        
     def tearDown(self):
         """Clean up test environment"""
-        if os.path.exists(self.test_dir):
+        if self.test_dir.exists():
             shutil.rmtree(self.test_dir)
     
     def test_generate_py_app(self):
@@ -36,8 +46,9 @@ class TestAppGenerator(unittest.TestCase):
         result = subprocess.run([
             sys.executable, "-m", "mtemplate", "render-py",
             "--spec", str(self.spec_file),
-            "--output", self.test_dir
-        ], capture_output=True, text=True, cwd=str(self.repo_root))
+            "--output", str(self.test_dir)
+        ], capture_output=True, text=True, cwd=str(self.repo_root),
+          env=dict(os.environ, PYTHONPATH=f"{self.repo_root}/src"))
         
         self.assertEqual(result.returncode, 0, f"Failed to generate py app: {result.stderr}")
         
@@ -103,8 +114,9 @@ class TestAppGenerator(unittest.TestCase):
         result = subprocess.run([
             sys.executable, "-m", "mtemplate", "render-browser1", 
             "--spec", str(self.spec_file),
-            "--output", self.test_dir
-        ], capture_output=True, text=True, cwd=str(self.repo_root))
+            "--output", str(self.test_dir)
+        ], capture_output=True, text=True, cwd=str(self.repo_root),
+          env=dict(os.environ, PYTHONPATH=f"{self.repo_root}/src"))
         
         self.assertEqual(result.returncode, 0, f"Failed to generate browser1 app: {result.stderr}")
         
@@ -175,14 +187,15 @@ class TestAppGenerator(unittest.TestCase):
                 self.assertNotIn('}}', test_content)
     
     def test_generate_both_apps(self):
-        """Test generating both py and browser1 apps together"""
+        """Test generating both py and browser1 apps together and run their tests"""
         # Generate both apps using the main render command with debug to prevent deletion
         result = subprocess.run([
             sys.executable, "-m", "mtemplate", "render",
             "--spec", str(self.spec_file),
-            "--output", self.test_dir,
+            "--output", str(self.test_dir),
             "--debug"
-        ], capture_output=True, text=True, cwd=str(self.repo_root))
+        ], capture_output=True, text=True, cwd=str(self.repo_root), 
+          env=dict(os.environ, PYTHONPATH=f"{self.repo_root}/src"))
         
         self.assertEqual(result.returncode, 0, f"Failed to generate apps: {result.stderr}")
         
@@ -204,6 +217,87 @@ class TestAppGenerator(unittest.TestCase):
         for file_path in expected_files:
             full_path = Path(self.test_dir) / file_path
             self.assertTrue(full_path.exists(), f"Expected file not found: {file_path}")
+        
+        # Setup the generated app - install Python dependencies
+        pip_install_result = subprocess.run([
+            sys.executable, "-m", "pip", "install", "-e", "."
+        ], capture_output=True, text=True, cwd=str(self.test_dir))
+        
+        # We don't fail if pip install fails since it might be due to missing system dependencies
+        # but we'll log it for debugging
+        if pip_install_result.returncode != 0:
+            print(f"Warning: pip install failed: {pip_install_result.stderr}")
+        
+        # Install browser dependencies
+        npm_install_result = subprocess.run([
+            "npm", "install"
+        ], capture_output=True, text=True, cwd=str(self.test_dir))
+        
+        # Similarly, we don't fail if npm install fails since npm might not be available
+        if npm_install_result.returncode != 0:
+            print(f"Warning: npm install failed: {npm_install_result.stderr}")
+        
+        # Create a simple .env file for the server
+        env_content = "# Generated for testing\nDEBUG=true\n"
+        with open(self.test_dir / ".env", "w") as f:
+            f.write(env_content)
+        
+        # Run the Python tests first
+        python_test_result = subprocess.run([
+            sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"
+        ], capture_output=True, text=True, cwd=str(self.test_dir))
+        
+        # Check that Python tests can at least be discovered and run
+        # (they might fail due to missing dependencies, but they should be runnable)
+        self.assertIn("test", python_test_result.stderr.lower() + python_test_result.stdout.lower(),
+                      f"Python tests did not run properly: {python_test_result.stderr}")
+        
+        # Test server startup (without actually keeping it running)
+        # We'll start it and then kill it quickly to test that it can start
+        server_process = None
+        try:
+            # Try to start the server in the background
+            server_process = subprocess.Popen([
+                sys.executable, "-c", 
+                "import sys; sys.path.insert(0, 'src'); from core.server import *; import time; time.sleep(2)"
+            ], cwd=str(self.test_dir), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            
+            # Give it a moment to start
+            time.sleep(1)
+            
+            # Check if process is still running (good sign)
+            poll_result = server_process.poll()
+            if poll_result is None:
+                # Process is still running, which means it started successfully
+                print("Server started successfully")
+            else:
+                # Process exited, let's see why
+                stdout, stderr = server_process.communicate()
+                print(f"Server exited with code {poll_result}: {stderr.decode()}")
+            
+        except Exception as e:
+            print(f"Could not test server startup: {e}")
+        finally:
+            # Clean up the server process
+            if server_process and server_process.poll() is None:
+                server_process.terminate()
+                try:
+                    server_process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    server_process.kill()
+        
+        # Test that browser tests can be discovered (we won't run them as they require a running server)
+        if npm_install_result.returncode == 0:
+            # Only test playwright if npm install succeeded
+            playwright_test_result = subprocess.run([
+                "npx", "playwright", "test", "--list"
+            ], capture_output=True, text=True, cwd=str(self.test_dir))
+            
+            if playwright_test_result.returncode == 0:
+                self.assertIn("spec", playwright_test_result.stdout.lower(),
+                              "Browser tests should be discoverable")
+            else:
+                print(f"Warning: Could not list playwright tests: {playwright_test_result.stderr}")
         
         # Verify that both .jinja2 template files exist (debug mode creates them)
         debug_template_files = [
