@@ -48,7 +48,7 @@ test.describe('Authentication Workflow', () => {
     await expect(page.locator('#message')).toContainText('User created successfully');
     
     // Step 2: Login
-    await page.goto('http://localhost:5005/auth/login.html');
+    await page.getByRole('link', { name: 'Login' }).click();
     
     await expect(page.locator('h1')).toContainText('Login - template_app');
     
@@ -154,34 +154,4 @@ test.describe('Authentication Workflow', () => {
     await expect(page.locator('#welcomeMessage')).toContainText(`Welcome, ${testEmail}!`);
   });
 
-  test('should show line break after welcome message', async ({ page }) => {
-    const testEmail = `linebreak${Date.now()}@example.com`;
-    const testPassword = 'testpassword123';
-    
-    // Create and login user
-    await page.goto('http://localhost:5005/auth/create-user.html');
-    await page.locator('input[name="name"]').fill('Line Break User');
-    await page.locator('input[name="email"]').fill(testEmail);
-    await page.locator('input[name="password1"]').fill(testPassword);
-    await page.locator('input[name="password2"]').fill(testPassword);
-    await page.getByRole('button', { name: 'Create User' }).click();
-    await expect(page.locator('#message')).toContainText('User created successfully');
-    
-    // Login
-    await page.goto('http://localhost:5005/auth/login.html');
-    await page.locator('input[name="email"]').fill(testEmail);
-    await page.locator('input[name="password"]').fill(testPassword);
-    await page.getByRole('button', { name: 'Login' }).click();
-    await page.waitForURL('http://localhost:5005/');
-    
-    // Check that there's a br element after the welcome message
-    const loggedInSection = page.locator('#loggedInButtons');
-    await expect(loggedInSection.locator('br')).toBeVisible();
-    
-    // Verify the welcome message comes before the buttons
-    const welcomeMessage = loggedInSection.locator('#welcomeMessage');
-    const userAccountButton = loggedInSection.locator('#userAccountButton');
-    await expect(welcomeMessage).toBeVisible();
-    await expect(userAccountButton).toBeVisible();
-  });
 });

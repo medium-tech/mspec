@@ -125,9 +125,10 @@ The main prototype are the python + browser 1 browser template apps.
     * 🟢 index (`templates/browser 1/srv/index.html`)
         * 🟢 list modules
         * 🟡 create user
-            * 🟡 login
+            * 🟢 login
             * 🔴 reset password
-        * 🔴 user page (w logout button)
+        * 🟢 user page (w logout button)
+            * 🟢 view user
             * 🔴 edit profile
             * 🔴 edit profile of logged in user
         * 🔴 profiles

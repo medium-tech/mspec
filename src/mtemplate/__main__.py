@@ -36,8 +36,10 @@ elif args.command == 'extract':
             f.write(template.create_template())
 
 elif args.command == 'render':
-    MTemplatePyProject.render(load_spec(args.spec), args.output / 'py', args.debug, args.disable_strict)
-    MTemplateBrowser1Project.render(load_spec(args.spec), args.output / 'browser1', args.debug, args.disable_strict)
+    py_out = None if args.output is None else args.output / 'py'
+    browser1_out = None if args.output is None else args.output / 'browser1'
+    MTemplatePyProject.render(load_spec(args.spec), py_out, args.debug, args.disable_strict)
+    MTemplateBrowser1Project.render(load_spec(args.spec), browser1_out, args.debug, args.disable_strict)
 
 elif args.command == 'render-py':
     MTemplatePyProject.render(load_spec(args.spec), args.output, args.debug, args.disable_strict)
