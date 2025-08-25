@@ -22,15 +22,15 @@
             <div id="userButtons">
                 <!-- logged out state -->
                 <div id="loggedOutButtons">
-                    <button onclick="window.location.href='/create-user.html'" class="navbar-link">Create User</button>
-                    <button onclick="window.location.href='/login.html'" class="navbar-link">Login</button>
+                    <button onclick="window.location.href='/auth/create-user.html'" class="navbar-link">Create User</button>
+                    <button onclick="window.location.href='/auth/login.html'" class="navbar-link">Login</button>
                 </div>
                 
                 <!-- logged in state -->
                 <div id="loggedInButtons" hidden>
                     <p id="welcomeMessage">Welcome, <span id="userName"></span>!</p>
                     <br>
-                    <button id="userAccountButton" onclick="window.location.href='/user-account.html'" class="navbar-link">User Account</button>
+                    <button id="userAccountButton" onclick="window.location.href='/auth/user-account.html'" class="navbar-link">User Account</button>
                     <button id="logoutButton" onclick="logoutUser()" class="navbar-link">Logout</button>
                 </div>
             </div>

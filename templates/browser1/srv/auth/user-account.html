@@ -42,6 +42,36 @@
             <div id="message"></div>
         </div>
 
+        <script>
+            // Populate user account information
+            function populateUserAccountInfo() {
+                const session = getUserSession();
+                
+                if (!session) {
+                    // If not logged in, redirect to home
+                    window.location.href = '/';
+                    return;
+                }
+                
+                const userEmail = document.getElementById('userEmail');
+                const loginTime = document.getElementById('loginTime');
+                
+                if (userEmail) {
+                    userEmail.textContent = session.user || 'Unknown';
+                }
+                
+                if (loginTime && session.loginTime) {
+                    const loginDate = new Date(session.loginTime);
+                    loginTime.textContent = loginDate.toLocaleString();
+                }
+            }
+
+            // Initialize user account page when page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                populateUserAccountInfo();
+            });
+        </script>
+
     </body>
 
 </html>

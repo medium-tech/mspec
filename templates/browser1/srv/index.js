@@ -310,32 +310,4 @@ function updateUIForLoginStatus() {
 // Initialize UI when page loads
 document.addEventListener('DOMContentLoaded', function() {
     updateUIForLoginStatus();
-    
-    // If we're on the user account page, populate user info
-    if (window.location.pathname.includes('user-account.html')) {
-        populateUserAccountInfo();
-    }
 });
-
-// Populate user account information
-function populateUserAccountInfo() {
-    const session = getUserSession();
-    
-    if (!session) {
-        // If not logged in, redirect to home
-        window.location.href = '/';
-        return;
-    }
-    
-    const userEmail = document.getElementById('userEmail');
-    const loginTime = document.getElementById('loginTime');
-    
-    if (userEmail) {
-        userEmail.textContent = session.user || 'Unknown';
-    }
-    
-    if (loginTime && session.loginTime) {
-        const loginDate = new Date(session.loginTime);
-        loginTime.textContent = loginDate.toLocaleString();
-    }
-}
