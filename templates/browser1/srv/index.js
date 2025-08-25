@@ -1,3 +1,183 @@
+//
+// user session management
+//
+
+function getUserSession() {
+    const sessionData = localStorage.getItem('userSession');
+    return sessionData ? JSON.parse(sessionData) : null;
+}
+
+function setUserSession(sessionData) {
+    localStorage.setItem('userSession', JSON.stringify(sessionData));
+}
+
+function clearUserSession() {
+    localStorage.removeItem('userSession');
+}
+
+function isUserLoggedIn() {
+    const session = getUserSession();
+    return session && session.access_token && session.user;
+}
+
+//
+// create user
+//
+
+function handleCreateUser(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const userData = {
+        name: formData.get('name'),
+        email: formData.get('email'),
+        password1: formData.get('password1'),
+        password2: formData.get('password2')
+    };
+    
+    // Basic client-side validation
+    if (userData.password1 !== userData.password2) {
+        showMessage('Passwords do not match', 'error');
+        return false;
+    }
+    
+    createUser(userData);
+    return false;
+}
+
+async function createUser(userData) {
+    
+    try {
+        const response = await fetch(`/api/core/user`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userData)
+        });
+        
+        if (response.ok) {
+            const user = await response.json();
+            showMessage('User created successfully! You can now login.', 'success');
+            // Clear the form
+            document.getElementById('createUserForm').reset();
+        } else {
+            const error = await response.text();
+            showMessage(`Error creating user: ${error}`, 'error');
+        }
+    } catch (error) {
+        showMessage(`Network error: ${error.message}`, 'error');
+    }
+}
+
+//
+// login/logout
+//
+
+function handleLogin(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const loginData = {
+        email: formData.get('email'),
+        password: formData.get('password')
+    };
+    
+    loginUser(loginData);
+    return false;
+}
+
+async function loginUser(loginData) {
+    
+    try {
+        // Create form data for the login endpoint
+        const formData = new URLSearchParams();
+        formData.append('email', loginData.email);
+        formData.append('password', loginData.password);
+        
+        const response = await fetch(`/api/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData
+        });
+        
+        if (response.ok) {
+            const authData = await response.json();
+            
+            // Store session data
+            const sessionData = {
+                access_token: authData.access_token,
+                user: loginData.email,
+                loginTime: new Date().toISOString()
+            };
+            setUserSession(sessionData);
+            
+            showMessage('Login successful! Redirecting...', 'success');
+            // Redirect to home page after a short delay
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1500);
+        } else {
+            const error = await response.text();
+            showMessage(`Login failed: ${error}`, 'error');
+        }
+    } catch (error) {
+        showMessage(`Network error: ${error.message}`, 'error');
+    }
+}
+
+function logoutUser() {
+    clearUserSession();
+    updateUIForLoginStatus();
+    showMessage('You have been logged out. Redirecting to home page...', 'success');
+    setTimeout(() => {
+        window.location.href = '/';
+    }, 1500);
+}
+
+// 
+// ui
+//
+
+function showMessage(message, type) {
+    const messageDiv = document.getElementById('message');
+    if (messageDiv) {
+        messageDiv.innerHTML = `<p class="${type}">${message}</p>`;
+    }
+}
+
+// enable/disable UI elements based on login status
+function updateUIForLoginStatus() {
+    const loggedOutButtons = document.getElementById('loggedOutButtons');
+    const loggedInButtons = document.getElementById('loggedInButtons');
+    const userName = document.getElementById('userName');
+    
+    if (!loggedOutButtons || !loggedInButtons) return;
+    
+    if (isUserLoggedIn()) {
+        const session = getUserSession();
+        loggedOutButtons.hidden = true;
+        loggedInButtons.hidden = false;
+        if (userName) {
+            userName.textContent = session.user;
+        }
+    } else {
+        loggedOutButtons.hidden = false;
+        loggedInButtons.hidden = true;
+    }
+}
+
+// initialize UI when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    updateUIForLoginStatus();
+});
+
+//
+// random functions
+//
+
 const randomNouns = ['apple', 'banana', 'horse', 'iguana', 'jellyfish', 'kangaroo', 'lion', 'quail', 'rabbit', 'snake', 'tiger', 'x-ray', 'yak', 'zebra']
 const randomAdjectives = ['shiny', 'dull', 'new', 'old', 'big', 'small', 'fast', 'slow', 'hot', 'cold', 'happy', 'sad', 'angry', 'calm', 'loud', 'quiet']
 const randomWords = randomNouns.concat(randomAdjectives)

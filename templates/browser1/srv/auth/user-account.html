@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<!-- vars :: {"template_app": "project.name.snake_case"} -->
+<html>
+
+    <head>
+        <title>User Account - template_app</title>
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
+        <link rel="stylesheet" type="text/css" href="/style.css">
+        <script src="/index.js"></script>
+    </head>
+
+    <body>
+
+        <h1>User Account - template_app</h1>
+        
+        <div class="nav">
+            <a href="/" class="navbar-link">Home</a>
+            <a onclick="logoutUser()" class="navbar-link">Logout</a>
+        </div>
+
+        <div class="centered-container">
+            <div id="userInfo">
+                <h2>User Information</h2>
+                <table>
+                    <tr>
+                        <td class="profile-left-col">Email:</td>
+                        <td id="userEmail">-</td>
+                    </tr>
+                    <tr>
+                        <td class="profile-left-col">Login Time:</td>
+                        <td id="loginTime">-</td>
+                    </tr>
+                    <tr>
+                        <td class="profile-left-col">Status:</td>
+                        <td id="userStatus">Active</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div id="message"></div>
+        </div>
+
+        <script>
+            // Populate user account information
+            function populateUserAccountInfo() {
+                const session = getUserSession();
+                
+                if (!session) {
+                    // If not logged in, redirect to home
+                    window.location.href = '/';
+                    return;
+                }
+                
+                const userEmail = document.getElementById('userEmail');
+                const loginTime = document.getElementById('loginTime');
+                
+                if (userEmail) {
+                    userEmail.textContent = session.user || 'Unknown';
+                }
+                
+                if (loginTime && session.loginTime) {
+                    const loginDate = new Date(session.loginTime);
+                    loginTime.textContent = loginDate.toLocaleString();
+                }
+            }
+
+            // Initialize user account page when page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                populateUserAccountInfo();
+            });
+        </script>
+
+    </body>
+
+</html>
