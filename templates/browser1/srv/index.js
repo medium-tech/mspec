@@ -286,25 +286,56 @@ function showMessage(message, type) {
 
 // Update UI based on login status
 function updateUIForLoginStatus() {
-    const userButtonsDiv = document.getElementById('userButtons');
-    if (!userButtonsDiv) return;
+    const loggedOutButtons = document.getElementById('loggedOutButtons');
+    const loggedInButtons = document.getElementById('loggedInButtons');
+    const userName = document.getElementById('userName');
+    
+    if (!loggedOutButtons || !loggedInButtons) return;
     
     if (isUserLoggedIn()) {
         const session = getUserSession();
-        userButtonsDiv.innerHTML = `
-            <p>Welcome, ${session.user}!</p>
-            <button onclick="window.location.href='/user-account.html'" class="navbar-link">User Account</button>
-            <button onclick="logoutUser()" class="navbar-link">Logout</button>
-        `;
+        // Show logged in state
+        loggedOutButtons.hidden = true;
+        loggedInButtons.hidden = false;
+        if (userName) {
+            userName.textContent = session.user;
+        }
     } else {
-        userButtonsDiv.innerHTML = `
-            <button onclick="window.location.href='/create-user.html'" class="navbar-link">Create User</button>
-            <button onclick="window.location.href='/login.html'" class="navbar-link">Login</button>
-        `;
+        // Show logged out state
+        loggedOutButtons.hidden = false;
+        loggedInButtons.hidden = true;
     }
 }
 
 // Initialize UI when page loads
 document.addEventListener('DOMContentLoaded', function() {
     updateUIForLoginStatus();
+    
+    // If we're on the user account page, populate user info
+    if (window.location.pathname.includes('user-account.html')) {
+        populateUserAccountInfo();
+    }
 });
+
+// Populate user account information
+function populateUserAccountInfo() {
+    const session = getUserSession();
+    
+    if (!session) {
+        // If not logged in, redirect to home
+        window.location.href = '/';
+        return;
+    }
+    
+    const userEmail = document.getElementById('userEmail');
+    const loginTime = document.getElementById('loginTime');
+    
+    if (userEmail) {
+        userEmail.textContent = session.user || 'Unknown';
+    }
+    
+    if (loginTime && session.loginTime) {
+        const loginDate = new Date(session.loginTime);
+        loginTime.textContent = loginDate.toLocaleString();
+    }
+}

@@ -20,7 +20,19 @@
 
         <div class="nav">
             <div id="userButtons">
-                <!-- User buttons will be inserted here by JavaScript -->
+                <!-- Logged out state -->
+                <div id="loggedOutButtons">
+                    <button onclick="window.location.href='/create-user.html'" class="navbar-link">Create User</button>
+                    <button onclick="window.location.href='/login.html'" class="navbar-link">Login</button>
+                </div>
+                
+                <!-- Logged in state -->
+                <div id="loggedInButtons" hidden>
+                    <p id="welcomeMessage">Welcome, <span id="userName"></span>!</p>
+                    <br>
+                    <button onclick="window.location.href='/user-account.html'" class="navbar-link">User Account</button>
+                    <button onclick="logoutUser()" class="navbar-link">Logout</button>
+                </div>
             </div>
         </div>
 
