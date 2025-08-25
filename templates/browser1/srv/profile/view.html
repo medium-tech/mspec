@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<!-- vars :: {"template_app": "project.name.snake_case"} -->
+<html>
+
+    <head>
+        <title>Profile View - template_app</title>
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
+        <link rel="stylesheet" type="text/css" href="/style.css">
+        <script src="/index.js"></script>
+    </head>
+
+    <body>
+
+        <h1>Profile View - template_app</h1>
+        
+        <div class="nav">
+            <a href="/" class="navbar-link">Home</a>
+            <a href="/profile/list.html" class="navbar-link">Browse Profiles</a>
+            <div id="userButtons">
+                <!-- logged out state -->
+                <div id="loggedOutButtons">
+                    <button onclick="window.location.href='/auth/create-user.html'" class="navbar-link">Create User</button>
+                    <button onclick="window.location.href='/auth/login.html'" class="navbar-link">Login</button>
+                </div>
+                
+                <!-- logged in state -->
+                <div id="loggedInButtons" hidden>
+                    <button onclick="window.location.href='/auth/user-account.html'" class="navbar-link">User Account</button>
+                    <button onclick="logoutUser()" class="navbar-link">Logout</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="centered-container">
+            <div id="profileInfo">
+                <h2 id="profileName">Loading...</h2>
+                <table>
+                    <tr>
+                        <td class="profile-left-col">Bio:</td>
+                        <td id="profileBio">-</td>
+                    </tr>
+                    <tr>
+                        <td class="profile-left-col">Tags:</td>
+                        <td id="profileTags">-</td>
+                    </tr>
+                    <tr>
+                        <td class="profile-left-col">Hierarchies:</td>
+                        <td id="profileHierarchies">-</td>
+                    </tr>
+                    <tr>
+                        <td class="profile-left-col">Additional Data:</td>
+                        <td id="profileData">-</td>
+                    </tr>
+                </table>
+                
+                <div id="profileActions" style="margin-top: 20px;">
+                    <!-- Edit button will be shown only for profile owner -->
+                </div>
+            </div>
+            
+            <div id="message"></div>
+        </div>
+
+        <script>
+            // Load profile when page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                updateUIForLoginStatus();
+                loadProfile();
+            });
+
+            function loadProfile() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const profileId = urlParams.get('id');
+                
+                if (!profileId) {
+                    showMessage('Profile ID not specified.', 'error');
+                    return;
+                }
+                
+                readProfile(profileId);
+            }
+
+            function displayProfile(profile) {
+                document.getElementById('profileName').textContent = profile.name;
+                document.getElementById('profileBio').textContent = profile.bio || '-';
+                
+                const tags = profile.meta && profile.meta.tags ? profile.meta.tags.join(', ') : '-';
+                document.getElementById('profileTags').textContent = tags;
+                
+                const hierarchies = profile.meta && profile.meta.hierarchies ? profile.meta.hierarchies.join(', ') : '-';
+                document.getElementById('profileHierarchies').textContent = hierarchies;
+                
+                const data = profile.meta && profile.meta.data ? JSON.stringify(profile.meta.data, null, 2) : '-';
+                document.getElementById('profileData').textContent = data;
+                
+                // Show edit button if user owns this profile
+                const session = getUserSession();
+                if (session && session.user_id === profile.user_id) {
+                    const actionsDiv = document.getElementById('profileActions');
+                    actionsDiv.innerHTML = `<button onclick="window.location.href='/profile/edit.html?id=${profile.id}'" class="navbar-link">Edit Profile</button>`;
+                }
+            }
+        </script>
+
+    </body>
+
+</html>

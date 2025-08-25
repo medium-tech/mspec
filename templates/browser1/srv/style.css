@@ -118,6 +118,15 @@ input {
   font-size: 14px;
 }
 
+.form-group textarea {
+  width: 300px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  resize: vertical;
+}
+
 .form-group button {
   background-color: midnightblue;
   color: white;
@@ -157,4 +166,49 @@ input {
 
 #userButtons button:hover {
   background-color: #1a237e;
+}
+
+.profile-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.profile-actions button {
+  background-color: midnightblue;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.profile-actions button:hover {
+  background-color: #1a237e;
+}
+
+#pagination {
+  margin-top: 20px;
+  text-align: center;
+}
+
+#pagination button {
+  background-color: midnightblue;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 0 10px;
+}
+
+#pagination button:hover:not(:disabled) {
+  background-color: #1a237e;
+}
+
+#pagination button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
 }

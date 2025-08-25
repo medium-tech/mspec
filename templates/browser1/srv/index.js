@@ -106,10 +106,25 @@ async function loginUser(loginData) {
         if (response.ok) {
             const authData = await response.json();
             
+            // Get current user information to store user_id
+            const userResponse = await fetch('/api/auth/me', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${authData.access_token}`
+                }
+            });
+            
+            let userId = null;
+            if (userResponse.ok) {
+                const userData = await userResponse.json();
+                userId = userData.id;
+            }
+            
             // Store session data
             const sessionData = {
                 access_token: authData.access_token,
                 user: loginData.email,
+                user_id: userId,
                 loginTime: new Date().toISOString()
             };
             setUserSession(sessionData);
@@ -173,6 +188,258 @@ function updateUIForLoginStatus() {
 document.addEventListener('DOMContentLoaded', function() {
     updateUIForLoginStatus();
 });
+
+//
+// profile management
+//
+
+function handleCreateProfile(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    
+    // Parse tags and hierarchies from comma-separated strings
+    const tagsStr = formData.get('tags') || '';
+    const tags = tagsStr ? tagsStr.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+    
+    const hierarchiesStr = formData.get('hierarchies') || '';
+    const hierarchies = hierarchiesStr ? hierarchiesStr.split(',').map(h => h.trim()).filter(h => h) : [];
+    
+    // Parse meta data JSON
+    let metaData = {};
+    const metaDataStr = formData.get('metaData');
+    if (metaDataStr && metaDataStr.trim()) {
+        try {
+            metaData = JSON.parse(metaDataStr);
+        } catch (e) {
+            showMessage('Invalid JSON format in Additional Data field.', 'error');
+            return false;
+        }
+    }
+    
+    const session = getUserSession();
+    if (!session || !session.user_id) {
+        showMessage('User session not found. Please log in again.', 'error');
+        return false;
+    }
+    
+    const profileData = {
+        name: formData.get('name'),
+        bio: formData.get('bio'),
+        user_id: session.user_id,
+        meta: {
+            data: metaData,
+            tags: tags,
+            hierarchies: hierarchies
+        }
+    };
+    
+    createProfile(profileData);
+    return false;
+}
+
+async function createProfile(profileData) {
+    const session = getUserSession();
+    if (!session || !session.access_token) {
+        showMessage('You must be logged in to create a profile.', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/core/profile', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify(profileData)
+        });
+        
+        if (response.ok) {
+            const profile = await response.json();
+            showMessage('Profile created successfully!', 'success');
+            setTimeout(() => {
+                window.location.href = `/profile/view.html?id=${profile.id}`;
+            }, 1500);
+        } else {
+            const error = await response.text();
+            showMessage(`Error creating profile: ${error}`, 'error');
+        }
+    } catch (error) {
+        showMessage(`Network error: ${error.message}`, 'error');
+    }
+}
+
+function handleEditProfile(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    
+    // Parse tags and hierarchies from comma-separated strings
+    const tagsStr = formData.get('tags') || '';
+    const tags = tagsStr ? tagsStr.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+    
+    const hierarchiesStr = formData.get('hierarchies') || '';
+    const hierarchies = hierarchiesStr ? hierarchiesStr.split(',').map(h => h.trim()).filter(h => h) : [];
+    
+    // Parse meta data JSON
+    let metaData = {};
+    const metaDataStr = formData.get('metaData');
+    if (metaDataStr && metaDataStr.trim()) {
+        try {
+            metaData = JSON.parse(metaDataStr);
+        } catch (e) {
+            showMessage('Invalid JSON format in Additional Data field.', 'error');
+            return false;
+        }
+    }
+    
+    const profileData = {
+        id: formData.get('profileId'),
+        name: formData.get('name'),
+        bio: formData.get('bio'),
+        user_id: formData.get('userId'),
+        meta: {
+            data: metaData,
+            tags: tags,
+            hierarchies: hierarchies
+        }
+    };
+    
+    updateProfile(profileData);
+    return false;
+}
+
+async function updateProfile(profileData) {
+    const session = getUserSession();
+    if (!session || !session.access_token) {
+        showMessage('You must be logged in to update a profile.', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/core/profile/${profileData.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify(profileData)
+        });
+        
+        if (response.ok) {
+            showMessage('Profile updated successfully!', 'success');
+            setTimeout(() => {
+                window.location.href = `/profile/view.html?id=${profileData.id}`;
+            }, 1500);
+        } else {
+            const error = await response.text();
+            showMessage(`Error updating profile: ${error}`, 'error');
+        }
+    } catch (error) {
+        showMessage(`Network error: ${error.message}`, 'error');
+    }
+}
+
+async function loadProfiles() {
+    try {
+        const offset = currentPage * pageSize;
+        const response = await fetch(`/api/core/profile?offset=${offset}&limit=${pageSize}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const profiles = await response.json();
+            displayProfiles(profiles);
+            updatePaginationButtons();
+        } else {
+            const error = await response.text();
+            showMessage(`Error loading profiles: ${error}`, 'error');
+        }
+    } catch (error) {
+        showMessage(`Network error: ${error.message}`, 'error');
+    }
+}
+
+function displayProfiles(profiles) {
+    const tableBody = document.getElementById('profileTableBody');
+    tableBody.innerHTML = '';
+    
+    profiles.forEach(profile => {
+        const row = document.createElement('tr');
+        
+        const nameCell = document.createElement('td');
+        nameCell.textContent = profile.name;
+        row.appendChild(nameCell);
+        
+        const bioCell = document.createElement('td');
+        bioCell.textContent = profile.bio ? (profile.bio.length > 50 ? profile.bio.substring(0, 50) + '...' : profile.bio) : '-';
+        row.appendChild(bioCell);
+        
+        const tagsCell = document.createElement('td');
+        const tags = profile.meta && profile.meta.tags ? profile.meta.tags.slice(0, 3).join(', ') : '-';
+        tagsCell.textContent = tags;
+        row.appendChild(tagsCell);
+        
+        const actionsCell = document.createElement('td');
+        actionsCell.innerHTML = `<button onclick="window.location.href='/profile/view.html?id=${profile.id}'" class="navbar-link">View</button>`;
+        row.appendChild(actionsCell);
+        
+        tableBody.appendChild(row);
+    });
+}
+
+async function readProfile(profileId) {
+    try {
+        const response = await fetch(`/api/core/profile/${profileId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const profile = await response.json();
+            displayProfile(profile);
+        } else {
+            const error = await response.text();
+            showMessage(`Error loading profile: ${error}`, 'error');
+        }
+    } catch (error) {
+        showMessage(`Network error: ${error.message}`, 'error');
+    }
+}
+
+async function readProfileForEdit(profileId) {
+    const session = getUserSession();
+    if (!session || !session.access_token) {
+        showMessage('You must be logged in to edit a profile.', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/core/profile/${profileId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+            }
+        });
+        
+        if (response.ok) {
+            const profile = await response.json();
+            populateEditForm(profile);
+        } else {
+            const error = await response.text();
+            showMessage(`Error loading profile: ${error}`, 'error');
+        }
+    } catch (error) {
+        showMessage(`Network error: ${error.message}`, 'error');
+    }
+}
 
 //
 // random functions

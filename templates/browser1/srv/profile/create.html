@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<!-- vars :: {"template_app": "project.name.snake_case"} -->
+<html>
+
+    <head>
+        <title>Create Profile - template_app</title>
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
+        <link rel="stylesheet" type="text/css" href="/style.css">
+        <script src="/index.js"></script>
+    </head>
+
+    <body>
+
+        <h1>Create Profile - template_app</h1>
+        
+        <div class="nav">
+            <a href="/" class="navbar-link">Home</a>
+            <a href="/auth/user-account.html" class="navbar-link">User Account</a>
+            <a href="/profile/list.html" class="navbar-link">Browse Profiles</a>
+            <a onclick="logoutUser()" class="navbar-link">Logout</a>
+        </div>
+
+        <div class="centered-container">
+            <form id="createProfileForm" onsubmit="handleCreateProfile(event)">
+                <div class="form-group">
+                    <label for="name">Name:</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bio">Bio:</label>
+                    <textarea id="bio" name="bio" rows="4" cols="50" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tags">Tags (comma-separated):</label>
+                    <input type="text" id="tags" name="tags" placeholder="e.g., musician, photographer, artist">
+                </div>
+                
+                <div class="form-group">
+                    <label for="hierarchies">Hierarchies (comma-separated):</label>
+                    <input type="text" id="hierarchies" name="hierarchies" placeholder="e.g., artist/musician, artist/photographer">
+                </div>
+                
+                <div class="form-group">
+                    <label for="metaData">Additional Data (JSON format):</label>
+                    <textarea id="metaData" name="metaData" rows="3" cols="50" placeholder='{"key": "value"}'></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <button type="submit">Create Profile</button>
+                </div>
+            </form>
+            
+            <div id="message"></div>
+        </div>
+
+        <script>
+            // Check if user is logged in when page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                if (!isUserLoggedIn()) {
+                    showMessage('You must be logged in to create a profile.', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/auth/login.html';
+                    }, 2000);
+                }
+            });
+        </script>
+
+    </body>
+
+</html>

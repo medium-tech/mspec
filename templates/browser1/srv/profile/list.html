@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<!-- vars :: {"template_app": "project.name.snake_case"} -->
+<html>
+
+    <head>
+        <title>Browse Profiles - template_app</title>
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
+        <link rel="stylesheet" type="text/css" href="/style.css">
+        <script src="/index.js"></script>
+    </head>
+
+    <body>
+
+        <h1>Browse Profiles - template_app</h1>
+        
+        <div class="nav">
+            <a href="/" class="navbar-link">Home</a>
+            <div id="userButtons">
+                <!-- logged out state -->
+                <div id="loggedOutButtons">
+                    <button onclick="window.location.href='/auth/create-user.html'" class="navbar-link">Create User</button>
+                    <button onclick="window.location.href='/auth/login.html'" class="navbar-link">Login</button>
+                </div>
+                
+                <!-- logged in state -->
+                <div id="loggedInButtons" hidden>
+                    <button onclick="window.location.href='/auth/user-account.html'" class="navbar-link">User Account</button>
+                    <button onclick="window.location.href='/profile/create.html'" class="navbar-link">Create Profile</button>
+                    <button onclick="logoutUser()" class="navbar-link">Logout</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="centered-container">
+            <div id="profileList">
+                <h2>Public Profiles</h2>
+                <table id="profileTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Bio</th>
+                            <th>Tags</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="profileTableBody">
+                        <!-- Profiles will be loaded here -->
+                    </tbody>
+                </table>
+                
+                <div id="pagination">
+                    <button id="prevButton" onclick="previousPage()" disabled>Previous</button>
+                    <span id="pageInfo">Page 1</span>
+                    <button id="nextButton" onclick="nextPage()">Next</button>
+                </div>
+            </div>
+            
+            <div id="message"></div>
+        </div>
+
+        <script>
+            let currentPage = 0;
+            const pageSize = 10;
+            let totalProfiles = 0;
+
+            // Load profiles when page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                updateUIForLoginStatus();
+                loadProfiles();
+            });
+
+            function nextPage() {
+                currentPage++;
+                loadProfiles();
+            }
+
+            function previousPage() {
+                if (currentPage > 0) {
+                    currentPage--;
+                    loadProfiles();
+                }
+            }
+
+            function updatePaginationButtons() {
+                const prevButton = document.getElementById('prevButton');
+                const nextButton = document.getElementById('nextButton');
+                const pageInfo = document.getElementById('pageInfo');
+                
+                prevButton.disabled = currentPage === 0;
+                pageInfo.textContent = `Page ${currentPage + 1}`;
+                
+                // Disable next button if we have less than pageSize profiles
+                const tableBody = document.getElementById('profileTableBody');
+                nextButton.disabled = tableBody.children.length < pageSize;
+            }
+        </script>
+
+    </body>
+
+</html>
