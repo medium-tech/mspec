@@ -136,7 +136,10 @@ function random_phone_number() {
     return `+${countryCode} (${areaCode}) ${exchange}-${number}`;
 }
 
-// User session management functions
+//
+// user session management
+//
+
 function getUserSession() {
     const sessionData = localStorage.getItem('userSession');
     return sessionData ? JSON.parse(sessionData) : null;
@@ -155,12 +158,10 @@ function isUserLoggedIn() {
     return session && session.access_token && session.user;
 }
 
-// Get API host - in a real app this would be configured
-function getApiHost() {
-    return window.location.origin; // Assumes API is on same host
-}
+//
+// create user
+//
 
-// Handle create user form submission
 function handleCreateUser(event) {
     event.preventDefault();
     
@@ -182,12 +183,11 @@ function handleCreateUser(event) {
     return false;
 }
 
-// Create user API call
 async function createUser(userData) {
     const messageDiv = document.getElementById('message');
     
     try {
-        const response = await fetch(`${getApiHost()}/api/core/user`, {
+        const response = await fetch(`/api/core/user`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -209,7 +209,10 @@ async function createUser(userData) {
     }
 }
 
-// Handle login form submission
+//
+// login/logout
+//
+
 function handleLogin(event) {
     event.preventDefault();
     
@@ -223,9 +226,7 @@ function handleLogin(event) {
     return false;
 }
 
-// Login user API call
 async function loginUser(loginData) {
-    const messageDiv = document.getElementById('message');
     
     try {
         // Create form data for the login endpoint
@@ -233,7 +234,7 @@ async function loginUser(loginData) {
         formData.append('email', loginData.email);
         formData.append('password', loginData.password);
         
-        const response = await fetch(`${getApiHost()}/api/auth/login`, {
+        const response = await fetch(`/api/auth/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -266,17 +267,16 @@ async function loginUser(loginData) {
     }
 }
 
-// Logout function
 function logoutUser() {
     clearUserSession();
+    updateUIForLoginStatus();
     showMessage('You have been logged out.', 'success');
-    // Refresh the page to update UI
-    setTimeout(() => {
-        window.location.reload();
-    }, 1000);
 }
 
-// Show message function
+// 
+// ui
+//
+
 function showMessage(message, type) {
     const messageDiv = document.getElementById('message');
     if (messageDiv) {
@@ -284,7 +284,7 @@ function showMessage(message, type) {
     }
 }
 
-// Update UI based on login status
+// enable/disable UI elements based on login status
 function updateUIForLoginStatus() {
     const loggedOutButtons = document.getElementById('loggedOutButtons');
     const loggedInButtons = document.getElementById('loggedInButtons');

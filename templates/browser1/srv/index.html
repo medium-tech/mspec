@@ -20,18 +20,18 @@
 
         <div class="nav">
             <div id="userButtons">
-                <!-- Logged out state -->
+                <!-- logged out state -->
                 <div id="loggedOutButtons">
                     <button onclick="window.location.href='/create-user.html'" class="navbar-link">Create User</button>
                     <button onclick="window.location.href='/login.html'" class="navbar-link">Login</button>
                 </div>
                 
-                <!-- Logged in state -->
+                <!-- logged in state -->
                 <div id="loggedInButtons" hidden>
                     <p id="welcomeMessage">Welcome, <span id="userName"></span>!</p>
                     <br>
-                    <button onclick="window.location.href='/user-account.html'" class="navbar-link">User Account</button>
-                    <button onclick="logoutUser()" class="navbar-link">Logout</button>
+                    <button id="userAccountButton" onclick="window.location.href='/user-account.html'" class="navbar-link">User Account</button>
+                    <button id="logoutButton" onclick="logoutUser()" class="navbar-link">Logout</button>
                 </div>
             </div>
         </div>
