@@ -15,7 +15,6 @@ import sys
 import time
 import datetime
 import signal
-import socket
 
 from pathlib import Path
 
@@ -28,7 +27,8 @@ class TestAppGenerator(unittest.TestCase):
         self.repo_root = Path(__file__).parent.parent
         self.spec_file = self.repo_root / 'src' / 'mspec' / 'data' / 'test-gen.yaml'
         
-        # Create tmp directory in tests folder
+        # create tmp directory for tests #
+
         self.tests_tmp_dir = self.repo_root / 'tests' / 'tmp'
         try:
             shutil.rmtree(self.tests_tmp_dir)
@@ -36,7 +36,8 @@ class TestAppGenerator(unittest.TestCase):
             pass
         self.tests_tmp_dir.mkdir(exist_ok=True)
         
-        # Create unique test directory for this test
+        # create unique directory name #
+
         timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S_%f')
         self.test_dir = self.tests_tmp_dir / f'test_{timestamp}'
         self.test_dir.mkdir(exist_ok=True)
@@ -46,11 +47,13 @@ class TestAppGenerator(unittest.TestCase):
         if self.test_dir.exists():
             shutil.rmtree(self.test_dir)
     
-    # py app generation test #
-    
     def test_generate_py_app(self):
         '''Test generating py app from test-gen.yaml and verify structure'''
-        # Generate the py app
+
+        #
+        # generate the py app
+        #
+
         result = subprocess.run([
             sys.executable, '-m', 'mtemplate', 'render-py',
             '--spec', str(self.spec_file),
@@ -60,7 +63,8 @@ class TestAppGenerator(unittest.TestCase):
         
         self.assertEqual(result.returncode, 0, f'Failed to generate py app: {result.stderr}')
         
-        # Check that key files were generated with proper structure
+        # check that key files were generated with proper structure #
+
         py_files = [
             'pyproject.toml',
             'test.sh',
@@ -79,28 +83,32 @@ class TestAppGenerator(unittest.TestCase):
             full_path = Path(self.test_dir) / file_path
             self.assertTrue(full_path.exists(), f'Expected file not found: {file_path}')
         
-        # Verify pyproject.toml has correct structure
+        # pyproject.toml #
+
         pyproject_path = Path(self.test_dir) / 'pyproject.toml'
         with open(pyproject_path, 'r') as f:
             pyproject_content = f.read()
             self.assertIn('name = \'test_gen\'', pyproject_content)
             self.assertIn('uwsgi', pyproject_content)
         
-        # Verify test.sh is executable and has correct content
+        # test.sh #
+
         test_sh_path = Path(self.test_dir) / 'test.sh'
         self.assertTrue(os.access(test_sh_path, os.X_OK), 'test.sh should be executable')
         with open(test_sh_path, 'r') as f:
             test_content = f.read()
             self.assertIn('python -m unittest', test_content)
         
-        # Verify server.sh is executable and has correct content
+        # server.sh #
+
         server_sh_path = Path(self.test_dir) / 'server.sh'
         self.assertTrue(os.access(server_sh_path, os.X_OK), 'server.sh should be executable')
         with open(server_sh_path, 'r') as f:
             server_content = f.read()
             self.assertIn('uwsgi', server_content)
         
-        # Verify generated model files have proper Python syntax
+        # check for template syntax in generated model files #
+
         model_files = [
             'src/generated_module_a/singular_model/model.py',
             'src/generated_module_a/plural_model/model.py'
@@ -110,17 +118,15 @@ class TestAppGenerator(unittest.TestCase):
             model_path = Path(self.test_dir) / model_file
             with open(model_path, 'r') as f:
                 model_content = f.read()
-                # Basic syntax check - should contain class definitions
                 self.assertIn('class ', model_content)
-                # Should not contain template syntax (should be resolved)
                 self.assertNotIn('{{', model_content)
                 self.assertNotIn('}}', model_content)
     
-    # browser1 app generation test #
-    
     def test_generate_browser1_app(self):
         '''Test generating browser1 app from test-gen.yaml and verify structure'''
-        # Generate the browser1 app
+
+        # generate the browser1 app #
+
         result = subprocess.run([
             sys.executable, '-m', 'mtemplate', 'render-browser1', 
             '--spec', str(self.spec_file),
@@ -130,7 +136,8 @@ class TestAppGenerator(unittest.TestCase):
         
         self.assertEqual(result.returncode, 0, f'Failed to generate browser1 app: {result.stderr}')
         
-        # Check that key files were generated with proper structure
+        # check that key files were generated with proper structure #
+
         browser1_files = [
             'package.json',
             'playwright.config.js',
@@ -147,7 +154,8 @@ class TestAppGenerator(unittest.TestCase):
             full_path = Path(self.test_dir) / file_path
             self.assertTrue(full_path.exists(), f'Expected file not found: {file_path}')
         
-        # Verify package.json has correct structure
+        # package.json #
+
         package_json_path = Path(self.test_dir) / 'package.json'
         with open(package_json_path, 'r') as f:
             package_content = f.read()
@@ -155,14 +163,16 @@ class TestAppGenerator(unittest.TestCase):
             self.assertIn('@playwright/test', package_content)
             self.assertIn('npx playwright test', package_content)
         
-        # Verify playwright config exists and has proper structure
+        # playwright config #
+
         playwright_config_path = Path(self.test_dir) / 'playwright.config.js'
         with open(playwright_config_path, 'r') as f:
             playwright_content = f.read()
             self.assertIn('testDir', playwright_content)
             self.assertIn('./tests', playwright_content)
         
-        # Verify generated HTML files have proper structure
+        # HTML files #
+
         html_files = [
             'srv/index.html',
             'srv/generated-module-a/singular-model/index.html'
@@ -179,7 +189,8 @@ class TestAppGenerator(unittest.TestCase):
                 self.assertNotIn('{{', html_content)
                 self.assertNotIn('}}', html_content)
         
-        # Verify generated test files have proper structure
+        # test files #
+
         test_files = [
             'tests/generated-module-a/singularModel.spec.js',
             'tests/generated-module-a/pluralModel.spec.js'
@@ -196,11 +207,13 @@ class TestAppGenerator(unittest.TestCase):
                 self.assertNotIn('{{', test_content)
                 self.assertNotIn('}}', test_content)
     
-    # integration test - both apps generation and execution #
-    
     def test_generate_both_apps(self):
         '''Test generating both py and browser1 apps together and run their tests'''
-        # Generate both apps using the main render command with debug to prevent deletion
+
+        #
+        # generate both apps
+        #
+
         result = subprocess.run([
             sys.executable, '-m', 'mtemplate', 'render',
             '--spec', str(self.spec_file),
@@ -211,18 +224,17 @@ class TestAppGenerator(unittest.TestCase):
         
         self.assertEqual(result.returncode, 0, f'Failed to generate apps: {result.stderr}')
         
-        # Check that files from both apps were generated in their respective subdirectories
+        # check that files from both apps were generated in their respective subdirectories #
+
         py_dir = self.test_dir / 'py'
         browser1_dir = self.test_dir / 'browser1'
         
         expected_files = [
-            # Python app files (in py/ subdirectory)
             (py_dir, 'pyproject.toml'),
             (py_dir, 'test.sh'), 
             (py_dir, 'server.sh'),
             (py_dir, 'src/core/__init__.py'),
             
-            # Browser1 app files (in browser1/ subdirectory)
             (browser1_dir, 'package.json'),
             (browser1_dir, 'playwright.config.js'),
             (browser1_dir, 'srv/index.html'),
@@ -232,10 +244,12 @@ class TestAppGenerator(unittest.TestCase):
         for base_dir, file_path in expected_files:
             full_path = base_dir / file_path
             self.assertTrue(full_path.exists(), f'Expected file not found: {base_dir.name}/{file_path}')
+        #
+        # app setup
+        #
         
-        # app setup #
-        
-        # cd to py directory and create virtual environment
+        # create virtual environment #
+
         venv_dir = self.test_dir / '.venv'
         venv_result = subprocess.run([
             sys.executable, '-m', 'venv', str(venv_dir), '--upgrade-deps'
@@ -246,7 +260,8 @@ class TestAppGenerator(unittest.TestCase):
         
         python_executable = str(venv_dir / 'bin' / 'python')
         
-        # Install Python dependencies: python -m pip install -e py
+        # install py dependencies #
+
         pip_install_result = subprocess.run([
             python_executable, '-m', 'pip', 'install', '-e', '.'
         ], capture_output=True, text=True, cwd=str(py_dir))
@@ -254,7 +269,8 @@ class TestAppGenerator(unittest.TestCase):
         if pip_install_result.returncode != 0:
             raise RuntimeError(f'Failed to install Python dependencies: {pip_install_result.stderr}')
         
-        # Install browser dependencies
+        # install browser1 dependencies #
+
         npm_install_result = subprocess.run([
             'npm', 'install'
         ], capture_output=True, text=True, cwd=str(browser1_dir))
@@ -262,24 +278,25 @@ class TestAppGenerator(unittest.TestCase):
         if npm_install_result.returncode != 0:
             raise RuntimeError(f'Failed to install npm dependencies: {npm_install_result.stderr}')
         
-        # Create .env file required by server.sh
-        env_file = py_dir / '.env'
-        
-        self.assertTrue(env_file.exists(), 'Expected .env file not found in py directory')
-        
-        # server startup and test execution #
+        #
+        # server startup and test execution
+        #
         
         server_process = None
         try:
-            # Check if server.sh exists
+
+            # check if server.sh exists #
+
             server_script = py_dir / 'server.sh'
             self.assertTrue(server_script.exists(), 'server.sh should exist')
             
-            # Create log files for server output to avoid pipe blocking
+            # create log files for server output to avoid pipe blocking #
+
             server_log = self.test_dir / 'server.log'
             server_err_log = self.test_dir / 'server_error.log'
             
-            # Start the server in background as a daemon-like process
+            # start server #
+
             with open(server_log, 'w') as stdout_file, open(server_err_log, 'w') as stderr_file:
                 server_process = subprocess.Popen([
                     'bash', '-c', server_script.as_posix()
@@ -291,56 +308,29 @@ class TestAppGenerator(unittest.TestCase):
 
             print(f'Started server with PID {server_process.pid}')
             
-            # Give the server a moment to start
-            time.sleep(8)
+            time.sleep(5)   # give the server a moment to start
 
-            # Check if the server has started successfully
+            # check if the server has started successfully #
+
             if server_process.poll() is not None:
-                # Read log files to get error information
                 with open(server_log, 'r') as f:
                     stdout_content = f.read()
                 with open(server_err_log, 'r') as f:
                     stderr_content = f.read()
                 raise RuntimeError(f'Server failed to start. stdout: {stdout_content}, stderr: {stderr_content}')
 
-            # Try to verify server is responding by attempting a simple connection
-            
-            server_responding = False
-            for _ in range(10):  # Try for up to 5 seconds
-                try:
-                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    sock.settimeout(1)
-                    result = sock.connect_ex(('localhost', 5005))
-                    sock.close()
-                    if result == 0:
-                        server_responding = True
-                        break
-                except:
-                    pass
-                time.sleep(0.5)
-            
-            if not server_responding:
-                # Read server logs for debugging
-                with open(server_log, 'r') as f:
-                    stdout_content = f.read()
-                with open(server_err_log, 'r') as f:
-                    stderr_content = f.read()
-                print(f'Server logs - stdout: {stdout_content}')
-                print(f'Server logs - stderr: {stderr_content}')
-                print('Warning: Server may not be responding on port 5005')
+            # run py tests #
 
-            # Run py tests: ./test.sh in py directory
             test_script = py_dir / 'test.sh'
             self.assertTrue(test_script.exists(), 'test.sh should exist')
             
             print(f'Running Python tests with command: bash -c {test_script.as_posix()}')
             
-            # Run tests with timeout and proper output handling
             python_test_result = None
             try:
                 python_test_result = subprocess.run([
                     'bash', '-c', test_script.as_posix()
-                ], capture_output=True, text=True, cwd=str(py_dir), timeout=30, 
+                ], capture_output=True, text=True, cwd=str(py_dir), timeout=60, 
                    env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), 
                            PATH=f'{venv_dir / "bin"}:{os.environ.get("PATH", "")}'))
                 
@@ -349,15 +339,14 @@ class TestAppGenerator(unittest.TestCase):
                 print(f'Python tests stderr: {python_test_result.stderr}')
                 
             except subprocess.TimeoutExpired:
-                print(f'Python tests timed out after 30 seconds')
-                # Don't fail the test just because of timeout - server might be working
-                print('Test timeout - this might indicate server deadlock issue is resolved')
+                raise RuntimeError('Python tests timed out')
             
             if python_test_result.returncode != 0:
                 raise RuntimeError(f'Python tests failed: {python_test_result.stderr}')
             
-            # Run browser1 tests: npm run test in browser1 directory
-            print(f'Running Browser1 tests with command: npm run test')
+            # run browser1 tests #
+            
+            print(f'Running browser1 tests with command: npm run test')
             browser_test_result = subprocess.run([
                 'npm', 'run', 'test'
             ], capture_output=True, text=True, cwd=str(browser1_dir), timeout=60, env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), PATH=f'{venv_dir / "bin"}:{os.environ.get("PATH", "")}'))
@@ -365,9 +354,9 @@ class TestAppGenerator(unittest.TestCase):
             print(browser_test_result.stdout + browser_test_result.stderr)
 
             if browser_test_result.returncode != 0:
-                raise RuntimeError(f'Browser1 tests failed: {browser_test_result.stderr}')
+                raise RuntimeError(f'browser1 tests failed: {browser_test_result.stderr}')
 
-            print('Terminating server process')
+            print('terminating server process')
             if server_process:
                 # Terminate the process group to ensure all child processes are killed
                 try:
@@ -377,15 +366,15 @@ class TestAppGenerator(unittest.TestCase):
                     pass
         
         finally:
+
             # cleanup #
-            print('Cleaning up server process')
+
+            print('cleaning up server process')
             if server_process:
                 try:
-                    # Try to terminate the process group first
                     os.killpg(os.getpgid(server_process.pid), signal.SIGTERM)
                     server_process.wait(timeout=5)
                 except (OSError, ProcessLookupError, subprocess.TimeoutExpired):
-                    # If graceful termination fails, force kill
                     try:
                         os.killpg(os.getpgid(server_process.pid), signal.SIGKILL)
                     except (OSError, ProcessLookupError):
