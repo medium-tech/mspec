@@ -15,6 +15,8 @@ import sys
 import time
 import datetime
 import signal
+import socket
+
 from pathlib import Path
 
 
@@ -41,8 +43,8 @@ class TestAppGenerator(unittest.TestCase):
         
     def tearDown(self):
         """Clean up test environment"""
-        # if self.test_dir.exists():
-        #     shutil.rmtree(self.test_dir)
+        if self.test_dir.exists():
+            shutil.rmtree(self.test_dir)
     
     def test_generate_py_app(self):
         """Test generating py app from test-gen.yaml and verify structure"""
@@ -256,9 +258,9 @@ class TestAppGenerator(unittest.TestCase):
         
         # Create .env file required by server.sh
         env_file = py_dir / ".env"
-        with open(env_file, 'w') as f:
-            f.write("# Environment variables for test server\n")
-            f.write("DEBUG=1\n")
+        # with open(env_file, 'w') as f:
+        #     f.write("# Environment variables for test server\n")
+        #     f.write("DEBUG=1\n")
         
         self.assertTrue(env_file.exists(), "Expected .env file not found in py directory")
         
@@ -298,9 +300,9 @@ class TestAppGenerator(unittest.TestCase):
                 raise RuntimeError(f"Server failed to start. stdout: {stdout_content}, stderr: {stderr_content}")
 
             # Try to verify server is responding by attempting a simple connection
-            import socket
+            
             server_responding = False
-            for attempt in range(10):  # Try for up to 5 seconds
+            for _ in range(10):  # Try for up to 5 seconds
                 try:
                     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     sock.settimeout(1)
@@ -347,29 +349,19 @@ class TestAppGenerator(unittest.TestCase):
                 # Don't fail the test just because of timeout - server might be working
                 print("Test timeout - this might indicate server deadlock issue is resolved")
             
-            # Check that Python tests can at least be discovered and run without hanging
-            # The main goal is to ensure server doesn't deadlock
-            if python_test_result is not None:
-                # Tests ran to completion - good sign
-                print("Python tests completed (may have passed or failed, but didn't hang)")
-            else:
-                print("Python tests may have timed out, but server process management worked")
+            if python_test_result.returncode != 0:
+                raise RuntimeError(f"Python tests failed: {python_test_result.stderr}")
             
             # Run browser1 tests: npm run test in browser1 directory
-            # print(f"Running Browser1 tests with command: npm run test")
-            # browser_test_result = subprocess.run([
-            #     "npm", "run", "test"
-            # ], capture_output=True, text=True, cwd=str(browser1_dir), timeout=60, env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), PATH=f"{venv_dir / 'bin'}:{os.environ.get('PATH', '')}"))
+            print(f"Running Browser1 tests with command: npm run test")
+            browser_test_result = subprocess.run([
+                "npm", "run", "test"
+            ], capture_output=True, text=True, cwd=str(browser1_dir), timeout=60, env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), PATH=f"{venv_dir / 'bin'}:{os.environ.get('PATH', '')}"))
 
-            # print(browser_test_result.stdout + browser_test_result.stderr)
+            print(browser_test_result.stdout + browser_test_result.stderr)
 
-            # # Check that browser tests can be discovered and run
-            # # Don't fail if tests fail, just ensure they can be discovered
-            # self.assertTrue(
-            #     "test" in browser_test_result.stderr.lower() + browser_test_result.stdout.lower() or
-            #     "playwright" in browser_test_result.stderr.lower() + browser_test_result.stdout.lower(),
-            #     f"Browser tests should be discoverable. Output: {browser_test_result.stdout} {browser_test_result.stderr}"
-            # )
+            if browser_test_result.returncode != 0:
+                raise RuntimeError(f"Browser1 tests failed: {browser_test_result.stderr}")
 
             print("Terminating server process")
             if server_process:
