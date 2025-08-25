@@ -262,6 +262,19 @@ As with the template apps, 0 dependencies are required to deploy the app, howeve
     npm install
     npm run test
 
+## test app generator
+
+To run the app generator tests that verify the mtemplate functionality:
+
+    ./test.sh
+
+The tests verify that:
+- The mtemplate system can generate py and browser1 apps from the test-gen.yaml spec
+- Generated apps have the correct file structure and content
+- Template syntax is properly resolved without errors
+- Both individual and combined app generation work correctly
+- Generated apps can be set up and their tests can be run
+
 ## run browser 2.0
 
 After [setting up your dev environment](#setup-dev-environment) run the following:
