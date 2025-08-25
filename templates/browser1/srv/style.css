@@ -99,3 +99,62 @@ input {
 .centered-container {
   margin: 0 auto;
 }
+
+.form-group {
+  margin: 15px 0;
+}
+
+.form-group label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.form-group input {
+  width: 300px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.form-group button {
+  background-color: midnightblue;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.form-group button:hover {
+  background-color: #1a237e;
+}
+
+#userButtons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+#userButtons p {
+  margin: 0;
+  font-weight: bold;
+  color: midnightblue;
+}
+
+#userButtons button {
+  background-color: midnightblue;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+#userButtons button:hover {
+  background-color: #1a237e;
+}
