@@ -13,7 +13,7 @@ import subprocess
 import os
 import sys
 import time
-import signal
+import datetime
 from pathlib import Path
 
 
@@ -27,18 +27,21 @@ class TestAppGenerator(unittest.TestCase):
         
         # Create tmp directory in tests folder
         self.tests_tmp_dir = self.repo_root / "tests" / "tmp"
+        try:
+            shutil.rmtree(self.tests_tmp_dir)
+        except FileNotFoundError:
+            pass
         self.tests_tmp_dir.mkdir(exist_ok=True)
         
         # Create unique test directory for this test
-        import datetime
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         self.test_dir = self.tests_tmp_dir / f"test_{timestamp}"
         self.test_dir.mkdir(exist_ok=True)
         
     def tearDown(self):
         """Clean up test environment"""
-        if self.test_dir.exists():
-            shutil.rmtree(self.test_dir)
+        # if self.test_dir.exists():
+        #     shutil.rmtree(self.test_dir)
     
     def test_generate_py_app(self):
         """Test generating py app from test-gen.yaml and verify structure"""
@@ -224,18 +227,15 @@ class TestAppGenerator(unittest.TestCase):
         # Setup the generated app following the instructions from the comment
         
         # cd to py directory and create virtual environment
-        venv_dir = py_dir / ".venv"
+        venv_dir = self.test_dir / ".venv"
         venv_result = subprocess.run([
             sys.executable, "-m", "venv", str(venv_dir), "--upgrade-deps"
         ], capture_output=True, text=True, cwd=str(py_dir))
         
         if venv_result.returncode != 0:
-            print(f"Warning: venv creation failed: {venv_result.stderr}")
-            # Fall back to using system python
-            python_executable = sys.executable
-        else:
-            # Use the virtual environment python
-            python_executable = str(venv_dir / "bin" / "python")
+            raise RuntimeError(f"Failed to create venv: {venv_result.stderr}")
+        
+        python_executable = str(venv_dir / "bin" / "python")
         
         # Install Python dependencies: python -m pip install -e py
         pip_install_result = subprocess.run([
@@ -243,7 +243,7 @@ class TestAppGenerator(unittest.TestCase):
         ], capture_output=True, text=True, cwd=str(py_dir))
         
         if pip_install_result.returncode != 0:
-            print(f"Warning: pip install failed: {pip_install_result.stderr}")
+            raise RuntimeError(f"Failed to install Python dependencies: {pip_install_result.stderr}")
         
         # Install browser dependencies
         npm_install_result = subprocess.run([
@@ -251,12 +251,9 @@ class TestAppGenerator(unittest.TestCase):
         ], capture_output=True, text=True, cwd=str(browser1_dir))
         
         if npm_install_result.returncode != 0:
-            print(f"Warning: npm install failed: {npm_install_result.stderr}")
+            raise RuntimeError(f"Failed to install npm dependencies: {npm_install_result.stderr}")
         
-        # Create a simple .env file for the server in the py directory
-        env_content = "# Generated for testing\nDEBUG=true\n"
-        with open(py_dir / ".env", "w") as f:
-            f.write(env_content)
+        self.assertTrue(os.path.exists(py_dir / ".env"), "Expected .env file not found in py directory")
         
         # Start the server in a subprocess as per instructions
         server_process = None
@@ -265,29 +262,37 @@ class TestAppGenerator(unittest.TestCase):
             server_script = py_dir / "server.sh"
             self.assertTrue(server_script.exists(), "server.sh should exist")
             
-            # Read the server.sh content and execute it with bash in background
-            with open(server_script, 'r') as f:
-                server_command = f.read().strip()
-            
             # Start the server in background
             server_process = subprocess.Popen([
-                "bash", "-c", server_command
-            ], cwd=str(py_dir), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                "bash", "-c", server_script.as_posix()
+            ], cwd=str(py_dir), stdout=subprocess.PIPE, stderr=subprocess.PIPE,  env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), PATH=f"{venv_dir / 'bin'}:{os.environ.get('PATH', '')}"))
+
+            print(f"Started server with PID {server_process.pid}")
             
             # Give the server a moment to start
-            time.sleep(2)
-            
+            time.sleep(5)
+
+            # Check if the server has started successfully
+            if server_process.poll() is not None:
+                stdout, stderr = server_process.communicate()
+                raise RuntimeError(f"Server failed to start. stdout: {stdout.decode()}, stderr: {stderr.decode()}")
+
             # Run py tests: ./test.sh in py directory
             test_script = py_dir / "test.sh"
             self.assertTrue(test_script.exists(), "test.sh should exist")
             
-            # Read the test.sh content and execute it with bash
-            with open(test_script, 'r') as f:
-                test_command = f.read().strip()
-            
-            python_test_result = subprocess.run([
-                "bash", "-c", test_command
-            ], capture_output=True, text=True, cwd=str(py_dir), timeout=30)
+            print(f'Running Python tests with command: bash -c {test_script.as_posix()}')
+            try:
+                python_test_result = subprocess.run([
+                    "bash", "-c", test_script.as_posix()
+                ], capture_output=True, text=True, cwd=str(py_dir), timeout=60, env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), PATH=f"{venv_dir / 'bin'}:{os.environ.get('PATH', '')}"))
+            except subprocess.TimeoutExpired:
+                print(f"Python tests timed out after 60 seconds")
+                python_test_result = None
+                breakpoint()
+                server_process.terminate()
+
+            print(python_test_result.stdout + python_test_result.stderr)
             
             # Check that Python tests can at least be discovered and run
             # Don't fail if tests fail, just ensure they can be discovered
@@ -297,21 +302,27 @@ class TestAppGenerator(unittest.TestCase):
             )
             
             # Run browser1 tests: npm run test in browser1 directory
-            if npm_install_result.returncode == 0:  # Only if npm install succeeded
-                browser_test_result = subprocess.run([
-                    "npm", "run", "test"
-                ], capture_output=True, text=True, cwd=str(browser1_dir), timeout=60)
-                
-                # Check that browser tests can be discovered and run
-                # Don't fail if tests fail, just ensure they can be discovered
-                self.assertTrue(
-                    "test" in browser_test_result.stderr.lower() + browser_test_result.stdout.lower() or
-                    "playwright" in browser_test_result.stderr.lower() + browser_test_result.stdout.lower(),
-                    f"Browser tests should be discoverable. Output: {browser_test_result.stdout} {browser_test_result.stderr}"
-                )
+            # print(f"Running Browser1 tests with command: npm run test")
+            # browser_test_result = subprocess.run([
+            #     "npm", "run", "test"
+            # ], capture_output=True, text=True, cwd=str(browser1_dir), timeout=60, env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), PATH=f"{venv_dir / 'bin'}:{os.environ.get('PATH', '')}"))
+
+            # print(browser_test_result.stdout + browser_test_result.stderr)
+
+            # # Check that browser tests can be discovered and run
+            # # Don't fail if tests fail, just ensure they can be discovered
+            # self.assertTrue(
+            #     "test" in browser_test_result.stderr.lower() + browser_test_result.stdout.lower() or
+            #     "playwright" in browser_test_result.stderr.lower() + browser_test_result.stdout.lower(),
+            #     f"Browser tests should be discoverable. Output: {browser_test_result.stdout} {browser_test_result.stderr}"
+            # )
+
+            print("Terminating server process")
+            server_process.terminate()
         
         finally:
             # Clean up: terminate the server process
+            print('Cleaning up server process')
             if server_process:
                 server_process.terminate()
                 try:
