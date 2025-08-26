@@ -55,7 +55,8 @@ class TestAppGenerator(unittest.TestCase):
         #
 
         result = subprocess.run([
-            sys.executable, '-m', 'mtemplate', 'render-py',
+            sys.executable, '-m', 'mtemplate', 'render',
+            '--app', 'py',
             '--spec', str(self.spec_file),
             '--output', str(self.test_dir)
         ], capture_output=True, text=True, cwd=str(self.repo_root),
@@ -80,12 +81,12 @@ class TestAppGenerator(unittest.TestCase):
         ]
         
         for file_path in py_files:
-            full_path = Path(self.test_dir) / file_path
+            full_path = Path(self.test_dir) / 'py' / file_path
             self.assertTrue(full_path.exists(), f'Expected file not found: {file_path}')
         
         # pyproject.toml #
 
-        pyproject_path = Path(self.test_dir) / 'pyproject.toml'
+        pyproject_path = Path(self.test_dir) / 'py' / 'pyproject.toml'
         with open(pyproject_path, 'r') as f:
             pyproject_content = f.read()
             self.assertIn('name = \'test_gen\'', pyproject_content)
@@ -93,7 +94,7 @@ class TestAppGenerator(unittest.TestCase):
         
         # test.sh #
 
-        test_sh_path = Path(self.test_dir) / 'test.sh'
+        test_sh_path = Path(self.test_dir) / 'py' / 'test.sh'
         self.assertTrue(os.access(test_sh_path, os.X_OK), 'test.sh should be executable')
         with open(test_sh_path, 'r') as f:
             test_content = f.read()
@@ -101,7 +102,7 @@ class TestAppGenerator(unittest.TestCase):
         
         # server.sh #
 
-        server_sh_path = Path(self.test_dir) / 'server.sh'
+        server_sh_path = Path(self.test_dir) / 'py' / 'server.sh'
         self.assertTrue(os.access(server_sh_path, os.X_OK), 'server.sh should be executable')
         with open(server_sh_path, 'r') as f:
             server_content = f.read()
@@ -115,7 +116,7 @@ class TestAppGenerator(unittest.TestCase):
         ]
         
         for model_file in model_files:
-            model_path = Path(self.test_dir) / model_file
+            model_path = Path(self.test_dir) / 'py' / model_file
             with open(model_path, 'r') as f:
                 model_content = f.read()
                 self.assertIn('class ', model_content)
@@ -128,7 +129,8 @@ class TestAppGenerator(unittest.TestCase):
         # generate the browser1 app #
 
         result = subprocess.run([
-            sys.executable, '-m', 'mtemplate', 'render-browser1', 
+            sys.executable, '-m', 'mtemplate', 'render', 
+            '--app', 'browser1',
             '--spec', str(self.spec_file),
             '--output', str(self.test_dir)
         ], capture_output=True, text=True, cwd=str(self.repo_root),
@@ -149,14 +151,14 @@ class TestAppGenerator(unittest.TestCase):
             'srv/generated-module-a/singular-model/index.html',
             'srv/generated-module-a/plural-model/index.html'
         ]
-        
+
         for file_path in browser1_files:
-            full_path = Path(self.test_dir) / file_path
+            full_path = Path(self.test_dir) / 'browser1' / file_path
             self.assertTrue(full_path.exists(), f'Expected file not found: {file_path}')
         
         # package.json #
 
-        package_json_path = Path(self.test_dir) / 'package.json'
+        package_json_path = Path(self.test_dir) / 'browser1' / 'package.json'
         with open(package_json_path, 'r') as f:
             package_content = f.read()
             self.assertIn('"name": "test_gen"', package_content)
@@ -165,7 +167,7 @@ class TestAppGenerator(unittest.TestCase):
         
         # playwright config #
 
-        playwright_config_path = Path(self.test_dir) / 'playwright.config.js'
+        playwright_config_path = Path(self.test_dir) / 'browser1' / 'playwright.config.js'
         with open(playwright_config_path, 'r') as f:
             playwright_content = f.read()
             self.assertIn('testDir', playwright_content)
@@ -179,7 +181,7 @@ class TestAppGenerator(unittest.TestCase):
         ]
         
         for html_file in html_files:
-            html_path = Path(self.test_dir) / html_file
+            html_path = Path(self.test_dir) / 'browser1' / html_file
             with open(html_path, 'r') as f:
                 html_content = f.read()
                 # Should be valid HTML structure
@@ -197,7 +199,7 @@ class TestAppGenerator(unittest.TestCase):
         ]
         
         for test_file in test_files:
-            test_path = Path(self.test_dir) / test_file
+            test_path = Path(self.test_dir) / 'browser1' / test_file
             with open(test_path, 'r') as f:
                 test_content = f.read()
                 # Should be valid Playwright test
@@ -250,7 +252,7 @@ class TestAppGenerator(unittest.TestCase):
         
         # create virtual environment #
 
-        venv_dir = self.test_dir / '.venv'
+        venv_dir = self.test_dir / 'py' / '.venv'
         venv_result = subprocess.run([
             sys.executable, '-m', 'venv', str(venv_dir), '--upgrade-deps'
         ], capture_output=True, text=True, cwd=str(py_dir))

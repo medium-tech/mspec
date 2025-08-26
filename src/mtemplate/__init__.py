@@ -244,7 +244,7 @@ class MTemplateProject:
         print(f':: done :: {self.spec["project"]["name"]["kebab_case"]} :: {self.app_name}')
 
     @classmethod
-    def render(cls, spec:dict, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False) -> 'MTemplateProject':
+    def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False) -> 'MTemplateProject':
         template_proj = cls(spec, debug=debug, disable_strict=disable_strict)
         template_proj.extract_templates()
         template_proj.init_template_vars()

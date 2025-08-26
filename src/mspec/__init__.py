@@ -18,16 +18,22 @@ def generate_names(lower_case:str) -> dict:
 
 def load_spec(spec_file:str) -> dict:
     """
-    load all yaml files in the spec directory and return them as a dictionary,
-    each top level key is the name of the file without extension 
-    and its value is the parsed yaml as a dictionary
+    open and parse spec file into dict,
+    first try to load from the path as provided,
+    if not found, try searching for path in built in sample_spec_dir
     """
     try:
+        print(f'attempting to load spec file: {spec_file}')
         with open(spec_file) as f:
             spec = yaml.load(f, Loader=yaml.FullLoader)
+        print(f'\tloaded.')
+
     except FileNotFoundError:
-        with open(sample_spec_dir / spec_file) as f:
+        _path = sample_spec_dir / spec_file
+        print(f'attempting to load spec file: {_path}')
+        with open(_path) as f:
             spec = yaml.load(f, Loader=yaml.FullLoader)
+        print(f'\tloaded.')
 
     project = spec['project']
     project['name'].update(generate_names(project['name']['lower_case']))

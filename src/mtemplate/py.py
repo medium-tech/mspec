@@ -1,6 +1,6 @@
-from mtemplate import MTemplateProject, MTemplateError, iso_format_string
+from mtemplate import MTemplateProject, MTemplateError
 from pathlib import Path
-from datetime import datetime
+import shutil
 from copy import deepcopy
 
 
@@ -10,7 +10,6 @@ __all__ = ['MTemplatePyProject']
 class MTemplatePyProject(MTemplateProject):
 
     app_name = 'py'
-
     template_dir = Path(__file__).parent.parent.parent / 'templates/py'
 
     module_prefixes = [
@@ -419,3 +418,12 @@ class MTemplatePyProject(MTemplateProject):
             out += self.spec['macro'][f'py_enum_definition_end']({}) + '\n'
 
         return out
+    
+    @classmethod
+    def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False) -> 'MTemplatePyProject':
+        template_proj = super().render(spec, env_file, output_dir, debug, disable_strict)
+        if env_file is not None:
+            env_file_out = Path(env_file) / '.env'
+            shutil.copyfile(env_file, env_file_out)
+            print(f'copied {env_file} to {env_file_out}')
+        return template_proj

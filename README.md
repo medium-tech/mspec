@@ -18,6 +18,7 @@ This project is two things: an [app generator](#app-generator) using code templa
     * [run and test template apps](#run-and-test-generated-apps)
     * [run browser 2.0](#run-browser-20)
 * [contributing](#contributing)
+* [deploying to pypi](#deploying-to-pypi)
 
 ## the problem this project solves
 It's 2025, the internet is faster than its ever been, software development is more accessible and yet somehow apps and websites still don't "just work". They're also slow. Even enterprise websites can take 10 seconds to load, not because they're network constrained but because the software is overengineered. Most of the web is just a CRUD app with a bit of dynamic logic in the back or front end. This project aims to reduce the complexity of deploying and maintaining applications. 
@@ -240,14 +241,13 @@ Or for help:
 
 After following the above steps to render the python and browser1 files you can run the apps as follows. You need to be in the output directory that contains the `browser1` and `py` directories which using the default spec and output is `dist/test-gen`
 
-    cd dist/test-gen
+    cd <output dir>/py
     python3 -m venv .venv --upgrade-deps
     source .venv/bin/activate
-    python -m pip install -e py
+    python -m pip install -e .
 
 Then to run the python server:
 
-    cd py
     ./server.sh
 
 The server is now available at `http://localhost:6006` for the api and frontend *(the port number is configured in the spec file, it may not always be 6006)*. If you followed the above steps for running the [python template app](#run-the-python-server) the `.env` file you created will be copied over for you. If not, the app will not run. Follow the above instructions and create the `.env` file manually in this directory.
@@ -328,3 +328,24 @@ See [TODO.md](./TODO.md) for desired language implementation and current progres
 
 ---
 [back to top of page](#mspec)
+
+# deploying to pypi
+
+install build and publish deps
+
+1. increment version in `pyproject.toml` file
+
+        pip install -r requirements-dev.txt
+
+1. build distributions
+
+        python3 -m build --sdist
+        python3 -m build --wheel
+
+1. check distributions for errors
+
+        twine check dist/*
+
+1. upload to pypi
+
+        twine upload dist/*

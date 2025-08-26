@@ -4,7 +4,7 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = 'mspec'
-version = '0.0.1a'
+version = '0.0.2a'
 authors = [
   { name='Brad Corlett', email='brad.corlett@gmail.com' },
 ]
@@ -15,6 +15,7 @@ dependencies = [
     'pyyaml == 6.0.2',
     'Jinja2 == 3.1.4'
 ]
+license = 'MIT'
 
 [tool.setuptools]
 include-package-data = true
