@@ -48,6 +48,17 @@ def auth_routes(ctx:dict, env:dict, raw_req_body:bytes):
         else:
             ctx['log'](f'ERROR 405 core.auth.login')
             raise RequestError('405 Method Not Allowed', 'invalid request method')
+    
+    elif re.match(r'/api/auth/me', env['PATH_INFO']):
+        
+        if env['REQUEST_METHOD'] == 'GET':
+            cur_user:User = env['get_user']()
+            ctx['log'](f'GET core.auth.me - {cur_user.id}')
+            raise JSONResponse('200 OK', cur_user.to_dict())
+        
+        else:
+            ctx['log'](f'ERROR 405 core.auth.me')
+            raise RequestError('405 Method Not Allowed', 'invalid request method')
 
 def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
     
