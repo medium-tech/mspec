@@ -8,7 +8,7 @@ version = '0.0.2a'
 authors = [
   { name='Brad Corlett', email='brad.corlett@gmail.com' },
 ]
-description = 'the medium protocol and stuff'
+description = 'mpsec application generator and browsing protocol'
 readme = 'README.md'
 requires-python = '>=3.7'
 dependencies = [
@@ -16,6 +16,11 @@ dependencies = [
     'Jinja2 == 3.1.4'
 ]
 license = 'MIT'
+
+[project.urls]
+Homepage = "https://github.com/medium-tech/mspec"
+Documentation = "https://github.com/medium-tech/mspec/blob/main/README.md"
+Repository = "https://github.com/medium-tech/mspec"
 
 [tool.setuptools]
 include-package-data = true
