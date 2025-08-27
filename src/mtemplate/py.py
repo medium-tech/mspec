@@ -420,8 +420,8 @@ class MTemplatePyProject(MTemplateProject):
         return out
     
     @classmethod
-    def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False) -> 'MTemplatePyProject':
-        template_proj = super().render(spec, env_file, output_dir, debug, disable_strict)
+    def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplatePyProject':
+        template_proj = super().render(spec, env_file, output_dir, debug, disable_strict, use_cache)
         if env_file is not None:
             env_file_out = Path(env_file) / '.env'
             shutil.copyfile(env_file, env_file_out)
