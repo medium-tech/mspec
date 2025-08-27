@@ -1,4 +1,5 @@
 # Browser2 JSON Page Documentation
+Learn how to create a JSON Browser2 page.
 
 ## Table of Contents
 

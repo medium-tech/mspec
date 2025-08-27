@@ -6,7 +6,8 @@ node_modules/
 dist/
 playwright-report/
 test-results/
-.env
+.env*
+!.env.example
 *.sqlite3
 build/
 tests/tmp/

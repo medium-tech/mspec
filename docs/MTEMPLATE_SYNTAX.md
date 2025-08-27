@@ -1,4 +1,4 @@
-# mtemplate Documentation
+# mtemplate - template syntax
 
 mtemplate is a code templating system that allows you to extract dynamic templates from syntactically valid code. Instead of writing templates in Jinja2 syntax (which can't be run directly), mtemplate embeds templating commands in language comments, allowing template applications to remain fully runnable and testable.
 
@@ -14,7 +14,6 @@ mtemplate is a code templating system that allows you to extract dynamic templat
   - [insert](#insert-command)
   - [replace](#replace-command)
   - [macro](#macro-command)
-- [CLI Usage](#cli-usage)
 
 ## Overview
 
@@ -256,29 +255,4 @@ cursor.execute("CREATE TABLE IF NOT EXISTS single_model(id INTEGER PRIMARY KEY, 
 This creates a macro that can be called like:
 ```python
 # insert :: macro.py_create_model_table({"model_name_snake_case": "user", "field_names": "name, email"})
-```
-
-
-## CLI Usage
-
-The mtemplate CLI provides several commands for working with templates.
-
-```bash
-# Show template structure
-python -m mtemplate tree-py
-
-# Extract template from a single file  
-python -m mtemplate extract --source path/to/file.py --output template.jinja2
-
-# Render templates from spec file
-python -m mtemplate render --spec spec.yaml --output output_dir
-
-# Render only Python templates
-python -m mtemplate render-py --spec spec.yaml
-
-# Render only Browser1 templates  
-python -m mtemplate render-browser1 --spec spec.yaml
-
-# Debug mode (saves .jinja2 files and doesn't clear output)
-python -m mtemplate render --spec spec.yaml --debug
 ```

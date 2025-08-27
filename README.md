@@ -4,30 +4,26 @@ This project is two things: an [app generator](#app-generator) using code templa
 
 ⚠️ this project is currently in alpha and incomplete ⚠️
 
-* [the problem this project aims to solve](#the-problem-this-project-solves)
 * [about this project](#mspec)
     * [app generator](#app-generator)
     * [browser 2.0](#browser-20)
-* [documentation](#documentation)
-    * [mtemplate documentation](./MTEMPLATE.md)
-    * [browser2.0 documentation](./BROWSER2.md)
+    * [the problem this project aims to solve](#the-problem-this-project-solves)
+* documentation
+    * mtemplate
+        * [app generator / spec](./docs/MTEMPLATE_SPEC.md)
+        * [template extractor](./docs/MTEMPLATE_EXTRACTOR.md)
+        * [template syntax](./docs/MTEMPLATE_SYNTAX.md)
+    * browser2
+        * [write a browser2 page](./docs/BROWSER2.md)
+        * [pybrowser2 - gui client](#pybrowser2)
 * [development](#development)
     * [setup dev enviro](#setup-dev-environment)
-    * [run and edit template apps](#template-apps)
+    * [run and edit template apps](#edit-and-run-template-apps)
     * [generate apps from templates](#generate-apps-from-spec-files)
     * [run and test template apps](#run-and-test-generated-apps)
     * [run browser 2.0](#run-browser-20)
 * [contributing](#contributing)
 * [deploying to pypi](#deploying-to-pypi)
-
-## the problem this project solves
-It's 2025, the internet is faster than its ever been, software development is more accessible and yet somehow apps and websites still don't "just work". They're also slow. Even enterprise websites can take 10 seconds to load, not because they're network constrained but because the software is overengineered. Most of the web is just a CRUD app with a bit of dynamic logic in the back or front end. This project aims to reduce the complexity of deploying and maintaining applications. 
-
-It also aims to improve the browsing experience by creating a simple markup language that can be implemented in any language. Instead of having a monolithic browser, the browser could be just at home in your office suite, your email client or a video game. 
-Limiting the browser to just Javascript limits our software creativity. Additionally, the added complexity of modern HTML/CSS/JS has demonstrated an unrelaiable, slow means of information exchange. If the language allows people to write crappy software, they will.
-This protocol is designed to prevent writing unreliable code and slow websites.
-
-Of course there are examples of fast websites but in my day to day experience is does not seem to be even a majority of websites.
 
 ## app generator
 
@@ -111,31 +107,34 @@ Browser2.0 also goes above and beyond the web browser, it is also an attempt to 
 
 Browser2.0 will use content based addressing instead of location based addressing. The current browser is location based `example.com/path/to/article`, but these urls break over time which make news articles and and written information degrade in quality over time. Content based addressing uses a file signature (checksum) to find and recall information, so that as a webpage is changed and modified over the years as long as they (or other server) continues to host the content it will always be discoverable. Additionally documents will be versioned and links will convey versions and be able to quote passages in the documents. A client will be able to easily expand a quote to see full context and find current or former versions of the same document. As new versions of a document are released, other documents can be updated to reference the new version of the source. This is a manual process because the author should review the changes as their conclusions may warrant revision based on the new information.
 
+## the problem this project solves
+In short, this project aims to solve complexity and reliability of modern application development.
+
+It's 2025, the internet is faster than its ever been, software development is more accessible and yet somehow apps and websites still don't "just work". They're also slow. Even enterprise websites can take 10 seconds to load, not because they're network constrained but because the software is overengineered. Most of the web is just a CRUD app with a bit of dynamic logic in the back or front end. This project aims to reduce the complexity of deploying and maintaining applications. 
+
+It also aims to improve the browsing experience by creating a simple markup language that can be implemented in any language. Instead of having a monolithic browser, the browser could be just at home in your office suite, your email client or a video game. 
+Limiting the browser to just Javascript limits our software creativity. Additionally, the added complexity of modern HTML/CSS/JS has demonstrated an unrelaiable, slow means of information exchange. If the language allows people to write crappy software, they will.
+This protocol is designed to prevent writing unreliable code and slow websites.
+
+Of course there are examples of fast websites but in my day to day experience is does not seem to be even a majority of websites.
+
 # Documentation
 
-## Browser2.0 JSON Pages
+## pybrowser2
+A browser2 implementation in Python using the built in `tkinter` library.
 
-See **[BROWSER2.md](./BROWSER2.md)** for comprehensive documentation on creating Browser2.0 JSON pages, including:
-- Complete reference for all top-level keys (params, state, ops, output)
-- Built-in functions and data types
-- UI elements and control flow
-- Working examples and demos
+After [setting up your dev environment](#setup-dev-environment) run the following:
 
-## App Generator and mtemplate
+    cd browser2/py/src
+    ./pybrowser2.py
 
-See **[MTEMPLATE.md](./MTEMPLATE.md)** for comprehensive documentation on the mtemplate templating system, including:
-- Complete reference for all template commands (vars, for, ignore, insert, replace, macro)
-- Comment syntax for different programming languages
-- Usage examples and best practices
-- CLI usage guide
+You can open any spec json file with this:
 
-If you're interested in generating an app check `spec/test-gen.yaml` for an example app with all the features of the app spec that are unittested (on the `main` branch). 
+    ./pybrowser2.py --spec file.json
 
-## CLI Help
+For more examples and complete documentation on creating JSON pages, see **[here](./docs/BROWSER2.md)**.
 
-Run `./pybrowser2.py -h` in `browser2/py/src` for the cli help screen for browser2.0 (after [setting up the dev enviro](#setup-dev-environment)).
-
-Run `python -m mtemplate -h` for the cli help screen for the template generator (after [setting up the dev enviro](#setup-dev-environment)).
+⚠️ Be careful with untrusted input as this project is still in alpha phase. ⚠️
 
 # Development
 
@@ -150,6 +149,7 @@ The `./templates` folder contains template apps from which templates are extract
 The `browser2/py` file contains the tkinter window and renderer for the browser2.0 python implementation.
 
 ## setup dev environment
+This environment will be used to develop the template apps, mspec and mtemplate modules and browser2 python implementation.
 
     git clone https://github.com/medium-tech/mspec.git
     cd mspec
@@ -158,59 +158,21 @@ The `browser2/py` file contains the tkinter window and renderer for the browser2
     pip install -e .
     pip install -e templates/py
 
-## template apps
-
+## edit and run template apps
 As mentioned, the templates are extracted from working apps in `./templates`, this allows you to run the templates directly for fast development and testing. This section explains how to run the apps from which templates are extracted. If you want to change the features that generated apps have you need to edit the template apps as described in this section. If you want to learn how to generate template apps from a yaml spec go to [generate apps from spec files](#generate-apps-from-spec-files).
 
-The template extraction syntax is embedded into code comments to allow the template apps to run on their own, this syntax is not currently documented. The yaml config spec is also not yet documented as it may change, but you can look at `./spec/test-gen.yaml` for a workin' example.
+### python template app
+Follow the setup instructions in [./templates/py/README.md](./templates/py/README.md), except use the `venv` you just setup instead of creating a separate. You can create a second `venv` but it's easier for testing to use the one that also has the other modules in this repo installed.
 
-### run the python server
-
-    cd templates/py
-
-Create a file `.env` file with the following variables:
-
-    MSTACK_AUTH_SECRET_KEY=my_auth_key
-    UWSGI_STATIC_SAFE=/path/to/mspec/templates/browser1/srv
-
-`MSTACK_AUTH_SECRET_KEY` - an auth key can be generated using a command like: `openssl rand -hex 32`
-
-`UWSGI_STATIC_SAFE` - uwsgi requires static files be configured with **absolute paths** for security reasons. However, the uwsgi config in this project uses relative paths for portability. Setting this value to the **absolute path on your local system** that points to the root of this repository will allow the relative paths to work.
-
-Then run the following command to start the web server:
-
-    ./server.sh 
-
-It uses `uwsgi` as the server, the main entry point for the web server is `./src/core/server.py`, and its config file is `./dev.yaml`.
+The readme has instructions to install deps, run the server, run the python gui and run tests.
 
 The api and frontend are served from the same server, you can access them at `http://localhost:5005`.
 
-To run unittests for the python backend, ensure the backend is running and then:
+### html / js gui template
 
-    ./test.sh
+The frontend files are served staticly from `./templates/browser1/srv` and can be accessed at `http://localhost:5005`. No dependencies are needed for running the frontend however `playwright` is used for testing. See [./templates/browser1/README.md](./templates/browser1/README.md) to learn how to run tests.
 
-### html / js frontend
 
-The frontend files are served staticly from `templates/browser1/srv` and can be accessed at `http://localhost:5005`. No dependencies are needed for running the frontend however `playwright` is used for testing.
-
-To run frontend tests, ensure the backend is running and then from the `templates/browser1` directory:
-
-    npm install
-    npm run test
-
-Alternatively, you can run the tests with a ui:
-
-    npm run test-ui
-
-Additionally, playwright provides a gui to help interactively create tests, you can access it using:
-
-    npm run test-gen
-
-### python frontend
-
-There is a (currently incomplete) front end implemented in python using the built in `tkinter` library. To run it:
-
-    python -m core gui
 
 ## generate apps from spec files
 
@@ -275,23 +237,6 @@ The tests verify that:
 - Both individual and combined app generation work correctly
 - Generated apps can be set up and their tests can be run
 
-## run browser 2.0
-
-After [setting up your dev environment](#setup-dev-environment) run the following:
-
-    cd browser2/py/src
-    ./pybrowser2.py
-
-Currently this is hardcoded to run the example document in variable `example_spec` in the file `src/mspec/markup.py`
-
-You can open any spec json file with this:
-
-    ./pybrowser2.py --spec ../../../src/mspec/data/hello-world-page.json
-
-For more examples and complete documentation on creating JSON pages, see **[BROWSER2.md](./BROWSER2.md)**.
-
-⚠️ Be careful with untrusted input as this project is still in alpha phase. ⚠️
-
 # Contributing
 
 ## General steps
@@ -316,13 +261,13 @@ Applications should keep dependencies to a bare minimum, when possible use a bui
 
 To the extent possible by your language the code layout should be similar to the python one. All apps (server/gui/clients) should go under one folder for the language. 
 
-The template syntax is documented in **[MTEMPLATE.md](./MTEMPLATE.md)**.
+The template syntax is [documented here](./docs/MTEMPLATE_SYNTAX.md).
 
 ## browser2.0
 
 Browser2 implementations go in `./browser2/<language>`. For languages not yet implemented, a proof of concept app should be able to render the `src/mspec/data/hello-world-page.json` hello world page. Full implementations should be able to render `src/mspec/data/test-page.json` and have unittests. See the [python implementation](#run-browser-20) for an example implementation of what the product should look like.
 
-For complete documentation on the Browser2.0 JSON page format, see **[BROWSER2.md](./BROWSER2.md)**.
+For complete documentation on the Browser2.0 JSON page format, see **[here](./docs/BROWSER2.md)**.
 
 See [TODO.md](./TODO.md) for desired language implementation and current progress.
 
