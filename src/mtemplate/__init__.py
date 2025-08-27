@@ -24,6 +24,9 @@ iso_format_string = '%Y-%m-%dT%H:%M:%S.%f'
 class MTemplateError(Exception):
     pass
 
+class MTemplateCacheMiss(MTemplateError):
+    pass
+
 def sort_dict_by_key_length(dictionary:dict) -> OrderedDict:
     """sort dictionary by key length in descending order, it is used when replacing template variables,
     by sorting the dictionary by key length, we can ensure that the longest keys are replaced first, so that
@@ -154,6 +157,11 @@ class MTemplateProject:
     @classmethod
     def cache_templates(cls, spec: dict) -> None:
         """Cache jinja2 template files to disk for faster re-use"""
+
+        #
+        # init
+        #
+
         template_proj = cls(spec)
         template_proj.extract_templates()
         
@@ -163,38 +171,42 @@ class MTemplateProject:
         
         print(f':: caching templates :: {cls.app_name} :: {len(template_proj.templates)} files')
         
-        # Cache macros as a JSON file
-        all_macros = {}
+        #
+        # cache macros
+        #
+
+        macros_to_cache = {}
         for rel_path, template in template_proj.templates.items():
             if template.macros:
-                all_macros[rel_path] = {}
+                macros_to_cache[rel_path] = {}
                 for macro_name, macro_obj in template.macros.items():
-                    all_macros[rel_path][macro_name] = {
+                    macros_to_cache[rel_path][macro_name] = {
                         'name': macro_obj.name,
                         'text': macro_obj.text,
                         'vars': macro_obj.vars
                     }
         
-        # Save macros to cache
-        macros_file = cache_dir / 'macros.json'
-        with open(macros_file, 'w') as f:
-            import json
-            json.dump(all_macros, f, indent=2)
-        print(f':: cached :: macros.json')
-        
+        macros_file_path = cache_dir / 'macros.json'
+        with open(macros_file_path, 'w') as f:
+            json.dump(macros_to_cache, f, indent=2)
+
+        print(f':: cached :: {macros_file_path}')
+
+        #
+        # cache jinja templates
+        #
+
         for rel_path, template in template_proj.templates.items():
-            # Check for .env files and emit warning
             if rel_path.endswith('/.env') or rel_path == '.env':
                 print(f':: warning :: ignoring .env file: {rel_path}')
                 continue
                 
-            # Write template to cache
             cache_file_path = cache_dir / (rel_path + '.jinja2')
             cache_file_path.parent.mkdir(parents=True, exist_ok=True)
             
             try:
                 template.write(cache_file_path)
-                print(f':: cached :: {rel_path}.jinja2')
+                print(f':: cached :: {cache_file_path}')
             except Exception as exc:
                 print(f':: error caching :: {rel_path}: {exc}')
                 raise
@@ -203,21 +215,26 @@ class MTemplateProject:
 
     def load_cached_templates(self) -> dict:
         """Load cached jinja2 template files from disk"""
+        #
+        # init
+        #
+
         cache_dir = Path(__file__).parent / '.cache' / self.app_name
         
         if not cache_dir.exists():
-            raise MTemplateError(f'Cache directory not found: {cache_dir}. Run cache command first.')
-        
-        print(f':: loading cached templates :: {self.app_name}')
-        
-        # Load macros from cache
+            raise MTemplateCacheMiss(f'Cache directory not found: {cache_dir}. Run cache command first.')
+
+        print(f':: loading cached templates :: {cache_dir}')
+
+        #
+        # load macros from cache
+        #
+
         macros_file = cache_dir / 'macros.json'
         cached_macros = {}
         if macros_file.exists():
             with open(macros_file, 'r') as f:
-                import json
                 cached_macros_data = json.load(f)
-                # Convert back to MTemplateMacro objects
                 for rel_path, macros in cached_macros_data.items():
                     cached_macros[rel_path] = {}
                     for macro_name, macro_data in macros.items():
@@ -227,15 +244,17 @@ class MTemplateProject:
                             macro_data['vars']
                         )
             print(f':: loaded :: macros.json')
+
+        #
+        # load jinja templates
+        #
         
-        # Get template paths to know which templates to load
         template_paths = self.template_source_paths()
         
         for template_type in ['app', 'module', 'model', 'macro_only']:
             for template_info in template_paths[template_type]:
                 rel_path = template_info['rel']
                 
-                # Skip .env files
                 if rel_path.endswith('/.env') or rel_path == '.env':
                     continue
                 
@@ -244,22 +263,22 @@ class MTemplateProject:
                 if not cache_file_path.exists():
                     raise MTemplateError(f'Cached template not found: {cache_file_path}')
                 
-                # Create a simple template extractor for the cached template
+                # template extractor #
+
                 template = MTemplateExtractor(cache_file_path)
-                
-                # Read the cached jinja2 template directly and set it as the template content
+
                 with open(cache_file_path, 'r') as f:
                     content = f.read()
                     template.template_lines = [content]
-                
-                # Restore macros for this template
+
+                # restore macros #
+
                 if rel_path in cached_macros:
                     template.macros = cached_macros[rel_path]
                 else:
                     template.macros = {}
                 
-                # Ensure create_template returns the cached content
-                template.template_vars = {}  # No vars needed for cached templates
+                template.template_vars = {}
                 
                 self.templates[rel_path] = template
                 print(f':: loaded :: {rel_path}.jinja2')
@@ -366,7 +385,7 @@ class MTemplateProject:
         if use_cache:
             try:
                 template_proj.load_cached_templates()
-            except MTemplateError as e:
+            except MTemplateCacheMiss as e:
                 print(f':: cache miss :: {e}')
                 print(f':: falling back to extract_templates')
                 template_proj.extract_templates()
