@@ -5,15 +5,15 @@ The mtemplate system uses YAML specification files to define the structure and d
 ## Table of Contents
 
 - [Overview](#overview)
-- [Usage](#usage)
+- [CLI Usage](#cli-usage)
 - [Required Top-Level Fields](#required-top-level-fields)
-  - [project](#project-field)
-  - [server](#server-field)
-  - [client](#client-field)
-- [Modules and Models](#modules-and-models)
-  - [modules](#modules-field)
-  - [models](#models-structure)
-  - [fields](#field-structure)
+  - [project](#project)
+  - [server](#server)
+  - [client](#client)
+- [Modules, Models and Fields](#modules-models-and-fields)
+  - [modules](#modules)
+  - [models](#models)
+  - [fields](#fields)
 - [Field Types and Examples](#field-types-and-examples)
   - [Basic Types](#basic-types)
   - [List Types](#list-types)
@@ -27,7 +27,7 @@ The YAML spec file defines the structure for generating applications using the m
 
 The spec file drives the template extraction process, where template applications in `templates/py` and `templates/browser1` are processed to create dynamic applications based on the specified models and fields.
 
-## Usage
+## CLI Usage
 
 Once you have created a YAML spec file, you can use it with the mtemplate command to generate applications:
 
@@ -56,7 +56,7 @@ python -m mspec spec --spec my-spec.yaml
 
 All YAML spec files must include these three top-level fields: `project`, `server`, and `client`.
 
-### project Field
+### project
 
 The `project` field defines metadata about the generated application:
 
@@ -76,7 +76,7 @@ project:
 - `author.name`: The author's full name
 - `author.email`: The author's email address
 
-### server Field
+### server
 
 The `server` field configures the backend server settings:
 
@@ -88,7 +88,7 @@ server:
 **Required subfields:**
 - `port`: The port number the server will listen on
 
-### client Field
+### client
 
 The `client` field configures client-side settings:
 
@@ -100,9 +100,9 @@ client:
 **Required subfields:**
 - `default_host`: The default host URL the client will connect to
 
-## Modules and Models
+## Modules, Models and Fields
 
-### modules Field
+### modules
 
 The `modules` field defines one or more modules, each containing related models:
 
@@ -117,11 +117,11 @@ modules:
 
 **Required subfields:**
 - `name.lower_case`: The module name in lowercase with spaces (automatically generates name variations)
-- `models`: A collection of model definitions
+- `models`: A collection of [model](#models) definitions
 
-### models Structure
+### models
 
-Each module must contain one or more models:
+Each [module](#modules) must contain one or more models:
 
 ```yaml
 models:
@@ -134,11 +134,11 @@ models:
 
 **Required subfields:**
 - `name.lower_case`: The model name in lowercase with spaces (automatically generates name variations)
-- `fields`: A collection of field definitions
+- `fields`: A collection of [field](#fields) definitions
 
-### fields Structure
+### fields
 
-Each model must contain one or more fields that define the data structure:
+Each [model](#models) must contain one or more fields that define the data structure:
 
 ```yaml
 fields:
@@ -200,7 +200,7 @@ name:
     - "Charlie"
 ```
 
-**datetime**: Date and time values (ISO 8601 format)
+**datetime**: Date and time values (format `%Y-%m-%dT%H:%M:%S` per python datetime formatting)
 ```yaml
 created_at:
   type: datetime
@@ -289,71 +289,138 @@ Here's a complete YAML spec file demonstrating all the features:
 ```yaml
 project:
   name:
-    lower_case: 'my sample app'
-  description: 'A sample application demonstrating mtemplate features'
+    lower_case: 'my sample store'
+
+  description: 'A sample project for mspec-alpha python app generator'
+
   author:
-    name: 'John Developer'
-    email: 'john@example.com'
+    name: 'B rad C'
+    email: 'sample@email.com'
 
 server:
-  port: 8080
+  port: 7007
 
 client:
-  default_host: 'http://localhost:8080'
+  default_host: 'http://localhost:7007'
 
 modules:
-  user_management:
+  store:
     name:
-      lower_case: 'user management'
-    
+      lower_case: 'store'
+
     models:
-      user:
+      products:
         name:
-          lower_case: 'user'
-        
+          lower_case: 'products'
+
         fields:
-          username:
+
+          product_name:
             type: str
             examples:
-              - "alice123"
-              - "bob_user"
-            random: random_user_name
-          
-          email:
-            type: str
+              - 'Laptop'
+              - 'Smartphone'
+              - 'Tablet'
+
+            random: random_thing_name
+
+          price:
+            type: float
             examples:
-              - "user@example.com"
-            random: random_email
-          
-          age:
-            type: int
-            examples:
-              - 25
-              - 30
-              - 45
-          
-          is_active:
+              - 999.99
+              - 499.99
+              - 299.99
+
+          in_stock:
             type: bool
             examples:
               - true
               - false
-          
-          tags:
-            type: list
-            element_type: str
+      
+      customers:
+        name:
+          lower_case: 'customers'
+
+        fields:
+
+          customer_name:
+            type: str
             examples:
-              - ["admin", "user"]
-              - ["premium"]
-          
-          status:
+              - 'Alice'
+              - 'Bob'
+              - 'Charlie'
+            random: random_person_name
+
+          email:
+            type: str
+            examples:
+              - 'alice@email.com'
+              - 'bob@email.com'
+            random: random_email
+
+          phone_number:
+            type: str
+            examples:
+              - '+1 (123) 456-7890'
+              - '+1 (987) 654-3210'
+            random: random_phone_number
+
+  admin:
+    name:
+      lower_case: 'admin'
+
+    models:
+      employees:
+        name:
+          lower_case: 'employees'
+
+        fields:
+
+          employee_name:
+            type: str
+            examples:
+              - 'David'
+              - 'Eve'
+              - 'Frank'
+            random: random_person_name
+
+          position:
             type: str
             enum:
-              - active
-              - inactive
-              - pending
+              - 'Manager'
+              - 'Sales'
+              - 'Support'
             examples:
-              - active
-              - pending
+              - 'Manager'
+              - 'Sales'
+              - 'Support'
+
+          hire_date:
+            type: str
+            examples:
+              - '2000-01-11T12:34:56'
+              - '2020-10-02T15:30:00'
+
+          email:
+            type: str
+            examples:
+              - 'my-name@email.com'
+            random: random_email
+
+          phone_number:
+            type: str
+            examples:
+              - '+1 (123) 456-7890'
+              - '+1 (987) 654-3210'
+            random: random_phone_number
+
+          salary:
+            type: float
+            examples:
+              - 60000.00
+              - 45000.00
+              - 35000.00
+
 ```
 
 This YAML spec file can be used with the mtemplate system to generate applications from the template code in `templates/py` and `templates/browser1`.
