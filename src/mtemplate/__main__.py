@@ -17,6 +17,7 @@ parser.add_argument('--debug', action='store_true', help='write jinja template f
 parser.add_argument('--disable-strict', action='store_true', help='disable jinja strict mode when rendering - discouraged but may be useful for debugging')
 parser.add_argument('--use-cache', action='store_true', default=True, help='use cached templates if available (default: True)')
 parser.add_argument('--no-cache', action='store_true', help='do not use cached templates, extract fresh templates')
+parser.add_argument('--update-cache', action='store_true', help='update the template cache after rendering')
 
 args = parser.parse_args()
 
@@ -27,9 +28,9 @@ use_cache = args.use_cache and not args.no_cache
 
 if args.command == 'tree':
     if args.app in ['both', 'py']:
-        MTemplatePyProject.tree(load_spec(args.spec))
+        MTemplatePyProject.tree(load_spec(args.spec), use_cache)
     if args.app in ['both', 'browser1']:
-        MTemplateBrowser1Project.tree(load_spec(args.spec))
+        MTemplateBrowser1Project.tree(load_spec(args.spec), use_cache)
 
 elif args.command == 'cache':
     if args.app in ['both', 'py']:
@@ -40,11 +41,11 @@ elif args.command == 'cache':
 elif args.command == 'render':
     if args.app in ['both', 'py']:
         py_out = None if args.output is None else args.output / 'py'
-        MTemplatePyProject.render(load_spec(args.spec), args.env_file, py_out, args.debug, args.disable_strict, use_cache)
+        MTemplatePyProject.render(load_spec(args.spec), args.env_file, py_out, args.debug, args.disable_strict, use_cache, args.update_cache)
 
     if args.app in ['both', 'browser1']:
         browser1_out = None if args.output is None else args.output / 'browser1'
-        MTemplateBrowser1Project.render(load_spec(args.spec), args.env_file, browser1_out, args.debug, args.disable_strict, use_cache)
+        MTemplateBrowser1Project.render(load_spec(args.spec), args.env_file, browser1_out, args.debug, args.disable_strict, use_cache, args.update_cache)
 
 else:
     parser.print_help()

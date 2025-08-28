@@ -8,21 +8,21 @@ __all__ = ['MTemplateBrowser1Project']
 class MTemplateBrowser1Project(MTemplateProject):
 
     app_name = 'browser1'
-
-    template_dir = Path(__file__).parent.parent.parent / 'templates/browser1'
+    template_dir = Path(__file__).parent.parent.parent / 'templates' / app_name
+    cache_dir = Path(__file__).parent / '.cache' / app_name
 
     module_prefixes = [
-        str(template_dir / 'srv/template-module')
+        'srv/template-module'
     ]
 
     model_prefixes = [
-        str(template_dir / 'tests/template-module'),
-        str(template_dir / 'srv/template-module/single-model')
+        'tests/template-module',
+        'srv/template-module/single-model'
     ]
 
     macro_only_prefixes = [
-        str(template_dir / 'srv/template-module/multi-model'),
-        str(template_dir / 'tests/template-module/multiModel')
+        'srv/template-module/multi-model',
+        'tests/template-module/multiModel'
     ]
 
     def init_template_vars(self):

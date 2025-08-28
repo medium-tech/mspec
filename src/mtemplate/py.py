@@ -10,25 +10,39 @@ __all__ = ['MTemplatePyProject']
 class MTemplatePyProject(MTemplateProject):
 
     app_name = 'py'
-    template_dir = Path(__file__).parent.parent.parent / 'templates/py'
+    template_dir = Path(__file__).parent.parent.parent / 'templates' / app_name
+    cache_dir = Path(__file__).parent / '.cache' / app_name
+
+    prefixes = {
+        'src/template_module': 'module',
+        'tests/template_module/__init__.py': 'module', 
+        
+        'src/template_module/single_model': 'model',
+        'tests/template_module': 'model',
+
+        'src/template_module/multi_model': 'macro_only',
+        'tests/template_module/test_multi': 'macro_only',
+        'tests/template_module/perf_multi': 'macro_only'
+    }
 
     module_prefixes = [
-        str(template_dir / 'src/template_module'),
-        str(template_dir / 'tests/template_module/__init__.py')
+        'src/template_module',
+        'tests/template_module/__init__.py'
     ]
 
     model_prefixes = [
-        str(template_dir / 'src/template_module/single_model'),
-        str(template_dir / 'tests/template_module'),
+        'src/template_module/single_model',
+        'tests/template_module',
     ]
 
     macro_only_prefixes = [
-        str(template_dir / 'src/template_module/multi_model'),
-        str(template_dir / 'tests/template_module/test_multi'),
-        str(template_dir / 'tests/template_module/perf_multi')
+        'src/template_module/multi_model',
+        'tests/template_module/test_multi',
+        'tests/template_module/perf_multi'
     ]
 
     def init_template_vars(self):
+        print('init_template_vars - python')
         super().init_template_vars()
         self.spec['macro'].update({
             'py_db_create': self.macro_py_db_create,
@@ -420,8 +434,8 @@ class MTemplatePyProject(MTemplateProject):
         return out
     
     @classmethod
-    def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplatePyProject':
-        template_proj = super().render(spec, env_file, output_dir, debug, disable_strict, use_cache)
+    def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True, update_cache:bool=False) -> 'MTemplatePyProject':
+        template_proj = super().render(spec, env_file, output_dir, debug, disable_strict, use_cache, update_cache)
         if env_file is not None:
             env_file_out = Path(env_file) / '.env'
             shutil.copyfile(env_file, env_file_out)
