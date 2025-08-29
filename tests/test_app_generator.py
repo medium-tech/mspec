@@ -47,6 +47,67 @@ class TestAppGenerator(unittest.TestCase):
         if self.test_dir.exists():
             shutil.rmtree(self.test_dir)
     
+    def test_cache(self):
+        """
+        ensure template caching is working by caching the apps then generating
+        with and without cache and comparing the output
+        """
+
+        #
+        # cache apps
+        #
+
+        result = subprocess.run([
+            sys.executable, '-m', 'mtemplate', 'render',
+            '--spec', str(self.spec_file),
+            '--update-cache',
+            '--no-cache',
+        ], capture_output=True, text=True, cwd=str(self.repo_root),
+          env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
+        
+        self.assertEqual(result.returncode, 0, f'Failed to cache app: {result.stderr}')
+
+        #
+        # build apps
+        #
+
+        # no cache #
+        no_cache_dir = self.test_dir / 'no-cache'
+        result = subprocess.run([
+            sys.executable, '-m', 'mtemplate', 'render',
+            '--spec', str(self.spec_file),
+            '--output', str(no_cache_dir),
+            '--no-cache',
+        ], capture_output=True, text=True, cwd=str(self.repo_root),
+          env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
+        
+        # use cache #
+        use_cache_dir = self.test_dir / 'use-cache'
+        result = subprocess.run([
+            sys.executable, '-m', 'mtemplate', 'render',
+            '--spec', str(self.spec_file),
+            '--output', str(use_cache_dir),
+            '--use-cache',
+        ], capture_output=True, text=True, cwd=str(self.repo_root),
+          env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
+        
+        #
+        # compare outputs
+        #
+
+        # get recursive file listings #
+        no_cache_files = sorted([str(p.relative_to(no_cache_dir)) for p in no_cache_dir.rglob('*') if p.is_file() and p.name != '.env'])
+        use_cache_files = sorted([str(p.relative_to(use_cache_dir)) for p in use_cache_dir.rglob('*') if p.is_file() and p.name != '.env'])
+
+        self.assertListEqual(no_cache_files, use_cache_files, 'File listings differ between no-cache and use-cache builds')
+
+        # compare file contents #
+        for file_rel_path in no_cache_files:
+            no_cache_file = no_cache_dir / file_rel_path
+            use_cache_file = use_cache_dir / file_rel_path
+            with open(no_cache_file, 'r') as f1, open(use_cache_file, 'r') as f2:
+                self.assertEqual(f1.read(), f2.read(), f'File contents differ: {file_rel_path}')
+
     def test_generate_py_app(self):
         '''Test generating py app from test-gen.yaml and verify structure'''
 
@@ -58,7 +119,8 @@ class TestAppGenerator(unittest.TestCase):
             sys.executable, '-m', 'mtemplate', 'render',
             '--app', 'py',
             '--spec', str(self.spec_file),
-            '--output', str(self.test_dir)
+            '--output', str(self.test_dir),
+            '--no-cache'
         ], capture_output=True, text=True, cwd=str(self.repo_root),
           env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
         
@@ -132,7 +194,8 @@ class TestAppGenerator(unittest.TestCase):
             sys.executable, '-m', 'mtemplate', 'render', 
             '--app', 'browser1',
             '--spec', str(self.spec_file),
-            '--output', str(self.test_dir)
+            '--output', str(self.test_dir),
+            '--no-cache'
         ], capture_output=True, text=True, cwd=str(self.repo_root),
           env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
         
@@ -209,7 +272,7 @@ class TestAppGenerator(unittest.TestCase):
                 self.assertNotIn('{{', test_content)
                 self.assertNotIn('}}', test_content)
     
-    def test_generate_both_apps(self):
+    def test_generate_and_test_both_apps(self):
         '''Test generating both py and browser1 apps together and run their tests'''
 
         #
@@ -220,8 +283,9 @@ class TestAppGenerator(unittest.TestCase):
             sys.executable, '-m', 'mtemplate', 'render',
             '--spec', str(self.spec_file),
             '--output', str(self.test_dir),
-            '--debug'
-        ], capture_output=True, text=True, cwd=str(self.repo_root), 
+            '--debug',
+            '--no-cache'
+        ], capture_output=True, text=True, cwd=str(self.repo_root),
           env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
         
         self.assertEqual(result.returncode, 0, f'Failed to generate apps: {result.stderr}')
@@ -381,6 +445,8 @@ class TestAppGenerator(unittest.TestCase):
                         os.killpg(os.getpgid(server_process.pid), signal.SIGKILL)
                     except (OSError, ProcessLookupError):
                         pass
+
+
 
 if __name__ == '__main__':
     unittest.main()
