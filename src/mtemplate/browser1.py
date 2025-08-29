@@ -11,6 +11,16 @@ class MTemplateBrowser1Project(MTemplateProject):
     template_dir = Path(__file__).parent.parent.parent / 'templates' / app_name
     cache_dir = Path(__file__).parent / '.cache' / app_name
 
+    prefixes = {
+        'srv/template-module': 'module',
+
+        'tests/template-module': 'model',
+        'srv/template-module/single-model': 'model',
+
+        'srv/template-module/multi-model': 'macro_only',
+        'tests/template-module/multiModel': 'macro_only',
+    }
+
     module_prefixes = [
         'srv/template-module'
     ]
