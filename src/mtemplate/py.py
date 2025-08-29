@@ -10,44 +10,20 @@ __all__ = ['MTemplatePyProject']
 class MTemplatePyProject(MTemplateProject):
 
     app_name = 'py'
-    template_dir = Path(__file__).parent.parent.parent / 'templates/py'
+    template_dir = Path(__file__).parent.parent.parent / 'templates' / app_name
+    cache_dir = Path(__file__).parent / '.cache' / app_name
 
-    module_prefixes = [
-        str(template_dir / 'src/template_module'),
-        str(template_dir / 'tests/template_module/__init__.py')
-    ]
+    prefixes = {
+        'src/template_module': 'module',
+        'tests/template_module/__init__.py': 'module', 
+        
+        'src/template_module/single_model': 'model',
+        'tests/template_module': 'model',
 
-    model_prefixes = [
-        str(template_dir / 'src/template_module/single_model'),
-        str(template_dir / 'tests/template_module'),
-    ]
-
-    macro_only_prefixes = [
-        str(template_dir / 'src/template_module/multi_model'),
-        str(template_dir / 'tests/template_module/test_multi'),
-        str(template_dir / 'tests/template_module/perf_multi')
-    ]
-
-    def init_template_vars(self):
-        super().init_template_vars()
-        self.spec['macro'].update({
-            'py_db_create': self.macro_py_db_create,
-            'py_db_read': self.macro_py_db_read,
-            'py_db_update': self.macro_py_db_update,
-            'py_db_delete': self.macro_py_db_delete,
-            'py_db_list_lists': self.macro_py_db_list_lists,
-            'py_sql_convert': self.macro_py_sql_convert,
-            'py_create_tables': self.macro_py_create_tables,
-            'py_test_crud_delete': self.macro_py_test_crud_delete,
-            'py_convert_types': self.macro_py_convert_types,
-            'py_example_fields': self.macro_py_example_fields,
-            'py_random_fields': self.macro_py_random_fields,
-            'py_verify_fields': self.macro_py_verify_fields,
-            'py_field_list': self.macro_py_field_list,
-            'py_field_definitions': self.macro_py_field_definitions,
-            'py_enum_definitions': self.macro_py_enum_definitions,
-            'py_tk_field_table': self.macro_py_tk_field_table,
-        })
+        'src/template_module/multi_model': 'macro_only',
+        'tests/template_module/test_multi': 'macro_only',
+        'tests/template_module/perf_multi': 'macro_only'
+    }
 
     def macro_py_db_create(self, model:dict, indent='\t\t') -> str:
         out = ''
@@ -420,8 +396,8 @@ class MTemplatePyProject(MTemplateProject):
         return out
     
     @classmethod
-    def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False) -> 'MTemplatePyProject':
-        template_proj = super().render(spec, env_file, output_dir, debug, disable_strict)
+    def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplatePyProject':
+        template_proj = super().render(spec, env_file, output_dir, debug, disable_strict, use_cache)
         if env_file is not None:
             env_file_out = Path(env_file) / '.env'
             shutil.copyfile(env_file, env_file_out)

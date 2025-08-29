@@ -29,4 +29,4 @@ include-package-data = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-"*" = ["*.yaml", "*.yml", "*.json"]
+"*" = ["*.yaml", "*.yml", "*.json", "*.jinja2"]

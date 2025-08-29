@@ -12,3 +12,4 @@ test-results/
 build/
 tests/tmp/
 out/
+src/mtemplate/.cache/

@@ -8,39 +8,18 @@ __all__ = ['MTemplateBrowser1Project']
 class MTemplateBrowser1Project(MTemplateProject):
 
     app_name = 'browser1'
+    template_dir = Path(__file__).parent.parent.parent / 'templates' / app_name
+    cache_dir = Path(__file__).parent / '.cache' / app_name
 
-    template_dir = Path(__file__).parent.parent.parent / 'templates/browser1'
+    prefixes = {
+        'srv/template-module': 'module',
 
-    module_prefixes = [
-        str(template_dir / 'srv/template-module')
-    ]
+        'tests/template-module': 'model',
+        'srv/template-module/single-model': 'model',
 
-    model_prefixes = [
-        str(template_dir / 'tests/template-module'),
-        str(template_dir / 'srv/template-module/single-model')
-    ]
-
-    macro_only_prefixes = [
-        str(template_dir / 'srv/template-module/multi-model'),
-        str(template_dir / 'tests/template-module/multiModel')
-    ]
-
-    def init_template_vars(self):
-        super().init_template_vars()
-        self.spec['macro'].update({
-            'browser1_init_fields': self.macro_browser1_init_fields,
-            'browser1_unittest_form': self.macro_browser1_unittest_form,
-            'browser1_random_fields': self.macro_browser1_random_fields,
-            'browser1_verify_fields': self.macro_browser1_verify_fields,
-            'browser1_from_input_tbody_fields': self.macro_browser1_from_input_tbody_fields,
-            'browser1_to_input_tbody': self.macro_browser1_to_input_tbody,
-            'browser1_to_display_tbody': self.macro_browser1_to_display_tbody,
-            'browser1_to_table_row': self.macro_browser1_to_table_row,
-            'browser1_list_table_headers': self.macro_browser1_list_table_headers,
-            'browser1_field_list': self.macro_browser1_field_list,
-            'browser1_enum_definitions': self.macro_browser1_enum_definitions,
-            'browser1_example_fields': self.macro_browser1_example_fields,
-        })
+        'srv/template-module/multi-model': 'macro_only',
+        'tests/template-module/multiModel': 'macro_only',
+    }
 
     def macro_browser1_init_fields(self, fields:dict, indent='\t') -> str:
         out = ''
