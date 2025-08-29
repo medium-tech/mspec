@@ -58,10 +58,8 @@ class TestAppGenerator(unittest.TestCase):
         #
 
         result = subprocess.run([
-            sys.executable, '-m', 'mtemplate', 'render',
+            sys.executable, '-m', 'mtemplate', 'cache',
             '--spec', str(self.spec_file),
-            '--update-cache',
-            '--no-cache',
         ], capture_output=True, text=True, cwd=str(self.repo_root),
           env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
         
@@ -445,7 +443,6 @@ class TestAppGenerator(unittest.TestCase):
                         os.killpg(os.getpgid(server_process.pid), signal.SIGKILL)
                     except (OSError, ProcessLookupError):
                         pass
-
 
 
 if __name__ == '__main__':

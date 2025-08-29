@@ -21,20 +21,6 @@ class MTemplateBrowser1Project(MTemplateProject):
         'tests/template-module/multiModel': 'macro_only',
     }
 
-    module_prefixes = [
-        'srv/template-module'
-    ]
-
-    model_prefixes = [
-        'tests/template-module',
-        'srv/template-module/single-model'
-    ]
-
-    macro_only_prefixes = [
-        'srv/template-module/multi-model',
-        'tests/template-module/multiModel'
-    ]
-
     def init_template_vars(self):
         super().init_template_vars()
         self.spec['macro'].update({

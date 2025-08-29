@@ -54,7 +54,7 @@ class MTemplateProject:
 
         self.jinja = Environment(
             autoescape=False,
-            loader=FunctionLoader(self._jinja_loader),
+            loader=FunctionLoader(self.jinja_loader),
             undefined=Undefined if disable_strict else StrictUndefined,
         )
 
@@ -65,7 +65,13 @@ class MTemplateProject:
         except KeyError:
             raise MTemplateError('spec must define project.name.kebab_case')
 
-    def template_source_paths(self, use_cache:bool=False, templatize_paths:bool=True) -> dict[str, list[dict[str, str]]]:
+    #
+    # templates
+    #
+
+    # get from disk #
+
+    def load_template_paths(self, use_cache:bool=False, templatize_paths:bool=True) -> dict[str, list[dict[str, str]]]:
         paths = {
             'app': [],
             'module': [],
@@ -135,38 +141,8 @@ class MTemplateProject:
         self.template_paths = paths
         return paths
 
-    def _jinja_loader(self, rel_path:str) -> str:
-        try:
-
-            return self.templates[rel_path].create_template()   # MTemplateExtractor obj when extracting
-
-        except AttributeError:                                  # str when loading from cache
-            assert isinstance(self.templates[rel_path], str)
-            return self.templates[rel_path]
-        
-        except KeyError: 
-            raise MTemplateError(f'template {rel_path} not found')
-        
-    def init_template_vars(self):
-        print('init_template_vars - base class')
-        all_models = []
-        for module in self.spec['modules'].values():
-            for model in module['models'].values():
-                # model['field_list'] = ', '.join(model['fields'].keys())
-                all_models.append({'module': module, 'model': model})
-
-        self.spec['all_models'] = all_models
-
-        for template in self.templates.values():
-            if isinstance(template, str):                   # loading from cache
-                pass
-            else:
-                self.spec['macro'].update(template.macros)  # extracting from templates
-
-        self.jinja.globals.update(self.spec)
-
     def extract_templates(self, templatize_paths:bool=True) -> dict:
-        template_paths = self.template_source_paths(templatize_paths=templatize_paths)
+        template_paths = self.load_template_paths(templatize_paths=templatize_paths)
         try:
             paths = template_paths['app'] + template_paths['module'] + template_paths['model'] + template_paths['macro_only']
         except KeyError:
@@ -181,65 +157,6 @@ class MTemplateProject:
                 raise
 
         return self.templates
-
-    # @classmethod
-    # def cache_templates(cls, spec: dict) -> None:
-    #     """Cache jinja2 template files to disk for faster re-use"""
-
-    #     #
-    #     # init
-    #     #
-
-    #     template_proj = cls(spec)
-    #     template_proj.extract_templates(templatize_paths=False)
-        
-    #     print(f'resetting cache dir: {template_proj.cache_dir}')
-    #     shutil.rmtree(template_proj.cache_dir, ignore_errors=True)
-    #     template_proj.cache_dir.mkdir(parents=True, exist_ok=True)
-
-    #     print(f':: caching templates :: {cls.app_name} :: {len(template_proj.templates)} files')
-        
-    #     #
-    #     # cache macros
-    #     #
-
-    #     macros_to_cache = {}
-    #     for rel_path, template in template_proj.templates.items():
-    #         if template.macros:
-    #             macros_to_cache[rel_path] = {}
-    #             for macro_name, macro_obj in template.macros.items():
-    #                 macros_to_cache[rel_path][macro_name] = {
-    #                     'name': macro_obj.name,
-    #                     'text': macro_obj.text,
-    #                     'vars': macro_obj.vars
-    #                 }
-        
-    #     macros_file_path = template_proj.cache_dir / 'macros.json'
-    #     with open(macros_file_path, 'w') as f:
-    #         json.dump(macros_to_cache, f, indent=2)
-
-    #     print(f':: cached :: {macros_file_path}')
-
-    #     #
-    #     # cache jinja templates
-    #     #
-
-    #     for rel_path, template in template_proj.templates.items():
-    #         if rel_path.endswith('/.env') or rel_path == '.env':
-    #             print(f':: warning :: ignoring .env file: {rel_path}')
-    #             continue
-
-    #         cache_file_path = template_proj.cache_dir / (rel_path + '.jinja2')
-    #         cache_file_path.parent.mkdir(parents=True, exist_ok=True)
-            
-    #         try:
-    #             template.write(cache_file_path)
-    #             print(f':: cached :: {cache_file_path}')
-    #         except Exception as exc:
-    #             print(f':: error caching :: {rel_path}: {exc}')
-    #             raise
-        
-    #     print(f':: done caching :: {cls.app_name}')
 
     def load_cached_templates(self) -> dict:
         """Load cached jinja2 template files from disk"""
@@ -307,6 +224,121 @@ class MTemplateProject:
         
         print(f':: done loading cache :: {self.app_name} :: {len(self.templates)} templates')
         return self.templates
+
+    # jinja templating #
+
+    def jinja_loader(self, rel_path:str) -> str:
+        try:
+
+            return self.templates[rel_path].create_template()   # MTemplateExtractor obj when extracting
+
+        except AttributeError:                                  # str when loading from cache
+            assert isinstance(self.templates[rel_path], str)
+            return self.templates[rel_path]
+        
+        except KeyError: 
+            raise MTemplateError(f'template {rel_path} not found')
+        
+    def init_template_vars(self):
+        print('init_template_vars - base class')
+        all_models = []
+        for module in self.spec['modules'].values():
+            for model in module['models'].values():
+                # model['field_list'] = ', '.join(model['fields'].keys())
+                all_models.append({'module': module, 'model': model})
+
+        self.spec['all_models'] = all_models
+
+        for template in self.templates.values():
+            if isinstance(template, str):                   # loading from cache
+                pass
+            else:
+                self.spec['macro'].update(template.macros)  # extracting from templates
+
+        self.jinja.globals.update(self.spec)
+
+    # cache #
+    
+    def write_cache(self):
+
+        print(f':: cache_state - resetting {self.cache_dir}')
+        shutil.rmtree(self.cache_dir, ignore_errors=True)
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+
+        #
+        # cache macros
+        #
+
+        print(':: cache_state | spec.macro')
+        macro_dict = {key: asdict(macro) for key, macro in self.spec['macro'].items() if isinstance(macro, MTemplateMacro)}
+        macro_json_data = json.dumps(macro_dict, sort_keys=True, indent=4)
+
+        if self.debug:
+            for line in macro_json_data.splitlines():
+                print('\t', line[0:135], '[...]' if len(line) > 135 else '')
+
+        macro_cache_path = self.cache_dir / 'macro.json'
+        with open(macro_cache_path, 'w+') as f:
+            f.write(macro_json_data)
+
+        print(f'\twrote {macro_cache_path}')
+
+        #
+        # cache template paths
+        #
+
+        print(':: cache_state | self.template_paths')
+        
+        template_paths_cache_data = copy(self.template_paths)
+
+        # rm src key from model dicts #
+        rm_src_key_from_dict = lambda m: {k: v for k, v in m.items() if k != 'src'}
+        cleaned_models = map(rm_src_key_from_dict, self.template_paths['model'])
+        template_paths_cache_data['model'] = list(cleaned_models)
+
+        # filter .env file
+        app = filter(lambda x: x['rel'] != '.env', self.template_paths['app'])
+        template_paths_cache_data['app'] = list(app)
+
+        json_template_paths_data = json.dumps(template_paths_cache_data, sort_keys=True, indent=4)
+
+        if self.debug:
+            for line in json_template_paths_data.splitlines():
+                print('\t', line[0:135], '[...]' if len(line) > 135 else '')
+
+        template_paths_cache_path = self.cache_dir / 'template_paths.json'
+        with open(template_paths_cache_path, 'w+') as f:
+            f.write(json_template_paths_data)
+
+        print(f'\twrote {template_paths_cache_path}')
+
+
+        #
+        # cache jinja templates
+        #
+
+        print(':: cache_state | self.templates')
+
+        for rel_path, template in self.templates.items():
+            if rel_path.endswith('/.env') or rel_path == '.env':
+                print(f'\n\t:: WARNING :: NOT CACHING: {rel_path}\n')
+                continue
+
+            cache_file_path = self.cache_dir / (rel_path + '.jinja2')
+            cache_file_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            try:
+                template.write(cache_file_path)
+                print(f'\twrote -> {cache_file_path}')
+            except Exception as exc:
+                print(f':: error caching :: {rel_path}: {exc}')
+                raise
+
+        print(':: cache done')
+    
+    #
+    # rendering
+    #
 
     def write_file(self, path:Path, data:str):
         try:
@@ -401,143 +433,55 @@ class MTemplateProject:
 
         print(f':: done :: {self.spec["project"]["name"]["kebab_case"]} :: {self.app_name}')
 
+    #
+    # ops
+    #
+
     @classmethod
-    def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True, update_cache:bool=False) -> 'MTemplateProject':
+    def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplateProject':
+        """
+        Render the project templates based on the provided specification.
+
+        Parameters:
+        - spec              (dict)                  The project specification.
+        - env_file          (str|Path, optional)    Ignored in base class, may be implemented in a subclass.
+        - output_dir        (str|Path, optional)    Directory to output the rendered templates.
+        - debug             (bool, optional)        Enable debug mode.
+        - disable_strict    (bool, optional)        Disable strict mode in jinja templates, only recommended for debugging.
+        - use_cache         (bool, optional)        Use cached templates if available.    
+
+        Returns:
+        - MTemplateProject: The project instance
+        """
+
         template_proj = cls(spec, debug=debug, disable_strict=disable_strict)
         
         # load tempaltes #
 
-        if use_cache:
-            try:
-                template_proj.load_cached_templates()
-            except MTemplateCacheMiss as e:
-                raise
-                print(f':: cache miss :: {e}')
-                print(f':: falling back to extract_templates')
-                template_proj.extract_templates()
-        else:
-            template_proj.extract_templates()
-
-        # ... #
-            
-        template_proj.init_template_vars()
-
-        # output #
-
-        if update_cache:
-            if use_cache:
-                raise MTemplateError('Must use no_cache if update_cache is true')
-            template_proj.cache_state()
-        else:
-            template_proj.render_templates(output_dir)
-
-        return template_proj
-    
-    def cache_state(self):
-
-        verbose = False
-
-        print(f':: cache_state - resetting {self.cache_dir}')
-        shutil.rmtree(self.cache_dir, ignore_errors=True)
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-
-        #
-        # cache macros
-        #
-
-        print(':: cache_state | spec.macro')
-        macro_dict = {key: asdict(macro) for key, macro in self.spec['macro'].items() if isinstance(macro, MTemplateMacro)}
-        macro_json_data = json.dumps(macro_dict, sort_keys=True, indent=4)
-
-        if verbose:
-            for line in macro_json_data.splitlines():
-                print('\t', line[0:135], '[...]' if len(line) > 135 else '')
-
-        macro_cache_path = self.cache_dir / 'macro.json'
-        with open(macro_cache_path, 'w+') as f:
-            f.write(macro_json_data)
-
-        print(f'\twrote {macro_cache_path}')
-
-        #
-        # cache template paths
-        #
-
-        print(':: cache_state | self.template_paths')
-        
-        template_paths_cache_data = copy(self.template_paths)
-
-        # rm src key from model dicts #
-        rm_src_key_from_dict = lambda m: {k: v for k, v in m.items() if k != 'src'}
-        cleaned_models = map(rm_src_key_from_dict, self.template_paths['model'])
-        template_paths_cache_data['model'] = list(cleaned_models)
-
-        # filter .env file
-        app = filter(lambda x: x['rel'] != '.env', self.template_paths['app'])
-        template_paths_cache_data['app'] = list(app)
-
-        json_template_paths_data = json.dumps(template_paths_cache_data, sort_keys=True, indent=4)
-
-        if verbose:
-            for line in json_template_paths_data.splitlines():
-                print('\t', line[0:135], '[...]' if len(line) > 135 else '')
-
-        template_paths_cache_path = self.cache_dir / 'template_paths.json'
-        with open(template_paths_cache_path, 'w+') as f:
-            f.write(json_template_paths_data)
-
-        print(f'\twrote {template_paths_cache_path}')
-
-
-        #
-        # cache jinja templates
-        #
-
-        print(':: cache_state | self.templates')
-
-        for rel_path, template in self.templates.items():
-            if rel_path.endswith('/.env') or rel_path == '.env':
-                print(f'\n\t:: WARNING :: NOT CACHING: {rel_path}\n')
-                continue
-
-            cache_file_path = self.cache_dir / (rel_path + '.jinja2')
-            cache_file_path.parent.mkdir(parents=True, exist_ok=True)
-            
-            try:
-                template.write(cache_file_path)
-                print(f'\twrote -> {cache_file_path}')
-            except Exception as exc:
-                print(f':: error caching :: {rel_path}: {exc}')
-                raise
-
-        print(':: cache done')
-    
-    @classmethod
-    def tree(cls, spec:dict, use_cache:bool=True) -> 'MTemplateProject':
-        print(f':: tree - {use_cache=} :: {cls.app_name}')
-        template_proj = cls(spec)
         if use_cache:
             template_proj.load_cached_templates()
         else:
             template_proj.extract_templates()
 
         template_proj.init_template_vars()
+
+        # output #
+
+        template_proj.render_templates(output_dir)
+        return template_proj
+    
+    @classmethod
+    def build_cache(cls, spec:dict) -> 'MTemplateProject':
+        template_proj = cls(spec)
         
-        print(':: spec.macro')
-        for name in sorted(template_proj.spec['macro'].keys()):
-            print(f'    {name}')
+        # load tempaltes #
+        template_proj.extract_templates()
+        template_proj.init_template_vars()
 
-        print(':: templates')
-        for name, template in template_proj.templates.items():
-            print(f'    {name}')
+        # cache state #
+        template_proj.write_cache()
+        return template_proj
 
-        print(':: template paths')
-        for key in template_proj.template_paths.keys():
-            print(f'    :: {key}')
-            for item in template_proj.template_paths[key]:
-                print(f'      {item["src"]}')
-
-        print(':: done')
 
 @dataclass
 class MTemplateMacro:

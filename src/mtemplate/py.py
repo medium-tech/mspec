@@ -25,22 +25,6 @@ class MTemplatePyProject(MTemplateProject):
         'tests/template_module/perf_multi': 'macro_only'
     }
 
-    module_prefixes = [
-        'src/template_module',
-        'tests/template_module/__init__.py'
-    ]
-
-    model_prefixes = [
-        'src/template_module/single_model',
-        'tests/template_module',
-    ]
-
-    macro_only_prefixes = [
-        'src/template_module/multi_model',
-        'tests/template_module/test_multi',
-        'tests/template_module/perf_multi'
-    ]
-
     def init_template_vars(self):
         print('init_template_vars - python')
         super().init_template_vars()
@@ -434,8 +418,8 @@ class MTemplatePyProject(MTemplateProject):
         return out
     
     @classmethod
-    def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True, update_cache:bool=False) -> 'MTemplatePyProject':
-        template_proj = super().render(spec, env_file, output_dir, debug, disable_strict, use_cache, update_cache)
+    def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplatePyProject':
+        template_proj = super().render(spec, env_file, output_dir, debug, disable_strict, use_cache)
         if env_file is not None:
             env_file_out = Path(env_file) / '.env'
             shutil.copyfile(env_file, env_file_out)
