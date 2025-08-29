@@ -25,28 +25,6 @@ class MTemplatePyProject(MTemplateProject):
         'tests/template_module/perf_multi': 'macro_only'
     }
 
-    def init_template_vars(self):
-        print('init_template_vars - python')
-        super().init_template_vars()
-        self.spec['macro'].update({
-            'py_db_create': self.macro_py_db_create,
-            'py_db_read': self.macro_py_db_read,
-            'py_db_update': self.macro_py_db_update,
-            'py_db_delete': self.macro_py_db_delete,
-            'py_db_list_lists': self.macro_py_db_list_lists,
-            'py_sql_convert': self.macro_py_sql_convert,
-            'py_create_tables': self.macro_py_create_tables,
-            'py_test_crud_delete': self.macro_py_test_crud_delete,
-            'py_convert_types': self.macro_py_convert_types,
-            'py_example_fields': self.macro_py_example_fields,
-            'py_random_fields': self.macro_py_random_fields,
-            'py_verify_fields': self.macro_py_verify_fields,
-            'py_field_list': self.macro_py_field_list,
-            'py_field_definitions': self.macro_py_field_definitions,
-            'py_enum_definitions': self.macro_py_enum_definitions,
-            'py_tk_field_table': self.macro_py_tk_field_table,
-        })
-
     def macro_py_db_create(self, model:dict, indent='\t\t') -> str:
         out = ''
 

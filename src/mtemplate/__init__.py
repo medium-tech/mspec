@@ -35,15 +35,17 @@ def sort_dict_by_key_length(dictionary:dict) -> OrderedDict:
 
 
 class MTemplateProject:
+    """
+    a project represents a single mtemplate project, it is responsible for loading the spec,
+    loading the templates, caching and rendering the templates
+    """
 
     app_name = '-'
 
     template_dir = Path(__file__).parent.parent.parent / 'templates' / app_name
     cache_dir = Path(__file__).parent / '.cache' / app_name
 
-    model_prefixes = []
-    module_prefixes = []
-    macro_only_prefixes = []
+    prefixes = {}
 
     def __init__(self, spec:dict, debug:bool=False, disable_strict:bool=False) -> None:
         self.spec = spec
@@ -240,25 +242,33 @@ class MTemplateProject:
             raise MTemplateError(f'template {rel_path} not found')
         
     def init_template_vars(self):
-        print('init_template_vars - base class')
+        
+        # all model list #
         all_models = []
         for module in self.spec['modules'].values():
             for model in module['models'].values():
-                # model['field_list'] = ', '.join(model['fields'].keys())
                 all_models.append({'module': module, 'model': model})
 
         self.spec['all_models'] = all_models
-
+        
+        # macros from templates #
         for template in self.templates.values():
-            if isinstance(template, str):                   # loading from cache
-                pass
+            if isinstance(template, str):
+                """ignore str values, this means we're loading from cache, load_cached_templates already did this"""
             else:
-                self.spec['macro'].update(template.macros)  # extracting from templates
+                # extracting from templates, add macros to spec
+                self.spec['macro'].update(template.macros)
+        
+        # macros from mtemplate classes #
+        for attr in dir(self):
+            if attr.startswith('macro_'):
+                macro_name = attr[6:]
+                self.spec['macro'][macro_name] = getattr(self, attr)
 
         self.jinja.globals.update(self.spec)
 
     # cache #
-    
+
     def write_cache(self):
 
         print(f':: cache_state - resetting {self.cache_dir}')
@@ -370,12 +380,9 @@ class MTemplateProject:
         
         self.write_file(out_path, rendered_template)
 
-    def render_templates(self, output_dir:str|Path=None):
+    def render_templates(self, output_dir:str|Path):
 
         print(f':: rendering :: {self.spec["project"]["name"]["kebab_case"]} :: {self.app_name}')
-
-        if output_dir is None:
-            output_dir = self.default_output_dir()
 
         if not self.debug:
             print(f':: removing old output dir: {output_dir}')
@@ -467,7 +474,7 @@ class MTemplateProject:
 
         # output #
 
-        template_proj.render_templates(output_dir)
+        template_proj.render_templates(output_dir or template_proj.default_output_dir())
         return template_proj
     
     @classmethod
@@ -485,6 +492,8 @@ class MTemplateProject:
 
 @dataclass
 class MTemplateMacro:
+    """a macro extracted by the MTemplateExtractor"""
+
     name:str
     text:str
     vars:dict
@@ -505,6 +514,7 @@ class MTemplateMacro:
 
 
 class MTemplateExtractor:
+    """extract a jinja template from a source file"""
 
     def __init__(self, path:str|Path, prefix='#', postfix='', single_quotes=False, emit_syntax=False) -> None:
         self.path = Path(path)
