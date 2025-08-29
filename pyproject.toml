@@ -4,11 +4,11 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = 'mspec'
-version = '0.0.2a'
+version = '0.0.3a'
 authors = [
   { name='Brad Corlett', email='brad.corlett@gmail.com' },
 ]
-description = 'mpsec application generator and browsing protocol'
+description = 'mspec application generator and browsing protocol'
 readme = 'README.md'
 requires-python = '>=3.7'
 dependencies = [
