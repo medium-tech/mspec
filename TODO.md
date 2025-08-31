@@ -20,14 +20,13 @@
 The main prototype are the python + browser 1 browser template apps.
 
 ### phase 1
-* 🔴 finish legacy browser todo list
-* 🟢 rename template apps (to disambiguate from testing libs)
-    * 🟢 unittest -> template_app
-    * 🟢 test_module -> template_module
-    * 🟢 test_model -> single_model
-    * 🟢 separate model fields starting with `multi_` to another model in the same module called `template_multi_model`
-        *(this will make previewing the gui template apps easier bc there are less fields)*
-    * 🟢 `html` (template app) -> `browser1`
+* 🟡 auth for models
+    * 🟡 require login to create a model
+    * 🟡 limit number of models created by user in spec file (ie. user can only create 1 profile)
+    * 🔴 model read op can be public or private
+        * 🔴 hardcoded in spec file
+        * 🔴 user can choose if model is public or private
+        * 🔴 user can create acl for read ops
 * 🔴 refactor python vs. templating logic
 * 🔴 add file ingest/upload
 * 🔴 update sample spec locations
@@ -37,7 +36,7 @@ The main prototype are the python + browser 1 browser template apps.
     * 🔴 update mtemplate cli help for spec arg
 
 ### phase 2
-* 🔴 go backend
+* 🔴 go template app
 * 🔴 implement cids
 
 ### additional features

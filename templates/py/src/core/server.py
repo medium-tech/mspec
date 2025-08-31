@@ -2,10 +2,11 @@ import re
 import os
 import time
 
+from copy import deepcopy
 from traceback import format_exc
 from urllib.parse import parse_qs
 
-from core.auth import create_new_user, login_user, _get_user_from_token
+from core.auth import create_new_user, login_user, get_user_id_from_token
 from core.types import to_json
 from core.models import *
 from core.db import *
@@ -55,7 +56,7 @@ def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
 
     if (instance := re.match(r'/api/core/user/(.+)', env['PATH_INFO'])) is not None:
         instance_id = instance.group(1)
-        cur_user:User = env['get_user']()
+        cur_user:User = ctx['auth']['get_user']()
 
         if cur_user.id != instance_id:
             raise ForbiddenError('Resource is not accessible')
@@ -130,7 +131,7 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
         elif env['REQUEST_METHOD'] == 'PUT':
             incoming_profile = Profile.from_json(raw_req_body.decode('utf-8'))
 
-            cur_user:User = env['get_user']()
+            cur_user:User = ctx['auth']['get_user']()
             if incoming_profile.user_id != cur_user.id:
                 raise ForbiddenError('Resource is not accessible')
 
@@ -150,7 +151,7 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
             raise JSONResponse('200 Ok', updated_profile.to_dict())
         
         elif env['REQUEST_METHOD'] == 'DELETE':
-            cur_user:User = env['get_user']()
+            cur_user:User = ctx['auth']['get_user']()
             if incoming_profile.user_id != cur_user.id:
                 raise ForbiddenError('Resource is not accessible')
             
@@ -166,8 +167,8 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
 
     elif re.match(r'/api/core/profile', env['PATH_INFO']):
         if env['REQUEST_METHOD'] == 'POST':
-            cur_user:User = env['get_user']()
-            
+            cur_user:User = ctx['auth']['get_user']()
+
             incoming_profile = Profile.from_json(raw_req_body.decode('utf-8'))
             if incoming_profile.user_id != cur_user.id:
                 raise ForbiddenError('Resource is not accessible')
@@ -219,15 +220,30 @@ def initialize():
     create_db_tables(server_ctx)
     uwsgi.log(f'INITIALIZED - pid: {os.getpid()}')
 
-def get_user(env:dict) -> User:
+def get_user_id(env:dict) -> User:
+    """
+    return user id as string for logged in user from HTTP Authorization header
+    raise AuthenticationError if not logged in or invalid header
+    """
     global server_ctx
     try:
         auth_header = env['HTTP_AUTHORIZATION']
     except KeyError:
         raise AuthenticationError('Not logged in')
     
-    token = auth_header[7:]
-    return _get_user_from_token(server_ctx, token)
+    return get_user_id_from_token(server_ctx, auth_header[7:])
+
+def get_user(env:dict) -> User:
+    """
+    get user id for logged in user from HTTP Authorization header,
+        and then get user object from database
+    raise AuthenticationError if not logged in or invalid header
+    """
+    user_id = get_user_id(env)
+    try:
+        return db_read_user(server_ctx, user_id)
+    except NotFoundError:
+        raise AuthenticationError('Could not validate credentials')
 
 def application(env, start_response):
 
@@ -235,7 +251,15 @@ def application(env, start_response):
     req_body:bytes = env['wsgi.input'].read()
     env['wsgi.input'].close()
 
-    env['get_user'] = lambda: get_user(env)
+    request_context = deepcopy(server_ctx)
+
+    assert 'auth' not in server_ctx
+    assert 'auth' not in request_context
+   
+    request_context['auth'] = {
+        'get_user_id': lambda: get_user_id(env),
+        'get_user': lambda: get_user(env)
+    }
 
     try:
         debug_delay = float(os.environ['DEBUG_DELAY'])
@@ -245,7 +269,7 @@ def application(env, start_response):
 
     for route in route_list:
         try:
-            route(server_ctx, env, req_body)
+            route(request_context, env, req_body)
 
         except AuthenticationError as e:
             body = {'error': 'Unauthorized'}
@@ -283,6 +307,7 @@ def application(env, start_response):
             content_type = JSONResponse.content_type
             uwsgi.log(f'ERROR - {e.__class__.__name__} - {e} \n' + format_exc())
             break
+        
     else:
         body = {'error': f'not found: ' + env['PATH_INFO']}
         status_code = '404 Not Found'

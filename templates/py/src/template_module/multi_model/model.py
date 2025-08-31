@@ -37,6 +37,7 @@ class MultiModel:
     multi_string: list[str]
     multi_enum: list[str]
     multi_datetime: list[datetime]
+    user_id: str = ''
     id: Optional[str] = None
 
     def convert_types(self) -> 'MultiModel':

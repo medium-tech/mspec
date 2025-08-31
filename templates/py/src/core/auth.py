@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-from core.db import db_read_user, db_create_user
+from core.db import db_create_user
 from core.exceptions import AuthenticationError, NotFoundError, ForbiddenError
 from core.models import User, UserPasswordHash, AccessToken, CreateUser
 from datetime import datetime, timedelta, timezone
@@ -21,22 +21,6 @@ MSTACK_AUTH_ALGORITHM = os.environ.get('MSTACK_AUTH_ALGORITHM', 'HS256')
 MSTACK_AUTH_LOGIN_EXPIRATION_MINUTES = os.environ.get('MSTACK_AUTH_LOGIN_EXPIRATION_MINUTES', 60 * 24 * 7)
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
-
-
-def _get_user_from_token(ctx:dict, token:str):
-    try:
-        payload = jwt.decode(token, MSTACK_AUTH_SECRET_KEY, algorithms=[MSTACK_AUTH_ALGORITHM])
-        user_id: str = payload.get('sub')
-        if user_id is None:
-            raise AuthenticationError('Could not validate credentials')
-        
-    except JWTError:
-        raise AuthenticationError('Could not validate credentials')
-    
-    try:
-        return db_read_user(ctx, user_id)
-    except NotFoundError:
-        raise AuthenticationError('Could not validate credentials')
 
 def _verify_password(plain_password:str, hashed_password:str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
@@ -120,7 +104,16 @@ def create_new_user(ctx:dict, incoming_user:CreateUser) -> User:
 
 def login_user(ctx:dict, email: str, password: str) -> AccessToken:
     user_id = _check_user_credentials(ctx, email, password)
-    print(f'login_user: {user_id} {type(user_id)}')
     assert isinstance(user_id, str)
     assert user_id != ''
     return _create_access_token(data={'sub': str(user_id)})
+
+def get_user_id_from_token(ctx:dict, token:str):
+    try:
+        payload = jwt.decode(token, MSTACK_AUTH_SECRET_KEY, algorithms=[MSTACK_AUTH_ALGORITHM])
+        user_id: str = payload.get('sub')
+        if user_id is None:
+            raise AuthenticationError('Could not validate credentials')
+        
+    except JWTError:
+        raise AuthenticationError('Could not validate credentials')

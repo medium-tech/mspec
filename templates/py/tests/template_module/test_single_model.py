@@ -12,7 +12,11 @@ from template_module.single_model.client import *
 test_ctx = create_db_context()
 test_ctx.update(create_client_context())
 
+# insert :: macro.py_test_model_auth_context(model)
+
 class TestSingleModel(unittest.TestCase):
+
+    # insert :: macro.py_test_auth(model)
 
     def test_single_model_crud(self):
         """

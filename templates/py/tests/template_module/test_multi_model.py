@@ -1,9 +1,11 @@
 import unittest
 import sqlite3
+import time
 
 from core.db import create_db_context
-from core.client import create_client_context
-from core.exceptions import NotFoundError
+from core.client import *
+from core.models import User, CreateUser
+from core.exceptions import AuthenticationError, NotFoundError
 from template_module.multi_model.model import MultiModel
 from template_module.multi_model.client import *
 
@@ -12,7 +14,33 @@ from template_module.multi_model.client import *
 test_ctx = create_db_context()
 test_ctx.update(create_client_context())
 
+# macro :: py_test_model_auth_context :: {"multi-model": "model.name.kebab_case", "MultiModel": "model.name.pascal_case"}
+# create user for auth testing
+new_user = CreateUser(
+    name='Test MultiModel Auth',
+    email=f'test-multi-model-auth-{time.time()}@email.com',
+    password1='my-test-password',
+    password2='my-test-password',
+)
+
+created_user = client_create_user(test_ctx, new_user)
+login_ctx = client_login(test_ctx, new_user.email, new_user.password1)
+test_ctx.update(login_ctx)
+# end macro ::
+
+
 class TestMultiModel(unittest.TestCase):
+
+    # macro :: py_test_auth :: {"multi_model": "model_name_snake_case"}
+    def test_multi_model_auth(self):
+        test_multi_model = MultiModel.example()
+        test_multi_model.validate()
+
+        # should not be able to create multi_model if logged out #
+        logged_out_ctx = create_db_context()
+        logged_out_ctx.update(create_client_context())
+        self.assertRaises(AuthenticationError, client_create_multi_model, logged_out_ctx, test_multi_model)
+    # end macro ::
 
     def test_multi_model_crud(self):
         """

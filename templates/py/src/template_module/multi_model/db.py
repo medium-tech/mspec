@@ -28,6 +28,19 @@ def db_create_multi_model(ctx:dict, obj:MultiModel) -> MultiModel:
     obj.validate()
     cursor:sqlite3.Cursor = ctx['db']['cursor']
 
+    # macro :: py_create_model_login_check :: {"multi_model": "model_name_snake_case"}
+    # must be logged in to make multi_model
+    user_id = ctx['auth']['get_user_id']()
+    # end macro ::
+
+    # macro :: py_create_model_number_created_check :: {"1": "max_models_per_user", "multi_model": "model_name_snake_case"}
+    # each user can only create a maximum of 1 multi_model(s)
+    cursor.execute("SELECT COUNT(*) FROM multi_model WHERE user_id=?", (user_id,))
+    count = cursor.fetchone()[0]
+    if count >= 1:
+        raise ValueError('user has reached the maximum number of multi_models')
+    # end macro ::
+
     result = cursor.execute(
         "INSERT INTO multi_model DEFAULT VALUES",
         ()
@@ -35,6 +48,7 @@ def db_create_multi_model(ctx:dict, obj:MultiModel) -> MultiModel:
     assert result.rowcount == 1
     assert result.lastrowid is not None
     obj.id = str(result.lastrowid)
+    
     # macro :: py_sql_create_list_bool :: {"multi_model": "model_name_snake_case", "multi_bool": "field_name"}
     _result = cursor.executemany(
         "INSERT INTO multi_model_multi_bool(value, position, multi_model_id) VALUES(?, ?, ?)",

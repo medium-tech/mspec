@@ -39,6 +39,21 @@ class MTemplatePyProject(MTemplateProject):
                 non_list_fields.append(name)
                 num_non_list_fields += 1
 
+        if model['auth']['require_login']:
+            if 'user_id' not in model['fields']:
+                raise ValueError('require_login requires a user_id field')
+            
+            out += self.spec['macro']['py_create_model_login_check']() + '\n'
+
+        if model['auth']['max_models_per_user'] is not None:
+            if not model['auth']['require_login']:
+                raise ValueError('max_models_per_user requires require_login to be true')
+            
+            vars = {
+                'max_models_per_user': model['auth']['max_models_per_user']
+            }
+            out += self.spec['macro']['py_create_model_number_created_check'](vars) + '\n'
+
         # non list fields #
         
         non_list_fields.sort()

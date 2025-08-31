@@ -17,7 +17,7 @@ class TestAuth(unittest.TestCase):
         # create user #
 
         new_user = CreateUser(
-            name='Test User auth',
+            name='Test User Auth',
             email=f'test-user-auth-{time.time()}@email.com',
             password1='my-test-password',
             password2='my-test-password',
