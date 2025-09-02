@@ -106,7 +106,7 @@ def create_db_tables(ctx:dict) -> None:
     # multi model
     #
 
-    cursor.execute("CREATE TABLE IF NOT EXISTS multi_model(id INTEGER PRIMARY KEY, 'single_bool', 'single_datetime', 'single_enum', 'single_float', 'single_int', 'single_string')")
+    cursor.execute("CREATE TABLE IF NOT EXISTS multi_model(id INTEGER PRIMARY KEY, 'user_id')")
     # end ignore ::
 
     # macro :: py_create_model_table_list :: {"multi_model": "model_name_snake_case", "multi_bool": "field_name"}

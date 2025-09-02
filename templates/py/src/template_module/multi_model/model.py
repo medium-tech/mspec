@@ -24,6 +24,7 @@ field_list = [
     'multi_string',
     'multi_enum',
     'multi_datetime',
+    'user_id',
 ]
 
 longest_field_name_length = max([len(name) for name in field_list])

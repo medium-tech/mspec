@@ -1,10 +1,11 @@
 import unittest
 import sqlite3
 import time
+import math
 
 from core.db import create_db_context
 from core.client import *
-from core.models import User, CreateUser
+from core.models import CreateUser
 from core.exceptions import AuthenticationError, NotFoundError
 from template_module.multi_model.model import MultiModel
 from template_module.multi_model.client import *
@@ -61,6 +62,7 @@ class TestMultiModel(unittest.TestCase):
         self.assertTrue(isinstance(created_multi_model, MultiModel))
         created_multi_model.validate()
         test_multi_model.id = created_multi_model.id
+        test_multi_model.user_id = created_multi_model.user_id
 
         self.assertEqual(created_multi_model, test_multi_model)
 
@@ -113,32 +115,22 @@ class TestMultiModel(unittest.TestCase):
 
         # seed data #
 
-        items = client_list_multi_model(test_ctx, offset=0, limit=101)
-        items_len = len(items)
-        if items_len > 100:
-            raise Exception('excpecting 100 items or less, delete db and restart test')
+        init_response = client_list_multi_model(test_ctx, offset=0, limit=1)
+        total_items = init_response['total']
         
-        if items_len < 50:
-            difference = 50 - items_len
-            for _ in range(difference):
+        if total_items < 50:
+            while total_items < 50:
                 item = MultiModel.random()
-                item = client_create_multi_model(test_ctx, item)
-        elif items_len > 50:
-            difference = items_len - 50
-            items_to_delete = items[:difference]
-            for item in items_to_delete:
-                client_delete_multi_model(test_ctx, item.id)
-
-        test_multi_model = MultiModel.example()
-        test_multi_model.validate()
+                client_create_multi_model(test_ctx, item)
+                total_items += 1
 
         # paginate #
 
         pg_configs = [
-            {'page_size': 10, 'expected_pages': 5},
-            {'page_size': 20, 'expected_pages': 3},
-            {'page_size': 25, 'expected_pages': 2},
-            {'page_size': 50, 'expected_pages': 1}
+            {'page_size': 10, 'expected_pages': math.ceil(total_items / 10)},
+            {'page_size': 20, 'expected_pages': math.ceil(total_items / 20)},
+            {'page_size': 25, 'expected_pages': math.ceil(total_items / 25)},
+            {'page_size': 50, 'expected_pages': math.ceil(total_items / 50)}
         ]
 
         for pg_config in pg_configs:
@@ -149,29 +141,29 @@ class TestMultiModel(unittest.TestCase):
             item_ids = []
             num_pages = 0
             while True:
-                items = client_list_multi_model(test_ctx, offset=offset, limit=page_size)
-                items_len = 0
-                for item in items:
-                    items_len += 1
+                response = client_list_multi_model(test_ctx, offset=offset, limit=page_size)
+                returned_items = 0
+                for item in response['items']:
+                    returned_items += 1
                     item.validate()
 
                     self.assertTrue(isinstance(item, MultiModel))
                     item_ids.append(item.id)
 
-                if items_len > 0:
+                if returned_items > 0:
                     num_pages += 1
 
-                if items_len < page_size:
+                if returned_items < page_size:
                     break
 
-                self.assertTrue(items_len <= page_size)
+                self.assertTrue(returned_items <= page_size)
 
                 offset += page_size
                 
             self.assertEqual(num_pages, expected_pages)
-            self.assertEqual(len(item_ids), 50)
-            self.assertEqual(len(set(item_ids)), 50)
-            
+            self.assertEqual(len(item_ids), total_items)
+            self.assertEqual(len(set(item_ids)), total_items)
+
 
 if __name__ == '__main__':
     unittest.main()

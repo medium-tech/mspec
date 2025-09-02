@@ -40,9 +40,19 @@ def client_create_multi_model(ctx:dict, obj:MultiModel) -> MultiModel:
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
             return MultiModel(**json.loads(response_body)).convert_types()
+        
+    except HTTPError as e:
+        if e.code == 401:
+            raise AuthenticationError('Error reading multi model: invalid username or password')
+        elif e.code == 403:
+            raise ForbiddenError('Error reading multi model: forbidden')
+        elif e.code == 404:
+            raise NotFoundError(f'multi model {id} not found')
+        raise MSpecError(f'error reading multi model: {e.__class__.__name__}: {e}')
 
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError(f'invalid response from server, {e.__class__.__name__}: {e}')
+    
     except Exception as e:
         raise MSpecError(f'error creating multi model: {e.__class__.__name__}: {e}')
 
@@ -166,7 +176,7 @@ def client_delete_multi_model(ctx:dict, id:str) -> None:
     except Exception as e:
         raise MSpecError(f'error deleting multi model: {e.__class__.__name__}: {e}')
 
-def client_list_multi_model(ctx:dict, offset:int=0, limit:int=50) -> list[MultiModel]:
+def client_list_multi_model(ctx:dict, offset:int=0, limit:int=50) -> dict:
     """
     list multi models from the server, verifying each.
 
@@ -174,8 +184,10 @@ def client_list_multi_model(ctx:dict, offset:int=0, limit:int=50) -> list[MultiM
         ctx :: dict containing the client context.
         offset :: int of the offset to start listing from.
         limit :: int of the maximum number of items to list.
-    
-    return :: list of MultiModel objects.
+
+    return :: dict with two keys:
+        total :: int of the total number of items.
+        items :: list of MultiModel objects.
 
     raises :: ConfigError, MSpecError
     """
@@ -191,7 +203,12 @@ def client_list_multi_model(ctx:dict, offset:int=0, limit:int=50) -> list[MultiM
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
 
-        return [MultiModel(**item).convert_types() for item in json.loads(response_body)]
+        response_data = json.loads(response_body)
+
+        return {
+            'total': response_data['total'],
+            'items': [MultiModel(**item).convert_types() for item in response_data['items']]
+        }
 
     except (json.JSONDecodeError, TypeError) as e:
         raise MSpecError(f'invalid response from server, {e.__class__.__name__}: {e}')

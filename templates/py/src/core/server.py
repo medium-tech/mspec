@@ -251,15 +251,16 @@ def application(env, start_response):
     req_body:bytes = env['wsgi.input'].read()
     env['wsgi.input'].close()
 
-    request_context = deepcopy(server_ctx)
-
     assert 'auth' not in server_ctx
-    assert 'auth' not in request_context
    
-    request_context['auth'] = {
-        'get_user_id': lambda: get_user_id(env),
-        'get_user': lambda: get_user(env)
+    auth_context = {
+        'auth': {
+            'get_user_id': lambda: get_user_id(env),
+            'get_user': lambda: get_user(env)
+        }
     }
+
+    request_context = server_ctx | auth_context
 
     try:
         debug_delay = float(os.environ['DEBUG_DELAY'])

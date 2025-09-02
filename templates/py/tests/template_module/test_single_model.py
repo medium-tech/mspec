@@ -68,6 +68,8 @@ class TestSingleModel(unittest.TestCase):
 
     def test_single_model_pagination(self):
 
+        raise Exception('refactor pagination to match multi_model')
+
         # seed data #
 
         items = client_list_single_model(test_ctx, offset=0, limit=101)

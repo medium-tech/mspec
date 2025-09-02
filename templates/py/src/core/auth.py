@@ -108,12 +108,15 @@ def login_user(ctx:dict, email: str, password: str) -> AccessToken:
     assert user_id != ''
     return _create_access_token(data={'sub': str(user_id)})
 
-def get_user_id_from_token(ctx:dict, token:str):
+def get_user_id_from_token(ctx:dict, token:str) -> str:
+    """parse a JWT token and return the user id as a string,
+    raise AuthenticationError if the token is invalid or expired
+    """
     try:
         payload = jwt.decode(token, MSTACK_AUTH_SECRET_KEY, algorithms=[MSTACK_AUTH_ALGORITHM])
         user_id: str = payload.get('sub')
         if user_id is None:
             raise AuthenticationError('Could not validate credentials')
-        
+        return user_id
     except JWTError:
         raise AuthenticationError('Could not validate credentials')

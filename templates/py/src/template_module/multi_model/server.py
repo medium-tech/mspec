@@ -62,7 +62,7 @@ def multi_model_routes(ctx:dict, env:dict, raw_req_body:bytes):
             incoming_item = MultiModel(**json.loads(raw_req_body.decode('utf-8'))).convert_types()
             item = db_create_multi_model(ctx, incoming_item)
 
-            ctx['log'](f'POST template-module.multi-model - id: {item.id}')
+            ctx['log'](f'POST template-module.multi-model - id: {item.id} user_id: {item.user_id}')
             raise JSONResponse('200 OK', item.to_dict())
         
         elif env['REQUEST_METHOD'] == 'GET':
@@ -73,7 +73,10 @@ def multi_model_routes(ctx:dict, env:dict, raw_req_body:bytes):
             items = db_list_multi_model(ctx, offset=int(offset), limit=int(limit))
             ctx['log'](f'GET template-module.multi-model')
 
-            raise JSONResponse('200 OK', [MultiModel.to_dict(item) for item in items])
+            raise JSONResponse('200 OK', {
+                'total': items['total'],
+                'items': [MultiModel.to_dict(item) for item in items['items']]
+            })
 
         else:
             ctx['log'](f'ERROR 405 template-module.multi-model')

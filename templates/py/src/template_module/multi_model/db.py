@@ -1,7 +1,7 @@
 import sqlite3
 from datetime import datetime
 from core.types import datetime_format_str
-from core.exceptions import NotFoundError
+from core.exceptions import ForbiddenError, NotFoundError
 from template_module.multi_model.model import MultiModel
 
 __all__ = [
@@ -28,56 +28,58 @@ def db_create_multi_model(ctx:dict, obj:MultiModel) -> MultiModel:
     obj.validate()
     cursor:sqlite3.Cursor = ctx['db']['cursor']
 
-    # macro :: py_create_model_login_check :: {"multi_model": "model_name_snake_case"}
+    # macro :: py_create_model_login_check :: {"multi_model": "model.name.snake_case"}
     # must be logged in to make multi_model
-    user_id = ctx['auth']['get_user_id']()
+    user = ctx['auth']['get_user']()
+    obj.user_id = user.id
+    assert obj.user_id is not None
     # end macro ::
 
-    # macro :: py_create_model_number_created_check :: {"1": "max_models_per_user", "multi_model": "model_name_snake_case"}
+    # macro :: py_create_model_number_created_check :: {"1": "max_models_per_user", "multi_model": "model.name.snake_case"}
     # each user can only create a maximum of 1 multi_model(s)
-    cursor.execute("SELECT COUNT(*) FROM multi_model WHERE user_id=?", (user_id,))
+    cursor.execute("SELECT COUNT(*) FROM multi_model WHERE user_id=?", (user.id,))
     count = cursor.fetchone()[0]
     if count >= 1:
         raise ValueError('user has reached the maximum number of multi_models')
     # end macro ::
 
     result = cursor.execute(
-        "INSERT INTO multi_model DEFAULT VALUES",
-        ()
+        "INSERT INTO multi_model('user_id') VALUES(?)",
+        (user.id,)
     )
     assert result.rowcount == 1
     assert result.lastrowid is not None
     obj.id = str(result.lastrowid)
     
     # macro :: py_sql_create_list_bool :: {"multi_model": "model_name_snake_case", "multi_bool": "field_name"}
-    _result = cursor.executemany(
+    cursor.executemany(
         "INSERT INTO multi_model_multi_bool(value, position, multi_model_id) VALUES(?, ?, ?)",
         ((value, position, result.lastrowid) for position, value in enumerate(obj.multi_bool))
     )
     # macro :: py_sql_create_list_int :: {"multi_model": "model_name_snake_case", "multi_int": "field_name"}
-    _result = cursor.executemany(
+    cursor.executemany(
         "INSERT INTO multi_model_multi_int(value, position, multi_model_id) VALUES(?, ?, ?)",
         ((value, position, result.lastrowid) for position, value in enumerate(obj.multi_int))
     )
     # macro :: py_sql_create_list_float :: {"multi_model": "model_name_snake_case", "multi_float": "field_name"}
-    _result = cursor.executemany(
+    cursor.executemany(
         "INSERT INTO multi_model_multi_float(value, position, multi_model_id) VALUES(?, ?, ?)",
         ((value, position, result.lastrowid) for position, value in enumerate(obj.multi_float))
     )
     # macro :: py_sql_create_list_str :: {"multi_model": "model_name_snake_case", "multi_string": "field_name"}
-    _result = cursor.executemany(
+    cursor.executemany(
         "INSERT INTO multi_model_multi_string(value, position, multi_model_id) VALUES(?, ?, ?)",
         ((value, position, result.lastrowid) for position, value in enumerate(obj.multi_string))
     )
 
     # macro :: py_sql_create_list_str_enum :: {"multi_model": "model_name_snake_case", "multi_enum": "field_name"}
-    _result = cursor.executemany(
+    cursor.executemany(
         "INSERT INTO multi_model_multi_enum(value, position, multi_model_id) VALUES(?, ?, ?)",
         ((value, position, result.lastrowid) for position, value in enumerate(obj.multi_enum))
     )
 
     # macro :: py_sql_create_list_datetime :: {"multi_model": "model_name_snake_case", "multi_datetime": "field_name"}
-    _result = cursor.executemany(
+    cursor.executemany(
         "INSERT INTO multi_model_multi_datetime(value, position, multi_model_id) VALUES(?, ?, ?)",
         ((value.isoformat(), position, result.lastrowid) for position, value in enumerate(obj.multi_datetime))
     )
@@ -128,6 +130,7 @@ def db_read_multi_model(ctx:dict, id:str) -> MultiModel:
 
     return MultiModel(
         id=str(entry[0]),
+        user_id=str(entry[1]),
         multi_bool=multi_bool,
         multi_float=multi_float,
         multi_int=multi_int,
@@ -151,6 +154,13 @@ def db_update_multi_model(ctx:dict, obj:MultiModel) -> MultiModel:
         raise ValueError('id must not be null to update an item')
     
     obj.validate()
+
+    # macro :: py_db_update_auth :: {"multi_model": "model.name.snake_case"}
+    user = ctx['auth']['get_user']()
+    if obj.user_id != user.id:
+        raise ForbiddenError('not allowed to update this multi_model')
+    # end macro ::
+
     cursor:sqlite3.Cursor = ctx['db']['cursor']
 
     # macro :: py_sql_update_list_bool :: {"multi_model": "model_name_snake_case", "multi_bool": "field_name"}
@@ -205,6 +215,18 @@ def db_delete_multi_model(ctx:dict, id:str) -> None:
     """
 
     cursor:sqlite3.Cursor = ctx['db']['cursor']
+
+    # macro :: py_db_delete_auth :: {"multi_model": "model.name.snake_case"}
+    user = ctx['auth']['get_user']()
+    try:
+        obj = db_read_multi_model(ctx, id)
+    except NotFoundError:
+        return
+
+    if obj.user_id != user.id:
+        raise ForbiddenError('not allowed to delete this multi_model')
+    # end macro ::
+
     cursor.execute(f"DELETE FROM multi_model WHERE id=?", (id,))
     # macro :: py_sql_delete_list :: {"multi_model": "model_name_snake_case", "multi_bool": "field_name"}
     cursor.execute(f"DELETE FROM multi_model_multi_bool WHERE multi_model_id=?", (id,))
@@ -218,7 +240,7 @@ def db_delete_multi_model(ctx:dict, id:str) -> None:
 
     ctx['db']['commit']()
 
-def db_list_multi_model(ctx:dict, offset:int=0, limit:int=25) -> list[MultiModel]:
+def db_list_multi_model(ctx:dict, offset:int=0, limit:int=25) -> dict:
     """
     list multi models from the database, and verify each
 
@@ -226,8 +248,10 @@ def db_list_multi_model(ctx:dict, offset:int=0, limit:int=25) -> list[MultiModel
         ctx :: dict containing the database client
         offset :: the offset to start listing from.
         limit :: the maximum number of items to list.
-    
-    return :: list of each item as a dict.
+
+    return :: dict with two keys:
+        total :: int of the total number of items.
+        items :: list of each item as a dict.
     """
     cursor:sqlite3.Cursor = ctx['db']['cursor']
     
@@ -260,6 +284,7 @@ def db_list_multi_model(ctx:dict, offset:int=0, limit:int=25) -> list[MultiModel
 
         items.append(MultiModel(
             id=str(entry[0]),
+            user_id=str(entry[1]),
 			multi_bool=multi_bool,
 			multi_float=multi_float,
 			multi_int=multi_int,
@@ -268,4 +293,7 @@ def db_list_multi_model(ctx:dict, offset:int=0, limit:int=25) -> list[MultiModel
             multi_datetime=multi_datetime,
         ).validate())
 
-    return items
+    return {
+        'total': cursor.execute("SELECT COUNT(*) FROM multi_model").fetchone()[0],
+        'items': items
+    }
