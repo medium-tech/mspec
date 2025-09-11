@@ -4,13 +4,13 @@
     "version": "0.0.1",
     "type": "module",
     "scripts": {
-      "test": "npx playwright test",
-      "test-ui": "npx playwright test --ui",
-      "test-report": "npx playwright show-report",
-      "test-gen": "npx playwright codegen http://localhost:5005"
+        "test": "npx playwright test",
+        "test-ui": "npx playwright test --ui",
+        "test-report": "npx playwright show-report",
+        "test-gen": "npx playwright codegen http://localhost:5005"
     },
     "devDependencies": {
-      "@playwright/test": "1.52.0"
+        "@playwright/test": "1.52.0",
+        "loadtest": "^8.2.0"
     }
-  }
-  
+}

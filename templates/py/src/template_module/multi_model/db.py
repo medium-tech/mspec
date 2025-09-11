@@ -35,7 +35,7 @@ def db_create_multi_model(ctx:dict, obj:MultiModel) -> MultiModel:
     assert obj.user_id is not None
     # end macro ::
 
-    # macro :: py_create_model_number_created_check :: {"1": "max_models_per_user", "multi_model": "model.name.snake_case"}
+    # macro :: py_create_model_max_created_check :: {"1": "model.auth.max_models_per_user", "multi_model": "model.name.snake_case"}
     # each user can only create a maximum of 1 multi_model(s)
     cursor.execute("SELECT COUNT(*) FROM multi_model WHERE user_id=?", (user.id,))
     count = cursor.fetchone()[0]

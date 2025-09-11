@@ -1,0 +1,123 @@
+project:
+  name:
+    lower_case: 'simple social network'
+
+  description: 'A simple social network project'
+
+  author:
+    name: 'B rad C'
+    email: 'sample@email.com'
+
+server:
+  port: 8008
+
+client:
+  default_host: 'http://localhost:8008'
+
+modules:
+  user:
+    name:
+      lower_case: 'user'
+    
+    models:
+      profile:
+        name:
+          lower_case: 'profile'
+
+        auth:
+          require_login: true
+          max_models_per_user: 1
+
+        fields:
+
+          user_id:
+            type: int
+            examples:
+              - 1
+              - 2
+              - 3
+
+          username:
+            type: str
+            examples:
+              - 'alice'
+              - 'bob'
+              - 'charlie'
+
+          bio:
+            type: str
+            examples:
+              - 'Loves hiking and outdoor adventures.'
+              - 'Avid reader and coffee enthusiast.'
+              - 'Tech geek and gamer.'
+
+  content:
+    name:
+      lower_case: 'content'
+
+    models:
+      post:
+        name:
+          lower_case: 'post'
+
+        auth:
+          require_login: true
+
+        fields:
+
+          user_id:
+            type: int
+            examples:
+              - 1
+              - 2
+              - 3
+
+          content:
+            type: str
+            examples:
+              - 'Just had an amazing day at the beach!'
+              - "Loving the new book I'm reading."
+              - "Can't wait for the weekend!"
+      event:
+        name:
+          lower_case: 'event'
+
+        auth:
+          require_login: true
+
+        fields:
+
+          user_id:
+            type: int
+            examples:
+              - 1
+              - 2
+              - 3
+
+          event_name:
+            type: str
+            examples:
+              - 'Birthday Party'
+              - 'Hiking Trip'
+              - 'Book Club Meeting'
+
+          event_date:
+            type: datetime
+            examples:
+              - '2023-10-15T18:00:00'
+              - '2023-11-20T09:30:00'
+              - '2023-12-05T14:00:00'
+
+          location:
+            type: str
+            examples:
+              - 'Central Park'
+              - 'Downtown Cafe'
+              - 'City Library'
+          
+          description:
+            type: str
+            examples:
+              - 'Join us for a fun birthday celebration!'
+              - 'A day of hiking and exploring nature.'
+              - 'Discussing our latest book over coffee.'

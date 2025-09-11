@@ -194,7 +194,12 @@ def client_list_single_model(ctx:dict, offset:int=0, limit:int=50) -> list[Singl
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
 
-        return [SingleModel(**item).convert_types() for item in json.loads(response_body)]
+        response_data = json.loads(response_body)
+
+        return {
+            'total': response_data['total'],
+            'items': [SingleModel(**item).convert_types() for item in response_data['items']]
+        }
 
     except (json.JSONDecodeError, TypeError) as e:
         raise MSpecError(f'invalid response from server, {e.__class__.__name__}: {e}')

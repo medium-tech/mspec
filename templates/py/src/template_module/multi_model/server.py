@@ -70,12 +70,12 @@ def multi_model_routes(ctx:dict, env:dict, raw_req_body:bytes):
             offset = query.get('offset', [0])[0]
             limit = query.get('limit', [25])[0]
 
-            items = db_list_multi_model(ctx, offset=int(offset), limit=int(limit))
+            db_result = db_list_multi_model(ctx, offset=int(offset), limit=int(limit))
             ctx['log'](f'GET template-module.multi-model')
 
             raise JSONResponse('200 OK', {
-                'total': items['total'],
-                'items': [MultiModel.to_dict(item) for item in items['items']]
+                'total': db_result['total'],
+                'items': [MultiModel.to_dict(item) for item in db_result['items']]
             })
 
         else:

@@ -4,7 +4,7 @@ from datetime import datetime
 from dataclasses import dataclass, asdict
 from typing import Optional
 
-from core.types import to_json, Meta, email_regex, Entity
+from core.types import to_json, email_regex, Entity
 
 __all__ = [
     'User',
@@ -15,7 +15,6 @@ __all__ = [
     'validate_new_passwords',
     'CreateUser',
     'UserPasswordHash',
-    'Profile',
     'acl_to_json',
     'acl_from_json',
     'acl_validate',
@@ -31,7 +30,6 @@ class User:
     name: str
     email: str
 
-    profile: Optional[str] = None
     id: Optional[str] = None
 
     def __post_init__(self):
@@ -47,17 +45,12 @@ class User:
         if not email_regex.fullmatch(self.email):
             raise ValueError('user email is invalid')
         
-        if not isinstance(self.profile, str) and self.profile is not None:
-            raise ValueError('invalid user profile')
-        
         return self
     
     def to_dict(self):
         data = asdict(self)
         if self.id is None:
             del data['id']
-        if self.profile is None:
-            del data['profile']
         return data
         
     def to_json(self):
@@ -71,8 +64,7 @@ class User:
     def example(cls):
         return cls(
             name='Alice',
-            email='alice@nice.com',
-            profile='12345'
+            email='alice@nice.com'
         )
 
 # user session #
@@ -250,64 +242,6 @@ class UserPasswordHash:
             salt='def456'
         )
 
-# profile #
-
-@dataclass
-class Profile:
-
-    name: str
-    bio: str
-    meta: Meta
-
-    user_id: Optional[str] = None
-    id: Optional[str] = None
-
-    def __post_init__(self):
-        if isinstance(self.meta, dict):
-            self.meta = Meta(**self.meta)
-    
-    def validate(self):
-        if not isinstance(self.id, str) and self.id is not None:
-            raise ValueError('invalid profile id')
-        
-        if not isinstance(self.name, str):
-            raise ValueError('profile name must be a string')
-        
-        if not isinstance(self.bio, str):
-            raise ValueError('profile bio must be a string')
-        
-        if not isinstance(self.meta, Meta):
-            raise ValueError('profile meta must be a metadata object')
-        
-        self.meta.validate()
-        
-        return self
-    
-    def to_dict(self):
-        data = asdict(self)
-        if self.id is None:
-            del data['id']
-        return data
-        
-    def to_json(self):
-        return to_json(self.to_dict())
-    
-    @classmethod
-    def from_json(cls, profile_json:str):
-        return cls(**json.loads(profile_json))
-    
-    @classmethod
-    def example(cls):
-        return cls(
-            name='Alice',
-            bio='Alice is a nice person.',
-            meta=Meta(
-                data={'age': 30},
-                tags=['nice', 'friendly', 'guitar', 'drums', 'camera', 'film'],
-                hierarchies=['artist/musician', 'artist/photographer']
-            )
-        )
-    
 # acl #
 
 def acl_to_json(acl:dict) -> str:

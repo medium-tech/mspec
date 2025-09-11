@@ -39,20 +39,23 @@ class MTemplatePyProject(MTemplateProject):
                 non_list_fields.append(name)
                 num_non_list_fields += 1
 
-        if model['auth']['require_login']:
+        auth = model.get('auth', {})
+
+        if auth.get('require_login', False) is True:
             if 'user_id' not in model['fields']:
                 raise ValueError('require_login requires a user_id field')
             
-            out += self.spec['macro']['py_create_model_login_check']() + '\n'
+            out += self.spec['macro']['py_create_model_login_check']({'model': model}) + '\n'
 
-        if model['auth']['max_models_per_user'] is not None:
-            if not model['auth']['require_login']:
+        if auth.get('max_models_per_user', None) is not None:
+            if not auth.get('require_login', False):
                 raise ValueError('max_models_per_user requires require_login to be true')
             
             vars = {
-                'max_models_per_user': model['auth']['max_models_per_user']
+                'max_models_per_user': auth['max_models_per_user'],
+                'model': model
             }
-            out += self.spec['macro']['py_create_model_number_created_check'](vars) + '\n'
+            out += self.spec['macro']['py_create_model_max_created_check'](vars) + '\n'
 
         # non list fields #
         
@@ -410,6 +413,62 @@ class MTemplatePyProject(MTemplateProject):
 
         return out
     
+    def macro_py_create_model_login_check(self, model:dict, indent='\t\t') -> str:
+        try:
+            if model['auth']['require_login']:
+                return self.spec['macro']['py_create_model_login_check']({'model': model}) + '\n'
+        except KeyError:
+            pass
+        return ''
+    
+    def macro_py_create_model_max_created_check(self, model:dict, indent='\t\t') -> str:
+        try:
+            if model['auth']['max_models_per_user'] is not None:
+                vars = {'model': model, 'max_models_per_user': model['auth']['max_models_per_user']}
+                return self.spec['macro']['py_create_model_max_created_check'](vars) + '\n'
+        except KeyError:
+            pass
+        return ''
+    
+    def macro_py_db_update_auth(self, model:dict, indent='\t\t') -> str:
+        try:
+            if model['auth']['require_login']:
+                return self.spec['macro']['py_db_update_auth']({'model': model}) + '\n'
+        except KeyError:
+            pass
+        return ''
+    
+    def macro_py_db_delete_auth(self, model:dict, indent='\t\t') -> str:
+        try:
+            if model['auth']['require_login']:
+                return self.spec['macro']['py_db_delete_auth']({'model': model}) + '\n'
+        except KeyError:
+            pass
+        return ''
+    
+    def macro_py_test_model_auth_context(self, model:dict, indent='\t'):
+        try:
+            if model['auth']['require_login']:
+                return self.spec['macro']['py_test_model_auth_context']({'model': model}) + '\n'
+        except KeyError:
+            pass
+        return ''
+    
+    def macro_py_test_auth(self, model:dict, indent='\t'):
+        try:
+            if model['auth']['require_login']:
+                return self.spec['macro']['py_test_auth']({'model': model}) + '\n'
+        except KeyError:
+            pass
+        return ''
+
+    def macro_py_test_model_seed_pagination(self, model:dict, indent='\t\t'):
+        try:
+            if model['auth']['max_models_per_user'] >= 1:
+                return self.spec['macro']['py_test_model_seed_pagination']({'model': model}) + '\n'
+        except KeyError:
+            pass
+        return ''
     @classmethod
     def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplatePyProject':
         template_proj = super().render(spec, env_file, output_dir, debug, disable_strict, use_cache)

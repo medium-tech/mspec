@@ -2,7 +2,7 @@ import os
 import sqlite3
 
 from core.db import db_create_user
-from core.exceptions import AuthenticationError, NotFoundError, ForbiddenError
+from core.exceptions import AuthenticationError, ForbiddenError
 from core.models import User, UserPasswordHash, AccessToken, CreateUser
 from datetime import datetime, timedelta, timezone
 

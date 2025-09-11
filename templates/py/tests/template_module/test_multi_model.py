@@ -5,7 +5,7 @@ import math
 
 from core.db import create_db_context
 from core.client import *
-from core.models import CreateUser
+from core.models import CreateUser, User
 from core.exceptions import AuthenticationError, NotFoundError
 from template_module.multi_model.model import MultiModel
 from template_module.multi_model.client import *
@@ -17,15 +17,17 @@ test_ctx.update(create_client_context())
 
 # macro :: py_test_model_auth_context :: {"multi-model": "model.name.kebab_case", "MultiModel": "model.name.pascal_case"}
 # create user for auth testing
-new_user = CreateUser(
-    name='Test MultiModel Auth',
-    email=f'test-multi-model-auth-{time.time()}@email.com',
-    password1='my-test-password',
-    password2='my-test-password',
-)
+def new_user() -> tuple[User, str]:
+    user = CreateUser(
+        name='Test MultiModel Auth',
+        email=f'test-multi-model-auth-{time.time()}@email.com',
+        password1='my-test-password',
+        password2='my-test-password',
+    )
+    return client_create_user(test_ctx, user), user.password1
 
-created_user = client_create_user(test_ctx, new_user)
-login_ctx = client_login(test_ctx, new_user.email, new_user.password1)
+created_user, created_user_pw = new_user()
+login_ctx = client_login(test_ctx, created_user.email, created_user_pw)
 test_ctx.update(login_ctx)
 # end macro ::
 
@@ -118,19 +120,24 @@ class TestMultiModel(unittest.TestCase):
         init_response = client_list_multi_model(test_ctx, offset=0, limit=1)
         total_items = init_response['total']
         
-        if total_items < 50:
-            while total_items < 50:
+        if total_items < 15:
+            seed_ctx = create_client_context()
+            while total_items < 15:
+                # macro :: py_test_model_seed_pagination :: {}
+                user, user_pw = new_user()
+                seed_ctx.update(client_login(seed_ctx, user.email, user_pw))
+                # end macro ::
+
                 item = MultiModel.random()
-                client_create_multi_model(test_ctx, item)
+                client_create_multi_model(seed_ctx, item)
                 total_items += 1
 
         # paginate #
 
         pg_configs = [
-            {'page_size': 10, 'expected_pages': math.ceil(total_items / 10)},
-            {'page_size': 20, 'expected_pages': math.ceil(total_items / 20)},
-            {'page_size': 25, 'expected_pages': math.ceil(total_items / 25)},
-            {'page_size': 50, 'expected_pages': math.ceil(total_items / 50)}
+            {'page_size': 5, 'expected_pages': math.ceil(total_items / 5)},
+            {'page_size': 8, 'expected_pages': math.ceil(total_items / 8)},
+            {'page_size': 15, 'expected_pages': math.ceil(total_items / 15)},
         ]
 
         for pg_config in pg_configs:

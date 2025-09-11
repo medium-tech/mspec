@@ -309,7 +309,7 @@ class Context:
 # permissions
 #
 
-entity_types = {'user', 'profile', 'group_profile'}
+entity_types = {'user'}
 
 @dataclass
 class Entity:

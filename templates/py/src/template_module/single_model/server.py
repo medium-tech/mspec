@@ -74,10 +74,13 @@ def single_model_routes(ctx:dict, env:dict, raw_req_body:bytes):
             offset = query.get('offset', [0])[0]
             limit = query.get('limit', [25])[0]
 
-            items = db_list_single_model(ctx, offset=int(offset), limit=int(limit))
+            db_result = db_list_single_model(ctx, offset=int(offset), limit=int(limit))
             ctx['log'](f'GET template-module.single-model')
 
-            raise JSONResponse('200 OK', [SingleModel.to_dict(item) for item in items])
+            raise JSONResponse('200 OK', {
+                'total': db_result['total'],
+                'items': [SingleModel.to_dict(item) for item in db_result['items']]
+            })
     
         else:
             ctx['log'](f'ERROR 405 template-module.single-model')

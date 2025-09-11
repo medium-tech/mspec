@@ -29,11 +29,6 @@ The main prototype are the python + browser 1 browser template apps.
         * 🔴 user can create acl for read ops
 * 🔴 refactor python vs. templating logic
 * 🔴 add file ingest/upload
-* 🔴 update sample spec locations
-    * 🔴 move src/mspec/data to browser2 and mtemplate specific dirs
-    * 🔴 remove from mspec pyproject.toml
-    * 🔴 update mspec.load_spec to not check internal repo
-    * 🔴 update mtemplate cli help for spec arg
 
 ### phase 2
 * 🔴 go template app

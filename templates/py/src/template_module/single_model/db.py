@@ -30,7 +30,7 @@ def db_create_single_model(ctx:dict, obj:SingleModel) -> SingleModel:
     obj.validate()
     cursor:sqlite3.Cursor = ctx['db']['cursor']
     # insert :: macro.py_create_model_login_check(model)
-    # insert :: macro.py_create_model_number_created_check(model)
+    # insert :: macro.py_create_model_max_created_check(model)
     # insert :: macro.py_db_create(model)
     # macro :: py_sql_create :: {"single_model": "model_name_snake_case", "('single_bool', 'single_datetime', 'single_enum', 'single_float', 'single_int', 'single_string')": "fields_sql", "VALUES(?, ?, ?, ?, ?, ?)": "sql_values", "obj.single_bool, obj.single_datetime.isoformat(), obj.single_enum, obj.single_float, obj.single_int, obj.single_string": "fields_py"}
     result = cursor.execute(
@@ -134,7 +134,7 @@ def db_delete_single_model(ctx:dict, id:str) -> None:
 
     ctx['db']['commit']()
 
-def db_list_single_model(ctx:dict, offset:int=0, limit:int=25) -> list[SingleModel]:
+def db_list_single_model(ctx:dict, offset:int=0, limit:int=25) -> dict:
     """
     list single models from the database, and verify each
 
@@ -143,7 +143,9 @@ def db_list_single_model(ctx:dict, offset:int=0, limit:int=25) -> list[SingleMod
         offset :: the offset to start listing from.
         limit :: the maximum number of items to list.
     
-    return :: list of each item as a dict.
+    return :: dict with two keys:
+        total :: int of the total number of items.
+        items :: list of each item as a dict.
     """
     cursor:sqlite3.Cursor = ctx['db']['cursor']
     
@@ -165,4 +167,7 @@ def db_list_single_model(ctx:dict, offset:int=0, limit:int=25) -> list[SingleMod
             # end replace ::
         ).validate())
 
-    return items
+    return {
+        'total': cursor.execute("SELECT COUNT(*) FROM single_model").fetchone()[0],
+        'items': items
+    }

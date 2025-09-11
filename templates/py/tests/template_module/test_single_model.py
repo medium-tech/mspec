@@ -1,3 +1,4 @@
+import math
 import unittest
 import sqlite3
 
@@ -68,25 +69,18 @@ class TestSingleModel(unittest.TestCase):
 
     def test_single_model_pagination(self):
 
-        raise Exception('refactor pagination to match multi_model')
-
         # seed data #
 
-        items = client_list_single_model(test_ctx, offset=0, limit=101)
-        items_len = len(items)
-        if items_len > 100:
-            raise Exception('excpecting 100 items or less, delete db and restart test')
+        init_response = client_list_single_model(test_ctx, offset=0, limit=101)
+        total_items = init_response['total']
         
-        if items_len < 50:
-            difference = 50 - items_len
-            for _ in range(difference):
+        if total_items < 15:
+            seed_ctx = create_client_context()
+            while total_items < 15:
+                # insert :: macro.py_test_model_seed_pagination(model)
                 item = SingleModel.random()
-                item = client_create_single_model(test_ctx, item)
-        elif items_len > 50:
-            difference = items_len - 50
-            items_to_delete = items[:difference]
-            for item in items_to_delete:
-                client_delete_single_model(test_ctx, item.id)
+                client_create_single_model(seed_ctx, item)
+                total_items += 1
 
         test_single_model = SingleModel.example()
         test_single_model.validate()
@@ -94,10 +88,9 @@ class TestSingleModel(unittest.TestCase):
         # paginate #
 
         pg_configs = [
-            {'page_size': 10, 'expected_pages': 5},
-            {'page_size': 20, 'expected_pages': 3},
-            {'page_size': 25, 'expected_pages': 2},
-            {'page_size': 50, 'expected_pages': 1}
+            {'page_size': 5, 'expected_pages': math.ceil(total_items / 5)},
+            {'page_size': 8, 'expected_pages': math.ceil(total_items / 8)},
+            {'page_size': 15, 'expected_pages': math.ceil(total_items / 15)}
         ]
 
         for pg_config in pg_configs:
@@ -108,7 +101,8 @@ class TestSingleModel(unittest.TestCase):
             item_ids = []
             num_pages = 0
             while True:
-                items = client_list_single_model(test_ctx, offset=offset, limit=page_size)
+                result = client_list_single_model(test_ctx, offset=offset, limit=page_size)
+                items = result['items']
                 items_len = 0
                 for item in items:
                     items_len += 1
@@ -128,8 +122,8 @@ class TestSingleModel(unittest.TestCase):
                 offset += page_size
                 
             self.assertEqual(num_pages, expected_pages)
-            self.assertEqual(len(item_ids), 50)
-            self.assertEqual(len(set(item_ids)), 50)
+            self.assertEqual(len(item_ids), total_items)
+            self.assertEqual(len(set(item_ids)), total_items)
             
 
 if __name__ == '__main__':

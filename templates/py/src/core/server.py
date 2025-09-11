@@ -2,7 +2,6 @@ import re
 import os
 import time
 
-from copy import deepcopy
 from traceback import format_exc
 from urllib.parse import parse_qs
 
@@ -113,85 +112,6 @@ def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
             ctx['log'](f'ERROR 405 core.user')
             raise RequestError('405 Method Not Allowed', 'invalid request method')
 
-def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
-
-    # profile - instance routes #
-
-    if (instance := re.match(r'/api/core/profile/(.+)', env['PATH_INFO'])) is not None:
-        instance_id = instance.group(1)
-        if env['REQUEST_METHOD'] == 'GET':
-            try:
-                item = db_read_profile(ctx, instance_id)
-                ctx['log'](f'GET core.profile/{instance_id}')
-                raise JSONResponse('200 OK', item.to_dict())
-            except NotFoundError:
-                ctx['log'](f'GET core.profile/{instance_id} - Not Found')
-                raise RequestError('404 Not Found', f'not found core.profile.{instance_id}')
-        
-        elif env['REQUEST_METHOD'] == 'PUT':
-            incoming_profile = Profile.from_json(raw_req_body.decode('utf-8'))
-
-            cur_user:User = ctx['auth']['get_user']()
-            if incoming_profile.user_id != cur_user.id:
-                raise ForbiddenError('Resource is not accessible')
-
-            try:
-                if instance_id != incoming_profile.id:
-                    raise RequestError('400 Bad Request', 'user id mismatch')
-            except KeyError:
-                raise RequestError('400 Bad Request', 'user is missing id')
-            
-            try:
-                updated_profile = db_update_profile(ctx, incoming_profile)
-            except NotFoundError:
-                ctx['log'](f'PUT core.profile/{instance_id} - Not Found')
-                raise RequestError('404 Not Found', f'not found core.profile.{instance_id}')
-            
-            ctx['log'](f'PUT core.profile/{instance_id}')
-            raise JSONResponse('200 Ok', updated_profile.to_dict())
-        
-        elif env['REQUEST_METHOD'] == 'DELETE':
-            cur_user:User = ctx['auth']['get_user']()
-            if incoming_profile.user_id != cur_user.id:
-                raise ForbiddenError('Resource is not accessible')
-            
-            db_delete_profile(ctx, instance_id)
-            ctx['log'](f'DELETE core.profile/{instance_id}')
-            raise JSONResponse('204 No Content')
-        
-        else:
-            ctx['log'](f'ERROR 405 core.profile/{instance_id}')
-            raise RequestError('405 Method Not Allowed', 'invalid request method')
-        
-    # profile - model routes #
-
-    elif re.match(r'/api/core/profile', env['PATH_INFO']):
-        if env['REQUEST_METHOD'] == 'POST':
-            cur_user:User = ctx['auth']['get_user']()
-
-            incoming_profile = Profile.from_json(raw_req_body.decode('utf-8'))
-            if incoming_profile.user_id != cur_user.id:
-                raise ForbiddenError('Resource is not accessible')
-            
-            item = db_create_profile(ctx, incoming_profile)
-
-            ctx['log'](f'POST core.profile - id: {item.id}')
-            raise JSONResponse('200 OK', item.to_dict())
-        
-        elif env['REQUEST_METHOD'] == 'GET':
-            query = parse_qs(env['QUERY_STRING'])
-            offset = query.get('offset', [0])[0]
-            limit = query.get('limit', [25])[0]
-
-            items = db_list_profile(ctx, int(offset), int(limit))
-            ctx['log'](f'GET core.profile')
-
-            raise JSONResponse('200 OK', [Profile.to_dict(item) for item in items])
-        
-        else:
-            ctx['log'](f'ERROR 405 core.profile')
-            raise RequestError('405 Method Not Allowed', 'invalid request method')
-
 #
 # app
 #
@@ -199,7 +119,6 @@ def profile_routes(ctx:dict, env:dict, raw_req_body:bytes):
 route_list = [
     auth_routes,
     user_routes,
-    profile_routes,
     # for :: {% for item in all_models %} :: {"single_model": "item.model.name.snake_case"}
     single_model_routes,
     # end for ::
