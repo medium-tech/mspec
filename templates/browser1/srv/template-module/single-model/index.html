@@ -124,9 +124,11 @@
                         return response.json()
                     }).then(data => {
                         console.log(data)
-                        const items = data.map(item => initSingleModel(item))
+                        const items = data['items'].map(item => initSingleModel(item))
 
                         document.getElementById('single-model-list-count').innerText = items.length
+                        document.getElementById('single-model-list-total').innerText = data['total']
+                        
                         singleModelListToDisplayTBody(items, document.querySelector('#single-model-list-tbody'))
 
                         if (offset > 0) prevPage.disabled = false
@@ -277,6 +279,8 @@
             size: <span id="single-model-list-size">25</span>
             &emsp;
             count: <span id="single-model-list-count">-</span>
+            &emsp;
+            total: <span id="single-model-list-total">-</span>
             
             <br>
 

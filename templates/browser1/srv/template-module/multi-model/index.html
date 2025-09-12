@@ -121,9 +121,11 @@
                         return response.json()
                     }).then(data => {
                         console.log(data)
-                        const items = data.map(item => initMultiModel(item))
+                        const items = data['items'].map(item => initMultiModel(item))
 
                         document.getElementById('multi-model-list-count').innerText = items.length
+                        document.getElementById('multi-model-list-total').innerText = data['total']
+                        
                         multiModelListToDisplayTBody(items, document.querySelector('#multi-model-list-tbody'))
 
                         if (offset > 0) prevPage.disabled = false
@@ -274,6 +276,8 @@
             size: <span id="multi-model-list-size">25</span>
             &emsp;
             count: <span id="multi-model-list-count">-</span>
+            &emsp;
+            total: <span id="multi-model-list-total">-</span>
 
             <br>
 
