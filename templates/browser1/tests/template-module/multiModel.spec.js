@@ -27,6 +27,54 @@ test('test - template module - multi model - pagination', async ({ page }) => {
 
 
 test('test - template module - multi model - instance', async ({ page }) => {
+    // macro :: browser1_model_auth_check_create_user :: {"multi-model": "model_name_kebab_case"}
+    //
+    // create user and login because multi-model requires auth
+    //
+
+    const testEmail = `test-multi-model-${Math.random()}-${Date.now()}@example.com`;
+    const testPassword = 'testpassword123';
+    const testName = 'Test User';
+
+    // Step 1: Create User
+    await page.goto('http://localhost:5005/');
+    await page.getByRole('button', { name: 'Create User' }).click();
+
+    await expect(page.locator('h1')).toContainText('Create User - template_app');
+
+    // Fill out the create user form
+    await page.locator('input[name="name"]').fill(testName);
+    await page.locator('input[name="email"]').fill(testEmail);
+    await page.locator('input[name="password1"]').fill(testPassword);
+    await page.locator('input[name="password2"]').fill(testPassword);
+
+    // Submit the form
+    await page.getByRole('button', { name: 'Create User' }).click();
+
+    // Wait for success message
+    await expect(page.locator('#message')).toContainText('User created successfully');
+
+    // Step 2: Login
+    await page.getByRole('link', { name: 'Login' }).click();
+
+    await expect(page.locator('h1')).toContainText('Login - template_app');
+
+    // Fill out the login form
+    await page.locator('input[name="email"]').fill(testEmail);
+    await page.locator('input[name="password"]').fill(testPassword);
+
+    // Submit the login form
+    await page.getByRole('button', { name: 'Login' }).click();
+
+    // Wait for success message and redirect
+    await expect(page.locator('#message')).toContainText('Login successful');
+
+    // Wait for redirect to home page
+    await page.waitForURL('http://localhost:5005/');
+
+    // Create random multi model item
+    await page.goto('http://localhost:5005/template-module/multi-model/create');
+    // end macro ::
 
     const textToContain = []
 
@@ -122,6 +170,48 @@ test('test - template module - multi model - instance', async ({ page }) => {
 });
 
 test('test - template module - multi model - create random', async ({ page }) => {
+
+  const testEmail = `test-multi-model-${Math.random()}-${Date.now()}@example.com`;
+  const testPassword = 'testpassword123';
+  const testName = 'Test User';
+  
+  // Step 1: Create User
+  await page.goto('http://localhost:5005/');
+  await page.getByRole('button', { name: 'Create User' }).click();
+  
+  await expect(page.locator('h1')).toContainText('Create User - template_app');
+  
+  // Fill out the create user form
+  await page.locator('input[name="name"]').fill(testName);
+  await page.locator('input[name="email"]').fill(testEmail);
+  await page.locator('input[name="password1"]').fill(testPassword);
+  await page.locator('input[name="password2"]').fill(testPassword);
+  
+  // Submit the form
+  await page.getByRole('button', { name: 'Create User' }).click();
+  
+  // Wait for success message
+  await expect(page.locator('#message')).toContainText('User created successfully');
+  
+  // Step 2: Login
+  await page.getByRole('link', { name: 'Login' }).click();
+  
+  await expect(page.locator('h1')).toContainText('Login - template_app');
+  
+  // Fill out the login form
+  await page.locator('input[name="email"]').fill(testEmail);
+  await page.locator('input[name="password"]').fill(testPassword);
+  
+  // Submit the login form
+  await page.getByRole('button', { name: 'Login' }).click();
+  
+  // Wait for success message and redirect
+  await expect(page.locator('#message')).toContainText('Login successful');
+  
+  // Wait for redirect to home page
+  await page.waitForURL('http://localhost:5005/');
+
+  // Create random multi model item
   await page.goto('http://localhost:5005/template-module/multi-model/create');
 
   await page.getByRole('button', { name: 'random' }).click();

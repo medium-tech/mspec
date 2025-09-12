@@ -5,8 +5,8 @@ import math
 
 from core.db import create_db_context
 from core.client import *
-from core.models import CreateUser, User
-from core.exceptions import AuthenticationError, NotFoundError
+from core.models import *
+from core.exceptions import *
 from template_module.multi_model.model import MultiModel
 from template_module.multi_model.client import *
 
@@ -15,7 +15,7 @@ from template_module.multi_model.client import *
 test_ctx = create_db_context()
 test_ctx.update(create_client_context())
 
-# macro :: py_test_model_auth_context :: {"multi-model": "model.name.kebab_case", "MultiModel": "model.name.pascal_case"}
+# macro :: py_test_model_auth_context_login :: {"multi-model": "model_name_kebab_case", "MultiModel": "model_name_pascal_case"}
 # create user for auth testing
 def new_user() -> tuple[User, str]:
     user = CreateUser(
@@ -34,7 +34,7 @@ test_ctx.update(login_ctx)
 
 class TestMultiModel(unittest.TestCase):
 
-    # macro :: py_test_auth :: {"multi_model": "model_name_snake_case"}
+    # macro :: py_test_auth_require_login :: {"multi_model": "model_name_snake_case", "MultiModel": "model_name_pascal_case"}
     def test_multi_model_auth(self):
         test_multi_model = MultiModel.example()
         test_multi_model.validate()
@@ -44,6 +44,20 @@ class TestMultiModel(unittest.TestCase):
         logged_out_ctx.update(create_client_context())
         self.assertRaises(AuthenticationError, client_create_multi_model, logged_out_ctx, test_multi_model)
     # end macro ::
+
+    # macro :: py_test_auth_max_models :: {"multi_model": "model_name_snake_case", "MultiModel": "model_name_pascal_case", "1": "max_models_per_user"}
+    def test_multi_model_auth_max_models(self):
+
+        user, user_pw = new_user()
+        max_models_ctx = create_client_context()
+        max_models_ctx.update(client_login(max_models_ctx, user.email, user_pw))
+
+        for _ in range(1):
+            client_create_multi_model(max_models_ctx, MultiModel.example())
+
+        self.assertRaises(Exception, client_create_multi_model, max_models_ctx, MultiModel.example())
+    # end macro ::
+
 
     def test_multi_model_crud(self):
         """
@@ -112,7 +126,6 @@ class TestMultiModel(unittest.TestCase):
         multi_datetime_result = cursor.execute(f"SELECT value FROM multi_model_multi_datetime WHERE multi_model_id=? ORDER BY position", (created_multi_model.id,))
         self.assertEqual(len(multi_datetime_result.fetchall()), 0)
         
-
     def test_multi_model_pagination(self):
 
         # seed data #

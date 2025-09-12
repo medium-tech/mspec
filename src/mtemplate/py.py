@@ -449,18 +449,29 @@ class MTemplatePyProject(MTemplateProject):
     def macro_py_test_model_auth_context(self, model:dict, indent='\t'):
         try:
             if model['auth']['require_login']:
-                return self.spec['macro']['py_test_model_auth_context']({'model': model}) + '\n'
+                return self.spec['macro']['py_test_model_auth_context_login']({
+                    'model_name_kebab_case': model['name']['kebab_case'],
+                    'model_name_pascal_case': model['name']['pascal_case'],
+                }) + '\n'
         except KeyError:
             pass
         return ''
     
     def macro_py_test_auth(self, model:dict, indent='\t'):
-        try:
-            if model['auth']['require_login']:
-                return self.spec['macro']['py_test_auth']({'model': model}) + '\n'
-        except KeyError:
-            pass
-        return ''
+        out = ''
+        auth = model.get('auth', {})
+        vars = {
+            'model_name_snake_case': model['name']['snake_case'],
+            'model_name_pascal_case': model['name']['pascal_case'],
+            'max_models_per_user': str(auth.get('max_models_per_user', None))
+        }
+        if auth.get('require_login', False):
+            out += self.spec['macro']['py_test_auth_require_login'](vars) + '\n'
+
+        if auth.get('max_models_per_user', None) is not None:
+            out += self.spec['macro']['py_test_auth_max_models'](vars) + '\n'
+
+        return out
 
     def macro_py_test_model_seed_pagination(self, model:dict, indent='\t\t'):
         try:

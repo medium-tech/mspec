@@ -283,3 +283,13 @@ class MTemplateBrowser1Project(MTemplateProject):
             lines.append(f"{indent}{name}: {value}")
 
         return ',\n'.join(lines)
+    
+    def macro_browser1_model_auth_check(self, model:dict, indent='\t') -> str:
+        auth = model.get('auth', {})
+
+        if auth.get('require_login', False) is True:
+            return self.spec['macro']['browser1_model_auth_check_create_user']({
+                'model_name_kebab_case': model['name']['kebab_case'],
+            }) + '\n'
+        else:
+            return ''

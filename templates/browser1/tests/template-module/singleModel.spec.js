@@ -28,6 +28,12 @@ test('test - template module - single model - pagination', async ({ page }) => {
 
 test('test - template module - single model - instance', async ({ page }) => {
 
+    // insert :: macro.browser1_model_auth_check(model)
+
+    //
+    // test single model
+    //
+
     const textToContain = []
 
     // create item
@@ -104,6 +110,11 @@ test('test - template module - single model - instance', async ({ page }) => {
 });
 
 test('test - template module - single model - create random', async ({ page }) => {
+  // insert :: macro.browser1_model_auth_check(model)
+  //
+  // test create random single model
+  //
+
   await page.goto('http://localhost:5005/template-module/single-model/create');
   
   await page.getByRole('button', { name: 'random' }).click();

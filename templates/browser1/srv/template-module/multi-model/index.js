@@ -926,9 +926,16 @@ function multiModelForJSON(data) {
 
 function clientCreateMultiModel(data) {
 
+    let session = getUserSession();
+    console.log('clientCreateMultiModel session', session);
+    if (!session) {
+        return Promise.reject('Must be logged in');
+    }
+
     return fetch('/api/template-module/multi-model', {
         method: 'POST',
         headers: {
+            'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
