@@ -12,23 +12,24 @@ from template_module.multi_model.client import *
 
 # vars :: {"template_module": "module.name.snake_case", "multi_model": "model.name.snake_case", "MultiModel": "model.name.pascal_case"}
 
-test_ctx = create_db_context()
-test_ctx.update(create_client_context())
+def test_ctx_init() -> dict:
+    ctx = create_db_context()
+    ctx.update(create_client_context())
+    return ctx
 
-# macro :: py_test_model_auth_context_login :: {"multi-model": "model_name_kebab_case", "MultiModel": "model_name_pascal_case"}
+# macro :: py_test_model_auth_context_new_user :: {"multi-model": "model_name_kebab_case", "MultiModel": "model_name_pascal_case"}
 # create user for auth testing
-def new_user() -> tuple[User, str]:
+def new_user() -> tuple[dict, User]:
+    new_ctx = test_ctx_init()
     user = CreateUser(
         name='Test MultiModel Auth',
         email=f'test-multi-model-auth-{time.time()}@email.com',
         password1='my-test-password',
         password2='my-test-password',
     )
-    return client_create_user(test_ctx, user), user.password1
-
-created_user, created_user_pw = new_user()
-login_ctx = client_login(test_ctx, created_user.email, created_user_pw)
-test_ctx.update(login_ctx)
+    created_user = client_create_user(new_ctx, user)
+    login_ctx = client_login(new_ctx, created_user.email, user.password1)
+    return login_ctx, created_user
 # end macro ::
 
 
@@ -39,18 +40,16 @@ class TestMultiModel(unittest.TestCase):
         test_multi_model = MultiModel.example()
         test_multi_model.validate()
 
+        logged_out_ctx = test_ctx_init()
+
         # should not be able to create multi_model if logged out #
-        logged_out_ctx = create_db_context()
-        logged_out_ctx.update(create_client_context())
         self.assertRaises(AuthenticationError, client_create_multi_model, logged_out_ctx, test_multi_model)
     # end macro ::
 
     # macro :: py_test_auth_max_models :: {"multi_model": "model_name_snake_case", "MultiModel": "model_name_pascal_case", "1": "max_models_per_user"}
     def test_multi_model_auth_max_models(self):
 
-        user, user_pw = new_user()
-        max_models_ctx = create_client_context()
-        max_models_ctx.update(client_login(max_models_ctx, user.email, user_pw))
+        max_models_ctx, _user = new_user()
 
         for _ in range(1):
             client_create_multi_model(max_models_ctx, MultiModel.example())
@@ -69,40 +68,49 @@ class TestMultiModel(unittest.TestCase):
         + delete
         """
 
+        crud_ctx = test_ctx_init()
+        # macro :: py_test_model_crud_context_new_user :: {}
+        new_user_ctx, _user = new_user()
+        crud_ctx.update(new_user_ctx)
+        # end macro ::
+
         test_multi_model = MultiModel.example()
         test_multi_model.validate()
 
         # create #
 
-        created_multi_model = client_create_multi_model(test_ctx, test_multi_model)
+        created_multi_model = client_create_multi_model(crud_ctx, test_multi_model)
         self.assertTrue(isinstance(created_multi_model, MultiModel))
         created_multi_model.validate()
         test_multi_model.id = created_multi_model.id
-        test_multi_model.user_id = created_multi_model.user_id
+        try:
+            test_multi_model.user_id = created_multi_model.user_id
+        except AttributeError:
+            pass
 
         self.assertEqual(created_multi_model, test_multi_model)
 
         # read #
 
-        test_multi_model_read = client_read_multi_model(test_ctx, created_multi_model.id)
+        test_multi_model_read = client_read_multi_model(crud_ctx, created_multi_model.id)
         self.assertTrue(isinstance(test_multi_model_read, MultiModel))
         test_multi_model_read.validate()
         self.assertEqual(test_multi_model_read, test_multi_model)
 
         # update #
 
-        updated_test_multi_model = client_update_multi_model(test_ctx, test_multi_model_read)
+        updated_test_multi_model = client_update_multi_model(crud_ctx, test_multi_model_read)
         self.assertTrue(isinstance(updated_test_multi_model, MultiModel))
         updated_test_multi_model.validate()
         self.assertEqual(test_multi_model_read, updated_test_multi_model)
 
         # delete #
 
-        delete_return = client_delete_multi_model(test_ctx, created_multi_model.id)
+        delete_return = client_delete_multi_model(crud_ctx, created_multi_model.id)
         self.assertIsNone(delete_return)
-        self.assertRaises(NotFoundError, client_read_multi_model, test_ctx, created_multi_model.id)
+        self.assertRaises(NotFoundError, client_read_multi_model, crud_ctx, created_multi_model.id)
 
-        cursor:sqlite3.Cursor = test_ctx['db']['cursor']
+        cursor:sqlite3.Cursor = crud_ctx['db']['cursor']
         fetched_item = cursor.execute(f"SELECT * FROM multi_model WHERE id=?", (created_multi_model.id,)).fetchone()
         self.assertIsNone(fetched_item)
 
@@ -128,17 +136,21 @@ class TestMultiModel(unittest.TestCase):
         
     def test_multi_model_pagination(self):
 
+        pagination_ctx = test_ctx_init()
+
         # seed data #
 
-        init_response = client_list_multi_model(test_ctx, offset=0, limit=1)
+        init_response = client_list_multi_model(pagination_ctx, offset=0, limit=1)
         total_items = init_response['total']
         
         if total_items < 15:
             seed_ctx = create_client_context()
             while total_items < 15:
-                # macro :: py_test_model_seed_pagination :: {}
-                user, user_pw = new_user()
-                seed_ctx.update(client_login(seed_ctx, user.email, user_pw))
+                # macro :: py_test_model_seed_pagination_new_user :: {"1": "max_models_per_user"}
+                # create new user(s) to avoid max models per user limits
+                if total_items % 1 == 0:
+                    new_user_ctx, _user = new_user()
+                    seed_ctx.update(new_user_ctx)
                 # end macro ::
 
                 item = MultiModel.random()
@@ -161,7 +173,7 @@ class TestMultiModel(unittest.TestCase):
             item_ids = []
             num_pages = 0
             while True:
-                response = client_list_multi_model(test_ctx, offset=offset, limit=page_size)
+                response = client_list_multi_model(pagination_ctx, offset=offset, limit=page_size)
                 returned_items = 0
                 for item in response['items']:
                     returned_items += 1

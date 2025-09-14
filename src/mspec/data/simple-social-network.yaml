@@ -31,11 +31,11 @@ modules:
         fields:
 
           user_id:
-            type: int
+            type: str
             examples:
-              - 1
-              - 2
-              - 3
+              - "1"
+              - "2"
+              - "3"
 
           username:
             type: str
@@ -66,11 +66,11 @@ modules:
         fields:
 
           user_id:
-            type: int
+            type: str
             examples:
-              - 1
-              - 2
-              - 3
+              - "1"
+              - "2"
+              - "3"
 
           content:
             type: str
@@ -88,11 +88,11 @@ modules:
         fields:
 
           user_id:
-            type: int
+            type: str
             examples:
-              - 1
-              - 2
-              - 3
+              - "1"
+              - "2"
+              - "3"
 
           event_name:
             type: str

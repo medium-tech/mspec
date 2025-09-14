@@ -42,5 +42,14 @@ def load_spec(spec_file:str) -> dict:
         module['name'].update(generate_names(module['name']['lower_case']))
         for model in module['models'].values():
             model['name'].update(generate_names(model['name']['lower_case']))
+
+            try:
+                fields = model['fields']
+            except KeyError:
+                raise ValueError(f'No fields defined in model {model["name"]["lower_case"]}')
+            
+            if fields.get('user_id', None) is not None:
+                if fields['user_id']['type'] != 'str':
+                    raise ValueError(f'user_id is a reserved field, must be type str in model {model["name"]["lower_case"]}')
         
     return spec

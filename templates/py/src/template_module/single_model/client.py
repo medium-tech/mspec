@@ -43,6 +43,14 @@ def client_create_single_model(ctx:dict, obj:SingleModel) -> SingleModel:
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
             return SingleModel(**json.loads(response_body)).convert_types()
+        
+    except HTTPError as e:
+        if e.code == 401:
+            raise AuthenticationError('Error creating single model: authentication error')
+        elif e.code == 403:
+            raise ForbiddenError('Error creating single model: forbidden')
+
+        raise MSpecError(f'error creating single model: {e.__class__.__name__}: {e}')
 
     except (json.JSONDecodeError, KeyError) as e:
         raise MSpecError(f'invalid response from server, {e.__class__.__name__}: {e}')

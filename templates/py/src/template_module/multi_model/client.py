@@ -43,11 +43,9 @@ def client_create_multi_model(ctx:dict, obj:MultiModel) -> MultiModel:
         
     except HTTPError as e:
         if e.code == 401:
-            raise AuthenticationError('Error reading multi model: invalid username or password')
+            raise AuthenticationError('Error reading multi model: authentication error')
         elif e.code == 403:
             raise ForbiddenError('Error reading multi model: forbidden')
-        elif e.code == 404:
-            raise NotFoundError(f'multi model {id} not found')
         raise MSpecError(f'error reading multi model: {e.__class__.__name__}: {e}')
 
     except (json.JSONDecodeError, KeyError) as e:
