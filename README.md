@@ -240,12 +240,12 @@ The tests verify that:
 # Contributing
 
 ## General steps
-* make branch from dev branch
+* make branch from `main` branch
 * make changes
 * update TODO.md by changing color of jewel next to item you're working on
     * change to 🟡 if item is started but not completed
     * change to 🟢 if item is complete and has passing unittests
-* create pull request to dev branch
+* create pull request to `main` branch
 
 ## template apps
 * python - backend and frontend are in `./templates/py`
