@@ -654,7 +654,7 @@ function singleModelForJSON(data) {
 
 function clientCreateSingleModel(data) {
     
-    return fetch('/api/template-module/single-model', {
+    return fetchWithSession('/api/template-module/single-model', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -665,14 +665,14 @@ function clientCreateSingleModel(data) {
 
 function clientReadSingleModel(id) {
 
-    return fetch(`/api/template-module/single-model/${id}`, {
+    return fetchWithSession('/api/template-module/single-model/' + id, {
         method: 'GET',
     })
 }
 
 function clientUpdateSingleModel(id, data) {
 
-    return fetch(`/api/template-module/single-model/${id}`, {
+    return fetchWithSession(`/api/template-module/single-model/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -684,7 +684,7 @@ function clientUpdateSingleModel(id, data) {
 
 function clientDeleteSingleModel(id) {
 
-    return fetch(`/api/template-module/single-model/${id}`, {
+    return fetchWithSession(`/api/template-module/single-model/${id}`, {
         method: 'DELETE',
     })
 
@@ -692,7 +692,7 @@ function clientDeleteSingleModel(id) {
 
 function clientListSingleModels(offset, size) {
 
-    return fetch(`/api/template-module/single-model?offset=${offset}&size=${size}`, {
+    return fetchWithSession(`/api/template-module/single-model?offset=${offset}&size=${size}`, {
         method: 'GET',
     })
 }

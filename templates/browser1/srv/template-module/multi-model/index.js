@@ -926,16 +926,9 @@ function multiModelForJSON(data) {
 
 function clientCreateMultiModel(data) {
 
-    let session = getUserSession();
-    console.log('clientCreateMultiModel session', session);
-    if (!session) {
-        return Promise.reject('Must be logged in');
-    }
-
-    return fetch('/api/template-module/multi-model', {
+    return fetchWithSession('/api/template-module/multi-model', {
         method: 'POST',
         headers: {
-            'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
@@ -944,14 +937,14 @@ function clientCreateMultiModel(data) {
 
 function clientReadMultiModel(id) {
 
-    return fetch(`/api/template-module/multi-model/${id}`, {
+    return fetchWithSession(`/api/template-module/multi-model/${id}`, {
         method: 'GET',
     })
 }
 
 function clientUpdateMultiModel(id, data) {
 
-    return fetch(`/api/template-module/multi-model/${id}`, {
+    return fetchWithSession(`/api/template-module/multi-model/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -963,7 +956,7 @@ function clientUpdateMultiModel(id, data) {
 
 function clientDeleteMultiModel(id) {
 
-    return fetch(`/api/template-module/multi-model/${id}`, {
+    return fetchWithSession(`/api/template-module/multi-model/${id}`, {
         method: 'DELETE',
     })
 
@@ -971,7 +964,7 @@ function clientDeleteMultiModel(id) {
 
 function clientListMultiModels(offset, size) {
 
-    return fetch(`/api/template-module/multi-model?offset=${offset}&size=${size}`, {
+    return fetchWithSession(`/api/template-module/multi-model?offset=${offset}&size=${size}`, {
         method: 'GET',
     })
 }

@@ -20,6 +20,17 @@ function isUserLoggedIn() {
     return session && session.access_token && session.user;
 }
 
+function fetchWithSession(url, options = {}) {
+    const session = getUserSession();
+    if (session && session.access_token) {
+        options.headers = {
+            ...options.headers,
+            'Authorization': `Bearer ${session.access_token}`
+        };
+    }
+    return fetch(url, options);
+}
+
 //
 // create user
 //

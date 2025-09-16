@@ -30,6 +30,8 @@ def db_create_multi_model(ctx:dict, obj:MultiModel) -> MultiModel:
 
     # macro :: py_create_model_login_check :: {"multi model": "model_name_lower_case"}
     # must be logged in to make multi model
+    if obj.user_id != '':
+        raise ValueError('user_id must not be supplied to create a new multi_model')
     user = ctx['auth']['get_user']()
     obj.user_id = user.id
     assert obj.user_id is not None
