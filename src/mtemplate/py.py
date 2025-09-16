@@ -302,6 +302,9 @@ class MTemplatePyProject(MTemplateProject):
     def macro_py_random_fields(self, fields:dict, indent='\t\t\t') -> str:
         lines = []
         for name, field in fields.items():
+            if name == 'user_id':
+                continue
+
             field_type = field['type']
             custom_function = field.get('random', None)
             # configure macro #
@@ -369,13 +372,18 @@ class MTemplatePyProject(MTemplateProject):
 
     def macro_py_field_definitions(self, fields:dict, indent='    ') -> str:
         out = ''
+        user_id = ''    # user_id is always last, with a default value
         for name, field in fields.items():
+            if name == 'user_id':
+                user_id = f"{indent}{name}: str = ''\n"
+                continue
             if field['type'] == 'list':
                 type_def = f'list[' + field['element_type'] + ']'
             else:
                 type_def = field['type']
             out += f'{indent}{name}: {type_def}\n'
-        return out
+
+        return out + user_id
 
     def macro_py_enum_definitions(self, fields:dict, indent='    ') -> str:
         out = ''

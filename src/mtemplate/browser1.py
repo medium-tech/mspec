@@ -53,16 +53,21 @@ class MTemplateBrowser1Project(MTemplateProject):
         out = ''
         for name, field in fields.items():
             vars = {'field': name}
-            field_type = field['type']
-            macro_name = f'browser1_to_table_row_{field_type}'
 
-            try:
-                macro_name += '_' + field['element_type']
-            except KeyError:
-                pass
+            if name == 'user_id':
+                macro_name = f'browser1_to_table_row_user_id'
 
-            if 'enum' in field:
-                macro_name += '_enum'
+            else:
+                field_type = field['type']
+                macro_name = f'browser1_to_table_row_{field_type}'
+
+                try:
+                    macro_name += '_' + field['element_type']
+                except KeyError:
+                    pass
+
+                if 'enum' in field:
+                    macro_name += '_enum'
 
             try:
                 out += self.spec['macro'][macro_name](vars) + '\n'
@@ -75,15 +80,19 @@ class MTemplateBrowser1Project(MTemplateProject):
         for name, field in fields.items():
             vars = {'field': name}
 
-            macro_name = f'browser1_to_display_tbody_{field["type"]}'
+            if name == 'user_id':
+                macro_name = f'browser1_to_display_tbody_user_id'
 
-            try:
-                macro_name += '_' + field['element_type']
-            except KeyError:
-                pass
+            else:
+                macro_name = f'browser1_to_display_tbody_{field["type"]}'
 
-            if 'enum' in field:
-                macro_name += '_enum'
+                try:
+                    macro_name += '_' + field['element_type']
+                except KeyError:
+                    pass
+
+                if 'enum' in field:
+                    macro_name += '_enum'
 
             out += self.spec['macro'][macro_name](vars) + '\n'
             
@@ -94,15 +103,18 @@ class MTemplateBrowser1Project(MTemplateProject):
         for name, field in fields.items():
             vars = {'field': name}
 
-            macro_name = f'browser1_to_input_tbody_{field["type"]}'
+            if name == 'user_id':
+                macro_name = f'browser1_to_input_tbody_user_id'
+            else:
+                macro_name = f'browser1_to_input_tbody_{field["type"]}'
 
-            try:
-                macro_name += '_' + field['element_type']
-            except KeyError:
-                pass
+                try:
+                    macro_name += '_' + field['element_type']
+                except KeyError:
+                    pass
 
-            if 'enum' in field:
-                macro_name += '_enum'
+                if 'enum' in field:
+                    macro_name += '_enum'
 
             out += self.spec['macro'][macro_name](vars) + '\n'
             
@@ -113,15 +125,18 @@ class MTemplateBrowser1Project(MTemplateProject):
         for name, field in fields.items():
             vars = {'field': name}
 
-            macro_name = f'browser1_from_input_tbody_{field["type"]}'
+            if name == 'user_id':
+                macro_name = f'browser1_from_input_tbody_user_id'
+            else:
+                macro_name = f'browser1_from_input_tbody_{field["type"]}'
 
-            try:
-                macro_name += '_' + field['element_type']
-            except KeyError:
-                pass
+                try:
+                    macro_name += '_' + field['element_type']
+                except KeyError:
+                    pass
 
-            if 'enum' in field:
-                macro_name += '_enum'
+                if 'enum' in field:
+                    macro_name += '_enum'
 
             out += self.spec['macro'][macro_name](vars) + '\n'
             

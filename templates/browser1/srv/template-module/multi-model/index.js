@@ -58,6 +58,7 @@ const multi_enum_options = [
 
 function initMultiModel(data) {
     let result = {
+        user_id: data.user_id || '',
         // macro :: browser1_init_list_bool :: {"multi_bool": "field"}
         multi_bool: data.multi_bool,
         // macro :: browser1_init_list_int :: {"multi_int": "field"}
@@ -187,6 +188,10 @@ function multiModelFromInputTBody(tbody) {
         data.id = idInput.value;
     }
 
+    // macro :: browser1_from_input_tbody_user_id :: {}
+    const user_idInput = tbody.querySelector('input[name="user_id"]');
+    data.user_id = user_idInput ? user_idInput.value : '';
+
     // macro :: browser1_from_input_tbody_list_bool :: {"multi_bool": "field"}
     const multi_boolInput = tbody.querySelector('input[name="multi_bool"]');
     data.multi_bool = JSON.parse(multi_boolInput.getAttribute('valueAsJSON'));
@@ -245,6 +250,33 @@ function multiModelToInputTBody(data, tbody) {
 
         tbody.appendChild(idTr);
     }
+
+    // macro :: browser1_to_input_tbody_user_id :: {}
+    //
+    // user_id - str
+    //
+
+    const user_idTdKey = document.createElement('td');
+    user_idTdKey.textContent = 'user_id';
+
+    const user_idTdInput = document.createElement('td');
+    const user_idInput = document.createElement('input');
+    user_idInput.name = 'user_id';
+    user_idInput.value = data.user_id || '';
+    user_idInput.size = 35;
+    user_idInput.readOnly = true;
+    user_idInput.placeholder = 'automatic field';
+    user_idTdInput.appendChild(user_idInput);
+
+    const user_idTdOther = document.createElement('td');
+    user_idTdOther.textContent = 'automatic field, not editable';
+
+    const user_idTr = document.createElement('tr');
+    user_idTr.appendChild(user_idTdKey);
+    user_idTr.appendChild(user_idTdInput);
+    user_idTr.appendChild(user_idTdOther);
+
+    tbody.appendChild(user_idTr);
 
     // macro :: browser1_to_input_tbody_list_bool :: {"multi_bool": "field"}
     //
@@ -705,6 +737,25 @@ function multiModelToDisplayTBody(data, tbody) {
 
     tbody.appendChild(idTr);
 
+    // macro :: browser1_to_display_tbody_user_id :: {}
+    //
+    // user_id - str
+    //
+
+    const user_idTdKey = document.createElement('td');
+    user_idTdKey.textContent = 'user_id';
+
+    const user_idTdValue = document.createElement('td');
+    user_idTdValue.textContent = data.user_id;
+
+    const user_idTr = document.createElement('tr');
+    user_idTr.appendChild(user_idTdKey);
+    user_idTr.appendChild(user_idTdValue);
+
+    tbody.appendChild(user_idTr);
+    // end macro ::
+
+
     // macro :: browser1_to_display_tbody_list_bool :: {"multi_bool": "field"}
     //
     // multi_bool - list of bool
@@ -822,6 +873,16 @@ function multiModelToTableRow(data) {
     const idTd = document.createElement('td');
     idTd.textContent = data.id;
     tr.appendChild(idTd);
+
+    // macro :: browser1_to_table_row_user_id :: {}
+    //
+    // user_id - str
+    //
+    
+    const user_idTd = document.createElement('td');
+    user_idTd.textContent = data.user_id;
+    tr.appendChild(user_idTd);
+    // end macro ::
 
     // macro :: browser1_to_table_row_list_bool :: {"multi_bool": "field"}
     //
