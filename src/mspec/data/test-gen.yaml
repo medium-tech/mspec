@@ -137,7 +137,17 @@ modules:
         name:
           lower_case: 'custom random model'
 
+        auth:
+          require_login: true
+
         fields:
+
+          user_id:
+            type: str
+            examples:
+              - "1"
+              - "2"
+              - "3"
 
           name:
             type: str
@@ -176,3 +186,46 @@ modules:
               - "+1 (987) 654-3210"
             random: random_phone_number
 
+      custom_limit_model_a:
+        name:
+          lower_case: 'custom limit model a'
+
+        auth:
+          require_login: true
+          max_models_per_user: 1
+
+        fields:
+          user_id:
+            type: str
+            examples:
+              - "1"
+              - "2"
+              - "3"
+          my_field:
+            type: str
+            examples:
+              - "example1"
+              - "example2"
+
+      custom_limit_model_b:
+        name:
+          lower_case: 'custom limit model b'
+
+        auth:
+          require_login: true
+          max_models_per_user: 2
+
+        fields:
+
+          user_id:
+            type: str
+            examples:
+              - "1"
+              - "2"
+              - "3"
+              
+          my_field:
+            type: str
+            examples:
+              - "example1"
+              - "example2"

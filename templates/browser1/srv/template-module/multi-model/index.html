@@ -167,8 +167,8 @@
                 loadItems()
             }
 
-            function createMultiModel() {
-                console.log('createMultiModel()')
+            function handleCreateMultiModel() {
+                console.log('handleCreateMultiModel()')
 
                 const createTBody = document.querySelector('#multi-model-create-tbody');
                 const data = multiModelFromInputTBody(createTBody);
@@ -308,7 +308,7 @@
 
         <div id="multi-model-create" hidden>
 
-            <button onclick="createMultiModel()">submit</button>
+            <button onclick="handleCreateMultiModel()">submit</button>
             &emsp;|&emsp;
             <button onclick="resetMultiModelInput()">reset</button>
             &emsp;|&emsp;

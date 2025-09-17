@@ -27,7 +27,7 @@ test('test - template module - multi model - pagination', async ({ page }) => {
 
 
 test('test - template module - multi model - instance', async ({ page }) => {
-    // macro :: browser1_model_auth_check_create_user :: {"multi-model": "model_name_kebab_case"}
+    // macro :: browser1_model_auth_check_create_user :: {"multi-model": "model_name_kebab_case", "http://localhost:5005": "client_default_host", "template_app": "project_name_snake_case"}
     //
     // create user and login because multi-model requires auth
     //

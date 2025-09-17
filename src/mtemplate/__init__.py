@@ -368,7 +368,11 @@ class MTemplateProject:
         out_path = Path(out_path)
         if self.debug:
             debug_output_path = out_path.with_name(out_path.name + '.jinja2')
-            self.write_file(debug_output_path, self.templates[rel_path].create_template())
+            try:
+                self.write_file(debug_output_path, self.templates[rel_path].create_template())
+            except Exception as e:
+                print(f':: error writing debug template :: {debug_output_path}: {e}')
+                raise
 
         try:
             jinja_template = self.jinja.get_template(rel_path)
@@ -421,6 +425,18 @@ class MTemplateProject:
 
             print('\n     models')
             for model in module['models'].values():
+                auth = model.get('auth', {})
+                
+                if auth.get('require_login', False) is True:
+                    if 'user_id' not in model['fields']:
+                        raise MTemplateError(f'model {model["name"]["kebab_case"]} requires auth but does not have user_id field')
+                if auth.get('max_models_per_user', None) is not None:
+                    if not isinstance(auth['max_models_per_user'], int) or auth['max_models_per_user'] < 1:
+                        raise MTemplateError(f'model {model["name"]["kebab_case"]} max_models_per_user must be int > 0')
+                    
+                    if auth.get('require_login', False) is not True:
+                        raise MTemplateError(f'model {model["name"]["kebab_case"]} has max_models_per_user set but does not require login')
+
                 print('      ', model['name']['lower_case'])
 
                 for template in self.template_paths['model']:

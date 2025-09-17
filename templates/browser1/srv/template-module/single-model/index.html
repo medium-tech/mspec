@@ -170,8 +170,8 @@
                 loadItems()
             }
 
-            function createSingleModel() {
-                console.log('createSingleModel()')
+            function handleCreateSingleModel() {
+                console.log('handleCreateSingleModel()')
 
                 const createTBody = document.querySelector('#single-model-create-tbody');
                 const data = singleModelFromInputTBody(createTBody);
@@ -314,7 +314,7 @@
 
         <div id="single-model-create" hidden>
 
-            <button onclick="createSingleModel()">submit</button>
+            <button onclick="handleCreateSingleModel()">submit</button>
             &emsp;|&emsp;
             <button onclick="resetSingleModelInput()">reset</button>
             &emsp;|&emsp;

@@ -145,6 +145,9 @@ class MTemplateBrowser1Project(MTemplateProject):
     def macro_browser1_unittest_form(self, fields:dict, indent='\t'):
         out = ''
         for name, field in fields.items():
+            if name == 'user_id':
+                continue
+            
             vars = {'field': name}
             macro_name = f'browser1_unittest_form_{field["type"]}'
 
@@ -209,6 +212,9 @@ class MTemplateBrowser1Project(MTemplateProject):
     def macro_browser1_random_fields(self, fields:dict, indent='\t\t') -> str:
         lines = []
         for name, field in fields.items():
+            if name == 'user_id':
+                continue
+
             custom_function = field.get('random', None)
             if custom_function:
                 lines.append(f"{indent}{name}: {custom_function}(),")
@@ -303,8 +309,11 @@ class MTemplateBrowser1Project(MTemplateProject):
         auth = model.get('auth', {})
 
         if auth.get('require_login', False) is True:
+            
             return self.spec['macro']['browser1_model_auth_check_create_user']({
                 'model_name_kebab_case': model['name']['kebab_case'],
+                'client_default_host':  self.spec['client']['default_host'],
+                'project_name_snake_case': self.spec['project']['name']['snake_case'],
             }) + '\n'
         else:
             return ''
