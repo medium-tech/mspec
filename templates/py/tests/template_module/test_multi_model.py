@@ -75,6 +75,10 @@ class TestMultiModel(unittest.TestCase):
         # end macro ::
 
         test_multi_model = MultiModel.example()
+        try:
+            test_multi_model.user_id = ''
+        except AttributeError:
+            """ignore if model does not have user_id"""
         test_multi_model.validate()
 
         # create #

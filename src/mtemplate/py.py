@@ -281,6 +281,10 @@ class MTemplatePyProject(MTemplateProject):
         lines = []
 
         for name, field in fields.items():
+            if name == 'user_id':
+                lines.append(f"{indent}{name}=''")
+                continue
+
             try:
                 example = field["examples"][0]
             except (KeyError, IndexError):

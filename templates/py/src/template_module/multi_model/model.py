@@ -135,6 +135,7 @@ class MultiModel:
     @classmethod
     def example(cls) -> 'MultiModel':
         return cls(
+            user_id='',
 			multi_bool=[True, False],
 			multi_int=[7, 11],
 			multi_float=[3.14, 2.718],

@@ -37,6 +37,10 @@ class TestSingleModel(unittest.TestCase):
         # insert :: macro.py_test_model_crud_context(model)
 
         test_single_model = SingleModel.example()
+        try:
+            test_single_model.user_id = ''
+        except AttributeError:
+            """ignore if model does not have user_id"""
         test_single_model.validate()
 
         # create #
