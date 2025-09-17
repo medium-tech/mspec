@@ -106,6 +106,91 @@ class TestAppGenerator(unittest.TestCase):
             with open(no_cache_file, 'r') as f1, open(use_cache_file, 'r') as f2:
                 self.assertEqual(f1.read(), f2.read(), f'File contents differ: {file_rel_path}')
 
+    def test_debug_mode(self):
+        """
+        + ensure debug mode outputs a jinja2 template for each rendered file
+        + ensure the generated app is the same as without debug mode when ignoring
+          the .jinja2 files
+        
+        """
+
+        #
+        # build apps
+        #
+
+        # normal #
+        normal_dir = self.test_dir / 'normal'
+        result = subprocess.run([
+            sys.executable, '-m', 'mtemplate', 'render',
+            '--spec', str(self.spec_file),
+            '--output', str(normal_dir),
+            '--no-cache',
+        ], capture_output=True, text=True, cwd=str(self.repo_root),
+          env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
+        
+        self.assertEqual(result.returncode, 0, f'Failed to generate app without debug: {result.stderr}')
+
+        # debug #
+        debug_no_cache_dir = self.test_dir / 'debug'
+        result = subprocess.run([
+            sys.executable, '-m', 'mtemplate', 'render',
+            '--spec', str(self.spec_file),
+            '--output', str(debug_no_cache_dir),
+            '--debug',
+            '--no-cache',
+        ], capture_output=True, text=True, cwd=str(self.repo_root),
+          env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
+        
+        self.assertEqual(result.returncode, 0, f'Failed to generate app with debug and no cache: {result.stderr}')
+
+        # debug with cache #
+        debug_cache_dir = self.test_dir / 'debug-cache'
+        result = subprocess.run([
+            sys.executable, '-m', 'mtemplate', 'render',
+            '--spec', str(self.spec_file),
+            '--output', str(debug_cache_dir),
+            '--debug',
+            '--use-cache',
+        ], capture_output=True, text=True, cwd=str(self.repo_root),
+          env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
+        
+        self.assertEqual(result.returncode, 0, f'Failed to generate app with debug and cache: {result.stderr}')
+        
+        #
+        # compare outputs
+        #
+
+        # get recursive file listings #
+        normal_files = sorted([str(p.relative_to(normal_dir)) for p in normal_dir.rglob('*') if p.is_file() and p.name != '.env'])
+        debug_no_cache_files = sorted([str(p.relative_to(debug_no_cache_dir)) for p in debug_no_cache_dir.rglob('*') if p.is_file() and p.name != '.env' and not p.name.endswith('.jinja2')])
+        debug_cache_files = sorted([str(p.relative_to(debug_cache_dir)) for p in debug_cache_dir.rglob('*') if p.is_file() and p.name != '.env' and not p.name.endswith('.jinja2')])
+
+        self.assertListEqual(normal_files, debug_no_cache_files, 'File listings differ between normal and debug builds (ignoring .jinja2 files)')
+        self.assertListEqual(normal_files, debug_cache_files, 'File listings differ between normal and debug-cache builds (ignoring .jinja2 files)')
+
+        # compare file contents to normal files #
+        for file_rel_path in normal_files:
+            normal_file = normal_dir / file_rel_path
+            debug_no_cache_file = debug_no_cache_dir / file_rel_path
+            debug_cache_file = debug_cache_dir / file_rel_path
+
+            with open(normal_file, 'r') as f1, open(debug_no_cache_file, 'r') as f2, open(debug_cache_file, 'r') as f3:
+                file_1_contents = f1.read()
+                self.assertEqual(file_1_contents, f2.read(), f'File contents differ: {file_rel_path}')
+                self.assertEqual(file_1_contents, f3.read(), f'File contents differ: {file_rel_path}')
+
+        # check each debug no cache has a corresponding .jinja2 file #
+        for file_rel_path in debug_no_cache_files:
+            debug_no_cache_file = debug_no_cache_dir / file_rel_path
+            jinja2_file = debug_no_cache_file.with_name(debug_no_cache_file.name + '.jinja2')
+            self.assertTrue(jinja2_file.exists(), f'Missing .jinja2 debug file for: {file_rel_path}')
+
+        # check each debug cache has a corresponding .jinja2 file #
+        for file_rel_path in debug_cache_files:
+            debug_cache_file = debug_cache_dir / file_rel_path
+            jinja2_file = debug_cache_file.with_name(debug_cache_file.name + '.jinja2')
+            self.assertTrue(jinja2_file.exists(), f'Missing .jinja2 debug file for: {file_rel_path}')
+
     def test_generate_py_app(self):
         '''Test generating py app from test-gen.yaml and verify structure'''
 

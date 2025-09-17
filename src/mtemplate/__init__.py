@@ -369,7 +369,10 @@ class MTemplateProject:
         if self.debug:
             debug_output_path = out_path.with_name(out_path.name + '.jinja2')
             try:
-                self.write_file(debug_output_path, self.templates[rel_path].create_template())
+                if isinstance(self.templates[rel_path], str):
+                    self.write_file(debug_output_path, self.templates[rel_path])
+                else:
+                    self.write_file(debug_output_path, self.templates[rel_path].create_template())
             except Exception as e:
                 print(f':: error writing debug template :: {debug_output_path}: {e}')
                 raise
