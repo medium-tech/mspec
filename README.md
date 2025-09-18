@@ -13,6 +13,7 @@ This project is two things: an [app generator](#app-generator) using code templa
         * [app generator / spec](./docs/MTEMPLATE_SPEC.md)
         * [template extractor](./docs/MTEMPLATE_EXTRACTOR.md)
         * [template syntax](./docs/MTEMPLATE_SYNTAX.md)
+        * [example repo](https://github.com/medium-tech/mspec-apps)
     * browser2
         * [write a browser2 page](./docs/BROWSER2.md)
         * [pybrowser2 - gui client](#pybrowser2)
