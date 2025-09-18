@@ -276,11 +276,13 @@ See [TODO.md](./TODO.md) for desired language implementation and current progres
 
 # deploying to pypi
 
-install build and publish deps
+install build deps:
+
+    pip install -r requirements-dev.txt
+
+deploying new version:
 
 1. increment version in `pyproject.toml` file
-
-        pip install -r requirements-dev.txt
 
 1. build distributions
 
@@ -289,6 +291,7 @@ install build and publish deps
 
 1. check distributions for errors
 
+        ./build_test.py
         twine check dist/*
 
 1. upload to pypi

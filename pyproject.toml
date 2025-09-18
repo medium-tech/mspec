@@ -4,7 +4,7 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = 'mspec'
-version = '0.0.7a'
+version = '0.0.8a'
 authors = [
   { name='Brad Corlett', email='brad.corlett@gmail.com' },
 ]
@@ -30,4 +30,9 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "*" = ["*.yaml", "*.yml", "*.json", "*.jinja2"]
-"mtemplate" = [".cache/**", ".cache/py/.env.example.jinja2"]
+"mtemplate" = [
+  ".cache/**", 
+  ".cache/py/.env.example.jinja2", 
+  ".cache/py/.gitignore.jinja2",
+  ".cache/browser1/.gitignore.jinja2"
+]
