@@ -100,8 +100,12 @@ def db_update_single_model(ctx:dict, obj:SingleModel) -> SingleModel:
     
     obj.validate()
     cursor:sqlite3.Cursor = ctx['db']['cursor']
+    # if :: model.auth.require_login is true
     # insert :: macro.py_db_update_auth(model)
+    # end if ::
+
     # insert :: macro.py_db_update(model)
+
     # macro :: py_sql_update :: {"single_model": "model_name_snake_case", "'single_bool'=?, 'single_datetime'=?, 'single_enum'=?, 'single_float'=?, 'single_int'=?, 'single_string'=?": "fields_sql", "obj.single_bool, obj.single_datetime.isoformat(), obj.single_enum, obj.single_float, obj.single_int, obj.single_string": "fields_py"}
     result = cursor.execute(
         "UPDATE single_model SET 'single_bool'=?, 'single_datetime'=?, 'single_enum'=?, 'single_float'=?, 'single_int'=?, 'single_string'=? WHERE id=?",
@@ -126,8 +130,12 @@ def db_delete_single_model(ctx:dict, id:str) -> None:
     """
 
     cursor:sqlite3.Cursor = ctx['db']['cursor']
-    # insert :: macro.py_db_delete_auth(model)
+    # if :: model.auth.require_login is true
+    # insert :: macro.py_db_delete_auth(model=model)
+    # end if ::
+
     # insert :: macro.py_db_delete(model)
+
     # macro :: py_sql_delete :: {"single_model": "model_name_snake_case"}
     cursor.execute(f"DELETE FROM single_model WHERE id=?", (id,))
     # end macro ::

@@ -437,13 +437,13 @@ class MTemplatePyProject(MTemplateProject):
             pass
         return ''
     
-    def macro_py_db_delete_auth(self, model:dict, indent='\t\t') -> str:
-        try:
-            if model['auth']['require_login']:
-                return self.spec['macro']['py_db_delete_auth']({'model': model}) + '\n'
-        except KeyError:
-            pass
-        return ''
+    # def macro_py_db_delete_auth(self, model:dict, indent='\t\t') -> str:
+    #     try:
+    #         if model['auth']['require_login']:
+    #             return self.spec['macro']['py_db_delete_auth']({'model': model}) + '\n'
+    #     except KeyError:
+    #         pass
+    #     return ''
        
     @classmethod
     def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplatePyProject':
