@@ -527,7 +527,10 @@ class MTemplateMacro:
         for template_value, input_key in sort_dict_by_key_length(self.vars).items():
             try:
                 output = output.replace(template_value, values[input_key])
-            except KeyError:
+            except KeyError as e:
+                print(f'KeyError {e} for macro {self.name}')
+                print(f'given keys: {values.keys()}')
+                breakpoint()
                 raise MTemplateError(f'{input_key} not given to macro {self.name}')
         return output
 

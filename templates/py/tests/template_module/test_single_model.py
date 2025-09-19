@@ -17,7 +17,7 @@ def test_ctx_init() -> dict:
     ctx.update(create_client_context())
     return ctx
 
-# insert :: macro.py_test_model_auth_context_new_user(model)
+# insert :: macro.py_test_model_auth_context_new_user({'model': model})
 
 class TestSingleModel(unittest.TestCase):
 
