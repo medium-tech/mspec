@@ -17,7 +17,7 @@ def test_ctx_init() -> dict:
     ctx.update(create_client_context())
     return ctx
 
-# macro :: py_test_model_auth_context_new_user :: {"multi-model": "model_name_kebab_case", "MultiModel": "model_name_pascal_case"}
+# macro :: py_test_model_auth_context_new_user :: {"multi-model": "model.name.kebab_case", "MultiModel": "model.name.pascal_case"}
 # create user for auth testing
 def new_user() -> tuple[dict, User]:
     new_ctx = test_ctx_init()
@@ -150,7 +150,7 @@ class TestMultiModel(unittest.TestCase):
         if total_items < 15:
             seed_ctx = create_client_context()
             while total_items < 15:
-                # macro :: py_test_model_seed_pagination_new_user :: {"1": "max_models_per_user"}
+                # macro :: py_test_model_seed_pagination_new_user :: {"1": "model.auth.max_models_per_user"}
                 # create new user(s) to avoid max models per user limits
                 if total_items % 1 == 0:
                     new_user_ctx, _user = new_user()

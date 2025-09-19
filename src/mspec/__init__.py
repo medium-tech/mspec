@@ -51,5 +51,16 @@ def load_spec(spec_file:str) -> dict:
             if fields.get('user_id', None) is not None:
                 if fields['user_id']['type'] != 'str':
                     raise ValueError(f'user_id is a reserved field, must be type str in model {model["name"]["lower_case"]}')
+            
+            if 'auth' in model:
+                if 'require_login' not in model['auth']:
+                    model['auth']['require_login'] = False
+                if 'max_models_per_user' not in model['auth']:
+                    model['auth']['max_models_per_user'] = None
+            else:
+                model['auth'] = {
+                    'require_login': False,
+                    'max_models_per_user': None
+                }
         
     return spec

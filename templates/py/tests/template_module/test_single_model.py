@@ -17,11 +17,17 @@ def test_ctx_init() -> dict:
     ctx.update(create_client_context())
     return ctx
 
-# insert :: macro.py_test_model_auth_context(model)
+# insert :: macro.py_test_model_auth_context_new_user(model)
 
 class TestSingleModel(unittest.TestCase):
 
-    # insert :: macro.py_test_auth(model)
+    # if :: model.auth.require_login is true
+    # insert :: macro.py_test_auth_require_login(model)
+    # end if ::
+
+    # if :: not model.auth.max_models_per_user is none
+    # insert :: macro.py_test_auth_max_models(model)
+    # end if ::
 
     def test_single_model_crud(self):
         """
@@ -94,7 +100,9 @@ class TestSingleModel(unittest.TestCase):
         if total_items < 15:
             seed_ctx = create_client_context()
             while total_items < 15:
-                # insert :: macro.py_test_model_seed_pagination(model)
+                # if :: model.auth.require_login is true
+                # insert :: macro.py_test_model_seed_pagination_new_user(model)
+                # end if ::
                 item = SingleModel.random()
                 client_create_single_model(seed_ctx, item)
                 total_items += 1

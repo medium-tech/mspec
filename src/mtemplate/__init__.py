@@ -636,6 +636,7 @@ class MTemplateExtractor:
     def parse(self):
 
         ignoring = False
+        open_if_statement = False
 
         with open(self.path, 'r') as f:
             line_no = 0
@@ -700,6 +701,35 @@ class MTemplateExtractor:
                 elif line_stripped.startswith(f'{self.prefix} end for ::'):
                     raise MTemplateError(f'end for without beginning for statement on line {line_no}')
                 
+                # if statement #
+
+                elif line_stripped.startswith(f'{self.prefix} if ::'):
+                    self._emit_syntax_line(line)
+                    if_statement = line_stripped.split('::')[1].strip()
+                    self.template_lines.append(f'{{% if {if_statement} %}}\n')
+                    open_if_statement = True
+
+                elif line_stripped.startswith(f'{self.prefix} elif ::'):
+                    if not open_if_statement:
+                        raise MTemplateError(f'elif without beginning if statement on line {line_no}')
+                    self._emit_syntax_line(line)
+                    elif_statement = line_stripped.split('::')[1].strip()
+                    self.template_lines.append(f'{{% elif {elif_statement} %}}\n')
+
+                elif line_stripped.startswith(f'{self.prefix} else ::'):
+                    if not open_if_statement:
+                        raise MTemplateError(f'else without beginning if statement on line {line_no}')
+                    self._emit_syntax_line(line)
+                    self.template_lines.append('{% else %}\n')
+
+                elif line_stripped.startswith(f'{self.prefix} end if ::'):
+                    if not open_if_statement:
+                        raise MTemplateError(f'endif without beginning if statement on line {line_no}')
+                    self._emit_syntax_line(line)
+                    self.template_lines.append('{% endif %}\n')
+                    open_if_statement = False
+
+
                 # ignore lines #
 
                 elif line_stripped.startswith(f'{self.prefix} ignore ::'):
