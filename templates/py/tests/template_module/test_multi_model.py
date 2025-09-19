@@ -149,7 +149,7 @@ class TestMultiModel(unittest.TestCase):
         
         if total_items < 15:
             seed_ctx = create_client_context()
-            # macro :: py_test_model_seed_pagination_login :: {"1": "model.auth.max_models_per_user"}
+            # macro :: py_test_model_seed_pagination_login :: {}
             new_user_ctx, _user = new_user()
             seed_ctx.update(new_user_ctx)
             # end macro ::

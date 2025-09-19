@@ -520,7 +520,7 @@ class MTemplateMacro:
     def __call__(self, values=None, **kwargs):
         if values is None:
             values = {}
-            
+
         if not isinstance(values, dict):
             raise TypeError(f"Expected dict for values, got {type(values).__name__}")
         

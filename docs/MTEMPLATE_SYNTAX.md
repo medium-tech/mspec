@@ -9,6 +9,7 @@ mtemplate is a code templating system that allows you to extract dynamic templat
 - [Comment Syntax by Language](#comment-syntax-by-language)
 - [Template Commands](#template-commands)
   - [vars](#vars-command)
+  - [if / elif / else branching](#if--elif--else-branching)
   - [for](#for-command)
   - [ignore](#ignore-command)
   - [insert](#insert-command)
@@ -105,7 +106,39 @@ JSON:
 }
 ```
 
-JSON doesn't have comments so we hack the system by defining the comment prefix to `"_": "` and comment ending to `",`
+JSON doesn't have comments so we hack the system by defining the comment prefix to `"_": "` and comment ending to `",`.
+As long as including the `"_"` key in the JSON doesn't affect any programs that use it when can template the JSON.
+
+### if / elif / else branching
+Conditional branching may be used in templates with `if`, `elif`, `else`, and `end if` commands. A conditional block begins with an `if` statement, may include zero or more `elif` statements, may include an optional `else` statement, and must end with an `end if` statement. The `if`, `elif` statements may include a condition that evaluates to `true` or `false`. The block of code following the `if` or `elif` statement is rendered in the template if the condition is `true`.
+
+**Syntax:**
+
+basic
+```
+<comment> if :: <statement>
+... template content ...
+<comment> end if ::
+```
+
+full
+```
+<comment> if :: <statement>
+... template content ...
+<comment> elif :: <statement>
+... template content ...
+<comment> else :: <statement>
+... template content ...
+<comment> end if ::
+```
+
+**Examples:**
+Python:
+```python
+# if :: model.auth.require_login is true
+# insert :: macro.py_test_model_seed_pagination_login(model=model)
+# end if ::
+```
 
 ### for Command
 
