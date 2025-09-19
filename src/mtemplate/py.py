@@ -406,45 +406,7 @@ class MTemplatePyProject(MTemplateProject):
             out += self.spec['macro'][f'py_enum_definition_end']({}) + '\n'
 
         return out
-    
-    def macro_py_create_model_login(self, model:dict, indent='\t\t') -> str:
-        auth = model.get('auth', {})
-
-        if auth.get('require_login', False):
-            return self.spec['macro']['py_create_model_login_check']({
-                'model': model,
-                'model_name_lower_case': model['name']['lower_case'],
-            }) + '\n'
-
-        return ''
-    
-    def macro_py_create_model_max_created(self, model:dict, indent='\t\t') -> str:
-        auth = model.get('auth', {})
-        if auth.get('max_models_per_user', None) is not None:
-            vars = {
-                'model_name_snake_case': model['name']['snake_case'], 
-                'max_models_per_user': str(auth['max_models_per_user'])
-            }
-            return self.spec['macro']['py_create_model_max_created_check'](vars) + '\n'
-        else:
-            return ''
-    
-    def macro_py_db_update_auth(self, model:dict, indent='\t\t') -> str:
-        try:
-            if model['auth']['require_login']:
-                return self.spec['macro']['py_db_update_auth']({'model': model}) + '\n'
-        except KeyError:
-            pass
-        return ''
-    
-    # def macro_py_db_delete_auth(self, model:dict, indent='\t\t') -> str:
-    #     try:
-    #         if model['auth']['require_login']:
-    #             return self.spec['macro']['py_db_delete_auth']({'model': model}) + '\n'
-    #     except KeyError:
-    #         pass
-    #     return ''
-       
+         
     @classmethod
     def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplatePyProject':
         template_proj = super().render(spec, env_file, output_dir, debug, disable_strict, use_cache)
