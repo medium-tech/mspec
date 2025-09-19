@@ -444,52 +444,7 @@ class MTemplatePyProject(MTemplateProject):
         except KeyError:
             pass
         return ''
-    
-    # def macro_py_test_model_auth_context(self, model:dict, indent='\t'):
-    #     auth = model.get('auth', {})
-    
-    #     if auth.get('require_login', False):
-    #         return self.spec['macro']['py_test_model_auth_context_new_user']({
-    #             'model': model
-    #         }) + '\n'
-
-    #     return ''
-    
-    def macro_py_test_model_crud_context(self, model:dict, indent='\t'):
-        try:
-            if model['auth']['require_login']:
-                return self.spec['macro']['py_test_model_crud_context_new_user']({
-                    'model': model,
-                }) + '\n'
-        except KeyError:
-            pass
-        return ''
-    
-    # def macro_py_test_auth(self, model:dict, indent='\t'):
-    #     out = ''
-    #     auth = model.get('auth', {})
-    #     vars = {
-    #         'model_name_snake_case': model['name']['snake_case'],
-    #         'model_name_pascal_case': model['name']['pascal_case'],
-    #         'max_models_per_user': str(auth.get('max_models_per_user', None))
-    #     }
-    #     if auth.get('require_login', False):
-    #         out += self.spec['macro']['py_test_auth_require_login'](vars) + '\n'
-
-    #     if auth.get('max_models_per_user', None) is not None:
-    #         out += self.spec['macro']['py_test_auth_max_models'](vars) + '\n'
-
-    #     return out
-
-    # def macro_py_test_model_seed_pagination(self, model:dict, indent='\t\t'):
-    #     auth = model.get('auth', {})
-    #     if auth.get('require_login', False) is True:
-    #         return self.spec['macro']['py_test_model_seed_pagination_new_user']({
-    #             'model': model,
-    #             'max_models_per_user': str(auth.get('max_models_per_user', 1))
-    #         }) + '\n'
-    #     return ''
-    
+       
     @classmethod
     def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplatePyProject':
         template_proj = super().render(spec, env_file, output_dir, debug, disable_strict, use_cache)

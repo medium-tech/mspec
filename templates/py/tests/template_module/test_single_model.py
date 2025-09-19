@@ -17,16 +17,16 @@ def test_ctx_init() -> dict:
     ctx.update(create_client_context())
     return ctx
 
-# insert :: macro.py_test_model_auth_context_new_user({'model': model})
+# insert :: macro.py_test_model_auth_new_user_function(model=model)
 
 class TestSingleModel(unittest.TestCase):
 
     # if :: model.auth.require_login is true
-    # insert :: macro.py_test_auth_require_login(model)
+    # insert :: macro.py_test_auth_require_login(model=model)
     # end if ::
 
     # if :: not model.auth.max_models_per_user is none
-    # insert :: macro.py_test_auth_max_models(model)
+    # insert :: macro.py_test_auth_max_models(model=model)
     # end if ::
 
     def test_single_model_crud(self):
@@ -40,7 +40,9 @@ class TestSingleModel(unittest.TestCase):
         """
 
         crud_ctx = test_ctx_init()
-        # insert :: macro.py_test_model_crud_context(model)
+        # if :: model.auth.require_login is true
+        # insert :: macro.py_test_model_crud_context_new_user(model)
+        # end if ::
 
         test_single_model = SingleModel.example()
         try:
@@ -99,9 +101,12 @@ class TestSingleModel(unittest.TestCase):
         
         if total_items < 15:
             seed_ctx = create_client_context()
+            # if :: model.auth.require_login is true
+            # insert :: macro.py_test_model_seed_pagination_login(model=model)
+            # end if ::
             while total_items < 15:
-                # if :: model.auth.require_login is true
-                # insert :: macro.py_test_model_seed_pagination_new_user(model)
+                # if :: model.auth.max_models_per_user is not none
+                # insert :: macro.py_test_model_seed_pagination_max_users(model=model)
                 # end if ::
                 item = SingleModel.random()
                 client_create_single_model(seed_ctx, item)

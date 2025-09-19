@@ -17,7 +17,7 @@ def test_ctx_init() -> dict:
     ctx.update(create_client_context())
     return ctx
 
-# macro :: py_test_model_auth_context_new_user :: {"multi-model": "model.name.kebab_case", "MultiModel": "model.name.pascal_case"}
+# macro :: py_test_model_auth_new_user_function :: {"multi-model": "model.name.kebab_case", "MultiModel": "model.name.pascal_case"}
 # create user for auth testing
 def new_user() -> tuple[dict, User]:
     new_ctx = test_ctx_init()
@@ -35,7 +35,7 @@ def new_user() -> tuple[dict, User]:
 
 class TestMultiModel(unittest.TestCase):
 
-    # macro :: py_test_auth_require_login :: {"multi_model": "model_name_snake_case", "MultiModel": "model_name_pascal_case"}
+    # macro :: py_test_auth_require_login :: {"multi_model": "model.name.snake_case", "MultiModel": "model.name.pascal_case"}
     def test_multi_model_auth(self):
         test_multi_model = MultiModel.example()
         test_multi_model.validate()
@@ -46,7 +46,7 @@ class TestMultiModel(unittest.TestCase):
         self.assertRaises(AuthenticationError, client_create_multi_model, logged_out_ctx, test_multi_model)
     # end macro ::
 
-    # macro :: py_test_auth_max_models :: {"multi_model": "model_name_snake_case", "MultiModel": "model_name_pascal_case", "1": "max_models_per_user"}
+    # macro :: py_test_auth_max_models :: {"multi_model": "model.name.snake_case", "MultiModel": "model.name.pascal_case", "1": "model.auth.max_models_per_user"}
     def test_multi_model_auth_max_models(self):
 
         max_models_ctx, _user = new_user()
@@ -149,8 +149,12 @@ class TestMultiModel(unittest.TestCase):
         
         if total_items < 15:
             seed_ctx = create_client_context()
+            # macro :: py_test_model_seed_pagination_login :: {"1": "model.auth.max_models_per_user"}
+            new_user_ctx, _user = new_user()
+            seed_ctx.update(new_user_ctx)
+            # end macro ::
             while total_items < 15:
-                # macro :: py_test_model_seed_pagination_new_user :: {"1": "model.auth.max_models_per_user"}
+                # macro :: py_test_model_seed_pagination_max_users :: {"1": "model.auth.max_models_per_user"}
                 # create new user(s) to avoid max models per user limits
                 if total_items % 1 == 0:
                     new_user_ctx, _user = new_user()

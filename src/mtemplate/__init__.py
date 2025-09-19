@@ -517,8 +517,15 @@ class MTemplateMacro:
     text:str
     vars:dict
 
-    def __call__(self, *args, **kwargs):
-        return self.render(*args, **kwargs)
+    def __call__(self, values=None, **kwargs):
+        if values is None:
+            values = {}
+            
+        if not isinstance(values, dict):
+            raise TypeError(f"Expected dict for values, got {type(values).__name__}")
+        
+        values.update(kwargs)
+        return self.render(values)
     
     def render(self, values:dict) -> str:
         # the keys in self.vars are the string in the template that will be replaced by the 
@@ -526,13 +533,27 @@ class MTemplateMacro:
         output = copy(self.text)
         for template_value, input_key in sort_dict_by_key_length(self.vars).items():
             try:
-                output = output.replace(template_value, values[input_key])
+                output = output.replace(template_value, self._get_value(values, input_key))
             except KeyError as e:
-                print(f'KeyError {e} for macro {self.name}')
-                print(f'given keys: {values.keys()}')
-                breakpoint()
-                raise MTemplateError(f'{input_key} not given to macro {self.name}')
+                raise MTemplateError(f'Unknown key "{input_key}" given to macro {self.name}, KeyError: {e}')
         return output
+
+    @staticmethod
+    def _get_value(data:dict, key:str) -> str:
+        """
+        get value from dict, if key not found return empty string
+            key can be a dot separated path to a nested value
+            e.g. 'model.name.kebab_case'
+        """
+        sub_keys = key.split('.')
+        current_data = data
+
+        for sub_key in sub_keys:
+            try:
+                current_data = current_data[sub_key]
+            except TypeError:
+                raise KeyError(sub_key)
+        return str(current_data)
 
 
 class MTemplateExtractor:
