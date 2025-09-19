@@ -142,7 +142,7 @@ Python:
 
 ### for Command
 
-The `for` command creates Jinja2 for loops in templates, with variable replacements within the loop block.
+The `for` command creates Jinja2 for loops in templates, with variable replacements within the loop block. The only `mtemplate` command that is currently support for nesting in an `for` loop is [insert](#insert-command) *(see below for example)*.
 
 **Syntax:**
 ```
@@ -162,6 +162,13 @@ Python:
 # for :: {% for model in module.models.values() %} :: {"single_model": "model.name.snake_case"}
 from template_module.single_model.client import *
 from template_module.single_model.db import *
+# end for ::
+```
+
+Python (nested insert):
+```python
+# for :: {% for field_name in model.list_fields %} :: {}
+# insert :: macro.py_sql_delete_list(model=model, field_name=field_name)
 # end for ::
 ```
 

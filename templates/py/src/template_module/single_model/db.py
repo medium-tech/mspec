@@ -141,11 +141,15 @@ def db_delete_single_model(ctx:dict, id:str) -> None:
     # insert :: macro.py_db_delete_auth(model=model)
     # end if ::
 
-    # insert :: macro.py_db_delete(model)
-
-    # macro :: py_sql_delete :: {"single_model": "model_name_snake_case"}
+    # macro :: py_sql_delete :: {"single_model": "model.name.snake_case"}
     cursor.execute(f"DELETE FROM single_model WHERE id=?", (id,))
     # end macro ::
+
+    # insert :: macro.py_sql_delete(model=model)
+
+    # for :: {% for field_name in model.list_fields %} :: {}
+    # insert :: macro.py_sql_delete_list(model=model, field_name=field_name)
+    # end for ::
 
     ctx['db']['commit']()
 

@@ -141,19 +141,19 @@ class MTemplatePyProject(MTemplateProject):
         out += '\n' + list_updates
         return out
 
-    def macro_py_db_delete(self, model:dict, indent='\t\t') -> str:
-        vars = {'model_name_snake_case': model['name']['snake_case']}
-        out = self.spec['macro']['py_sql_delete'](vars) + '\n'
+    # def macro_py_db_delete(self, model:dict, indent='\t\t') -> str:
+    #     vars = {'model_name_snake_case': model['name']['snake_case']}
+    #     out = self.spec['macro']['py_sql_delete'](vars) + '\n'
 
-        for name, field in model['fields'].items():
-            if field['type'] == 'list':
-                list_vars = {
-                    'model_name_snake_case': model['name']['snake_case'],
-                    'field_name': name,
-                }
-                out += self.spec['macro']['py_sql_delete_list'](list_vars) + '\n'
+    #     for name, field in model['fields'].items():
+    #         if field['type'] == 'list':
+    #             list_vars = {
+    #                 'model': model,
+    #                 'field_name': name,
+    #             }
+    #             out += self.spec['macro']['py_sql_delete_list'](list_vars) + '\n'
 
-        return out
+    #     return out
 
     def macro_py_db_list_lists(self, model:dict, indent='\t\t') -> str:
         out = ''

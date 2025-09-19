@@ -13,40 +13,49 @@ import subprocess
 import os
 import sys
 import time
-import datetime
 import signal
 
 from pathlib import Path
 
+DEBUG_TESTS = os.environ.get('DEBUG_TESTS', '0') in ('1', 'true', 'True', 'TRUE')
+
+test_num = 0
 
 class TestAppGenerator(unittest.TestCase):
     '''Test the complete app generation workflow'''
-    
-    def setUp(self):
-        '''Set up test environment'''
-        self.repo_root = Path(__file__).parent.parent
-        self.spec_file = self.repo_root / 'src' / 'mspec' / 'data' / 'test-gen.yaml'
-        
-        # create tmp directory for tests #
 
-        self.tests_tmp_dir = self.repo_root / 'tests' / 'tmp'
+    repo_root = Path(__file__).parent.parent
+    spec_file = repo_root / 'src' / 'mspec' / 'data' / 'test-gen.yaml'
+    tests_tmp_dir = repo_root / 'tests' / 'tmp'
+
+    @classmethod
+    def setUpClass(cls):
+        '''run before any tests in class to remove old tmp test dirs'''
         try:
-            shutil.rmtree(self.tests_tmp_dir)
+            shutil.rmtree(cls.tests_tmp_dir)
         except FileNotFoundError:
             pass
-        self.tests_tmp_dir.mkdir(exist_ok=True)
+
+        cls.tests_tmp_dir.mkdir(exist_ok=True)
+    
+    def setUp(self):
+        '''run before each test to create unique test dir'''
         
         # create unique directory name #
-
-        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-        self.test_dir = self.tests_tmp_dir / f'test_{timestamp}'
+        global test_num
+        self.test_dir = self.tests_tmp_dir / f'test_{test_num}'
+        test_num += 1
         self.test_dir.mkdir(exist_ok=True)
-        
+
     def tearDown(self):
-        '''Clean up test environment'''
-        if self.test_dir.exists():
-            shutil.rmtree(self.test_dir)
-    
+        print(f'*** tear down {DEBUG_TESTS} ***')
+        if not DEBUG_TESTS:
+            try:
+                shutil.rmtree(self.test_dir)
+                print('\t* removed test directory:', self.test_dir)
+            except Exception as e:
+                print('\t* failed to remove test directory:', self.test_dir, e)
+
     def test_cache(self):
         """
         ensure template caching is working by caching the apps then generating

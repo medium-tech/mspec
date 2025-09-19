@@ -46,7 +46,25 @@ def load_spec(spec_file:str) -> dict:
             try:
                 fields = model['fields']
             except KeyError:
-                raise ValueError(f'No fields defined in model {model["name"]["lower_case"]}')
+                raise ValueError(f'No fields defined in model {module["name"]["lower_case"]}.{model["name"]["lower_case"]}')
+            
+            total_fields = len(fields)
+            model['non_list_fields'] = []
+            model['list_fields'] = []
+            
+            for field_name, field in fields.items():
+                try:
+                    field_type = field['type']
+                except KeyError:
+                    raise ValueError(f'No type defined for field {field_name} in model {module["name"]["lower_case"]}.{model["name"]["lower_case"]}')
+                
+                if field_type == 'list':
+                    model['list_fields'].append(field_name)
+                else:
+                    model['non_list_fields'].append(field_name)
+            
+            if total_fields == 0:
+                raise ValueError(f'No fields defined in model {module["name"]["lower_case"]}.{model["name"]["lower_case"]}')
             
             if fields.get('user_id', None) is not None:
                 if fields['user_id']['type'] != 'str':

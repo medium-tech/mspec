@@ -643,6 +643,15 @@ class MTemplateExtractor:
 
         self.macros[macro_name] = MTemplateMacro(macro_name, macro_text, macro_vars)
 
+    def parse_insert_line(self, line:str, line_no:int) -> str:
+        self._emit_syntax_line(line)
+        try:
+            _, insert_stmt = line.split('::')
+        except ValueError:
+            raise MTemplateError(f'invalid insert statement on line {line_no}')
+        
+        return '{{ ' + insert_stmt.strip() + ' }}\n'
+
     def create_template(self) -> str:
         template = ''.join(self.template_lines)
         for key, value in sort_dict_by_key_length(self.template_vars).items():
@@ -710,7 +719,10 @@ class MTemplateExtractor:
                             end_for_mods.extend(mods.strip().split())
                             break
 
-                        for_lines.append(next_line)
+                        elif next_line_strippped.startswith(f'{self.prefix} insert ::'):
+                            for_lines.append(self.parse_insert_line(next_line_strippped, line_no))
+                        else:
+                            for_lines.append(next_line)
                     
                     try:
                         self._parse_for_lines(line_stripped, for_lines, end_for_mods)
@@ -767,13 +779,7 @@ class MTemplateExtractor:
                 # insert line #
 
                 elif line_stripped.startswith(f'{self.prefix} insert ::'): 
-                    self._emit_syntax_line(line)
-                    try:
-                        _, insert_stmt = line_stripped.split('::')
-                    except ValueError:
-                        raise MTemplateError(f'invalid insert statement on line {line_no}')
-                    
-                    self.template_lines.append('{{ ' + insert_stmt.strip() + ' }}\n')
+                    self.template_lines.append(self.parse_insert_line(line_stripped, line_no))
 
                 # replace lines #
 
