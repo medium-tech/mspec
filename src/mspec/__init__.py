@@ -49,20 +49,28 @@ def load_spec(spec_file:str) -> dict:
                 raise ValueError(f'No fields defined in model {module["name"]["lower_case"]}.{model["name"]["lower_case"]}')
             
             total_fields = len(fields)
-            model['non_list_fields'] = []
-            model['list_fields'] = []
-            
+            non_list_fields = []
+            list_fields = []
+            sorted_fields = []
+
             for field_name, field in fields.items():
+                entry = (field_name, field)
+                sorted_fields.append(entry)
                 try:
                     field_type = field['type']
                 except KeyError:
                     raise ValueError(f'No type defined for field {field_name} in model {module["name"]["lower_case"]}.{model["name"]["lower_case"]}')
                 
                 if field_type == 'list':
-                    model['list_fields'].append(field_name)
+                    list_fields.append(entry)
                 else:
-                    model['non_list_fields'].append(field_name)
-            
+                    non_list_fields.append(entry)
+
+            model['non_list_fields'] = sorted(non_list_fields, key=lambda x: x[0])
+            model['list_fields'] = sorted(list_fields, key=lambda x: x[0])
+            model['sorted_fields'] = sorted(sorted_fields, key=lambda x: x[0])
+            model['total_fields'] = total_fields
+
             if total_fields == 0:
                 raise ValueError(f'No fields defined in model {module["name"]["lower_case"]}.{model["name"]["lower_case"]}')
             
