@@ -644,7 +644,6 @@ class MTemplateExtractor:
         self.macros[macro_name] = MTemplateMacro(macro_name, macro_text, macro_vars)
 
     def parse_insert_line(self, line:str, line_no:int) -> str:
-        self._emit_syntax_line(line)
         try:
             _, insert_stmt = line.split('::')
         except ValueError:
@@ -661,10 +660,6 @@ class MTemplateExtractor:
     def write(self, path:str|Path):
         with open(path, 'w+') as f:
             f.write(self.create_template())
-
-    def _emit_syntax_line(self, line:str):
-        if self.emit_syntax:
-            self.template_lines.append(line.replace('{%', '{::').replace('%}', '::}'))
 
     def parse(self):
 
@@ -683,7 +678,6 @@ class MTemplateExtractor:
                 # vars line #
 
                 if line_stripped.startswith(f'{self.prefix} vars :: '):
-                    self._emit_syntax_line(line)
                     try:
                         self._parse_vars_line(line_stripped)
                     except MTemplateError as e:
@@ -692,7 +686,6 @@ class MTemplateExtractor:
                 # for loop #
 
                 elif line_stripped.startswith(f'{self.prefix} for :: '):
-                    self._emit_syntax_line(line)
                     for_lines = []
                     for_start_line_no = line_no
                     end_for_mods = []
@@ -728,9 +721,6 @@ class MTemplateExtractor:
                         self._parse_for_lines(line_stripped, for_lines, end_for_mods)
                     except MTemplateError as e:
                         raise MTemplateError(f'{e} on line {line_no} of {self.path}')
-                    
-                    if end_for_line:
-                        self._emit_syntax_line(end_for_line)
                 
                 # end for #
                 
@@ -740,7 +730,6 @@ class MTemplateExtractor:
                 # if statement #
 
                 elif line_stripped.startswith(f'{self.prefix} if ::'):
-                    self._emit_syntax_line(line)
                     if_statement = line_stripped.split('::')[1].strip()
                     self.template_lines.append(f'{{% if {if_statement} %}}\n')
                     open_if_statement = True
@@ -748,20 +737,17 @@ class MTemplateExtractor:
                 elif line_stripped.startswith(f'{self.prefix} elif ::'):
                     if not open_if_statement:
                         raise MTemplateError(f'elif without beginning if statement on line {line_no}')
-                    self._emit_syntax_line(line)
                     elif_statement = line_stripped.split('::')[1].strip()
                     self.template_lines.append(f'{{% elif {elif_statement} %}}\n')
 
                 elif line_stripped.startswith(f'{self.prefix} else ::'):
                     if not open_if_statement:
                         raise MTemplateError(f'else without beginning if statement on line {line_no}')
-                    self._emit_syntax_line(line)
                     self.template_lines.append('{% else %}\n')
 
                 elif line_stripped.startswith(f'{self.prefix} end if ::'):
                     if not open_if_statement:
                         raise MTemplateError(f'endif without beginning if statement on line {line_no}')
-                    self._emit_syntax_line(line)
                     self.template_lines.append('{% endif %}\n')
                     open_if_statement = False
 
@@ -769,11 +755,9 @@ class MTemplateExtractor:
                 # ignore lines #
 
                 elif line_stripped.startswith(f'{self.prefix} ignore ::'):
-                    self._emit_syntax_line(line)
                     ignoring = True
 
                 elif line_stripped.startswith(f'{self.prefix} end ignore ::'):
-                    self._emit_syntax_line(line)
                     ignoring = False
 
                 # insert line #
@@ -784,7 +768,6 @@ class MTemplateExtractor:
                 # replace lines #
 
                 elif line_stripped.startswith(f'{self.prefix} replace ::'):
-                    self._emit_syntax_line(line)
                     replace_start_line_no = line_no
 
                     while True:
@@ -809,14 +792,12 @@ class MTemplateExtractor:
                         # insert replacement statement #
 
                         if next_line_strippped == f'{self.prefix} end replace ::':
-                            self._emit_syntax_line(next_line)
                             self.template_lines.append('{{ ' + replacement_stmt.strip() + ' }}\n')
                             break
                 
                 # macros #
 
                 elif line_stripped.startswith(f'{self.prefix} macro ::'):
-                    self._emit_syntax_line(line)
                     macro_start_line_no = line_no
                     macro_def_line = line_stripped
                     macro_lines = []
@@ -834,11 +815,9 @@ class MTemplateExtractor:
 
                         try:
                             if next_line_strippped == f'{self.prefix} end macro ::':
-                                self._emit_syntax_line(next_line)
                                 self._parse_macro(macro_def_line, macro_lines)
                                 break
                             elif next_line_strippped.startswith(f'{self.prefix} macro ::'):
-                                self._emit_syntax_line(next_line)
                                 self._parse_macro(macro_def_line, macro_lines)
                                 macro_def_line = next_line_strippped
                                 macro_lines = []
@@ -851,7 +830,6 @@ class MTemplateExtractor:
                 # end of loop, ignore the line or add it to template #
 
                 elif ignoring:
-                    self._emit_syntax_line(line)
                     continue
             
                 else:
