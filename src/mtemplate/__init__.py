@@ -4,6 +4,7 @@ import shutil
 import stat
 
 from copy import copy
+from functools import reduce
 from pathlib import Path
 from collections import OrderedDict
 from dataclasses import dataclass, asdict
@@ -570,6 +571,10 @@ class MTemplateExtractor:
         self.macros = {}
         self.emit_syntax = emit_syntax
 
+    #
+    # parsing methods
+    #
+
     def _load_json(self, data:str):
         if self.single_quotes:
             return json.loads(data.replace("'", '"'))
@@ -588,42 +593,17 @@ class MTemplateExtractor:
         except json.JSONDecodeError as e:
             raise MTemplateError(f'JSONDecodeError:{e} in vars definition')
 
-    def _parse_for_lines(self, definition_line:str, lines:list[str], end_for_mods:list[str]):
+    # def _parse_for_lines(self, definition_line:str, lines:list[str], end_for_mods:list[str]):
 
-        # parse for loop definition #
-
-        try:
-            definition_split = definition_line.split('::')
-            jinja_line = definition_split[1]
-
-        except IndexError:
-            raise MTemplateError(f'for loop definition missing jinja loop syntax')
         
-        # parse block vars #
 
-        try:
-            block_vars = self._load_json(definition_split[2].strip())
-
-        except json.JSONDecodeError:
-            try:
-                block_vars = eval(definition_split[2].strip())
-            except Exception as e:
-                raise MTemplateError(f'{e.__class__.__name__}:{e} parsing block vars')
-        
-        if not isinstance(block_vars, dict):
-            raise MTemplateError(f'vars must be a dict not {type(block_vars).__name__}')
-        
-        # append lines to template #
-
-        self.template_lines.append(jinja_line.strip() + '\n')
-
-        for line in lines:
-            new_line = line 
-            for key, value in sort_dict_by_key_length(block_vars).items():
-                new_line = new_line.replace(key, '{{ ' + value + ' }}')
-            self.template_lines.append(new_line)
-        end_for = '{% endfor %}' if 'rstrip' in end_for_mods else '{% endfor %}\n'
-        self.template_lines.append(end_for)
+    #     for line in lines:
+    #         new_line = line 
+    #         for key, value in sort_dict_by_key_length(block_vars).items():
+    #             new_line = new_line.replace(key, '{{ ' + value + ' }}')
+    #         self.template_lines.append(new_line)
+    #     end_for = '{% endfor %}' if 'rstrip' in end_for_mods else '{% endfor %}\n'
+    #     self.template_lines.append(end_for)
     
     def _parse_macro(self, macro_def_line:str, lines:list[str]):
         macro_split = macro_def_line.split('::')
@@ -643,7 +623,7 @@ class MTemplateExtractor:
 
         self.macros[macro_name] = MTemplateMacro(macro_name, macro_text, macro_vars)
 
-    def parse_insert_line(self, line:str, line_no:int) -> str:
+    def _parse_insert_line(self, line:str, line_no:int) -> str:
         try:
             _, insert_stmt = line.split('::')
         except ValueError:
@@ -651,20 +631,12 @@ class MTemplateExtractor:
         
         return '{{ ' + insert_stmt.strip() + ' }}\n'
 
-    def create_template(self) -> str:
-        template = ''.join(self.template_lines)
-        for key, value in sort_dict_by_key_length(self.template_vars).items():
-            template = template.replace(key, '{{ ' + value + ' }}')
-        return template
-
-    def write(self, path:str|Path):
-        with open(path, 'w+') as f:
-            f.write(self.create_template())
-
     def parse(self):
 
         ignoring = False
-        open_if_statement = False
+        open_for_loops = 0
+        for_loop_replacements = []
+        open_if_statements = 0
 
         with open(self.path, 'r') as f:
             line_no = 0
@@ -675,7 +647,9 @@ class MTemplateExtractor:
                 line_no += 1
                 line_stripped = line.replace(self.postfix, '').strip()
 
-                # vars line #
+                #
+                # vars line
+                #
 
                 if line_stripped.startswith(f'{self.prefix} vars :: '):
                     try:
@@ -683,76 +657,91 @@ class MTemplateExtractor:
                     except MTemplateError as e:
                         raise MTemplateError(f'{e} on line {line_no} of {self.path}')
 
-                # for loop #
+                #
+                # for loop
+                #
 
+                # open for loop #
+                
                 elif line_stripped.startswith(f'{self.prefix} for :: '):
-                    for_lines = []
-                    for_start_line_no = line_no
-                    end_for_mods = []
-                    end_for_line = ''
+                    open_for_loops += 1
 
-                    while True:
+                    # parse for loop definition #
 
-                        # seek ahead to each line in for loop #
+                    try:
+                        definition_split = line_stripped.split('::')
+                        jinja_for_line = definition_split[1]
 
+                    except IndexError:
+                        raise MTemplateError(f'for loop definition missing jinja loop syntax')
+                    
+                    # parse block vars #
+
+                    try:
+                        for_block_vars = self._load_json(definition_split[2].strip())
+
+                    except json.JSONDecodeError:
                         try:
-                            next_line = next(f)
-                        except StopIteration:
-                            raise MTemplateError(f'Unterminated for loop starting on line {for_start_line_no} of {self.path}')
-                        
-                        next_line_strippped = next_line.replace(self.postfix, '').strip()
-                        line_no += 1
-                        
-                        if next_line_strippped.startswith(f'{self.prefix} end for ::'):
-                            end_for_line = next_line
-                            try:
-                                _, mods = next_line_strippped.split('::')
-                            except ValueError:
-                                raise MTemplateError(f'invalid end for statement on line {line_no} of {self.path}')
-                            end_for_mods.extend(mods.strip().split())
-                            break
+                            for_block_vars = eval(definition_split[2].strip())
+                        except Exception as e:
+                            raise MTemplateError(f'{e.__class__.__name__}:{e} parsing block vars')
+                    
+                    if not isinstance(for_block_vars, dict):
+                        raise MTemplateError(f'vars must be a dict not {type(for_block_vars).__name__}')
+                    
+                    for_loop_replacements.append(for_block_vars)
+                    
+                    # append lines to template #
 
-                        elif next_line_strippped.startswith(f'{self.prefix} insert ::'):
-                            for_lines.append(self.parse_insert_line(next_line_strippped, line_no))
-                        else:
-                            for_lines.append(next_line)
+                    self.template_lines.append(jinja_for_line.strip() + '\n')
+                
+                # close for loop #
+
+                elif line_stripped.startswith(f'{self.prefix} end for ::'):
+                    if open_for_loops < 1:
+                        raise MTemplateError(f'end for without beginning for statement on line {line_no} of {self.path}')
                     
                     try:
-                        self._parse_for_lines(line_stripped, for_lines, end_for_mods)
-                    except MTemplateError as e:
-                        raise MTemplateError(f'{e} on line {line_no} of {self.path}')
-                
-                # end for #
-                
-                elif line_stripped.startswith(f'{self.prefix} end for ::'):
-                    raise MTemplateError(f'end for without beginning for statement on line {line_no}')
-                
-                # if statement #
+                        _, mods = line_stripped.split('::')
+                    except ValueError:
+                        raise MTemplateError(f'invalid end for statement on line {line_no} of {self.path}')
+                    
+                    end_for_mods = mods.strip().split()
+                    end_for = '{% endfor %}' if 'rstrip' in end_for_mods else '{% endfor %}\n'
+
+                    self.template_lines.append(end_for)
+                    del for_loop_replacements[-1]
+                    open_for_loops -= 1
+
+                #
+                # branching - if / elif / else
+                #
 
                 elif line_stripped.startswith(f'{self.prefix} if ::'):
                     if_statement = line_stripped.split('::')[1].strip()
                     self.template_lines.append(f'{{% if {if_statement} %}}\n')
-                    open_if_statement = True
+                    open_if_statements += 1
 
                 elif line_stripped.startswith(f'{self.prefix} elif ::'):
-                    if not open_if_statement:
+                    if open_if_statements < 1:
                         raise MTemplateError(f'elif without beginning if statement on line {line_no}')
                     elif_statement = line_stripped.split('::')[1].strip()
                     self.template_lines.append(f'{{% elif {elif_statement} %}}\n')
 
                 elif line_stripped.startswith(f'{self.prefix} else ::'):
-                    if not open_if_statement:
+                    if open_if_statements < 1:
                         raise MTemplateError(f'else without beginning if statement on line {line_no}')
                     self.template_lines.append('{% else %}\n')
 
                 elif line_stripped.startswith(f'{self.prefix} end if ::'):
-                    if not open_if_statement:
+                    if open_if_statements < 1:
                         raise MTemplateError(f'endif without beginning if statement on line {line_no}')
                     self.template_lines.append('{% endif %}\n')
-                    open_if_statement = False
+                    open_if_statements -= 1
 
-
-                # ignore lines #
+                #
+                # ignore lines
+                #
 
                 elif line_stripped.startswith(f'{self.prefix} ignore ::'):
                     ignoring = True
@@ -760,24 +749,28 @@ class MTemplateExtractor:
                 elif line_stripped.startswith(f'{self.prefix} end ignore ::'):
                     ignoring = False
 
-                # insert line #
+                #
+                # insert line
+                #
 
                 elif line_stripped.startswith(f'{self.prefix} insert ::'): 
-                    self.template_lines.append(self.parse_insert_line(line_stripped, line_no))
+                    self.template_lines.append(self._parse_insert_line(line_stripped, line_no))
 
-                # replace lines #
+                #
+                # replace lines
+                #
 
                 elif line_stripped.startswith(f'{self.prefix} replace ::'):
                     replace_start_line_no = line_no
 
-                    while True:
-                        
-                        # parse replace statement #
+                    # parse replace statement #
 
-                        try:
-                            _, replacement_stmt = line_stripped.split('::')
-                        except ValueError:
-                            raise MTemplateError(f'invalid replace statement on line {line_no}')
+                    try:
+                        _, replacement_stmt = line_stripped.split('::')
+                    except ValueError:
+                        raise MTemplateError(f'invalid replace statement on line {line_no}')
+
+                    while True:
 
                         # seek ahead to each line in replacement block #
 
@@ -798,7 +791,6 @@ class MTemplateExtractor:
                 # macros #
 
                 elif line_stripped.startswith(f'{self.prefix} macro ::'):
-                    macro_start_line_no = line_no
                     macro_def_line = line_stripped
                     macro_lines = []
 
@@ -833,7 +825,33 @@ class MTemplateExtractor:
                     continue
             
                 else:
-                    self.template_lines.append(line)
+                    if open_for_loops == 0:
+                        self.template_lines.append(line)
+                    else:
+                        # inside for loop, replace for loop vars
+                        for_vars = reduce(lambda acc, entry: {**acc, **entry}, for_loop_replacements, {})
+                        new_line = line
+                        for key, value in sort_dict_by_key_length(for_vars).items():
+                            new_line = new_line.replace(key, '{{ ' + value + ' }}')
+                        self.template_lines.append(new_line)
+
+            if open_for_loops > 0:
+                raise MTemplateError(f'Unterminated for loop in file {self.path}')
+            if open_if_statements > 0:
+                raise MTemplateError(f'Unterminated if statement in file {self.path}')
+    #
+    # file methods
+    #
+
+    def create_template(self) -> str:
+        template = ''.join(self.template_lines)
+        for key, value in sort_dict_by_key_length(self.template_vars).items():
+            template = template.replace(key, '{{ ' + value + ' }}')
+        return template
+
+    def write(self, path:str|Path):
+        with open(path, 'w+') as f:
+            f.write(self.create_template())
 
     @classmethod
     def template_from_file(cls, path:str|Path, emit_syntax:bool=False) -> 'MTemplateExtractor':
