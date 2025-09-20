@@ -35,7 +35,7 @@ The main prototype are the python + browser 1 browser template apps.
             # insert :: macro.py_field_macro :: type-switcher
             # end for ::
 
-        * `type-switcher` tells the renderer to append the field type to the macro name,
+        * `type-switcher` tells the renderer to emit branching for field types to run the correct macro
         ex:
             * `macro.py_field_macro_str`
             * `macro.py_field_macro_list_bool`
