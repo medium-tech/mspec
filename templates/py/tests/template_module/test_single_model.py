@@ -88,7 +88,9 @@ class TestSingleModel(unittest.TestCase):
         fetched_item = cursor.execute(f"SELECT * FROM single_model WHERE id=?", (created_single_model.id,)).fetchone()
         self.assertIsNone(fetched_item)
 
-        # insert :: macro.py_test_crud_delete(model)
+        # for :: {% for field_name, field in model.list_fields %} :: {}
+        # insert :: macro.py_test_sql_delete_list(model=model, field_name=field_name)
+        # end for ::
 
     def test_single_model_pagination(self):
 

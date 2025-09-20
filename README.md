@@ -18,11 +18,11 @@ This project is two things: an [app generator](#app-generator) using code templa
         * [write a browser2 page](./docs/BROWSER2.md)
         * [pybrowser2 - gui client](#pybrowser2)
 * [development](#development)
+    * [code layout](#code-layout)
     * [setup dev enviro](#setup-dev-environment)
     * [run and edit template apps](#edit-and-run-template-apps)
-    * [generate apps from templates](#generate-apps-from-spec-files)
-    * [run and test template apps](#run-and-test-generated-apps)
-    * [run browser 2.0](#run-browser-20)
+    * [generate apps using templates](#generate-apps-using-templates)
+    * [test app generator](#test-app-generator)
 * [contributing](#contributing)
 * [deploying to pypi](#deploying-to-pypi)
 
@@ -174,8 +174,7 @@ The api and frontend are served from the same server, you can access them at `ht
 The frontend files are served staticly from `./templates/browser1/srv` and can be accessed at `http://localhost:5005`. No dependencies are needed for running the frontend however `playwright` is used for testing. See [./templates/browser1/README.md](./templates/browser1/README.md) to learn how to run tests.
 
 
-
-## generate apps from spec files
+## generate apps using templates
 
 To generate apps from spec files, first follow steps in [setup dev environment](#setup-dev-environment).
 
@@ -231,12 +230,9 @@ To run the app generator tests that verify the mtemplate functionality:
 
     ./test.sh
 
-The tests verify that:
-- The mtemplate system can generate py and browser1 apps from the test-gen.yaml spec
-- Generated apps have the correct file structure and content
-- Template syntax is properly resolved without errors
-- Both individual and combined app generation work correctly
-- Generated apps can be set up and their tests can be run
+These tests gerenerate apps from a unittest spec file, it sets up their environments and runs their unittests. It deletes the apps after the test, if tests fail and you need to inspect the apps for troubleshooting use debug mode to leave the apps on disk.
+
+    ./test.sh --debug
 
 # Contributing
 

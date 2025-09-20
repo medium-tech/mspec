@@ -210,18 +210,6 @@ class MTemplatePyProject(MTemplateProject):
             out += list_tables + '\n'
 
         return out
-
-    def macro_py_test_crud_delete(self, model:dict, indent='\t\t') -> str:
-        out = ''
-        for name, field in model['fields'].items():
-            if field['type'] == 'list':
-                list_vars = {
-                    'model_name_snake_case': model['name']['snake_case'],
-                    'field_name': name,
-                }
-                out += self.spec['macro']['py_test_sql_delete'](list_vars) + '\n'
-
-        return out
     
     def macro_py_tk_field_table(self, fields:dict, indent='\t') -> str:
         out = ''
