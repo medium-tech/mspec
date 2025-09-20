@@ -29,14 +29,19 @@ single_enum_options = [
 
 
 field_list = [
-    # replace :: macro.py_field_list(model.fields)
+    # macro :: py_field_list_entry :: {"single_bool": "field_name"}
     'single_bool',
+    # end macro ::
+    # ignore ::
     'single_int',
     'single_float',
     'single_string',
     'single_enum',
     'single_datetime',
-    # end replace ::
+    # end ignore ::
+    # for :: {% for field_name, field in model.sorted_fields %} :: {}
+    # insert :: macro.py_field_list_entry(model=model, field_name=field_name)
+    # end for ::
 ]
 
 longest_field_name_length = max([len(name) for name in field_list])

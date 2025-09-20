@@ -347,19 +347,6 @@ class MTemplatePyProject(MTemplateProject):
                 raise MTemplateError(f'field {name} does not have type "{field_type}" - KeyError: {e}')
         return out
 
-    def macro_py_field_list(self, fields:dict, indent='\t') -> str:
-        out = ''
-
-        field_names = list(fields.keys())
-        last_field_index = len(field_names) - 1
-
-        for n, name in enumerate(sorted(field_names)):
-            out += f"{indent}'{name}'"
-            if n < last_field_index:
-                out += ',\n'
-
-        return out
-
     def macro_py_field_definitions(self, fields:dict, indent='    ') -> str:
         out = ''
         user_id = ''    # user_id is always last, with a default value
