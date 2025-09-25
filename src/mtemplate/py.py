@@ -349,24 +349,6 @@ class MTemplatePyProject(MTemplateProject):
             out += f'{indent}{name}: {type_def}\n'
 
         return out + user_id
-
-    def macro_py_enum_definitions(self, fields:dict, indent='    ') -> str:
-        out = ''
-        for name, field in fields.items():
-            try:
-                enum_values = field['enum']
-            except KeyError:
-                continue
-
-            out += self.spec['macro'][f'py_enum_definition_begin']({'field_name': name})
-
-            for option in enum_values:
-                args = {'option': option.replace("'", "\'")}
-                out += self.spec['macro'][f'py_enum_definition_option'](args)
-
-            out += self.spec['macro'][f'py_enum_definition_end']({}) + '\n'
-
-        return out
          
     @classmethod
     def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplatePyProject':

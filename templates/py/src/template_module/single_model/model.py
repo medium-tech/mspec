@@ -12,7 +12,6 @@ __all__ = [
 
 # vars :: {"SingleModel": "model.name.pascal_case"}
 
-# insert :: macro.py_enum_definitions(model.fields)
 # macro :: py_enum_definition_begin :: {"single_enum": "field_name"}
 single_enum_options = [
 # macro :: py_enum_definition_option :: {"red": "option"}
@@ -25,6 +24,17 @@ single_enum_options = [
 # macro :: py_enum_definition_end :: {}
 ]
 # end macro ::
+
+# for :: {% for field_name, field in model.fields.items() %} :: {"field-type": "field.type", "field-enum": "str(field)"}
+    # if :: 'enum' in field
+        # insert :: macro.py_enum_definition_begin(field_name=field_name)
+            # for :: {% for option in field.enum %} :: {}
+            # insert :: macro.py_enum_definition_option(option=option)
+            # end for ::
+        # insert :: macro.py_enum_definition_end()
+    # end if ::
+# end for ::
+
 
 
 
