@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import shutil
 import stat
@@ -644,6 +645,9 @@ class MTemplateExtractor:
             # iter over each line of file and parse tokens #
 
             for line in f:
+
+                leading_whitespace = lambda: re.match(r'^\s*', line).group(0)
+
                 line_no += 1
                 line_stripped = line.replace(self.postfix, '').strip()
 
@@ -693,7 +697,7 @@ class MTemplateExtractor:
                     
                     # append lines to template #
 
-                    self.template_lines.append(jinja_for_line.strip() + '\n')
+                    self.template_lines.append(leading_whitespace() + jinja_for_line.strip() + '\n')
                 
                 # close for loop #
 
@@ -709,7 +713,7 @@ class MTemplateExtractor:
                     end_for_mods = mods.strip().split()
                     end_for = '{% endfor %}' if 'rstrip' in end_for_mods else '{% endfor %}\n'
 
-                    self.template_lines.append(end_for)
+                    self.template_lines.append(leading_whitespace() + end_for)
                     del for_loop_replacements[-1]
                     open_for_loops -= 1
 
@@ -719,24 +723,24 @@ class MTemplateExtractor:
 
                 elif line_stripped.startswith(f'{self.prefix} if ::'):
                     if_statement = line_stripped.split('::')[1].strip()
-                    self.template_lines.append(f'{{% if {if_statement} %}}\n')
+                    self.template_lines.append(leading_whitespace() + f'{{% if {if_statement} %}}\n')
                     open_if_statements += 1
 
                 elif line_stripped.startswith(f'{self.prefix} elif ::'):
                     if open_if_statements < 1:
                         raise MTemplateError(f'elif without beginning if statement on line {line_no}')
                     elif_statement = line_stripped.split('::')[1].strip()
-                    self.template_lines.append(f'{{% elif {elif_statement} %}}\n')
+                    self.template_lines.append(leading_whitespace() + f'{{% elif {elif_statement} %}}\n')
 
                 elif line_stripped.startswith(f'{self.prefix} else ::'):
                     if open_if_statements < 1:
                         raise MTemplateError(f'else without beginning if statement on line {line_no}')
-                    self.template_lines.append('{% else %}\n')
+                    self.template_lines.append(leading_whitespace() + '{% else %}\n')
 
                 elif line_stripped.startswith(f'{self.prefix} end if ::'):
                     if open_if_statements < 1:
                         raise MTemplateError(f'endif without beginning if statement on line {line_no}')
-                    self.template_lines.append('{% endif %}\n')
+                    self.template_lines.append(leading_whitespace() + '{% endif %}\n')
                     open_if_statements -= 1
 
                 #
