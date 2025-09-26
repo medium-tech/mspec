@@ -314,27 +314,6 @@ class MTemplatePyProject(MTemplateProject):
             
         return ',\n'.join(lines)
 
-    def macro_py_verify_fields(self, fields:dict, indent='\t') -> str:
-        out = ''
-        for name, field in fields.items():
-            vars = deepcopy(field)
-            vars['name'] = name
-
-            if field['type'] == 'list':
-                field_type = 'list_' + field['element_type']
-             
-            else:
-                field_type = field['type']
-
-            if 'enum' in field:
-                field_type += '_enum'
-
-            try:
-                out += self.spec['macro'][f'py_verify_{field_type}'](vars) + '\n'
-            except KeyError as e:
-                raise MTemplateError(f'field {name} does not have type "{field_type}" - KeyError: {e}')
-        return out
-
     def macro_py_field_definitions(self, fields:dict, indent='    ') -> str:
         out = ''
         user_id = ''    # user_id is always last, with a default value

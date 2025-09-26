@@ -52,6 +52,7 @@ class MTemplateProject:
     def __init__(self, spec:dict, debug:bool=False, disable_strict:bool=False) -> None:
         self.spec = spec
         self.spec['macro'] = {}
+        self.spec['macro_by_type'] = self._macro_by_type
         self.debug = debug
         self.template_paths:dict[str, list[dict[str, str]]] = {}
         self.templates:dict[str, MTemplateExtractor] = {}
@@ -61,6 +62,10 @@ class MTemplateProject:
             loader=FunctionLoader(self.jinja_loader),
             undefined=Undefined if disable_strict else StrictUndefined,
         )
+
+    def _macro_by_type(self, macro_name:str, type_id:str, **vars) -> str:
+        macro = self.spec['macro'][f'{macro_name}_{type_id}']
+        return macro(**vars)
 
     def default_output_dir(self) -> Path:
         parent_dir = Path(__file__).parent.parent.parent
@@ -688,7 +693,7 @@ class MTemplateExtractor:
                         try:
                             for_block_vars = eval(definition_split[2].strip())
                         except Exception as e:
-                            raise MTemplateError(f'{e.__class__.__name__}:{e} parsing block vars')
+                            raise MTemplateError(f'Caught while parsing block vars :: {e.__class__.__name__}:{e}')
                     
                     if not isinstance(for_block_vars, dict):
                         raise MTemplateError(f'vars must be a dict not {type(for_block_vars).__name__}')

@@ -35,13 +35,30 @@ def load_spec(spec_file:str) -> dict:
             spec = yaml.load(f, Loader=yaml.FullLoader)
         print(f'\tloaded.')
 
+    #
+    # project
+    #
+
     project = spec['project']
     project['name'].update(generate_names(project['name']['lower_case']))
 
+    #
+    # modules
+    #
+
     for module in spec['modules'].values():
         module['name'].update(generate_names(module['name']['lower_case']))
+
+        #
+        # models
+        #
+
         for model in module['models'].values():
             model['name'].update(generate_names(model['name']['lower_case']))
+
+            #
+            # fields
+            #
 
             try:
                 fields = model['fields']
@@ -52,27 +69,48 @@ def load_spec(spec_file:str) -> dict:
             non_list_fields = []
             list_fields = []
             sorted_fields = []
+            enum_fields = []
 
             for field_name, field in fields.items():
-                entry = (field_name, field)
-                sorted_fields.append(entry)
+                if 'name' not in field:
+                    breakpoint()
+                field['name'].update(generate_names(field['name']['lower_case']))
+
+                entry = (field_name, field)     # storing this as a tuple is from before the name
+                sorted_fields.append(entry)     # generation was added, could probably be simplified
+
                 try:
                     field_type = field['type']
                 except KeyError:
                     raise ValueError(f'No type defined for field {field_name} in model {module["name"]["lower_case"]}.{model["name"]["lower_case"]}')
                 
+                type_id = field_type
+                
                 if field_type == 'list':
+                    try:
+                        type_id += '_' + field['element_type']
+                    except KeyError:
+                        raise ValueError(f'No element_type defined for list field {field_name} in model {module["name"]["lower_case"]}.{model["name"]["lower_case"]}')
                     list_fields.append(entry)
                 else:
                     non_list_fields.append(entry)
 
+                if 'enum' in field:
+                    type_id += '_enum'
+                    enum_fields.append(entry)
+
+                field['type_id'] = type_id
+
             model['non_list_fields'] = sorted(non_list_fields, key=lambda x: x[0])
             model['list_fields'] = sorted(list_fields, key=lambda x: x[0])
+            model['enum_fields'] = sorted(enum_fields, key=lambda x: x[0])
             model['sorted_fields'] = sorted(sorted_fields, key=lambda x: x[0])
             model['total_fields'] = total_fields
 
             if total_fields == 0:
                 raise ValueError(f'No fields defined in model {module["name"]["lower_case"]}.{model["name"]["lower_case"]}')
+            
+            # other model checks #
             
             if fields.get('user_id', None) is not None:
                 if fields['user_id']['type'] != 'str':

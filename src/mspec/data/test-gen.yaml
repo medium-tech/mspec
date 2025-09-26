@@ -28,12 +28,16 @@ modules:
         fields:
 
           x_bool:
+            name:
+              lower_case: 'x bool'
             type: bool
             examples:
               - false
               - true
 
           x_int:
+            name:
+              lower_case: 'x int'
             type: int
             examples:
               - 101
@@ -41,6 +45,8 @@ modules:
               - 3
 
           x_float:
+            name:
+              lower_case: 'x float'
             type: float
             examples:
               - 21.99
@@ -48,6 +54,8 @@ modules:
               - 1.01
 
           x_string:
+            name:
+              lower_case: 'x string'
             type: str
             examples:
               - "piano"
@@ -56,6 +64,8 @@ modules:
               - "saxophone"
 
           x_enum:
+            name:
+              lower_case: 'x enum'
             type: str
             enum:
               - taco
@@ -68,6 +78,8 @@ modules:
               - taco
 
           x_datetime:
+            name:
+              lower_case: 'x datetime'
             type: datetime
             examples:
               - "2000-01-11T12:34:56"
@@ -80,6 +92,8 @@ modules:
         fields:
 
           x_list_bool:
+            name:
+              lower_case: 'x list bool'
             type: list
             element_type: bool
             examples:
@@ -87,6 +101,8 @@ modules:
               - [false, true, true]
 
           x_list_int:
+            name:
+              lower_case: 'x list int'
             type: list
             element_type: int
             examples:
@@ -94,6 +110,8 @@ modules:
               - [42, 16, 109, 4]
 
           x_list_float:
+            name:
+              lower_case: 'x list float'
             type: list
             element_type: float
             examples:
@@ -101,6 +119,8 @@ modules:
               - [1.618, 0.577]
 
           x_list_string:
+            name:
+              lower_case: 'x list string'
             type: list
             element_type: str
             examples:
@@ -109,6 +129,8 @@ modules:
               - ["amplitude", "hello world"]
 
           x_list_enum:
+            name:
+              lower_case: 'x list enum'
             type: list
             element_type: str
             enum:
@@ -122,6 +144,8 @@ modules:
               - ["carne"]
 
           x_list_datetime:
+            name:
+              lower_case: 'x list datetime'
             type: list
             element_type: datetime
             examples:
@@ -143,6 +167,8 @@ modules:
         fields:
 
           user_id:
+            name:
+              lower_case: 'user id'
             type: str
             examples:
               - "1"
@@ -150,6 +176,8 @@ modules:
               - "3"
 
           name:
+            name:
+              lower_case: 'name'
             type: str
             examples:
               - "Alice"
@@ -158,6 +186,8 @@ modules:
             random: random_person_name
           
           user_name:
+            name:
+              lower_case: 'user name'
             type: str
             examples:
               - "alice123"
@@ -166,6 +196,8 @@ modules:
             random: random_user_name
           
           favorite_thing:
+            name:
+              lower_case: 'favorite thing'
             type: str
             examples:
               - "pizza"
@@ -174,12 +206,16 @@ modules:
             random: random_thing_name
           
           email:
+            name:
+              lower_case: 'email'
             type: str
             examples:
               - "my@email.com"
             random: random_email
           
           phone_number:
+            name:
+              lower_case: 'phone number'
             type: str
             examples:
               - "+1 (123) 456-7890"
@@ -196,12 +232,16 @@ modules:
 
         fields:
           user_id:
+            name:
+              lower_case: 'user id'
             type: str
             examples:
               - "1"
               - "2"
               - "3"
           my_field:
+            name:
+              lower_case: 'my field'
             type: str
             examples:
               - "example1"
@@ -218,6 +258,8 @@ modules:
         fields:
 
           user_id:
+            name:
+              lower_case: 'user id'
             type: str
             examples:
               - "1"
@@ -225,6 +267,8 @@ modules:
               - "3"
               
           my_field:
+            name:
+              lower_case: 'my field'
             type: str
             examples:
               - "example1"

@@ -27,18 +27,12 @@ The main prototype are the python + browser 1 browser template apps.
         * 🔴 hardcoded in spec file
         * 🔴 user can choose if model is public or private
         * 🔴 user can create acl for read ops
+    * 🔴 revist python password implementation
+        * `bcrypt` 5.0 broke implementation, either fix or use stdlib alternatives (https://docs.python.org/3/library/hashlib.html#hashlib.scrypt) as described in description: https://pypi.org/project/bcrypt/
 * 🟡 refactor python vs. templating logic
-    * 🟡 enable nested loops and if branching
-    * 🔴 add type modifier to insert statement, enables the renderer to rename a macro
-
-            # for :: {% for field_name, field in model.list_fields %} :: {}
-            # insert :: macro.py_field_macro :: type-switcher
-            # end for ::
-
-        * `type-switcher` tells the renderer to emit branching for field types to run the correct macro
-        ex:
-            * `macro.py_field_macro_str`
-            * `macro.py_field_macro_list_bool`
+    * 🟢 enable nested loops and if branching
+    * 🟢 add macro by type function for calling a macro dynamically
+    * 🟡 simplify templates by deleting functions written in python
 * 🔴 add file ingest/upload
     
 

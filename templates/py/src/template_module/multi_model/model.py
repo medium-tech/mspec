@@ -60,7 +60,7 @@ class MultiModel:
         if not isinstance(self.id, str) and self.id is not None:
             raise TypeError('invalid type for id')
 
-        # macro :: py_verify_list_bool :: {"multi_bool": "name"}
+        # macro :: py_verify_list_bool :: {"multi_bool": "field.name.snake_case"}
         # multi_bool - list of bool
 
         if not isinstance(self.multi_bool, list):
@@ -70,7 +70,7 @@ class MultiModel:
             if not isinstance(item, bool):
                 raise TypeError('multi_bool elements must be bool')
 
-        # macro :: py_verify_list_int :: {"multi_int": "name"}
+        # macro :: py_verify_list_int :: {"multi_int": "field.name.snake_case"}
         # multi_int - list of int
    
         if not isinstance(self.multi_int, list):
@@ -80,7 +80,7 @@ class MultiModel:
             if not isinstance(item, int):
                 raise TypeError('multi_int elements must be int')
 
-        # macro :: py_verify_list_float :: {"multi_float": "name"}
+        # macro :: py_verify_list_float :: {"multi_float": "field.name.snake_case"}
         # multi_float - list of float
 
         if not isinstance(self.multi_float, list):
@@ -90,7 +90,7 @@ class MultiModel:
             if not isinstance(item, float):
                 raise TypeError('multi_float elements must be float')
 
-        # macro :: py_verify_list_str :: {"multi_string": "name"}
+        # macro :: py_verify_list_str :: {"multi_string": "field.name.snake_case"}
         # multi_string - list of str
 
         if not isinstance(self.multi_string, list):
@@ -100,7 +100,7 @@ class MultiModel:
             if not isinstance(item, str):
                 raise TypeError('multi_string elements must be str')
 
-        # macro :: py_verify_list_str_enum :: {"multi_enum": "name"}
+        # macro :: py_verify_list_str_enum :: {"multi_enum": "field.name.snake_case"}
         # multi_enum - list of str enum
 
         if not isinstance(self.multi_enum, list):
@@ -109,8 +109,8 @@ class MultiModel:
         for item in self.multi_enum:
             if item not in multi_enum_options:
                 raise TypeError('invalid enum option for multi_enum')
-            
-        # macro :: py_verify_list_datetime :: {"multi_datetime": "name"}
+
+        # macro :: py_verify_list_datetime :: {"multi_datetime": "field.name.snake_case"}
         # multi_datetime - list of datetime
 
         if not isinstance(self.multi_datetime, list):

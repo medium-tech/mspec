@@ -12,6 +12,11 @@ template app
                 max models: {{ model.auth.max_models_per_user }}
                 # end if ::
             # end if ::
+            fields:
+                # for :: {% for field_name, field in model.fields.items() %} :: {"field-name": "field_name", "field-id-type": "field.type_id"}
+                field-name: field-id-type
+                # end for ::
+
     # end for ::
 # end for ::
 
