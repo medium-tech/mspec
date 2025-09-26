@@ -147,8 +147,8 @@ def db_delete_single_model(ctx:dict, id:str) -> None:
 
     # insert :: macro.py_sql_delete(model=model)
 
-    # for :: {% for field_name, field in model.list_fields %} :: {}
-    # insert :: macro.py_sql_delete_list(model=model, field_name=field_name)
+    # for :: {% for field in model.list_fields %} :: {}
+    # insert :: macro.py_sql_delete_list(model=model, field=field)
     # end for ::
 
     ctx['db']['commit']()

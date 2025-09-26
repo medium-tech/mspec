@@ -72,12 +72,13 @@ def load_spec(spec_file:str) -> dict:
             enum_fields = []
 
             for field_name, field in fields.items():
-                if 'name' not in field:
-                    breakpoint()
+                try:
+                    field['name']['lower_case']
+                except KeyError:
+                    raise ValueError(f'Must define name.lower_case for field {field_name} in model {module["name"]["lower_case"]}.{model["name"]["lower_case"]}')
                 field['name'].update(generate_names(field['name']['lower_case']))
 
-                entry = (field_name, field)     # storing this as a tuple is from before the name
-                sorted_fields.append(entry)     # generation was added, could probably be simplified
+                sorted_fields.append(field)
 
                 try:
                     field_type = field['type']
@@ -91,20 +92,20 @@ def load_spec(spec_file:str) -> dict:
                         type_id += '_' + field['element_type']
                     except KeyError:
                         raise ValueError(f'No element_type defined for list field {field_name} in model {module["name"]["lower_case"]}.{model["name"]["lower_case"]}')
-                    list_fields.append(entry)
+                    list_fields.append(field)
                 else:
-                    non_list_fields.append(entry)
+                    non_list_fields.append(field)
 
                 if 'enum' in field:
                     type_id += '_enum'
-                    enum_fields.append(entry)
+                    enum_fields.append(field)
 
                 field['type_id'] = type_id
 
-            model['non_list_fields'] = sorted(non_list_fields, key=lambda x: x[0])
-            model['list_fields'] = sorted(list_fields, key=lambda x: x[0])
-            model['enum_fields'] = sorted(enum_fields, key=lambda x: x[0])
-            model['sorted_fields'] = sorted(sorted_fields, key=lambda x: x[0])
+            model['non_list_fields'] = sorted(non_list_fields, key=lambda x: x['name']['snake_case'])
+            model['list_fields'] = sorted(list_fields, key=lambda x: x['name']['snake_case'])
+            model['enum_fields'] = sorted(enum_fields, key=lambda x: x['name']['snake_case'])
+            model['sorted_fields'] = sorted(sorted_fields, key=lambda x: x['name']['snake_case'])
             model['total_fields'] = total_fields
 
             if total_fields == 0:

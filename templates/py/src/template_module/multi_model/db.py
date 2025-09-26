@@ -231,7 +231,7 @@ def db_delete_multi_model(ctx:dict, id:str) -> None:
     # end macro ::
 
     cursor.execute(f"DELETE FROM multi_model WHERE id=?", (id,))
-    # macro :: py_sql_delete_list :: {"multi_model": "model.name.snake_case", "multi_bool": "field_name"}
+    # macro :: py_sql_delete_list :: {"multi_model": "model.name.snake_case", "multi_bool": "field.name.snake_case"}
     cursor.execute(f"DELETE FROM multi_model_multi_bool WHERE multi_model_id=?", (id,))
     # end macro ::
 

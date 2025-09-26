@@ -37,7 +37,7 @@ single_enum_options = [
 
 
 field_list = [
-    # macro :: py_field_list_entry :: {"single_bool": "field_name"}
+    # macro :: py_field_list_entry :: {"single_bool": "field.name.snake_case"}
     'single_bool',
     # end macro ::
     # ignore ::
@@ -47,8 +47,8 @@ field_list = [
     'single_enum',
     'single_datetime',
     # end ignore ::
-    # for :: {% for field_name, field in model.sorted_fields %} :: {}
-    # insert :: macro.py_field_list_entry(model=model, field_name=field_name)
+    # for :: {% for field in model.sorted_fields %} :: {}
+    # insert :: macro.py_field_list_entry(field=field)
     # end for ::
 ]
 
