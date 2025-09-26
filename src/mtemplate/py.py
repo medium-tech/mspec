@@ -195,22 +195,7 @@ class MTemplatePyProject(MTemplateProject):
             column += 1
 
         return out
-
-    def macro_py_convert_types(self, fields:dict, indent='\t') -> str:
-        out = ''
-        for name, field in fields.items():
-            if field['type'] == 'datetime':
-                vars = deepcopy(field)
-                vars['name'] = name
-                out += self.spec['macro']['py_convert_types_datetime'](vars) + '\n'
-
-            elif field['type'] == 'list' and field['element_type'] == 'datetime':
-                vars = deepcopy(field)
-                vars['name'] = name
-                out += self.spec['macro']['py_convert_types_list_datetime'](vars) + '\n'
-                
-        return out
-    
+   
     def macro_py_example_fields(self, fields:dict, indent='\t\t\t') -> str:
 
         def convert_val(value, field_type):

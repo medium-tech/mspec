@@ -42,7 +42,7 @@ class MultiModel:
     id: Optional[str] = None
 
     def convert_types(self) -> 'MultiModel':
-        # macro :: py_convert_types_list_datetime :: {"multi_datetime": "name"}
+        # macro :: py_convert_types_list_datetime :: {"multi_datetime": "field.name.snake_case"}
         # multi_datetime - list of datetime
         new_values = []
         for item in self.multi_datetime:

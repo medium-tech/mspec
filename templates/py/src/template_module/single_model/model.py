@@ -68,12 +68,20 @@ class SingleModel:
     id: Optional[str] = None
 
     def convert_types(self) -> 'SingleModel':
-        # insert :: macro.py_convert_types(model.fields)
-        # macro :: py_convert_types_datetime :: {"single_datetime": "name"}
+        # macro :: py_convert_types_datetime :: {"single_datetime": "field.name.snake_case"}
         # single_datetime - datetime
         if isinstance(self.single_datetime, str):
             self.single_datetime = datetime.strptime(self.single_datetime, datetime_format_str).replace(microsecond=0)
         # end macro ::
+
+        # for :: {% for field in model.non_list_fields if field.type == 'datetime' %} :: {}
+        # insert :: macro.py_convert_types_datetime(field=field)
+        # end for ::
+
+        # for :: {% for field in model.list_fields if field.element_type == 'datetime' %} :: {}
+        # insert :: macro.py_convert_types_list_datetime(field=field)
+        # end for ::
+
         return self
 
     def validate(self) -> 'SingleModel':
