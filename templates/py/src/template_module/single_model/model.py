@@ -156,14 +156,26 @@ class SingleModel:
     @classmethod
     def example(cls) -> 'SingleModel':
         return cls(
-            # replace :: macro.py_example_fields(model.fields)
+            # macro :: py_example_bool :: {"single_bool": "field.name.snake_case", "True": "field.examples.0"}
 			single_bool=True,
+            # macro :: py_example_int :: {"single_int": "field.name.snake_case", "7": "field.examples.0"}
 			single_int=7,
+            # macro :: py_example_float :: {"single_float": "field.name.snake_case", "3.14": "field.examples.0"}
 			single_float=3.14,
+            # macro :: py_example_str :: {"single_string": "field.name.snake_case", "banana": "py_escape_single_quote(field.examples.0)"}
 			single_string='banana',
+            # macro :: py_example_str_enum :: {"single_enum": "field.name.snake_case", "red": "py_escape_single_quote(field.examples.0)"}
 			single_enum='red',
+            # macro :: py_example_datetime :: {"single_datetime": "field.name.snake_case", "2000-01-11T12:34:56": "field.examples.0"}
 			single_datetime=datetime.strptime('2000-01-11T12:34:56', datetime_format_str),
-            # end replace ::
+            # end macro ::
+            # for :: {% for field in model.fields.values() %} :: {}
+                # if :: field.name.snake_case == 'user_id'
+                    # insert :: macro.py_example_user_id()
+                # else ::
+                    # insert :: macro_by_type('py_example', field.type_id, field=field)
+                # end if ::
+            # end for ::
         ) 
 
     @classmethod

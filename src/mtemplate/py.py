@@ -195,42 +195,7 @@ class MTemplatePyProject(MTemplateProject):
             column += 1
 
         return out
-   
-    def macro_py_example_fields(self, fields:dict, indent='\t\t\t') -> str:
-
-        def convert_val(value, field_type):
-            if field_type in ['bool', 'int', 'float']:
-                return str(value)
-            elif field_type == 'str':
-                return f"'{value.replace("'", "\'")}'"
-            elif field_type == 'datetime':
-                return f"datetime.strptime('{value}', datetime_format_str)"
-
-        lines = []
-
-        for name, field in fields.items():
-            if name == 'user_id':
-                lines.append(f"{indent}{name}=''")
-                continue
-
-            try:
-                example = field["examples"][0]
-            except (KeyError, IndexError):
-                raise MTemplateError(f'field {name} does not have an example')
-            
-            if field['type'] == 'list':
-                values = []
-                for item in example:
-                    values.append(convert_val(item, field['element_type']))
-                value = '[' + ', '.join(values) + ']'
-
-            else:
-                value = convert_val(example, field['type'])
-
-            lines.append(f"{indent}{name}={value}")
-
-        return ',\n'.join(lines)
-        
+          
     @classmethod
     def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplatePyProject':
         template_proj = super().render(spec, env_file, output_dir, debug, disable_strict, use_cache)

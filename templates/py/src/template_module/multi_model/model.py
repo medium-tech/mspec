@@ -139,13 +139,21 @@ class MultiModel:
     @classmethod
     def example(cls) -> 'MultiModel':
         return cls(
+            # macro :: py_example_user_id :: {}
             user_id='',
+            # macro :: py_example_list_bool :: {"multi_bool": "field.name.snake_case", "[True, False]": "field.examples.0"}
 			multi_bool=[True, False],
+            # macro :: py_example_list_int :: {"multi_int": "field.name.snake_case", "[7, 11]": "field.examples.0"}
 			multi_int=[7, 11],
+            # macro :: py_example_list_float :: {"multi_float": "field.name.snake_case", "[3.14, 2.718]": "field.examples.0"}
 			multi_float=[3.14, 2.718],
+            # macro :: py_example_list_str :: {"multi_string": "field.name.snake_case", "['banana']": "field.examples.0"}
 			multi_string=['banana'],
+            # macro :: py_example_list_str_enum :: {"multi_enum": "field.name.snake_case", "['giraffe', 'elephant']": "field.examples.0"}
             multi_enum=['giraffe', 'elephant'],
-            multi_datetime=[datetime.strptime('2000-01-11T12:34:56', datetime_format_str)],
+            # macro :: py_example_list_datetime :: {"multi_datetime": "field.name.snake_case", "['2000-01-11T12:34:56']": "field.examples.0"}
+            multi_datetime=[datetime.strptime(x, datetime_format_str) for x in ['2000-01-11T12:34:56']],
+            # end macro ::
         ) 
 
     @classmethod

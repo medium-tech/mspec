@@ -86,6 +86,11 @@ def load_spec(spec_file:str) -> dict:
                     if key not in field['name']:
                         field['name'][key] = value
 
+                try:
+                    field['examples'][0]
+                except (KeyError, IndexError):
+                    raise ValueError(f'field {field_name} does not have an example in model {module["name"]["lower_case"]}.{model["name"]["lower_case"]}')
+
                 sorted_fields.append(field)
 
                 try:

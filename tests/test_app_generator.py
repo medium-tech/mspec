@@ -17,8 +17,6 @@ import signal
 
 from pathlib import Path
 
-DEBUG_TESTS = os.environ.get('DEBUG_TESTS', '0') in ('1', 'true', 'True', 'TRUE')
-
 test_num = 0
 
 class TestAppGenerator(unittest.TestCase):
@@ -46,13 +44,12 @@ class TestAppGenerator(unittest.TestCase):
         self.test_dir = self.tests_tmp_dir / f'test_{test_num}'
         test_num += 1
         self.test_dir.mkdir(exist_ok=True)
+        self.test_passed = False
 
     def tearDown(self):
-        print(f'*** tear down {DEBUG_TESTS} ***')
-        if not DEBUG_TESTS:
+        if self.test_passed:
             try:
                 shutil.rmtree(self.test_dir)
-                print('\t* removed test directory:', self.test_dir)
             except Exception as e:
                 print('\t* failed to remove test directory:', self.test_dir, e)
 
@@ -114,6 +111,8 @@ class TestAppGenerator(unittest.TestCase):
             use_cache_file = use_cache_dir / file_rel_path
             with open(no_cache_file, 'r') as f1, open(use_cache_file, 'r') as f2:
                 self.assertEqual(f1.read(), f2.read(), f'File contents differ: {file_rel_path}')
+
+        self.test_passed = True
 
     def test_debug_mode(self):
         """
@@ -200,6 +199,8 @@ class TestAppGenerator(unittest.TestCase):
             jinja2_file = debug_cache_file.with_name(debug_cache_file.name + '.jinja2')
             self.assertTrue(jinja2_file.exists(), f'Missing .jinja2 debug file for: {file_rel_path}')
 
+        self.test_passed = True
+
     def test_generate_py_app(self):
         '''Test generating py app from test-gen.yaml and verify structure'''
 
@@ -276,6 +277,8 @@ class TestAppGenerator(unittest.TestCase):
                 self.assertIn('class ', model_content)
                 self.assertNotIn('{{', model_content)
                 self.assertNotIn('}}', model_content)
+
+        self.test_passed = True
     
     def test_generate_browser1_app(self):
         '''Test generating browser1 app from test-gen.yaml and verify structure'''
@@ -363,6 +366,8 @@ class TestAppGenerator(unittest.TestCase):
                 # Should not contain unresolved template syntax
                 self.assertNotIn('{{', test_content)
                 self.assertNotIn('}}', test_content)
+
+        self.test_passed = True
     
     def test_generate_and_test_both_apps(self):
         '''Test generating both py and browser1 apps together and run their tests'''
@@ -537,6 +542,8 @@ class TestAppGenerator(unittest.TestCase):
                         os.killpg(os.getpgid(server_process.pid), signal.SIGKILL)
                     except (OSError, ProcessLookupError):
                         pass
+
+        self.test_passed = True
 
 
 if __name__ == '__main__':

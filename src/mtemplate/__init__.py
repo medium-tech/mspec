@@ -35,6 +35,8 @@ def sort_dict_by_key_length(dictionary:dict) -> OrderedDict:
     shorter keys that are substrings of longer keys are not replaced prematurely"""
     return OrderedDict(sorted(dictionary.items(), key=lambda item: len(item[0]), reverse=True))
 
+def py_escape_single_quote(s:str) -> str:
+    return s.replace("'", "\'")
 
 class MTemplateProject:
     """
@@ -53,6 +55,7 @@ class MTemplateProject:
         self.spec = spec
         self.spec['macro'] = {}
         self.spec['macro_by_type'] = self._macro_by_type
+        self.spec['py_escape_single_quote'] = py_escape_single_quote
         self.debug = debug
         self.template_paths:dict[str, list[dict[str, str]]] = {}
         self.templates:dict[str, MTemplateExtractor] = {}
@@ -539,12 +542,20 @@ class MTemplateMacro:
         # variable/macro arg which is defined in the value of the dict
         output = copy(self.text)
         for template_value, input_key in sort_dict_by_key_length(self.vars).items():
+            data_key, post_processor = self.parse_key(input_key)
             try:
-                output = output.replace(template_value, self._get_value(values, input_key))
+                output = output.replace(template_value, self._get_value(values, data_key))
             except KeyError as e:
-                raise MTemplateError(f'Unknown key "{input_key}" given to macro {self.name}, KeyError: {e}')
+                raise MTemplateError(f'Unknown key "{data_key}" given to macro {self.name}, inpute key: {input_key}')
         return output
-
+    
+    def parse_key(self, key:str) -> tuple[str, callable]:
+        """parse a data key and check for registered functions to return as post processors"""
+        if key.startswith('py_escape_single_quote(') and key.endswith(')'):
+            return key[23:-1], py_escape_single_quote
+        else:
+            return key, lambda x: x
+        
     @staticmethod
     def _get_value(data:dict, key:str) -> str:
         """
@@ -558,8 +569,16 @@ class MTemplateMacro:
         for sub_key in sub_keys:
             try:
                 current_data = current_data[sub_key]
-            except TypeError:
-                raise KeyError(sub_key)
+
+            except TypeError as e:
+                if sub_key.isnumeric():
+                    try:
+                        index = int(sub_key)
+                        current_data = current_data[index]
+                    except (IndexError, TypeError) as e:
+                        raise KeyError(f'IndexError: {e} looking for index "{sub_key}" in data: {current_data}')
+                else:
+                    raise KeyError(sub_key)
         return str(current_data)
 
 
