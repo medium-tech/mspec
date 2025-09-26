@@ -169,13 +169,25 @@ class SingleModel:
     @classmethod
     def random(cls) -> 'SingleModel':
         return cls(
-            # insert :: macro.py_random_fields(model.fields)
-            # ignore ::
+            # macro :: py_random_bool :: {"single_bool": "field.name.snake_case"}
 			single_bool=random_bool(),
+            # macro :: py_random_int :: {"single_int": "field.name.snake_case"}
 			single_int=random_int(),
+            # macro :: py_random_float :: {"single_float": "field.name.snake_case"}
 			single_float=random_float(),
+            # macro :: py_random_str :: {"single_string": "field.name.snake_case"}
 			single_string=random_str(),
+            # macro :: py_random_str_enum :: {"single_enum": "field.name.snake_case"}
 			single_enum=random_str_enum(single_enum_options),
+            # macro :: py_random_datetime :: {"single_datetime": "field.name.snake_case"}
 			single_datetime=random_datetime(),
-            # end ignore ::
+            # end macro ::
+
+            # for :: {% for field in model.fields.values() if field.name.snake_case != 'user_id' %} :: {}
+                # if :: 'random' in field
+                    # insert :: macro.py_random_field_custom(field=field)
+                # else ::
+                    # insert :: macro_by_type('py_random', field.type_id, field=field)
+                # end if ::
+            # end for ::
         )

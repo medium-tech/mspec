@@ -151,10 +151,28 @@ class MultiModel:
     @classmethod
     def random(cls) -> 'MultiModel':
         return cls(
+            # macro :: py_random_list_bool :: {"multi_bool": "field.name.snake_case"}
 			multi_bool=random_list('bool'),
+            # macro :: py_random_list_int :: {"multi_int": "field.name.snake_case"}
 			multi_int=random_list('int'),
+            # macro :: py_random_list_float :: {"multi_float": "field.name.snake_case"}
 			multi_float=random_list('float'),
+            # macro :: py_random_list_str :: {"multi_string": "field.name.snake_case"}
 			multi_string=random_list('str'),
+            # macro :: py_random_list_str_enum :: {"multi_enum": "field.name.snake_case"}
             multi_enum=random_list('str', multi_enum_options),
+            # macro :: py_random_list_datetime :: {"multi_datetime": "field.name.snake_case"}
             multi_datetime=random_list('datetime'),
+            # end macro ::
+        )
+    
+class MacroOnlyModel:
+    custom_random_field: str
+
+    @classmethod
+    def random(cls) -> 'MacroOnlyModel':
+        return cls(
+            # macro :: py_random_field_custom :: {"custom_random_field": "field.name.snake_case", "random_thing_name": "field.random"}
+            custom_random_field=random_thing_name(),
+            # end macro ::
         )

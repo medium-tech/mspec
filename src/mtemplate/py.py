@@ -230,43 +230,6 @@ class MTemplatePyProject(MTemplateProject):
             lines.append(f"{indent}{name}={value}")
 
         return ',\n'.join(lines)
-
-    def macro_py_random_fields(self, fields:dict, indent='\t\t\t') -> str:
-        lines = []
-        for name, field in fields.items():
-            if name == 'user_id':
-                continue
-
-            field_type = field['type']
-            custom_function = field.get('random', None)
-            # configure macro #
-
-            if custom_function is not None:
-                func_name = custom_function
-                args = ''
-
-            elif field['type'] == 'list':
-                func_name = f'random_{field_type}'
-                args = f"'{field['element_type']}'"
-
-                if 'enum' in field:
-                    args += f", {name}_options"
-
-            else:
-                func_name = f'random_{field_type}'
-                args = ''
-                if 'enum' in field:
-                    func_name += '_enum'
-                    args += f'{name}_options'
-
-            # run macro #
-
-            try:
-                lines.append(f"{indent}{name}={func_name}({args})")
-            except KeyError:
-                raise MTemplateError(f'field {name} does not have a type')
-            
-        return ',\n'.join(lines)
         
     @classmethod
     def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplatePyProject':
