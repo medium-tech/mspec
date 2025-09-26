@@ -64,14 +64,18 @@ def db_read_single_model(ctx:dict, id:str) -> SingleModel:
     raises :: NotFoundError if the item is not found.
     """
 
-    # insert :: macro.py_db_read(model)
-    # macro :: py_sql_read :: {"single_model": "model_name_snake_case"}
+    # macro :: py_sql_read :: {"single_model": "model.name.snake_case"}
     cursor:sqlite3.Cursor = ctx['db']['cursor']
     result = cursor.execute(f"SELECT * FROM single_model WHERE id=?", (id,))
     entry = result.fetchone()
     if entry is None:
         raise NotFoundError(f'single_model {id} not found')
     # end macro ::
+    # insert :: macro.py_sql_read(model=model)
+
+    # for :: {% for field in model.list_fields %} :: {}
+    # insert :: macro_by_type('py_sql_read', field.type_id, model=model, field=field)
+    # end for ::
     
     return SingleModel(
         id=str(entry[0]),
@@ -172,8 +176,9 @@ def db_list_single_model(ctx:dict, offset:int=0, limit:int=25) -> dict:
     query = cursor.execute("SELECT * FROM single_model ORDER BY id LIMIT ? OFFSET ?", (limit, offset))
 
     for entry in query.fetchall():
-        # insert :: macro.py_db_list_lists(model)
-        
+        # for :: {% for field in model.list_fields %} :: {}
+        # insert :: macro_by_type('py_sql', field.type_id, model=model, field=field)
+        # end for ::
         items.append(SingleModel(
             id=str(entry[0]),
             # replace :: macro.py_sql_convert(model.fields)

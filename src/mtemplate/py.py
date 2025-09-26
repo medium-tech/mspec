@@ -83,23 +83,6 @@ class MTemplatePyProject(MTemplateProject):
             out += self.spec['macro'][macro_name](list_vars) + '\n'
 
         return out
-
-    def macro_py_db_read(self, model:dict, indent='\t\t') -> str:
-        read_vars = {'model_name_snake_case': model['name']['snake_case']}
-        out = self.spec['macro']['py_sql_read'](read_vars) + '\n'
-
-        for name, field in model['fields'].items():
-            if field['type'] == 'list':
-                read_list_vars = {
-                    'model_name_snake_case': model['name']['snake_case'],
-                    'field_name': name
-                }
-                macro_name = 'py_sql_read_list_' + field['element_type']
-                if 'enum' in field:
-                    macro_name += '_enum'
-                out += self.spec['macro'][macro_name](read_list_vars) + '\n'
-
-        return out
     
     def macro_py_db_update(self, model:dict, indent='\t\t') -> str:
         fields_sql = []
@@ -139,20 +122,6 @@ class MTemplatePyProject(MTemplateProject):
             out = ''
 
         out += '\n' + list_updates
-        return out
-
-    def macro_py_db_list_lists(self, model:dict, indent='\t\t') -> str:
-        out = ''
-        for name, field in model['fields'].items():
-            if field['type'] == 'list':
-                list_vars = {
-                    'model_name_snake_case': model['name']['snake_case'],
-                    'field_name': name
-                }
-                macro_name = 'py_sql_list_' + field['element_type']
-                if 'enum' in field:
-                    macro_name += '_enum'
-                out += self.spec['macro'][macro_name](list_vars) + '\n'
         return out
 
     def macro_py_sql_convert(self, fields:dict, indent='\t\t\t') -> str:

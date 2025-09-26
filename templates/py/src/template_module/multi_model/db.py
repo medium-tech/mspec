@@ -108,22 +108,22 @@ def db_read_multi_model(ctx:dict, id:str) -> MultiModel:
     entry = result.fetchone()
     if entry is None:
         raise NotFoundError(f'multi model {id} not found')
-    # macro :: py_sql_read_list_bool :: {"multi_model": "model_name_snake_case", "multi_bool": "field_name"}
+    # macro :: py_sql_read_list_bool :: {"multi_model": "model.name.snake_case", "multi_bool": "field.name.snake_case"}
     multi_bool_cursor = cursor.execute(f"SELECT value FROM multi_model_multi_bool WHERE multi_model_id=? ORDER BY position", (id,))
     multi_bool = [bool(row[0]) for row in multi_bool_cursor.fetchall()]
-    # macro :: py_sql_read_list_int :: {"multi_model": "model_name_snake_case", "multi_int": "field_name"}
+    # macro :: py_sql_read_list_int :: {"multi_model": "model.name.snake_case", "multi_int": "field.name.snake_case"}
     multi_int_cursor = cursor.execute(f"SELECT value FROM multi_model_multi_int WHERE multi_model_id=? ORDER BY position", (id,))
     multi_int = [row[0] for row in multi_int_cursor.fetchall()]
-    # macro :: py_sql_read_list_float :: {"multi_model": "model_name_snake_case", "multi_float": "field_name"}
+    # macro :: py_sql_read_list_float :: {"multi_model": "model.name.snake_case", "multi_float": "field.name.snake_case"}
     multi_float_cursor = cursor.execute(f"SELECT value FROM multi_model_multi_float WHERE multi_model_id=? ORDER BY position", (id,))
     multi_float = [row[0] for row in multi_float_cursor.fetchall()]
-    # macro :: py_sql_read_list_str :: {"multi_model": "model_name_snake_case", "multi_string": "field_name"}
+    # macro :: py_sql_read_list_str :: {"multi_model": "model.name.snake_case", "multi_string": "field.name.snake_case"}
     multi_string_cursor = cursor.execute(f"SELECT value FROM multi_model_multi_string WHERE multi_model_id=? ORDER BY position", (id,))
     multi_string = [row[0] for row in multi_string_cursor.fetchall()]
-    # macro :: py_sql_read_list_str_enum :: {"multi_model": "model_name_snake_case", "multi_enum": "field_name"}
+    # macro :: py_sql_read_list_str_enum :: {"multi_model": "model.name.snake_case", "multi_enum": "field.name.snake_case"}
     multi_enum_cursor = cursor.execute(f"SELECT value FROM multi_model_multi_enum WHERE multi_model_id=? ORDER BY position", (id,))
     multi_enum = [row[0] for row in multi_enum_cursor.fetchall()]
-    # macro :: py_sql_read_list_datetime :: {"multi_model": "model_name_snake_case", "multi_datetime": "field_name"}
+    # macro :: py_sql_read_list_datetime :: {"multi_model": "model.name.snake_case", "multi_datetime": "field.name.snake_case"}
     multi_datetime_cursor = cursor.execute(f"SELECT value FROM multi_model_multi_datetime WHERE multi_model_id=? ORDER BY position", (id,))
     multi_datetime = [
         datetime.strptime(row[0], datetime_format_str).replace(microsecond=0) 
@@ -262,22 +262,22 @@ def db_list_multi_model(ctx:dict, offset:int=0, limit:int=25) -> dict:
     query = cursor.execute("SELECT * FROM multi_model ORDER BY id LIMIT ? OFFSET ?", (limit, offset))
 
     for entry in query.fetchall():
-        # macro :: py_sql_list_bool :: {"multi_model": "model_name_snake_case", "multi_bool": "field_name"}
+        # macro :: py_sql_list_bool :: {"multi_model": "model.name.snake_case", "multi_bool": "field.name.snake_case"}
         multi_bool_cursor = cursor.execute(f"SELECT value FROM multi_model_multi_bool WHERE multi_model_id=? ORDER BY position", (entry[0],))
         multi_bool = [bool(row[0]) for row in multi_bool_cursor.fetchall()]
-        # macro :: py_sql_list_int :: {"multi_model": "model_name_snake_case", "multi_int": "field_name"}
+        # macro :: py_sql_list_int :: {"multi_model": "model.name.snake_case", "multi_int": "field.name.snake_case"}
         multi_int_cursor = cursor.execute(f"SELECT value FROM multi_model_multi_int WHERE multi_model_id=? ORDER BY position", (entry[0],))
         multi_int = [row[0] for row in multi_int_cursor.fetchall()]
-        # macro :: py_sql_list_float :: {"multi_model": "model_name_snake_case", "multi_float": "field_name"}
+        # macro :: py_sql_list_float :: {"multi_model": "model.name.snake_case", "multi_float": "field.name.snake_case"}
         multi_float_cursor = cursor.execute(f"SELECT value FROM multi_model_multi_float WHERE multi_model_id=? ORDER BY position", (entry[0],))
         multi_float = [row[0] for row in multi_float_cursor.fetchall()]
-        # macro :: py_sql_list_str :: {"multi_model": "model_name_snake_case", "multi_string": "field_name"}
+        # macro :: py_sql_list_str :: {"multi_model": "model.name.snake_case", "multi_string": "field.name.snake_case"}
         multi_string_cursor = cursor.execute(f"SELECT value FROM multi_model_multi_string WHERE multi_model_id=? ORDER BY position", (entry[0],))
         multi_string = [row[0] for row in multi_string_cursor.fetchall()]
-        # macro :: py_sql_list_str_enum :: {"multi_model": "model_name_snake_case", "multi_enum": "field_name"}
+        # macro :: py_sql_list_str_enum :: {"multi_model": "model.name.snake_case", "multi_enum": "field.name.snake_case"}
         multi_enum_cursor = cursor.execute(f"SELECT value FROM multi_model_multi_enum WHERE multi_model_id=? ORDER BY position", (entry[0],))
         multi_enum = [row[0] for row in multi_enum_cursor.fetchall()]
-        # macro :: py_sql_list_datetime :: {"multi_model": "model_name_snake_case", "multi_datetime": "field_name"}
+        # macro :: py_sql_list_datetime :: {"multi_model": "model.name.snake_case", "multi_datetime": "field.name.snake_case"}
         multi_datetime_cursor = cursor.execute(f"SELECT value FROM multi_model_multi_datetime WHERE multi_model_id=? ORDER BY position", (entry[0],))
         multi_datetime = [
             datetime.strptime(row[0], datetime_format_str).replace(microsecond=0) 

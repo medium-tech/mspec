@@ -61,7 +61,7 @@ def load_spec(spec_file:str) -> dict:
             #
 
             try:
-                fields = model['fields']
+                fields:dict = model['fields']
             except KeyError:
                 raise ValueError(f'No fields defined in model {module["name"]["lower_case"]}.{model["name"]["lower_case"]}')
             
