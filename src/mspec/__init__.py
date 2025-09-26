@@ -40,21 +40,27 @@ def load_spec(spec_file:str) -> dict:
     #
 
     project = spec['project']
-    project['name'].update(generate_names(project['name']['lower_case']))
+    for key, value in generate_names(project['name']['lower_case']).items():
+        if key not in project['name']:
+            project['name'][key] = value
 
     #
     # modules
     #
 
     for module in spec['modules'].values():
-        module['name'].update(generate_names(module['name']['lower_case']))
+        for key, value in generate_names(module['name']['lower_case']).items():
+            if key not in module['name']:
+                module['name'][key] = value
 
         #
         # models
         #
 
         for model in module['models'].values():
-            model['name'].update(generate_names(model['name']['lower_case']))
+            for key, value in generate_names(model['name']['lower_case']).items():
+                if key not in model['name']:
+                    model['name'][key] = value
 
             #
             # fields
@@ -76,7 +82,9 @@ def load_spec(spec_file:str) -> dict:
                     field['name']['lower_case']
                 except KeyError:
                     raise ValueError(f'Must define name.lower_case for field {field_name} in model {module["name"]["lower_case"]}.{model["name"]["lower_case"]}')
-                field['name'].update(generate_names(field['name']['lower_case']))
+                for key, value in generate_names(field['name']['lower_case']).items():
+                    if key not in field['name']:
+                        field['name'][key] = value
 
                 sorted_fields.append(field)
 
