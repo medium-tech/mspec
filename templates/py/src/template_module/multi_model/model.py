@@ -32,13 +32,17 @@ longest_field_name_length = max([len(name) for name in field_list])
 @dataclass
 class MultiModel:
 
+    # macro :: py_field_definition_list :: {"multi_bool": "field.name.snake_case", "bool": "field.element_type"}
     multi_bool: list[bool]
+    # end macro ::
     multi_int: list[int]
     multi_float: list[float]
     multi_string: list[str]
     multi_enum: list[str]
     multi_datetime: list[datetime]
+    # macro :: py_field_definition_user_id :: {}
     user_id: str = ''
+    # end macro ::
     id: Optional[str] = None
 
     def convert_types(self) -> 'MultiModel':

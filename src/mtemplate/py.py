@@ -267,22 +267,7 @@ class MTemplatePyProject(MTemplateProject):
                 raise MTemplateError(f'field {name} does not have a type')
             
         return ',\n'.join(lines)
-
-    def macro_py_field_definitions(self, fields:dict, indent='    ') -> str:
-        out = ''
-        user_id = ''    # user_id is always last, with a default value
-        for name, field in fields.items():
-            if name == 'user_id':
-                user_id = f"{indent}{name}: str = ''\n"
-                continue
-            if field['type'] == 'list':
-                type_def = f'list[' + field['element_type'] + ']'
-            else:
-                type_def = field['type']
-            out += f'{indent}{name}: {type_def}\n'
-
-        return out + user_id
-         
+        
     @classmethod
     def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplatePyProject':
         template_proj = super().render(spec, env_file, output_dir, debug, disable_strict, use_cache)

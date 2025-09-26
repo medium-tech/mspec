@@ -57,14 +57,26 @@ longest_field_name_length = max([len(name) for name in field_list])
 @dataclass
 class SingleModel:
 
-    # replace :: macro.py_field_definitions(model.fields)
+    # macro :: py_field_definition :: {"single_bool": "field.name.snake_case", "bool": "field.type"}
     single_bool: bool
+    # end macro ::
+    # ignore ::
     single_int: int
     single_float: float
     single_string: str
     single_enum: str
     single_datetime: datetime
-    # end replace ::
+    # end ignore ::
+    # for :: {% for field in model.sorted_fields if field.name.snake_case != 'user_id' %} :: {}
+        # if :: field.type == 'list'
+            # insert :: macro.py_field_definition_list(field=field)
+        # else ::
+            # insert :: macro.py_field_definition(field=field)
+        # end if ::
+    # end for ::
+    # if :: 'user_id' in model.fields
+    # insert :: macro.py_field_definition_user_id()
+    # end if ::
     id: Optional[str] = None
 
     def convert_types(self) -> 'SingleModel':
