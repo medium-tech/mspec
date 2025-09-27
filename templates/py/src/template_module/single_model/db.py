@@ -39,7 +39,7 @@ def db_create_single_model(ctx:dict, obj:SingleModel) -> SingleModel:
 
     # insert :: macro.py_db_create(model)
 
-    # macro :: py_sql_create :: {"single_model": "model_name_snake_case", "('single_bool', 'single_datetime', 'single_enum', 'single_float', 'single_int', 'single_string')": "fields_sql", "VALUES(?, ?, ?, ?, ?, ?)": "sql_values", "obj.single_bool, obj.single_datetime.isoformat(), obj.single_enum, obj.single_float, obj.single_int, obj.single_string": "fields_py"}
+    # macro :: py_sql_create :: {"single_model": "model.name.snake_case", "('single_bool', 'single_datetime', 'single_enum', 'single_float', 'single_int', 'single_string')": "fields_sql", "VALUES(?, ?, ?, ?, ?, ?)": "sql_values", "obj.single_bool, obj.single_datetime.isoformat(), obj.single_enum, obj.single_float, obj.single_int, obj.single_string": "fields_py"}
     result = cursor.execute(
         "INSERT INTO single_model('single_bool', 'single_datetime', 'single_enum', 'single_float', 'single_int', 'single_string') VALUES(?, ?, ?, ?, ?, ?)",
         (obj.single_bool, obj.single_datetime.isoformat(), obj.single_enum, obj.single_float, obj.single_int, obj.single_string)
@@ -48,6 +48,10 @@ def db_create_single_model(ctx:dict, obj:SingleModel) -> SingleModel:
     assert result.lastrowid is not None
     obj.id = str(result.lastrowid)
     # end macro ::
+
+    # for :: {% for field in model.list_fields %} :: {}
+    # insert :: macro_by_type('py_sql_create', field.type_id, model=model, field=field)
+    # end for ::
 
     ctx['db']['commit']()
     return obj

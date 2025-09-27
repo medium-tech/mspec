@@ -28,24 +28,13 @@ class MTemplatePyProject(MTemplateProject):
     def macro_py_db_create(self, model:dict, indent='\t\t') -> str:
         out = ''
 
-        list_fields = []
-        non_list_fields = []
-        num_non_list_fields = 0
-
-        for name, field in model['fields'].items():
-            if field['type'] == 'list':
-                list_fields.append(name)
-            else:
-                non_list_fields.append(name)
-                num_non_list_fields += 1
-
-        # non list fields #
-        
-        non_list_fields.sort()
+        non_list_fields = model['non_list_fields']
+        num_non_list_fields = len(non_list_fields)
 
         fields_py = ''
-        for field_name in non_list_fields:
-            if model['fields'][field_name]['type'] == 'datetime':
+        for field in non_list_fields:
+            field_name = field['name']['snake_case']
+            if field['type'] == 'datetime':
                 fields_py += f"obj.{field_name}.isoformat(), "
             else:
                 fields_py += f"obj.{field_name}, "
@@ -54,33 +43,19 @@ class MTemplatePyProject(MTemplateProject):
             fields_sql = ''
             sql_values = 'DEFAULT VALUES'
         else:
-            fields_sql = '(' + ', '.join([f"'{name}'" for name in non_list_fields]) + ')'
+            fields_sql = '(' + ', '.join([f"'{f['name']['snake_case']}'" for f in non_list_fields]) + ')'
 
             question_marks = ', '.join(['?'] * num_non_list_fields)
             sql_values = f'VALUES({question_marks})'
 
         create_vars = {
-            'model_name_snake_case': model['name']['snake_case'],
+            'model': model,
             'fields_sql': fields_sql,
             'sql_values': sql_values,
             'fields_py': fields_py.strip()
         }
 
         out += self.spec['macro']['py_sql_create'](create_vars) + '\n'
-
-        # list fields #
-
-        list_fields.sort()
-
-        for field_name in list_fields:
-            list_vars = {
-                'model_name_snake_case': model['name']['snake_case'],
-                'field_name': field_name,
-            }
-            macro_name = 'py_sql_create_list_' + model['fields'][field_name]['element_type']
-            if 'enum' in model['fields'][field_name]:
-                macro_name += '_enum'
-            out += self.spec['macro'][macro_name](list_vars) + '\n'
 
         return out
     

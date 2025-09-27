@@ -53,35 +53,35 @@ def db_create_multi_model(ctx:dict, obj:MultiModel) -> MultiModel:
     assert result.rowcount == 1
     assert result.lastrowid is not None
     obj.id = str(result.lastrowid)
-    
-    # macro :: py_sql_create_list_bool :: {"multi_model": "model_name_snake_case", "multi_bool": "field_name"}
+
+    # macro :: py_sql_create_list_bool :: {"multi_model": "model.name.snake_case", "multi_bool": "field.name.snake_case"}
     cursor.executemany(
         "INSERT INTO multi_model_multi_bool(value, position, multi_model_id) VALUES(?, ?, ?)",
         ((value, position, result.lastrowid) for position, value in enumerate(obj.multi_bool))
     )
-    # macro :: py_sql_create_list_int :: {"multi_model": "model_name_snake_case", "multi_int": "field_name"}
+    # macro :: py_sql_create_list_int :: {"multi_model": "model.name.snake_case", "multi_int": "field.name.snake_case"}
     cursor.executemany(
         "INSERT INTO multi_model_multi_int(value, position, multi_model_id) VALUES(?, ?, ?)",
         ((value, position, result.lastrowid) for position, value in enumerate(obj.multi_int))
     )
-    # macro :: py_sql_create_list_float :: {"multi_model": "model_name_snake_case", "multi_float": "field_name"}
+    # macro :: py_sql_create_list_float :: {"multi_model": "model.name.snake_case", "multi_float": "field.name.snake_case"}
     cursor.executemany(
         "INSERT INTO multi_model_multi_float(value, position, multi_model_id) VALUES(?, ?, ?)",
         ((value, position, result.lastrowid) for position, value in enumerate(obj.multi_float))
     )
-    # macro :: py_sql_create_list_str :: {"multi_model": "model_name_snake_case", "multi_string": "field_name"}
+    # macro :: py_sql_create_list_str :: {"multi_model": "model.name.snake_case", "multi_string": "field.name.snake_case"}
     cursor.executemany(
         "INSERT INTO multi_model_multi_string(value, position, multi_model_id) VALUES(?, ?, ?)",
         ((value, position, result.lastrowid) for position, value in enumerate(obj.multi_string))
     )
 
-    # macro :: py_sql_create_list_str_enum :: {"multi_model": "model_name_snake_case", "multi_enum": "field_name"}
+    # macro :: py_sql_create_list_str_enum :: {"multi_model": "model.name.snake_case", "multi_enum": "field.name.snake_case"}
     cursor.executemany(
         "INSERT INTO multi_model_multi_enum(value, position, multi_model_id) VALUES(?, ?, ?)",
         ((value, position, result.lastrowid) for position, value in enumerate(obj.multi_enum))
     )
 
-    # macro :: py_sql_create_list_datetime :: {"multi_model": "model_name_snake_case", "multi_datetime": "field_name"}
+    # macro :: py_sql_create_list_datetime :: {"multi_model": "model.name.snake_case", "multi_datetime": "field.name.snake_case"}
     cursor.executemany(
         "INSERT INTO multi_model_multi_datetime(value, position, multi_model_id) VALUES(?, ?, ?)",
         ((value.isoformat(), position, result.lastrowid) for position, value in enumerate(obj.multi_datetime))
