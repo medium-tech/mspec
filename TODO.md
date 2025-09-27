@@ -28,17 +28,49 @@ The main prototype are the python + browser 1 browser template apps.
         * 🔴 user can choose if model is public or private
         * 🔴 user can create acl for read ops
     * 🔴 revist python password implementation
-        * `bcrypt` 5.0 broke implementation, either fix or use stdlib alternatives (https://docs.python.org/3/library/hashlib.html#hashlib.scrypt) as described in description: https://pypi.org/project/bcrypt/
+        * `bcrypt` 5.0 broke implementation, migrate stdlib alternatives (https://docs.python.org/3/library/hashlib.html#hashlib.scrypt) as described in description: https://pypi.org/project/bcrypt/
+    * 🔴 implement oauth
 * 🟡 refactor python vs. templating logic
     * 🟢 enable nested loops and if branching
     * 🟢 add macro by type function for calling a macro dynamically
-    * 🟡 simplify templates by deleting functions written in python
+    * 🟡 migrate macros written in python to template syntax
+        * 🟡 py app
+        * 🟡 browser1 app
+    * 🔴 create system to sync template changes to macro only templates (ex: copy changes from `./single_model/db.py` to `./mutlti_model/db.py`)
+        * load files `./single_model/db.py` and `./mutlti_model/db.py` (if exists)
+        * the parent template is used to render a child based on a yaml model
+            * render everything except for undefined macros (existing macros in `./mutlti_model/db.py` should be undefined at this point)
+        * for undefined macros:
+            * if file `./multi_model/db.py` exists and  macro is defined in it
+                * insert it, including macro syntax (`# macro :: ... :: {"...": "..."}`)
+                * overwrite existing `./multi_model/db.py` file
+            * else
+                * create place holder macro (`# macro :: ... :: {"...": "..."}`)
 * 🔴 add file ingest/upload
-    
+    * 🔴 file sql table
+    * 🔴 add field type: foreign key
+    * 🔴 ingest
+        * 🔴 py client
+        * 🔴 py server/http client
+        * 🔴 browser 1
+    * 🔴 read
+        * 🔴 py client
+        * 🔴 py server/http client
+        * 🔴 browser 1
+    * 🔴 add multipart uploads
+* 🔴 implement cids
+    * 🔴 template apps
+        * 🔴 add cid sql table
+            * 🔴 row contains foreign key to file
+            * 🔴 row can contain foreign key to model table
+    * 🔴 browser2
+        * 🔴 page to page links
+        * 🔴 retrieving/viewing files
+        * 🔴 retrieving/viewing model data
 
 ### phase 2
 * 🔴 go template app
-* 🔴 implement cids
+
 
 ### additional features
 * 🔴 add foreign key id to test_model
