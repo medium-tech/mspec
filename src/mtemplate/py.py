@@ -124,41 +124,6 @@ class MTemplatePyProject(MTemplateProject):
         out += '\n' + list_updates
         return out
 
-    def macro_py_create_tables(self, all_models:list[dict], indent='\t') -> str:
-        out = ''
-        for item in all_models:
-
-            non_list_fields = []
-            list_tables = ''
-
-            for name, field in item['model']['fields'].items():
-                # list fields have their own tables
-                # all other fields are added to the main table
-                if field['type'] == 'list':
-                    # concat list table macro
-                    list_vars = {
-                        'model_name_snake_case': item['model']['name']['snake_case'],
-                        'field_name': name,
-                    }
-                    list_tables += self.spec['macro']['py_create_model_table_list'](list_vars) + '\n'
-                else:
-                    # append non list fields to create table macro
-                    non_list_fields.append(f"'{name}'")
-
-            if len(non_list_fields) == 0:
-                field_list = ''
-            else:
-                field_list = ', ' + ', '.join(sorted(non_list_fields))
-
-            table_vars = {
-                'model_name_snake_case': item['model']['name']['snake_case'],
-                'field_list': field_list
-            }
-            out += self.spec['macro']['py_create_model_table'](table_vars) + '\n'
-            out += list_tables + '\n'
-
-        return out
-          
     @classmethod
     def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplatePyProject':
         template_proj = super().render(spec, env_file, output_dir, debug, disable_strict, use_cache)

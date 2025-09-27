@@ -545,9 +545,10 @@ class MTemplateMacro:
         for template_value, input_key in sort_dict_by_key_length(self.vars).items():
             data_key, post_processor = self.parse_key(input_key)
             try:
-                output = output.replace(template_value, self._get_value(values, data_key))
+                output_value = post_processor(self._get_value(values, data_key))
+                output = output.replace(template_value, output_value)
             except KeyError as e:
-                raise MTemplateError(f'Unknown key "{data_key}" given to macro {self.name}, inpute key: {input_key}')
+                raise MTemplateError(f'Unknown key {e} given to macro {self.name}, input key: {input_key}')
         return output
     
     def parse_key(self, key:str) -> tuple[str, callable]:

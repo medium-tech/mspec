@@ -60,19 +60,42 @@ def create_db_tables(ctx:dict) -> None:
     cursor.execute("CREATE TABLE IF NOT EXISTS user(id INTEGER PRIMARY KEY, name, email, profile)")
     cursor.execute("CREATE TABLE IF NOT EXISTS user_password_hash(id INTEGER PRIMARY KEY, user_id INTEGER REFERENCES user(id), hash)")
 
-    # insert :: macro.py_create_tables(all_models)
-    # macro :: py_create_model_table :: {"single_model": "model_name_snake_case", ", 'single_bool', 'single_datetime', 'single_enum', 'single_float', 'single_int', 'single_string'": "field_list"}
+    # macro :: py_create_model_table_start :: {"single_model": "model.name.snake_case"}
     #
     # single model
     #
-
-    cursor.execute("CREATE TABLE IF NOT EXISTS single_model(id INTEGER PRIMARY KEY, 'single_bool', 'single_datetime', 'single_enum', 'single_float', 'single_int', 'single_string')")
+    single_model_create_sql = "CREATE TABLE IF NOT EXISTS single_model(id INTEGER PRIMARY KEY"
+    # macro :: py_create_model_table_field :: {"single_model": "model.name.snake_case", "single_bool": "field.name.snake_case"}
+    single_model_create_sql += ", 'single_bool'"
+    # end macro ::
+    # ignore ::
+    single_model_create_sql += ", 'single_datetime'"
+    single_model_create_sql += ", 'single_enum'"
+    single_model_create_sql += ", 'single_float'"
+    single_model_create_sql += ", 'single_int'"
+    single_model_create_sql += ", 'single_string'"
+    # end ignore ::
+    # macro :: py_create_model_table_end :: {"single_model": "model.name.snake_case"}
+    single_model_create_sql += ')'
+    cursor.execute(single_model_create_sql)
     # end macro ::
     # macro :: py_create_model_table_list :: {"single_model": "model_name_snake_case", "multi_bool": "field_name"}
     cursor.execute("CREATE TABLE IF NOT EXISTS single_model_multi_bool(id INTEGER PRIMARY KEY, value, position, single_model_id INTEGER REFERENCES single_model(id))")
     cursor.execute('CREATE INDEX IF NOT EXISTS single_model_multi_bool_index ON single_model_multi_bool(single_model_id)')
     # end macro ::
 
+    # for :: {% for module in modules.values() %} :: {}
+        # for :: {% for model in module.models.values() %} :: {}
+            # insert :: macro.py_create_model_table_start(model=model)
+            # for :: {% for field in model.non_list_fields %} :: {}
+                # insert :: macro.py_create_model_table_field(model=model,field=field)
+            # end for ::
+            # insert :: macro.py_create_model_table_end(model=model)
+            # for :: {% for field in model.list_fields %} :: {}
+                # insert :: macro.py_create_model_table_list_field(model=model, field=field)
+            # end for ::
+        # end for ::
+    # end for ::
     # ignore ::
     cursor.execute("CREATE TABLE IF NOT EXISTS single_model_multi_int(id INTEGER PRIMARY KEY, value, position, single_model_id INTEGER REFERENCES single_model(id))")
     cursor.execute('CREATE INDEX IF NOT EXISTS single_model_multi_int_index ON single_model_multi_int(single_model_id)')
@@ -89,9 +112,6 @@ def create_db_tables(ctx:dict) -> None:
     cursor.execute("CREATE TABLE IF NOT EXISTS single_model_multi_datetime(id INTEGER PRIMARY KEY, value, position, single_model_id INTEGER REFERENCES single_model(id))")
     cursor.execute('CREATE INDEX IF NOT EXISTS single_model_multi_datetime_index ON single_model_multi_datetime(single_model_id)')
 
-    # end ignore ::
-    # ignore ::
-
     #
     # multi model
     #
@@ -99,7 +119,7 @@ def create_db_tables(ctx:dict) -> None:
     cursor.execute("CREATE TABLE IF NOT EXISTS multi_model(id INTEGER PRIMARY KEY, 'user_id')")
     # end ignore ::
 
-    # macro :: py_create_model_table_list :: {"multi_model": "model_name_snake_case", "multi_bool": "field_name"}
+    # macro :: py_create_model_table_list_field :: {"multi_model": "model.name.snake_case", "multi_bool": "field.name.snake_case"}
     cursor.execute("CREATE TABLE IF NOT EXISTS multi_model_multi_bool(id INTEGER PRIMARY KEY, value, position, multi_model_id INTEGER REFERENCES multi_model(id))")
     cursor.execute('CREATE INDEX IF NOT EXISTS multi_model_multi_bool_index ON multi_model_multi_bool(multi_model_id)')
     # end macro ::
