@@ -5,8 +5,10 @@ from core.types import Fonts
 # for :: {% for module in modules.values() %} :: {"template_module": "module.name.snake_case", "TemplateModule": "module.name.pascal_case"}
 from template_module.gui import TemplateModuleIndexPage
 # end for :: rstrip
-# for :: {% for item in all_models %} :: {"template_module": "item.module.name.snake_case", "single_model": "item.model.name.snake_case", "SingleModel": "item.model.name.pascal_case"}
+# for :: {% for module in modules.values() %} :: {"template_module": "module.name.snake_case"}
+    # for :: {% for model in module.models.values() %} :: {"SingleModel": "model.name.pascal_case", "single_model": "model.name.snake_case"}
 from template_module.single_model.gui import SingleModelIndexPage, SingleModelInstancePage
+    # end for ::
 # end for :: rstrip
 # ignore ::
 from template_module.multi_model.gui import MultiModelIndexPage, MultiModelInstancePage
@@ -38,9 +40,11 @@ class TemplateAppGUI(tkinter.Tk):
         # for :: {% for module in modules.values() %} :: {"TemplateModule": "module.name.pascal_case"}
         TemplateModuleIndexPage,
         # end for ::
-        # for :: {% for item in all_models %} :: {"SingleModel": "item.model.name.pascal_case"}
+        # for :: {% for module in modules.values() %} :: {}
+            # for :: {% for model in module.models.values() %} :: {"SingleModel": "model.name.pascal_case"}
         SingleModelIndexPage,
         SingleModelInstancePage,
+            # end for ::
         # end for ::
         # ignore ::
         MultiModelIndexPage,

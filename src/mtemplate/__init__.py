@@ -254,14 +254,6 @@ class MTemplateProject:
         
     def init_template_vars(self):
         
-        # all model list #
-        all_models = []
-        for module in self.spec['modules'].values():
-            for model in module['models'].values():
-                all_models.append({'module': module, 'model': model})
-
-        self.spec['all_models'] = all_models
-        
         # macros from templates #
         for template in self.templates.values():
             if isinstance(template, str):

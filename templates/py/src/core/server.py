@@ -10,10 +10,11 @@ from core.types import to_json
 from core.models import *
 from core.db import *
 from core.exceptions import RequestError, JSONResponse, PlainTextResponse, NotFoundError, AuthenticationError, ForbiddenError
-# for :: {% for item in all_models %} :: {"template_module": "item.module.name.snake_case", "single_model": "item.model.name.snake_case"}
+# for :: {% for module in modules.values() %} :: {"template_module": "module.name.snake_case"}
+    # for :: {% for model in module.models.values() %} :: {"single_model": "model.name.snake_case"}
 from template_module.single_model.server import single_model_routes
+    # end for ::
 # end for ::
-
 # ignore ::
 from template_module.multi_model.server import multi_model_routes
 # end ignore ::
@@ -119,8 +120,10 @@ def user_routes(ctx:dict, env:dict, raw_req_body:bytes):
 route_list = [
     auth_routes,
     user_routes,
-    # for :: {% for item in all_models %} :: {"single_model": "item.model.name.snake_case"}
+    # for :: {% for module in modules.values() %} :: {}
+        # for :: {% for model in module.models.values() %} :: {"single_model": "model.name.snake_case"}
     single_model_routes,
+        # end for ::
     # end for ::
     # ignore ::
     multi_model_routes,
