@@ -87,13 +87,15 @@ class SingleModelIndexPage(tkinter.Frame):
             header.grid(row=self.list_items_row_offset - 1, column=n)
 
         try:
-            items = client_list_single_model(self.app.ctx, offset=self.list_offset, limit=self.list_page_size)
+            list_response = client_list_single_model(self.app.ctx, offset=self.list_offset, limit=self.list_page_size)
         except Exception as e:
             print(e)
             self.list_status.set('status: 🔴')
             return
         
-        self.pagination_label.set(f'offset: {self.list_offset} limit: {self.list_page_size} results: {len(items)}')
+        items = list_response['items']
+        
+        self.pagination_label.set(f'offset: {self.list_offset} limit: {self.list_page_size} count: {len(items)} total: {list_response["total"]}')
         
         self.list_status.set('status: 🟢')
 
@@ -124,44 +126,42 @@ class SingleModelIndexPage(tkinter.Frame):
             id_text.insert(tkinter.END, item_id)
             id_text.grid(row=n + self.list_items_row_offset, column=1, padx=padx)
 
-            # insert :: macro.py_tk_field_table(model.fields)
-
-            # macro :: py_tk_field_table_bool :: {"single_bool": "name", "2": "column"}
+            # macro :: py_tk_field_table_bool :: {"single_bool": "field.name.snake_case", "2": "column"}
             # single_bool - bool
             single_bool_text = tkinter.Text(self.table, height=1, width=5, highlightthickness=0)
             single_bool_text.insert(tkinter.END, str(getattr(item, 'single_bool', '-')).lower())
             single_bool_text.grid(row=n + self.list_items_row_offset, column=2, padx=padx)
             # end macro ::
 
-            # macro :: py_tk_field_table_int :: {"single_int": "name", "3": "column"}
+            # macro :: py_tk_field_table_int :: {"single_int": "field.name.snake_case", "3": "column"}
             # single_int - int
             single_int_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
             single_int_text.insert(tkinter.END, str(getattr(item, 'single_int', '-')))
             single_int_text.grid(row=n + self.list_items_row_offset, column=3, padx=padx)
             # end macro ::
 
-            # macro :: py_tk_field_table_float :: {"single_float": "name", "4": "column"}
+            # macro :: py_tk_field_table_float :: {"single_float": "field.name.snake_case", "4": "column"}
             # single_float - float
             single_float_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
             single_float_text.insert(tkinter.END, str(getattr(item, 'single_float', '-')))
             single_float_text.grid(row=n + self.list_items_row_offset, column=4, padx=padx)
             # end macro ::
 
-            # macro :: py_tk_field_table_str :: {"single_string": "name", "5": "column"}
+            # macro :: py_tk_field_table_str :: {"single_string": "field.name.snake_case", "5": "column"}
             # single_string - str
             single_string_text = tkinter.Text(self.table, height=1, width=20, highlightthickness=0)
             single_string_text.insert(tkinter.END, getattr(item, 'single_string', '-'))
             single_string_text.grid(row=n + self.list_items_row_offset, column=5, padx=padx)
             # end macro ::
 
-            # macro :: py_tk_field_table_enum :: {"single_enum": "name", "6": "column"}
+            # macro :: py_tk_field_table_str_enum :: {"single_enum": "field.name.snake_case", "6": "column"}
             # single_enum - str
             single_enum_text = tkinter.Text(self.table, height=1, width=15, highlightthickness=0)
             single_enum_text.insert(tkinter.END, getattr(item, 'single_enum', '-'))
             single_enum_text.grid(row=n + self.list_items_row_offset, column=6, padx=padx)
             # end macro ::
 
-            # macro :: py_tk_field_table_datetime :: {"single_datetime": "name", "7": "column"}
+            # macro :: py_tk_field_table_datetime :: {"single_datetime": "field.name.snake_case", "7": "column"}
             # single_datetime - datetime
             single_datetime_text = tkinter.Text(self.table, height=1, width=20, highlightthickness=0)
             single_datetime_value = getattr(item, 'single_datetime', '-')
@@ -170,6 +170,10 @@ class SingleModelIndexPage(tkinter.Frame):
             single_datetime_text.insert(tkinter.END, str(single_datetime_value))
             single_datetime_text.grid(row=n + self.list_items_row_offset, column=7, padx=padx)
             # end macro ::
+
+            # for :: {% for index, field in enumerate(model.sorted_fields, start=2) %} :: {}
+                # insert :: macro_by_type('py_tk_field_table', field.type_id, field=field, column=index)
+            # end for ::
 
         if self.list_offset == 0:
             self.prev_pg_button.state(['disabled'])

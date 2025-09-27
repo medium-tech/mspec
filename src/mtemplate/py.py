@@ -179,22 +179,6 @@ class MTemplatePyProject(MTemplateProject):
             out += list_tables + '\n'
 
         return out
-    
-    def macro_py_tk_field_table(self, fields:dict, indent='\t') -> str:
-        out = ''
-        column = 2
-        for name, field in fields.items():
-            macro_name = f'py_tk_field_table_{field["type"]}'
-            if field['type'] == 'list':
-                macro_name += f'_{field["element_type"]}'
-
-            vars = deepcopy(field)
-            vars['name'] = name
-            vars['column'] = str(column)
-            out += self.spec['macro'][macro_name](vars) + '\n'
-            column += 1
-
-        return out
           
     @classmethod
     def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplatePyProject':

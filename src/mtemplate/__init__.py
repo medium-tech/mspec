@@ -54,6 +54,7 @@ class MTemplateProject:
     def __init__(self, spec:dict, debug:bool=False, disable_strict:bool=False) -> None:
         self.spec = spec
         self.spec['macro'] = {}
+        self.spec['enumerate'] = enumerate
         self.spec['macro_by_type'] = self._macro_by_type
         self.spec['py_escape_single_quote'] = py_escape_single_quote
         self.debug = debug

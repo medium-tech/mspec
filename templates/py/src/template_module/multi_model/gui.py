@@ -85,13 +85,15 @@ class MultiModelIndexPage(tkinter.Frame):
             header.grid(row=self.list_items_row_offset - 1, column=n)
 
         try:
-            items = client_list_multi_model(self.app.ctx, offset=self.list_offset, limit=self.list_page_size)
+            list_response = client_list_multi_model(self.app.ctx, offset=self.list_offset, limit=self.list_page_size)
         except Exception as e:
             print(e)
             self.list_status.set('status: 🔴')
             return
+        
+        items = list_response['items']
 
-        self.pagination_label.set(f'offset: {self.list_offset} limit: {self.list_page_size} results: {len(items)}')
+        self.pagination_label.set(f'offset: {self.list_offset} limit: {self.list_page_size} count: {len(items)} total: {list_response["total"]}')
 
         self.list_status.set('status: 🟢')
 
@@ -122,7 +124,7 @@ class MultiModelIndexPage(tkinter.Frame):
             id_text.insert(tkinter.END, item_id)
             id_text.grid(row=n + self.list_items_row_offset, column=1, padx=padx)
 
-            # macro :: py_tk_field_table_list_bool :: {"multi_bool": "name"}
+            # macro :: py_tk_field_table_list_bool :: {"multi_bool": "field.name.snake_case"}
             # multi_bool - list of bool
             multi_bool_text = tkinter.Text(self.table, height=1, width=10, highlightthickness=0)
             multi_bool_value = getattr(item, 'multi_bool', '-')
@@ -132,7 +134,7 @@ class MultiModelIndexPage(tkinter.Frame):
             multi_bool_text.grid(row=n + self.list_items_row_offset, column=2, padx=padx)
             # end macro ::
 
-            # macro :: py_tk_field_table_list_int :: {"multi_int": "name"}
+            # macro :: py_tk_field_table_list_int :: {"multi_int": "field.name.snake_case"}
             # multi_int - list of int
             multi_int_text = tkinter.Text(self.table, height=1, width=15, highlightthickness=0)
             multi_int_value = getattr(item, 'multi_int', '-')
@@ -142,7 +144,7 @@ class MultiModelIndexPage(tkinter.Frame):
             multi_int_text.grid(row=n + self.list_items_row_offset, column=3, padx=padx)
             # end macro ::
 
-            # macro :: py_tk_field_table_list_float :: {"multi_float": "name"}
+            # macro :: py_tk_field_table_list_float :: {"multi_float": "field.name.snake_case"}
             # multi_float - list of float
             multi_float_text = tkinter.Text(self.table, height=1, width=15, highlightthickness=0)
             multi_float_value = getattr(item, 'multi_float', '-')
@@ -152,7 +154,7 @@ class MultiModelIndexPage(tkinter.Frame):
             multi_float_text.grid(row=n + self.list_items_row_offset, column=4, padx=padx)
             # end macro ::
 
-            # macro :: py_tk_field_table_list_str :: {"multi_string": "name"}
+            # macro :: py_tk_field_table_list_str :: {"multi_string": "field.name.snake_case"}
             # multi_string - list of str
             multi_string_text = tkinter.Text(self.table, height=1, width=30, highlightthickness=0)
             multi_string_value = getattr(item, 'multi_string', '-')
@@ -162,7 +164,7 @@ class MultiModelIndexPage(tkinter.Frame):
             multi_string_text.grid(row=n + self.list_items_row_offset, column=5, padx=padx)
             # end macro ::
 
-            # macro :: py_tk_field_table_list_enum :: {"multi_enum": "name"}
+            # macro :: py_tk_field_table_list_str_enum :: {"multi_enum": "field.name.snake_case"}
             # multi_enum - list of str (enums)
             multi_enum_text = tkinter.Text(self.table, height=1, width=20, highlightthickness=0)
             multi_enum_value = getattr(item, 'multi_enum', '-')
@@ -172,7 +174,7 @@ class MultiModelIndexPage(tkinter.Frame):
             multi_enum_text.grid(row=n + self.list_items_row_offset, column=6, padx=padx)
             # end macro ::
 
-            # macro :: py_tk_field_table_list_datetime :: {"multi_datetime": "name"}
+            # macro :: py_tk_field_table_list_datetime :: {"multi_datetime": "field.name.snake_case"}
             # multi_datetime - list of datetime
             multi_datetime_text = tkinter.Text(self.table, height=1, width=30, highlightthickness=0)
             multi_datetime_value = getattr(item, 'multi_datetime', '-')
