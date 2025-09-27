@@ -124,27 +124,6 @@ class MTemplatePyProject(MTemplateProject):
         out += '\n' + list_updates
         return out
 
-    def macro_py_sql_convert(self, fields:dict, indent='\t\t\t') -> str:
-        out = ''
-        single_field_index = 1
-
-        for field_name in sorted(fields.keys()):
-            if fields[field_name]['type'] == 'list':
-                out += f"{indent}{field_name}={field_name},\n"
-
-            else:
-                macro_vars = {
-                    'local_var': f'entry[{single_field_index}]',
-                    'field_name': field_name,
-                }
-                macro_name = 'py_sql_convert_' + fields[field_name]["type"]
-                if 'enum' in fields[field_name]:
-                    macro_name += '_enum'
-                out += self.spec['macro'][macro_name](macro_vars) + '\n'
-                single_field_index += 1
-
-        return out
-
     def macro_py_create_tables(self, all_models:list[dict], indent='\t') -> str:
         out = ''
         for item in all_models:

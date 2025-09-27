@@ -79,20 +79,29 @@ def db_read_single_model(ctx:dict, id:str) -> SingleModel:
     
     return SingleModel(
         id=str(entry[0]),
-        # insert :: macro.py_sql_convert(model.fields)
-        # macro :: py_sql_convert_bool :: {"entry[1]": "local_var", "single_bool": "field_name"}
+        # macro :: py_sql_convert_bool :: {"1": "index", "single_bool": "field.name.snake_case"}
         single_bool=bool(entry[1]),
-        # macro :: py_sql_convert_datetime :: {"entry[2]": "local_var", "single_datetime": "field_name"}
+        # macro :: py_sql_convert_datetime :: {"2": "index", "single_datetime": "field.name.snake_case"}
         single_datetime=datetime.strptime(entry[2], datetime_format_str).replace(microsecond=0),
-        # macro :: py_sql_convert_str_enum :: {"entry[3]": "local_var", "single_enum": "field_name"}
+        # macro :: py_sql_convert_str_enum :: {"3": "index", "single_enum": "field.name.snake_case"}
         single_enum=entry[3],
-        # macro :: py_sql_convert_float :: {"entry[4]": "local_var", "single_float": "field_name"}
+        # macro :: py_sql_convert_float :: {"4": "index", "single_float": "field.name.snake_case"}
         single_float=entry[4],
-        # macro :: py_sql_convert_int :: {"entry[5]": "local_var", "single_int": "field_name"}
+        # macro :: py_sql_convert_int :: {"5": "index", "single_int": "field.name.snake_case"}
         single_int=entry[5],
-        # macro :: py_sql_convert_str :: {"entry[6]": "local_var", "single_string": "field_name"}
+        # macro :: py_sql_convert_str :: {"6": "index", "single_string": "field.name.snake_case"}
         single_string=entry[6],
         # end macro ::
+        # for :: {% for index, field in enumerate(model.non_list_fields, start=1) %} :: {}
+            # if :: field.name.snake_case == 'user_id'
+                # insert :: macro.py_sql_convert_user_id(field=field, index=index)
+            # else ::
+                # insert :: macro_by_type('py_sql_convert', field.type_id, field=field, index=index)
+            # end if ::
+        # end for ::
+        # for :: {% for field in model.list_fields %} :: {}
+            # insert :: macro.py_sql_convert_list(field=field)
+        # end for ::
     ).validate()
 
 def db_update_single_model(ctx:dict, obj:SingleModel) -> SingleModel:
@@ -181,14 +190,24 @@ def db_list_single_model(ctx:dict, offset:int=0, limit:int=25) -> dict:
         # end for ::
         items.append(SingleModel(
             id=str(entry[0]),
-            # replace :: macro.py_sql_convert(model.fields)
+            # ignore ::
 			single_bool=bool(entry[1]),
 			single_datetime=datetime.strptime(entry[2], datetime_format_str).replace(microsecond=0),
 			single_enum=entry[3],
 			single_float=entry[4],
 			single_int=entry[5],
 			single_string=entry[6],
-            # end replace ::
+            # end ignore ::
+            # for :: {% for index, field in enumerate(model.non_list_fields, start=1) %} :: {}
+                # if :: field.name.snake_case == 'user_id'
+                    # insert :: macro.py_sql_convert_user_id(field=field, index=index)
+                # else ::
+                    # insert :: macro_by_type('py_sql_convert', field.type_id, field=field, index=index)
+                # end if ::
+            # end for ::
+            # for :: {% for field in model.list_fields %} :: {}
+                # insert :: macro.py_sql_convert_list(field=field)
+            # end for ::
         ).validate())
 
     return {

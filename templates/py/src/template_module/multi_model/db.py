@@ -133,8 +133,12 @@ def db_read_multi_model(ctx:dict, id:str) -> MultiModel:
 
     return MultiModel(
         id=str(entry[0]),
+        # macro :: py_sql_convert_user_id :: {"1": "index"}
         user_id=str(entry[1]),
+        # end macro ::
+        # macro :: py_sql_convert_list :: {"multi_bool": "field.name.snake_case"}
         multi_bool=multi_bool,
+        # end macro ::
         multi_float=multi_float,
         multi_int=multi_int,
         multi_string=multi_string,
