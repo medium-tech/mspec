@@ -79,11 +79,6 @@ def create_db_tables(ctx:dict) -> None:
     single_model_create_sql += ')'
     cursor.execute(single_model_create_sql)
     # end macro ::
-    # macro :: py_create_model_table_list :: {"single_model": "model_name_snake_case", "multi_bool": "field_name"}
-    cursor.execute("CREATE TABLE IF NOT EXISTS single_model_multi_bool(id INTEGER PRIMARY KEY, value, position, single_model_id INTEGER REFERENCES single_model(id))")
-    cursor.execute('CREATE INDEX IF NOT EXISTS single_model_multi_bool_index ON single_model_multi_bool(single_model_id)')
-    # end macro ::
-
     # for :: {% for module in modules.values() %} :: {}
         # for :: {% for model in module.models.values() %} :: {}
             # insert :: macro.py_create_model_table_start(model=model)
@@ -97,20 +92,6 @@ def create_db_tables(ctx:dict) -> None:
         # end for ::
     # end for ::
     # ignore ::
-    cursor.execute("CREATE TABLE IF NOT EXISTS single_model_multi_int(id INTEGER PRIMARY KEY, value, position, single_model_id INTEGER REFERENCES single_model(id))")
-    cursor.execute('CREATE INDEX IF NOT EXISTS single_model_multi_int_index ON single_model_multi_int(single_model_id)')
-
-    cursor.execute("CREATE TABLE IF NOT EXISTS single_model_multi_float(id INTEGER PRIMARY KEY, value, position, single_model_id INTEGER REFERENCES single_model(id))")
-    cursor.execute('CREATE INDEX IF NOT EXISTS single_model_multi_float_index ON single_model_multi_float(single_model_id)')
-
-    cursor.execute("CREATE TABLE IF NOT EXISTS single_model_multi_string(id INTEGER PRIMARY KEY, value, position, single_model_id INTEGER REFERENCES single_model(id))")
-    cursor.execute('CREATE INDEX IF NOT EXISTS single_model_multi_string_index ON single_model_multi_string(single_model_id)')
-
-    cursor.execute("CREATE TABLE IF NOT EXISTS single_model_multi_enum(id INTEGER PRIMARY KEY, value, position, single_model_id INTEGER REFERENCES single_model(id))")
-    cursor.execute('CREATE INDEX IF NOT EXISTS single_model_multi_enum_index ON single_model_multi_enum(single_model_id)')
-
-    cursor.execute("CREATE TABLE IF NOT EXISTS single_model_multi_datetime(id INTEGER PRIMARY KEY, value, position, single_model_id INTEGER REFERENCES single_model(id))")
-    cursor.execute('CREATE INDEX IF NOT EXISTS single_model_multi_datetime_index ON single_model_multi_datetime(single_model_id)')
 
     #
     # multi model
@@ -123,7 +104,6 @@ def create_db_tables(ctx:dict) -> None:
     cursor.execute("CREATE TABLE IF NOT EXISTS multi_model_multi_bool(id INTEGER PRIMARY KEY, value, position, multi_model_id INTEGER REFERENCES multi_model(id))")
     cursor.execute('CREATE INDEX IF NOT EXISTS multi_model_multi_bool_index ON multi_model_multi_bool(multi_model_id)')
     # end macro ::
-
     # ignore ::
     cursor.execute("CREATE TABLE IF NOT EXISTS multi_model_multi_int(id INTEGER PRIMARY KEY, value, position, multi_model_id INTEGER REFERENCES multi_model(id))")
     cursor.execute('CREATE INDEX IF NOT EXISTS multi_model_multi_int_index ON multi_model_multi_int(multi_model_id)')
