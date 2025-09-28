@@ -20,6 +20,7 @@ from pathlib import Path
 test_num = 0
 
 QUICK_TEST = os.getenv('QUICK_TEST', '0') == '1'
+TEMPLATE_TEST = os.getenv('TEMPLATE_TEST', '0') == '1'
 DEV_TEST = os.getenv('DEV_TEST', '0') == '1'
 
 def indent_lines(test, indent=2):
@@ -51,10 +52,10 @@ class BaseMSpecTest(unittest.TestCase):
         self.test_dir = self.tests_tmp_dir / f'test_{test_num}'
         test_num += 1
         self.test_dir.mkdir(exist_ok=True)
-        self.test_passed = False
+        self.run_cleanup = False
 
     def tearDown(self):
-        if self.test_passed:
+        if self.run_cleanup:
             try:
                 shutil.rmtree(self.test_dir)
             except Exception as e:
@@ -118,8 +119,6 @@ class BaseMSpecTest(unittest.TestCase):
             use_cache_file = use_cache_dir / file_rel_path
             with open(no_cache_file, 'r') as f1, open(use_cache_file, 'r') as f2:
                 self.assertEqual(f1.read(), f2.read(), f'File contents differ: {file_rel_path}')
-
-        self.test_passed = True
 
     def _test_debug_mode(self, spec_file:str):
         """
@@ -206,10 +205,9 @@ class BaseMSpecTest(unittest.TestCase):
             jinja2_file = debug_cache_file.with_name(debug_cache_file.name + '.jinja2')
             self.assertTrue(jinja2_file.exists(), f'Missing .jinja2 debug file for: {file_rel_path}')
 
-        self.test_passed = True
-
-    def _test_generate_and_test_both_apps(self, spec_file:str):
-        '''Test generating both py and browser1 apps together and run their tests'''
+    def _test_generate_and_install_both_apps(self, spec_file:str) -> Path:
+        '''Test generating both py and browser1 apps together and installing them,
+        returns the path to the python venv directory'''
 
         #
         # generate both apps
@@ -280,6 +278,13 @@ class BaseMSpecTest(unittest.TestCase):
         if npm_install_result.returncode != 0:
             raise RuntimeError(f'Failed to install npm dependencies: {npm_install_result.stderr}')
         
+        return venv_dir
+
+    def _test_run_server_and_both_app_tests(self, venv_dir:Path):
+
+        py_dir = self.test_dir / 'py'
+        browser1_dir = self.test_dir / 'browser1'
+
         #
         # server startup and test execution
         #
@@ -294,9 +299,9 @@ class BaseMSpecTest(unittest.TestCase):
             
             # create log files for server output to avoid pipe blocking #
 
-            server_log = self.test_dir / 'server.log'
-            server_err_log = self.test_dir / 'server_error.log'
-            
+            server_log = self.test_dir / 'unittest-server.log'
+            server_err_log = self.test_dir / 'unittest-server-error.log'
+
             # start server #
 
             with open(server_log, 'w') as stdout_file, open(server_err_log, 'w') as stderr_file:
@@ -381,7 +386,6 @@ class BaseMSpecTest(unittest.TestCase):
                     except (OSError, ProcessLookupError):
                         pass
 
-        self.test_passed = True
         print('\tdone')
 
 
@@ -394,14 +398,18 @@ class TestTestGenSpec(BaseMSpecTest):
     tests_tmp_dir = repo_root / 'tests' / 'tmp'
 
     def test_cache(self):
-        return self._test_cache(self.spec_file)
+        self._test_cache(self.spec_file)
+        self.run_cleanup = True
     
     def test_debug_mode(self):
-        return self._test_debug_mode(self.spec_file)
+        self._test_debug_mode(self.spec_file)
+        self.run_cleanup = True
 
-    @unittest.skipIf(QUICK_TEST, "Skipping app test in quick test mode")
+    @unittest.skipIf(QUICK_TEST or TEMPLATE_TEST, "Skipping app test")
     def test_generate_and_test_both_apps(self):
-        return self._test_generate_and_test_both_apps(self.spec_file)
+        venv_dir = self._test_generate_and_install_both_apps(self.spec_file)
+        self._test_run_server_and_both_app_tests(venv_dir)
+        self.run_cleanup = True
 
     def test_generate_py_app(self):
         '''Test generating py app from test-gen.yaml and verify structure'''
@@ -480,7 +488,7 @@ class TestTestGenSpec(BaseMSpecTest):
                 self.assertNotIn('{{', model_content)
                 self.assertNotIn('}}', model_content)
 
-        self.test_passed = True
+        self.run_cleanup = True
     
     def test_generate_browser1_app(self):
         '''Test generating browser1 app from test-gen.yaml and verify structure'''
@@ -569,7 +577,7 @@ class TestTestGenSpec(BaseMSpecTest):
                 self.assertNotIn('{{', test_content)
                 self.assertNotIn('}}', test_content)
 
-        self.test_passed = True
+        self.run_cleanup = True
     
 
 class TestSampleStoreSpec(BaseMSpecTest):
@@ -580,15 +588,18 @@ class TestSampleStoreSpec(BaseMSpecTest):
     tests_tmp_dir = repo_root / 'tests' / 'tmp'
 
     def test_cache(self):
-        return self._test_cache(self.spec_file)
+        self._test_cache(self.spec_file)
+        self.run_cleanup = True
 
     def test_debug_mode(self):
-        return self._test_debug_mode(self.spec_file)
+        self._test_debug_mode(self.spec_file)
+        self.run_cleanup = True
 
-    @unittest.skipIf(DEV_TEST or QUICK_TEST, "Skipping app test for dev/quick test mode")
+    @unittest.skipIf(DEV_TEST or QUICK_TEST or TEMPLATE_TEST, "Skipping app test for dev/quick/template test mode")
     def test_generate_and_test_both_apps(self):
-        return self._test_generate_and_test_both_apps(self.spec_file)
-    
+        venv_dir = self._test_generate_and_install_both_apps(self.spec_file)
+        self._test_run_server_and_both_app_tests(venv_dir)
+        self.run_cleanup = True
 
 class TestSimpleSocialSpec(BaseMSpecTest):
     '''Test the complete app generation workflow'''
@@ -598,14 +609,49 @@ class TestSimpleSocialSpec(BaseMSpecTest):
     tests_tmp_dir = repo_root / 'tests' / 'tmp'
 
     def test_cache(self):
-        return self._test_cache(self.spec_file)
+        self._test_cache(self.spec_file)
+        self.run_cleanup = True
 
     def test_debug_mode(self):
-        return self._test_debug_mode(self.spec_file)
+        self._test_debug_mode(self.spec_file)
+        self.run_cleanup = True
+
+    @unittest.skipIf(DEV_TEST or QUICK_TEST or TEMPLATE_TEST, "Skipping app test for dev/quick/template test mode")
+    def test_generate_and_test_both_apps(self):
+        venv_dir = self._test_generate_and_install_both_apps(self.spec_file)
+        self._test_run_server_and_both_app_tests(venv_dir)
+        self.run_cleanup = True
+
+class TestTemplateSourceApps(BaseMSpecTest):
+
+    repo_root = Path(__file__).parent.parent
+
+    def setUp(self):
+        '''run before each test to create unique test dir'''
+        self.test_dir = self.repo_root / 'templates'
+        self.run_cleanup = False
 
     @unittest.skipIf(DEV_TEST or QUICK_TEST, "Skipping app test for dev/quick test mode")
-    def test_generate_and_test_both_apps(self):
-        return self._test_generate_and_test_both_apps(self.spec_file)
+    def test_run_template_source_apps(self):
+        '''Test generating and running all template source apps'''
+        venv_dir = self.repo_root / '.venv'
+        if not venv_dir.exists():
+            raise RuntimeError(f'venv does not exist: {venv_dir.absolute()}, follow dev environment setup instructions in README.md')
+        self._test_run_server_and_both_app_tests(venv_dir)
+
+        self.run_cleanup = False  # ensure we do not delete the templates directory
+
+        # delete server logs if they exist
+        to_delete = [
+            self.test_dir / 'unittest-server.log',
+            self.test_dir / 'unittest-server-error.log'
+        ]
+
+        for path in to_delete:
+            try:
+                path.unlink()
+            except FileNotFoundError:
+                pass
 
 if __name__ == '__main__':
     unittest.main()

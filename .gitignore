@@ -13,3 +13,4 @@ build/
 tests/tmp/
 out/
 src/mtemplate/.cache/
+unittest*.log
