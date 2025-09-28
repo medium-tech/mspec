@@ -31,6 +31,8 @@ modules:
         fields:
 
           user_id:
+            name:
+              lower_case: 'user id'
             type: str
             examples:
               - "1"
@@ -38,6 +40,8 @@ modules:
               - "3"
 
           username:
+            name:
+              lower_case: 'username'
             type: str
             examples:
               - 'alice'
@@ -45,6 +49,8 @@ modules:
               - 'charlie'
 
           bio:
+            name:
+              lower_case: 'bio'
             type: str
             examples:
               - 'Loves hiking and outdoor adventures.'
@@ -66,6 +72,8 @@ modules:
         fields:
 
           user_id:
+            name:
+              lower_case: 'user id'
             type: str
             examples:
               - "1"
@@ -73,6 +81,8 @@ modules:
               - "3"
 
           content:
+            name:
+              lower_case: 'content'
             type: str
             examples:
               - 'Just had an amazing day at the beach!'
@@ -88,6 +98,8 @@ modules:
         fields:
 
           user_id:
+            name:
+              lower_case: 'user id'
             type: str
             examples:
               - "1"
@@ -95,6 +107,8 @@ modules:
               - "3"
 
           event_name:
+            name:
+              lower_case: 'event name'
             type: str
             examples:
               - 'Birthday Party'
@@ -102,6 +116,8 @@ modules:
               - 'Book Club Meeting'
 
           event_date:
+            name:
+              lower_case: 'event date'
             type: datetime
             examples:
               - '2023-10-15T18:00:00'
@@ -109,6 +125,8 @@ modules:
               - '2023-12-05T14:00:00'
 
           location:
+            name:
+              lower_case: 'location'
             type: str
             examples:
               - 'Central Park'
@@ -116,6 +134,8 @@ modules:
               - 'City Library'
           
           description:
+            name:
+              lower_case: 'description'
             type: str
             examples:
               - 'Join us for a fun birthday celebration!'
