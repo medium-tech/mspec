@@ -226,9 +226,13 @@ As with the template apps, 0 dependencies are required to deploy the app, howeve
 
 ## test app generator
 
-To run the app generator tests that verify the mtemplate functionality:
+These tests ensure the template extraction, caching and generation of apps is working. It will also install generated apps, run the server process and their tests. 
 
     ./test.sh
+
+For development and iterative testing it is recommended to use the `--dev` option to skip exhaustive testing (run with `--help` for more details).
+
+    ./test.sh --dev
 
 # Contributing
 
@@ -269,13 +273,20 @@ See [TODO.md](./TODO.md) for desired language implementation and current progres
 
 # deploying to pypi
 
-install build deps:
+### install build dependencies:
 
     pip install -r requirements-dev.txt
 
-deploying new version:
+### finalizing release
+1. run `python -m mtemplate cache` to ensure distributed templates are up to date
+
+1. run and test template apps
+
+1. run app template generator tests
 
 1. increment version in `pyproject.toml` file
+
+### build and publish release:
 
 1. build distributions
 
@@ -287,6 +298,6 @@ deploying new version:
         ./build_test.py
         twine check dist/*
 
-1. upload to pypi
+1. upload to pypi (will prompt for api key, no other config needed)
 
         twine upload dist/*

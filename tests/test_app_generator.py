@@ -20,7 +20,7 @@ from pathlib import Path
 test_num = 0
 
 QUICK_TEST = os.getenv('QUICK_TEST', '0') == '1'
-FULL_TEST = os.getenv('FULL_TEST', '0') == '1'
+DEV_TEST = os.getenv('DEV_TEST', '0') == '1'
 
 def indent_lines(test, indent=2):
     '''Indent each line of a multi-line string for pretty printing'''
@@ -584,8 +584,8 @@ class TestSampleStoreSpec(BaseMSpecTest):
 
     def test_debug_mode(self):
         return self._test_debug_mode(self.spec_file)
-    
-    @unittest.skipUnless(FULL_TEST, "Skipping app test in quick test mode")
+
+    @unittest.skipIf(DEV_TEST or QUICK_TEST, "Skipping app test for dev/quick test mode")
     def test_generate_and_test_both_apps(self):
         return self._test_generate_and_test_both_apps(self.spec_file)
     
@@ -602,8 +602,8 @@ class TestSimpleSocialSpec(BaseMSpecTest):
 
     def test_debug_mode(self):
         return self._test_debug_mode(self.spec_file)
-    
-    @unittest.skipUnless(FULL_TEST, "Skipping app test in quick test mode")
+
+    @unittest.skipIf(DEV_TEST or QUICK_TEST, "Skipping app test for dev/quick test mode")
     def test_generate_and_test_both_apps(self):
         return self._test_generate_and_test_both_apps(self.spec_file)
 
