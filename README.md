@@ -230,10 +230,6 @@ To run the app generator tests that verify the mtemplate functionality:
 
     ./test.sh
 
-These tests gerenerate apps from a unittest spec file, it sets up their environments and runs their unittests. It deletes the apps after the test, if tests fail and you need to inspect the apps for troubleshooting use debug mode to leave the apps on disk.
-
-    ./test.sh --debug
-
 # Contributing
 
 ## General steps

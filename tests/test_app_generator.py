@@ -19,11 +19,18 @@ from pathlib import Path
 
 test_num = 0
 
-class TestAppGenerator(unittest.TestCase):
+QUICK_TEST = os.getenv('QUICK_TEST', '0') == '1'
+FULL_TEST = os.getenv('FULL_TEST', '0') == '1'
+
+def indent_lines(test, indent=2):
+    '''Indent each line of a multi-line string for pretty printing'''
+    indentation = '\t' * indent
+    return '\n'.join(f'{indentation}{line}' for line in test.splitlines())
+
+class BaseMSpecTest(unittest.TestCase):
     '''Test the complete app generation workflow'''
 
     repo_root = Path(__file__).parent.parent
-    spec_file = repo_root / 'src' / 'mspec' / 'data' / 'test-gen.yaml'
     tests_tmp_dir = repo_root / 'tests' / 'tmp'
 
     @classmethod
@@ -53,7 +60,7 @@ class TestAppGenerator(unittest.TestCase):
             except Exception as e:
                 print('\t* failed to remove test directory:', self.test_dir, e)
 
-    def test_cache(self):
+    def _test_cache(self, spec_file:str):
         """
         ensure template caching is working by caching the apps then generating
         with and without cache and comparing the output
@@ -65,7 +72,7 @@ class TestAppGenerator(unittest.TestCase):
 
         result = subprocess.run([
             sys.executable, '-m', 'mtemplate', 'cache',
-            '--spec', str(self.spec_file),
+            '--spec', str(spec_file),
         ], capture_output=True, text=True, cwd=str(self.repo_root),
           env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
         
@@ -79,7 +86,7 @@ class TestAppGenerator(unittest.TestCase):
         no_cache_dir = self.test_dir / 'no-cache'
         result = subprocess.run([
             sys.executable, '-m', 'mtemplate', 'render',
-            '--spec', str(self.spec_file),
+            '--spec', str(spec_file),
             '--output', str(no_cache_dir),
             '--no-cache',
         ], capture_output=True, text=True, cwd=str(self.repo_root),
@@ -89,7 +96,7 @@ class TestAppGenerator(unittest.TestCase):
         use_cache_dir = self.test_dir / 'use-cache'
         result = subprocess.run([
             sys.executable, '-m', 'mtemplate', 'render',
-            '--spec', str(self.spec_file),
+            '--spec', str(spec_file),
             '--output', str(use_cache_dir),
             '--use-cache',
         ], capture_output=True, text=True, cwd=str(self.repo_root),
@@ -114,7 +121,7 @@ class TestAppGenerator(unittest.TestCase):
 
         self.test_passed = True
 
-    def test_debug_mode(self):
+    def _test_debug_mode(self, spec_file:str):
         """
         + ensure debug mode outputs a jinja2 template for each rendered file
         + ensure the generated app is the same as without debug mode when ignoring
@@ -130,7 +137,7 @@ class TestAppGenerator(unittest.TestCase):
         normal_dir = self.test_dir / 'normal'
         result = subprocess.run([
             sys.executable, '-m', 'mtemplate', 'render',
-            '--spec', str(self.spec_file),
+            '--spec', str(spec_file),
             '--output', str(normal_dir),
             '--no-cache',
         ], capture_output=True, text=True, cwd=str(self.repo_root),
@@ -142,7 +149,7 @@ class TestAppGenerator(unittest.TestCase):
         debug_no_cache_dir = self.test_dir / 'debug'
         result = subprocess.run([
             sys.executable, '-m', 'mtemplate', 'render',
-            '--spec', str(self.spec_file),
+            '--spec', str(spec_file),
             '--output', str(debug_no_cache_dir),
             '--debug',
             '--no-cache',
@@ -155,7 +162,7 @@ class TestAppGenerator(unittest.TestCase):
         debug_cache_dir = self.test_dir / 'debug-cache'
         result = subprocess.run([
             sys.executable, '-m', 'mtemplate', 'render',
-            '--spec', str(self.spec_file),
+            '--spec', str(spec_file),
             '--output', str(debug_cache_dir),
             '--debug',
             '--use-cache',
@@ -200,6 +207,201 @@ class TestAppGenerator(unittest.TestCase):
             self.assertTrue(jinja2_file.exists(), f'Missing .jinja2 debug file for: {file_rel_path}')
 
         self.test_passed = True
+
+    def _test_generate_and_test_both_apps(self, spec_file:str):
+        '''Test generating both py and browser1 apps together and run their tests'''
+
+        #
+        # generate both apps
+        #
+
+        result = subprocess.run([
+            sys.executable, '-m', 'mtemplate', 'render',
+            '--spec', str(spec_file),
+            '--output', str(self.test_dir),
+            '--debug',
+            '--no-cache'
+        ], capture_output=True, text=True, cwd=str(self.repo_root),
+          env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
+        
+        self.assertEqual(result.returncode, 0, f'Failed to generate apps: {result.stderr}')
+        
+        # check that files from both apps were generated in their respective subdirectories #
+
+        py_dir = self.test_dir / 'py'
+        browser1_dir = self.test_dir / 'browser1'
+        
+        expected_files = [
+            (py_dir, 'pyproject.toml'),
+            (py_dir, 'test.sh'), 
+            (py_dir, 'server.sh'),
+            (py_dir, 'src/core/__init__.py'),
+            
+            (browser1_dir, 'package.json'),
+            (browser1_dir, 'playwright.config.js'),
+            (browser1_dir, 'srv/index.html'),
+            (browser1_dir, 'srv/index.js')
+        ]
+        
+        for base_dir, file_path in expected_files:
+            full_path = base_dir / file_path
+            self.assertTrue(full_path.exists(), f'Expected file not found: {base_dir.name}/{file_path}')
+        #
+        # app setup
+        #
+        
+        # create virtual environment #
+
+        venv_dir = self.test_dir / 'py' / '.venv'
+        venv_result = subprocess.run([
+            sys.executable, '-m', 'venv', str(venv_dir), '--upgrade-deps'
+        ], capture_output=True, text=True, cwd=str(py_dir))
+        
+        if venv_result.returncode != 0:
+            raise RuntimeError(f'Failed to create venv: {venv_result.stderr}')
+        
+        python_executable = str(venv_dir / 'bin' / 'python')
+        
+        # install py dependencies #
+
+        pip_install_result = subprocess.run([
+            python_executable, '-m', 'pip', 'install', '-e', '.'
+        ], capture_output=True, text=True, cwd=str(py_dir))
+        
+        if pip_install_result.returncode != 0:
+            raise RuntimeError(f'Failed to install Python dependencies: {pip_install_result.stderr}')
+        
+        # install browser1 dependencies #
+
+        npm_install_result = subprocess.run([
+            'npm', 'install'
+        ], capture_output=True, text=True, cwd=str(browser1_dir))
+        
+        if npm_install_result.returncode != 0:
+            raise RuntimeError(f'Failed to install npm dependencies: {npm_install_result.stderr}')
+        
+        #
+        # server startup and test execution
+        #
+        
+        server_process = None
+        try:
+
+            # check if server.sh exists #
+
+            server_script = py_dir / 'server.sh'
+            self.assertTrue(server_script.exists(), 'server.sh should exist')
+            
+            # create log files for server output to avoid pipe blocking #
+
+            server_log = self.test_dir / 'server.log'
+            server_err_log = self.test_dir / 'server_error.log'
+            
+            # start server #
+
+            with open(server_log, 'w') as stdout_file, open(server_err_log, 'w') as stderr_file:
+                server_process = subprocess.Popen([
+                    'bash', '-c', server_script.as_posix()
+                ], cwd=str(py_dir), 
+                   stdout=stdout_file, 
+                   stderr=stderr_file,
+                   preexec_fn=os.setsid,  # Start in new session to make it daemon-like
+                   env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), PATH=f'{venv_dir / "bin"}:{os.environ.get("PATH", "")}'))
+
+            print(f'Server with PID {server_process.pid} running {server_script}')
+            
+            time.sleep(5)   # give the server a moment to start
+
+            # check if the server has started successfully #
+
+            if server_process.poll() is not None:
+                with open(server_log, 'r') as f:
+                    stdout_content = f.read()
+                with open(server_err_log, 'r') as f:
+                    stderr_content = f.read()
+                raise RuntimeError(f'Server failed to start. stdout: {stdout_content}, stderr: {stderr_content}')
+
+            # run py tests #
+
+            test_script = py_dir / 'test.sh'
+            self.assertTrue(test_script.exists(), 'test.sh should exist')
+            
+            python_test_result = None
+            try:
+                python_test_result = subprocess.run([
+                    'bash', '-c', test_script.as_posix()
+                ], capture_output=True, text=True, cwd=str(py_dir), timeout=60, 
+                   env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), 
+                           PATH=f'{venv_dir / "bin"}:{os.environ.get("PATH", "")}'))
+                
+                print(f'\tPython tests return code: {python_test_result.returncode}')
+                print(f'\tPython tests stdout: {indent_lines(python_test_result.stdout)}')
+                print(f'\tPython tests stderr: {indent_lines(python_test_result.stderr)}')
+
+            except subprocess.TimeoutExpired:
+                raise RuntimeError('Python tests timed out')
+            
+            if python_test_result.returncode != 0:
+                raise RuntimeError(f'Python tests failed: {python_test_result.stderr}')
+            
+            # run browser1 tests #
+            
+            browser_test_result = subprocess.run([
+                'npm', 'run', 'test'
+            ], capture_output=True, text=True, cwd=str(browser1_dir), timeout=60, env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), PATH=f'{venv_dir / "bin"}:{os.environ.get("PATH", "")}'))
+
+            print(f'\tBrowser tests return code: {browser_test_result.returncode}')
+            print(f'\tBrowser tests stdout: {indent_lines(browser_test_result.stdout)}')
+            print(f'\tBrowser tests stderr: {indent_lines(browser_test_result.stderr)}')
+
+            if browser_test_result.returncode != 0:
+                raise RuntimeError(f'browser1 tests failed: {browser_test_result.stderr}')
+
+            if server_process:
+                print('\tterminating server process')
+                # Terminate the process group to ensure all child processes are killed
+                try:
+                    os.killpg(os.getpgid(server_process.pid), signal.SIGTERM)
+                except (OSError, ProcessLookupError):
+                    # Process might have already terminated
+                    pass
+        
+        finally:
+
+            # cleanup #
+
+            if server_process:
+                print('\tcleaning up server process')
+                try:
+                    os.killpg(os.getpgid(server_process.pid), signal.SIGTERM)
+                    server_process.wait(timeout=5)
+                except (OSError, ProcessLookupError, subprocess.TimeoutExpired):
+                    try:
+                        os.killpg(os.getpgid(server_process.pid), signal.SIGKILL)
+                    except (OSError, ProcessLookupError):
+                        pass
+
+        self.test_passed = True
+        print('\tdone')
+
+
+
+class TestTestGenSpec(BaseMSpecTest):
+    '''Test the complete app generation workflow'''
+
+    repo_root = Path(__file__).parent.parent
+    spec_file = repo_root / 'src' / 'mspec' / 'data' / 'test-gen.yaml'
+    tests_tmp_dir = repo_root / 'tests' / 'tmp'
+
+    def test_cache(self):
+        return self._test_cache(self.spec_file)
+    
+    def test_debug_mode(self):
+        return self._test_debug_mode(self.spec_file)
+
+    @unittest.skipIf(QUICK_TEST, "Skipping app test in quick test mode")
+    def test_generate_and_test_both_apps(self):
+        return self._test_generate_and_test_both_apps(self.spec_file)
 
     def test_generate_py_app(self):
         '''Test generating py app from test-gen.yaml and verify structure'''
@@ -369,182 +571,41 @@ class TestAppGenerator(unittest.TestCase):
 
         self.test_passed = True
     
+
+class TestSampleStoreSpec(BaseMSpecTest):
+    '''Test the complete app generation workflow'''
+
+    repo_root = Path(__file__).parent.parent
+    spec_file = repo_root / 'src' / 'mspec' / 'data' / 'my-sample-store.yaml'
+    tests_tmp_dir = repo_root / 'tests' / 'tmp'
+
+    def test_cache(self):
+        return self._test_cache(self.spec_file)
+
+    def test_debug_mode(self):
+        return self._test_debug_mode(self.spec_file)
+    
+    @unittest.skipUnless(FULL_TEST, "Skipping app test in quick test mode")
     def test_generate_and_test_both_apps(self):
-        '''Test generating both py and browser1 apps together and run their tests'''
+        return self._test_generate_and_test_both_apps(self.spec_file)
+    
 
-        #
-        # generate both apps
-        #
+class TestSimpleSocialSpec(BaseMSpecTest):
+    '''Test the complete app generation workflow'''
 
-        result = subprocess.run([
-            sys.executable, '-m', 'mtemplate', 'render',
-            '--spec', str(self.spec_file),
-            '--output', str(self.test_dir),
-            '--debug',
-            '--no-cache'
-        ], capture_output=True, text=True, cwd=str(self.repo_root),
-          env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
-        
-        self.assertEqual(result.returncode, 0, f'Failed to generate apps: {result.stderr}')
-        
-        # check that files from both apps were generated in their respective subdirectories #
+    repo_root = Path(__file__).parent.parent
+    spec_file = repo_root / 'src' / 'mspec' / 'data' / 'simple-social-network.yaml'
+    tests_tmp_dir = repo_root / 'tests' / 'tmp'
 
-        py_dir = self.test_dir / 'py'
-        browser1_dir = self.test_dir / 'browser1'
-        
-        expected_files = [
-            (py_dir, 'pyproject.toml'),
-            (py_dir, 'test.sh'), 
-            (py_dir, 'server.sh'),
-            (py_dir, 'src/core/__init__.py'),
-            
-            (browser1_dir, 'package.json'),
-            (browser1_dir, 'playwright.config.js'),
-            (browser1_dir, 'srv/index.html'),
-            (browser1_dir, 'srv/index.js')
-        ]
-        
-        for base_dir, file_path in expected_files:
-            full_path = base_dir / file_path
-            self.assertTrue(full_path.exists(), f'Expected file not found: {base_dir.name}/{file_path}')
-        #
-        # app setup
-        #
-        
-        # create virtual environment #
+    def test_cache(self):
+        return self._test_cache(self.spec_file)
 
-        venv_dir = self.test_dir / 'py' / '.venv'
-        venv_result = subprocess.run([
-            sys.executable, '-m', 'venv', str(venv_dir), '--upgrade-deps'
-        ], capture_output=True, text=True, cwd=str(py_dir))
-        
-        if venv_result.returncode != 0:
-            raise RuntimeError(f'Failed to create venv: {venv_result.stderr}')
-        
-        python_executable = str(venv_dir / 'bin' / 'python')
-        
-        # install py dependencies #
-
-        pip_install_result = subprocess.run([
-            python_executable, '-m', 'pip', 'install', '-e', '.'
-        ], capture_output=True, text=True, cwd=str(py_dir))
-        
-        if pip_install_result.returncode != 0:
-            raise RuntimeError(f'Failed to install Python dependencies: {pip_install_result.stderr}')
-        
-        # install browser1 dependencies #
-
-        npm_install_result = subprocess.run([
-            'npm', 'install'
-        ], capture_output=True, text=True, cwd=str(browser1_dir))
-        
-        if npm_install_result.returncode != 0:
-            raise RuntimeError(f'Failed to install npm dependencies: {npm_install_result.stderr}')
-        
-        #
-        # server startup and test execution
-        #
-        
-        server_process = None
-        try:
-
-            # check if server.sh exists #
-
-            server_script = py_dir / 'server.sh'
-            self.assertTrue(server_script.exists(), 'server.sh should exist')
-            
-            # create log files for server output to avoid pipe blocking #
-
-            server_log = self.test_dir / 'server.log'
-            server_err_log = self.test_dir / 'server_error.log'
-            
-            # start server #
-
-            with open(server_log, 'w') as stdout_file, open(server_err_log, 'w') as stderr_file:
-                server_process = subprocess.Popen([
-                    'bash', '-c', server_script.as_posix()
-                ], cwd=str(py_dir), 
-                   stdout=stdout_file, 
-                   stderr=stderr_file,
-                   preexec_fn=os.setsid,  # Start in new session to make it daemon-like
-                   env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), PATH=f'{venv_dir / "bin"}:{os.environ.get("PATH", "")}'))
-
-            print(f'Started server with PID {server_process.pid}')
-            
-            time.sleep(5)   # give the server a moment to start
-
-            # check if the server has started successfully #
-
-            if server_process.poll() is not None:
-                with open(server_log, 'r') as f:
-                    stdout_content = f.read()
-                with open(server_err_log, 'r') as f:
-                    stderr_content = f.read()
-                raise RuntimeError(f'Server failed to start. stdout: {stdout_content}, stderr: {stderr_content}')
-
-            # run py tests #
-
-            test_script = py_dir / 'test.sh'
-            self.assertTrue(test_script.exists(), 'test.sh should exist')
-            
-            print(f'Running Python tests with command: bash -c {test_script.as_posix()}')
-            
-            python_test_result = None
-            try:
-                python_test_result = subprocess.run([
-                    'bash', '-c', test_script.as_posix()
-                ], capture_output=True, text=True, cwd=str(py_dir), timeout=60, 
-                   env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), 
-                           PATH=f'{venv_dir / "bin"}:{os.environ.get("PATH", "")}'))
-                
-                print(f'Python tests return code: {python_test_result.returncode}')
-                print(f'Python tests stdout: {python_test_result.stdout}')
-                print(f'Python tests stderr: {python_test_result.stderr}')
-                
-            except subprocess.TimeoutExpired:
-                raise RuntimeError('Python tests timed out')
-            
-            if python_test_result.returncode != 0:
-                raise RuntimeError(f'Python tests failed: {python_test_result.stderr}')
-            
-            # run browser1 tests #
-            
-            print(f'Running browser1 tests with command: npm run test')
-            browser_test_result = subprocess.run([
-                'npm', 'run', 'test'
-            ], capture_output=True, text=True, cwd=str(browser1_dir), timeout=60, env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), PATH=f'{venv_dir / "bin"}:{os.environ.get("PATH", "")}'))
-
-            print(browser_test_result.stdout + browser_test_result.stderr)
-
-            if browser_test_result.returncode != 0:
-                raise RuntimeError(f'browser1 tests failed: {browser_test_result.stderr}')
-
-            print('terminating server process')
-            if server_process:
-                # Terminate the process group to ensure all child processes are killed
-                try:
-                    os.killpg(os.getpgid(server_process.pid), signal.SIGTERM)
-                except (OSError, ProcessLookupError):
-                    # Process might have already terminated
-                    pass
-        
-        finally:
-
-            # cleanup #
-
-            print('cleaning up server process')
-            if server_process:
-                try:
-                    os.killpg(os.getpgid(server_process.pid), signal.SIGTERM)
-                    server_process.wait(timeout=5)
-                except (OSError, ProcessLookupError, subprocess.TimeoutExpired):
-                    try:
-                        os.killpg(os.getpgid(server_process.pid), signal.SIGKILL)
-                    except (OSError, ProcessLookupError):
-                        pass
-
-        self.test_passed = True
-
+    def test_debug_mode(self):
+        return self._test_debug_mode(self.spec_file)
+    
+    @unittest.skipUnless(FULL_TEST, "Skipping app test in quick test mode")
+    def test_generate_and_test_both_apps(self):
+        return self._test_generate_and_test_both_apps(self.spec_file)
 
 if __name__ == '__main__':
     unittest.main()

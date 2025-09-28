@@ -27,6 +27,8 @@ modules:
         fields:
 
           product_name:
+            name:
+              lower_case: 'product name'
             type: str
             examples:
               - 'Laptop'
@@ -36,6 +38,8 @@ modules:
             random: random_thing_name
 
           price:
+            name:
+              lower_case: 'price'
             type: float
             examples:
               - 999.99
@@ -43,6 +47,8 @@ modules:
               - 299.99
 
           in_stock:
+            name:
+              lower_case: 'in stock'
             type: bool
             examples:
               - true
@@ -55,6 +61,8 @@ modules:
         fields:
 
           customer_name:
+            name:
+              lower_case: 'customer name'
             type: str
             examples:
               - 'Alice'
@@ -63,6 +71,8 @@ modules:
             random: random_person_name
 
           email:
+            name:
+              lower_case: 'email'
             type: str
             examples:
               - 'alice@email.com'
@@ -70,6 +80,8 @@ modules:
             random: random_email
 
           phone_number:
+            name:
+              lower_case: 'phone number'
             type: str
             examples:
               - '+1 (123) 456-7890'
@@ -88,6 +100,8 @@ modules:
         fields:
 
           employee_name:
+            name:
+              lower_case: 'employee name'
             type: str
             examples:
               - 'David'
@@ -96,6 +110,8 @@ modules:
             random: random_person_name
 
           position:
+            name:
+              lower_case: 'position'
             type: str
             enum:
               - 'Manager'
@@ -107,18 +123,24 @@ modules:
               - 'Support'
 
           hire_date:
+            name:
+              lower_case: 'hire date'
             type: str
             examples:
               - '2000-01-11T12:34:56'
               - '2020-10-02T15:30:00'
 
           email:
+            name:
+              lower_case: 'email'
             type: str
             examples:
               - 'my-name@email.com'
             random: random_email
 
           phone_number:
+            name:
+              lower_case: 'phone number'
             type: str
             examples:
               - '+1 (123) 456-7890'
@@ -126,6 +148,8 @@ modules:
             random: random_phone_number
 
           salary:
+            name:
+              lower_case: 'salary'
             type: float
             examples:
               - 60000.00
