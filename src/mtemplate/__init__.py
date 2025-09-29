@@ -947,7 +947,7 @@ def run_server_and_app_tests(root_dir:Path, venv_dir:Optional[Path]=None, quiet:
 
     py_dir = root_dir / 'py'
     browser1_dir = root_dir / 'browser1'
-    
+
     if venv_dir is None:
         venv_dir = py_dir / '.venv'
 
@@ -990,7 +990,13 @@ def run_server_and_app_tests(root_dir:Path, venv_dir:Optional[Path]=None, quiet:
                 stdout_content = f.read()
             with open(server_err_log, 'r') as f:
                 stderr_content = f.read()
-            raise RuntimeError(f'Server failed to start. stdout: {stdout_content}, stderr: {stderr_content}')
+
+            if not quiet:
+                print(f'\tServer process exited prematurely with code {server_process.returncode}')
+                print(f'\tServer stdout: {indent_lines(stdout_content)}')
+                print(f'\tServer stderr: {indent_lines(stderr_content)}')
+
+            raise RuntimeError(f'Server failed to start, see logs {server_log} and {server_err_log}')
 
         # run py tests #
 
