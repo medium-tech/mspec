@@ -16,6 +16,7 @@ import time
 import signal
 
 from pathlib import Path
+from mtemplate import setup_generated_app, run_server_and_app_tests
 
 test_num = 0
 
@@ -205,14 +206,7 @@ class BaseMSpecTest(unittest.TestCase):
             jinja2_file = debug_cache_file.with_name(debug_cache_file.name + '.jinja2')
             self.assertTrue(jinja2_file.exists(), f'Missing .jinja2 debug file for: {file_rel_path}')
 
-    def _test_generate_and_install_both_apps(self, spec_file:str) -> Path:
-        '''Test generating both py and browser1 apps together and installing them,
-        returns the path to the python venv directory'''
-
-        #
-        # generate both apps
-        #
-
+    def _render_spec(self, spec_file:str):
         result = subprocess.run([
             sys.executable, '-m', 'mtemplate', 'render',
             '--spec', str(spec_file),
@@ -223,172 +217,11 @@ class BaseMSpecTest(unittest.TestCase):
           env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
         
         self.assertEqual(result.returncode, 0, f'Failed to generate apps: {result.stderr}')
-        
-        # check that files from both apps were generated in their respective subdirectories #
 
-        py_dir = self.test_dir / 'py'
-        browser1_dir = self.test_dir / 'browser1'
-        
-        expected_files = [
-            (py_dir, 'pyproject.toml'),
-            (py_dir, 'test.sh'), 
-            (py_dir, 'server.sh'),
-            (py_dir, 'src/core/__init__.py'),
-            
-            (browser1_dir, 'package.json'),
-            (browser1_dir, 'playwright.config.js'),
-            (browser1_dir, 'srv/index.html'),
-            (browser1_dir, 'srv/index.js')
-        ]
-        
-        for base_dir, file_path in expected_files:
-            full_path = base_dir / file_path
-            self.assertTrue(full_path.exists(), f'Expected file not found: {base_dir.name}/{file_path}')
-        #
-        # app setup
-        #
-        
-        # create virtual environment #
-
-        venv_dir = self.test_dir / 'py' / '.venv'
-        venv_result = subprocess.run([
-            sys.executable, '-m', 'venv', str(venv_dir), '--upgrade-deps'
-        ], capture_output=True, text=True, cwd=str(py_dir))
-        
-        if venv_result.returncode != 0:
-            raise RuntimeError(f'Failed to create venv: {venv_result.stderr}')
-        
-        python_executable = str(venv_dir / 'bin' / 'python')
-        
-        # install py dependencies #
-
-        pip_install_result = subprocess.run([
-            python_executable, '-m', 'pip', 'install', '-e', '.'
-        ], capture_output=True, text=True, cwd=str(py_dir))
-        
-        if pip_install_result.returncode != 0:
-            raise RuntimeError(f'Failed to install Python dependencies: {pip_install_result.stderr}')
-        
-        # install browser1 dependencies #
-
-        npm_install_result = subprocess.run([
-            'npm', 'install'
-        ], capture_output=True, text=True, cwd=str(browser1_dir))
-        
-        if npm_install_result.returncode != 0:
-            raise RuntimeError(f'Failed to install npm dependencies: {npm_install_result.stderr}')
-        
-        return venv_dir
-
-    def _test_run_server_and_both_app_tests(self, venv_dir:Path):
-
-        py_dir = self.test_dir / 'py'
-        browser1_dir = self.test_dir / 'browser1'
-
-        #
-        # server startup and test execution
-        #
-        
-        server_process = None
-        try:
-
-            # check if server.sh exists #
-
-            server_script = py_dir / 'server.sh'
-            self.assertTrue(server_script.exists(), 'server.sh should exist')
-            
-            # create log files for server output to avoid pipe blocking #
-
-            server_log = self.test_dir / 'unittest-server.log'
-            server_err_log = self.test_dir / 'unittest-server-error.log'
-
-            # start server #
-
-            with open(server_log, 'w') as stdout_file, open(server_err_log, 'w') as stderr_file:
-                server_process = subprocess.Popen([
-                    'bash', '-c', server_script.as_posix()
-                ], cwd=str(py_dir), 
-                   stdout=stdout_file, 
-                   stderr=stderr_file,
-                   preexec_fn=os.setsid,  # Start in new session to make it daemon-like
-                   env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), PATH=f'{venv_dir / "bin"}:{os.environ.get("PATH", "")}'))
-
-            print(f'Server with PID {server_process.pid} running {server_script}')
-            
-            time.sleep(5)   # give the server a moment to start
-
-            # check if the server has started successfully #
-
-            if server_process.poll() is not None:
-                with open(server_log, 'r') as f:
-                    stdout_content = f.read()
-                with open(server_err_log, 'r') as f:
-                    stderr_content = f.read()
-                raise RuntimeError(f'Server failed to start. stdout: {stdout_content}, stderr: {stderr_content}')
-
-            # run py tests #
-
-            test_script = py_dir / 'test.sh'
-            self.assertTrue(test_script.exists(), 'test.sh should exist')
-            
-            python_test_result = None
-            try:
-                python_test_result = subprocess.run([
-                    'bash', '-c', test_script.as_posix()
-                ], capture_output=True, text=True, cwd=str(py_dir), timeout=60, 
-                   env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), 
-                           PATH=f'{venv_dir / "bin"}:{os.environ.get("PATH", "")}'))
-                
-                print(f'\tPython tests return code: {python_test_result.returncode}')
-                print(f'\tPython tests stdout: {indent_lines(python_test_result.stdout)}')
-                print(f'\tPython tests stderr: {indent_lines(python_test_result.stderr)}')
-
-            except subprocess.TimeoutExpired:
-                raise RuntimeError('Python tests timed out')
-            
-            if python_test_result.returncode != 0:
-                raise RuntimeError(f'Python tests failed: {python_test_result.stderr}')
-            
-            # run browser1 tests #
-            
-            browser_test_result = subprocess.run([
-                'npm', 'run', 'test'
-            ], capture_output=True, text=True, cwd=str(browser1_dir), timeout=60, env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), PATH=f'{venv_dir / "bin"}:{os.environ.get("PATH", "")}'))
-
-            print(f'\tBrowser tests return code: {browser_test_result.returncode}')
-            print(f'\tBrowser tests stdout: {indent_lines(browser_test_result.stdout)}')
-            print(f'\tBrowser tests stderr: {indent_lines(browser_test_result.stderr)}')
-
-            if browser_test_result.returncode != 0:
-                raise RuntimeError(f'browser1 tests failed: {browser_test_result.stderr}')
-
-            if server_process:
-                print('\tterminating server process')
-                # Terminate the process group to ensure all child processes are killed
-                try:
-                    os.killpg(os.getpgid(server_process.pid), signal.SIGTERM)
-                except (OSError, ProcessLookupError):
-                    # Process might have already terminated
-                    pass
-        
-        finally:
-
-            # cleanup #
-
-            if server_process:
-                print('\tcleaning up server process')
-                try:
-                    os.killpg(os.getpgid(server_process.pid), signal.SIGTERM)
-                    server_process.wait(timeout=5)
-                except (OSError, ProcessLookupError, subprocess.TimeoutExpired):
-                    try:
-                        os.killpg(os.getpgid(server_process.pid), signal.SIGKILL)
-                    except (OSError, ProcessLookupError):
-                        pass
-
-        print('\tdone')
-
-
+    def _test_generate_and_test_both_apps(self, spec_file:str):
+        self._render_spec(spec_file)
+        setup_generated_app(self.test_dir)
+        run_server_and_app_tests(self.test_dir)
 
 class TestTestGenSpec(BaseMSpecTest):
     '''Test the complete app generation workflow'''
@@ -407,8 +240,7 @@ class TestTestGenSpec(BaseMSpecTest):
 
     @unittest.skipIf(QUICK_TEST or TEMPLATE_TEST, "Skipping app test")
     def test_generate_and_test_both_apps(self):
-        venv_dir = self._test_generate_and_install_both_apps(self.spec_file)
-        self._test_run_server_and_both_app_tests(venv_dir)
+        self._test_generate_and_test_both_apps(self.spec_file)
         self.run_cleanup = True
 
     def test_generate_py_app(self):
@@ -597,8 +429,7 @@ class TestSampleStoreSpec(BaseMSpecTest):
 
     @unittest.skipIf(DEV_TEST or QUICK_TEST or TEMPLATE_TEST, "Skipping app test for dev/quick/template test mode")
     def test_generate_and_test_both_apps(self):
-        venv_dir = self._test_generate_and_install_both_apps(self.spec_file)
-        self._test_run_server_and_both_app_tests(venv_dir)
+        self._test_generate_and_test_both_apps(self.spec_file)
         self.run_cleanup = True
 
 class TestSimpleSocialSpec(BaseMSpecTest):
@@ -618,8 +449,7 @@ class TestSimpleSocialSpec(BaseMSpecTest):
 
     @unittest.skipIf(DEV_TEST or QUICK_TEST or TEMPLATE_TEST, "Skipping app test for dev/quick/template test mode")
     def test_generate_and_test_both_apps(self):
-        venv_dir = self._test_generate_and_install_both_apps(self.spec_file)
-        self._test_run_server_and_both_app_tests(venv_dir)
+        self._test_generate_and_test_both_apps(self.spec_file)
         self.run_cleanup = True
 
 class TestTemplateSourceApps(BaseMSpecTest):
@@ -637,11 +467,11 @@ class TestTemplateSourceApps(BaseMSpecTest):
         venv_dir = self.repo_root / '.venv'
         if not venv_dir.exists():
             raise RuntimeError(f'venv does not exist: {venv_dir.absolute()}, follow dev environment setup instructions in README.md')
-        self._test_run_server_and_both_app_tests(venv_dir)
-
-        self.run_cleanup = False  # ensure we do not delete the templates directory
+        
+        run_server_and_app_tests(self.test_dir, venv_dir)
 
         # delete server logs if they exist
+
         to_delete = [
             self.test_dir / 'unittest-server.log',
             self.test_dir / 'unittest-server-error.log'
@@ -652,6 +482,8 @@ class TestTemplateSourceApps(BaseMSpecTest):
                 path.unlink()
             except FileNotFoundError:
                 pass
+
+        self.run_cleanup = False  # ensure we do not delete the templates directory
 
 if __name__ == '__main__':
     unittest.main()

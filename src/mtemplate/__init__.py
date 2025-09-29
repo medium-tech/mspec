@@ -1,12 +1,17 @@
 import os
 import re
+import sys
 import json
-import shutil
 import stat
+import time
+import shutil
+import signal
+import subprocess
 
 from copy import copy
-from functools import reduce
 from pathlib import Path
+from typing import Optional
+from functools import reduce
 from collections import OrderedDict
 from dataclasses import dataclass, asdict
 
@@ -611,18 +616,6 @@ class MTemplateExtractor:
 
         except json.JSONDecodeError as e:
             raise MTemplateError(f'JSONDecodeError:{e} in vars definition')
-
-    # def _parse_for_lines(self, definition_line:str, lines:list[str], end_for_mods:list[str]):
-
-        
-
-    #     for line in lines:
-    #         new_line = line 
-    #         for key, value in sort_dict_by_key_length(block_vars).items():
-    #             new_line = new_line.replace(key, '{{ ' + value + ' }}')
-    #         self.template_lines.append(new_line)
-    #     end_for = '{% endfor %}' if 'rstrip' in end_for_mods else '{% endfor %}\n'
-    #     self.template_lines.append(end_for)
     
     def _parse_macro(self, macro_def_line:str, lines:list[str]):
         macro_split = macro_def_line.split('::')
@@ -861,6 +854,7 @@ class MTemplateExtractor:
                 raise MTemplateError(f'Unterminated for loop in file {self.path}')
             if open_if_statements > 0:
                 raise MTemplateError(f'Unterminated if statement in file {self.path}')
+    
     #
     # file methods
     #
@@ -903,3 +897,179 @@ class MTemplateExtractor:
         instance = cls(path, prefix=prefix, postfix=postfix, single_quotes=single_quotes, emit_syntax=emit_syntax)
         instance.parse()
         return instance
+
+#
+# utility functions
+#
+
+def setup_generated_app(root_dir:Path) -> dict:
+
+    py_dir = root_dir / 'py'
+    browser1_dir = root_dir / 'browser1'
+
+    # create virtual environment #
+
+    venv_dir = py_dir / '.venv'
+    venv_result = subprocess.run([
+        sys.executable, '-m', 'venv', str(venv_dir), '--upgrade-deps'
+    ], capture_output=True, text=True, cwd=str(py_dir))
+    
+    if venv_result.returncode != 0:
+        raise RuntimeError(f'Failed to create venv: {venv_result.stderr}')
+    
+    python_executable = str(venv_dir / 'bin' / 'python')
+    
+    # install py dependencies #
+
+    pip_install_result = subprocess.run([
+        python_executable, '-m', 'pip', 'install', '-e', '.'
+    ], capture_output=True, text=True, cwd=str(py_dir))
+    
+    if pip_install_result.returncode != 0:
+        raise RuntimeError(f'Failed to install Python dependencies: {pip_install_result.stderr}')
+    
+    # install browser1 dependencies #
+
+    npm_install_result = subprocess.run([
+        'npm', 'install'
+    ], capture_output=True, text=True, cwd=str(browser1_dir))
+    
+    if npm_install_result.returncode != 0:
+        raise RuntimeError(f'Failed to install npm dependencies: {npm_install_result.stderr}')
+    
+    return {'venv_dir': venv_dir}
+
+def indent_lines(lines:str, indent:int=2) -> str:
+    '''Indent each line of a multi-line string for pretty printing'''
+    return '\n'.join(f'{"\t" * indent}{line}' for line in lines.splitlines())
+
+def run_server_and_app_tests(root_dir:Path, venv_dir:Optional[Path]=None, quiet:bool=False) -> None:
+
+    py_dir = root_dir / 'py'
+    browser1_dir = root_dir / 'browser1'
+    
+    if venv_dir is None:
+        venv_dir = py_dir / '.venv'
+
+    #
+    # server startup and test execution
+    #
+    
+    server_process = None
+    try:
+
+        # check if server.sh exists #
+
+        server_script = py_dir / 'server.sh'
+        
+        # create log files for server output to avoid pipe blocking #
+
+        server_log = root_dir / 'unittest-server.log'
+        server_err_log = root_dir / 'unittest-server-error.log'
+
+        # start server #
+
+        with open(server_log, 'w') as stdout_file, open(server_err_log, 'w') as stderr_file:
+            server_process = subprocess.Popen([
+                'bash', '-c', server_script.as_posix()
+            ], cwd=str(py_dir), 
+                stdout=stdout_file, 
+                stderr=stderr_file,
+                preexec_fn=os.setsid,  # Start in new session to make it daemon-like
+                env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), PATH=f'{venv_dir / "bin"}:{os.environ.get("PATH", "")}'))
+            
+        if not quiet:
+            print(f'Server with PID {server_process.pid} running {server_script}')
+        
+        time.sleep(5)   # give the server a moment to start
+
+        # check if the server has started successfully #
+
+        if server_process.poll() is not None:
+            with open(server_log, 'r') as f:
+                stdout_content = f.read()
+            with open(server_err_log, 'r') as f:
+                stderr_content = f.read()
+            raise RuntimeError(f'Server failed to start. stdout: {stdout_content}, stderr: {stderr_content}')
+
+        # run py tests #
+
+        test_script = py_dir / 'test.sh'
+        
+        python_test_result = None
+        try:
+            python_test_result = subprocess.run(
+                ['bash', '-c', test_script.as_posix()], 
+                capture_output=True, 
+                text=True, 
+                cwd=str(py_dir), 
+                timeout=60, 
+                env=dict(
+                    os.environ, 
+                    VIRTUAL_ENV=venv_dir.as_posix(), 
+                    PATH=f'{venv_dir / "bin"}:{os.environ.get("PATH", "")}'
+                )
+            )
+
+            if not quiet:
+                print(f'\tPython tests return code: {python_test_result.returncode}')
+                print(f'\tPython tests stdout: {indent_lines(python_test_result.stdout)}')
+                print(f'\tPython tests stderr: {indent_lines(python_test_result.stderr)}')
+
+        except subprocess.TimeoutExpired:
+            raise RuntimeError('Python tests timed out')
+        
+        if python_test_result.returncode != 0:
+            raise RuntimeError(f'Python tests failed: {python_test_result.stderr}')
+        
+        # run browser1 tests #
+        
+        browser_test_result = subprocess.run(
+            ['npm', 'run', 'test'], 
+            capture_output=True, 
+            text=True, 
+            cwd=str(browser1_dir), 
+            timeout=60, 
+            env=dict(
+                os.environ, 
+                VIRTUAL_ENV=venv_dir.as_posix(), 
+                PATH=f'{venv_dir / "bin"}:{os.environ.get("PATH", "")}'
+            )
+        )
+
+        if not quiet:
+            print(f'\tBrowser tests return code: {browser_test_result.returncode}')
+            print(f'\tBrowser tests stdout: {indent_lines(browser_test_result.stdout)}')
+            print(f'\tBrowser tests stderr: {indent_lines(browser_test_result.stderr)}')
+
+        if browser_test_result.returncode != 0:
+            raise RuntimeError(f'browser1 tests failed: {browser_test_result.stderr}')
+
+        if server_process:
+            if not quiet:
+                print('\tterminating server process')
+            # Terminate the process group to ensure all child processes are killed
+            try:
+                os.killpg(os.getpgid(server_process.pid), signal.SIGTERM)
+            except (OSError, ProcessLookupError):
+                # Process might have already terminated
+                pass
+    
+    finally:
+
+        # cleanup #
+
+        if server_process:
+            if not quiet:
+                print('\tcleaning up server process')
+            try:
+                os.killpg(os.getpgid(server_process.pid), signal.SIGTERM)
+                server_process.wait(timeout=5)
+            except (OSError, ProcessLookupError, subprocess.TimeoutExpired):
+                try:
+                    os.killpg(os.getpgid(server_process.pid), signal.SIGKILL)
+                except (OSError, ProcessLookupError):
+                    pass
+
+    if not quiet:
+        print('\tdone')
