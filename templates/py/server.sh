@@ -9,4 +9,9 @@ fi
 # env vars from .env
 export $(grep -v '^#' .env | xargs)
 
-uwsgi --yaml ./dev.yaml
+# if arg 'stop' is given, stop the server, else start it
+if [ "$1" == "stop" ]; then
+  uwsgi --stop src/core/server.pid
+else
+  uwsgi --yaml ./dev.yaml
+fi

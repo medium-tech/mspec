@@ -2,6 +2,8 @@
 uwsgi:
   http: :5005
   wsgi-file: src/core/server.py
+  master: true
+  safe-pidfile: src/core/server.pid
   # for :: {% for module in modules.values() %} :: {"template-module":"module.name.kebab_case"}
       # for :: {% for model in module.models.values() %} :: {"single-model": "model.name.kebab_case", "single model": "model.name.lower_case"}
 

@@ -12,8 +12,6 @@ import shutil
 import subprocess
 import os
 import sys
-import time
-import signal
 
 from pathlib import Path
 from mtemplate import setup_generated_app, run_server_and_app_tests

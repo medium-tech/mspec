@@ -28,6 +28,10 @@ After setting up, run:
 
     ./server.sh 
 
+The server can be stopped with:
+
+    ./server.sh stop
+
 ## run the python gui
 After setting up, run:
 

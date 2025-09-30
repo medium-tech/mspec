@@ -970,16 +970,21 @@ def run_server_and_app_tests(root_dir:Path, venv_dir:Optional[Path]=None, quiet:
         # start server #
 
         with open(server_log, 'w') as stdout_file, open(server_err_log, 'w') as stderr_file:
-            server_process = subprocess.Popen([
-                'bash', '-c', server_script.as_posix()
-            ], cwd=str(py_dir), 
+            server_process = subprocess.Popen(
+                ['bash', '-c', server_script.as_posix()],
+                cwd=str(py_dir), 
                 stdout=stdout_file, 
                 stderr=stderr_file,
                 preexec_fn=os.setsid,  # Start in new session to make it daemon-like
-                env=dict(os.environ, VIRTUAL_ENV=venv_dir.as_posix(), PATH=f'{venv_dir / "bin"}:{os.environ.get("PATH", "")}'))
+                env=dict(
+                    os.environ, 
+                    VIRTUAL_ENV=venv_dir.as_posix(), 
+                    PATH=f'{venv_dir / "bin"}:{os.environ.get("PATH", "")}'
+                    )
+                )
             
         if not quiet:
-            print(f'Server with PID {server_process.pid} running {server_script}')
+            print(f'\nServer with PID {server_process.pid} running {server_script}')
         
         time.sleep(5)   # give the server a moment to start
 
@@ -1050,32 +1055,41 @@ def run_server_and_app_tests(root_dir:Path, venv_dir:Optional[Path]=None, quiet:
 
         if browser_test_result.returncode != 0:
             raise RuntimeError(f'browser1 tests failed: {browser_test_result.stderr}')
-
-        if server_process:
-            if not quiet:
-                print('\tterminating server process')
-            # Terminate the process group to ensure all child processes are killed
-            try:
-                os.killpg(os.getpgid(server_process.pid), signal.SIGTERM)
-            except (OSError, ProcessLookupError):
-                # Process might have already terminated
-                pass
     
     finally:
 
         # cleanup #
 
-        if server_process:
-            if not quiet:
-                print('\tcleaning up server process')
+        print('\tstopping uwsgi')
+
+        stop_server_result = subprocess.run(
+            ['bash', '-c', server_script.as_posix() + ' stop'], 
+            capture_output=True, 
+            text=True, 
+            cwd=str(py_dir), 
+            timeout=60, 
+            env=dict(
+                os.environ, 
+                VIRTUAL_ENV=venv_dir.as_posix(), 
+                PATH=f'{venv_dir / "bin"}:{os.environ.get("PATH", "")}'
+            )
+        )
+
+        if not quiet:
+            print(f'\tstop server return code: {stop_server_result.returncode}')
+            print(f'\tstop server stdout: {indent_lines(stop_server_result.stdout)}')
+            print(f'\tstop server stderr: {indent_lines(stop_server_result.stderr)}')
+
+        time.sleep(2)   # give the server a moment to stop
+
+        if server_process is not None:
             try:
-                os.killpg(os.getpgid(server_process.pid), signal.SIGTERM)
+                os.kill(server_process.pid, signal.SIGTERM)
                 server_process.wait(timeout=5)
-            except (OSError, ProcessLookupError, subprocess.TimeoutExpired):
-                try:
-                    os.killpg(os.getpgid(server_process.pid), signal.SIGKILL)
-                except (OSError, ProcessLookupError):
-                    pass
+                
+            except ProcessLookupError:
+                pass  # process already terminated
+
 
     if not quiet:
         print('\tdone')
