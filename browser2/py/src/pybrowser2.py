@@ -2,7 +2,7 @@
 import tkinter
 import webbrowser
 from tkinter import ttk
-from mspec import sample_spec_dir
+from mspec import sample_spec_dir, load_browser2_spec
 from mspec.markup import lingo_app, render_output, lingo_execute, lingo_update_state
 
 default_page = str(sample_spec_dir / 'test-page.json')
@@ -55,6 +55,8 @@ class LingoPage(tkinter.Frame):
                 self.render_input(element)
             elif 'text' in element:
                 self.render_text(element)
+            elif 'value' in element:
+                self.render_value(element)
             else:
                 raise ValueError('Unknown element type')
             
@@ -76,6 +78,9 @@ class LingoPage(tkinter.Frame):
     def render_text(self, element:dict):
         self._text_buffer.insert(self._tk_row(), element['text'])
 
+    def render_value(self, element:dict):
+        self._text_buffer.insert(self._tk_row(), json.dumps(element, indent=4, sort_keys=True))
+
     def render_break(self, element:dict):
         self._text_buffer.insert(self._tk_row(), '\n' * element['break'])
 
@@ -89,7 +94,6 @@ class LingoPage(tkinter.Frame):
         self._text_buffer.window_create(self._tk_row(), window=button)
 
     def render_input(self, element:dict):
-
         try:
             state_field_name = list(element['bind']['state'].keys())[0]
         except (KeyError, IndexError):
@@ -172,8 +176,6 @@ if __name__ == '__main__':
     parser.add_argument('--spec', type=str, default=default_page, help=f'Path to the spec file, default: {default_page}')
     args = parser.parse_args()
 
-    with open(args.spec, 'r') as f:
-        spec = json.load(f)
-
+    spec = load_browser2_spec(args.spec)
     app = LingoGUIApp(spec)
     app.mainloop()

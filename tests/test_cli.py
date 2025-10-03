@@ -56,9 +56,17 @@ class TestCLI(unittest.TestCase):
         self.assertTrue(copied_file.exists())
         copied_file.unlink()
     
-    def test_run_command(self):
+    def test_run_command_functions(self):
         """Test the run command with functions.json"""
         result = self._run_cli(['run', 'functions.json'])
+        self.assertEqual(result.returncode, 0)
+        self.assertIn('Running run command with spec:', result.stdout)
+        # Should output JSON to stdout
+        self.assertTrue(len(result.stdout) > 0)
+
+    def test_run_command_return_types(self):
+        """Test the run command with return-types.json"""
+        result = self._run_cli(['run', 'return-types.json'])
         self.assertEqual(result.returncode, 0)
         self.assertIn('Running run command with spec:', result.stdout)
         # Should output JSON to stdout

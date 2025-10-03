@@ -3,7 +3,7 @@ import datetime
 import json
 
 from pprint import pprint
-from mspec import sample_spec_dir
+from mspec import load_browser2_spec, sample_spec_dir
 from mspec.markup import *
 
 
@@ -25,11 +25,8 @@ class TestLingoApp(unittest.TestCase):
         app.state['name'] = 'Alice'
         doc = render_output(app)
 
-        greeting = doc[14]['text']
-        self.assertEqual(greeting, 'Welcome in, ')
-
-        name = doc[15]['text']
-        self.assertEqual(name, 'Alice')
+        self.assertEqual(doc[14]['text'], 'Welcome in, ')
+        self.assertEqual(doc[15]['text'], 'Alice')
 
         self._test_doc(doc, debug=False)
 
@@ -37,12 +34,9 @@ class TestLingoApp(unittest.TestCase):
         app = lingo_app(self.test_spec, first_visit=False)
         app.state['name'] = 'Bob'
         doc = render_output(app)
-
-        greeting = doc[14]['text']
-        self.assertEqual(greeting, 'Welcome back, ')
-
-        name = doc[15]['text']
-        self.assertEqual(name, 'Bob')
+        
+        self.assertEqual(doc[14]['text'], 'Welcome back, ')
+        self.assertEqual(doc[15]['text'], 'Bob')
         
         self._test_doc(doc, debug=False)
 
@@ -237,6 +231,11 @@ class TestLingoApp(unittest.TestCase):
         missing_functions = expected_functions - tested_functions
         self.assertEqual(len(missing_functions), 0, 
                         f"Missing tests for functions: {missing_functions}")
+
+    def test_return_types(self):
+        spec = load_browser2_spec('return-types.json')
+        app = lingo_app(spec)
+        doc = render_output(lingo_update_state(app))
 
     def _test_functions_section(self, doc: list[dict], debug=False):
         """Helper method to validate the functions document structure"""

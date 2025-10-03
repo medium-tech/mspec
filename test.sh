@@ -80,4 +80,4 @@ fi
 # echo "Running tests in: $TESTS"
 
 # Test runner for mspec app generator tests
-QUICK_TEST=$QUICK_TEST DEV_TEST=$DEV_TEST TEMPLATE_TEST=$TEMPLATE_TEST python -m unittest "$TESTS" -b
+QUICK_TEST=$QUICK_TEST DEV_TEST=$DEV_TEST TEMPLATE_TEST=$TEMPLATE_TEST python -m unittest "$TESTS"

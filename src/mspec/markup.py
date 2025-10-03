@@ -9,25 +9,25 @@ from typing import Any, Optional
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
 
 lingo_function_lookup = {
-    'bool': {'func': bool, 'args': {'object': {'type': Any}}},
-    'not': {'func': operator.not_, 'args': {'object': {'type': Any}}},
-    'neg': {'func': operator.neg, 'args': {'object': {'type': Any}}},
+    'bool': {'func': bool, 'args': {'object': {'type': 'any'}}},
+    'not': {'func': operator.not_, 'args': {'object': {'type': 'any'}}},
+    'neg': {'func': operator.neg, 'args': {'object': {'type': 'any'}}},
 
-    'and': {'func': operator.and_, 'args': {'a': {'type': Any}, 'b': {'type': Any}}},
-    'or': {'func': operator.or_, 'args': {'a': {'type': Any}, 'b': {'type': Any}}},
+    'and': {'func': operator.and_, 'args': {'a': {'type': 'any'}, 'b': {'type': 'any'}}},
+    'or': {'func': operator.or_, 'args': {'a': {'type': 'any'}, 'b': {'type': 'any'}}},
     
-    'add': {'func': operator.add, 'args': {'a': {'type': (int, float)}, 'b': {'type': (int, float)}}},
-    'sub': {'func': operator.sub, 'args': {'a': {'type': (int, float)}, 'b': {'type': (int, float)}}},
-    'mul': {'func': operator.mul, 'args': {'a': {'type': (int, float)}, 'b': {'type': (int, float)}}},
-    'div': {'func': operator.truediv, 'args': {'a': {'type': (int, float)}, 'b': {'type': (int, float)}}},
-    'pow': {'func': operator.pow, 'args': {'a': {'type': (int, float)}, 'b': {'type': (int, float)}}},
+    'add': {'func': operator.add, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
+    'sub': {'func': operator.sub, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
+    'mul': {'func': operator.mul, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
+    'div': {'func': operator.truediv, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
+    'pow': {'func': operator.pow, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
 
-    'eq': {'func': operator.eq, 'args': {'a': {'type': (int, float, str)}, 'b': {'type': (int, float, str)}}},
-    'ne': {'func': lambda a, b: operator.ne(a, b), 'args': {'a': {'type': (int, float, str)}, 'b': {'type': (int, float, str)}}},
-    'lt': {'func': operator.lt, 'args': {'a': {'type': (int, float, str)}, 'b': {'type': (int, float, str)}}},
-    'le': {'func': operator.le, 'args': {'a': {'type': (int, float, str)}, 'b': {'type': (int, float, str)}}},
-    'gt': {'func': operator.gt, 'args': {'a': {'type': (int, float, str)}, 'b': {'type': (int, float, str)}}},
-    'ge': {'func': operator.ge, 'args': {'a': {'type': (int, float, str)}, 'b': {'type': (int, float, str)}}},
+    'eq': {'func': operator.eq, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
+    'ne': {'func': lambda a, b: operator.ne(a, b), 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
+    'lt': {'func': operator.lt, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
+    'le': {'func': operator.le, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
+    'gt': {'func': operator.gt, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
+    'ge': {'func': operator.ge, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
 
     'current': {
         'weekday': {'func': lambda: datetime.now().weekday(), 'args': {}}
@@ -36,7 +36,7 @@ lingo_function_lookup = {
         'now': {'func': datetime.now, 'args': {}}
     },
     'random': {
-        'randint': {'func': randint, 'args': {'a': {'type': int}, 'b': {'type': int}}}
+        'randint': {'func': randint, 'args': {'a': {'type': 'int'}, 'b': {'type': 'int'}}}
     }
 }
 
@@ -72,9 +72,12 @@ def lingo_update_state(app:LingoApp, ctx: Optional[dict]=None) -> LingoApp:
                     raise ValueError(f'state - {key} - missing default value')
         else:
             new_value = lingo_execute(app, calc, ctx)
-            if value['type'] != new_value.__class__.__name__:
-                raise ValueError(f'state - {key} - expression returned type: ' + new_value.__class__.__name__)
-            app.state[key] = new_value
+            if not isinstance(new_value, dict) or 'value' not in new_value or 'type' not in new_value:
+                raise ValueError(f'state - {key} - expression did not return a valid value dict')
+            if value['type'] != new_value['type']:
+                raise ValueError(f'state - {key} - expression returned type: ' + new_value['type'] +
+                                 f', expected type: {value["type"]}')
+            app.state[key] = new_value['value']
 
     return app
 
@@ -85,36 +88,54 @@ def lingo_execute(app:LingoApp, expression:Any, ctx:Optional[dict]=None) -> Any:
         expression: dict - The expression to run."
     :return: Any - The result of the expression."
     """
+
+    # calculate expression #
+
     if isinstance(expression, dict):
         if 'set' in expression:
-            return render_set(app, expression, ctx)
+            result = render_set(app, expression, ctx)
         elif 'state' in expression:
-            return render_state(app, expression, ctx)
+            result = render_state(app, expression, ctx)
         elif 'params' in expression:
-            return render_params(app, expression, ctx)
+            result = render_params(app, expression, ctx)
         elif 'op' in expression:
-            return render_op(app, expression, ctx)
+            result = render_op(app, expression, ctx)
         elif 'call' in expression:
-            return render_call(app, expression, ctx)
+            result = render_call(app, expression, ctx)
         elif 'block' in expression:
-            return render_block(app, expression, ctx)
+            result = render_block(app, expression, ctx)
         elif 'lingo' in expression:
-            return render_lingo(app, expression, ctx)
+            result = render_lingo(app, expression, ctx)
         elif 'branch' in expression:
-            return render_branch(app, expression, ctx)
+            result = render_branch(app, expression, ctx)
         elif 'switch' in expression:
-            return render_switch(app, expression, ctx)
+            result = render_switch(app, expression, ctx)
         elif 'heading' in expression:
             # heading is a special case for rendering headings
-            return render_heading(app, expression, ctx)
+            result = render_heading(app, expression, ctx)
         elif 'args' in expression:
-            return render_args(app, expression, ctx)
+            result = render_args(app, expression, ctx)
         else:
-            # print('warning - unrecognized expression type:', expression)
-            return expression
+            result = expression
     else:
-        return expression
-    
+        result = expression
+
+    # format return value #
+
+    if isinstance(result, dict):
+        return result
+    elif isinstance(result, list):
+        element_types = [type(item) for item in result]
+        if len(set(element_types)) > 1:
+            raise ValueError(f'List contains mixed types: {element_types}')
+        if element_types[0] not in [bool, int, float, str, dict, datetime]:
+            raise ValueError(f'List contains unsupported type: {element_types[0]}')
+        return result
+    else:
+        if not isinstance(result, (bool, int, float, str, datetime)):
+            raise ValueError(f'Unsupported return type: {result.__class__.__name__}')
+        return {'value': result, 'type': result.__class__.__name__}
+
 # high level render #
 
 def render_output(app:LingoApp, ctx:Optional[dict]=None) -> list[dict]:
@@ -193,7 +214,7 @@ def render_branch(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
         # run expresion #
 
         try:
-            condition = lingo_execute(app, expr, ctx)
+            condition = lingo_execute(app, expr, ctx)['value']
         except Exception as e:
             raise ValueError(f'branch {n} - error processing condition') from e
 
@@ -206,9 +227,9 @@ def render_branch(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
 
     raise ValueError(f'unvalid branch expression')
 
-def render_switch(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> None:
+def render_switch(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
     try:
-        switch = expression['switch']
+        switch = element['switch']
         expression = switch['expression']
         cases = switch['cases']
         default = switch['default']
@@ -219,7 +240,7 @@ def render_switch(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> No
         raise ValueError(f'switch - must have at least one case')
 
     try:
-        value = lingo_execute(app, expression, ctx)
+        value = lingo_execute(app, expression, ctx)['value']
     except Exception as e:
         raise ValueError(f'switch - error processing expression') from e
 
@@ -266,7 +287,7 @@ def render_params(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> An
     
     return value
 
-def render_set(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> None:
+def render_set(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
     try:
         target = expression['set']['state']
         value_expr = expression['to']
@@ -288,7 +309,7 @@ def render_set(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> None:
     # get value #
 
     try:
-        value = lingo_execute(app, value_expr, ctx)
+        value = lingo_execute(app, value_expr, ctx)['value']
     except Exception as e:
         raise ValueError('set - error processing to expression') from e
     
@@ -296,6 +317,7 @@ def render_set(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> None:
         raise ValueError(f'set - value type mismatch: {field_type} != {value.__class__.__name__}')
     
     app.state[field_name] = value
+    return app.state[field_name]
 
 def render_state(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
     # parse expression #
@@ -317,14 +339,19 @@ def render_state(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
 def render_lingo(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
     result = lingo_execute(app, element['lingo'], ctx)
     _type = type(result)
-    if _type == str:
-        return {'text': result}
-    elif _type == int or _type == float or _type == bool:
-        return {'text': str(result)}
-    elif _type == datetime:
-        return {'text': result.strftime(datetime_format_str)}
-    elif _type == dict:
-        return result
+
+    if _type == dict:
+        if 'value' in result:
+            if result['type'] == 'str':
+                return {'text': result['value']}
+            elif result['type'] in ['int', 'float', 'bool']:
+                return {'text': str(result['value'])}
+            elif result['type'] == 'datetime':
+                return {'text': result['value'].strftime(datetime_format_str)}
+            else:
+                raise ValueError(f'lingo - unexpected result value type: {result["type"]}')
+        else:
+            return result
     else:
         raise ValueError(f'lingo - invalid result type: {_type}')
     
@@ -411,11 +438,11 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
             raise ValueError(f'call - unknown arg: {arg_name}')
         
         value = lingo_execute(app, arg_expression, ctx)
-        if arg_type is not Any:
-            if not isinstance(value, arg_type):
-                breakpoint()
-                raise ValueError(f'call - arg {arg_name} - expected type {arg_type}, got {value.__class__.__name__}')
-        rendered_args[arg_name] = value
+
+        if arg_type != 'any':
+            if value['type'] not in arg_type:
+                raise ValueError(f'call - arg {arg_name} - expected type {arg_type}, got {value["type"]}')
+        rendered_args[arg_name] = value['value']
 
     # Check if function is from operator module or built-in and needs positional args
     if (hasattr(function, '__module__') and function.__module__ == '_operator') or \
@@ -427,6 +454,7 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
                 args_list.append(rendered_args[arg_name])
             else:
                 raise ValueError(f'call - missing required arg: {arg_name}')
+
         return function(*args_list)
     else:
         return function(**rendered_args)
