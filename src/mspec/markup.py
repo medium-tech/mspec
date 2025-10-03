@@ -57,7 +57,6 @@ def lingo_app(spec: dict, **params) -> LingoApp:
 
     return lingo_update_state(instance)
 
-
 def lingo_update_state(app:LingoApp, ctx: Optional[dict]=None) -> LingoApp:
     for key, value in app.spec['state'].items():
         try:

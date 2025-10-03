@@ -1,0 +1,40 @@
+{
+  "params": {
+    "a": {
+      "type": "int",
+      "default": 5
+    },
+    "b": {
+      "type": "int",
+      "default": 3
+    }
+  },
+  
+  "state": {},
+
+  "ops": {},
+
+  "output": {
+    "lingo": {
+      "call": "mul",
+      "args": {
+        "a": {
+          "call": "add",
+          "args": {
+            "a": {
+              "params": {
+                "a": {}
+              }
+            },
+            "b": {
+              "params": {
+                "b": {}
+              }
+            }
+          }
+        },
+        "b": 2
+      }
+    }
+  }
+}
