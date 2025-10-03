@@ -4,9 +4,21 @@ import json
 from mspec import load_spec, sample_spec_dir, builtin_spec_files, load_browser2_spec
 from mspec.markup import lingo_app, render_output, lingo_update_state
 
-parser = argparse.ArgumentParser(description='MSpec command line interface')
-parser.add_argument('command', choices=['show', 'specs', 'example', 'run'], help='command to run')
-parser.add_argument('spec', type=str, help='spec file pattern', default=None, nargs='?')
+parser = argparse.ArgumentParser(
+    description='MSpec command line interface'
+)
+parser.add_argument(
+    'command', 
+    choices=['show', 'specs', 'example', 'run'], 
+    help='Command to run: show (load and display spec), specs (list built-in specs), example (copy built-in spec to current directory), run (execute browser2 spec and print result)'
+)
+parser.add_argument(
+    'spec', 
+    type=str, 
+    help='Spec file path or built-in spec name (not required for "specs" command) Spec arguments can be file paths or built-in spec names. The app first tries to load from the file system, then falls back to built-in specs. Use the "specs" command to list built-in specs.', 
+    default=None, 
+    nargs='?'
+)
 
 args = parser.parse_args()
 
