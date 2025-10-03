@@ -4,21 +4,25 @@ import json
 
 from pprint import pprint
 from pathlib import Path
+from mspec import sample_spec_dir
 from mspec.markup import *
 
-test_spec_path = Path(__file__).parent.parent.parent.parent / 'src/mspec/data/test-page.json'
-functions_spec_path = Path(__file__).parent.parent.parent.parent / 'src/mspec/data/functions.json'
-
-with open(test_spec_path, 'r') as f:
-    test_spec = json.load(f)
-
-with open(functions_spec_path, 'r') as f:
-    functions_spec = json.load(f)
 
 class TestLingoApp(unittest.TestCase):
+        
+    @classmethod
+    def setUpClass(cls):
+        cls.test_spec_path = sample_spec_dir / 'test-page.json'
+        cls.functions_spec_path = sample_spec_dir / 'functions.json'
+
+        with open(cls.test_spec_path, 'r') as f:
+            cls.test_spec = json.load(f)
+
+        with open(cls.functions_spec_path, 'r') as f:
+            cls.functions_spec = json.load(f)
 
     def test_example_app_first_visit(self):
-        app = lingo_app(test_spec, first_visit=True)
+        app = lingo_app(self.test_spec, first_visit=True)
         app.state['name'] = 'Alice'
         doc = render_output(app)
 
@@ -31,7 +35,7 @@ class TestLingoApp(unittest.TestCase):
         self._test_doc(doc, debug=False)
 
     def test_example_app_not_first_visit(self):
-        app = lingo_app(test_spec, first_visit=False)
+        app = lingo_app(self.test_spec, first_visit=False)
         app.state['name'] = 'Bob'
         doc = render_output(app)
 
@@ -82,7 +86,7 @@ class TestLingoApp(unittest.TestCase):
 
     def test_functions_page(self):
         """Test all functions defined in lingo_function_lookup using functions.json"""
-        app = lingo_app(functions_spec)
+        app = lingo_app(self.functions_spec)
         doc = render_output(app)
         
         # Test that we get the expected number of output elements
@@ -98,7 +102,7 @@ class TestLingoApp(unittest.TestCase):
 
     def test_boolean_functions(self):
         """Test boolean conversion functions"""
-        app = lingo_app(functions_spec)
+        app = lingo_app(self.functions_spec)
         
         # Test bool function
         self.assertTrue(app.state['test_bool_true'])
@@ -113,7 +117,7 @@ class TestLingoApp(unittest.TestCase):
 
     def test_logical_functions(self):
         """Test logical operators"""
-        app = lingo_app(functions_spec)
+        app = lingo_app(self.functions_spec)
         
         # Test and function
         self.assertTrue(app.state['test_and_true'])
@@ -125,7 +129,7 @@ class TestLingoApp(unittest.TestCase):
 
     def test_math_functions(self):
         """Test mathematical operators"""
-        app = lingo_app(functions_spec)
+        app = lingo_app(self.functions_spec)
         
         # Test arithmetic
         self.assertEqual(app.state['test_add'], 15)
@@ -136,7 +140,7 @@ class TestLingoApp(unittest.TestCase):
 
     def test_comparison_functions(self):
         """Test comparison operators"""
-        app = lingo_app(functions_spec)
+        app = lingo_app(self.functions_spec)
         
         # Test equality
         self.assertTrue(app.state['test_eq_true'])
@@ -156,7 +160,7 @@ class TestLingoApp(unittest.TestCase):
 
     def test_time_functions(self):
         """Test datetime and time-related functions"""
-        app = lingo_app(functions_spec)
+        app = lingo_app(self.functions_spec)
         doc = render_output(app)
         
         # Find the datetime output in the rendered document
@@ -196,7 +200,7 @@ class TestLingoApp(unittest.TestCase):
 
     def test_all_functions_coverage(self):
         """Verify that all functions in lingo_function_lookup are tested"""
-        app = lingo_app(functions_spec)
+        app = lingo_app(self.functions_spec)
         
         # Get all function names from lingo_function_lookup
         expected_functions = set()
@@ -212,7 +216,7 @@ class TestLingoApp(unittest.TestCase):
         tested_functions = set()
         
         # Check state calculations for tested functions
-        for state_key, state_def in functions_spec['state'].items():
+        for state_key, state_def in self.functions_spec['state'].items():
             if 'calc' in state_def and 'call' in state_def['calc']:
                 tested_functions.add(state_def['calc']['call'])
         
@@ -227,8 +231,8 @@ class TestLingoApp(unittest.TestCase):
             elif isinstance(element, list):
                 for item in element:
                     check_calls_in_element(item)
-        
-        for output_element in functions_spec['output']:
+
+        for output_element in self.functions_spec['output']:
             check_calls_in_element(output_element)
         
         # Verify coverage
