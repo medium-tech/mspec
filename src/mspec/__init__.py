@@ -1,3 +1,5 @@
+import os
+import json
 from pathlib import Path
 import yaml
 
@@ -5,6 +7,9 @@ __all__ = ['spec', 'sample_spec_dir', 'dist_dir']
 
 sample_spec_dir = Path(__file__).parent / 'data'
 dist_dir = Path(__file__).parent.parent.parent / 'dist'
+
+def builtin_spec_files() -> list[str]:
+    return os.listdir(sample_spec_dir)
 
 def generate_names(lower_case:str) -> dict:
     name_split = lower_case.split(' ')
@@ -16,6 +21,26 @@ def generate_names(lower_case:str) -> dict:
         'camel_case': pascal_case[0].lower() + pascal_case[1:]
     }
 
+def load_browser2_spec(spec_file:str) -> dict:
+    """
+    open and parse spec file into dict,
+    first try to load from the path as provided,
+    if not found, try searching for path in built in sample_spec_dir
+    """
+
+    if not spec_file.endswith('.json'):
+        raise ValueError(f'spec file must be a .json file, got: {spec_file}')
+
+    try:
+        print(f'attempting to load spec file: {spec_file}')
+        with open(spec_file) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        _path = sample_spec_dir / spec_file
+        print(f'attempting to load spec file: {_path}')
+        with open(_path) as f:
+            return json.load(f)
+        
 def load_spec(spec_file:str) -> dict:
     """
     open and parse spec file into dict,
