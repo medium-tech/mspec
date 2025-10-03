@@ -3,7 +3,6 @@ import datetime
 import json
 
 from pprint import pprint
-from pathlib import Path
 from mspec import sample_spec_dir
 from mspec.markup import *
 
@@ -200,7 +199,6 @@ class TestLingoApp(unittest.TestCase):
 
     def test_all_functions_coverage(self):
         """Verify that all functions in lingo_function_lookup are tested"""
-        app = lingo_app(self.functions_spec)
         
         # Get all function names from lingo_function_lookup
         expected_functions = set()
