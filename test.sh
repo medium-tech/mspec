@@ -64,7 +64,7 @@ if [ $MODE_SUM -gt 1 ]; then
   exit 1
 fi
 
-TESTS="tests"
+TESTS="discover"
 
 # if CLI_TEST then
 if [ $CLI_TEST -eq 1 ]; then
