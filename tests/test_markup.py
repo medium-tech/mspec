@@ -25,8 +25,8 @@ class TestLingoApp(unittest.TestCase):
         app.state['name'] = 'Alice'
         doc = render_output(app)
 
-        self.assertEqual(doc[14]['text'], 'Welcome in, ')
-        self.assertEqual(doc[15]['text'], 'Alice')
+        self.assertEqual(doc[16]['text'], 'Welcome in, ')
+        self.assertEqual(doc[17]['text'], 'Alice')
 
         self._test_doc(doc, debug=False)
 
@@ -35,8 +35,8 @@ class TestLingoApp(unittest.TestCase):
         app.state['name'] = 'Bob'
         doc = render_output(app)
         
-        self.assertEqual(doc[14]['text'], 'Welcome back, ')
-        self.assertEqual(doc[15]['text'], 'Bob')
+        self.assertEqual(doc[16]['text'], 'Welcome back, ')
+        self.assertEqual(doc[17]['text'], 'Bob')
         
         self._test_doc(doc, debug=False)
 
@@ -61,7 +61,7 @@ class TestLingoApp(unittest.TestCase):
 
         self.assertIn(doc[9]['text'], ['0', '1'])
 
-        when = doc[19]['text']
+        when = doc[21]['text']
         weekday = datetime.now().weekday()
         expecting = 'Weekend'
         if weekday == 0:

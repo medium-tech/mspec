@@ -49,6 +49,13 @@
 
             {"text": "Here's a random number: "},
             {"lingo": {"state": {"n": {}}}},
+            {"text": ". It's "},
+            {"branch": [
+                {"if": {"call": "lt", "args": {"a": {"state": {"n": {}}}, "b": 26}}, "then": {"text": "small"}},
+                {"elif": {"call": "lt", "args": {"a": {"state": {"n": {}}}, "b": 51}}, "then": {"text": "medium"}},
+                {"elif": {"call": "lt", "args": {"a": {"state": {"n": {}}}, "b": 76}}, "then": {"text": "large"}},
+                {"else": {"text": "extra large"}}
+            ]},
             {"text": "."},
             {"break": 1},
             
