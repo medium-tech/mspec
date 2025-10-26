@@ -9,7 +9,8 @@ from mspec.markup import lingo_app, render_output, lingo_update_state
 # argument parser
 #
 
-parser = argparse.ArgumentParser(description='MSpec command line interface')
+description = '''mspec command line interface, run "mspec <command> --help" for more information on a command.'''
+parser = argparse.ArgumentParser(description=description, prog='mspec')
 subparsers = parser.add_subparsers(dest='command', help='Available commands')
 
 # specs command #
@@ -35,6 +36,19 @@ example_parser.add_argument(
     'spec',
     type=str,
     help='Built-in spec name to copy to current directory'
+)
+example_parser.add_argument(
+    '--yes',
+    '-y',
+    action='store_true',
+    help='Automatically answer yes to overwrite prompts'
+)
+
+example_parser.add_argument(
+    '--no',
+    '-n',
+    action='store_true',
+    help='Automatically answer no to overwrite prompts'
 )
 
 # run command #
@@ -93,7 +107,20 @@ elif args.command == 'example':
     for directory in directories:
         spec_path: Path = directory / args.spec
         if spec_path.exists():
-            shutil.copy(spec_path, Path.cwd() / args.spec)
+            output_path = Path.cwd() / args.spec
+            if output_path.exists():
+                if args.yes:
+                    pass
+                elif args.no:
+                    print(f'File already exists, not overwriting: {args.spec}')
+                    raise SystemExit(0)
+                else:
+                    response = input(f'File {output_path.name} exists, overwrite {args.spec}? (y/n): ')
+                    if response.lower() != 'y':
+                        print('Aborting copy.')
+                        raise SystemExit(1)
+                    
+            shutil.copy(spec_path, output_path)
             print(f'Copied example spec file to current directory: {args.spec}')
             break
     else:
