@@ -280,9 +280,9 @@ See [TODO.md](./TODO.md) for desired language implementation and current progres
 ### finalizing release
 1. run `python -m mtemplate cache` to ensure distributed templates are up to date
 
-1. run full test suite `./test.sh`
-
 1. increment version in `pyproject.toml` file
+
+1. run full test suite `./test.sh`
 
 ### build and publish release:
 

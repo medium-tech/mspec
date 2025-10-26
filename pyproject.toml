@@ -4,7 +4,7 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = 'mspec'
-version = '0.0.10a'
+version = '0.0.11a'
 authors = [
   { name='Brad Corlett', email='brad.corlett@gmail.com' },
 ]
