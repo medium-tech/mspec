@@ -1,7 +1,9 @@
 import unittest
 import subprocess
 import sys
+import json
 from pathlib import Path
+from mspec import load_lingo_script_spec
 
 class TestCLI(unittest.TestCase):
     
@@ -10,6 +12,10 @@ class TestCLI(unittest.TestCase):
         cmd = [sys.executable, '-m', 'mspec'] + args
         result = subprocess.run(cmd, capture_output=True, text=True)
         return result
+    
+    #
+    # specs command
+    #
     
     def test_specs_command(self):
         """Test the specs command returns successfully"""
@@ -21,6 +27,10 @@ class TestCLI(unittest.TestCase):
         self.assertGreaterEqual(result.stdout.count('.json'), 4)
         self.assertGreaterEqual(result.stdout.count('.yaml'), 3)
     
+    #
+    # example command
+    #
+
     def test_example_command_generator(self):
         """Test the example command with test-gen.yaml"""
         result = self._run_cli(['example', 'test-gen.yaml', '--yes'])
@@ -140,11 +150,14 @@ class TestCLI(unittest.TestCase):
             except FileNotFoundError:
                 pass
     
+    #
+    # run command
+    #
+
     def test_run_command_functions(self):
         """Test the run command with functions.json"""
         result = self._run_cli(['run', 'functions.json'])
         self.assertEqual(result.returncode, 0)
-        self.assertIn('Running run command with spec:', result.stdout)
         # Should output JSON to stdout
         self.assertTrue(len(result.stdout) > 0)
 
@@ -152,10 +165,35 @@ class TestCLI(unittest.TestCase):
         """Test the run command with return-types.json"""
         result = self._run_cli(['run', 'return-types.json'])
         self.assertEqual(result.returncode, 0)
-        self.assertIn('Running run command with spec:', result.stdout)
         # Should output JSON to stdout
         self.assertTrue(len(result.stdout) > 0)
     
+    #
+    # execute command
+    #
+
+    def test_execute_command_all_param_types(self):
+        """Test the execute command with all_param_types.json"""
+        test_data = load_lingo_script_spec('all_param_types_test_data.json')
+
+        # test default case #
+
+        result = self._run_cli(['execute', 'all_param_types.json'])
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(json.loads(result.stdout), test_data['results']['default'])
+
+        # test test cases #
+
+        for test_case in test_data['results']['test_cases']:
+            params_json = json.dumps(test_case['params'])
+            result = self._run_cli(['execute', 'all_param_types.json', '--params', params_json])
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(json.loads(result.stdout), test_case['result'])
+
+    #
+    # misc cases
+    #
+
     def test_no_command_shows_help(self):
         """Test that running without a command shows help"""
         result = self._run_cli([])

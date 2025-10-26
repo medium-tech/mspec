@@ -3,7 +3,7 @@ import shutil
 import json
 from pathlib import Path
 from mspec import *
-from mspec.markup import lingo_app, render_output, lingo_update_state
+from mspec.markup import lingo_app, lingo_execute, render_output
 
 #
 # argument parser
@@ -43,12 +43,17 @@ example_parser.add_argument(
     action='store_true',
     help='Automatically answer yes to overwrite prompts'
 )
-
 example_parser.add_argument(
     '--no',
     '-n',
     action='store_true',
     help='Automatically answer no to overwrite prompts'
+)
+example_parser.add_argument(
+    '--display',
+    '-d',
+    action='store_true',
+    help='Display the result of the example spec instead of writing to file'
 )
 
 # run command #
@@ -62,12 +67,36 @@ run_parser.add_argument(
     type=str,
     help='Browser2 spec file path (.json) or built-in spec name'
 )
+run_parser.add_argument(
+    '--params',
+    '-p',
+    type=str,
+    help='JSON string of parameters for the run spec'
+)
 
-args = parser.parse_args()
+# execute command #
+
+execute_parser = subparsers.add_parser(
+    'execute',
+    help='Execute a lingo script spec and print the result'
+)
+execute_parser.add_argument(
+    'spec',
+    type=str,
+    help='Lingo script spec file path (.json) or built-in spec name'
+)
+execute_parser.add_argument(
+    '--params',
+    '-p',
+    type=str,
+    help='JSON string of parameters for the execute spec'
+)
 
 #
 # run commands
 #
+
+args = parser.parse_args()
 
 if not args.command:
     parser.print_help()
@@ -108,34 +137,51 @@ elif args.command == 'example':
         spec_path: Path = directory / args.spec
         if spec_path.exists():
             output_path = Path.cwd() / args.spec
-            if output_path.exists():
-                if args.yes:
-                    pass
-                elif args.no:
-                    print(f'File already exists, not overwriting: {args.spec}')
-                    raise SystemExit(0)
-                else:
-                    response = input(f'File {output_path.name} exists, overwrite {args.spec}? (y/n): ')
-                    if response.lower() != 'y':
-                        print('Aborting copy.')
-                        raise SystemExit(1)
-                    
-            shutil.copy(spec_path, output_path)
-            print(f'Copied example spec file to current directory: {args.spec}')
+            if args.display:
+                with open(spec_path, 'r') as f:
+                    print(f'Displaying example: {args.spec}\n\n')
+                    print(f.read())
+
+            else:
+                if output_path.exists():
+                    if args.yes:
+                        pass
+                    elif args.no:
+                        print(f'File already exists, not overwriting: {args.spec}')
+                        raise SystemExit(0)
+                    else:
+                        response = input(f'File {output_path.name} exists, overwrite {args.spec}? (y/n): ')
+                        if response.lower() != 'y':
+                            print('Aborting copy.')
+                            raise SystemExit(1)
+                        
+                shutil.copy(spec_path, output_path)
+                print(f'Copied example spec file to current directory: {args.spec}')
+
             break
     else:
         print(f'Example spec file not found: {spec_path}')
         raise SystemExit(1)
 
 elif args.command == 'run':
-    print(f'Running run command with spec: {args.spec}')
     if not args.spec.endswith('.json'):
         print('Spec file must be a .json file for run command')
         raise SystemExit(1)
     spec = load_browser2_spec(args.spec, display=True)
-    app = lingo_app(spec)
-    doc = render_output(lingo_update_state(app))
-    print(json.dumps(doc, indent=4))
+    params = json.loads(args.params) if args.params else {}
+    app = lingo_app(spec, **params)
+    doc = render_output(app)
+    print(json.dumps(doc, indent=4, sort_keys=True))
+
+elif args.command == 'execute':
+    if not args.spec.endswith('.json'):
+        print('Spec file must be a .json file for execute command')
+        raise SystemExit(1)
+    lingo_script = load_lingo_script_spec(args.spec)
+    params = json.loads(args.params) if args.params else {}
+    app = lingo_app(lingo_script, **params)
+    result = lingo_execute(app, lingo_script['output'])
+    print(json.dumps(result, indent=4, sort_keys=True))
 
 else:
     print('Unknown command')
