@@ -22,10 +22,12 @@ sample_generator_spec_dir = sample_data_dir / 'generator'
 dist_dir = Path(__file__).parent.parent.parent / 'dist'
 
 def builtin_spec_files() -> list[str]:
+    script_files = os.listdir(sample_lingo_script_spec_dir)
     return {
-        'browser2_specs': os.listdir(sample_browser2_spec_dir),
-        'generator_specs': os.listdir(sample_generator_spec_dir),
-        'lingo_script_specs': os.listdir(sample_lingo_script_spec_dir)
+        'browser2': os.listdir(sample_browser2_spec_dir),
+        'generator': os.listdir(sample_generator_spec_dir),
+        'lingo_script': list(filter(lambda f: not f.endswith('_test_data.json'), script_files)),
+        'lingo_script_test_data': list(filter(lambda f: f.endswith('_test_data.json'), script_files))
     }
 
 def generate_names(lower_case:str) -> dict:
@@ -38,7 +40,7 @@ def generate_names(lower_case:str) -> dict:
         'camel_case': pascal_case[0].lower() + pascal_case[1:]
     }
 
-def load_browser2_spec(spec_file:str) -> dict:
+def load_browser2_spec(spec_file:str, display:bool=False) -> dict:
     """
     open and parse spec file into dict,
     first try to load from the path as provided,
@@ -49,16 +51,18 @@ def load_browser2_spec(spec_file:str) -> dict:
         raise ValueError(f'spec file must be a .json file, got: {spec_file}')
 
     try:
-        print(f'attempting to load spec file: {spec_file}')
+        if display:
+            print(f'attempting to load spec file: {spec_file}')
         with open(spec_file) as f:
             return json.load(f)
     except FileNotFoundError:
         _path = sample_browser2_spec_dir / spec_file
-        print(f'attempting to load spec file: {_path}')
+        if display:
+            print(f'attempting to load spec file: {_path}')
         with open(_path) as f:
             return json.load(f)
-        
-def load_lingo_script_spec(spec_file:str) -> dict:
+
+def load_lingo_script_spec(spec_file:str, display:bool=False) -> dict:
     """
     open and parse lingo script spec file into dict,
     first try to load from the path as provided,
@@ -69,13 +73,15 @@ def load_lingo_script_spec(spec_file:str) -> dict:
         raise ValueError(f'spec file must be a .json file, got: {spec_file}')
 
     try:
-        print(f'attempting to load lingo script spec file: {spec_file}')
+        if display:
+            print(f'attempting to load lingo script spec file: {spec_file}')
         with open(spec_file) as f:
             return json.load(f)
         
     except FileNotFoundError:
         _path = sample_lingo_script_spec_dir / spec_file
-        print(f'attempting to load lingo script spec file: {_path}')
+        if display:
+            print(f'attempting to load lingo script spec file: {_path}')
         with open(_path) as f:
             return json.load(f)
         

@@ -1,0 +1,15 @@
+{
+    "params": {
+        "a": {
+            "type": "int",
+            "default": 0
+        }
+    },
+    "state": {},
+    "ops": {},
+    "output": {
+        "params": {
+            "a": {}
+        }
+    }
+}

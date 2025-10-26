@@ -1,0 +1,156 @@
+{
+    "ops": {},
+    "output": {
+        "args": {
+            "a": {
+                "switch": {
+                    "cases": [
+                        {
+                            "case": "mon",
+                            "then": {
+                                "args": {
+                                    "a": 15,
+                                    "b": -1
+                                },
+                                "call": "mul"
+                            }
+                        },
+                        {
+                            "case": "thu",
+                            "then": {
+                                "args": {
+                                    "a": {
+                                        "args": {
+                                            "a": 2,
+                                            "b": 3
+                                        },
+                                        "call": "add"
+                                    },
+                                    "b": 1
+                                },
+                                "call": "add"
+                            }
+                        },
+                        {
+                            "case": "fri",
+                            "then": {
+                                "type": "int",
+                                "value": 15
+                            }
+                        },
+                        {
+                            "case": "sat",
+                            "then": {
+                                "type": "int",
+                                "value": 20
+                            }
+                        },
+                        {
+                            "case": "sun",
+                            "then": {
+                                "type": "int",
+                                "value": 10
+                            }
+                        }
+                    ],
+                    "default": {
+                        "type": "int",
+                        "value": 0
+                    },
+                    "expression": {
+                        "switch": {
+                            "cases": [
+                                {
+                                    "case": 1,
+                                    "then": {
+                                        "type": "str",
+                                        "value": "tue"
+                                    }
+                                },
+                                {
+                                    "case": {
+                                        "args": {
+                                            "a": 1,
+                                            "b": 1
+                                        },
+                                        "call": "add"
+                                    },
+                                    "then": {
+                                        "type": "str",
+                                        "value": "wed"
+                                    }
+                                },
+                                {
+                                    "case": 3,
+                                    "then": {
+                                        "type": "str",
+                                        "value": "thu"
+                                    }
+                                },
+                                {
+                                    "case": 4,
+                                    "then": {
+                                        "type": "str",
+                                        "value": "fri"
+                                    }
+                                },
+                                {
+                                    "case": 5,
+                                    "then": {
+                                        "type": "str",
+                                        "value": "sat"
+                                    }
+                                },
+                                {
+                                    "case": {
+                                        "args": {
+                                            "a": {
+                                                "args": {
+                                                    "a": 3,
+                                                    "b": 0
+                                                },
+                                                "call": "add"
+                                            },
+                                            "b": 3
+                                        },
+                                        "call": "add"
+                                    },
+                                    "then": {
+                                        "type": "str",
+                                        "value": "sun"
+                                    }
+                                }
+                            ],
+                            "default": {
+                                "type": "str",
+                                "value": "mon"
+                            },
+                            "expression": {
+                                "params": {
+                                    "day": {}
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "b": {
+                "params": {
+                    "happiness": {}
+                }
+            }
+        },
+        "call": "add"
+    },
+    "params": {
+        "day": {
+            "default": 5,
+            "type": "int"
+        },
+        "happiness": {
+            "default": 100,
+            "type": "int"
+        }
+    },
+    "state": {}
+}

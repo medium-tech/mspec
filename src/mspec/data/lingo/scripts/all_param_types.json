@@ -1,0 +1,27 @@
+{
+    "params": {
+        "int_param": {
+            "type": "int",
+            "default": 42
+        },
+        "float_param": {
+            "type": "float",
+            "default": 3.0
+        },
+        "bool_param": {
+            "type": "bool",
+            "default": true
+        },
+        "string_param": {
+            "type": "str",
+            "default": "hello"
+        }
+    },
+    "state": {},
+    "ops": {},
+    "output": {
+        "params": {
+            "int_param": {}
+        }
+    }
+}

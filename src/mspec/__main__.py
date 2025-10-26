@@ -19,6 +19,12 @@ specs_parser = subparsers.add_parser(
     help='List all built-in spec files'
 )
 
+specs_parser.add_argument(
+    '--json',
+    action='store_true',
+    help='Output specs in JSON format'
+)
+
 # example command #
 
 example_parser = subparsers.add_parser(
@@ -56,17 +62,25 @@ if not args.command:
 if args.command == 'specs':
     specs = builtin_spec_files()
 
-    print('Builtin browser2 spec files:')
-    for spec in specs['browser2_specs']:
-        print(f' - {spec}')
+    if args.json:
+        print(json.dumps(specs, indent=4))
 
-    print('Builtin generator spec files:')
-    for spec in specs['generator_specs']:
-        print(f' - {spec}')
+    else:
+        print('Builtin browser2 spec files:')
+        for spec in specs['browser2']:
+            print(f' - {spec}')
 
-    print('Builtin mspec lingo script spec files:')
-    for spec in specs['lingo_script_specs']:
-        print(f' - {spec}')
+        print('Builtin generator spec files:')
+        for spec in specs['generator']:
+            print(f' - {spec}')
+
+        print('Builtin mspec lingo script spec files:')
+        for spec in specs['lingo_script']:
+            print(f' - {spec}')
+
+        print('Builtin mspec lingo script test data spec files:')
+        for spec in specs['lingo_script_test_data']:
+            print(f' - {spec}')
 
 elif args.command == 'example':
 
@@ -91,7 +105,7 @@ elif args.command == 'run':
     if not args.spec.endswith('.json'):
         print('Spec file must be a .json file for run command')
         raise SystemExit(1)
-    spec = load_browser2_spec(args.spec)
+    spec = load_browser2_spec(args.spec, display=True)
     app = lingo_app(spec)
     doc = render_output(lingo_update_state(app))
     print(json.dumps(doc, indent=4))
