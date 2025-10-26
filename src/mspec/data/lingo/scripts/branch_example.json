@@ -1,0 +1,110 @@
+{
+    "ops": {},
+    "output": {
+        "branch": [
+            {
+                "if": {
+                    "args": {
+                        "a": {
+                            "args": {
+                                "a": {
+                                    "params": {
+                                        "n": {}
+                                    }
+                                },
+                                "b": {
+                                    "branch": [
+                                        {
+                                            "if": {
+                                                "params": {
+                                                    "boost": {}
+                                                }
+                                            },
+                                            "then": {
+                                                "type": "int",
+                                                "value": 3
+                                            }
+                                        },
+                                        {
+                                            "else": {
+                                                "type": "int",
+                                                "value": 0
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "call": "add"
+                        },
+                        "b": 2
+                    },
+                    "call": "lt"
+                },
+                "then": {
+                    "type": "str",
+                    "value": "small"
+                }
+            },
+            {
+                "elif": {
+                    "args": {
+                        "a": {
+                            "args": {
+                                "a": {
+                                    "params": {
+                                        "n": {}
+                                    }
+                                },
+                                "b": {
+                                    "branch": [
+                                        {
+                                            "if": {
+                                                "params": {
+                                                    "boost": {}
+                                                }
+                                            },
+                                            "then": {
+                                                "type": "int",
+                                                "value": 3
+                                            }
+                                        },
+                                        {
+                                            "else": {
+                                                "type": "int",
+                                                "value": 0
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "call": "add"
+                        },
+                        "b": 5
+                    },
+                    "call": "lt"
+                },
+                "then": {
+                    "type": "str",
+                    "value": "medium"
+                }
+            },
+            {
+                "else": {
+                    "type": "str",
+                    "value": "large"
+                }
+            }
+        ]
+    },
+    "params": {
+        "boost": {
+            "default": true,
+            "type": "bool"
+        },
+        "n": {
+            "default": 0,
+            "type": "int"
+        }
+    },
+    "state": {}
+}

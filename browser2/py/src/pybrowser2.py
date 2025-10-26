@@ -2,10 +2,10 @@
 import tkinter
 import webbrowser
 from tkinter import ttk
-from mspec import sample_spec_dir, load_browser2_spec
+from mspec import sample_data_dir, load_browser2_spec
 from mspec.markup import lingo_app, render_output, lingo_execute, lingo_update_state
 
-default_page = str(sample_spec_dir / 'test-page.json')
+default_page = str(sample_data_dir / 'test-page.json')
 
 HEADING = {
     1: ('Verdana', 35),

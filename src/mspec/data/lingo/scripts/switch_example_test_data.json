@@ -1,0 +1,30 @@
+{
+    "results": {
+        "default": {
+            "type": "int",
+            "value": 120
+        },
+        "test_cases": [
+            {
+                "params": {
+                    "day": 0,
+                    "happiness": 50
+                },
+                "result": {
+                    "type": "int",
+                    "value": 35
+                }
+            },
+            {
+                "params": {
+                    "day": 4,
+                    "happiness": 75
+                },
+                "result": {
+                    "type": "int",
+                    "value": 90
+                }
+            }
+        ]
+    }
+}

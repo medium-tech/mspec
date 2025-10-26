@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from mspec import load_spec
+from mspec import load_generator_spec
 from mtemplate import setup_generated_app, run_server_and_app_tests
 from mtemplate.browser1 import MTemplateBrowser1Project
 from mtemplate.py import MTemplatePyProject
@@ -31,19 +31,19 @@ use_cache = args.use_cache and not args.no_cache
 
 if args.command == 'cache':
     if args.app in ['both', 'py']:
-        MTemplatePyProject.build_cache(load_spec(args.spec))
+        MTemplatePyProject.build_cache(load_generator_spec(args.spec))
         
     if args.app in ['both', 'browser1']:
-        MTemplateBrowser1Project.build_cache(load_spec(args.spec))
+        MTemplateBrowser1Project.build_cache(load_generator_spec(args.spec))
 
 elif args.command == 'render':
     if args.app in ['both', 'py']:
         py_out = None if args.output is None else args.output / 'py'
-        MTemplatePyProject.render(load_spec(args.spec), args.env_file, py_out, args.debug, args.disable_strict, use_cache)
+        MTemplatePyProject.render(load_generator_spec(args.spec), args.env_file, py_out, args.debug, args.disable_strict, use_cache)
 
     if args.app in ['both', 'browser1']:
         browser1_out = None if args.output is None else args.output / 'browser1'
-        MTemplateBrowser1Project.render(load_spec(args.spec), args.env_file, browser1_out, args.debug, args.disable_strict, use_cache)
+        MTemplateBrowser1Project.render(load_generator_spec(args.spec), args.env_file, browser1_out, args.debug, args.disable_strict, use_cache)
 
 elif args.command == 'setup':
     if args.source_dir is None:

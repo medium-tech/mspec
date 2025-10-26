@@ -225,7 +225,7 @@ class TestTestGenSpec(BaseMSpecTest):
     '''Test the complete app generation workflow'''
 
     repo_root = Path(__file__).parent.parent
-    spec_file = repo_root / 'src' / 'mspec' / 'data' / 'test-gen.yaml'
+    spec_file = repo_root / 'src' / 'mspec' / 'data' / 'generator' / 'test-gen.yaml'
     tests_tmp_dir = repo_root / 'tests' / 'tmp'
 
     def test_cache(self):
@@ -414,7 +414,7 @@ class TestSampleStoreSpec(BaseMSpecTest):
     '''Test the complete app generation workflow'''
 
     repo_root = Path(__file__).parent.parent
-    spec_file = repo_root / 'src' / 'mspec' / 'data' / 'my-sample-store.yaml'
+    spec_file = repo_root / 'src' / 'mspec' / 'data' / 'generator' / 'my-sample-store.yaml'
     tests_tmp_dir = repo_root / 'tests' / 'tmp'
 
     def test_cache(self):
@@ -434,7 +434,7 @@ class TestSimpleSocialSpec(BaseMSpecTest):
     '''Test the complete app generation workflow'''
 
     repo_root = Path(__file__).parent.parent
-    spec_file = repo_root / 'src' / 'mspec' / 'data' / 'simple-social-network.yaml'
+    spec_file = repo_root / 'src' / 'mspec' / 'data' / 'generator' / 'simple-social-network.yaml'
     tests_tmp_dir = repo_root / 'tests' / 'tmp'
 
     def test_cache(self):

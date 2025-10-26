@@ -1,0 +1,28 @@
+{
+    "results": {
+        "default": {
+            "type": "int",
+            "value": 42
+        },
+        "test_cases": [
+            {
+                "params": {
+                    "int_param": 100
+                },
+                "result": {
+                    "type": "int",
+                    "value": 100
+                }
+            },
+            {
+                "params": {
+                    "int_param": -25
+                },
+                "result": {
+                    "type": "int",
+                    "value": -25
+                }
+            }
+        ]
+    }
+}

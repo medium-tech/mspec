@@ -3,16 +3,16 @@ import datetime
 import json
 
 from pprint import pprint
-from mspec import load_browser2_spec, sample_spec_dir
+from mspec import load_browser2_spec, sample_browser2_spec_dir, builtin_spec_files, load_lingo_script_spec
 from mspec.markup import *
 
 
-class TestLingoApp(unittest.TestCase):
+class TestLingoPages(unittest.TestCase):
         
     @classmethod
     def setUpClass(cls):
-        cls.test_spec_path = sample_spec_dir / 'test-page.json'
-        cls.functions_spec_path = sample_spec_dir / 'functions.json'
+        cls.test_spec_path = sample_browser2_spec_dir / 'test-page.json'
+        cls.functions_spec_path = sample_browser2_spec_dir / 'functions.json'
 
         with open(cls.test_spec_path, 'r') as f:
             cls.test_spec = json.load(f)
@@ -247,6 +247,29 @@ class TestLingoApp(unittest.TestCase):
         
         # Should have at least heading and several function test outputs
         self.assertGreater(len(doc), 10, "Should have substantial output for function tests")
+
+built_in = builtin_spec_files()
+lingo_scripts = built_in['lingo_script']
+lingo_script_test_data = built_in['lingo_script_test_data']
+
+class TestLingoScripts(unittest.TestCase):
+
+    def test_lingo_scripts(self):
+        for name in lingo_scripts:
+            with self.subTest(name=name):
+                lingo_script = load_lingo_script_spec(name)
+                test_data = load_lingo_script_spec(name.replace('.json', '_test_data.json'))
+
+                default_app = lingo_app(lingo_script)
+                default_result = lingo_execute(default_app, lingo_script['output'])
+
+                self.assertEqual(default_result, test_data['results']['default'])
+
+                for test_case in test_data['results']['test_cases']:
+                    test_case_app = lingo_app(lingo_script, **test_case['params'])
+                    result = lingo_execute(test_case_app, lingo_script['output'])
+
+                    self.assertEqual(result, test_case['result'])
 
 if __name__ == '__main__':
     unittest.main()

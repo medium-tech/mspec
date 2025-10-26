@@ -1,0 +1,50 @@
+{
+    "results": {
+        "default": {
+            "type": "str",
+            "value": "medium"
+        },
+        "test_cases": [
+            {
+                "params": {
+                    "n": 0,
+                    "boost": false
+                },
+                "result": {
+                    "type": "str",
+                    "value": "small"
+                }
+            },
+            {
+                "params": {
+                    "boost": false,
+                    "n": 4
+                },
+                "result": {
+                    "type": "str",
+                    "value": "medium"
+                }
+            },
+            {
+                "params": {
+                    "boost": true,
+                    "n": 4
+                },
+                "result": {
+                    "type": "str",
+                    "value": "large"
+                }
+            },
+            {
+                "params": {
+                    "boost": false,
+                    "n": 5
+                },
+                "result": {
+                    "type": "str",
+                    "value": "large"
+                }
+            }
+        ]
+    }
+}

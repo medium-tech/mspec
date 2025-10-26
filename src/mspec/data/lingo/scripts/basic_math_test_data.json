@@ -1,0 +1,30 @@
+{
+    "results": {
+        "default": {
+            "type": "float",
+            "value": 20.0
+        },
+        "test_cases": [
+            {
+                "params": {
+                    "a": 10,
+                    "b": 4
+                },
+                "result": {
+                    "type": "float",
+                    "value": 35.0
+                }
+            },
+            {
+                "params": {
+                    "a": 2,
+                    "b": 1
+                },
+                "result": {
+                    "type": "float",
+                    "value": 7.5
+                }
+            }
+        ]
+    }
+}
