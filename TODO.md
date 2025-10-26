@@ -19,6 +19,20 @@
 ## main template prototype
 The main prototype are the python + browser 1 browser template apps.
 
+### lingo
+* 🔴 rename mspec/markup.py to lingo.py
+* 🔴 move sample apps from bl-mspec-dev
+    * 🔴 add tests to ensure correct outputs are generated
+* 🔴 add lists
+    * 🔴 map
+    * 🔴 slice
+    * 🔴 filter
+    * 🔴 count
+    * 🔴 drop
+    * 🔴 take
+    * 🔴 drop while
+    * 🔴 take while
+
 ### phase 1
 * 🟡 auth for models
     * 🟡 require login to create a model

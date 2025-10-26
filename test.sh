@@ -4,7 +4,7 @@
 
 # function to print help menu
 print_help() {
-  echo "Usage: $0 [--quick] [--dev] [-h|--help]"
+  echo "Usage: $0 [--quick] [--templates] [--dev] [--cli] [--markup] [-h|--help]"
   echo ""
   echo "Options:"
   echo "  --quick       Test template extraction, caching, and app generation, but don't run and test apps"
