@@ -2,14 +2,31 @@ import os
 import json
 from pathlib import Path
 import yaml
+__all__ = [
+    'sample_data_dir',
+    'sample_browser2_spec_dir',
+    'sample_lingo_script_spec_dir',
+    'sample_generator_spec_dir',
+    'dist_dir',
+    'builtin_spec_files',
+    'generate_names',
+    'load_browser2_spec',
+    'load_lingo_script_spec',
+    'load_generator_spec'
+]
 
-__all__ = ['spec', 'sample_spec_dir', 'dist_dir']
-
-sample_spec_dir = Path(__file__).parent / 'data'
+sample_data_dir = Path(__file__).parent / 'data'
+sample_browser2_spec_dir = sample_data_dir / 'lingo' / 'pages'
+sample_lingo_script_spec_dir = sample_data_dir / 'lingo' / 'scripts'
+sample_generator_spec_dir = sample_data_dir / 'generator'
 dist_dir = Path(__file__).parent.parent.parent / 'dist'
 
 def builtin_spec_files() -> list[str]:
-    return os.listdir(sample_spec_dir)
+    return {
+        'browser2_specs': os.listdir(sample_browser2_spec_dir),
+        'generator_specs': os.listdir(sample_generator_spec_dir),
+        'lingo_script_specs': os.listdir(sample_lingo_script_spec_dir)
+    }
 
 def generate_names(lower_case:str) -> dict:
     name_split = lower_case.split(' ')
@@ -36,12 +53,33 @@ def load_browser2_spec(spec_file:str) -> dict:
         with open(spec_file) as f:
             return json.load(f)
     except FileNotFoundError:
-        _path = sample_spec_dir / spec_file
+        _path = sample_browser2_spec_dir / spec_file
         print(f'attempting to load spec file: {_path}')
         with open(_path) as f:
             return json.load(f)
         
-def load_spec(spec_file:str) -> dict:
+def load_lingo_script_spec(spec_file:str) -> dict:
+    """
+    open and parse lingo script spec file into dict,
+    first try to load from the path as provided,
+    if not found, try searching for path in built in sample_lingo_script_spec_dir
+    """
+
+    if not spec_file.endswith('.json'):
+        raise ValueError(f'spec file must be a .json file, got: {spec_file}')
+
+    try:
+        print(f'attempting to load lingo script spec file: {spec_file}')
+        with open(spec_file) as f:
+            return json.load(f)
+        
+    except FileNotFoundError:
+        _path = sample_lingo_script_spec_dir / spec_file
+        print(f'attempting to load lingo script spec file: {_path}')
+        with open(_path) as f:
+            return json.load(f)
+        
+def load_generator_spec(spec_file:str) -> dict:
     """
     open and parse spec file into dict,
     first try to load from the path as provided,
@@ -54,7 +92,7 @@ def load_spec(spec_file:str) -> dict:
         print(f'\tloaded.')
 
     except FileNotFoundError:
-        _path = sample_spec_dir / spec_file
+        _path = sample_generator_spec_dir / spec_file
         print(f'attempting to load spec file: {_path}')
         with open(_path) as f:
             spec = yaml.load(f, Loader=yaml.FullLoader)

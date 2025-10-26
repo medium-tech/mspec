@@ -1,7 +1,8 @@
 import argparse
 import shutil
 import json
-from mspec import load_spec, sample_spec_dir, builtin_spec_files, load_browser2_spec
+from pathlib import Path
+from mspec import *
 from mspec.markup import lingo_app, render_output, lingo_update_state
 
 #
@@ -69,30 +70,40 @@ if args.command == 'show':
     if args.spec.endswith('.json'):
         print(json.dumps(load_browser2_spec(args.spec), indent=4))
     else:
-        print(json.dumps(load_spec(args.spec), indent=4))
+        print(json.dumps(load_generator_spec(args.spec), indent=4))
 
 elif args.command == 'specs':
     specs = builtin_spec_files()
 
     print('Builtin browser2 spec files:')
-    for spec in specs:
-        if spec.endswith('json'):
-            print(f' - {spec}')
+    for spec in specs['browser2_specs']:
+        print(f' - {spec}')
 
-    print('Builtin mspec template app spec files:')
-    for spec in specs:
-        if spec.endswith('yaml') or spec.endswith('yml'):
-            print(f' - {spec}')
+    print('Builtin generator spec files:')
+    for spec in specs['generator_specs']:
+        print(f' - {spec}')
+
+    print('Builtin mspec lingo script spec files:')
+    for spec in specs['lingo_script_specs']:
+        print(f' - {spec}')
 
 elif args.command == 'example':
-    spec_path = sample_spec_dir / args.spec
-    
-    if not spec_path.exists():
+
+    directories = [
+        sample_browser2_spec_dir,
+        sample_generator_spec_dir,
+        sample_lingo_script_spec_dir
+    ]
+
+    for directory in directories:
+        spec_path: Path = directory / args.spec
+        if spec_path.exists():
+            shutil.copy(spec_path, Path.cwd() / args.spec)
+            print(f'Copied example spec file to current directory: {args.spec}')
+            break
+    else:
         print(f'Example spec file not found: {spec_path}')
         raise SystemExit(1)
-    
-    shutil.copy(spec_path, '.')
-    print(f'Copied example spec file to current directory: {spec_path.name}')
 
 elif args.command == 'run':
     print(f'Running run command with spec: {args.spec}')

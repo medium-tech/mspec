@@ -3,7 +3,7 @@ import datetime
 import json
 
 from pprint import pprint
-from mspec import load_browser2_spec, sample_spec_dir
+from mspec import load_browser2_spec, sample_data_dir
 from mspec.markup import *
 
 
@@ -11,8 +11,8 @@ class TestLingoApp(unittest.TestCase):
         
     @classmethod
     def setUpClass(cls):
-        cls.test_spec_path = sample_spec_dir / 'test-page.json'
-        cls.functions_spec_path = sample_spec_dir / 'functions.json'
+        cls.test_spec_path = sample_data_dir / 'test-page.json'
+        cls.functions_spec_path = sample_data_dir / 'functions.json'
 
         with open(cls.test_spec_path, 'r') as f:
             cls.test_spec = json.load(f)
