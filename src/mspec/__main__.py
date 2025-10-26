@@ -12,19 +12,6 @@ from mspec.markup import lingo_app, render_output, lingo_update_state
 parser = argparse.ArgumentParser(description='MSpec command line interface')
 subparsers = parser.add_subparsers(dest='command', help='Available commands')
 
-
-# show command #
-
-show_parser = subparsers.add_parser(
-    'show', 
-    help='Load and display a spec file'
-)
-show_parser.add_argument(
-    'spec',
-    type=str,
-    help='Spec file path or built-in spec name. The app first tries to load from the file system, then falls back to built-in specs.'
-)
-
 # specs command #
 
 specs_parser = subparsers.add_parser(
@@ -66,13 +53,7 @@ if not args.command:
     parser.print_help()
     raise SystemExit(1)
 
-if args.command == 'show':
-    if args.spec.endswith('.json'):
-        print(json.dumps(load_browser2_spec(args.spec), indent=4))
-    else:
-        print(json.dumps(load_generator_spec(args.spec), indent=4))
-
-elif args.command == 'specs':
+if args.command == 'specs':
     specs = builtin_spec_files()
 
     print('Builtin browser2 spec files:')

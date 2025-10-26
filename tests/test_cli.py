@@ -16,23 +16,10 @@ class TestCLI(unittest.TestCase):
         result = self._run_cli(['specs'])
         self.assertEqual(result.returncode, 0)
         self.assertIn('Builtin browser2 spec files:', result.stdout)
-        self.assertIn('Builtin mspec template app spec files:', result.stdout)
-        self.assertGreaterEqual(result.stdout.count('.json'), 3)
+        self.assertIn('Builtin generator spec files:', result.stdout)
+        self.assertIn('Builtin mspec lingo script spec files:', result.stdout)
+        self.assertGreaterEqual(result.stdout.count('.json'), 4)
         self.assertGreaterEqual(result.stdout.count('.yaml'), 3)
-    
-    def test_show_command_yaml(self):
-        """Test the show command with test-gen.yaml"""
-        result = self._run_cli(['show', 'test-gen.yaml'])
-        self.assertEqual(result.returncode, 0)
-        # Should output JSON to stdout
-        self.assertTrue(len(result.stdout) > 0)
-    
-    def test_show_command_json(self):
-        """Test the show command with test-page.json"""
-        result = self._run_cli(['show', 'test-page.json'])
-        self.assertEqual(result.returncode, 0)
-        # Should output JSON to stdout
-        self.assertTrue(len(result.stdout) > 0)
     
     def test_example_command_yaml(self):
         """Test the example command with test-gen.yaml"""
