@@ -34,8 +34,7 @@ A Browser2 JSON page consists of four main sections:
 To run a Browser2 page using the Python implementation:
 
 ```bash
-cd browser2/py/src
-./pybrowser2.py --spec path/to/your/page.json
+python -m mspec.browser2 --spec path/to/your/page.json
 ```
 
 ## Top-Level Keys

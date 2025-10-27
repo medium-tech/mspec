@@ -16,7 +16,7 @@ This project is two things: an [app generator](#app-generator) using code templa
         * [example repo](https://github.com/medium-tech/mspec-apps)
     * browser2
         * [write a browser2 page](./docs/BROWSER2.md)
-        * [pybrowser2 - gui client](#pybrowser2)
+        * [python gui client](#pybrowser2)
 * [development](#development)
     * [code layout](#code-layout)
     * [setup dev enviro](#setup-dev-environment)
@@ -124,14 +124,17 @@ Of course there are examples of fast websites but in my day to day experience is
 ## pybrowser2
 A browser2 implementation in Python using the built in `tkinter` library.
 
-After [setting up your dev environment](#setup-dev-environment) run the following:
-
-    cd browser2/py/src
-    ./pybrowser2.py
+    python -m mspec.browser2
 
 You can open any spec json file with this:
 
-    ./pybrowser2.py --spec file.json
+    python -m mspec.browser2 --spec functions.json
+
+`functions.json` is a built in example spec and the above command will work even if that file is not in your working directory. the `--spec` arg will first be check to see if the path exists, if not then the arg will be checked against built in specs.
+
+To list built in examples:
+
+    python -m mspec specs
 
 For more examples and complete documentation on creating JSON pages, see **[here](./docs/BROWSER2.md)**.
 
@@ -143,11 +146,9 @@ For more examples and complete documentation on creating JSON pages, see **[here
 The `./src` folder contains two modules:
 
 * `mtemplate` - extracts templates from template apps and using them to generate apps based on yaml definition files in `./spec`
-* `mspec` - parse yaml spec files in `./spec`, parse and process browser2.0 json pages
+* `mspec` - parse yaml spec files, browser2 and lingo
 
 The `./templates` folder contains template apps from which templates are extracted.
-
-The `browser2/py` file contains the tkinter window and renderer for the browser2.0 python implementation.
 
 ## setup dev environment
 This environment will be used to develop the template apps, mspec and mtemplate modules and browser2 python implementation.
@@ -262,7 +263,7 @@ The template syntax is [documented here](./docs/MTEMPLATE_SYNTAX.md).
 
 ## browser2.0
 
-Browser2 implementations go in `./browser2/<language>`. For languages not yet implemented, a proof of concept app should be able to render the `src/mspec/data/hello-world-page.json` hello world page. Full implementations should be able to render `src/mspec/data/test-page.json` and have unittests. See the [python implementation](#run-browser-20) for an example implementation of what the product should look like.
+Browser2 implementations go in `./browser2/<language>`. For languages not yet implemented, a proof of concept app should be able to render the `src/mspec/data/lingo/pages/hello-world-page.json` hello world page. Full implementations should be able to render all `src/mspec/data/lingo/pages/*` and have unittests. See the [python implementation](#run-browser-20) for an example implementation of what the product should look like.
 
 For complete documentation on the Browser2.0 JSON page format, see **[here](./docs/BROWSER2.md)**.
 
