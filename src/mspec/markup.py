@@ -24,22 +24,22 @@ lingo_function_lookup = {
     'pow': {'func': operator.pow, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
 
     'eq': {'func': operator.eq, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
-    'ne': {'func': lambda a, b: operator.ne(a, b), 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
+    'ne': {'func': operator.ne, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
     'lt': {'func': operator.lt, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
     'le': {'func': operator.le, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
     'gt': {'func': operator.gt, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
     'ge': {'func': operator.ge, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
 
-    'range': {'func': range, 'args': {'stop': {'type': 'int'}, 'start': {'type': 'int', 'default': 0}, 'step': {'type': 'int', 'default': 1}}, 'arg_order': ['start', 'stop', 'step']},
+    'range': {'func': range, 'args': {'start': {'type': 'int', 'default': 0}, 'stop': {'type': 'int'}, 'step': {'type': 'int', 'default': 1}}},
 
     'current': {
-        'weekday': {'func': lambda: datetime.now().weekday(), 'args': {}}
+        'weekday': {'func': lambda: datetime.now().weekday(), 'args': {}, 'sig': 'kwargs'}
     },
     'datetime': {
-        'now': {'func': datetime.now, 'args': {}}
+        'now': {'func': datetime.now, 'args': {}, 'sig': 'kwargs'}
     },
     'random': {
-        'randint': {'func': randint, 'args': {'a': {'type': 'int'}, 'b': {'type': 'int'}}}
+        'randint': {'func': randint, 'args': {'a': {'type': 'int'}, 'b': {'type': 'int'}}, 'sig': 'kwargs'}
     }
 }
 
@@ -128,24 +128,6 @@ def lingo_execute(app:LingoApp, expression:Any, ctx:Optional[dict]=None) -> Any:
     if isinstance(result, dict):
         return result
     
-    # elif isinstance(result, (list, Sequence)) and not isinstance(result, str):
-    #     element_types = []
-    #     elements = []
-    #     for item in result:
-    #         if not isinstance(item, (bool, int, float, str, dict, datetime)):
-    #             raise ValueError(f'List contains unsupported type: {item.__class__.__name__}')
-    #         element_types.append(item.__class__)
-    #         elements.append(item)
-
-    #     if len(set(element_types)) > 1:
-    #         raise ValueError(f'List contains mixed types: {element_types}')
-        
-    #     list_value = {'value': elements, 'type': 'list'}
-    #     try:
-    #         list_value['element_type'] = element_types[0].__name__
-    #     except IndexError:
-    #         pass
-    #     return list_value
     elif isinstance(result, list):
         return result
     
@@ -429,6 +411,7 @@ def render_op(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
 def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
 
     # init #
+
     try:
         _args = expression['args']
     except KeyError:
@@ -440,6 +423,7 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
         raise ValueError('call - invalid function name')
     
     # get func and args def #
+
     try:
         if name_depth == 1:
             definition = lingo_function_lookup[name_split[0]]
@@ -453,7 +437,8 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
     function = definition['func']
     args_def = definition.get('args', {})
         
-    # validate args #
+    # supplied args #
+
     rendered_args = {}
     for arg_name, arg_expression in _args.items():
         try:
@@ -469,22 +454,13 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
             
         rendered_args[arg_name] = value['value']
 
-    # Check if function is from operator module or built-in and needs positional args
-    if 'arg_order' in definition:
-        args_list = []
-        for arg_name in definition['arg_order']:
-            if arg_name in rendered_args:
-                args_list.append(rendered_args[arg_name])
-            elif 'default' in args_def[arg_name]:
-                args_list.append(args_def[arg_name]['default'])
-            else:
-                raise ValueError(f'call - missing required arg: {arg_name}')
+    # order args and call #
 
-        return_value = function(*args_list)
+    if definition.get('sig', '') == 'kwargs':
+        return_value = function(**rendered_args)
 
-    elif (hasattr(function, '__module__') and function.__module__ == '_operator') or \
-       (hasattr(function, '__module__') and function.__module__ == 'builtins'):
-        # For operator and built-in functions, convert to positional arguments in the order defined
+    else: 
+        # positional args
         args_list = []
         for arg_name in args_def.keys():
             if arg_name in rendered_args:
@@ -495,8 +471,8 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
                 raise ValueError(f'call - missing required arg: {arg_name}')
 
         return_value = function(*args_list)
-    else:
-        return_value = function(**rendered_args)
+    
+    # format return value #
 
     if isinstance(return_value, Sequence) and not isinstance(return_value, str):
         element_types = []
