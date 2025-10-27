@@ -58,6 +58,7 @@ lingo_function_lookup = {
     'filter': {'func': filter, 'create_args': _map_function_args},
     'dropwhile': {'func': dropwhile, 'create_args': _map_function_args},
     'takewhile': {'func': takewhile, 'create_args': _map_function_args},
+    'reversed': {'func': reversed, 'args': {'sequence': {'type': 'list'}}},
 
     'current': {
         'weekday': {'func': lambda: datetime.now().weekday(), 'args': {}, 'sig': 'kwargs'}

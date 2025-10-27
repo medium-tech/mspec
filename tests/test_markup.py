@@ -154,6 +154,7 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(app.state['test_filter'], [4, 5, 6, 7])
         self.assertEqual(app.state['test_dropwhile'], [4, 5, 6, 7])
         self.assertEqual(app.state['test_takewhile'], [1, 2, 3])
+        self.assertEqual(app.state['test_reversed'], [3, 2, 1])
 
     def test_comparison_functions(self):
         """Test comparison operators"""

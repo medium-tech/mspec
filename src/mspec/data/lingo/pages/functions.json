@@ -192,6 +192,10 @@
                     "iterable": [1, 2, 3, 4, 5, 6, 7]
                 }
             }
+        },
+        "test_reversed": {
+            "type": "list",
+            "calc": {"call": "reversed", "args": {"sequence": [1,2,3]}}
         }
     },
     "ops": {},
@@ -254,7 +258,8 @@
             {"text": "map(add(item, 10), [1,2,3,4,5]) = "}, {"lingo": {"state": {"test_map": {}}}}, {"break": 1},
             {"text": "filter(gt(item, 3), [1,2,3,4,5,6,7]) = "}, {"lingo": {"state": {"test_filter": {}}}}, {"break": 1},
             {"text": "dropwhile(lt(item, 4), [1,2,3,4,5,6,7]) = "}, {"lingo": {"state": {"test_dropwhile": {}}}}, {"break": 1},
-            {"text": "takewhile(lt(item, 4), [1,2,3,4,5,6,7]) = "}, {"lingo": {"state": {"test_takewhile": {}}}}, {"break": 2},
+            {"text": "takewhile(lt(item, 4), [1,2,3,4,5,6,7]) = "}, {"lingo": {"state": {"test_takewhile": {}}}}, {"break": 1},
+            {"text": "reversed([1,2,3]) = "}, {"lingo": {"state": {"test_reversed": {}}}}, {"break": 2},
 
             {"text": "Time Functions:"},
             {"break": 1},
