@@ -139,6 +139,7 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(app.state['test_range_default'], [0, 1, 2, 3, 4])
         self.assertEqual(app.state['test_range_start'], [1, 2, 3, 4, 5, 6])
         self.assertEqual(app.state['test_range_step'], [0, 2, 4, 6, 8])
+        self.assertEqual(app.state['test_map'], [11, 12, 13, 14, 15])
 
     def test_comparison_functions(self):
         """Test comparison operators"""

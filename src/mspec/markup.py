@@ -9,6 +9,24 @@ from typing import Any, Optional
 
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
 
+@dataclass
+class LingoApp:
+    spec: dict[str, dict]
+    params: dict[str, Any]
+    state: dict[str, Any]
+    buffer: list[dict]
+
+def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[list, dict]:
+    
+    def map_func(item):
+        new_ctx = ctx.copy() if ctx is not None else {}
+        new_ctx['self'] = {'item': item}
+        result = lingo_execute(app, expression['args']['function'], new_ctx)
+        return result['value']
+    
+    iterable = lingo_execute(app, expression['args']['iterable'], ctx)
+    return (map_func, iterable['value'] if isinstance(iterable, dict) else iterable), {}
+
 lingo_function_lookup = {
     'bool': {'func': bool, 'args': {'object': {'type': 'any'}}},
     'not': {'func': operator.not_, 'args': {'object': {'type': 'any'}}},
@@ -31,6 +49,7 @@ lingo_function_lookup = {
     'ge': {'func': operator.ge, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
 
     'range': {'func': range, 'args': {'start': {'type': 'int', 'default': 0}, 'stop': {'type': 'int'}, 'step': {'type': 'int', 'default': 1}}},
+    'map': {'func': map, 'create_args': _map_function_args},
 
     'current': {
         'weekday': {'func': lambda: datetime.now().weekday(), 'args': {}, 'sig': 'kwargs'}
@@ -42,13 +61,6 @@ lingo_function_lookup = {
         'randint': {'func': randint, 'args': {'a': {'type': 'int'}, 'b': {'type': 'int'}}, 'sig': 'kwargs'}
     }
 }
-
-@dataclass
-class LingoApp:
-    spec: dict[str, dict]
-    params: dict[str, Any]
-    state: dict[str, Any]
-    buffer: list[dict]
 
 
 def lingo_app(spec: dict, **params) -> LingoApp:
@@ -118,6 +130,8 @@ def lingo_execute(app:LingoApp, expression:Any, ctx:Optional[dict]=None) -> Any:
             result = render_heading(app, expression, ctx)
         elif 'args' in expression:
             result = render_args(app, expression, ctx)
+        elif 'self' in expression:
+            result = render_self(app, expression, ctx)
         else:
             result = expression
     else:
@@ -125,10 +139,7 @@ def lingo_execute(app:LingoApp, expression:Any, ctx:Optional[dict]=None) -> Any:
 
     # format return value #
 
-    if isinstance(result, dict):
-        return result
-    
-    elif isinstance(result, list):
+    if isinstance(result, (dict, list)):
         return result
     
     else:
@@ -255,6 +266,12 @@ def render_switch(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
     return lingo_execute(app, default, ctx)
     
 # state and input #
+
+def render_self(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
+    try:
+        return ctx['self'][expression['self']]
+    except (KeyError, TypeError):
+        raise ValueError('self - missing self context')
 
 def render_params(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
     # parse expression #
@@ -440,24 +457,31 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
     # supplied args #
 
     rendered_args = {}
-    for arg_name, arg_expression in _args.items():
-        try:
-            arg_type = args_def[arg_name]['type']
-        except KeyError:
-            raise ValueError(f'call - unknown arg: {arg_name}')
-        
-        value = lingo_execute(app, arg_expression, ctx)
-
-        if arg_type != 'any':
-            if value['type'] not in arg_type:
-                raise ValueError(f'call - arg {arg_name} - expected type {arg_type}, got {value["type"]}')
+    if 'create_args' not in definition:
+        for arg_name, arg_expression in _args.items():
+            try:
+                arg_type = args_def[arg_name]['type']
+            except KeyError:
+                raise ValueError(f'call - unknown arg: {arg_name}')
             
-        rendered_args[arg_name] = value['value']
+            value = lingo_execute(app, arg_expression, ctx)
+
+            if arg_type != 'any':
+                if value['type'] not in arg_type:
+                    raise ValueError(f'call - arg {arg_name} - expected type {arg_type}, got {value["type"]}')
+                
+            rendered_args[arg_name] = value['value']
 
     # order args and call #
 
     if definition.get('sig', '') == 'kwargs':
         return_value = function(**rendered_args)
+    
+    # create args from callable
+    elif 'create_args' in definition:
+        # custom arg handling
+        args, kwargs = definition['create_args'](app, expression, ctx)
+        return_value = function(*args, **kwargs)
 
     else: 
         # positional args
@@ -474,7 +498,7 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
     
     # format return value #
 
-    if isinstance(return_value, Sequence) and not isinstance(return_value, str):
+    if isinstance(return_value, (Sequence, map)) and not isinstance(return_value, str):
         element_types = []
         elements = []
         for item in return_value:
