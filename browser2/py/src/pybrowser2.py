@@ -37,7 +37,7 @@ class LingoPage(tkinter.Frame):
     def render_output(self):
         doc = render_output(lingo_update_state(self.app))
 
-        self._text_buffer = tkinter.Text(self, font=TEXT, wrap='word', height=25, width=100, highlightthickness=0)
+        self._text_buffer = tkinter.Text(self, font=TEXT, wrap='word', height=50, width=100, highlightthickness=0, borderwidth=2, relief='solid')
         self._text_row = 1
         self.link_count = 0
         self.entries = {}

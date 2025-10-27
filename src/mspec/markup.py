@@ -1,5 +1,6 @@
 import operator
 
+from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
@@ -28,6 +29,8 @@ lingo_function_lookup = {
     'le': {'func': operator.le, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
     'gt': {'func': operator.gt, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
     'ge': {'func': operator.ge, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
+
+    'range': {'func': range, 'args': {'stop': {'type': 'int'}, 'start': {'type': 'int', 'default': 0}, 'step': {'type': 'int', 'default': 1}}, 'arg_order': ['start', 'stop', 'step']},
 
     'current': {
         'weekday': {'func': lambda: datetime.now().weekday(), 'args': {}}
@@ -124,16 +127,32 @@ def lingo_execute(app:LingoApp, expression:Any, ctx:Optional[dict]=None) -> Any:
 
     if isinstance(result, dict):
         return result
+    
+    # elif isinstance(result, (list, Sequence)) and not isinstance(result, str):
+    #     element_types = []
+    #     elements = []
+    #     for item in result:
+    #         if not isinstance(item, (bool, int, float, str, dict, datetime)):
+    #             raise ValueError(f'List contains unsupported type: {item.__class__.__name__}')
+    #         element_types.append(item.__class__)
+    #         elements.append(item)
+
+    #     if len(set(element_types)) > 1:
+    #         raise ValueError(f'List contains mixed types: {element_types}')
+        
+    #     list_value = {'value': elements, 'type': 'list'}
+    #     try:
+    #         list_value['element_type'] = element_types[0].__name__
+    #     except IndexError:
+    #         pass
+    #     return list_value
     elif isinstance(result, list):
-        element_types = [type(item) for item in result]
-        if len(set(element_types)) > 1:
-            raise ValueError(f'List contains mixed types: {element_types}')
-        if element_types[0] not in [bool, int, float, str, dict, datetime]:
-            raise ValueError(f'List contains unsupported type: {element_types[0]}')
         return result
+    
     else:
         if not isinstance(result, (bool, int, float, str, datetime)):
             raise ValueError(f'Unsupported return type: {result.__class__.__name__}')
+        
         return {'value': result, 'type': result.__class__.__name__}
 
 # high level render #
@@ -340,18 +359,20 @@ def render_lingo(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
     result = lingo_execute(app, element['lingo'], ctx)
     _type = type(result)
 
+    convert = lambda x: x.strftime(datetime_format_str) if isinstance(x, datetime) else str(x)
+
     if _type == dict:
         if 'value' in result:
-            if result['type'] == 'str':
-                return {'text': result['value']}
-            elif result['type'] in ['int', 'float', 'bool']:
-                return {'text': str(result['value'])}
-            elif result['type'] == 'datetime':
-                return {'text': result['value'].strftime(datetime_format_str)}
+            if result['type'] in ['str', 'int', 'float', 'bool', 'datetime']:
+                return {'text': convert(result['value'])}
+            elif result['type'] == 'list':
+                return {'text': ', '.join(convert(item) for item in result['value'])}
             else:
                 raise ValueError(f'lingo - unexpected result value type: {result["type"]}')
         else:
             return result
+    elif _type == list:
+        return {'text': ', '.join(convert(item) for item in result)}
     else:
         raise ValueError(f'lingo - invalid result type: {_type}')
     
@@ -421,13 +442,16 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
     # get func and args def #
     try:
         if name_depth == 1:
-            function = lingo_function_lookup[name_split[0]]['func']
-            args_def = lingo_function_lookup[name_split[0]].get('args', {})
+            definition = lingo_function_lookup[name_split[0]]
+            
         else:
-            function = lingo_function_lookup[name_split[0]][name_split[1]]['func']
-            args_def = lingo_function_lookup[name_split[0]][name_split[1]].get('args', {})
+            definition = lingo_function_lookup[name_split[0]][name_split[1]]
+
     except KeyError as func_name:
         raise ValueError(f'call - undefined func: {func_name}')
+    
+    function = definition['func']
+    args_def = definition.get('args', {})
         
     # validate args #
     rendered_args = {}
@@ -442,22 +466,58 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
         if arg_type != 'any':
             if value['type'] not in arg_type:
                 raise ValueError(f'call - arg {arg_name} - expected type {arg_type}, got {value["type"]}')
+            
         rendered_args[arg_name] = value['value']
 
     # Check if function is from operator module or built-in and needs positional args
-    if (hasattr(function, '__module__') and function.__module__ == '_operator') or \
+    if 'arg_order' in definition:
+        args_list = []
+        for arg_name in definition['arg_order']:
+            if arg_name in rendered_args:
+                args_list.append(rendered_args[arg_name])
+            elif 'default' in args_def[arg_name]:
+                args_list.append(args_def[arg_name]['default'])
+            else:
+                raise ValueError(f'call - missing required arg: {arg_name}')
+
+        return_value = function(*args_list)
+
+    elif (hasattr(function, '__module__') and function.__module__ == '_operator') or \
        (hasattr(function, '__module__') and function.__module__ == 'builtins'):
         # For operator and built-in functions, convert to positional arguments in the order defined
         args_list = []
         for arg_name in args_def.keys():
             if arg_name in rendered_args:
                 args_list.append(rendered_args[arg_name])
+            elif 'default' in args_def[arg_name]:
+                args_list.append(args_def[arg_name]['default'])
             else:
                 raise ValueError(f'call - missing required arg: {arg_name}')
 
-        return function(*args_list)
+        return_value = function(*args_list)
     else:
-        return function(**rendered_args)
+        return_value = function(**rendered_args)
+
+    if isinstance(return_value, Sequence) and not isinstance(return_value, str):
+        element_types = []
+        elements = []
+        for item in return_value:
+            if not isinstance(item, (bool, int, float, str, dict, datetime)):
+                raise ValueError(f'List contains unsupported type: {item.__class__.__name__}')
+            element_types.append(item.__class__.__name__)
+            elements.append(item)
+        if len(set(element_types)) > 1:
+            raise ValueError(f'List contains mixed types: {element_types}')
+        
+        try:
+            element_type = element_types[0]
+        except IndexError:
+            element_type = 'unknown'
+        
+        return {'value': elements, 'type': 'list', 'element_type': element_type}
+    
+    else:
+        return return_value
 
 def render_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
     arg_name = expression['args']

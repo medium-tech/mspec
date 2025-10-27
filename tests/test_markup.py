@@ -131,6 +131,15 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(app.state['test_div'], 5.0)
         self.assertEqual(app.state['test_pow'], 8)
 
+    def test_list_functions(self):
+        """Test list-related functions"""
+        app = lingo_app(self.functions_spec)
+
+        # Test list creation
+        self.assertEqual(app.state['test_range_default'], [0, 1, 2, 3, 4])
+        self.assertEqual(app.state['test_range_start'], [1, 2, 3, 4, 5, 6])
+        self.assertEqual(app.state['test_range_step'], [0, 2, 4, 6, 8])
+
     def test_comparison_functions(self):
         """Test comparison operators"""
         app = lingo_app(self.functions_spec)

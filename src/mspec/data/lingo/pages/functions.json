@@ -104,6 +104,18 @@
         "test_ge_false": {
             "type": "bool",
             "calc": {"call": "ge", "args": {"a": 3, "b": 5}}
+        },
+        "test_range_default": {
+            "type": "list",
+            "calc": {"call": "range", "args": {"stop": 5}}
+        },
+        "test_range_start": {
+            "type": "list",
+            "calc": {"call": "range", "args": {"start": 1, "stop": 7}}
+        },
+        "test_range_step": {
+            "type": "list",
+            "calc": {"call": "range", "args": {"start": 0, "stop": 10, "step": 2}}
         }
     },
     "ops": {},
@@ -147,6 +159,12 @@
             {"text": "gt(3, 5) = "}, {"lingo": {"state": {"test_gt_false": {}}}}, {"break": 1},
             {"text": "ge(5, 5) = "}, {"lingo": {"state": {"test_ge_true": {}}}}, {"break": 1},
             {"text": "ge(3, 5) = "}, {"lingo": {"state": {"test_ge_false": {}}}}, {"break": 2},
+
+            {"text": "List Functions:"},
+            {"break": 1},
+            {"text": "range(5) = "}, {"lingo": {"state": {"test_range_default": {}}}}, {"break": 1},
+            {"text": "range(1, 7) = "}, {"lingo": {"state": {"test_range_start": {}}}}, {"break": 1},
+            {"text": "range(0, 10, 2) = "}, {"lingo": {"state": {"test_range_step": {}}}}, {"break": 2},
             
             {"text": "Time Functions:"},
             {"break": 1},
