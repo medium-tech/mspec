@@ -22,15 +22,13 @@ The main prototype are the python + browser 1 browser template apps.
 ### lingo
 * 🟢 move sample apps from bl-mspec-dev
     * 🟢 add tests to ensure correct outputs are generated
-* 🔴 add lists
-    * 🔴 map
-    * 🔴 slice
-    * 🔴 filter
-    * 🔴 count
-    * 🔴 drop
-    * 🔴 take
-    * 🔴 drop while
-    * 🔴 take while
+* 🟢 add lists
+    * 🟢 map
+    * 🟢 slice
+    * 🟢 filter
+    * 🟢 count
+    * 🟢 drop while
+    * 🟢 take while
 * 🔴 refactor internal api
     * 🔴 rename mspec/markup.py to lingo.py
     * 🔴 rename `render_output` to `lingo_render`

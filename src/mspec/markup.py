@@ -1,11 +1,11 @@
 import operator
 
-from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
 from random import randint
 from typing import Any, Optional
+from itertools import dropwhile, takewhile, islice
 
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
 
@@ -48,8 +48,16 @@ lingo_function_lookup = {
     'gt': {'func': operator.gt, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
     'ge': {'func': operator.ge, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
 
+    'len': {'func': len, 'args': {'object': {'type': ('str', 'list')}}},
+    'any': {'func': any, 'args': {'iterable': {'type': 'list'}}},
+    'all': {'func': all, 'args': {'iterable': {'type': 'list'}}},
+    
+    'slice': {'func': islice, 'args': {'iterator': {'type': 'list'}, 'start': {'type': 'int', 'default': None}, 'stop': {'type': 'int'}, 'step': {'type': 'int', 'default': None}}},
     'range': {'func': range, 'args': {'start': {'type': 'int', 'default': 0}, 'stop': {'type': 'int'}, 'step': {'type': 'int', 'default': 1}}},
     'map': {'func': map, 'create_args': _map_function_args},
+    'filter': {'func': filter, 'create_args': _map_function_args},
+    'dropwhile': {'func': dropwhile, 'create_args': _map_function_args},
+    'takewhile': {'func': takewhile, 'create_args': _map_function_args},
 
     'current': {
         'weekday': {'func': lambda: datetime.now().weekday(), 'args': {}, 'sig': 'kwargs'}
@@ -466,11 +474,10 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
             
             value = lingo_execute(app, arg_expression, ctx)
 
-            if arg_type != 'any':
-                if value['type'] not in arg_type:
-                    raise ValueError(f'call - arg {arg_name} - expected type {arg_type}, got {value["type"]}')
-                
-            rendered_args[arg_name] = value['value']
+            try:
+                rendered_args[arg_name] = value['value']
+            except TypeError:
+                rendered_args[arg_name] = value
 
     # order args and call #
 
@@ -498,7 +505,7 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
     
     # format return value #
 
-    if isinstance(return_value, (Sequence, map)) and not isinstance(return_value, str):
+    if hasattr(return_value, '__iter__') and not isinstance(return_value, str):
         element_types = []
         elements = []
         for item in return_value:

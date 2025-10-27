@@ -105,6 +105,42 @@
             "type": "bool",
             "calc": {"call": "ge", "args": {"a": 3, "b": 5}}
         },
+        "test_len_list": {
+            "type": "int",
+            "calc": {"call": "len", "args": {"object": [1,2,3,4,5]}}
+        },
+        "test_len_string": {
+            "type": "int",
+            "calc": {"call": "len", "args": {"object": "hello"}}
+        },
+        "test_any_true": {
+            "type": "bool",
+            "calc": {"call": "any", "args": {"iterable": [true, false]}}
+        },
+        "test_any_false": {
+            "type": "bool",
+            "calc": {"call": "any", "args": {"iterable": [false, false]}}
+        },
+        "test_all_true": {
+            "type": "bool",
+            "calc": {"call": "all", "args": {"iterable": [true, true]}}
+        },
+        "test_all_false": {
+            "type": "bool",
+            "calc": {"call": "all", "args": {"iterable": [true, false]}}
+        },
+        "test_slice_default": {
+            "type": "list",
+            "calc": {"call": "slice", "args": {"iterator": [0,1,2,3,4 ], "stop": 2}}
+        },
+        "test_slice_start": {
+            "type": "list",
+            "calc": {"call": "slice", "args": {"iterator": [0,1,2,3,4,5,6], "start": 2, "stop": 5}}
+        },
+        "test_slice_step": {
+            "type": "list",
+            "calc": {"call": "slice", "args": {"iterator": [0,1,2,3,4], "start": 1, "stop": 4, "step": 2}}
+        },
         "test_range_default": {
             "type": "list",
             "calc": {"call": "range", "args": {"stop": 5}}
@@ -124,6 +160,36 @@
                 "args": {
                     "function": {"call": "add", "args": {"a": {"self": "item"}, "b": 10}},
                     "iterable": [1, 2, 3, 4, 5]
+                }
+            }
+        },
+        "test_filter": {
+            "type": "list",
+            "calc": {
+                "call": "filter",
+                "args": {
+                    "function": {"call": "gt", "args": {"a": {"self": "item"}, "b": 3}},
+                    "iterable": [1, 2, 3, 4, 5, 6, 7]
+                }
+            }
+        },
+        "test_dropwhile": {
+            "type": "list",
+            "calc": {
+                "call": "dropwhile",
+                "args": {
+                    "function": {"call": "lt", "args": {"a": {"self": "item"}, "b": 4}},
+                    "iterable": [1, 2, 3, 4, 5, 6, 7]
+                }
+            }
+        },
+        "test_takewhile": {
+            "type": "list",
+            "calc": {
+                "call": "takewhile",
+                "args": {
+                    "function": {"call": "lt", "args": {"a": {"self": "item"}, "b": 4}},
+                    "iterable": [1, 2, 3, 4, 5, 6, 7]
                 }
             }
         }
@@ -172,11 +238,24 @@
 
             {"text": "List Functions:"},
             {"break": 1},
+            {"text": "len([1,2,3,4,5]) = "}, {"lingo": {"state": {"test_len_list": {}}}}, {"break": 1},
+            {"text": "len('hello') = "}, {"lingo": {"state": {"test_len_string": {}}}}, {"break": 1},
+            {"text": "any([true, false]) = "}, {"lingo": {"state": {"test_any_true": {}}}}, {"break": 1},
+            {"text": "any([false, false]) = "}, {"lingo": {"state": {"test_any_false": {}}}}, {"break": 1},
+            {"text": "all([true, true]) = "}, {"lingo": {"state": {"test_all_true": {}}}}, {"break": 1},
+            {"text": "all([false, false]) = "}, {"lingo": {"state": {"test_all_false": {}}}}, {"break": 2},
+
+            {"text": "slice([0,1,2,3,4], stop=2) = "}, {"lingo": {"state": {"test_slice_default": {}}}}, {"break": 1},
+            {"text": "slice([0,1,2,3,4,5,6], start=2, stop=5) = "}, {"lingo": {"state": {"test_slice_start": {}}}}, {"break": 1},
+            {"text": "slice([0,1,2,3,4], start=1, stop=4, step=2) = "}, {"lingo": {"state": {"test_slice_step": {}}}}, {"break": 1},
             {"text": "range(5) = "}, {"lingo": {"state": {"test_range_default": {}}}}, {"break": 1},
             {"text": "range(1, 7) = "}, {"lingo": {"state": {"test_range_start": {}}}}, {"break": 1},
             {"text": "range(0, 10, 2) = "}, {"lingo": {"state": {"test_range_step": {}}}}, {"break": 1},
-            {"text": "map(add(item, 10), [1,2,3,4,5]) = "}, {"lingo": {"state": {"test_map": {}}}}, {"break": 2},
-            
+            {"text": "map(add(item, 10), [1,2,3,4,5]) = "}, {"lingo": {"state": {"test_map": {}}}}, {"break": 1},
+            {"text": "filter(gt(item, 3), [1,2,3,4,5,6,7]) = "}, {"lingo": {"state": {"test_filter": {}}}}, {"break": 1},
+            {"text": "dropwhile(lt(item, 4), [1,2,3,4,5,6,7]) = "}, {"lingo": {"state": {"test_dropwhile": {}}}}, {"break": 1},
+            {"text": "takewhile(lt(item, 4), [1,2,3,4,5,6,7]) = "}, {"lingo": {"state": {"test_takewhile": {}}}}, {"break": 2},
+
             {"text": "Time Functions:"},
             {"break": 1},
             {"text": "current.weekday() = "}, {"lingo": {"call": "current.weekday"}}, {"break": 1},

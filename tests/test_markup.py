@@ -136,10 +136,24 @@ class TestLingoPages(unittest.TestCase):
         app = lingo_app(self.functions_spec)
 
         # Test list creation
+        self.assertEqual(app.state['test_len_list'], 5)
+        self.assertEqual(app.state['test_len_string'], 5)
+        self.assertTrue(app.state['test_any_true'])
+        self.assertFalse(app.state['test_any_false'])
+        self.assertTrue(app.state['test_all_true'])
+        self.assertFalse(app.state['test_all_false'])
+
+        self.assertEqual(app.state['test_slice_default'], [0, 1])
+        self.assertEqual(app.state['test_slice_start'], [2, 3, 4])
+        self.assertEqual(app.state['test_slice_step'], [1, 3])
         self.assertEqual(app.state['test_range_default'], [0, 1, 2, 3, 4])
         self.assertEqual(app.state['test_range_start'], [1, 2, 3, 4, 5, 6])
         self.assertEqual(app.state['test_range_step'], [0, 2, 4, 6, 8])
         self.assertEqual(app.state['test_map'], [11, 12, 13, 14, 15])
+
+        self.assertEqual(app.state['test_filter'], [4, 5, 6, 7])
+        self.assertEqual(app.state['test_dropwhile'], [4, 5, 6, 7])
+        self.assertEqual(app.state['test_takewhile'], [1, 2, 3])
 
     def test_comparison_functions(self):
         """Test comparison operators"""
