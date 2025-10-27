@@ -5,7 +5,7 @@ from tkinter import ttk
 from mspec import sample_data_dir, load_browser2_spec
 from mspec.markup import lingo_app, render_output, lingo_execute, lingo_update_state
 
-default_page = str(sample_data_dir / 'test-page.json')
+DEFAULT_SPEC = 'test-page.json'
 
 HEADING = {
     1: ('Verdana', 35),
@@ -173,7 +173,7 @@ if __name__ == '__main__':
     import argparse
     import json
     parser = argparse.ArgumentParser(description='Run Browser2.0')
-    parser.add_argument('--spec', type=str, default=default_page, help=f'Path to the spec file, default: {default_page}')
+    parser.add_argument('--spec', type=str, default=DEFAULT_SPEC, help=f'Path to the spec file, default: {DEFAULT_SPEC}')
     args = parser.parse_args()
 
     spec = load_browser2_spec(args.spec)
