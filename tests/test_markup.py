@@ -142,6 +142,7 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(app.state['test_pow'], 8)
         self.assertEqual(app.state['test_min'], 3)
         self.assertEqual(app.state['test_max'], 7)
+        self.assertEqual(app.state['test_abs'], 10)
 
     def test_list_functions(self):
         """Test list-related functions"""
@@ -170,6 +171,9 @@ class TestLingoPages(unittest.TestCase):
 
         self.assertEqual(app.state['test_sum'], 6)
         self.assertEqual(app.state['test_sum_start'], 16)
+        self.assertEqual(app.state['test_sorted'], [2, 5, 9])
+        self.assertEqual(app.state['test_accumulate'], [1, 3, 6, 10])
+        self.assertEqual(app.state['test_accumulate_initial'], [10, 11, 13, 16, 20])
 
     def test_comparison_functions(self):
         """Test comparison operators"""

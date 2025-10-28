@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from random import randint
 from typing import Any, Optional
-from itertools import dropwhile, takewhile, islice
+from itertools import dropwhile, takewhile, islice, accumulate
+from functools import reduce
 
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
 
@@ -27,6 +28,20 @@ def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) 
     iterable = lingo_execute(app, expression['args']['iterable'], ctx)
     return (map_func, iterable['value'] if isinstance(iterable, dict) else iterable), {}
 
+def _accumulate_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[list, dict]:
+    
+    def accumulate_func(a, b):
+        new_ctx = ctx.copy() if ctx is not None else {}
+        new_ctx['self'] = {'item': a, 'next_item': b}
+        result = lingo_execute(app, expression['args']['function'], new_ctx)
+        return result['value']
+    
+    iterable = lingo_execute(app, expression['args']['iterable'], ctx)
+    items = iterable['value'] if isinstance(iterable, dict) else iterable
+
+    initial = expression['args'].get('initial', None)
+    return (items, accumulate_func), {'initial': initial}
+
 def str_join(separator:str, items:list) -> str:
     return separator.join(str(item) for item in items)
 
@@ -34,12 +49,11 @@ lingo_function_lookup = {
     'bool': {'func': bool, 'args': {'object': {'type': 'any'}}},
     'not': {'func': operator.not_, 'args': {'object': {'type': 'any'}}},
     'neg': {'func': operator.neg, 'args': {'object': {'type': 'any'}}},
+    'and': {'func': operator.and_, 'args': {'a': {'type': 'any'}, 'b': {'type': 'any'}}},
+    'or': {'func': operator.or_, 'args': {'a': {'type': 'any'}, 'b': {'type': 'any'}}},
 
     'str': {'func': str, 'args': {'object': {'type': 'any'}}},
     'join': {'func': str_join, 'args': {'separator': {'type': 'str'}, 'items': {'type': 'list'}}},
-
-    'and': {'func': operator.and_, 'args': {'a': {'type': 'any'}, 'b': {'type': 'any'}}},
-    'or': {'func': operator.or_, 'args': {'a': {'type': 'any'}, 'b': {'type': 'any'}}},
     
     'add': {'func': operator.add, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
     'sub': {'func': operator.sub, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
@@ -48,6 +62,7 @@ lingo_function_lookup = {
     'pow': {'func': operator.pow, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
     'min': {'func': min, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
     'max': {'func': max, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
+    'abs': {'func': abs, 'args': {'number': {'type': ('int', 'float')}}},
 
     'eq': {'func': operator.eq, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
     'ne': {'func': operator.ne, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
@@ -68,6 +83,8 @@ lingo_function_lookup = {
     'takewhile': {'func': takewhile, 'create_args': _map_function_args},
     'reversed': {'func': reversed, 'args': {'sequence': {'type': 'list'}}},
     'sum': {'func': lambda i, s,: sum(i, s), 'args': {'iterable': {'type': 'list'}, 'start': {'type': ('int', 'float'), 'default': 0}}},
+    'sorted': {'func': sorted, 'args': {'iterable': {'type': 'list'}}},
+    'accumulate': {'func': accumulate, 'create_args': _accumulate_function_args},
 
     'current': {
         'weekday': {'func': lambda: datetime.now().weekday(), 'args': {}, 'sig': 'kwargs'}
@@ -498,7 +515,12 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
     elif 'create_args' in definition:
         # custom arg handling
         args, kwargs = definition['create_args'](app, expression, ctx)
-        return_value = function(*args, **kwargs)
+        try:
+            return_value = function(*args, **kwargs)
+        except Exception as e:
+            print(e)
+            breakpoint()
+            raise e
 
     else: 
         # positional args
