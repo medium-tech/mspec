@@ -21,6 +21,14 @@
             "type": "int",
             "calc": {"call": "neg", "args": {"object": 5}}
         },
+        "test_str": {
+            "type": "str",
+            "calc": {"call": "str", "args": {"object": 123}}
+        },
+        "test_join": {
+            "type": "str",
+            "calc": {"call": "join", "args": {"separator": "-", "items": ["a", "b", "c"]}}
+        },
         "test_and_true": {
             "type": "bool",
             "calc": {"call": "and", "args": {"a": true, "b": true}}
@@ -56,6 +64,14 @@
         "test_pow": {
             "type": "int",
             "calc": {"call": "pow", "args": {"a": 2, "b": 3}}
+        },
+        "test_min": {
+            "type": "int",
+            "calc": {"call": "min", "args": {"a": 3, "b": 7}}
+        },
+        "test_max": {
+            "type": "int",
+            "calc": {"call": "max", "args": {"a": 3, "b": 7}}
         },
         "test_eq_true": {
             "type": "bool",
@@ -196,6 +212,14 @@
         "test_reversed": {
             "type": "list",
             "calc": {"call": "reversed", "args": {"sequence": [1,2,3]}}
+        },
+        "test_sum": {
+            "type": "int",
+            "calc": {"call": "sum", "args": {"iterable": [1,2,3], "start": 0}}
+        },
+        "test_sum_start": {
+            "type": "int",
+            "calc": {"call": "sum", "args": {"iterable": [1,2,3], "start": 10}}
         }
     },
     "ops": {},
@@ -209,6 +233,11 @@
             {"text": "not(true) = "}, {"lingo": {"state": {"test_not_true": {}}}}, {"break": 1},
             {"text": "not(false) = "}, {"lingo": {"state": {"test_not_false": {}}}}, {"break": 1},
             {"text": "neg(5) = "}, {"lingo": {"state": {"test_neg": {}}}}, {"break": 2},
+
+            {"text": "String Functions:"},
+            {"break": 1},
+            {"text": "str(123) = "}, {"lingo": {"state": {"test_str": {}}}}, {"break": 1},
+            {"text": "join('-', ['a','b','c']) = "}, {"lingo": {"state": {"test_join": {}}}}, {"break": 2},
             
             {"text": "Logical Functions:"},
             {"break": 1},
@@ -223,7 +252,9 @@
             {"text": "sub(10, 3) = "}, {"lingo": {"state": {"test_sub": {}}}}, {"break": 1},
             {"text": "mul(4, 7) = "}, {"lingo": {"state": {"test_mul": {}}}}, {"break": 1},
             {"text": "div(15, 3) = "}, {"lingo": {"state": {"test_div": {}}}}, {"break": 1},
-            {"text": "pow(2, 3) = "}, {"lingo": {"state": {"test_pow": {}}}}, {"break": 2},
+            {"text": "pow(2, 3) = "}, {"lingo": {"state": {"test_pow": {}}}}, {"break": 1},
+            {"text": "min(3, 7) = "}, {"lingo": {"state": {"test_min": {}}}}, {"break": 1},
+            {"text": "max(3, 7) = "}, {"lingo": {"state": {"test_max": {}}}}, {"break": 2},
             
             {"text": "Comparison Functions:"},
             {"break": 1},
@@ -248,10 +279,10 @@
             {"text": "any([false, false]) = "}, {"lingo": {"state": {"test_any_false": {}}}}, {"break": 1},
             {"text": "all([true, true]) = "}, {"lingo": {"state": {"test_all_true": {}}}}, {"break": 1},
             {"text": "all([false, false]) = "}, {"lingo": {"state": {"test_all_false": {}}}}, {"break": 2},
-
             {"text": "slice([0,1,2,3,4], stop=2) = "}, {"lingo": {"state": {"test_slice_default": {}}}}, {"break": 1},
             {"text": "slice([0,1,2,3,4,5,6], start=2, stop=5) = "}, {"lingo": {"state": {"test_slice_start": {}}}}, {"break": 1},
             {"text": "slice([0,1,2,3,4], start=1, stop=4, step=2) = "}, {"lingo": {"state": {"test_slice_step": {}}}}, {"break": 1},
+
             {"text": "range(5) = "}, {"lingo": {"state": {"test_range_default": {}}}}, {"break": 1},
             {"text": "range(1, 7) = "}, {"lingo": {"state": {"test_range_start": {}}}}, {"break": 1},
             {"text": "range(0, 10, 2) = "}, {"lingo": {"state": {"test_range_step": {}}}}, {"break": 1},
@@ -259,7 +290,9 @@
             {"text": "filter(gt(item, 3), [1,2,3,4,5,6,7]) = "}, {"lingo": {"state": {"test_filter": {}}}}, {"break": 1},
             {"text": "dropwhile(lt(item, 4), [1,2,3,4,5,6,7]) = "}, {"lingo": {"state": {"test_dropwhile": {}}}}, {"break": 1},
             {"text": "takewhile(lt(item, 4), [1,2,3,4,5,6,7]) = "}, {"lingo": {"state": {"test_takewhile": {}}}}, {"break": 1},
-            {"text": "reversed([1,2,3]) = "}, {"lingo": {"state": {"test_reversed": {}}}}, {"break": 2},
+            {"text": "reversed([1,2,3]) = "}, {"lingo": {"state": {"test_reversed": {}}}}, {"break": 1},
+            {"text": "sum([1,2,3], start=0) = "}, {"lingo": {"state": {"test_sum": {}}}}, {"break": 1},
+            {"text": "sum([1,2,3], start=10) = "}, {"lingo": {"state": {"test_sum_start": {}}}}, {"break": 1},
 
             {"text": "Time Functions:"},
             {"break": 1},

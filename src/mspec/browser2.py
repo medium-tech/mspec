@@ -58,7 +58,7 @@ class LingoPage(tkinter.Frame):
             elif 'value' in element:
                 self.render_value(element)
             else:
-                raise ValueError('Unknown element type')
+                raise ValueError(f'Unknown element type: index: {n} - {list(element)}')
             
             self._text_row += 1
         

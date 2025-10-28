@@ -27,10 +27,16 @@ def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) 
     iterable = lingo_execute(app, expression['args']['iterable'], ctx)
     return (map_func, iterable['value'] if isinstance(iterable, dict) else iterable), {}
 
+def str_join(separator:str, items:list) -> str:
+    return separator.join(str(item) for item in items)
+
 lingo_function_lookup = {
     'bool': {'func': bool, 'args': {'object': {'type': 'any'}}},
     'not': {'func': operator.not_, 'args': {'object': {'type': 'any'}}},
     'neg': {'func': operator.neg, 'args': {'object': {'type': 'any'}}},
+
+    'str': {'func': str, 'args': {'object': {'type': 'any'}}},
+    'join': {'func': str_join, 'args': {'separator': {'type': 'str'}, 'items': {'type': 'list'}}},
 
     'and': {'func': operator.and_, 'args': {'a': {'type': 'any'}, 'b': {'type': 'any'}}},
     'or': {'func': operator.or_, 'args': {'a': {'type': 'any'}, 'b': {'type': 'any'}}},
@@ -40,6 +46,8 @@ lingo_function_lookup = {
     'mul': {'func': operator.mul, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
     'div': {'func': operator.truediv, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
     'pow': {'func': operator.pow, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
+    'min': {'func': min, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
+    'max': {'func': max, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
 
     'eq': {'func': operator.eq, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
     'ne': {'func': operator.ne, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
@@ -59,6 +67,7 @@ lingo_function_lookup = {
     'dropwhile': {'func': dropwhile, 'create_args': _map_function_args},
     'takewhile': {'func': takewhile, 'create_args': _map_function_args},
     'reversed': {'func': reversed, 'args': {'sequence': {'type': 'list'}}},
+    'sum': {'func': lambda i, s,: sum(i, s), 'args': {'iterable': {'type': 'list'}, 'start': {'type': ('int', 'float'), 'default': 0}}},
 
     'current': {
         'weekday': {'func': lambda: datetime.now().weekday(), 'args': {}, 'sig': 'kwargs'}

@@ -108,6 +108,16 @@ class TestLingoPages(unittest.TestCase):
         # Test neg function
         self.assertEqual(app.state['test_neg'], -5)
 
+    def test_string_functions(self):
+        """Test string-related functions"""
+        app = lingo_app(self.functions_spec)
+        
+        # Test str function
+        self.assertEqual(app.state['test_str'], '123')
+        
+        # Test join function
+        self.assertEqual(app.state['test_join'], 'a-b-c')
+
     def test_logical_functions(self):
         """Test logical operators"""
         app = lingo_app(self.functions_spec)
@@ -130,6 +140,8 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(app.state['test_mul'], 28)
         self.assertEqual(app.state['test_div'], 5.0)
         self.assertEqual(app.state['test_pow'], 8)
+        self.assertEqual(app.state['test_min'], 3)
+        self.assertEqual(app.state['test_max'], 7)
 
     def test_list_functions(self):
         """Test list-related functions"""
@@ -155,6 +167,9 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(app.state['test_dropwhile'], [4, 5, 6, 7])
         self.assertEqual(app.state['test_takewhile'], [1, 2, 3])
         self.assertEqual(app.state['test_reversed'], [3, 2, 1])
+
+        self.assertEqual(app.state['test_sum'], 6)
+        self.assertEqual(app.state['test_sum_start'], 16)
 
     def test_comparison_functions(self):
         """Test comparison operators"""
