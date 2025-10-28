@@ -42,6 +42,23 @@ def _accumulate_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]
     initial = expression['args'].get('initial', None)
     return (items, accumulate_func), {'initial': initial}
 
+def _reduce_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[list, dict]:
+    
+    def reduce_func(a, b):
+        new_ctx = ctx.copy() if ctx is not None else {}
+        new_ctx['self'] = {'item': a, 'next_item': b}
+        result = lingo_execute(app, expression['args']['function'], new_ctx)
+        return result['value']
+    
+    iterable = lingo_execute(app, expression['args']['iterable'], ctx)
+    items = iterable['value'] if isinstance(iterable, dict) else iterable
+
+    initial = expression['args'].get('initial', None)
+    if initial is not None:
+        return (reduce_func, items, initial), {}
+    else:
+        return (reduce_func, items), {}
+
 def str_join(separator:str, items:list) -> str:
     return separator.join(str(item) for item in items)
 
@@ -85,6 +102,7 @@ lingo_function_lookup = {
     'sum': {'func': lambda i, s,: sum(i, s), 'args': {'iterable': {'type': 'list'}, 'start': {'type': ('int', 'float'), 'default': 0}}},
     'sorted': {'func': sorted, 'args': {'iterable': {'type': 'list'}}},
     'accumulate': {'func': accumulate, 'create_args': _accumulate_function_args},
+    'reduce': {'func': reduce, 'create_args': _reduce_function_args},
 
     'current': {
         'weekday': {'func': lambda: datetime.now().weekday(), 'args': {}, 'sig': 'kwargs'}
@@ -518,8 +536,6 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
         try:
             return_value = function(*args, **kwargs)
         except Exception as e:
-            print(e)
-            breakpoint()
             raise e
 
     else: 

@@ -174,7 +174,9 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(app.state['test_sorted'], [2, 5, 9])
         self.assertEqual(app.state['test_accumulate'], [1, 3, 6, 10])
         self.assertEqual(app.state['test_accumulate_initial'], [10, 11, 13, 16, 20])
-
+        self.assertEqual(app.state['test_reduce'], 10)
+        self.assertEqual(app.state['test_reduce_initial'], 20)
+        
     def test_comparison_functions(self):
         """Test comparison operators"""
         app = lingo_app(self.functions_spec)

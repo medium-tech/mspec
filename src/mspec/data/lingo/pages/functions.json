@@ -236,6 +236,14 @@
         "test_accumulate_initial": {
             "type": "list",
             "calc": {"call": "accumulate", "args": {"iterable": [1,2,3,4], "function": {"call": "add", "args": {"a": {"self": "item"}, "b": {"self": "next_item"}}}, "initial": 10}}
+        },
+        "test_reduce": {
+            "type": "int",
+            "calc": {"call": "reduce", "args": {"iterable": [1,2,3,4], "function": {"call": "add", "args": {"a": {"self": "item"}, "b": {"self": "next_item"}}}}}
+        },
+        "test_reduce_initial": {
+            "type": "int",
+            "calc": {"call": "reduce", "args": {"iterable": [1,2,3,4], "function": {"call": "add", "args": {"a": {"self": "item"}, "b": {"self": "next_item"}}}, "initial": 10}}
         }
     },
     "ops": {},
@@ -312,7 +320,9 @@
             {"text": "sum([1,2,3], start=10) = "}, {"lingo": {"state": {"test_sum_start": {}}}}, {"break": 1},
             {"text": "sort([5,2,9]) = "}, {"lingo": {"state": {"test_sorted": {}}}}, {"break": 1},
             {"text": "accumulate([1,2,3,4], add) = "}, {"lingo": {"state": {"test_accumulate": {}}}}, {"break": 1},
-            {"text": "accumulate([1,2,3,4], add, initial=10) = "}, {"lingo": {"state": {"test_accumulate_initial": {}}}}, {"break": 2},
+            {"text": "accumulate([1,2,3,4], add, initial=10) = "}, {"lingo": {"state": {"test_accumulate_initial": {}}}}, {"break": 1},
+            {"text": "reduce([1,2,3,4], add) = "}, {"lingo": {"state": {"test_reduce": {}}}}, {"break": 1},
+            {"text": "reduce([1,2,3,4], add, initial=10) = "}, {"lingo": {"state": {"test_reduce_initial": {}}}}, {"break": 2},
 
             {"text": "Time Functions:"},
             {"break": 1},
