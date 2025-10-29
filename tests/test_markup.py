@@ -3,8 +3,8 @@ import datetime
 import json
 
 from pprint import pprint
-from mspec import load_browser2_spec, sample_browser2_spec_dir, builtin_spec_files, load_lingo_script_spec
-from mspec.markup import *
+from mspec import load_browser2_spec, sample_browser2_spec_dir, builtin_spec_files, load_lingo_script_spec, sample_lingo_script_spec_dir
+from mspec.lingo import *
 
 
 class TestLingoPages(unittest.TestCase):
@@ -338,7 +338,9 @@ class TestLingoScripts(unittest.TestCase):
         for name in lingo_scripts:
             with self.subTest(name=name):
                 lingo_script = load_lingo_script_spec(name)
-                test_data = load_lingo_script_spec(name.replace('.json', '_test_data.json'))
+                test_data_path = sample_lingo_script_spec_dir / name.replace('.json', '_test_data.json')
+                with open(test_data_path) as f:
+                    test_data = json.load(f)
 
                 default_app = lingo_app(lingo_script)
                 default_result = lingo_execute(default_app, lingo_script['output'])

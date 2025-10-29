@@ -1,5 +1,7 @@
 {
-
+    "lingo": {
+        "version": "page-beta-1"
+    },
     "params": {
         "first_visit": {"type": "bool", "default": false}
     },

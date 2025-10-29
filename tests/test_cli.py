@@ -3,7 +3,7 @@ import subprocess
 import sys
 import json
 from pathlib import Path
-from mspec import load_lingo_script_spec
+from mspec import load_lingo_script_spec, sample_lingo_script_spec_dir
 
 class TestCLI(unittest.TestCase):
     
@@ -174,7 +174,9 @@ class TestCLI(unittest.TestCase):
 
     def test_execute_command_all_param_types(self):
         """Test the execute command with all_param_types.json"""
-        test_data = load_lingo_script_spec('all_param_types_test_data.json')
+        test_data_path = sample_lingo_script_spec_dir / 'all_param_types_test_data.json'
+        with open(test_data_path) as f:
+            test_data = json.load(f)
 
         # test default case #
 

@@ -3,7 +3,7 @@ import tkinter
 import webbrowser
 from tkinter import ttk
 from mspec import sample_data_dir, load_browser2_spec
-from mspec.markup import lingo_app, render_output, lingo_execute, lingo_update_state
+from mspec.lingo import lingo_app, render_output, lingo_execute, lingo_update_state
 
 DEFAULT_SPEC = 'test-page.json'
 

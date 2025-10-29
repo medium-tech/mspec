@@ -3,7 +3,7 @@ import shutil
 import json
 from pathlib import Path
 from mspec import *
-from mspec.markup import lingo_app, lingo_execute, render_output
+from mspec.lingo import lingo_app, lingo_execute, render_output
 
 #
 # argument parser
@@ -139,7 +139,6 @@ elif args.command == 'example':
             output_path = Path.cwd() / args.spec
             if args.display:
                 with open(spec_path, 'r') as f:
-                    print(f'Displaying example: {args.spec}\n\n')
                     print(f.read())
 
             else:
@@ -164,9 +163,6 @@ elif args.command == 'example':
         raise SystemExit(1)
 
 elif args.command == 'run':
-    if not args.spec.endswith('.json'):
-        print('Spec file must be a .json file for run command')
-        raise SystemExit(1)
     spec = load_browser2_spec(args.spec, display=True)
     params = json.loads(args.params) if args.params else {}
     app = lingo_app(spec, **params)
@@ -174,9 +170,6 @@ elif args.command == 'run':
     print(json.dumps(doc, indent=4, sort_keys=True))
 
 elif args.command == 'execute':
-    if not args.spec.endswith('.json'):
-        print('Spec file must be a .json file for execute command')
-        raise SystemExit(1)
     lingo_script = load_lingo_script_spec(args.spec)
     params = json.loads(args.params) if args.params else {}
     app = lingo_app(lingo_script, **params)

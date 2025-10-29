@@ -1,3 +1,5 @@
+lingo:
+  version: 'generator-beta-1'
 project:
   name:
     lower_case: 'my sample store'

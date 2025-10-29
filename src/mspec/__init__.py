@@ -47,20 +47,26 @@ def load_browser2_spec(spec_file:str, display:bool=False) -> dict:
     if not found, try searching for path in built in sample_spec_dir
     """
 
-    if not spec_file.endswith('.json'):
-        raise ValueError(f'spec file must be a .json file, got: {spec_file}')
-
     try:
         if display:
             print(f'attempting to load spec file: {spec_file}')
         with open(spec_file) as f:
-            return json.load(f)
+            contents = json.load(f)
     except FileNotFoundError:
         _path = sample_browser2_spec_dir / spec_file
         if display:
             print(f'attempting to load spec file: {_path}')
         with open(_path) as f:
-            return json.load(f)
+            contents = json.load(f)
+
+    try:
+        if contents['lingo']['version'] != 'page-beta-1':
+            raise ValueError(f'Unsupported lingo.version in spec file: {spec_file}, got: {contents["lingo"]["version"]}')
+        
+    except KeyError:
+        raise ValueError(f'No lingo.version defined in spec file: {spec_file}')
+
+    return contents
 
 def load_lingo_script_spec(spec_file:str, display:bool=False) -> dict:
     """
@@ -69,22 +75,28 @@ def load_lingo_script_spec(spec_file:str, display:bool=False) -> dict:
     if not found, try searching for path in built in sample_lingo_script_spec_dir
     """
 
-    if not spec_file.endswith('.json'):
-        raise ValueError(f'spec file must be a .json file, got: {spec_file}')
-
     try:
         if display:
             print(f'attempting to load lingo script spec file: {spec_file}')
         with open(spec_file) as f:
-            return json.load(f)
+            contents = json.load(f)
         
     except FileNotFoundError:
         _path = sample_lingo_script_spec_dir / spec_file
         if display:
             print(f'attempting to load lingo script spec file: {_path}')
         with open(_path) as f:
-            return json.load(f)
-        
+            contents = json.load(f)
+
+    try:
+        if contents['lingo']['version'] != 'script-beta-1':
+            raise ValueError(f'Unsupported lingo.version in lingo script spec file: {spec_file}, got: {contents["lingo"]["version"]}')
+
+    except KeyError:
+        raise ValueError(f'No lingo.version defined in lingo script spec file: {spec_file}')
+
+    return contents
+
 def load_generator_spec(spec_file:str) -> dict:
     """
     open and parse spec file into dict,
@@ -92,17 +104,19 @@ def load_generator_spec(spec_file:str) -> dict:
     if not found, try searching for path in built in sample_spec_dir
     """
     try:
-        print(f'attempting to load spec file: {spec_file}')
         with open(spec_file) as f:
             spec = yaml.load(f, Loader=yaml.FullLoader)
-        print(f'\tloaded.')
 
     except FileNotFoundError:
         _path = sample_generator_spec_dir / spec_file
-        print(f'attempting to load spec file: {_path}')
         with open(_path) as f:
             spec = yaml.load(f, Loader=yaml.FullLoader)
-        print(f'\tloaded.')
+
+    try:
+        if spec['lingo']['version'] != 'generator-beta-1':
+            raise ValueError(f'Unsupported lingo.version in spec file: {spec_file}, got: {spec["lingo"]["version"]}')
+    except KeyError:
+        raise ValueError(f'No lingo.version defined in spec file: {spec_file}')
 
     #
     # project

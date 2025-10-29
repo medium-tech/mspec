@@ -1,4 +1,7 @@
 {
+    "lingo": {
+        "version": "page-beta-1"
+    },
     "params": {},
     "state": {
         "test_eq_true": {

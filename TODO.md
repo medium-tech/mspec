@@ -29,8 +29,8 @@ The main prototype are the python + browser 1 browser template apps.
     * 🟢 count
     * 🟢 drop while
     * 🟢 take while
-* 🔴 refactor internal api
-    * 🔴 rename mspec/markup.py to lingo.py
+* 🟡 refactor internal api
+    * 🟢 rename mspec/markup.py to lingo.py
     * 🔴 rename `render_output` to `lingo_render`
     * 🔴 rename remaining `render_*` functions to `execute_*`
     * 🔴 separate pages and scripts, currenlty both use `output` to define their result, but execute should use `main` and render should use `output`
