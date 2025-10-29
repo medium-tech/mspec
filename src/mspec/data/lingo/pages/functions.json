@@ -1,110 +1,6 @@
 {
     "params": {},
     "state": {
-        "test_bool_true": {
-            "type": "bool",
-            "calc": {"call": "bool", "args": {"object": 1}}
-        },
-        "test_bool_false": {
-            "type": "bool", 
-            "calc": {"call": "bool", "args": {"object": 0}}
-        },
-        "test_not_true": {
-            "type": "bool",
-            "calc": {"call": "not", "args": {"object": true}}
-        },
-        "test_not_false": {
-            "type": "bool",
-            "calc": {"call": "not", "args": {"object": false}}
-        },
-        "test_neg": {
-            "type": "int",
-            "calc": {"call": "neg", "args": {"object": 5}}
-        },
-        "test_int": {
-            "type": "int",
-            "calc": {"call": "int", "args": {"number": 42.7}}
-        },
-        "test_int_base": {
-            "type": "int",
-            "calc": {"call": "int", "args": {"string": "2A", "base": 16}}
-        },
-        "test_float": {
-            "type": "float",
-            "calc": {"call": "float", "args": {"number": "1e-003"}}
-        },
-        "test_round_default": {
-            "type": "int",
-            "calc": {"call": "round", "args": {"number": 3.14159}}
-        },
-        "test_round_ndigits": {
-            "type": "float",
-            "calc": {"call": "round", "args": {"number": 3.14159, "ndigits": 3}}
-        },
-        "test_str": {
-            "type": "str",
-            "calc": {"call": "str", "args": {"object": 123}}
-        },
-        "test_join": {
-            "type": "str",
-            "calc": {"call": "join", "args": {"separator": "-", "items": ["a", "b", "c"]}}
-        },
-        "test_and_true": {
-            "type": "bool",
-            "calc": {"call": "and", "args": {"a": true, "b": true}}
-        },
-        "test_and_false": {
-            "type": "bool", 
-            "calc": {"call": "and", "args": {"a": true, "b": false}}
-        },
-        "test_or_true": {
-            "type": "bool",
-            "calc": {"call": "or", "args": {"a": false, "b": true}}
-        },
-        "test_or_false": {
-            "type": "bool",
-            "calc": {"call": "or", "args": {"a": false, "b": false}}
-        },
-        "test_add": {
-            "type": "int",
-            "calc": {"call": "add", "args": {"a": 10, "b": 5}}
-        },
-        "test_sub": {
-            "type": "int", 
-            "calc": {"call": "sub", "args": {"a": 10, "b": 3}}
-        },
-        "test_mul": {
-            "type": "int",
-            "calc": {"call": "mul", "args": {"a": 4, "b": 7}}
-        },
-        "test_div": {
-            "type": "float",
-            "calc": {"call": "div", "args": {"a": 15, "b": 3}}
-        },
-        "test_floordiv": {
-            "type": "int",
-            "calc": {"call": "floordiv", "args": {"a": 15, "b": 2}}
-        },
-        "test_mod": {
-            "type": "int",
-            "calc": {"call": "mod", "args": {"a": 15, "b": 4}}
-        },
-        "test_pow": {
-            "type": "int",
-            "calc": {"call": "pow", "args": {"a": 2, "b": 3}}
-        },
-        "test_min": {
-            "type": "int",
-            "calc": {"call": "min", "args": {"a": 3, "b": 7}}
-        },
-        "test_max": {
-            "type": "int",
-            "calc": {"call": "max", "args": {"a": 3, "b": 7}}
-        },
-        "test_abs": {
-            "type": "int",
-            "calc": {"call": "abs", "args": {"number": -10}}
-        },
         "test_eq_true": {
             "type": "bool",
             "calc": {"call": "eq", "args": {"a": 5, "b": 5}}
@@ -153,6 +49,110 @@
             "type": "bool",
             "calc": {"call": "ge", "args": {"a": 3, "b": 5}}
         },
+        "test_bool_true": {
+            "type": "bool",
+            "calc": {"call": "bool", "args": {"object": 1}}
+        },
+        "test_bool_false": {
+            "type": "bool", 
+            "calc": {"call": "bool", "args": {"object": 0}}
+        },
+        "test_not_true": {
+            "type": "bool",
+            "calc": {"call": "not", "args": {"object": true}}
+        },
+        "test_not_false": {
+            "type": "bool",
+            "calc": {"call": "not", "args": {"object": false}}
+        },
+        "test_neg": {
+            "type": "int",
+            "calc": {"call": "neg", "args": {"object": 5}}
+        },
+        "test_and_true": {
+            "type": "bool",
+            "calc": {"call": "and", "args": {"a": true, "b": true}}
+        },
+        "test_and_false": {
+            "type": "bool", 
+            "calc": {"call": "and", "args": {"a": true, "b": false}}
+        },
+        "test_or_true": {
+            "type": "bool",
+            "calc": {"call": "or", "args": {"a": false, "b": true}}
+        },
+        "test_or_false": {
+            "type": "bool",
+            "calc": {"call": "or", "args": {"a": false, "b": false}}
+        },
+        "test_int": {
+            "type": "int",
+            "calc": {"call": "int", "args": {"number": 42.7}}
+        },
+        "test_int_base": {
+            "type": "int",
+            "calc": {"call": "int", "args": {"string": "2A", "base": 16}}
+        },
+        "test_float": {
+            "type": "float",
+            "calc": {"call": "float", "args": {"number": "1e-003"}}
+        },
+        "test_round_default": {
+            "type": "int",
+            "calc": {"call": "round", "args": {"number": 3.14159}}
+        },
+        "test_round_ndigits": {
+            "type": "float",
+            "calc": {"call": "round", "args": {"number": 3.14159, "ndigits": 3}}
+        },
+        "test_str": {
+            "type": "str",
+            "calc": {"call": "str", "args": {"object": 123}}
+        },
+        "test_join": {
+            "type": "str",
+            "calc": {"call": "join", "args": {"separator": "-", "items": ["a", "b", "c"]}}
+        },
+        "test_add": {
+            "type": "int",
+            "calc": {"call": "add", "args": {"a": 10, "b": 5}}
+        },
+        "test_sub": {
+            "type": "int", 
+            "calc": {"call": "sub", "args": {"a": 10, "b": 3}}
+        },
+        "test_mul": {
+            "type": "int",
+            "calc": {"call": "mul", "args": {"a": 4, "b": 7}}
+        },
+        "test_div": {
+            "type": "float",
+            "calc": {"call": "div", "args": {"a": 15, "b": 3}}
+        },
+        "test_floordiv": {
+            "type": "int",
+            "calc": {"call": "floordiv", "args": {"a": 15, "b": 2}}
+        },
+        "test_mod": {
+            "type": "int",
+            "calc": {"call": "mod", "args": {"a": 15, "b": 4}}
+        },
+        "test_pow": {
+            "type": "int",
+            "calc": {"call": "pow", "args": {"a": 2, "b": 3}}
+        },
+        "test_min": {
+            "type": "int",
+            "calc": {"call": "min", "args": {"a": 3, "b": 7}}
+        },
+        "test_max": {
+            "type": "int",
+            "calc": {"call": "max", "args": {"a": 3, "b": 7}}
+        },
+        "test_abs": {
+            "type": "int",
+            "calc": {"call": "abs", "args": {"number": -10}}
+        },
         "test_len_list": {
             "type": "int",
             "calc": {"call": "len", "args": {"object": [1,2,3,4,5]}}
@@ -160,6 +160,30 @@
         "test_len_string": {
             "type": "int",
             "calc": {"call": "len", "args": {"object": "hello"}}
+        },
+        "test_range_default": {
+            "type": "list",
+            "calc": {"call": "range", "args": {"stop": 5}}
+        },
+        "test_range_start": {
+            "type": "list",
+            "calc": {"call": "range", "args": {"start": 1, "stop": 7}}
+        },
+        "test_range_step": {
+            "type": "list",
+            "calc": {"call": "range", "args": {"start": 0, "stop": 10, "step": 2}}
+        },
+        "test_slice_default": {
+            "type": "list",
+            "calc": {"call": "slice", "args": {"iterator": [0,1,2,3,4 ], "stop": 2}}
+        },
+        "test_slice_start": {
+            "type": "list",
+            "calc": {"call": "slice", "args": {"iterator": [0,1,2,3,4,5,6], "start": 2, "stop": 5}}
+        },
+        "test_slice_step": {
+            "type": "list",
+            "calc": {"call": "slice", "args": {"iterator": [0,1,2,3,4], "start": 1, "stop": 4, "step": 2}}
         },
         "test_any_true": {
             "type": "bool",
@@ -177,29 +201,17 @@
             "type": "bool",
             "calc": {"call": "all", "args": {"iterable": [true, false]}}
         },
-        "test_slice_default": {
-            "type": "list",
-            "calc": {"call": "slice", "args": {"iterator": [0,1,2,3,4 ], "stop": 2}}
+        "test_sum": {
+            "type": "int",
+            "calc": {"call": "sum", "args": {"iterable": [1,2,3], "start": 0}}
         },
-        "test_slice_start": {
-            "type": "list",
-            "calc": {"call": "slice", "args": {"iterator": [0,1,2,3,4,5,6], "start": 2, "stop": 5}}
+        "test_sum_start": {
+            "type": "int",
+            "calc": {"call": "sum", "args": {"iterable": [1,2,3], "start": 10}}
         },
-        "test_slice_step": {
+        "test_sorted": {
             "type": "list",
-            "calc": {"call": "slice", "args": {"iterator": [0,1,2,3,4], "start": 1, "stop": 4, "step": 2}}
-        },
-        "test_range_default": {
-            "type": "list",
-            "calc": {"call": "range", "args": {"stop": 5}}
-        },
-        "test_range_start": {
-            "type": "list",
-            "calc": {"call": "range", "args": {"start": 1, "stop": 7}}
-        },
-        "test_range_step": {
-            "type": "list",
-            "calc": {"call": "range", "args": {"start": 0, "stop": 10, "step": 2}}
+            "calc": {"call": "sorted", "args": {"iterable": [5,2,9]}}
         },
         "test_map": {
             "type": "list",
@@ -244,18 +256,6 @@
         "test_reversed": {
             "type": "list",
             "calc": {"call": "reversed", "args": {"sequence": [1,2,3]}}
-        },
-        "test_sum": {
-            "type": "int",
-            "calc": {"call": "sum", "args": {"iterable": [1,2,3], "start": 0}}
-        },
-        "test_sum_start": {
-            "type": "int",
-            "calc": {"call": "sum", "args": {"iterable": [1,2,3], "start": 10}}
-        },
-        "test_sorted": {
-            "type": "list",
-            "calc": {"call": "sorted", "args": {"iterable": [5,2,9]}}
         },
         "test_accumulate": {
             "type": "list",
