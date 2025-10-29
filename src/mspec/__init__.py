@@ -25,6 +25,20 @@ sample_lingo_script_spec_dir = sample_data_dir / 'lingo' / 'scripts'
 sample_generator_spec_dir = sample_data_dir / 'generator'
 dist_dir = Path(__file__).parent.parent.parent / 'dist'
 
+def load_json_or_yaml(file_path:Path|str) -> dict:
+    """
+    load json or yaml file based on file extension
+    """
+    str_path = str(file_path)
+    if str_path.endswith('.json'):
+        with open(str_path) as f:
+            return json.load(f)
+    elif str_path.endswith(('.yml', '.yaml')):
+        with open(str_path) as f:
+            return yaml.load(f, Loader=yaml.FullLoader)
+    else:
+        raise ValueError(f'Unsupported file extension for file: {file_path}')
+
 def builtin_spec_files() -> list[str]:
     script_files = os.listdir(sample_lingo_script_spec_dir)
     return {
@@ -44,14 +58,12 @@ def load_browser2_spec(spec_file:str, display:bool=False) -> dict:
     try:
         if display:
             print(f'attempting to load spec file: {spec_file}')
-        with open(spec_file) as f:
-            contents = json.load(f)
+        contents = load_json_or_yaml(spec_file)
     except FileNotFoundError:
         _path = sample_browser2_spec_dir / spec_file
         if display:
             print(f'attempting to load spec file: {_path}')
-        with open(_path) as f:
-            contents = json.load(f)
+        contents = load_json_or_yaml(_path)
 
     try:
         if contents['lingo']['version'] != 'page-beta-1':
@@ -72,15 +84,13 @@ def load_lingo_script_spec(spec_file:str, display:bool=False) -> dict:
     try:
         if display:
             print(f'attempting to load lingo script spec file: {spec_file}')
-        with open(spec_file) as f:
-            contents = json.load(f)
+        contents = load_json_or_yaml(spec_file)
         
     except FileNotFoundError:
         _path = sample_lingo_script_spec_dir / spec_file
         if display:
             print(f'attempting to load lingo script spec file: {_path}')
-        with open(_path) as f:
-            contents = json.load(f)
+        contents = load_json_or_yaml(_path)
 
     try:
         if contents['lingo']['version'] != 'script-beta-1':
@@ -98,18 +108,16 @@ def load_generator_spec(spec_file:str) -> dict:
     if not found, try searching for path in built in sample_spec_dir
     """
     try:
-        with open(spec_file) as f:
-            spec = yaml.load(f, Loader=yaml.FullLoader)
+        contents = load_json_or_yaml(spec_file)
 
     except FileNotFoundError:
         _path = sample_generator_spec_dir / spec_file
-        with open(_path) as f:
-            spec = yaml.load(f, Loader=yaml.FullLoader)
+        contents = load_json_or_yaml(_path)
 
     try:
-        if spec['lingo']['version'] != 'generator-beta-1':
-            raise ValueError(f'Unsupported lingo.version in spec file: {spec_file}, got: {spec["lingo"]["version"]}')
+        if contents['lingo']['version'] != 'generator-beta-1':
+            raise ValueError(f'Unsupported lingo.version in spec file: {spec_file}, got: {contents["lingo"]["version"]}')
     except KeyError:
         raise ValueError(f'No lingo.version defined in spec file: {spec_file}')
 
-    return init_generator_spec(spec)
+    return init_generator_spec(contents)
