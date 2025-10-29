@@ -71,7 +71,7 @@ def load_browser2_spec(spec_file:str, display:bool=False) -> dict:
         
     except KeyError:
         raise ValueError(f'No lingo.version defined in spec file: {spec_file}')
-
+    
     return contents
 
 def load_lingo_script_spec(spec_file:str, display:bool=False) -> dict:
