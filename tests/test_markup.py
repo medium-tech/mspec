@@ -3,7 +3,7 @@ import datetime
 import json
 
 from pprint import pprint
-from mspec import load_browser2_spec, sample_browser2_spec_dir, builtin_spec_files, load_lingo_script_spec, sample_lingo_script_spec_dir
+from mspec.core import load_browser2_spec, sample_browser2_spec_dir, builtin_spec_files, load_lingo_script_spec, sample_lingo_script_spec_dir
 from mspec.lingo import *
 
 

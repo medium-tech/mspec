@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from mspec import load_generator_spec
+from mspec.core import load_generator_spec
 from mtemplate import setup_generated_app, run_server_and_app_tests
 from mtemplate.browser1 import MTemplateBrowser1Project
 from mtemplate.py import MTemplatePyProject

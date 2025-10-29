@@ -2,7 +2,7 @@ import argparse
 import shutil
 import json
 from pathlib import Path
-from mspec import *
+from mspec.core import *
 from mspec.lingo import lingo_app, lingo_execute, render_output
 
 #

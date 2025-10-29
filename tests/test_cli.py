@@ -3,7 +3,7 @@ import subprocess
 import sys
 import json
 from pathlib import Path
-from mspec import load_lingo_script_spec, sample_lingo_script_spec_dir
+from mspec.core import load_lingo_script_spec, sample_lingo_script_spec_dir
 
 class TestCLI(unittest.TestCase):
     
