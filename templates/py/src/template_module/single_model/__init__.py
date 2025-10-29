@@ -1,0 +1,13 @@
+# test comment at the top of single_module.py to test parent/child template system.
+
+# 1
+
+# 2
+
+# name :: init_comment
+
+# 3
+
+# 4
+
+# test comment at bottom of single_module.py to test parent/child template system.

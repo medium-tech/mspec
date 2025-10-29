@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from mspec.core import load_generator_spec
+from mtemplate.core import apply_template_slots
 from mtemplate import setup_generated_app, run_server_and_app_tests
 from mtemplate.browser1 import MTemplateBrowser1Project
 from mtemplate.py import MTemplatePyProject
@@ -11,7 +12,7 @@ from pathlib import Path
 # parser #
 
 parser = argparse.ArgumentParser(description='mtemplate - cli')
-parser.add_argument('command', choices=['render', 'cache', 'setup', 'test'], help='Use "render" to generate an app from a spec file, "cache" to cache jinja2 templates, "setup" to setup a generated app, or "test" to run generated app tests')
+parser.add_argument('command', choices=['render', 'cache', 'setup', 'test', 'slots'], help='Use "render" to generate an app from a spec file, "cache" to cache jinja2 templates, "setup" to setup a generated app, or "test" to run generated app tests')
 parser.add_argument('--spec', type=str, default='test-gen.yaml', help='spec file to use, first attempt to use <spec> if it exists, else try <spec> in the built in template repo')
 parser.add_argument('--env-file', type=str, default=None, help='path to .env file to copy to output dir for python app (if rendering python app)')
 parser.add_argument('--app', type=str, default='both', choices=['py', 'browser1', 'both'], help='Which apps to apply command to, choices are "py", "browser1" or "both", default: "both"')
@@ -56,6 +57,10 @@ elif args.command == 'test':
         print('Error: --source-dir is required for test command')
     else:
         run_server_and_app_tests(args.source_dir)
+
+elif args.command == 'slots':
+    result = apply_template_slots()
+    print(result)
 
 else:
     parser.print_help()
