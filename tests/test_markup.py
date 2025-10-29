@@ -77,6 +77,53 @@ class TestLingoPages(unittest.TestCase):
 
         self.assertEqual(when, expecting, f"Expected {expecting} but got {when} based on weekday {weekday}")
 
+    def test_all_functions_coverage(self):
+        """Verify that all functions in lingo_function_lookup are tested"""
+        
+        # Get all function names from lingo_function_lookup
+        expected_functions = set()
+        for key, value in lingo_function_lookup.items():
+            if isinstance(value, dict) and 'func' in value:
+                expected_functions.add(key)
+            elif isinstance(value, dict):
+                # Nested functions like current.weekday, datetime.now, random.randint
+                for subkey in value.keys():
+                    expected_functions.add(f"{key}.{subkey}")
+        
+        # Check that we have state variables or direct calls for each function
+        tested_functions = set()
+        
+        # Check state calculations for tested functions
+        for state_key, state_def in self.functions_spec['state'].items():
+            if 'calc' in state_def and 'call' in state_def['calc']:
+                tested_functions.add(state_def['calc']['call'])
+        
+        # Check output for direct function calls
+        def check_calls_in_element(element):
+            if isinstance(element, dict):
+                if 'call' in element:
+                    tested_functions.add(element['call'])
+                for value in element.values():
+                    if isinstance(value, (dict, list)):
+                        check_calls_in_element(value)
+            elif isinstance(element, list):
+                for item in element:
+                    check_calls_in_element(item)
+
+        for output_element in self.functions_spec['output']:
+            check_calls_in_element(output_element)
+        
+        # Verify coverage
+        missing_functions = expected_functions - tested_functions
+        self.assertEqual(len(missing_functions), 0, 
+                        f"Missing tests for functions: {missing_functions}")
+
+    def test_return_types(self):
+        spec = load_browser2_spec('return-types.json')
+        app = lingo_app(spec)
+        doc = render_output(lingo_update_state(app))
+
+
     def test_functions_page(self):
         """Test all functions defined in lingo_function_lookup using functions.json"""
         app = lingo_app(self.functions_spec)
@@ -89,9 +136,6 @@ class TestLingoPages(unittest.TestCase):
         heading = doc[0]
         self.assertEqual(heading['heading'], 'Function Tests')
         self.assertEqual(heading['level'], 1)
-        
-        # Test boolean functions
-        self._test_functions_section(doc, debug=False)
 
     def test_boolean_functions(self):
         """Test boolean conversion functions"""
@@ -259,63 +303,7 @@ class TestLingoPages(unittest.TestCase):
         self.assertTrue(weekday_found, "Should find current.weekday() output")
         self.assertTrue(random_found, "Should find random.randint() output")
 
-    def test_all_functions_coverage(self):
-        """Verify that all functions in lingo_function_lookup are tested"""
-        
-        # Get all function names from lingo_function_lookup
-        expected_functions = set()
-        for key, value in lingo_function_lookup.items():
-            if isinstance(value, dict) and 'func' in value:
-                expected_functions.add(key)
-            elif isinstance(value, dict):
-                # Nested functions like current.weekday, datetime.now, random.randint
-                for subkey in value.keys():
-                    expected_functions.add(f"{key}.{subkey}")
-        
-        # Check that we have state variables or direct calls for each function
-        tested_functions = set()
-        
-        # Check state calculations for tested functions
-        for state_key, state_def in self.functions_spec['state'].items():
-            if 'calc' in state_def and 'call' in state_def['calc']:
-                tested_functions.add(state_def['calc']['call'])
-        
-        # Check output for direct function calls
-        def check_calls_in_element(element):
-            if isinstance(element, dict):
-                if 'call' in element:
-                    tested_functions.add(element['call'])
-                for value in element.values():
-                    if isinstance(value, (dict, list)):
-                        check_calls_in_element(value)
-            elif isinstance(element, list):
-                for item in element:
-                    check_calls_in_element(item)
-
-        for output_element in self.functions_spec['output']:
-            check_calls_in_element(output_element)
-        
-        # Verify coverage
-        missing_functions = expected_functions - tested_functions
-        self.assertEqual(len(missing_functions), 0, 
-                        f"Missing tests for functions: {missing_functions}")
-
-    def test_return_types(self):
-        spec = load_browser2_spec('return-types.json')
-        app = lingo_app(spec)
-        doc = render_output(lingo_update_state(app))
-
-    def _test_functions_section(self, doc: list[dict], debug=False):
-        """Helper method to validate the functions document structure"""
-        self.assertIsInstance(doc, list)
-        
-        if debug:
-            for n, element in enumerate(doc):
-                print(n, element)
-        
-        # Should have at least heading and several function test outputs
-        self.assertGreater(len(doc), 10, "Should have substantial output for function tests")
-
+    
 built_in = builtin_spec_files()
 lingo_scripts = built_in['lingo_script']
 lingo_script_test_data = built_in['lingo_script_test_data']
