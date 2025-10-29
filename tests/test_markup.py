@@ -77,6 +77,24 @@ class TestLingoPages(unittest.TestCase):
 
         self.assertEqual(when, expecting, f"Expected {expecting} but got {when} based on weekday {weekday}")
 
+    def test_return_types(self):
+        spec = load_browser2_spec('return-types.json')
+        app = lingo_app(spec)
+        doc = render_output(lingo_update_state(app))
+
+    def test_functions_page(self):
+        """Test all functions defined in lingo_function_lookup using functions.json"""
+        app = lingo_app(self.functions_spec)
+        doc = render_output(app)
+        
+        # Test that we get the expected number of output elements
+        self.assertGreater(len(doc), 90, "Should have many output elements for comprehensive function testing")
+        
+        # Verify it's structured as expected
+        heading = doc[0]
+        self.assertEqual(heading['heading'], 'Function Tests')
+        self.assertEqual(heading['level'], 1)
+
     def test_all_functions_coverage(self):
         """Verify that all functions in lingo_function_lookup are tested"""
         
@@ -118,133 +136,8 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(len(missing_functions), 0, 
                         f"Missing tests for functions: {missing_functions}")
 
-    def test_return_types(self):
-        spec = load_browser2_spec('return-types.json')
-        app = lingo_app(spec)
-        doc = render_output(lingo_update_state(app))
-
-
-    def test_functions_page(self):
-        """Test all functions defined in lingo_function_lookup using functions.json"""
-        app = lingo_app(self.functions_spec)
-        doc = render_output(app)
-        
-        # Test that we get the expected number of output elements
-        self.assertGreater(len(doc), 90, "Should have many output elements for comprehensive function testing")
-        
-        # Verify it's structured as expected
-        heading = doc[0]
-        self.assertEqual(heading['heading'], 'Function Tests')
-        self.assertEqual(heading['level'], 1)
-
-    def test_boolean_functions(self):
-        """Test boolean conversion functions"""
-        app = lingo_app(self.functions_spec)
-        
-        # Test bool function
-        self.assertTrue(app.state['test_bool_true'])
-        self.assertFalse(app.state['test_bool_false'])
-        
-        # Test not function
-        self.assertFalse(app.state['test_not_true'])
-        self.assertTrue(app.state['test_not_false'])
-        
-        # Test neg function
-        self.assertEqual(app.state['test_neg'], -5)
-
-    def test_int_functions(self):
-        """Test integer conversion functions"""
-        app = lingo_app(self.functions_spec)
-        
-        # Test int function with number
-        self.assertEqual(app.state['test_int'], 42)
-        
-        # Test int function with string and base
-        self.assertEqual(app.state['test_int_base'], 42)
-
-    def test_float_functions(self):
-        """Test float conversion functions"""
-        app = lingo_app(self.functions_spec)
-
-        # Test float function
-        self.assertEqual(app.state['test_float'], 0.001)
-
-        self.assertEqual(app.state['test_round_default'], 3)
-        self.assertEqual(app.state['test_round_ndigits'], 3.142)
-
-    def test_string_functions(self):
-        """Test string-related functions"""
-        app = lingo_app(self.functions_spec)
-        
-        # Test str function
-        self.assertEqual(app.state['test_str'], '123')
-        
-        # Test join function
-        self.assertEqual(app.state['test_join'], 'a-b-c')
-
-    def test_logical_functions(self):
-        """Test logical operators"""
-        app = lingo_app(self.functions_spec)
-        
-        # Test and function
-        self.assertTrue(app.state['test_and_true'])
-        self.assertFalse(app.state['test_and_false'])
-        
-        # Test or function
-        self.assertTrue(app.state['test_or_true'])
-        self.assertFalse(app.state['test_or_false'])
-
-    def test_math_functions(self):
-        """Test mathematical operators"""
-        app = lingo_app(self.functions_spec)
-        
-        # Test arithmetic
-        self.assertEqual(app.state['test_add'], 15)
-        self.assertEqual(app.state['test_sub'], 7)
-        self.assertEqual(app.state['test_mul'], 28)
-        self.assertEqual(app.state['test_div'], 5.0)
-        self.assertEqual(app.state['test_pow'], 8)
-        self.assertEqual(app.state['test_min'], 3)
-        self.assertEqual(app.state['test_max'], 7)
-        self.assertEqual(app.state['test_abs'], 10)
-        self.assertEqual(app.state['test_floordiv'], 7)
-        self.assertEqual(app.state['test_mod'], 3)
-
-    def test_list_functions(self):
-        """Test list-related functions"""
-        app = lingo_app(self.functions_spec)
-
-        # Test list creation
-        self.assertEqual(app.state['test_len_list'], 5)
-        self.assertEqual(app.state['test_len_string'], 5)
-        self.assertTrue(app.state['test_any_true'])
-        self.assertFalse(app.state['test_any_false'])
-        self.assertTrue(app.state['test_all_true'])
-        self.assertFalse(app.state['test_all_false'])
-
-        self.assertEqual(app.state['test_slice_default'], [0, 1])
-        self.assertEqual(app.state['test_slice_start'], [2, 3, 4])
-        self.assertEqual(app.state['test_slice_step'], [1, 3])
-        self.assertEqual(app.state['test_range_default'], [0, 1, 2, 3, 4])
-        self.assertEqual(app.state['test_range_start'], [1, 2, 3, 4, 5, 6])
-        self.assertEqual(app.state['test_range_step'], [0, 2, 4, 6, 8])
-        self.assertEqual(app.state['test_map'], [11, 12, 13, 14, 15])
-
-        self.assertEqual(app.state['test_filter'], [4, 5, 6, 7])
-        self.assertEqual(app.state['test_dropwhile'], [4, 5, 6, 7])
-        self.assertEqual(app.state['test_takewhile'], [1, 2, 3])
-        self.assertEqual(app.state['test_reversed'], [3, 2, 1])
-
-        self.assertEqual(app.state['test_sum'], 6)
-        self.assertEqual(app.state['test_sum_start'], 16)
-        self.assertEqual(app.state['test_sorted'], [2, 5, 9])
-        self.assertEqual(app.state['test_accumulate'], [1, 3, 6, 10])
-        self.assertEqual(app.state['test_accumulate_initial'], [10, 11, 13, 16, 20])
-        self.assertEqual(app.state['test_reduce'], 10)
-        self.assertEqual(app.state['test_reduce_initial'], 20)
-        
     def test_comparison_functions(self):
-        """Test comparison operators"""
+        """Test comparison operators: eq, ne, lt, le, gt, ge"""
         app = lingo_app(self.functions_spec)
         
         # Test equality
@@ -263,15 +156,138 @@ class TestLingoPages(unittest.TestCase):
         self.assertTrue(app.state['test_ge_true'])
         self.assertFalse(app.state['test_ge_false'])
 
-    def test_time_functions(self):
-        """Test datetime and time-related functions"""
+    def test_bool_functions(self):
+        """Test bool operators: bool, not, neg, and, or"""
+        app = lingo_app(self.functions_spec)
+        
+        # Test bool function
+        self.assertTrue(app.state['test_bool_true'])
+        self.assertFalse(app.state['test_bool_false'])
+        
+        # Test not function
+        self.assertFalse(app.state['test_not_true'])
+        self.assertTrue(app.state['test_not_false'])
+        
+        # Test neg function
+        self.assertEqual(app.state['test_neg'], -5)
+        
+        # Test and function
+        self.assertTrue(app.state['test_and_true'])
+        self.assertFalse(app.state['test_and_false'])
+        
+        # Test or function
+        self.assertTrue(app.state['test_or_true'])
+        self.assertFalse(app.state['test_or_false'])
+
+    def test_int_functions(self):
+        """Test int conversion functions: int"""
+        app = lingo_app(self.functions_spec)
+        
+        # Test int function with number
+        self.assertEqual(app.state['test_int'], 42)
+        
+        # Test int function with string and base
+        self.assertEqual(app.state['test_int_base'], 42)
+
+    def test_float_functions(self):
+        """Test float conversion and rounding functions: float, round"""
+        app = lingo_app(self.functions_spec)
+
+        # Test float function
+        self.assertEqual(app.state['test_float'], 0.001)
+
+        # Test round function
+        self.assertEqual(app.state['test_round_default'], 3)
+        self.assertEqual(app.state['test_round_ndigits'], 3.142)
+
+    def test_str_functions(self):
+        """Test string functions: str, join"""
+        app = lingo_app(self.functions_spec)
+        
+        # Test str function
+        self.assertEqual(app.state['test_str'], '123')
+        
+        # Test join function
+        self.assertEqual(app.state['test_join'], 'a-b-c')
+
+    def test_math_functions(self):
+        """Test math operators: add, sub, mul, div, floordiv, mod, pow, min, max, abs"""
+        app = lingo_app(self.functions_spec)
+        
+        # Test arithmetic operations
+        self.assertEqual(app.state['test_add'], 15)
+        self.assertEqual(app.state['test_sub'], 7)
+        self.assertEqual(app.state['test_mul'], 28)
+        self.assertEqual(app.state['test_div'], 5.0)
+        self.assertEqual(app.state['test_floordiv'], 7)
+        self.assertEqual(app.state['test_mod'], 3)
+        self.assertEqual(app.state['test_pow'], 8)
+        
+        # Test min/max/abs
+        self.assertEqual(app.state['test_min'], 3)
+        self.assertEqual(app.state['test_max'], 7)
+        self.assertEqual(app.state['test_abs'], 10)
+
+    def test_sequence_functions(self):
+        """Test sequence functions: len, range, slice, any, all, sum, sorted"""
+        app = lingo_app(self.functions_spec)
+
+        # Test len
+        self.assertEqual(app.state['test_len_list'], 5)
+        self.assertEqual(app.state['test_len_string'], 5)
+        
+        # Test any and all
+        self.assertTrue(app.state['test_any_true'])
+        self.assertFalse(app.state['test_any_false'])
+        self.assertTrue(app.state['test_all_true'])
+        self.assertFalse(app.state['test_all_false'])
+
+        # Test slice
+        self.assertEqual(app.state['test_slice_default'], [0, 1])
+        self.assertEqual(app.state['test_slice_start'], [2, 3, 4])
+        self.assertEqual(app.state['test_slice_step'], [1, 3])
+        
+        # Test range
+        self.assertEqual(app.state['test_range_default'], [0, 1, 2, 3, 4])
+        self.assertEqual(app.state['test_range_start'], [1, 2, 3, 4, 5, 6])
+        self.assertEqual(app.state['test_range_step'], [0, 2, 4, 6, 8])
+
+        # Test sum and sorted
+        self.assertEqual(app.state['test_sum'], 6)
+        self.assertEqual(app.state['test_sum_start'], 16)
+        self.assertEqual(app.state['test_sorted'], [2, 5, 9])
+
+    def test_sequence_ops_functions(self):
+        """Test sequence ops: map, filter, dropwhile, takewhile, reversed, accumulate, reduce"""
+        app = lingo_app(self.functions_spec)
+
+        # Test map
+        self.assertEqual(app.state['test_map'], [11, 12, 13, 14, 15])
+
+        # Test filter
+        self.assertEqual(app.state['test_filter'], [4, 5, 6, 7])
+        
+        # Test dropwhile and takewhile
+        self.assertEqual(app.state['test_dropwhile'], [4, 5, 6, 7])
+        self.assertEqual(app.state['test_takewhile'], [1, 2, 3])
+        
+        # Test reversed
+        self.assertEqual(app.state['test_reversed'], [3, 2, 1])
+
+        # Test accumulate and reduce
+        self.assertEqual(app.state['test_accumulate'], [1, 3, 6, 10])
+        self.assertEqual(app.state['test_accumulate_initial'], [10, 11, 13, 16, 20])
+        self.assertEqual(app.state['test_reduce'], 10)
+        self.assertEqual(app.state['test_reduce_initial'], 20)
+
+    def test_datetime_functions(self):
+        """Test date and time functions: current.weekday, datetime.now"""
         app = lingo_app(self.functions_spec)
         doc = render_output(app)
         
         # Find the datetime output in the rendered document
         datetime_found = False
         weekday_found = False
-        random_found = False
 
         for n, element in enumerate(doc):
             if 'text' in element:
@@ -281,26 +297,34 @@ class TestLingoPages(unittest.TestCase):
                     datetime_found = True
                 elif 'current.weekday()' in text:
                     weekday_found = True
-                elif 'random.randint(1, 10)' in text:
+                elif text.isdigit() and 'weekday()' in str(doc[n - 1]):
+                    # Weekday should be 0-6
+                    weekday_val = int(text)
+                    self.assertGreaterEqual(weekday_val, 0)
+                    self.assertLessEqual(weekday_val, 6)
+        
+        self.assertTrue(datetime_found, "Should find datetime.now() output")
+        self.assertTrue(weekday_found, "Should find current.weekday() output")
+
+    def test_random_functions(self):
+        """Test random functions: random.randint"""
+        app = lingo_app(self.functions_spec)
+        doc = render_output(app)
+        
+        # Find the random output in the rendered document
+        random_found = False
+
+        for n, element in enumerate(doc):
+            if 'text' in element:
+                text = element['text']
+                if 'random.randint(1, 10)' in text:
                     random_found = True
-                elif text.isdigit() and 'weekday()' in str(doc[n - 1]):
-                    # Weekday should be 0-6
-                    weekday_val = int(text)
-                    self.assertGreaterEqual(weekday_val, 0)
-                    self.assertLessEqual(weekday_val, 6)
-                elif text.isdigit() and 'weekday()' in str(doc[n - 1]):
-                    # Weekday should be 0-6
-                    weekday_val = int(text)
-                    self.assertGreaterEqual(weekday_val, 0)
-                    self.assertLessEqual(weekday_val, 6)
-                elif text.isdigit() and 'randint(1, 10)' in str(doc[n - 1]):
+                elif text.isdigit() and n > 0 and 'randint(1, 10)' in str(doc[n - 1]):
                     # Random number should be 1-10
                     random_val = int(text)
                     self.assertGreaterEqual(random_val, 1)
                     self.assertLessEqual(random_val, 10)
         
-        self.assertTrue(datetime_found, "Should find datetime.now() output")
-        self.assertTrue(weekday_found, "Should find current.weekday() output")
         self.assertTrue(random_found, "Should find random.randint() output")
 
     
