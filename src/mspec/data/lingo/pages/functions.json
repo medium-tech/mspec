@@ -21,6 +21,26 @@
             "type": "int",
             "calc": {"call": "neg", "args": {"object": 5}}
         },
+        "test_int": {
+            "type": "int",
+            "calc": {"call": "int", "args": {"number": 42.7}}
+        },
+        "test_int_base": {
+            "type": "int",
+            "calc": {"call": "int", "args": {"string": "2A", "base": 16}}
+        },
+        "test_float": {
+            "type": "float",
+            "calc": {"call": "float", "args": {"number": "1e-003"}}
+        },
+        "test_round_default": {
+            "type": "int",
+            "calc": {"call": "round", "args": {"number": 3.14159}}
+        },
+        "test_round_ndigits": {
+            "type": "float",
+            "calc": {"call": "round", "args": {"number": 3.14159, "ndigits": 3}}
+        },
         "test_str": {
             "type": "str",
             "calc": {"call": "str", "args": {"object": 123}}
@@ -60,6 +80,14 @@
         "test_div": {
             "type": "float",
             "calc": {"call": "div", "args": {"a": 15, "b": 3}}
+        },
+        "test_floordiv": {
+            "type": "int",
+            "calc": {"call": "floordiv", "args": {"a": 15, "b": 2}}
+        },
+        "test_mod": {
+            "type": "int",
+            "calc": {"call": "mod", "args": {"a": 15, "b": 4}}
         },
         "test_pow": {
             "type": "int",

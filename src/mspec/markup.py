@@ -62,24 +62,19 @@ def _reduce_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=Non
 def str_join(separator:str, items:list) -> str:
     return separator.join(str(item) for item in items)
 
-lingo_function_lookup = {
-    'bool': {'func': bool, 'args': {'object': {'type': 'any'}}},
-    'not': {'func': operator.not_, 'args': {'object': {'type': 'any'}}},
-    'neg': {'func': operator.neg, 'args': {'object': {'type': 'any'}}},
-    'and': {'func': operator.and_, 'args': {'a': {'type': 'any'}, 'b': {'type': 'any'}}},
-    'or': {'func': operator.or_, 'args': {'a': {'type': 'any'}, 'b': {'type': 'any'}}},
+def lingo_int(number:Any=None, string:str=None, base:int=10) -> int:
+    if number is not None:
+        return int(number)
 
-    'str': {'func': str, 'args': {'object': {'type': 'any'}}},
-    'join': {'func': str_join, 'args': {'separator': {'type': 'str'}, 'items': {'type': 'list'}}},
-    
-    'add': {'func': operator.add, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
-    'sub': {'func': operator.sub, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
-    'mul': {'func': operator.mul, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
-    'div': {'func': operator.truediv, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
-    'pow': {'func': operator.pow, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
-    'min': {'func': min, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
-    'max': {'func': max, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
-    'abs': {'func': abs, 'args': {'number': {'type': ('int', 'float')}}},
+    elif string is not None:
+        return int(string, base)
+        
+    else:
+        raise ValueError('lingo int - must provide either number or string argument')
+
+lingo_function_lookup = {
+
+    # comparison #
 
     'eq': {'func': operator.eq, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
     'ne': {'func': operator.ne, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
@@ -88,21 +83,63 @@ lingo_function_lookup = {
     'gt': {'func': operator.gt, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
     'ge': {'func': operator.ge, 'args': {'a': {'type': ('int', 'float', 'str')}, 'b': {'type': ('int', 'float', 'str')}}},
 
+    # bool #
+
+    'bool': {'func': bool, 'args': {'object': {'type': 'any'}}},
+    'not': {'func': operator.not_, 'args': {'object': {'type': 'any'}}},
+    'neg': {'func': operator.neg, 'args': {'object': {'type': 'any'}}},
+    'and': {'func': operator.and_, 'args': {'a': {'type': 'any'}, 'b': {'type': 'any'}}},
+    'or': {'func': operator.or_, 'args': {'a': {'type': 'any'}, 'b': {'type': 'any'}}},
+
+    # int #
+
+    'int': {'func': lingo_int, 'args': {'number': {'type': 'any', 'default': None}, 'string': {'type': 'str', 'default': None}, 'base': {'type': 'int', 'default': 10}}},
+
+    # float #
+
+    'float': {'func': float, 'args': {'number': {'type': 'any'}}},
+    'round': {'func': round, 'args': {'number': {'type': 'float'}, 'ndigits': {'type': 'int', 'default': None}}},
+
+    # str #
+
+    'str': {'func': str, 'args': {'object': {'type': 'any'}}},
+    'join': {'func': str_join, 'args': {'separator': {'type': 'str'}, 'items': {'type': 'list'}}},
+
+    # math #
+
+    'add': {'func': operator.add, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
+    'sub': {'func': operator.sub, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
+    'mul': {'func': operator.mul, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
+    'div': {'func': operator.truediv, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
+    'floordiv': {'func': operator.floordiv, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
+    'mod': {'func': operator.mod, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
+    # 'divmod': {'func': divmod, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}}, - need to accept multi-dim lists
+    'pow': {'func': operator.pow, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
+    'min': {'func': min, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
+    'max': {'func': max, 'args': {'a': {'type': ('int', 'float')}, 'b': {'type': ('int', 'float')}}},
+    'abs': {'func': abs, 'args': {'number': {'type': ('int', 'float')}}},
+
+    # sequence #
+
     'len': {'func': len, 'args': {'object': {'type': ('str', 'list')}}},
+    'range': {'func': range, 'args': {'start': {'type': 'int', 'default': 0}, 'stop': {'type': 'int'}, 'step': {'type': 'int', 'default': 1}}},
+    'slice': {'func': islice, 'args': {'iterator': {'type': 'list'}, 'start': {'type': 'int', 'default': None}, 'stop': {'type': 'int'}, 'step': {'type': 'int', 'default': None}}},
     'any': {'func': any, 'args': {'iterable': {'type': 'list'}}},
     'all': {'func': all, 'args': {'iterable': {'type': 'list'}}},
-    
-    'slice': {'func': islice, 'args': {'iterator': {'type': 'list'}, 'start': {'type': 'int', 'default': None}, 'stop': {'type': 'int'}, 'step': {'type': 'int', 'default': None}}},
-    'range': {'func': range, 'args': {'start': {'type': 'int', 'default': 0}, 'stop': {'type': 'int'}, 'step': {'type': 'int', 'default': 1}}},
+    'sum': {'func': lambda i, s: sum(i, s), 'args': {'iterable': {'type': 'list'}, 'start': {'type': ('int', 'float'), 'default': 0}}},
+    'sorted': {'func': sorted, 'args': {'iterable': {'type': 'list'}}},
+
+    # sequence ops #
+
     'map': {'func': map, 'create_args': _map_function_args},
     'filter': {'func': filter, 'create_args': _map_function_args},
     'dropwhile': {'func': dropwhile, 'create_args': _map_function_args},
     'takewhile': {'func': takewhile, 'create_args': _map_function_args},
     'reversed': {'func': reversed, 'args': {'sequence': {'type': 'list'}}},
-    'sum': {'func': lambda i, s,: sum(i, s), 'args': {'iterable': {'type': 'list'}, 'start': {'type': ('int', 'float'), 'default': 0}}},
-    'sorted': {'func': sorted, 'args': {'iterable': {'type': 'list'}}},
     'accumulate': {'func': accumulate, 'create_args': _accumulate_function_args},
     'reduce': {'func': reduce, 'create_args': _reduce_function_args},
+
+    # date and time #
 
     'current': {
         'weekday': {'func': lambda: datetime.now().weekday(), 'args': {}, 'sig': 'kwargs'}
@@ -110,6 +147,9 @@ lingo_function_lookup = {
     'datetime': {
         'now': {'func': datetime.now, 'args': {}, 'sig': 'kwargs'}
     },
+
+    # random #
+
     'random': {
         'randint': {'func': randint, 'args': {'a': {'type': 'int'}, 'b': {'type': 'int'}}, 'sig': 'kwargs'}
     }

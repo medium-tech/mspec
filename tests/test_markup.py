@@ -108,6 +108,26 @@ class TestLingoPages(unittest.TestCase):
         # Test neg function
         self.assertEqual(app.state['test_neg'], -5)
 
+    def test_int_functions(self):
+        """Test integer conversion functions"""
+        app = lingo_app(self.functions_spec)
+        
+        # Test int function with number
+        self.assertEqual(app.state['test_int'], 42)
+        
+        # Test int function with string and base
+        self.assertEqual(app.state['test_int_base'], 42)
+
+    def test_float_functions(self):
+        """Test float conversion functions"""
+        app = lingo_app(self.functions_spec)
+
+        # Test float function
+        self.assertEqual(app.state['test_float'], 0.001)
+
+        self.assertEqual(app.state['test_round_default'], 3)
+        self.assertEqual(app.state['test_round_ndigits'], 3.142)
+
     def test_string_functions(self):
         """Test string-related functions"""
         app = lingo_app(self.functions_spec)
@@ -143,6 +163,8 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(app.state['test_min'], 3)
         self.assertEqual(app.state['test_max'], 7)
         self.assertEqual(app.state['test_abs'], 10)
+        self.assertEqual(app.state['test_floordiv'], 7)
+        self.assertEqual(app.state['test_mod'], 3)
 
     def test_list_functions(self):
         """Test list-related functions"""
