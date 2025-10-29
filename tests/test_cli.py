@@ -1,16 +1,22 @@
+import os
+import shutil
 import unittest
 import subprocess
 import sys
 import json
 from pathlib import Path
-from mspec.core import load_lingo_script_spec, sample_lingo_script_spec_dir
+from mspec.core import sample_lingo_script_spec_dir, builtin_spec_files
+from .core import TESTS_TMP_DIR
+
+ALL_SPECS = [files for files in builtin_spec_files().values()]
+TOTAL_NUM_SPECS = sum(len(files) for files in ALL_SPECS)
 
 class TestCLI(unittest.TestCase):
-    
-    def _run_cli(self, args):
+
+    def _run_cli(self, args, cwd=None):
         """Helper method to run the CLI with given arguments"""
         cmd = [sys.executable, '-m', 'mspec'] + args
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
         return result
     
     #
@@ -150,6 +156,59 @@ class TestCLI(unittest.TestCase):
             except FileNotFoundError:
                 pass
     
+    #
+    # examples command
+    #
+
+    def test_examples_in_cwd(self):
+        """Test the examples command copies all example specs to current working directory"""
+        output_dir = TESTS_TMP_DIR / 'cli_examples_cwd'
+        if output_dir.exists():
+            shutil.rmtree(output_dir)
+        
+        try:
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            result = self._run_cli(['examples'], cwd=str(output_dir))
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            self.assertTrue((output_dir / 'lingo' / 'pages').is_dir())
+            self.assertTrue((output_dir / 'lingo' / 'scripts').is_dir())
+            self.assertTrue((output_dir / 'generator').is_dir())
+
+            # recursevely count number of files copied
+            all_files_copied = list(output_dir.rglob('*'))
+            num_files_copied = len([f for f in all_files_copied if f.is_file()])
+            self.assertEqual(num_files_copied, TOTAL_NUM_SPECS)
+
+        finally:
+            # Clean up - remove the output directory
+            if output_dir.exists():
+                shutil.rmtree(output_dir)
+
+    def test_examples_command(self):
+        """Test the examples command copies all example specs"""
+        output_dir = TESTS_TMP_DIR / 'cli_examples_output'
+        if output_dir.exists():
+            shutil.rmtree(output_dir)
+        
+        try:
+            result = self._run_cli(['examples', '-o', str(output_dir)])
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            self.assertTrue(output_dir.exists())
+            self.assertTrue((output_dir / 'lingo' / 'pages').is_dir())
+            self.assertTrue((output_dir / 'lingo' / 'scripts').is_dir())
+            self.assertTrue((output_dir / 'generator').is_dir())
+
+            # recursevely count number of files copied
+            all_files_copied = list(output_dir.rglob('*'))
+            num_files_copied = len([f for f in all_files_copied if f.is_file()])
+            self.assertEqual(num_files_copied, TOTAL_NUM_SPECS)
+
+        finally:
+            # Clean up - remove the output directory
+            if output_dir.exists():
+                shutil.rmtree(output_dir)
+
     #
     # run command
     #

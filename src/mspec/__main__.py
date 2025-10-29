@@ -1,4 +1,5 @@
 import argparse
+import os
 import shutil
 import json
 from pathlib import Path
@@ -37,6 +38,7 @@ example_parser.add_argument(
     type=str,
     help='Built-in spec name to copy to current directory'
 )
+
 example_parser.add_argument(
     '--yes',
     '-y',
@@ -54,6 +56,20 @@ example_parser.add_argument(
     '-d',
     action='store_true',
     help='Display the result of the example spec instead of writing to file'
+)
+
+# examples command #
+
+examples_parser = subparsers.add_parser(
+    'examples',
+    help='Copy all built-in specs to the current directory'
+)
+examples_parser.add_argument(
+    '--output-dir',
+    '-o',
+    type=str,
+    default='.',
+    help='Output directory to copy all built-in specs to (default: current directory)'
 )
 
 # run command #
@@ -161,6 +177,9 @@ elif args.command == 'example':
     else:
         print(f'Example spec file not found: {spec_path}')
         raise SystemExit(1)
+
+elif args.command == 'examples':
+    shutil.copytree(sample_data_dir, args.output_dir, dirs_exist_ok=True)
 
 elif args.command == 'run':
     spec = load_browser2_spec(args.spec, display=True)

@@ -15,6 +15,7 @@ import sys
 
 from pathlib import Path
 from mtemplate import setup_generated_app, run_server_and_app_tests
+from .core import REPO_ROOT, TESTS_TMP_DIR
 
 test_num = 0
 
@@ -30,25 +31,22 @@ def indent_lines(test, indent=2):
 class BaseMSpecTest(unittest.TestCase):
     '''Test the complete app generation workflow'''
 
-    repo_root = Path(__file__).parent.parent
-    tests_tmp_dir = repo_root / 'tests' / 'tmp'
-
     @classmethod
     def setUpClass(cls):
         '''run before any tests in class to remove old tmp test dirs'''
         try:
-            shutil.rmtree(cls.tests_tmp_dir)
+            shutil.rmtree(TESTS_TMP_DIR)
         except FileNotFoundError:
             pass
 
-        cls.tests_tmp_dir.mkdir(exist_ok=True)
+        TESTS_TMP_DIR.mkdir(exist_ok=True)
     
     def setUp(self):
         '''run before each test to create unique test dir'''
         
         # create unique directory name #
         global test_num
-        self.test_dir = self.tests_tmp_dir / f'test_{test_num}'
+        self.test_dir = TESTS_TMP_DIR / f'test_{test_num}'
         test_num += 1
         self.test_dir.mkdir(exist_ok=True)
         self.run_cleanup = False
@@ -73,8 +71,8 @@ class BaseMSpecTest(unittest.TestCase):
         result = subprocess.run([
             sys.executable, '-m', 'mtemplate', 'cache',
             '--spec', str(spec_file),
-        ], capture_output=True, text=True, cwd=str(self.repo_root),
-          env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
+        ], capture_output=True, text=True, cwd=str(REPO_ROOT),
+          env=dict(os.environ, PYTHONPATH=f'{REPO_ROOT}/src'))
         
         self.assertEqual(result.returncode, 0, f'Failed to cache app: {result.stderr}')
 
@@ -89,8 +87,8 @@ class BaseMSpecTest(unittest.TestCase):
             '--spec', str(spec_file),
             '--output', str(no_cache_dir),
             '--no-cache',
-        ], capture_output=True, text=True, cwd=str(self.repo_root),
-          env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
+        ], capture_output=True, text=True, cwd=str(REPO_ROOT),
+          env=dict(os.environ, PYTHONPATH=f'{REPO_ROOT}/src'))
         
         # use cache #
         use_cache_dir = self.test_dir / 'use-cache'
@@ -99,8 +97,8 @@ class BaseMSpecTest(unittest.TestCase):
             '--spec', str(spec_file),
             '--output', str(use_cache_dir),
             '--use-cache',
-        ], capture_output=True, text=True, cwd=str(self.repo_root),
-          env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
+        ], capture_output=True, text=True, cwd=str(REPO_ROOT),
+          env=dict(os.environ, PYTHONPATH=f'{REPO_ROOT}/src'))
         
         #
         # compare outputs
@@ -138,8 +136,8 @@ class BaseMSpecTest(unittest.TestCase):
             '--spec', str(spec_file),
             '--output', str(normal_dir),
             '--no-cache',
-        ], capture_output=True, text=True, cwd=str(self.repo_root),
-          env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
+        ], capture_output=True, text=True, cwd=str(REPO_ROOT),
+          env=dict(os.environ, PYTHONPATH=f'{REPO_ROOT}/src'))
         
         self.assertEqual(result.returncode, 0, f'Failed to generate app without debug: {result.stderr}')
 
@@ -151,8 +149,8 @@ class BaseMSpecTest(unittest.TestCase):
             '--output', str(debug_no_cache_dir),
             '--debug',
             '--no-cache',
-        ], capture_output=True, text=True, cwd=str(self.repo_root),
-          env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
+        ], capture_output=True, text=True, cwd=str(REPO_ROOT),
+          env=dict(os.environ, PYTHONPATH=f'{REPO_ROOT}/src'))
         
         self.assertEqual(result.returncode, 0, f'Failed to generate app with debug and no cache: {result.stderr}')
 
@@ -164,8 +162,8 @@ class BaseMSpecTest(unittest.TestCase):
             '--output', str(debug_cache_dir),
             '--debug',
             '--use-cache',
-        ], capture_output=True, text=True, cwd=str(self.repo_root),
-          env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
+        ], capture_output=True, text=True, cwd=str(REPO_ROOT),
+          env=dict(os.environ, PYTHONPATH=f'{REPO_ROOT}/src'))
         
         self.assertEqual(result.returncode, 0, f'Failed to generate app with debug and cache: {result.stderr}')
         
@@ -211,8 +209,8 @@ class BaseMSpecTest(unittest.TestCase):
             '--output', str(self.test_dir),
             '--debug',
             '--no-cache'
-        ], capture_output=True, text=True, cwd=str(self.repo_root),
-          env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
+        ], capture_output=True, text=True, cwd=str(REPO_ROOT),
+          env=dict(os.environ, PYTHONPATH=f'{REPO_ROOT}/src'))
         
         self.assertEqual(result.returncode, 0, f'Failed to generate apps: {result.stderr}')
 
@@ -224,9 +222,7 @@ class BaseMSpecTest(unittest.TestCase):
 class TestTestGenSpec(BaseMSpecTest):
     '''Test the complete app generation workflow'''
 
-    repo_root = Path(__file__).parent.parent
-    spec_file = repo_root / 'src' / 'mspec' / 'data' / 'generator' / 'test-gen.yaml'
-    tests_tmp_dir = repo_root / 'tests' / 'tmp'
+    spec_file = REPO_ROOT / 'src' / 'mspec' / 'data' / 'generator' / 'test-gen.yaml'
 
     def test_cache(self):
         self._test_cache(self.spec_file)
@@ -254,8 +250,8 @@ class TestTestGenSpec(BaseMSpecTest):
             '--spec', str(self.spec_file),
             '--output', str(self.test_dir),
             '--no-cache'
-        ], capture_output=True, text=True, cwd=str(self.repo_root),
-          env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
+        ], capture_output=True, text=True, cwd=str(REPO_ROOT),
+          env=dict(os.environ, PYTHONPATH=f'{REPO_ROOT}/src'))
         
         self.assertEqual(result.returncode, 0, f'Failed to generate py app: {result.stderr}')
         
@@ -331,8 +327,8 @@ class TestTestGenSpec(BaseMSpecTest):
             '--spec', str(self.spec_file),
             '--output', str(self.test_dir),
             '--no-cache'
-        ], capture_output=True, text=True, cwd=str(self.repo_root),
-          env=dict(os.environ, PYTHONPATH=f'{self.repo_root}/src'))
+        ], capture_output=True, text=True, cwd=str(REPO_ROOT),
+          env=dict(os.environ, PYTHONPATH=f'{REPO_ROOT}/src'))
         
         self.assertEqual(result.returncode, 0, f'Failed to generate browser1 app: {result.stderr}')
         
@@ -413,9 +409,7 @@ class TestTestGenSpec(BaseMSpecTest):
 class TestSampleStoreSpec(BaseMSpecTest):
     '''Test the complete app generation workflow'''
 
-    repo_root = Path(__file__).parent.parent
-    spec_file = repo_root / 'src' / 'mspec' / 'data' / 'generator' / 'my-sample-store.yaml'
-    tests_tmp_dir = repo_root / 'tests' / 'tmp'
+    spec_file = REPO_ROOT / 'src' / 'mspec' / 'data' / 'generator' / 'my-sample-store.yaml'
 
     def test_cache(self):
         self._test_cache(self.spec_file)
@@ -433,9 +427,7 @@ class TestSampleStoreSpec(BaseMSpecTest):
 class TestSimpleSocialSpec(BaseMSpecTest):
     '''Test the complete app generation workflow'''
 
-    repo_root = Path(__file__).parent.parent
-    spec_file = repo_root / 'src' / 'mspec' / 'data' / 'generator' / 'simple-social-network.yaml'
-    tests_tmp_dir = repo_root / 'tests' / 'tmp'
+    spec_file = REPO_ROOT / 'src' / 'mspec' / 'data' / 'generator' / 'simple-social-network.yaml'
 
     def test_cache(self):
         self._test_cache(self.spec_file)
@@ -452,17 +444,15 @@ class TestSimpleSocialSpec(BaseMSpecTest):
 
 class TestTemplateSourceApps(BaseMSpecTest):
 
-    repo_root = Path(__file__).parent.parent
-
     def setUp(self):
         '''run before each test to create unique test dir'''
-        self.test_dir = self.repo_root / 'templates'
+        self.test_dir = REPO_ROOT / 'templates'
         self.run_cleanup = False
 
     @unittest.skipIf(DEV_TEST or QUICK_TEST, "Skipping app test for dev/quick test mode")
     def test_run_template_source_apps(self):
         '''Test generating and running all template source apps'''
-        venv_dir = self.repo_root / '.venv'
+        venv_dir = REPO_ROOT / '.venv'
         if not venv_dir.exists():
             raise RuntimeError(f'venv does not exist: {venv_dir.absolute()}, follow dev environment setup instructions in README.md')
         
