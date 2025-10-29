@@ -4,7 +4,7 @@
 
 # 2
 
-# name :: init_comment
+# slot :: init_comment
 
 # 3
 
