@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# ./test.sh [--quick] [--dev]
-
 # function to print help menu
 print_help() {
   echo "Usage: $0 [--quick] [--templates] [--dev] [--cli] [--markup] [-h|--help]"

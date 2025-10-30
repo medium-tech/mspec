@@ -29,6 +29,10 @@ The main prototype are the python + browser 1 browser template apps.
     * 🟢 count
     * 🟢 drop while
     * 🟢 take while
+* 🔴 models
+    * 🔴 read
+    * 🔴 list / paginate
+    * 🔴 ui forms for create/update/delete
 * 🟡 refactor internal api
     * 🟢 rename mspec/markup.py to lingo.py
     * 🔴 rename `render_output` to `lingo_render`
