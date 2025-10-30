@@ -10,4 +10,6 @@
 
 # 4
 
+# slot :: footer_comment
+
 # test comment at bottom of single_module.py to test parent/child template system.
