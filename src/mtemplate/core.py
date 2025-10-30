@@ -114,8 +114,7 @@ def apply_template_slots(child_path: Path | str=_child_template_path) -> str:
                 slot_content = all_slot_content[slot_name]
             except KeyError:
                 raise ValueError(f'Slot "{slot_name}" in parent not found in child')
-            except TypeError:
-                breakpoint()
+
             output_lines.extend(slot_content)
             slots_replaced.append(slot_name)
 
