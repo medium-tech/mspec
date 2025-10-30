@@ -15,6 +15,8 @@ from functools import reduce
 from collections import OrderedDict
 from dataclasses import dataclass, asdict
 
+from mtemplate.core import apply_template_slots
+
 from jinja2 import Environment, FunctionLoader, StrictUndefined, TemplateError, Undefined
 
 __all__ = [
@@ -89,7 +91,7 @@ class MTemplateProject:
 
     # get from disk #
 
-    def load_template_paths(self, use_cache:bool=False, templatize_paths:bool=True) -> dict[str, list[dict[str, str]]]:
+    def load_template_paths(self, use_cache:bool=False) -> dict[str, list[dict[str, str]]]:
         paths = {
             'app': [],
             'module': [],
@@ -147,20 +149,11 @@ class MTemplateProject:
                 else:
                     paths['app'].append(template)
 
-                # if any([rel_path.startswith(prefix) for prefix in self.macro_only_prefixes]):
-                #     paths['macro_only'].append(template)
-                # elif any([rel_path.startswith(prefix) for prefix in self.model_prefixes]):
-                #     paths['model'].append(template)
-                # elif any([rel_path.startswith(prefix) for prefix in self.module_prefixes]):
-                #     paths['module'].append(template)
-                # else:
-                #     paths['app'].append(template)
-
         self.template_paths = paths
         return paths
 
-    def extract_templates(self, templatize_paths:bool=True) -> dict:
-        template_paths = self.load_template_paths(templatize_paths=templatize_paths)
+    def extract_templates(self) -> dict:
+        template_paths = self.load_template_paths()
         try:
             paths = template_paths['app'] + template_paths['module'] + template_paths['model'] + template_paths['macro_only']
         except KeyError:
