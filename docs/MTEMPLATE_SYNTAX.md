@@ -15,6 +15,9 @@ mtemplate is a code templating system that allows you to extract dynamic templat
   - [insert](#insert-command)
   - [replace](#replace-command)
   - [macro](#macro-command)
+  - [slot](#slot-command)
+  - [parent](#parent-command)
+- [About Parent/Child Slots](#about-parentchild-slots)
 
 ## Overview
 
@@ -287,5 +290,141 @@ cursor.execute("CREATE TABLE IF NOT EXISTS single_model(id INTEGER PRIMARY KEY, 
 
 This creates a macro that can be called like:
 ```python
+This creates a macro that can be called like:
+```python
 # insert :: macro.py_create_model_table({"model_name_snake_case": "user", "field_names": "name, email"})
 ```
+
+### slot Command
+
+The `slot` command is used for parenting. In a parent template the slot defines the location to be replaced and in a child it is used with a `slot end` command to define the regoin that will be replaced in the parent. Slots are used in conjunction with the `parent` command to create a parent-child template relationship, see [About Parent/Child Slots](#about-parentchild-slots) for more.
+
+Each slot defined in the child must have a `slot` and `end slot` command, but in the parent each slot is only a `slot` command.
+
+**Syntax:**
+
+parent templates
+```
+... content in parent file ...
+<comment> slot :: <slot_name>
+... more content in parent file ...
+```
+
+child templates
+```
+... content in parent file ...
+<comment> slot :: <slot_name>
+... child slot content ...
+<comment> end slot ::
+... content in parent file ...
+```
+
+**Arguments:**
+- `slot_name`: Unique identifier for the slot within the template
+
+### parent Command
+
+The `parent` command establishes a parent-child relationship between templates, it is used to define a template as a child and what file is its parent. See [About Parent/Child Slots](#about-parentchild-slots) for more.
+
+**Syntax:**
+```
+<comment> parent :: <relative_path_to_parent>
+```
+
+**Arguments:**
+- `relative_path_to_parent`: Relative path from the child template to its parent template
+
+**Example:**
+
+Python:
+```python
+# parent :: ../single_model/__init__.py
+```
+
+**Location:**
+The `parent` command should be placed at the end of the child template file, after all slot definitions. This isn't necessary, but when the child is re-generated the `parent` line will be emitted in the last line because the parser doesn't know where it should be placed.
+
+## About Parent/Child Slots
+
+**Motivation**
+The `mtemplate` system is a template system that extracts templates from syntactically valid code. As such variations in templates may require multiple templates and duplicated template code. For example, the model in `templates/.../single_model/db.py` does not require authentican, but `templates/.../multi_model/db.py` does. Both templates are needed to create a `db.py`, the one in `single_model` is the parent template and the `multi_model` is the child. The child defines an authentication macro inside a slot and the parent uses conditional statements to apply the variation (macro) when needed. The several lines inside the children's slots are the only thing different about it than the parent template. When changes to parent model are made they can be syncronized to the child template using slots. The `slot` and `slot end` commands in the child define the variation, and the matching `slot` command in the parent defines where the variation should be placed in the parent.
+
+**Workflow:**
+
+1. **Define parent template** with slots:
+   ```python
+   # slot :: custom_imports
+   
+   from core import *
+   
+   # slot :: custom_code
+   ```
+
+1. **Create child template** with parent reference and slot overrides:
+   ```python
+   # slot :: custom_imports
+   from typing import List
+   # end slot ::
+   
+   from core import *
+   
+   # slot :: custom_code
+   def custom_function():
+       pass
+   # end slot ::
+   
+   # parent :: ../single_model/__init__.py
+   ```
+    Copy and paste the parent to create the child, then add code variations using slots in the child and create a corresponding slot in the parent where the variation should go. 
+
+1. **Make changes in parent template**
+    ```python
+   # slot :: custom_imports
+   
+   from core import *
+   from other_module import more_code
+   
+   # slot :: custom_code
+   ```
+
+1. **Synchronize templates** by running:
+   ```bash
+   python -m mtemplate slots
+   ```
+   
+   This command:
+   - Finds all child templates (templates with a `parent` command) in `./templates/`
+   - For each child, reads its parent template
+   - Replaces slots in the parent with corresponding slot content from the child
+   - Writes the result back to the child template file
+   - Preserves the `parent` command at the end
+
+1. **Child template output** will now have the new import with all of it's custom code right where it's supposed to be
+    ```python
+   # slot :: custom_imports
+   from typing import List
+   # end slot ::
+   
+   from core import *
+   from other_module import more_code
+   
+   # slot :: custom_code
+   def custom_function():
+       pass
+   # end slot ::
+   
+   # parent :: ../single_model/__init__.py
+   ```
+
+**Error Handling:**
+- If a child has a slot not present in the parent: Error raised
+- If a parent has a slot not defined in the child: Error raised
+- If no parent is defined in a child template passed to `apply_template_slots()`: `NoParentDefinedError` raised
+- If multiple parent commands exist: Error raised
+
+**Debug Mode:**
+```bash
+python -m mtemplate slots --debug
+```
+
+In debug mode, the command shows what would be updated without actually modifying files, and may show warnings.
