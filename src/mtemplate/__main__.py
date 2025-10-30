@@ -59,8 +59,11 @@ elif args.command == 'test':
         run_server_and_app_tests(args.source_dir)
 
 elif args.command == 'slots':
-    result = apply_template_slots()
-    print(result)
+    if args.app in ['both', 'py']:
+        MTemplatePyProject.apply_slots_to_children(debug=args.debug)
+
+    if args.app in ['both', 'browser1']:
+        MTemplateBrowser1Project.apply_slots_to_children(debug=args.debug)
 
 else:
     parser.print_help()

@@ -4,7 +4,6 @@
 
 # 2
 
-# parent :: ../single_model/__init__.py
 # slot :: init_comment
 # 2.5   - from multi_model
 
@@ -20,3 +19,4 @@
 # end slot ::
 
 # test comment at bottom of single_module.py to test parent/child template system.
+# parent :: ../single_model/__init__.py

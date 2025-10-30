@@ -2,11 +2,15 @@ from pathlib import Path
 
 
 __all__ = [
+    'NoParentDefinedError',
     'apply_template_slots'
 ]
 
 py_dir = Path(__file__).parent.parent.parent / 'templates' / 'py'
 _child_template_path = py_dir / 'src' / 'template_module' / 'multi_model' / '__init__.py'
+
+class NoParentDefinedError(Exception):
+    pass
 
 def apply_template_slots(child_path: Path | str=_child_template_path) -> str:
     """Given a child template path, regenerate the child template
@@ -39,6 +43,7 @@ def apply_template_slots(child_path: Path | str=_child_template_path) -> str:
     all_slot_content = {}
     inside_slot = False
     current_slot_name = None
+    parent_line = None
 
     for line in child_content:
         if line.strip().startswith('# parent ::'):
@@ -46,6 +51,7 @@ def apply_template_slots(child_path: Path | str=_child_template_path) -> str:
                 raise ValueError(f'parent command not allowed inside slot: {current_slot_name}')
             
             parent_commands.append(line)
+            parent_line = line
 
         elif line.strip().startswith('# slot ::'):
             if inside_slot:
@@ -56,11 +62,13 @@ def apply_template_slots(child_path: Path | str=_child_template_path) -> str:
             child_slot_name = line.strip().split('::')[1].strip()
             current_slot_name = child_slot_name
             slots_in_child.append(current_slot_name)
-            all_slot_content[current_slot_name] = []
+            all_slot_content[current_slot_name] = [line]
         
         elif inside_slot and line.strip().startswith('# end slot'):
             if not inside_slot:
                 raise ValueError(f'End slot found without matching start slot (slot: {current_slot_name})')
+            all_slot_content[current_slot_name].append(line)
+            current_slot_name = None
             inside_slot = False
         
         elif inside_slot:
@@ -70,7 +78,7 @@ def apply_template_slots(child_path: Path | str=_child_template_path) -> str:
             child_template_lines.append(line)
 
     if not parent_commands:
-        raise ValueError(f'No parent defined in child template: {child_template_path}')
+        raise NoParentDefinedError(f'No parent defined in child template: {child_template_path}')
 
     elif len(parent_commands) > 1:
         raise ValueError('Multiple parent templates found, only one parent template is supported.')
@@ -113,6 +121,8 @@ def apply_template_slots(child_path: Path | str=_child_template_path) -> str:
 
         else:
             output_lines.append(line)
+    
+    output_lines.append(parent_line)
 
     if not slots_replaced:
         raise ValueError('No slots were replaced; ensure slot names match between parent and child templates.')

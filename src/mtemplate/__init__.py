@@ -15,7 +15,7 @@ from functools import reduce
 from collections import OrderedDict
 from dataclasses import dataclass, asdict
 
-from mtemplate.core import apply_template_slots
+from mtemplate.core import apply_template_slots, NoParentDefinedError
 
 from jinja2 import Environment, FunctionLoader, StrictUndefined, TemplateError, Undefined
 
@@ -463,6 +463,25 @@ class MTemplateProject:
     #
     # ops
     #
+
+    @classmethod
+    def apply_slots_to_children(cls, debug:bool=False):
+        template_proj = cls({}, debug=debug)
+        paths = template_proj.load_template_paths()
+        for macro in paths['macro_only']:
+            try:
+                new_template_content = apply_template_slots(macro['src'])
+            except NoParentDefinedError:
+                if debug:
+                    print(f'Warning no parent defined in macro template: {macro["src"]}')
+                continue
+            
+            if debug:
+                print(f'Would have applied slots to macro template: {macro["src"]}')
+            else:
+                with open(macro['src'], 'w') as f:
+                    f.write(new_template_content)
+                print(f'Applied slots to macro template: {macro["src"]}')
 
     @classmethod
     def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplateProject':
