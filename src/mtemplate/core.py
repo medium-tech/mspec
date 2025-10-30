@@ -121,8 +121,8 @@ def apply_template_slots(child_path: Path | str=_child_template_path) -> str:
 
         else:
             output_lines.append(line)
-    
-    output_lines.append(parent_line)
+
+    output_lines.append(f'\n{parent_line}')
 
     if not slots_replaced:
         raise ValueError('No slots were replaced; ensure slot names match between parent and child templates.')

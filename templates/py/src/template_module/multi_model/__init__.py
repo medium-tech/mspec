@@ -1,8 +1,8 @@
 # test comment at the top of single_module.py to test parent/child template system.
 
-# 1
+# 1.0
 
-# 2
+# 2.0
 
 # slot :: init_comment
 # 2.5   - from multi_model
@@ -10,9 +10,9 @@
 # 2.5.1 - from multi_model
 # end slot ::
 
-# 3
+# 3.0
 
-# 4
+# 4.0
 
 # slot :: footer_comment
 # 4.5   - from multi_model

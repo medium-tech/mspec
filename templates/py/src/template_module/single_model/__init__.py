@@ -1,14 +1,14 @@
 # test comment at the top of single_module.py to test parent/child template system.
 
-# 1
+# 1.0
 
-# 2
+# 2.0
 
 # slot :: init_comment
 
-# 3
+# 3.0
 
-# 4
+# 4.0
 
 # slot :: footer_comment
 
