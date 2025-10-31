@@ -1,0 +1,9 @@
+# Compiled binary
+hello
+
+# Go build cache
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
