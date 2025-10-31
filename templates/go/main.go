@@ -12,7 +12,13 @@ import (
 func main() {
     args := os.Args[1:]
 
-    if len(args) == 0 || args[0] == "--help" {
+	if len(args) == 0 {
+		fmt.Fprintf(os.Stderr, "Error: no command provided\n")
+		printHelp()
+		os.Exit(1)
+	}
+
+    if args[0] == "-h" || args[0] == "--help" {
         printHelp()
         return
     }
@@ -89,7 +95,7 @@ func main() {
 
 func printHelp() {
     fmt.Println(`Usage:
-  ./main --help
+  ./main -h | --help
       Displays the help information.
 
   ./main http create single-model [<json string of model>]

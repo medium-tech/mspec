@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"os"
 	"fmt"
-	"strings"
-	"time"
+
+	"github.com/medium-tech/mspec/templates/go/mspec"
 )
 
 //
@@ -34,37 +34,13 @@ func IsValidSingleEnum(s string) bool {
 
 
 type SingleModel struct {
-	ID             *string       `json:"id,omitempty"`
-	SingleBool     bool          `json:"single_bool"`
-	SingleInt      int           `json:"single_int"`
-	SingleFloat    float64       `json:"single_float"`
-	SingleString   string        `json:"single_string"`
-	SingleEnum     string        `json:"single_enum"`
-	SingleDatetime LingoDateTime `json:"single_datetime"`
-}
-
-// LingoDateTime wraps time.Time to handle custom datetime format
-type LingoDateTime struct {
-	time.Time
-}
-
-const DatetimeFormat = "2006-01-02T15:04:05"
-
-// UnmarshalJSON implements json.Unmarshaler for LingoDateTime
-func (ct *LingoDateTime) UnmarshalJSON(b []byte) error {
-	s := strings.Trim(string(b), "\"")
-	t, err := time.Parse(DatetimeFormat, s)
-	if err != nil {
-		return err
-	}
-	ct.Time = t
-	return nil
-}
-
-// MarshalJSON implements json.Marshaler for LingoDateTime
-func (ct LingoDateTime) MarshalJSON() ([]byte, error) {
-	formatted := fmt.Sprintf("\"%s\"", ct.Format(DatetimeFormat))
-	return []byte(formatted), nil
+	ID             *string        `json:"id,omitempty"`
+	SingleBool     bool           `json:"single_bool"`
+	SingleInt      int            `json:"single_int"`
+	SingleFloat    float64        `json:"single_float"`
+	SingleString   string         `json:"single_string"`
+	SingleEnum     string         `json:"single_enum"`
+	SingleDatetime mspec.DateTime `json:"single_datetime"`
 }
 
 // ToJSON serializes the SingleModel to a JSON string
@@ -131,7 +107,7 @@ func (m *SingleModel) Print() {
 	fmt.Printf("  SingleFloat: %f\n", m.SingleFloat)
 	fmt.Printf("  SingleString: %s\n", m.SingleString)
 	fmt.Printf("  SingleEnum: %s\n", m.SingleEnum)
-	fmt.Printf("  SingleDatetime: %s\n", m.SingleDatetime.Format(DatetimeFormat))
+	fmt.Printf("  SingleDatetime: %s\n", m.SingleDatetime.Format(mspec.DatetimeFormat))
 	fmt.Printf("}\n")
 }
 
@@ -140,7 +116,6 @@ func (m *SingleModel) Print() {
 //
 
 func HttpCreateSingleModel(jsonData string) {
-	fmt.Printf("HttpCreateSingleModel called with JSON: %s\n", jsonData)
 	model, err := FromJSON(jsonData)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error parsing JSON: %v\n", err)
