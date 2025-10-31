@@ -1,10 +1,12 @@
 package main
 
 import (
+    "encoding/json"
     "fmt"
     "os"
     "strconv"
     "strings"
+    "time"
 )
 
 func main() {
@@ -104,6 +106,36 @@ func printHelp() {
 
   ./main http list single-model [--offset=<offset> default:0] [--limit=<limit> default:50]
       Lists models with optional pagination parameters.`)
+}
+
+// SingleModel represents a data model with various field types
+type SingleModel struct {
+	ID            *string   `json:"id,omitempty"`
+	SingleBool    bool      `json:"single_bool"`
+	SingleInt     int       `json:"single_int"`
+	SingleFloat   float64   `json:"single_float"`
+	SingleString  string    `json:"single_string"`
+	SingleEnum    string    `json:"single_enum"`
+	SingleDatetime time.Time `json:"single_datetime"`
+}
+
+// ToJSON serializes the SingleModel to a JSON string
+func (m *SingleModel) ToJSON() (string, error) {
+	data, err := json.Marshal(m)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+// FromJSON deserializes a JSON string into a SingleModel
+func FromJSON(jsonStr string) (*SingleModel, error) {
+	var model SingleModel
+	err := json.Unmarshal([]byte(jsonStr), &model)
+	if err != nil {
+		return nil, err
+	}
+	return &model, nil
 }
 
 // Placeholder functions for each command
