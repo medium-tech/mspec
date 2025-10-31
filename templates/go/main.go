@@ -108,6 +108,28 @@ func printHelp() {
       Lists models with optional pagination parameters.`)
 }
 
+// SingleEnumType represents valid enum values for single_enum
+type SingleEnumType string
+
+const (
+	SingleEnumRed   SingleEnumType = "red"
+	SingleEnumGreen SingleEnumType = "green"
+	SingleEnumBlue  SingleEnumType = "blue"
+)
+
+// Valid enum options
+var singleEnumOptions = []string{"red", "green", "blue"}
+
+// IsValidSingleEnum checks if a string is a valid enum value
+func IsValidSingleEnum(s string) bool {
+	for _, v := range singleEnumOptions {
+		if s == v {
+			return true
+		}
+	}
+	return false
+}
+
 // SingleModel represents a data model with various field types
 type SingleModel struct {
 	ID            *string   `json:"id,omitempty"`
@@ -182,6 +204,11 @@ func SingleModelFromJSON(jsonStr string) (*SingleModel, error) {
 	err = json.Unmarshal([]byte(jsonStr), &model)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing fields: %w", err)
+	}
+
+	// Validate enum value
+	if !IsValidSingleEnum(model.SingleEnum) {
+		return nil, fmt.Errorf("invalid enum value for single_enum: %s (must be one of: %v)", model.SingleEnum, singleEnumOptions)
 	}
 
 	return &model, nil
