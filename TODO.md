@@ -97,6 +97,12 @@ The main prototype are the python + browser 1 browser template apps.
         * 🔴 page to page links
         * 🔴 retrieving/viewing files
         * 🔴 retrieving/viewing model data
+* 🔴 more types
+    * 🔴 multi-dimensional arrays
+    * 🔴 date and time
+        * 🔴 date
+        * 🔴 time
+        * 🔴 any of datetime, date or time
 
 ### phase 2
 * 🔴 go template app
