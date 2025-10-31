@@ -48,67 +48,75 @@ The main prototype are the python + browser 1 browser template apps.
     * 🔴 shutdown
  
 ### template app phase 1
-* 🟡 auth for models
-    * 🟡 require login to create a model
-    * 🟡 limit number of models created by user in spec file (ie. user can only create 1 profile)
-    * 🔴 model read op can be public or private
-        * 🔴 hardcoded in spec file
-        * 🔴 user can choose if model is public or private
-        * 🔴 user can create acl for read ops
-    * 🔴 revist python password implementation
-        * `bcrypt` 5.0 broke implementation, migrate stdlib alternatives (https://docs.python.org/3/library/hashlib.html#hashlib.scrypt) as described in description: https://pypi.org/project/bcrypt/
-    * 🔴 implement oauth
-* 🟡 refactor python vs. templating logic
-    * 🟢 enable nested loops and if branching
-    * 🟢 add macro by type function for calling a macro dynamically
-    * 🟡 migrate macros written in python to template syntax
-        * 🟡 py app
-        * 🟡 browser1 app
-    * 🟡 create system to sync template changes to macro only templates (ex: copy changes from `./single_model/db.py` to `./mutlti_model/db.py`)
-        * load files `./single_model/db.py` and `./mutlti_model/db.py` (if exists)
-        * the parent template is used to render a child based on a yaml model
-            * render everything except for undefined macros (existing macros in `./mutlti_model/db.py` should be undefined at this point)
-        * for undefined macros:
-            * if file `./multi_model/db.py` exists and  macro is defined in it
-                * insert it, including macro syntax (`# macro :: ... :: {"...": "..."}`)
-                * overwrite existing `./multi_model/db.py` file
-            * else
-                * create place holder macro (`# macro :: ... :: {"...": "..."}`)
-* 🔴 add foreign key id as model field type
-* 🔴 add meta to models
-* 🔴 add file ingest/upload
-    * 🔴 file sql table
-    * 🔴 add model field type: file
-    * 🔴 ingest
-        * 🔴 py client
-        * 🔴 py server/http client
-        * 🔴 browser 1
-    * 🔴 read
-        * 🔴 py client
-        * 🔴 py server/http client
-        * 🔴 browser 1
-    * 🔴 add multipart uploads
-* 🔴 implement cids
-    * 🔴 template apps
-        * 🔴 add cid sql table
-            * 🔴 row contains foreign key to file
-            * 🔴 row can contain foreign key to model table
-    * 🔴 browser2
-        * 🔴 page to page links
-        * 🔴 retrieving/viewing files
-        * 🔴 retrieving/viewing model data
-* 🔴 more types
-    * 🔴 multi-dimensional arrays
-    * 🔴 date and time
-        * 🔴 date
-        * 🔴 time
-        * 🔴 any of datetime, date or time
+* 🟡 python full featured template app
+    * 🟡 auth for models
+        * 🟡 require login to create a model
+        * 🟡 limit number of models created by user in spec file (ie. user can only create 1 profile)
+        * 🔴 model read op can be public or private
+            * 🔴 hardcoded in spec file
+            * 🔴 user can choose if model is public or private
+            * 🔴 user can create acl for read ops
+        * 🔴 revist python password implementation
+            * `bcrypt` 5.0 broke implementation, migrate stdlib alternatives (https://docs.python.org/3/library/hashlib.html#hashlib.scrypt) as described in description: https://pypi.org/project/bcrypt/
+        * 🔴 implement oauth
+
+    * 🔴 add foreign key id as model field type
+    * 🔴 add meta to models
+    * 🔴 add file ingest/upload
+        * 🔴 file sql table
+        * 🔴 add model field type: file
+        * 🔴 ingest
+            * 🔴 py client
+            * 🔴 py server/http client
+            * 🔴 browser 1
+        * 🔴 read
+            * 🔴 py client
+            * 🔴 py server/http client
+            * 🔴 browser 1
+        * 🔴 add multipart uploads
+    * 🔴 implement cids
+        * 🔴 template apps
+            * 🔴 add cid sql table
+                * 🔴 row contains foreign key to file
+                * 🔴 row can contain foreign key to model table
+        * 🔴 browser2
+            * 🔴 page to page links
+            * 🔴 retrieving/viewing files
+            * 🔴 retrieving/viewing model data
+    * 🔴 more types
+        * 🔴 multi-dimensional arrays
+        * 🔴 date and time
+            * 🔴 date
+            * 🔴 time
+            * 🔴 any of datetime, date or time
+* 🟢 browser 1 app
+    * 🟢 gui
+        * 🟢 crud/list
+        * 🟢 auth
+
+* 🔴 go app
+    * 🔴 sqlite interface
+    * 🔴 server
+        * 🔴 db wrapper
+        * 🔴 auth
+        * 🔴 serve browser1 html
 
 ### phase 2
-* 🔴 go template app
+* 🟡 python app
+    * 🟡 refactor python vs. templating logic
+        * 🟢 enable nested loops and if branching
+        * 🟢 add macro by type function for calling a macro dynamically
+        * 🟡 migrate macros written in python to template syntax
+            * 🟡 py app
+            * 🟡 browser1 app
+        * 🔴 revist python template app, re: single_model vs. multi_model, templates and macros
+        * 🟡 create system to sync template changes to macro only templates (ex: copy changes from `./single_model/db.py` to `./mutlti_model/db.py`)
+            * load files `./single_model/db.py` and `./mutlti_model/db.py` (if exists)
+            * the parent template is used to render a child based on a yaml model
+                * render everything except for undefined macros (existing macros in `./mutlti_model/db.py` should be undefined at this point)
 
 ### phase 3
-* 🔴 revist python template app, re: single_model vs. multi_model, templates and macros
+
 * 🔴 haskell template app
 * 🔴 c template app
 
@@ -119,7 +127,7 @@ The main prototype are the python + browser 1 browser template apps.
 * 🔴 clean up whitespace in generated apps
 
 ## python template app
-* 🟢 sqllite3 client
+* 🟢 sqlite3 client
     * 🟢 core   (`templates/py/src/core/db.py`)
         * 🟢 create tables
         * 🟢 user crud ops
@@ -222,7 +230,7 @@ The main prototype are the python + browser 1 browser template apps.
     * 🟢 unittests (`templates/browser 1/tests/test-module/testModel.spec.js`)
 
 ## go template app
-* 🔴 sql/sqllite3 client
+* 🔴 sqlite3 client
     * 🔴 core
         * 🔴 create tables
         * 🔴 user crud ops
@@ -291,11 +299,10 @@ The main prototype are the python + browser 1 browser template apps.
                 * 🔴 delete
     * 🔴 template extraction 
     * 🔴 tests
-    * 🔴 make network requests async
 
 
 ## c template app
-* 🔴 sql/sqllite3 client
+* 🔴 sqlite3 client
     * 🔴 core
         * 🔴 create tables
         * 🔴 user crud ops
@@ -350,10 +357,9 @@ The main prototype are the python + browser 1 browser template apps.
                 * 🔴 delete
     * 🔴 template extraction 
     * 🔴 tests
-    * 🔴 make network requests async
 
 ## haskell template app
-* 🔴 sql/sqllite3 client
+* 🔴 sqlite3 client
     * 🔴 core
         * 🔴 create tables
         * 🔴 user crud ops
@@ -422,8 +428,6 @@ The main prototype are the python + browser 1 browser template apps.
                 * 🔴 delete
     * 🔴 template extraction 
     * 🔴 tests
-    * 🔴 make network requests async
-
 
 ## browser 2.0 clients
 * 🟡 python tkinter
