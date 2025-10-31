@@ -116,11 +116,35 @@ type SingleModel struct {
 	SingleFloat   float64   `json:"single_float"`
 	SingleString  string    `json:"single_string"`
 	SingleEnum    string    `json:"single_enum"`
-	SingleDatetime time.Time `json:"single_datetime"`
+	SingleDatetime lingoDateTime `json:"single_datetime"`
 }
 
-// ToJSON serializes the SingleModel to a JSON string
-func (m *SingleModel) ToJSON() (string, error) {
+// lingoDateTime wraps time.Time to handle custom datetime format
+type lingoDateTime struct {
+	time.Time
+}
+
+const datetimeFormat = "2006-01-02T15:04:05"
+
+// UnmarshalJSON implements json.Unmarshaler for lingoDateTime
+func (ct *lingoDateTime) UnmarshalJSON(b []byte) error {
+	s := strings.Trim(string(b), "\"")
+	t, err := time.Parse(datetimeFormat, s)
+	if err != nil {
+		return err
+	}
+	ct.Time = t
+	return nil
+}
+
+// MarshalJSON implements json.Marshaler for lingoDateTime
+func (ct lingoDateTime) MarshalJSON() ([]byte, error) {
+	formatted := fmt.Sprintf("\"%s\"", ct.Format(datetimeFormat))
+	return []byte(formatted), nil
+}
+
+// SingleModelToJSON serializes the SingleModel to a JSON string
+func (m *SingleModel) SingleModelToJSON() (string, error) {
 	data, err := json.Marshal(m)
 	if err != nil {
 		return "", err
@@ -128,20 +152,69 @@ func (m *SingleModel) ToJSON() (string, error) {
 	return string(data), nil
 }
 
-// FromJSON deserializes a JSON string into a SingleModel
-func FromJSON(jsonStr string) (*SingleModel, error) {
-	var model SingleModel
-	err := json.Unmarshal([]byte(jsonStr), &model)
+// SingleModelFromJSON deserializes a JSON string into a SingleModel
+// All fields except ID are required and will return an error if missing
+func SingleModelFromJSON(jsonStr string) (*SingleModel, error) {
+	var rawData map[string]interface{}
+	err := json.Unmarshal([]byte(jsonStr), &rawData)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid JSON: %w", err)
 	}
+
+	// Check required fields
+	requiredFields := []string{
+		"single_bool",
+		"single_int",
+		"single_float",
+		"single_string",
+		"single_enum",
+		"single_datetime",
+	}
+
+	for _, field := range requiredFields {
+		if _, exists := rawData[field]; !exists {
+			return nil, fmt.Errorf("missing required field: %s", field)
+		}
+	}
+
+	// Unmarshal into struct
+	var model SingleModel
+	err = json.Unmarshal([]byte(jsonStr), &model)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing fields: %w", err)
+	}
+
 	return &model, nil
 }
+
+// SingleModel print to console
+func (m *SingleModel) SingleModelPrint() {
+	fmt.Printf("SingleModel {\n")
+	if m.ID != nil {
+		fmt.Printf("  ID: %s\n", *m.ID)
+	} else {
+		fmt.Printf("  ID: nil\n")
+	}
+	fmt.Printf("  SingleBool: %t\n", m.SingleBool)
+	fmt.Printf("  SingleInt: %d\n", m.SingleInt)
+	fmt.Printf("  SingleFloat: %f\n", m.SingleFloat)
+	fmt.Printf("  SingleString: %s\n", m.SingleString)
+	fmt.Printf("  SingleEnum: %s\n", m.SingleEnum)
+	fmt.Printf("  SingleDatetime: %s\n", m.SingleDatetime.Format(datetimeFormat))
+	fmt.Printf("}\n")
+}
+
 
 // Placeholder functions for each command
 
 func httpCreateSingleModel(jsonData string) {
     fmt.Printf("httpCreateSingleModel called with JSON: %s\n", jsonData)
+	model, err := SingleModelFromJSON(jsonData)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing JSON: %v\n", err)
+		return
+	}
+	model.SingleModelPrint()
     // TODO: Implement HTTP create logic
 }
 
