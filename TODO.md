@@ -47,7 +47,7 @@ The main prototype are the python + browser 1 browser template apps.
     * 🔴 after_first_render
     * 🔴 shutdown
  
-### phase 1
+### template app phase 1
 * 🟡 auth for models
     * 🟡 require login to create a model
     * 🟡 limit number of models created by user in spec file (ie. user can only create 1 profile)
@@ -64,7 +64,7 @@ The main prototype are the python + browser 1 browser template apps.
     * 🟡 migrate macros written in python to template syntax
         * 🟡 py app
         * 🟡 browser1 app
-    * 🔴 create system to sync template changes to macro only templates (ex: copy changes from `./single_model/db.py` to `./mutlti_model/db.py`)
+    * 🟡 create system to sync template changes to macro only templates (ex: copy changes from `./single_model/db.py` to `./mutlti_model/db.py`)
         * load files `./single_model/db.py` and `./mutlti_model/db.py` (if exists)
         * the parent template is used to render a child based on a yaml model
             * render everything except for undefined macros (existing macros in `./mutlti_model/db.py` should be undefined at this point)
@@ -74,9 +74,11 @@ The main prototype are the python + browser 1 browser template apps.
                 * overwrite existing `./multi_model/db.py` file
             * else
                 * create place holder macro (`# macro :: ... :: {"...": "..."}`)
+* 🔴 add foreign key id as model field type
+* 🔴 add meta to models
 * 🔴 add file ingest/upload
     * 🔴 file sql table
-    * 🔴 add field type: foreign key
+    * 🔴 add model field type: file
     * 🔴 ingest
         * 🔴 py client
         * 🔴 py server/http client
@@ -99,10 +101,12 @@ The main prototype are the python + browser 1 browser template apps.
 ### phase 2
 * 🔴 go template app
 
+### phase 3
+* 🔴 revist python template app, re: single_model vs. multi_model, templates and macros
+* 🔴 haskell template app
+* 🔴 c template app
 
-### additional features
-* 🔴 add foreign key id to test_model
-* 🔴 add meta to test_model
+
 
 ### misc
 * 🟡 performance testing
