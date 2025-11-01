@@ -9,10 +9,10 @@ A simple hello world application in Go.
 go run main.go
 
 # Build the application
-go build -o hello main.go
+go build -o main main.go
 
 # Run the built binary
-./hello
+./main
 ```
 
 ## Requirements

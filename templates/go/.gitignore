@@ -1,5 +1,5 @@
 # Compiled binary
-hello
+main
 
 # Go build cache
 *.exe
