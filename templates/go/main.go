@@ -109,7 +109,7 @@ func main() {
 //
 
 func printHelp() {
-	fmt.Println(`Usage:
+	fmt.Printf(`Usage:
   ./main -h | --help | help
       Displays this global help information.
 
@@ -122,10 +122,14 @@ func printHelp() {
 Available modules:
   template-module    Example module with CRUD operations
 
+Environment variables:
+  MAPP_CLIENT_HOST    The client host URL (default: %s)
+  MAPP_DB_FILE       The database file path (default: %s)
+
 Examples:
   ./main template-module help
   ./main template-module single-model
-  ./main template-module single-model http create '{"single_bool":true,...}'`)
+  ./main template-module single-model http create '{"single_bool":true,...}'`, mapp.MappClientHostDefault, mapp.MappDBFileDefault)
 }
 
 func printTemplateModuleHelp() {

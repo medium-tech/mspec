@@ -16,14 +16,17 @@ type Context struct {
 	DBFile     string `json:"db_file,omitempty"`
 }
 
+var MappClientHostDefault = "http://localhost:5005"
+var MappDBFileDefault = "db.sqlite3"
+
 func ContextFromEnv() *Context {
 	clientHost := os.Getenv("MAPP_CLIENT_HOST")
 	if clientHost == "" {
-		clientHost = "http://localhost:5005"
+		clientHost = MappClientHostDefault
 	}
 	dbFile := os.Getenv("MAPP_DB_FILE")
 	if dbFile == "" {
-		dbFile = "db.sqlite3"
+		dbFile = MappDBFileDefault
 	}
 
 	return &Context{
