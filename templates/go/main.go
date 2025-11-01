@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-    args := os.Args[1:]
+	args := os.Args[1:]
 
 	if len(args) == 0 {
 		fmt.Fprintf(os.Stderr, "Error: no command provided\n")
@@ -18,83 +18,83 @@ func main() {
 		os.Exit(1)
 	}
 
-    if args[0] == "-h" || args[0] == "--help" {
-        printHelp()
-        return
-    }
+	if args[0] == "-h" || args[0] == "--help" {
+		printHelp()
+		return
+	}
 
-    if args[0] != "http" {
-        fmt.Fprintf(os.Stderr, "Error: unknown command '%s'\n", args[0])
-        printHelp()
-        os.Exit(1)
-    }
+	if args[0] != "http" {
+		fmt.Fprintf(os.Stderr, "Error: unknown command '%s'\n", args[0])
+		printHelp()
+		os.Exit(1)
+	}
 
-    if len(args) < 3 {
-        fmt.Fprintln(os.Stderr, "Error: insufficient arguments")
-        printHelp()
-        os.Exit(1)
-    }
+	if len(args) < 3 {
+		fmt.Fprintln(os.Stderr, "Error: insufficient arguments")
+		printHelp()
+		os.Exit(1)
+	}
 
-    action := args[1]
-    model := args[2]
+	action := args[1]
+	model := args[2]
 
-    if model != "single-model" {
-        fmt.Fprintf(os.Stderr, "Error: unknown model type '%s'\n", model)
-        os.Exit(1)
-    }
+	if model != "single-model" {
+		fmt.Fprintf(os.Stderr, "Error: unknown model type '%s'\n", model)
+		os.Exit(1)
+	}
 
-    switch action {
-		case "create":
-			if len(args) < 4 {
-				fmt.Fprintln(os.Stderr, "Error: missing JSON string for create")
-				os.Exit(1)
-			}
-			template_module.HttpCreateSingleModel(args[3])
-		case "read":
-			if len(args) < 4 {
-				fmt.Fprintln(os.Stderr, "Error: missing model ID for read")
-				os.Exit(1)
-			}
-			template_module.HttpReadSingleModel(args[3])
-		case "update":
-			if len(args) < 5 {
-				fmt.Fprintln(os.Stderr, "Error: missing model ID or JSON string for update")
-				os.Exit(1)
-			}
-			template_module.HttpUpdateSingleModel(args[3], args[4])
-		case "delete":
-			if len(args) < 4 {
-				fmt.Fprintln(os.Stderr, "Error: missing model ID for delete")
-				os.Exit(1)
-			}
-			template_module.HttpDeleteSingleModel(args[3])
-		case "list":
-			offset := 0
-			limit := 50
-			// Parse optional flags
-			for i := 3; i < len(args); i++ {
-				if strings.HasPrefix(args[i], "--offset=") {
-					val := strings.TrimPrefix(args[i], "--offset=")
-					if parsed, err := strconv.Atoi(val); err == nil {
-						offset = parsed
-					}
-				} else if strings.HasPrefix(args[i], "--limit=") {
-					val := strings.TrimPrefix(args[i], "--limit=")
-					if parsed, err := strconv.Atoi(val); err == nil {
-						limit = parsed
-					}
+	switch action {
+	case "create":
+		if len(args) < 4 {
+			fmt.Fprintln(os.Stderr, "Error: missing JSON string for create")
+			os.Exit(1)
+		}
+		template_module.CLICreateSingleModel(args[3])
+	case "read":
+		if len(args) < 4 {
+			fmt.Fprintln(os.Stderr, "Error: missing model ID for read")
+			os.Exit(1)
+		}
+		template_module.CLIReadSingleModel(args[3])
+	case "update":
+		if len(args) < 5 {
+			fmt.Fprintln(os.Stderr, "Error: missing model ID or JSON string for update")
+			os.Exit(1)
+		}
+		template_module.CLIUpdateSingleModel(args[3], args[4])
+	case "delete":
+		if len(args) < 4 {
+			fmt.Fprintln(os.Stderr, "Error: missing model ID for delete")
+			os.Exit(1)
+		}
+		template_module.CLIDeleteSingleModel(args[3])
+	case "list":
+		offset := 0
+		limit := 50
+		// Parse optional flags
+		for i := 3; i < len(args); i++ {
+			if strings.HasPrefix(args[i], "--offset=") {
+				val := strings.TrimPrefix(args[i], "--offset=")
+				if parsed, err := strconv.Atoi(val); err == nil {
+					offset = parsed
+				}
+			} else if strings.HasPrefix(args[i], "--limit=") {
+				val := strings.TrimPrefix(args[i], "--limit=")
+				if parsed, err := strconv.Atoi(val); err == nil {
+					limit = parsed
 				}
 			}
-			template_module.HttpListSingleModel(offset, limit)
-		default:
-			fmt.Fprintf(os.Stderr, "Error: unknown action '%s'\n", action)
-			printHelp()
-			os.Exit(1)
-    }
+		}
+		template_module.CLIListSingleModel(offset, limit)
+	default:
+		fmt.Fprintf(os.Stderr, "Error: unknown action '%s'\n", action)
+		printHelp()
+		os.Exit(1)
+	}
 }
 
 func printHelp() {
-    fmt.Println(`Usage:
+	fmt.Println(`Usage:
   ./main -h | --help
       Displays the help information.
 
