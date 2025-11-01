@@ -559,9 +559,7 @@ func CLIListSingleModel(command string, ctx *mapp.Context, offset int, limit int
 	return listResponse, nil
 }
 
-//
-// DB-specific CLI wrappers
-//
+// other cli commands //
 
 func CLIDbCreateTableSingleModel() (map[string]string, *mapp.MspecError) {
 	response, mspecErr := DBCreateTableSingleModel()
@@ -571,10 +569,6 @@ func CLIDbCreateTableSingleModel() (map[string]string, *mapp.MspecError) {
 
 	return response, nil
 }
-
-//
-// help menu
-//
 
 func printSingleModelHelp() {
 	fmt.Println(`Single Model Help
