@@ -2,9 +2,35 @@ package mapp
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 )
+
+//
+// context
+//
+
+type Context struct {
+	ClientHost string `json:"client_host,omitempty"`
+	DBFile     string `json:"db_file,omitempty"`
+}
+
+func ContextFromEnv() *Context {
+	clientHost := os.Getenv("MAPP_CLIENT_HOST")
+	if clientHost == "" {
+		clientHost = "http://localhost:5005"
+	}
+	dbFile := os.Getenv("MAPP_DB_FILE")
+	if dbFile == "" {
+		dbFile = "db.sqlite3"
+	}
+
+	return &Context{
+		ClientHost: clientHost,
+		DBFile:     dbFile,
+	}
+}
 
 //
 // custom error
