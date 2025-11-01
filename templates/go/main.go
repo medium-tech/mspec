@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
+	"github.com/medium-tech/mspec/templates/go/mapp"
 	"github.com/medium-tech/mspec/templates/go/template_module"
 )
 
@@ -32,22 +34,38 @@ func main() {
 	}
 
 	module := args[0]
+	var result interface{}
+	var err *mapp.MspecError
+
 	switch module {
 	case "template-module":
 		model := args[1]
 		switch model {
 		case "single-model":
-			template_module.CLIParseSingleModel(args)
+			result, err = template_module.CLIParseSingleModel(args)
 		default:
-			fmt.Fprintf(os.Stderr, "Error: unknown model type '%s'\n", model)
-			os.Exit(1)
+			err = &mapp.MspecError{Message: fmt.Sprintf("unknown model type '%s'", model), Code: "unknown_model"}
 		}
 	default:
-		fmt.Fprintf(os.Stderr, "Error: unknown module '%s'\n", module)
-		printHelp()
+		err = &mapp.MspecError{Message: fmt.Sprintf("unknown module '%s'", module), Code: "unknown_module"}
+	}
+
+	// Handle errors
+	if err != nil {
+		jsonBytes, _ := json.MarshalIndent(err, "", "  ")
+		fmt.Println(string(jsonBytes))
 		os.Exit(1)
 	}
 
+	// Pretty print result
+	jsonBytes, marshalErr := json.MarshalIndent(result, "", "  ")
+	if marshalErr != nil {
+		errorOutput := mapp.MspecError{Message: fmt.Sprintf("error formatting JSON: %v", marshalErr), Code: "format_error"}
+		jsonBytes, _ := json.MarshalIndent(errorOutput, "", "  ")
+		fmt.Println(string(jsonBytes))
+		os.Exit(1)
+	}
+	fmt.Println(string(jsonBytes))
 }
 
 //

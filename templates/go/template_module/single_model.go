@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -319,7 +318,7 @@ func HttpListSingleModel(offset int, limit int) (*ListSingleModelResponse, *mapp
 // cli wrappers
 //
 
-func CLIParseSingleModel(args []string) *mapp.MspecError {
+func CLIParseSingleModel(args []string) (interface{}, *mapp.MspecError) {
 
 	command := args[2]
 
@@ -327,41 +326,34 @@ func CLIParseSingleModel(args []string) *mapp.MspecError {
 	case "http":
 		return CLIParseSingleModelHttp(args)
 	default:
-		fmt.Fprintf(os.Stderr, "Error: unknown command '%s'\n", command)
-		os.Exit(1)
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("unknown command '%s'", command), Code: "unknown_command"}
 	}
-
-	return nil
 }
 
-func CLIParseSingleModelHttp(args []string) *mapp.MspecError {
+func CLIParseSingleModelHttp(args []string) (interface{}, *mapp.MspecError) {
 	action := args[3]
 
 	switch action {
 	case "create":
 		if len(args) < 5 {
-			fmt.Fprintln(os.Stderr, "Error: missing JSON string for create")
-			os.Exit(1)
+			return nil, &mapp.MspecError{Message: "missing JSON string for create", Code: "missing_argument"}
 		}
-		CLICreateSingleModel(args[4])
+		return CLICreateSingleModel(args[4])
 	case "read":
 		if len(args) < 5 {
-			fmt.Fprintln(os.Stderr, "Error: missing model ID for read")
-			os.Exit(1)
+			return nil, &mapp.MspecError{Message: "missing model ID for read", Code: "missing_argument"}
 		}
-		CLIReadSingleModel(args[4])
+		return CLIReadSingleModel(args[4])
 	case "update":
 		if len(args) < 6 {
-			fmt.Fprintln(os.Stderr, "Error: missing model ID or JSON string for update")
-			os.Exit(1)
+			return nil, &mapp.MspecError{Message: "missing model ID or JSON string for update", Code: "missing_argument"}
 		}
-		CLIUpdateSingleModel(args[4], args[5])
+		return CLIUpdateSingleModel(args[4], args[5])
 	case "delete":
 		if len(args) < 5 {
-			fmt.Fprintln(os.Stderr, "Error: missing model ID for delete")
-			os.Exit(1)
+			return nil, &mapp.MspecError{Message: "missing model ID for delete", Code: "missing_argument"}
 		}
-		CLIDeleteSingleModel(args[4])
+		return CLIDeleteSingleModel(args[4])
 	case "list":
 		offset := 0
 		limit := 50
@@ -379,115 +371,67 @@ func CLIParseSingleModelHttp(args []string) *mapp.MspecError {
 				}
 			}
 		}
-		CLIListSingleModel(offset, limit)
+		return CLIListSingleModel(offset, limit)
 	default:
-		fmt.Fprintf(os.Stderr, "Error: unknown action '%s'\n", action)
-		os.Exit(1)
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("unknown action '%s'", action), Code: "unknown_action"}
 	}
-
-	return nil
 }
 
-func CLICreateSingleModel(jsonData string) {
+func CLICreateSingleModel(jsonData string) (*SingleModel, *mapp.MspecError) {
 	model, err := FromJSON(jsonData)
 	if err != nil {
-		errorOutput := mapp.MspecError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
-		jsonBytes, _ := json.MarshalIndent(errorOutput, "", "  ")
-		fmt.Println(string(jsonBytes))
-		os.Exit(1)
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
 	}
 
 	createdModel, mspecErr := HttpCreateSingleModel(model)
 	if mspecErr != nil {
-		jsonBytes, _ := json.MarshalIndent(mspecErr, "", "  ")
-		fmt.Println(string(jsonBytes))
-		os.Exit(1)
+		return nil, mspecErr
 	}
 
-	jsonBytes, err := json.MarshalIndent(createdModel, "", "  ")
-	if err != nil {
-		errorOutput := mapp.MspecError{Message: fmt.Sprintf("error formatting JSON: %v", err), Code: "format_error"}
-		jsonBytes, _ := json.MarshalIndent(errorOutput, "", "  ")
-		fmt.Println(string(jsonBytes))
-		os.Exit(1)
-	}
-	fmt.Println(string(jsonBytes))
+	return createdModel, nil
 }
 
-func CLIReadSingleModel(modelID string) {
+func CLIReadSingleModel(modelID string) (*SingleModel, *mapp.MspecError) {
 	model, mspecErr := HttpReadSingleModel(modelID)
 	if mspecErr != nil {
-		jsonBytes, _ := json.MarshalIndent(mspecErr, "", "  ")
-		fmt.Println(string(jsonBytes))
-		os.Exit(1)
+		return nil, mspecErr
 	}
 
-	jsonBytes, err := json.MarshalIndent(model, "", "  ")
-	if err != nil {
-		errorOutput := mapp.MspecError{Message: fmt.Sprintf("error formatting JSON: %v", err), Code: "format_error"}
-		jsonBytes, _ := json.MarshalIndent(errorOutput, "", "  ")
-		fmt.Println(string(jsonBytes))
-		os.Exit(1)
-	}
-	fmt.Println(string(jsonBytes))
+	return model, nil
 }
 
-func CLIUpdateSingleModel(modelID string, jsonData string) {
+func CLIUpdateSingleModel(modelID string, jsonData string) (*SingleModel, *mapp.MspecError) {
 	model, err := FromJSON(jsonData)
 	if err != nil {
-		errorOutput := mapp.MspecError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
-		jsonBytes, _ := json.MarshalIndent(errorOutput, "", "  ")
-		fmt.Println(string(jsonBytes))
-		os.Exit(1)
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
 	}
 
 	updatedModel, mspecErr := HttpUpdateSingleModel(modelID, model)
 	if mspecErr != nil {
-		jsonBytes, _ := json.MarshalIndent(mspecErr, "", "  ")
-		fmt.Println(string(jsonBytes))
-		os.Exit(1)
+		return nil, mspecErr
 	}
 
-	jsonBytes, err := json.MarshalIndent(updatedModel, "", "  ")
-	if err != nil {
-		errorOutput := mapp.MspecError{Message: fmt.Sprintf("error formatting JSON: %v", err), Code: "format_error"}
-		jsonBytes, _ := json.MarshalIndent(errorOutput, "", "  ")
-		fmt.Println(string(jsonBytes))
-		os.Exit(1)
-	}
-	fmt.Println(string(jsonBytes))
+	return updatedModel, nil
 }
 
-func CLIDeleteSingleModel(modelID string) {
+func CLIDeleteSingleModel(modelID string) (map[string]string, *mapp.MspecError) {
 	mspecErr := HttpDeleteSingleModel(modelID)
 	if mspecErr != nil {
-		jsonBytes, _ := json.MarshalIndent(mspecErr, "", "  ")
-		fmt.Println(string(jsonBytes))
-		os.Exit(1)
+		return nil, mspecErr
 	}
 
 	response := map[string]string{
 		"message": fmt.Sprintf("deleted single model %s", modelID),
 		"id":      modelID,
 	}
-	jsonBytes, _ := json.MarshalIndent(response, "", "  ")
-	fmt.Println(string(jsonBytes))
+	return response, nil
 }
 
-func CLIListSingleModel(offset int, limit int) {
+func CLIListSingleModel(offset int, limit int) (*ListSingleModelResponse, *mapp.MspecError) {
 	listResponse, mspecErr := HttpListSingleModel(offset, limit)
 	if mspecErr != nil {
-		jsonBytes, _ := json.MarshalIndent(mspecErr, "", "  ")
-		fmt.Println(string(jsonBytes))
-		os.Exit(1)
+		return nil, mspecErr
 	}
 
-	jsonBytes, err := json.MarshalIndent(listResponse, "", "  ")
-	if err != nil {
-		errorOutput := mapp.MspecError{Message: fmt.Sprintf("error formatting JSON: %v", err), Code: "format_error"}
-		jsonBytes, _ := json.MarshalIndent(errorOutput, "", "  ")
-		fmt.Println(string(jsonBytes))
-		os.Exit(1)
-	}
-	fmt.Println(string(jsonBytes))
+	return listResponse, nil
 }
