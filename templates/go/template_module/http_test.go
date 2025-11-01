@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/medium-tech/mspec/templates/go/mspec"
+	"github.com/medium-tech/mspec/templates/go/mapp"
 )
 
 // These tests require the Python server to be running at http://localhost:5005
@@ -16,7 +16,7 @@ func TestHttpCreateSingleModel(t *testing.T) {
 		SingleFloat:  3.14,
 		SingleString: "test create",
 		SingleEnum:   "red",
-		SingleDatetime: mspec.DateTime{
+		SingleDatetime: mapp.DateTime{
 			Time: time.Date(2000, 1, 11, 12, 34, 56, 0, time.UTC),
 		},
 	}
@@ -45,7 +45,7 @@ func TestHttpReadSingleModel(t *testing.T) {
 		SingleFloat:  2.71,
 		SingleString: "test read",
 		SingleEnum:   "blue",
-		SingleDatetime: mspec.DateTime{
+		SingleDatetime: mapp.DateTime{
 			Time: time.Date(2000, 1, 11, 12, 34, 56, 0, time.UTC),
 		},
 	}
@@ -94,7 +94,7 @@ func TestHttpUpdateSingleModel(t *testing.T) {
 		SingleFloat:  1.23,
 		SingleString: "test update original",
 		SingleEnum:   "green",
-		SingleDatetime: mspec.DateTime{
+		SingleDatetime: mapp.DateTime{
 			Time: time.Date(2000, 1, 11, 12, 34, 56, 0, time.UTC),
 		},
 	}
@@ -133,7 +133,7 @@ func TestHttpDeleteSingleModel(t *testing.T) {
 		SingleFloat:  9.99,
 		SingleString: "test delete",
 		SingleEnum:   "red",
-		SingleDatetime: mspec.DateTime{
+		SingleDatetime: mapp.DateTime{
 			Time: time.Date(2000, 1, 11, 12, 34, 56, 0, time.UTC),
 		},
 	}
@@ -172,7 +172,7 @@ func TestHttpListSingleModel(t *testing.T) {
 			SingleFloat:  1.5,
 			SingleString: "test list",
 			SingleEnum:   "red",
-			SingleDatetime: mspec.DateTime{
+			SingleDatetime: mapp.DateTime{
 				Time: time.Date(2000, 1, 11, 12, 34, 56, 0, time.UTC),
 			},
 		}

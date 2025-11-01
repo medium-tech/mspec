@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/medium-tech/mspec/templates/go/mspec"
+	"github.com/medium-tech/mspec/templates/go/mapp"
 )
 
 //
@@ -128,7 +128,7 @@ func TestToJSON(t *testing.T) {
 		SingleFloat:  3.14,
 		SingleString: "test",
 		SingleEnum:   "red",
-		SingleDatetime: mspec.DateTime{
+		SingleDatetime: mapp.DateTime{
 			Time: time.Date(2000, 1, 11, 12, 34, 56, 0, time.UTC),
 		},
 	}

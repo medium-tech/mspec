@@ -1,4 +1,4 @@
-package mspec
+package mapp
 
 import (
 	"fmt"
