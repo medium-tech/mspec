@@ -412,22 +412,22 @@ func CLIParseSingleModelHttp(args []string) (interface{}, *mapp.MspecError) {
 		if len(args) < 5 {
 			return nil, &mapp.MspecError{Message: "missing JSON string for create", Code: "missing_argument"}
 		}
-		return CLICreateSingleModel(ctx, args[4])
+		return CLICreateSingleModel("http", ctx, args[4])
 	case "read":
 		if len(args) < 5 {
 			return nil, &mapp.MspecError{Message: "missing model ID for read", Code: "missing_argument"}
 		}
-		return CLIReadSingleModel(ctx, args[4])
+		return CLIReadSingleModel("http", ctx, args[4])
 	case "update":
 		if len(args) < 6 {
 			return nil, &mapp.MspecError{Message: "missing model ID or JSON string for update", Code: "missing_argument"}
 		}
-		return CLIUpdateSingleModel(ctx, args[4], args[5])
+		return CLIUpdateSingleModel("http", ctx, args[4], args[5])
 	case "delete":
 		if len(args) < 5 {
 			return nil, &mapp.MspecError{Message: "missing model ID for delete", Code: "missing_argument"}
 		}
-		return CLIDeleteSingleModel(ctx, args[4])
+		return CLIDeleteSingleModel("http", ctx, args[4])
 	case "list":
 		offset := 0
 		limit := 50
@@ -445,7 +445,7 @@ func CLIParseSingleModelHttp(args []string) (interface{}, *mapp.MspecError) {
 				}
 			}
 		}
-		return CLIListSingleModel(ctx, offset, limit)
+		return CLIListSingleModel("http", ctx, offset, limit)
 	default:
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("unknown action '%s'", action), Code: "unknown_action"}
 	}
@@ -454,6 +454,8 @@ func CLIParseSingleModelHttp(args []string) (interface{}, *mapp.MspecError) {
 func CLIParseSingleModelDb(args []string) (interface{}, *mapp.MspecError) {
 	action := args[3]
 
+	ctx := mapp.ContextFromEnv()
+
 	switch action {
 	case "create-table":
 		return CLIDbCreateTableSingleModel()
@@ -461,22 +463,22 @@ func CLIParseSingleModelDb(args []string) (interface{}, *mapp.MspecError) {
 		if len(args) < 5 {
 			return nil, &mapp.MspecError{Message: "missing JSON string for create", Code: "missing_argument"}
 		}
-		return CLIDbCreateSingleModel(args[4])
+		return CLICreateSingleModel("db", ctx, args[4])
 	case "read":
 		if len(args) < 5 {
 			return nil, &mapp.MspecError{Message: "missing model ID for read", Code: "missing_argument"}
 		}
-		return CLIDbReadSingleModel(args[4])
+		return CLIReadSingleModel("db", ctx, args[4])
 	case "update":
 		if len(args) < 6 {
 			return nil, &mapp.MspecError{Message: "missing model ID or JSON string for update", Code: "missing_argument"}
 		}
-		return CLIDbUpdateSingleModel(args[4], args[5])
+		return CLIUpdateSingleModel("db", ctx, args[4], args[5])
 	case "delete":
 		if len(args) < 5 {
 			return nil, &mapp.MspecError{Message: "missing model ID for delete", Code: "missing_argument"}
 		}
-		return CLIDbDeleteSingleModel(args[4])
+		return CLIDeleteSingleModel("db", ctx, args[4])
 	case "list":
 		offset := 0
 		limit := 50
@@ -494,19 +496,27 @@ func CLIParseSingleModelDb(args []string) (interface{}, *mapp.MspecError) {
 				}
 			}
 		}
-		return CLIDbListSingleModel(offset, limit)
+		return CLIListSingleModel("db", ctx, offset, limit)
 	default:
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("unknown action '%s'", action), Code: "unknown_action"}
 	}
 }
 
-func CLICreateSingleModel(ctx *mapp.Context, jsonData string) (*SingleModel, *mapp.MspecError) {
+func CLICreateSingleModel(protocol string, ctx *mapp.Context, jsonData string) (*SingleModel, *mapp.MspecError) {
 	model, err := FromJSON(jsonData)
 	if err != nil {
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
 	}
 
-	createdModel, mspecErr := HttpCreateSingleModel(ctx, model)
+	var createdModel *SingleModel
+	var mspecErr *mapp.MspecError
+
+	if protocol == "http" {
+		createdModel, mspecErr = HttpCreateSingleModel(ctx, model)
+	} else {
+		createdModel, mspecErr = DBCreateSingleModel(model)
+	}
+
 	if mspecErr != nil {
 		return nil, mspecErr
 	}
@@ -514,8 +524,16 @@ func CLICreateSingleModel(ctx *mapp.Context, jsonData string) (*SingleModel, *ma
 	return createdModel, nil
 }
 
-func CLIReadSingleModel(ctx *mapp.Context, modelID string) (*SingleModel, *mapp.MspecError) {
-	model, mspecErr := HttpReadSingleModel(ctx, modelID)
+func CLIReadSingleModel(protocol string, ctx *mapp.Context, modelID string) (*SingleModel, *mapp.MspecError) {
+	var model *SingleModel
+	var mspecErr *mapp.MspecError
+
+	if protocol == "http" {
+		model, mspecErr = HttpReadSingleModel(ctx, modelID)
+	} else {
+		model, mspecErr = DBReadSingleModel(modelID)
+	}
+
 	if mspecErr != nil {
 		return nil, mspecErr
 	}
@@ -523,13 +541,21 @@ func CLIReadSingleModel(ctx *mapp.Context, modelID string) (*SingleModel, *mapp.
 	return model, nil
 }
 
-func CLIUpdateSingleModel(ctx *mapp.Context, modelID string, jsonData string) (*SingleModel, *mapp.MspecError) {
+func CLIUpdateSingleModel(protocol string, ctx *mapp.Context, modelID string, jsonData string) (*SingleModel, *mapp.MspecError) {
 	model, err := FromJSON(jsonData)
 	if err != nil {
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
 	}
 
-	updatedModel, mspecErr := HttpUpdateSingleModel(ctx, modelID, model)
+	var updatedModel *SingleModel
+	var mspecErr *mapp.MspecError
+
+	if protocol == "http" {
+		updatedModel, mspecErr = HttpUpdateSingleModel(ctx, modelID, model)
+	} else {
+		updatedModel, mspecErr = DBUpdateSingleModel(modelID, model)
+	}
+
 	if mspecErr != nil {
 		return nil, mspecErr
 	}
@@ -537,8 +563,15 @@ func CLIUpdateSingleModel(ctx *mapp.Context, modelID string, jsonData string) (*
 	return updatedModel, nil
 }
 
-func CLIDeleteSingleModel(ctx *mapp.Context, modelID string) (map[string]string, *mapp.MspecError) {
-	mspecErr := HttpDeleteSingleModel(ctx, modelID)
+func CLIDeleteSingleModel(protocol string, ctx *mapp.Context, modelID string) (map[string]string, *mapp.MspecError) {
+	var mspecErr *mapp.MspecError
+
+	if protocol == "http" {
+		mspecErr = HttpDeleteSingleModel(ctx, modelID)
+	} else {
+		mspecErr = DBDeleteSingleModel(modelID)
+	}
+
 	if mspecErr != nil {
 		return nil, mspecErr
 	}
@@ -550,8 +583,16 @@ func CLIDeleteSingleModel(ctx *mapp.Context, modelID string) (map[string]string,
 	return response, nil
 }
 
-func CLIListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleModelResponse, *mapp.MspecError) {
-	listResponse, mspecErr := HttpListSingleModel(ctx, offset, limit)
+func CLIListSingleModel(protocol string, ctx *mapp.Context, offset int, limit int) (*ListSingleModelResponse, *mapp.MspecError) {
+	var listResponse *ListSingleModelResponse
+	var mspecErr *mapp.MspecError
+
+	if protocol == "http" {
+		listResponse, mspecErr = HttpListSingleModel(ctx, offset, limit)
+	} else {
+		listResponse, mspecErr = DBListSingleModel(offset, limit)
+	}
+
 	if mspecErr != nil {
 		return nil, mspecErr
 	}
@@ -560,7 +601,7 @@ func CLIListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleMo
 }
 
 //
-// DB CLI wrappers
+// DB-specific CLI wrappers
 //
 
 func CLIDbCreateTableSingleModel() (map[string]string, *mapp.MspecError) {
@@ -570,63 +611,4 @@ func CLIDbCreateTableSingleModel() (map[string]string, *mapp.MspecError) {
 	}
 
 	return response, nil
-}
-
-func CLIDbCreateSingleModel(jsonData string) (*SingleModel, *mapp.MspecError) {
-	model, err := FromJSON(jsonData)
-	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
-	}
-
-	createdModel, mspecErr := DBCreateSingleModel(model)
-	if mspecErr != nil {
-		return nil, mspecErr
-	}
-
-	return createdModel, nil
-}
-
-func CLIDbReadSingleModel(modelID string) (*SingleModel, *mapp.MspecError) {
-	model, mspecErr := DBReadSingleModel(modelID)
-	if mspecErr != nil {
-		return nil, mspecErr
-	}
-
-	return model, nil
-}
-
-func CLIDbUpdateSingleModel(modelID string, jsonData string) (*SingleModel, *mapp.MspecError) {
-	model, err := FromJSON(jsonData)
-	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
-	}
-
-	updatedModel, mspecErr := DBUpdateSingleModel(modelID, model)
-	if mspecErr != nil {
-		return nil, mspecErr
-	}
-
-	return updatedModel, nil
-}
-
-func CLIDbDeleteSingleModel(modelID string) (map[string]string, *mapp.MspecError) {
-	mspecErr := DBDeleteSingleModel(modelID)
-	if mspecErr != nil {
-		return nil, mspecErr
-	}
-
-	response := map[string]string{
-		"message": fmt.Sprintf("deleted single model %s", modelID),
-		"id":      modelID,
-	}
-	return response, nil
-}
-
-func CLIDbListSingleModel(offset int, limit int) (*ListSingleModelResponse, *mapp.MspecError) {
-	listResponse, mspecErr := DBListSingleModel(offset, limit)
-	if mspecErr != nil {
-		return nil, mspecErr
-	}
-
-	return listResponse, nil
 }
