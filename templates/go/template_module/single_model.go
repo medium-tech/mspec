@@ -391,16 +391,24 @@ func DBListSingleModel(offset int, limit int) (*ListSingleModelResponse, *mapp.M
 func CLIParseSingleModel(args []string) (interface{}, *mapp.MspecError) {
 
 	command := args[2]
-	action := args[3]
 
 	ctx := mapp.ContextFromEnv()
 
 	switch command {
 	case "http", "db":
 		// Validate command is supported
+	case "help":
+		printSingleModelHelp()
+		return nil, nil
 	default:
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("unknown command '%s'", command), Code: "unknown_command"}
 	}
+
+	if len(args) < 4 {
+		return nil, &mapp.MspecError{Message: "missing action argument", Code: "missing_argument"}
+	}
+
+	action := args[3]
 
 	switch action {
 	case "create-table":
@@ -568,7 +576,7 @@ func CLIDbCreateTableSingleModel() (map[string]string, *mapp.MspecError) {
 // help menu
 //
 
-func PrintSingleModelHelp() {
+func printSingleModelHelp() {
 	fmt.Println(`Single Model Help
 
 The single-model supports CRUD operations via HTTP or database commands.

@@ -30,41 +30,8 @@ func main() {
 
 	module := args[0]
 
-	// Module-level help
-	if len(args) >= 2 && args[1] == "help" {
-		switch module {
-		case "template-module":
-			printTemplateModuleHelp()
-		default:
-			fmt.Fprintf(os.Stderr, "Error: unknown module '%s'\n", module)
-			os.Exit(1)
-		}
-		return
-	}
-
-	// Model-level help
-	if len(args) >= 2 {
-		model := args[1]
-		if len(args) == 2 || (len(args) >= 3 && args[2] == "help") {
-			switch module {
-			case "template-module":
-				switch model {
-				case "single-model":
-					template_module.PrintSingleModelHelp()
-				default:
-					fmt.Fprintf(os.Stderr, "Error: unknown model type '%s'\n", model)
-					os.Exit(1)
-				}
-			default:
-				fmt.Fprintf(os.Stderr, "Error: unknown module '%s'\n", module)
-				os.Exit(1)
-			}
-			return
-		}
-	}
-
-	// Require at least 4 args for actual commands
-	if len(args) < 4 {
+	// Require at least 3 args for actual commands
+	if len(args) < 3 {
 		fmt.Fprintln(os.Stderr, "Error: insufficient arguments")
 		printHelp()
 		os.Exit(1)
@@ -79,6 +46,9 @@ func main() {
 		switch model {
 		case "single-model":
 			result, err = template_module.CLIParseSingleModel(args)
+		case "help":
+			printTemplateModuleHelp()
+			os.Exit(0)
 		default:
 			err = &mapp.MspecError{Message: fmt.Sprintf("unknown model type '%s'", model), Code: "unknown_model"}
 		}
@@ -94,14 +64,16 @@ func main() {
 	}
 
 	// Pretty print result
-	jsonBytes, marshalErr := json.MarshalIndent(result, "", "  ")
-	if marshalErr != nil {
-		errorOutput := mapp.MspecError{Message: fmt.Sprintf("error formatting JSON: %v", marshalErr), Code: "format_error"}
-		jsonBytes, _ := json.MarshalIndent(errorOutput, "", "  ")
+	if result != nil {
+		jsonBytes, marshalErr := json.MarshalIndent(result, "", "  ")
+		if marshalErr != nil {
+			errorOutput := mapp.MspecError{Message: fmt.Sprintf("error formatting JSON: %v", marshalErr), Code: "format_error"}
+			jsonBytes, _ := json.MarshalIndent(errorOutput, "", "  ")
+			fmt.Println(string(jsonBytes))
+			os.Exit(1)
+		}
 		fmt.Println(string(jsonBytes))
-		os.Exit(1)
 	}
-	fmt.Println(string(jsonBytes))
 }
 
 //
