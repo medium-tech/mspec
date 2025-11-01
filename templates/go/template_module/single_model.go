@@ -551,7 +551,9 @@ func CLIListSingleModel(command string, ctx *mapp.Context, offset int, limit int
 	return listResponse, nil
 }
 
+//
 // DB-specific CLI wrappers
+//
 
 func CLIDbCreateTableSingleModel() (map[string]string, *mapp.MspecError) {
 	response, mspecErr := DBCreateTableSingleModel()
@@ -560,4 +562,73 @@ func CLIDbCreateTableSingleModel() (map[string]string, *mapp.MspecError) {
 	}
 
 	return response, nil
+}
+
+//
+// help menu
+//
+
+func PrintSingleModelHelp() {
+	fmt.Println(`Single Model Help
+
+The single-model supports CRUD operations via HTTP or database commands.
+
+Available commands:
+  http    Interact with the model via HTTP API
+  db      Interact with the model via local SQLite database
+
+Usage:
+  ./main template-module single-model <command> <action> [args]
+
+HTTP Commands:
+  ./main template-module single-model http create <json>
+      Creates a single model on the remote server via HTTP.
+
+  ./main template-module single-model http read <model_id>
+      Reads a single model from the remote server via HTTP.
+
+  ./main template-module single-model http update <model_id> <json>
+      Updates a single model on the remote server via HTTP.
+
+  ./main template-module single-model http delete <model_id>
+      Deletes a single model from the remote server via HTTP.
+
+  ./main template-module single-model http list [--offset=N] [--limit=N]
+      Lists models from the remote server via HTTP with optional pagination.
+
+Database Commands:
+  ./main template-module single-model db create-table
+      Creates the single_model table in the local SQLite database.
+
+  ./main template-module single-model db create <json>
+      Creates a single model in the local SQLite database.
+
+  ./main template-module single-model db read <model_id>
+      Reads a single model from the local SQLite database.
+
+  ./main template-module single-model db update <model_id> <json>
+      Updates a single model in the local SQLite database.
+
+  ./main template-module single-model db delete <model_id>
+      Deletes a single model from the local SQLite database.
+
+  ./main template-module single-model db list [--offset=N] [--limit=N]
+      Lists models from the local SQLite database with optional pagination.
+
+Model JSON Format:
+  {
+    "single_bool": true,
+    "single_int": 42,
+    "single_float": 3.14,
+    "single_string": "example text",
+    "single_enum": "red|green|blue",
+    "single_datetime": "2000-01-11T12:34:56"
+  }
+
+Examples:
+  ./main template-module single-model http create '{"single_bool":true,"single_int":42,"single_float":3.14,"single_string":"test","single_enum":"red","single_datetime":"2024-01-01T10:00:00"}'
+  ./main template-module single-model http read 123
+  ./main template-module single-model http list --offset=0 --limit=10
+  ./main template-module single-model db create-table
+  ./main template-module single-model db list`)
 }

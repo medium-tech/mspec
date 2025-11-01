@@ -22,18 +22,54 @@ func main() {
 		os.Exit(1)
 	}
 
-	if args[0] == "-h" || args[0] == "--help" {
+	// Global help
+	if args[0] == "-h" || args[0] == "--help" || args[0] == "help" {
 		printHelp()
 		return
 	}
 
+	module := args[0]
+
+	// Module-level help
+	if len(args) >= 2 && args[1] == "help" {
+		switch module {
+		case "template-module":
+			printTemplateModuleHelp()
+		default:
+			fmt.Fprintf(os.Stderr, "Error: unknown module '%s'\n", module)
+			os.Exit(1)
+		}
+		return
+	}
+
+	// Model-level help
+	if len(args) >= 2 {
+		model := args[1]
+		if len(args) == 2 || (len(args) >= 3 && args[2] == "help") {
+			switch module {
+			case "template-module":
+				switch model {
+				case "single-model":
+					template_module.PrintSingleModelHelp()
+				default:
+					fmt.Fprintf(os.Stderr, "Error: unknown model type '%s'\n", model)
+					os.Exit(1)
+				}
+			default:
+				fmt.Fprintf(os.Stderr, "Error: unknown module '%s'\n", module)
+				os.Exit(1)
+			}
+			return
+		}
+	}
+
+	// Require at least 4 args for actual commands
 	if len(args) < 4 {
 		fmt.Fprintln(os.Stderr, "Error: insufficient arguments")
 		printHelp()
 		os.Exit(1)
 	}
 
-	module := args[0]
 	var result interface{}
 	var err *mapp.MspecError
 
@@ -74,39 +110,37 @@ func main() {
 
 func printHelp() {
 	fmt.Println(`Usage:
-  ./main -h | --help
-      Displays the help information.
+  ./main -h | --help | help
+      Displays this global help information.
 
-  ./main template-module single-model http create [<json string of model>]
-      Creates a single model based on the provided JSON string on remote server via HTTP.
+  ./main <module> help
+      Displays help for a specific module.
 
-  ./main template-module single-model http read [<model id>]
-      Reads a single model based on the provided model ID from remote server via HTTP.
+  ./main <module> <model>
+      Displays help for a specific model.
 
-  ./main template-module single-model http update [<model id>] [<json string of updated model>]
-      Updates a single model based on the provided model ID and JSON string on remote server via HTTP.
+Available modules:
+  template-module    Example module with CRUD operations
 
-  ./main template-module single-model http delete [<model id>]
-      Deletes a single model based on the provided model ID from remote server via HTTP.
+Examples:
+  ./main template-module help
+  ./main template-module single-model
+  ./main template-module single-model http create '{"single_bool":true,...}'`)
+}
 
-  ./main template-module single-model http list [--offset=<offset> default:0] [--limit=<limit> default:50]
-      Lists models with optional pagination parameters.
+func printTemplateModuleHelp() {
+	fmt.Println(`Template Module Help
 
-  ./main template-module single-model db create-table
-      Creates the single_model table in the local SQLite database.
+The template-module provides example CRUD operations for data models.
 
-  ./main template-module single-model db create [<json string of model>]
-      Creates a single model in the local SQLite database.
+Available models:
+  single-model    A model with single-value fields (bool, int, float, string, enum, datetime)
 
-  ./main template-module single-model db read [<model id>]
-      Reads a single model from the local SQLite database.
+Usage:
+  ./main template-module <model>              Show model-specific help
+  ./main template-module <model> <command>    Execute a command
 
-  ./main template-module single-model db update [<model id>] [<json string of updated model>]
-      Updates a single model in the local SQLite database.
-
-  ./main template-module single-model db delete [<model id>]
-      Deletes a single model from the local SQLite database.
-
-  ./main template-module single-model db list [--offset=<offset> default:0] [--limit=<limit> default:50]
-      Lists models from the local SQLite database with optional pagination parameters.`)
+Examples:
+  ./main template-module single-model         Show single-model help
+  ./main template-module single-model help    Show single-model help`)
 }
