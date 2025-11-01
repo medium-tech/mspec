@@ -46,8 +46,8 @@ func TestCLI_Help(t *testing.T) {
 	if !strings.Contains(output, "Usage:") {
 		t.Error("Help output doesn't contain 'Usage:'")
 	}
-	if !strings.Contains(output, "http create single-model") {
-		t.Error("Help output doesn't contain 'http create single-model'")
+	if !strings.Contains(output, "template-module single-model http create") {
+		t.Error("Help output doesn't contain 'template-module single-model http create'")
 	}
 }
 
@@ -69,7 +69,7 @@ func TestCLI_CreateSingleModel(t *testing.T) {
 
 	jsonInput := `{"single_bool":false,"single_int":42,"single_float":3.14,"single_string":"cli test","single_enum":"red","single_datetime":"2000-01-11T12:34:56"}`
 
-	output, exitCode := runCLI(t, "http", "create", "single-model", jsonInput)
+	output, exitCode := runCLI(t, "template-module", "single-model", "http", "create", jsonInput)
 
 	if exitCode != 0 {
 		t.Errorf("Expected exit code 0, got %d. Output: %s", exitCode, output)
@@ -100,7 +100,7 @@ func TestCLI_CreateSingleModel(t *testing.T) {
 func TestCLI_CreateSingleModel_InvalidJSON(t *testing.T) {
 	buildBinary(t)
 
-	output, exitCode := runCLI(t, "http", "create", "single-model", "{invalid json}")
+	output, exitCode := runCLI(t, "template-module", "single-model", "http", "create", "{invalid json}")
 
 	if exitCode == 0 {
 		t.Error("Expected non-zero exit code for invalid JSON")
@@ -130,7 +130,7 @@ func TestCLI_CreateSingleModel_MissingRequiredField(t *testing.T) {
 
 	jsonInput := `{"single_int":42}` // missing required fields
 
-	output, exitCode := runCLI(t, "http", "create", "single-model", jsonInput)
+	output, exitCode := runCLI(t, "template-module", "single-model", "http", "create", jsonInput)
 
 	if exitCode == 0 {
 		t.Error("Expected non-zero exit code for missing required fields")
@@ -151,7 +151,7 @@ func TestCLI_CreateSingleModel_MissingRequiredField(t *testing.T) {
 func TestCLI_ReadSingleModel_NotFound(t *testing.T) {
 	buildBinary(t)
 
-	output, exitCode := runCLI(t, "http", "read", "single-model", "nonexistent-id-99999")
+	output, exitCode := runCLI(t, "template-module", "single-model", "http", "read", "nonexistent-id-99999")
 
 	if exitCode == 0 {
 		t.Error("Expected non-zero exit code for not found")
@@ -175,7 +175,7 @@ func TestCLI_ReadSingleModel_NotFound(t *testing.T) {
 func TestCLI_ListSingleModel(t *testing.T) {
 	buildBinary(t)
 
-	output, exitCode := runCLI(t, "http", "list", "single-model", "--offset=0", "--limit=5")
+	output, exitCode := runCLI(t, "template-module", "single-model", "http", "list", "--offset=0", "--limit=5")
 
 	if exitCode != 0 {
 		t.Errorf("Expected exit code 0, got %d. Output: %s", exitCode, output)
@@ -211,7 +211,7 @@ func TestCLI_DeleteSingleModel(t *testing.T) {
 
 	// First create a model to delete
 	jsonInput := `{"single_bool":true,"single_int":999,"single_float":1.1,"single_string":"delete me","single_enum":"blue","single_datetime":"2000-01-11T12:34:56"}`
-	createOutput, exitCode := runCLI(t, "http", "create", "single-model", jsonInput)
+	createOutput, exitCode := runCLI(t, "template-module", "single-model", "http", "create", jsonInput)
 
 	if exitCode != 0 {
 		t.Fatalf("Failed to create model: %s", createOutput)
@@ -222,7 +222,7 @@ func TestCLI_DeleteSingleModel(t *testing.T) {
 	modelID := created["id"].(string)
 
 	// Delete it
-	output, exitCode := runCLI(t, "http", "delete", "single-model", modelID)
+	output, exitCode := runCLI(t, "template-module", "single-model", "http", "delete", modelID)
 
 	if exitCode != 0 {
 		t.Errorf("Expected exit code 0, got %d. Output: %s", exitCode, output)
@@ -252,7 +252,7 @@ func TestCLI_UpdateSingleModel(t *testing.T) {
 
 	// First create a model to update
 	jsonInput := `{"single_bool":true,"single_int":100,"single_float":2.2,"single_string":"original","single_enum":"green","single_datetime":"2000-01-11T12:34:56"}`
-	createOutput, exitCode := runCLI(t, "http", "create", "single-model", jsonInput)
+	createOutput, exitCode := runCLI(t, "template-module", "single-model", "http", "create", jsonInput)
 
 	if exitCode != 0 {
 		t.Fatalf("Failed to create model: %s", createOutput)
@@ -264,7 +264,7 @@ func TestCLI_UpdateSingleModel(t *testing.T) {
 
 	// Update it
 	updateInput := `{"single_bool":false,"single_int":200,"single_float":3.3,"single_string":"updated","single_enum":"red","single_datetime":"2000-01-11T12:34:56"}`
-	output, exitCode := runCLI(t, "http", "update", "single-model", modelID, updateInput)
+	output, exitCode := runCLI(t, "template-module", "single-model", "http", "update", modelID, updateInput)
 
 	if exitCode != 0 {
 		t.Errorf("Expected exit code 0, got %d. Output: %s", exitCode, output)
