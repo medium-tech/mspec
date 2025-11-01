@@ -101,81 +101,81 @@ func FromJSON(jsonStr string) (*SingleModel, error) {
 
 const DefaultHost = "http://localhost:5005"
 
-func HttpCreateSingleModel(model *SingleModel) (*SingleModel, error) {
+func HttpCreateSingleModel(model *SingleModel) (*SingleModel, *mspec.MspecError) {
 	// Convert to JSON for request
 	requestBody, err := json.Marshal(model)
 	if err != nil {
-		return nil, fmt.Errorf("error marshaling JSON: %w", err)
+		return nil, &mspec.MspecError{Message: fmt.Sprintf("error marshaling JSON: %v", err), Code: "marshal_error"}
 	}
 
 	// Make HTTP request
 	url := DefaultHost + "/api/template-module/single-model"
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, fmt.Errorf("error creating single model: %w", err)
+		return nil, &mspec.MspecError{Message: fmt.Sprintf("error creating single model: %v", err), Code: "http_error"}
 	}
 	defer resp.Body.Close()
 
 	// Handle HTTP errors
 	if resp.StatusCode == 401 {
-		return nil, fmt.Errorf("authentication error")
+		return nil, &mspec.MspecError{Message: "authentication error", Code: "authentication_error"}
 	} else if resp.StatusCode == 403 {
-		return nil, fmt.Errorf("forbidden")
+		return nil, &mspec.MspecError{Message: "forbidden", Code: "forbidden"}
 	} else if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(body))
+		return nil, &mspec.MspecError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
 	}
 
 	// Parse response
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
+		return nil, &mspec.MspecError{Message: fmt.Sprintf("error reading response: %v", err), Code: "read_error"}
 	}
 
 	createdModel, err := FromJSON(string(responseBody))
 	if err != nil {
-		return nil, fmt.Errorf("error parsing response: %w", err)
+		return nil, &mspec.MspecError{Message: fmt.Sprintf("error parsing response: %v", err), Code: "parse_error"}
 	}
 
 	return createdModel, nil
 }
 
-func HttpReadSingleModel(modelID string) (*SingleModel, error) {
+func HttpReadSingleModel(modelID string) (*SingleModel, *mspec.MspecError) {
 	url := DefaultHost + "/api/template-module/single-model/" + modelID
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("error reading single model: %w", err)
+		return nil, &mspec.MspecError{Message: fmt.Sprintf("error reading single model: %v", err), Code: "http_error"}
 	}
 	defer resp.Body.Close()
 
 	// Handle HTTP errors
 	if resp.StatusCode == 401 {
-		return nil, fmt.Errorf("authentication error")
+		return nil, &mspec.MspecError{Message: "authentication error", Code: "authentication_error"}
 	} else if resp.StatusCode == 403 {
-		return nil, fmt.Errorf("forbidden")
+		return nil, &mspec.MspecError{Message: "forbidden", Code: "forbidden"}
 	} else if resp.StatusCode == 404 {
-		return nil, fmt.Errorf("single model %s not found", modelID)
+		return nil, &mspec.MspecError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
 	} else if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(body))
+		return nil, &mspec.MspecError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
 	}
 
 	// Parse response
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
+		return nil, &mspec.MspecError{Message: fmt.Sprintf("error reading response: %v", err), Code: "read_error"}
 	}
 
 	model, err := FromJSON(string(responseBody))
 	if err != nil {
-		return nil, fmt.Errorf("error parsing response: %w", err)
+		return nil, &mspec.MspecError{Message: fmt.Sprintf("error parsing response: %v", err), Code: "parse_error"}
 	}
 
 	return model, nil
 }
 
-func HttpUpdateSingleModel(modelID string, model *SingleModel) (*SingleModel, error) {
+func HttpUpdateSingleModel(modelID string, model *SingleModel) (*SingleModel, *mspec.MspecError) {
 	// Set the ID if not already set
 	if model.ID == nil {
 		model.ID = &modelID
@@ -184,75 +184,75 @@ func HttpUpdateSingleModel(modelID string, model *SingleModel) (*SingleModel, er
 	// Convert to JSON for request
 	requestBody, err := json.Marshal(model)
 	if err != nil {
-		return nil, fmt.Errorf("error marshaling JSON: %w", err)
+		return nil, &mspec.MspecError{Message: fmt.Sprintf("error marshaling JSON: %v", err), Code: "marshal_error"}
 	}
 
 	// Make HTTP request
 	url := DefaultHost + "/api/template-module/single-model/" + modelID
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
+		return nil, &mspec.MspecError{Message: fmt.Sprintf("error creating request: %v", err), Code: "request_error"}
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error updating single model: %w", err)
+		return nil, &mspec.MspecError{Message: fmt.Sprintf("error updating single model: %v", err), Code: "http_error"}
 	}
 	defer resp.Body.Close()
 
 	// Handle HTTP errors
 	if resp.StatusCode == 401 {
-		return nil, fmt.Errorf("authentication error")
+		return nil, &mspec.MspecError{Message: "authentication error", Code: "authentication_error"}
 	} else if resp.StatusCode == 403 {
-		return nil, fmt.Errorf("forbidden")
+		return nil, &mspec.MspecError{Message: "forbidden", Code: "forbidden"}
 	} else if resp.StatusCode == 404 {
-		return nil, fmt.Errorf("single model %s not found", modelID)
+		return nil, &mspec.MspecError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
 	} else if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(body))
+		return nil, &mspec.MspecError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
 	}
 
 	// Parse response
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
+		return nil, &mspec.MspecError{Message: fmt.Sprintf("error reading response: %v", err), Code: "read_error"}
 	}
 
 	updatedModel, err := FromJSON(string(responseBody))
 	if err != nil {
-		return nil, fmt.Errorf("error parsing response: %w", err)
+		return nil, &mspec.MspecError{Message: fmt.Sprintf("error parsing response: %v", err), Code: "parse_error"}
 	}
 
 	return updatedModel, nil
 }
 
-func HttpDeleteSingleModel(modelID string) error {
+func HttpDeleteSingleModel(modelID string) *mspec.MspecError {
 	url := DefaultHost + "/api/template-module/single-model/" + modelID
 
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
-		return fmt.Errorf("error creating request: %w", err)
+		return &mspec.MspecError{Message: fmt.Sprintf("error creating request: %v", err), Code: "request_error"}
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("error deleting single model: %w", err)
+		return &mspec.MspecError{Message: fmt.Sprintf("error deleting single model: %v", err), Code: "http_error"}
 	}
 	defer resp.Body.Close()
 
 	// Handle HTTP errors
 	if resp.StatusCode == 401 {
-		return fmt.Errorf("authentication error")
+		return &mspec.MspecError{Message: "authentication error", Code: "authentication_error"}
 	} else if resp.StatusCode == 403 {
-		return fmt.Errorf("forbidden")
+		return &mspec.MspecError{Message: "forbidden", Code: "forbidden"}
 	} else if resp.StatusCode == 404 {
-		return fmt.Errorf("single model %s not found", modelID)
+		return &mspec.MspecError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
 	} else if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(body))
+		return &mspec.MspecError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
 	}
 
 	return nil
@@ -263,35 +263,35 @@ type ListSingleModelResponse struct {
 	Items []SingleModel `json:"items"`
 }
 
-func HttpListSingleModel(offset int, limit int) (*ListSingleModelResponse, error) {
+func HttpListSingleModel(offset int, limit int) (*ListSingleModelResponse, *mspec.MspecError) {
 	url := fmt.Sprintf("%s/api/template-module/single-model?offset=%d&limit=%d", DefaultHost, offset, limit)
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("error listing single models: %w", err)
+		return nil, &mspec.MspecError{Message: fmt.Sprintf("error listing single models: %v", err), Code: "http_error"}
 	}
 	defer resp.Body.Close()
 
 	// Handle HTTP errors
 	if resp.StatusCode == 401 {
-		return nil, fmt.Errorf("authentication error")
+		return nil, &mspec.MspecError{Message: "authentication error", Code: "authentication_error"}
 	} else if resp.StatusCode == 403 {
-		return nil, fmt.Errorf("forbidden")
+		return nil, &mspec.MspecError{Message: "forbidden", Code: "forbidden"}
 	} else if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(body))
+		return nil, &mspec.MspecError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
 	}
 
 	// Parse response
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
+		return nil, &mspec.MspecError{Message: fmt.Sprintf("error reading response: %v", err), Code: "read_error"}
 	}
 
 	var listResponse ListSingleModelResponse
 	err = json.Unmarshal(responseBody, &listResponse)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing response: %w", err)
+		return nil, &mspec.MspecError{Message: fmt.Sprintf("error parsing response: %v", err), Code: "parse_error"}
 	}
 
 	return &listResponse, nil
@@ -304,37 +304,44 @@ func HttpListSingleModel(offset int, limit int) (*ListSingleModelResponse, error
 func CLICreateSingleModel(jsonData string) {
 	model, err := FromJSON(jsonData)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing JSON: %v\n", err)
+		errorOutput := mspec.MspecError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
+		jsonBytes, _ := json.MarshalIndent(errorOutput, "", "  ")
+		fmt.Println(string(jsonBytes))
 		os.Exit(1)
 	}
 
-	createdModel, err := HttpCreateSingleModel(model)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error creating single model: %v\n", err)
+	createdModel, mspecErr := HttpCreateSingleModel(model)
+	if mspecErr != nil {
+		jsonBytes, _ := json.MarshalIndent(mspecErr, "", "  ")
+		fmt.Println(string(jsonBytes))
 		os.Exit(1)
 	}
 
 	// Pretty print JSON
 	jsonBytes, err := json.MarshalIndent(createdModel, "", "  ")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error formatting JSON: %v\n", err)
+		errorOutput := mspec.MspecError{Message: fmt.Sprintf("error formatting JSON: %v", err), Code: "format_error"}
+		jsonBytes, _ := json.MarshalIndent(errorOutput, "", "  ")
+		fmt.Println(string(jsonBytes))
 		os.Exit(1)
 	}
-	fmt.Println("Created:")
 	fmt.Println(string(jsonBytes))
 }
 
 func CLIReadSingleModel(modelID string) {
-	model, err := HttpReadSingleModel(modelID)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading single model: %v\n", err)
+	model, mspecErr := HttpReadSingleModel(modelID)
+	if mspecErr != nil {
+		jsonBytes, _ := json.MarshalIndent(mspecErr, "", "  ")
+		fmt.Println(string(jsonBytes))
 		os.Exit(1)
 	}
 
 	// Pretty print JSON
 	jsonBytes, err := json.MarshalIndent(model, "", "  ")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error formatting JSON: %v\n", err)
+		errorOutput := mspec.MspecError{Message: fmt.Sprintf("error formatting JSON: %v", err), Code: "format_error"}
+		jsonBytes, _ := json.MarshalIndent(errorOutput, "", "  ")
+		fmt.Println(string(jsonBytes))
 		os.Exit(1)
 	}
 	fmt.Println(string(jsonBytes))
@@ -343,47 +350,61 @@ func CLIReadSingleModel(modelID string) {
 func CLIUpdateSingleModel(modelID string, jsonData string) {
 	model, err := FromJSON(jsonData)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing JSON: %v\n", err)
+		errorOutput := mspec.MspecError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
+		jsonBytes, _ := json.MarshalIndent(errorOutput, "", "  ")
+		fmt.Println(string(jsonBytes))
 		os.Exit(1)
 	}
 
-	updatedModel, err := HttpUpdateSingleModel(modelID, model)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error updating single model: %v\n", err)
+	updatedModel, mspecErr := HttpUpdateSingleModel(modelID, model)
+	if mspecErr != nil {
+		jsonBytes, _ := json.MarshalIndent(mspecErr, "", "  ")
+		fmt.Println(string(jsonBytes))
 		os.Exit(1)
 	}
 
 	// Pretty print JSON
 	jsonBytes, err := json.MarshalIndent(updatedModel, "", "  ")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error formatting JSON: %v\n", err)
+		errorOutput := mspec.MspecError{Message: fmt.Sprintf("error formatting JSON: %v", err), Code: "format_error"}
+		jsonBytes, _ := json.MarshalIndent(errorOutput, "", "  ")
+		fmt.Println(string(jsonBytes))
 		os.Exit(1)
 	}
-	fmt.Println("Updated:")
 	fmt.Println(string(jsonBytes))
 }
 
 func CLIDeleteSingleModel(modelID string) {
-	err := HttpDeleteSingleModel(modelID)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error deleting single model: %v\n", err)
+	mspecErr := HttpDeleteSingleModel(modelID)
+	if mspecErr != nil {
+		jsonBytes, _ := json.MarshalIndent(mspecErr, "", "  ")
+		fmt.Println(string(jsonBytes))
 		os.Exit(1)
 	}
 
-	fmt.Printf("Deleted single model %s\n", modelID)
+	// Print success message as JSON
+	response := map[string]string{
+		"message": fmt.Sprintf("deleted single model %s", modelID),
+		"id":      modelID,
+	}
+	jsonBytes, _ := json.MarshalIndent(response, "", "  ")
+	fmt.Println(string(jsonBytes))
 }
 
 func CLIListSingleModel(offset int, limit int) {
-	listResponse, err := HttpListSingleModel(offset, limit)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error listing single models: %v\n", err)
+	listResponse, mspecErr := HttpListSingleModel(offset, limit)
+	if mspecErr != nil {
+		jsonBytes, _ := json.MarshalIndent(mspecErr, "", "  ")
+		fmt.Println(string(jsonBytes))
 		os.Exit(1)
 	}
 
 	// Pretty print JSON
 	jsonBytes, err := json.MarshalIndent(listResponse, "", "  ")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error formatting JSON: %v\n", err)
+		errorOutput := mspec.MspecError{Message: fmt.Sprintf("error formatting JSON: %v", err), Code: "format_error"}
+		jsonBytes, _ := json.MarshalIndent(errorOutput, "", "  ")
+		fmt.Println(string(jsonBytes))
 		os.Exit(1)
 	}
 	fmt.Println(string(jsonBytes))
