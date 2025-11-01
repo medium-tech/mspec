@@ -385,7 +385,7 @@ func DBListSingleModel(offset int, limit int) (*ListSingleModelResponse, *mapp.M
 }
 
 //
-// cli wrappers
+// cli
 //
 
 func CLIParseSingleModel(args []string) (interface{}, *mapp.MspecError) {
@@ -450,6 +450,8 @@ func CLIParseSingleModel(args []string) (interface{}, *mapp.MspecError) {
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("unknown action '%s'", action), Code: "unknown_action"}
 	}
 }
+
+// cli crud wrappers //
 
 func CLICreateSingleModel(command string, ctx *mapp.Context, jsonData string) (*SingleModel, *mapp.MspecError) {
 	model, err := FromJSON(jsonData)
@@ -549,9 +551,7 @@ func CLIListSingleModel(command string, ctx *mapp.Context, offset int, limit int
 	return listResponse, nil
 }
 
-//
 // DB-specific CLI wrappers
-//
 
 func CLIDbCreateTableSingleModel() (map[string]string, *mapp.MspecError) {
 	response, mspecErr := DBCreateTableSingleModel()
