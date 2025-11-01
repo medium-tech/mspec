@@ -95,23 +95,6 @@ func FromJSON(jsonStr string) (*SingleModel, error) {
 	return &model, nil
 }
 
-// Print outputs the SingleModel to console
-func (m *SingleModel) Print() {
-	fmt.Printf("SingleModel {\n")
-	if m.ID != nil {
-		fmt.Printf("  ID: %s\n", *m.ID)
-	} else {
-		fmt.Printf("  ID: nil\n")
-	}
-	fmt.Printf("  SingleBool: %t\n", m.SingleBool)
-	fmt.Printf("  SingleInt: %d\n", m.SingleInt)
-	fmt.Printf("  SingleFloat: %f\n", m.SingleFloat)
-	fmt.Printf("  SingleString: %s\n", m.SingleString)
-	fmt.Printf("  SingleEnum: %s\n", m.SingleEnum)
-	fmt.Printf("  SingleDatetime: %s\n", m.SingleDatetime.Format(mspec.DatetimeFormat))
-	fmt.Printf("}\n")
-}
-
 //
 // http client
 //
@@ -331,8 +314,14 @@ func CLICreateSingleModel(jsonData string) {
 		os.Exit(1)
 	}
 
+	// Pretty print JSON
+	jsonBytes, err := json.MarshalIndent(createdModel, "", "  ")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error formatting JSON: %v\n", err)
+		os.Exit(1)
+	}
 	fmt.Println("Created:")
-	createdModel.Print()
+	fmt.Println(string(jsonBytes))
 }
 
 func CLIReadSingleModel(modelID string) {
@@ -342,7 +331,13 @@ func CLIReadSingleModel(modelID string) {
 		os.Exit(1)
 	}
 
-	model.Print()
+	// Pretty print JSON
+	jsonBytes, err := json.MarshalIndent(model, "", "  ")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error formatting JSON: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println(string(jsonBytes))
 }
 
 func CLIUpdateSingleModel(modelID string, jsonData string) {
@@ -358,8 +353,14 @@ func CLIUpdateSingleModel(modelID string, jsonData string) {
 		os.Exit(1)
 	}
 
+	// Pretty print JSON
+	jsonBytes, err := json.MarshalIndent(updatedModel, "", "  ")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error formatting JSON: %v\n", err)
+		os.Exit(1)
+	}
 	fmt.Println("Updated:")
-	updatedModel.Print()
+	fmt.Println(string(jsonBytes))
 }
 
 func CLIDeleteSingleModel(modelID string) {
@@ -379,10 +380,11 @@ func CLIListSingleModel(offset int, limit int) {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Total: %d\n", listResponse.Total)
-	fmt.Printf("Showing %d items:\n", len(listResponse.Items))
-	for i, model := range listResponse.Items {
-		fmt.Printf("\n[%d] ", i+1)
-		model.Print()
+	// Pretty print JSON
+	jsonBytes, err := json.MarshalIndent(listResponse, "", "  ")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error formatting JSON: %v\n", err)
+		os.Exit(1)
 	}
+	fmt.Println(string(jsonBytes))
 }
