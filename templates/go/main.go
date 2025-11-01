@@ -90,5 +90,23 @@ func printHelp() {
       Deletes a single model based on the provided model ID from remote server via HTTP.
 
   ./main template-module single-model http list [--offset=<offset> default:0] [--limit=<limit> default:50]
-      Lists models with optional pagination parameters.`)
+      Lists models with optional pagination parameters.
+
+  ./main template-module single-model db create-table
+      Creates the single_model table in the local SQLite database.
+
+  ./main template-module single-model db create [<json string of model>]
+      Creates a single model in the local SQLite database.
+
+  ./main template-module single-model db read [<model id>]
+      Reads a single model from the local SQLite database.
+
+  ./main template-module single-model db update [<model id>] [<json string of updated model>]
+      Updates a single model in the local SQLite database.
+
+  ./main template-module single-model db delete [<model id>]
+      Deletes a single model from the local SQLite database.
+
+  ./main template-module single-model db list [--offset=<offset> default:0] [--limit=<limit> default:50]
+      Lists models from the local SQLite database with optional pagination parameters.`)
 }
