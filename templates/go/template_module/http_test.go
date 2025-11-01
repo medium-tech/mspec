@@ -21,7 +21,9 @@ func TestHttpCreateSingleModel(t *testing.T) {
 		},
 	}
 
-	result, err := HttpCreateSingleModel(model)
+	ctx := mapp.ContextFromEnv()
+
+	result, err := HttpCreateSingleModel(ctx, model)
 	if err != nil {
 		t.Fatalf("HttpCreateSingleModel failed: %v", err)
 	}
@@ -50,7 +52,9 @@ func TestHttpReadSingleModel(t *testing.T) {
 		},
 	}
 
-	created, err := HttpCreateSingleModel(model)
+	ctx := mapp.ContextFromEnv()
+
+	created, err := HttpCreateSingleModel(ctx, model)
 	if err != nil {
 		t.Fatalf("HttpCreateSingleModel failed: %v", err)
 	}
@@ -60,7 +64,7 @@ func TestHttpReadSingleModel(t *testing.T) {
 	}
 
 	// Now read it back
-	result, err := HttpReadSingleModel(*created.ID)
+	result, err := HttpReadSingleModel(ctx, *created.ID)
 	if err != nil {
 		t.Fatalf("HttpReadSingleModel failed: %v", err)
 	}
@@ -77,7 +81,10 @@ func TestHttpReadSingleModel(t *testing.T) {
 }
 
 func TestHttpReadSingleModel_NotFound(t *testing.T) {
-	_, err := HttpReadSingleModel("nonexistent-id-12345")
+
+	ctx := mapp.ContextFromEnv()
+
+	_, err := HttpReadSingleModel(ctx, "nonexistent-id-12345")
 	if err == nil {
 		t.Error("Expected error for non-existent model")
 	}
@@ -99,7 +106,9 @@ func TestHttpUpdateSingleModel(t *testing.T) {
 		},
 	}
 
-	created, err := HttpCreateSingleModel(model)
+	ctx := mapp.ContextFromEnv()
+
+	created, err := HttpCreateSingleModel(ctx, model)
 	if err != nil {
 		t.Fatalf("HttpCreateSingleModel failed: %v", err)
 	}
@@ -112,7 +121,7 @@ func TestHttpUpdateSingleModel(t *testing.T) {
 	created.SingleString = "test update modified"
 	created.SingleInt = 200
 
-	result, err := HttpUpdateSingleModel(*created.ID, created)
+	result, err := HttpUpdateSingleModel(ctx, *created.ID, created)
 	if err != nil {
 		t.Fatalf("HttpUpdateSingleModel failed: %v", err)
 	}
@@ -138,7 +147,9 @@ func TestHttpDeleteSingleModel(t *testing.T) {
 		},
 	}
 
-	created, err := HttpCreateSingleModel(model)
+	ctx := mapp.ContextFromEnv()
+
+	created, err := HttpCreateSingleModel(ctx, model)
 	if err != nil {
 		t.Fatalf("HttpCreateSingleModel failed: %v", err)
 	}
@@ -148,13 +159,13 @@ func TestHttpDeleteSingleModel(t *testing.T) {
 	}
 
 	// Delete it
-	err = HttpDeleteSingleModel(*created.ID)
+	err = HttpDeleteSingleModel(ctx, *created.ID)
 	if err != nil {
 		t.Fatalf("HttpDeleteSingleModel failed: %v", err)
 	}
 
 	// Verify it's gone
-	_, err = HttpReadSingleModel(*created.ID)
+	_, err = HttpReadSingleModel(ctx, *created.ID)
 	if err == nil {
 		t.Error("Expected error when reading deleted model")
 	}
@@ -164,6 +175,9 @@ func TestHttpDeleteSingleModel(t *testing.T) {
 }
 
 func TestHttpListSingleModel(t *testing.T) {
+
+	ctx := mapp.ContextFromEnv()
+
 	// Create a few models first
 	for i := 0; i < 3; i++ {
 		model := &SingleModel{
@@ -176,14 +190,14 @@ func TestHttpListSingleModel(t *testing.T) {
 				Time: time.Date(2000, 1, 11, 12, 34, 56, 0, time.UTC),
 			},
 		}
-		_, err := HttpCreateSingleModel(model)
+		_, err := HttpCreateSingleModel(ctx, model)
 		if err != nil {
 			t.Fatalf("HttpCreateSingleModel failed: %v", err)
 		}
 	}
 
 	// List models
-	result, err := HttpListSingleModel(0, 10)
+	result, err := HttpListSingleModel(ctx, 0, 10)
 	if err != nil {
 		t.Fatalf("HttpListSingleModel failed: %v", err)
 	}
@@ -197,7 +211,9 @@ func TestHttpListSingleModel(t *testing.T) {
 }
 
 func TestHttpListSingleModel_Pagination(t *testing.T) {
-	result, err := HttpListSingleModel(0, 2)
+	ctx := mapp.ContextFromEnv()
+
+	result, err := HttpListSingleModel(ctx, 0, 2)
 	if err != nil {
 		t.Fatalf("HttpListSingleModel failed: %v", err)
 	}

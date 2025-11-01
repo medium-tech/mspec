@@ -102,9 +102,7 @@ func FromJSON(jsonStr string) (*SingleModel, error) {
 // http client
 //
 
-const DefaultHost = "http://localhost:5005"
-
-func HttpCreateSingleModel(model *SingleModel) (*SingleModel, *mapp.MspecError) {
+func HttpCreateSingleModel(ctx *mapp.Context, model *SingleModel) (*SingleModel, *mapp.MspecError) {
 	// Convert to JSON for request //
 
 	requestBody, err := json.Marshal(model)
@@ -114,7 +112,7 @@ func HttpCreateSingleModel(model *SingleModel) (*SingleModel, *mapp.MspecError) 
 
 	// Make HTTP request //
 
-	url := DefaultHost + "/api/template-module/single-model"
+	url := ctx.ClientHost + "/api/template-module/single-model"
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("error creating single model: %v", err), Code: "http_error"}
@@ -147,8 +145,8 @@ func HttpCreateSingleModel(model *SingleModel) (*SingleModel, *mapp.MspecError) 
 	return createdModel, nil
 }
 
-func HttpReadSingleModel(modelID string) (*SingleModel, *mapp.MspecError) {
-	url := DefaultHost + "/api/template-module/single-model/" + modelID
+func HttpReadSingleModel(ctx *mapp.Context, modelID string) (*SingleModel, *mapp.MspecError) {
+	url := ctx.ClientHost + "/api/template-module/single-model/" + modelID
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -184,7 +182,7 @@ func HttpReadSingleModel(modelID string) (*SingleModel, *mapp.MspecError) {
 	return model, nil
 }
 
-func HttpUpdateSingleModel(modelID string, model *SingleModel) (*SingleModel, *mapp.MspecError) {
+func HttpUpdateSingleModel(ctx *mapp.Context, modelID string, model *SingleModel) (*SingleModel, *mapp.MspecError) {
 	// Set the ID if not already set //
 
 	if model.ID == nil {
@@ -200,7 +198,7 @@ func HttpUpdateSingleModel(modelID string, model *SingleModel) (*SingleModel, *m
 
 	// Make HTTP request //
 
-	url := DefaultHost + "/api/template-module/single-model/" + modelID
+	url := ctx.ClientHost + "/api/template-module/single-model/" + modelID
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("error creating request: %v", err), Code: "request_error"}
@@ -242,8 +240,8 @@ func HttpUpdateSingleModel(modelID string, model *SingleModel) (*SingleModel, *m
 	return updatedModel, nil
 }
 
-func HttpDeleteSingleModel(modelID string) *mapp.MspecError {
-	url := DefaultHost + "/api/template-module/single-model/" + modelID
+func HttpDeleteSingleModel(ctx *mapp.Context, modelID string) *mapp.MspecError {
+	url := ctx.ClientHost + "/api/template-module/single-model/" + modelID
 
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
@@ -278,8 +276,8 @@ type ListSingleModelResponse struct {
 	Items []SingleModel `json:"items"`
 }
 
-func HttpListSingleModel(offset int, limit int) (*ListSingleModelResponse, *mapp.MspecError) {
-	url := fmt.Sprintf("%s/api/template-module/single-model?offset=%d&limit=%d", DefaultHost, offset, limit)
+func HttpListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleModelResponse, *mapp.MspecError) {
+	url := fmt.Sprintf("%s/api/template-module/single-model?offset=%d&limit=%d", ctx.ClientHost, offset, limit)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -333,27 +331,29 @@ func CLIParseSingleModel(args []string) (interface{}, *mapp.MspecError) {
 func CLIParseSingleModelHttp(args []string) (interface{}, *mapp.MspecError) {
 	action := args[3]
 
+	ctx := mapp.ContextFromEnv()
+
 	switch action {
 	case "create":
 		if len(args) < 5 {
 			return nil, &mapp.MspecError{Message: "missing JSON string for create", Code: "missing_argument"}
 		}
-		return CLICreateSingleModel(args[4])
+		return CLICreateSingleModel(ctx, args[4])
 	case "read":
 		if len(args) < 5 {
 			return nil, &mapp.MspecError{Message: "missing model ID for read", Code: "missing_argument"}
 		}
-		return CLIReadSingleModel(args[4])
+		return CLIReadSingleModel(ctx, args[4])
 	case "update":
 		if len(args) < 6 {
 			return nil, &mapp.MspecError{Message: "missing model ID or JSON string for update", Code: "missing_argument"}
 		}
-		return CLIUpdateSingleModel(args[4], args[5])
+		return CLIUpdateSingleModel(ctx, args[4], args[5])
 	case "delete":
 		if len(args) < 5 {
 			return nil, &mapp.MspecError{Message: "missing model ID for delete", Code: "missing_argument"}
 		}
-		return CLIDeleteSingleModel(args[4])
+		return CLIDeleteSingleModel(ctx, args[4])
 	case "list":
 		offset := 0
 		limit := 50
@@ -371,19 +371,19 @@ func CLIParseSingleModelHttp(args []string) (interface{}, *mapp.MspecError) {
 				}
 			}
 		}
-		return CLIListSingleModel(offset, limit)
+		return CLIListSingleModel(ctx, offset, limit)
 	default:
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("unknown action '%s'", action), Code: "unknown_action"}
 	}
 }
 
-func CLICreateSingleModel(jsonData string) (*SingleModel, *mapp.MspecError) {
+func CLICreateSingleModel(ctx *mapp.Context, jsonData string) (*SingleModel, *mapp.MspecError) {
 	model, err := FromJSON(jsonData)
 	if err != nil {
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
 	}
 
-	createdModel, mspecErr := HttpCreateSingleModel(model)
+	createdModel, mspecErr := HttpCreateSingleModel(ctx, model)
 	if mspecErr != nil {
 		return nil, mspecErr
 	}
@@ -391,8 +391,8 @@ func CLICreateSingleModel(jsonData string) (*SingleModel, *mapp.MspecError) {
 	return createdModel, nil
 }
 
-func CLIReadSingleModel(modelID string) (*SingleModel, *mapp.MspecError) {
-	model, mspecErr := HttpReadSingleModel(modelID)
+func CLIReadSingleModel(ctx *mapp.Context, modelID string) (*SingleModel, *mapp.MspecError) {
+	model, mspecErr := HttpReadSingleModel(ctx, modelID)
 	if mspecErr != nil {
 		return nil, mspecErr
 	}
@@ -400,13 +400,13 @@ func CLIReadSingleModel(modelID string) (*SingleModel, *mapp.MspecError) {
 	return model, nil
 }
 
-func CLIUpdateSingleModel(modelID string, jsonData string) (*SingleModel, *mapp.MspecError) {
+func CLIUpdateSingleModel(ctx *mapp.Context, modelID string, jsonData string) (*SingleModel, *mapp.MspecError) {
 	model, err := FromJSON(jsonData)
 	if err != nil {
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
 	}
 
-	updatedModel, mspecErr := HttpUpdateSingleModel(modelID, model)
+	updatedModel, mspecErr := HttpUpdateSingleModel(ctx, modelID, model)
 	if mspecErr != nil {
 		return nil, mspecErr
 	}
@@ -414,8 +414,8 @@ func CLIUpdateSingleModel(modelID string, jsonData string) (*SingleModel, *mapp.
 	return updatedModel, nil
 }
 
-func CLIDeleteSingleModel(modelID string) (map[string]string, *mapp.MspecError) {
-	mspecErr := HttpDeleteSingleModel(modelID)
+func CLIDeleteSingleModel(ctx *mapp.Context, modelID string) (map[string]string, *mapp.MspecError) {
+	mspecErr := HttpDeleteSingleModel(ctx, modelID)
 	if mspecErr != nil {
 		return nil, mspecErr
 	}
@@ -427,8 +427,8 @@ func CLIDeleteSingleModel(modelID string) (map[string]string, *mapp.MspecError) 
 	return response, nil
 }
 
-func CLIListSingleModel(offset int, limit int) (*ListSingleModelResponse, *mapp.MspecError) {
-	listResponse, mspecErr := HttpListSingleModel(offset, limit)
+func CLIListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleModelResponse, *mapp.MspecError) {
+	listResponse, mspecErr := HttpListSingleModel(ctx, offset, limit)
 	if mspecErr != nil {
 		return nil, mspecErr
 	}
