@@ -390,44 +390,44 @@ func DBListSingleModel(offset int, limit int) (*ListSingleModelResponse, *mapp.M
 
 func CLIParseSingleModel(args []string) (interface{}, *mapp.MspecError) {
 
-	protocol := args[2]
+	command := args[2]
 	action := args[3]
 
 	ctx := mapp.ContextFromEnv()
 
-	switch protocol {
+	switch command {
 	case "http", "db":
-		// Validate protocol is supported
+		// Validate command is supported
 	default:
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("unknown command '%s'", protocol), Code: "unknown_command"}
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("unknown command '%s'", command), Code: "unknown_command"}
 	}
 
 	switch action {
 	case "create-table":
-		if protocol != "db" {
-			return nil, &mapp.MspecError{Message: "create-table is only available for db protocol", Code: "invalid_action"}
+		if command != "db" {
+			return nil, &mapp.MspecError{Message: "create-table is only available for db command", Code: "invalid_action"}
 		}
 		return CLIDbCreateTableSingleModel()
 	case "create":
 		if len(args) < 5 {
 			return nil, &mapp.MspecError{Message: "missing JSON string for create", Code: "missing_argument"}
 		}
-		return CLICreateSingleModel(protocol, ctx, args[4])
+		return CLICreateSingleModel(command, ctx, args[4])
 	case "read":
 		if len(args) < 5 {
 			return nil, &mapp.MspecError{Message: "missing model ID for read", Code: "missing_argument"}
 		}
-		return CLIReadSingleModel(protocol, ctx, args[4])
+		return CLIReadSingleModel(command, ctx, args[4])
 	case "update":
 		if len(args) < 6 {
 			return nil, &mapp.MspecError{Message: "missing model ID or JSON string for update", Code: "missing_argument"}
 		}
-		return CLIUpdateSingleModel(protocol, ctx, args[4], args[5])
+		return CLIUpdateSingleModel(command, ctx, args[4], args[5])
 	case "delete":
 		if len(args) < 5 {
 			return nil, &mapp.MspecError{Message: "missing model ID for delete", Code: "missing_argument"}
 		}
-		return CLIDeleteSingleModel(protocol, ctx, args[4])
+		return CLIDeleteSingleModel(command, ctx, args[4])
 	case "list":
 		offset := 0
 		limit := 50
@@ -445,13 +445,13 @@ func CLIParseSingleModel(args []string) (interface{}, *mapp.MspecError) {
 				}
 			}
 		}
-		return CLIListSingleModel(protocol, ctx, offset, limit)
+		return CLIListSingleModel(command, ctx, offset, limit)
 	default:
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("unknown action '%s'", action), Code: "unknown_action"}
 	}
 }
 
-func CLICreateSingleModel(protocol string, ctx *mapp.Context, jsonData string) (*SingleModel, *mapp.MspecError) {
+func CLICreateSingleModel(command string, ctx *mapp.Context, jsonData string) (*SingleModel, *mapp.MspecError) {
 	model, err := FromJSON(jsonData)
 	if err != nil {
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
@@ -460,7 +460,7 @@ func CLICreateSingleModel(protocol string, ctx *mapp.Context, jsonData string) (
 	var createdModel *SingleModel
 	var mspecErr *mapp.MspecError
 
-	if protocol == "http" {
+	if command == "http" {
 		createdModel, mspecErr = HttpCreateSingleModel(ctx, model)
 	} else {
 		createdModel, mspecErr = DBCreateSingleModel(model)
@@ -473,11 +473,11 @@ func CLICreateSingleModel(protocol string, ctx *mapp.Context, jsonData string) (
 	return createdModel, nil
 }
 
-func CLIReadSingleModel(protocol string, ctx *mapp.Context, modelID string) (*SingleModel, *mapp.MspecError) {
+func CLIReadSingleModel(command string, ctx *mapp.Context, modelID string) (*SingleModel, *mapp.MspecError) {
 	var model *SingleModel
 	var mspecErr *mapp.MspecError
 
-	if protocol == "http" {
+	if command == "http" {
 		model, mspecErr = HttpReadSingleModel(ctx, modelID)
 	} else {
 		model, mspecErr = DBReadSingleModel(modelID)
@@ -490,7 +490,7 @@ func CLIReadSingleModel(protocol string, ctx *mapp.Context, modelID string) (*Si
 	return model, nil
 }
 
-func CLIUpdateSingleModel(protocol string, ctx *mapp.Context, modelID string, jsonData string) (*SingleModel, *mapp.MspecError) {
+func CLIUpdateSingleModel(command string, ctx *mapp.Context, modelID string, jsonData string) (*SingleModel, *mapp.MspecError) {
 	model, err := FromJSON(jsonData)
 	if err != nil {
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
@@ -499,7 +499,7 @@ func CLIUpdateSingleModel(protocol string, ctx *mapp.Context, modelID string, js
 	var updatedModel *SingleModel
 	var mspecErr *mapp.MspecError
 
-	if protocol == "http" {
+	if command == "http" {
 		updatedModel, mspecErr = HttpUpdateSingleModel(ctx, modelID, model)
 	} else {
 		updatedModel, mspecErr = DBUpdateSingleModel(modelID, model)
@@ -512,10 +512,10 @@ func CLIUpdateSingleModel(protocol string, ctx *mapp.Context, modelID string, js
 	return updatedModel, nil
 }
 
-func CLIDeleteSingleModel(protocol string, ctx *mapp.Context, modelID string) (map[string]string, *mapp.MspecError) {
+func CLIDeleteSingleModel(command string, ctx *mapp.Context, modelID string) (map[string]string, *mapp.MspecError) {
 	var mspecErr *mapp.MspecError
 
-	if protocol == "http" {
+	if command == "http" {
 		mspecErr = HttpDeleteSingleModel(ctx, modelID)
 	} else {
 		mspecErr = DBDeleteSingleModel(modelID)
@@ -532,11 +532,11 @@ func CLIDeleteSingleModel(protocol string, ctx *mapp.Context, modelID string) (m
 	return response, nil
 }
 
-func CLIListSingleModel(protocol string, ctx *mapp.Context, offset int, limit int) (*ListSingleModelResponse, *mapp.MspecError) {
+func CLIListSingleModel(command string, ctx *mapp.Context, offset int, limit int) (*ListSingleModelResponse, *mapp.MspecError) {
 	var listResponse *ListSingleModelResponse
 	var mspecErr *mapp.MspecError
 
-	if protocol == "http" {
+	if command == "http" {
 		listResponse, mspecErr = HttpListSingleModel(ctx, offset, limit)
 	} else {
 		listResponse, mspecErr = DBListSingleModel(offset, limit)
