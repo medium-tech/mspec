@@ -390,95 +390,44 @@ func DBListSingleModel(offset int, limit int) (*ListSingleModelResponse, *mapp.M
 
 func CLIParseSingleModel(args []string) (interface{}, *mapp.MspecError) {
 
-	command := args[2]
-
-	switch command {
-	case "http":
-		return CLIParseSingleModelHttp(args)
-	case "db":
-		return CLIParseSingleModelDb(args)
-	default:
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("unknown command '%s'", command), Code: "unknown_command"}
-	}
-}
-
-func CLIParseSingleModelHttp(args []string) (interface{}, *mapp.MspecError) {
+	protocol := args[2]
 	action := args[3]
 
 	ctx := mapp.ContextFromEnv()
 
-	switch action {
-	case "create":
-		if len(args) < 5 {
-			return nil, &mapp.MspecError{Message: "missing JSON string for create", Code: "missing_argument"}
-		}
-		return CLICreateSingleModel("http", ctx, args[4])
-	case "read":
-		if len(args) < 5 {
-			return nil, &mapp.MspecError{Message: "missing model ID for read", Code: "missing_argument"}
-		}
-		return CLIReadSingleModel("http", ctx, args[4])
-	case "update":
-		if len(args) < 6 {
-			return nil, &mapp.MspecError{Message: "missing model ID or JSON string for update", Code: "missing_argument"}
-		}
-		return CLIUpdateSingleModel("http", ctx, args[4], args[5])
-	case "delete":
-		if len(args) < 5 {
-			return nil, &mapp.MspecError{Message: "missing model ID for delete", Code: "missing_argument"}
-		}
-		return CLIDeleteSingleModel("http", ctx, args[4])
-	case "list":
-		offset := 0
-		limit := 50
-
-		for i := 4; i < len(args); i++ {
-			if strings.HasPrefix(args[i], "--offset=") {
-				val := strings.TrimPrefix(args[i], "--offset=")
-				if parsed, err := strconv.Atoi(val); err == nil {
-					offset = parsed
-				}
-			} else if strings.HasPrefix(args[i], "--limit=") {
-				val := strings.TrimPrefix(args[i], "--limit=")
-				if parsed, err := strconv.Atoi(val); err == nil {
-					limit = parsed
-				}
-			}
-		}
-		return CLIListSingleModel("http", ctx, offset, limit)
+	switch protocol {
+	case "http", "db":
+		// Validate protocol is supported
 	default:
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("unknown action '%s'", action), Code: "unknown_action"}
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("unknown command '%s'", protocol), Code: "unknown_command"}
 	}
-}
-
-func CLIParseSingleModelDb(args []string) (interface{}, *mapp.MspecError) {
-	action := args[3]
-
-	ctx := mapp.ContextFromEnv()
 
 	switch action {
 	case "create-table":
+		if protocol != "db" {
+			return nil, &mapp.MspecError{Message: "create-table is only available for db protocol", Code: "invalid_action"}
+		}
 		return CLIDbCreateTableSingleModel()
 	case "create":
 		if len(args) < 5 {
 			return nil, &mapp.MspecError{Message: "missing JSON string for create", Code: "missing_argument"}
 		}
-		return CLICreateSingleModel("db", ctx, args[4])
+		return CLICreateSingleModel(protocol, ctx, args[4])
 	case "read":
 		if len(args) < 5 {
 			return nil, &mapp.MspecError{Message: "missing model ID for read", Code: "missing_argument"}
 		}
-		return CLIReadSingleModel("db", ctx, args[4])
+		return CLIReadSingleModel(protocol, ctx, args[4])
 	case "update":
 		if len(args) < 6 {
 			return nil, &mapp.MspecError{Message: "missing model ID or JSON string for update", Code: "missing_argument"}
 		}
-		return CLIUpdateSingleModel("db", ctx, args[4], args[5])
+		return CLIUpdateSingleModel(protocol, ctx, args[4], args[5])
 	case "delete":
 		if len(args) < 5 {
 			return nil, &mapp.MspecError{Message: "missing model ID for delete", Code: "missing_argument"}
 		}
-		return CLIDeleteSingleModel("db", ctx, args[4])
+		return CLIDeleteSingleModel(protocol, ctx, args[4])
 	case "list":
 		offset := 0
 		limit := 50
@@ -496,7 +445,7 @@ func CLIParseSingleModelDb(args []string) (interface{}, *mapp.MspecError) {
 				}
 			}
 		}
-		return CLIListSingleModel("db", ctx, offset, limit)
+		return CLIListSingleModel(protocol, ctx, offset, limit)
 	default:
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("unknown action '%s'", action), Code: "unknown_action"}
 	}
