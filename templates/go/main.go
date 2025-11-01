@@ -9,6 +9,10 @@ import (
 	"github.com/medium-tech/mspec/templates/go/template_module"
 )
 
+//
+// parse and run CLI commands
+//
+
 func main() {
 	args := os.Args[1:]
 
@@ -98,6 +102,10 @@ func main() {
 		os.Exit(1)
 	}
 }
+
+//
+// help menu
+//
 
 func printHelp() {
 	fmt.Println(`Usage:

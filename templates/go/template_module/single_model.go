@@ -44,7 +44,6 @@ type SingleModel struct {
 	SingleDatetime mapp.DateTime `json:"single_datetime"`
 }
 
-// ToJSON serializes the SingleModel to a JSON string
 func (m *SingleModel) ToJSON() (string, error) {
 	data, err := json.Marshal(m)
 	if err != nil {
@@ -64,7 +63,8 @@ func FromJSON(jsonStr string) (*SingleModel, error) {
 		return nil, fmt.Errorf("invalid JSON: %w", err)
 	}
 
-	// Check required fields
+	// Check required fields //
+
 	requiredFields := []string{
 		"single_bool",
 		"single_int",
@@ -80,14 +80,16 @@ func FromJSON(jsonStr string) (*SingleModel, error) {
 		}
 	}
 
-	// Unmarshal into struct
+	// Unmarshal into struct //
+
 	var model SingleModel
 	err = json.Unmarshal([]byte(jsonStr), &model)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing fields: %w", err)
 	}
 
-	// Validate enum value
+	// Validate enum value //
+
 	if !IsValidSingleEnum(model.SingleEnum) {
 		return nil, fmt.Errorf("invalid enum value for single_enum: %s (must be one of: %v)", model.SingleEnum, singleEnumOptions)
 	}
@@ -101,15 +103,16 @@ func FromJSON(jsonStr string) (*SingleModel, error) {
 
 const DefaultHost = "http://localhost:5005"
 
-// HTTP CRUD operations that return errors
 func HttpCreateSingleModel(model *SingleModel) (*SingleModel, *mapp.MspecError) {
-	// Convert to JSON for request
+	// Convert to JSON for request //
+
 	requestBody, err := json.Marshal(model)
 	if err != nil {
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("error marshaling JSON: %v", err), Code: "marshal_error"}
 	}
 
-	// Make HTTP request
+	// Make HTTP request //
+
 	url := DefaultHost + "/api/template-module/single-model"
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
@@ -117,7 +120,8 @@ func HttpCreateSingleModel(model *SingleModel) (*SingleModel, *mapp.MspecError) 
 	}
 	defer resp.Body.Close()
 
-	// Handle HTTP errors
+	// Handle HTTP errors //
+
 	if resp.StatusCode == 401 {
 		return nil, &mapp.MspecError{Message: "authentication error", Code: "authentication_error"}
 	} else if resp.StatusCode == 403 {
@@ -127,7 +131,8 @@ func HttpCreateSingleModel(model *SingleModel) (*SingleModel, *mapp.MspecError) 
 		return nil, &mapp.MspecError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
 	}
 
-	// Parse response
+	// Parse response //
+
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("error reading response: %v", err), Code: "read_error"}
@@ -150,7 +155,8 @@ func HttpReadSingleModel(modelID string) (*SingleModel, *mapp.MspecError) {
 	}
 	defer resp.Body.Close()
 
-	// Handle HTTP errors
+	// Handle HTTP errors //
+
 	if resp.StatusCode == 401 {
 		return nil, &mapp.MspecError{Message: "authentication error", Code: "authentication_error"}
 	} else if resp.StatusCode == 403 {
@@ -162,7 +168,8 @@ func HttpReadSingleModel(modelID string) (*SingleModel, *mapp.MspecError) {
 		return nil, &mapp.MspecError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
 	}
 
-	// Parse response
+	// Parse response //
+
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("error reading response: %v", err), Code: "read_error"}
@@ -177,18 +184,21 @@ func HttpReadSingleModel(modelID string) (*SingleModel, *mapp.MspecError) {
 }
 
 func HttpUpdateSingleModel(modelID string, model *SingleModel) (*SingleModel, *mapp.MspecError) {
-	// Set the ID if not already set
+	// Set the ID if not already set //
+
 	if model.ID == nil {
 		model.ID = &modelID
 	}
 
-	// Convert to JSON for request
+	// Convert to JSON for request //
+
 	requestBody, err := json.Marshal(model)
 	if err != nil {
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("error marshaling JSON: %v", err), Code: "marshal_error"}
 	}
 
-	// Make HTTP request
+	// Make HTTP request //
+
 	url := DefaultHost + "/api/template-module/single-model/" + modelID
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(requestBody))
 	if err != nil {
@@ -203,7 +213,8 @@ func HttpUpdateSingleModel(modelID string, model *SingleModel) (*SingleModel, *m
 	}
 	defer resp.Body.Close()
 
-	// Handle HTTP errors
+	// Handle HTTP errors //
+
 	if resp.StatusCode == 401 {
 		return nil, &mapp.MspecError{Message: "authentication error", Code: "authentication_error"}
 	} else if resp.StatusCode == 403 {
@@ -215,7 +226,8 @@ func HttpUpdateSingleModel(modelID string, model *SingleModel) (*SingleModel, *m
 		return nil, &mapp.MspecError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
 	}
 
-	// Parse response
+	// Parse response //
+
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("error reading response: %v", err), Code: "read_error"}
@@ -244,7 +256,8 @@ func HttpDeleteSingleModel(modelID string) *mapp.MspecError {
 	}
 	defer resp.Body.Close()
 
-	// Handle HTTP errors
+	// Handle HTTP errors //
+
 	if resp.StatusCode == 401 {
 		return &mapp.MspecError{Message: "authentication error", Code: "authentication_error"}
 	} else if resp.StatusCode == 403 {
@@ -273,7 +286,8 @@ func HttpListSingleModel(offset int, limit int) (*ListSingleModelResponse, *mapp
 	}
 	defer resp.Body.Close()
 
-	// Handle HTTP errors
+	// Handle HTTP errors //
+
 	if resp.StatusCode == 401 {
 		return nil, &mapp.MspecError{Message: "authentication error", Code: "authentication_error"}
 	} else if resp.StatusCode == 403 {
@@ -283,7 +297,8 @@ func HttpListSingleModel(offset int, limit int) (*ListSingleModelResponse, *mapp
 		return nil, &mapp.MspecError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
 	}
 
-	// Parse response
+	// Parse response //
+
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("error reading response: %v", err), Code: "read_error"}
@@ -318,7 +333,6 @@ func CLICreateSingleModel(jsonData string) {
 		os.Exit(1)
 	}
 
-	// Pretty print JSON
 	jsonBytes, err := json.MarshalIndent(createdModel, "", "  ")
 	if err != nil {
 		errorOutput := mapp.MspecError{Message: fmt.Sprintf("error formatting JSON: %v", err), Code: "format_error"}
@@ -337,7 +351,6 @@ func CLIReadSingleModel(modelID string) {
 		os.Exit(1)
 	}
 
-	// Pretty print JSON
 	jsonBytes, err := json.MarshalIndent(model, "", "  ")
 	if err != nil {
 		errorOutput := mapp.MspecError{Message: fmt.Sprintf("error formatting JSON: %v", err), Code: "format_error"}
@@ -364,7 +377,6 @@ func CLIUpdateSingleModel(modelID string, jsonData string) {
 		os.Exit(1)
 	}
 
-	// Pretty print JSON
 	jsonBytes, err := json.MarshalIndent(updatedModel, "", "  ")
 	if err != nil {
 		errorOutput := mapp.MspecError{Message: fmt.Sprintf("error formatting JSON: %v", err), Code: "format_error"}
@@ -383,7 +395,6 @@ func CLIDeleteSingleModel(modelID string) {
 		os.Exit(1)
 	}
 
-	// Print success message as JSON
 	response := map[string]string{
 		"message": fmt.Sprintf("deleted single model %s", modelID),
 		"id":      modelID,
@@ -400,7 +411,6 @@ func CLIListSingleModel(offset int, limit int) {
 		os.Exit(1)
 	}
 
-	// Pretty print JSON
 	jsonBytes, err := json.MarshalIndent(listResponse, "", "  ")
 	if err != nil {
 		errorOutput := mapp.MspecError{Message: fmt.Sprintf("error formatting JSON: %v", err), Code: "format_error"}
