@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/medium-tech/mspec/templates/go/mapp"
 )
@@ -316,6 +318,75 @@ func HttpListSingleModel(offset int, limit int) (*ListSingleModelResponse, *mapp
 //
 // cli wrappers
 //
+
+func CLIParseSingleModel(args []string) *mapp.MspecError {
+
+	command := args[2]
+
+	switch command {
+	case "http":
+		return CLIParseSingleModelHttp(args)
+	default:
+		fmt.Fprintf(os.Stderr, "Error: unknown command '%s'\n", command)
+		os.Exit(1)
+	}
+
+	return nil
+}
+
+func CLIParseSingleModelHttp(args []string) *mapp.MspecError {
+	action := args[3]
+
+	switch action {
+	case "create":
+		if len(args) < 5 {
+			fmt.Fprintln(os.Stderr, "Error: missing JSON string for create")
+			os.Exit(1)
+		}
+		CLICreateSingleModel(args[4])
+	case "read":
+		if len(args) < 5 {
+			fmt.Fprintln(os.Stderr, "Error: missing model ID for read")
+			os.Exit(1)
+		}
+		CLIReadSingleModel(args[4])
+	case "update":
+		if len(args) < 6 {
+			fmt.Fprintln(os.Stderr, "Error: missing model ID or JSON string for update")
+			os.Exit(1)
+		}
+		CLIUpdateSingleModel(args[4], args[5])
+	case "delete":
+		if len(args) < 5 {
+			fmt.Fprintln(os.Stderr, "Error: missing model ID for delete")
+			os.Exit(1)
+		}
+		CLIDeleteSingleModel(args[4])
+	case "list":
+		offset := 0
+		limit := 50
+
+		for i := 4; i < len(args); i++ {
+			if strings.HasPrefix(args[i], "--offset=") {
+				val := strings.TrimPrefix(args[i], "--offset=")
+				if parsed, err := strconv.Atoi(val); err == nil {
+					offset = parsed
+				}
+			} else if strings.HasPrefix(args[i], "--limit=") {
+				val := strings.TrimPrefix(args[i], "--limit=")
+				if parsed, err := strconv.Atoi(val); err == nil {
+					limit = parsed
+				}
+			}
+		}
+		CLIListSingleModel(offset, limit)
+	default:
+		fmt.Fprintf(os.Stderr, "Error: unknown action '%s'\n", action)
+		os.Exit(1)
+	}
+
+	return nil
+}
 
 func CLICreateSingleModel(jsonData string) {
 	model, err := FromJSON(jsonData)

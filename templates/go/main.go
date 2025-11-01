@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 
 	"github.com/medium-tech/mspec/templates/go/template_module"
 )
@@ -27,80 +25,29 @@ func main() {
 		return
 	}
 
-	if args[0] != "template-module" {
-		fmt.Fprintf(os.Stderr, "Error: unknown module '%s'\n", args[0])
-		printHelp()
-		os.Exit(1)
-	}
-
 	if len(args) < 4 {
 		fmt.Fprintln(os.Stderr, "Error: insufficient arguments")
 		printHelp()
 		os.Exit(1)
 	}
 
-	model := args[1]
-	protocol := args[2]
-	action := args[3]
-
-	if model != "single-model" {
-		fmt.Fprintf(os.Stderr, "Error: unknown model type '%s'\n", model)
-		os.Exit(1)
-	}
-
-	if protocol != "http" {
-		fmt.Fprintf(os.Stderr, "Error: unknown protocol '%s'\n", protocol)
-		os.Exit(1)
-	}
-
-	switch action {
-	case "create":
-		if len(args) < 5 {
-			fmt.Fprintln(os.Stderr, "Error: missing JSON string for create")
+	module := args[0]
+	switch module {
+	case "template-module":
+		model := args[1]
+		switch model {
+		case "single-model":
+			template_module.CLIParseSingleModel(args)
+		default:
+			fmt.Fprintf(os.Stderr, "Error: unknown model type '%s'\n", model)
 			os.Exit(1)
 		}
-		template_module.CLICreateSingleModel(args[4])
-	case "read":
-		if len(args) < 5 {
-			fmt.Fprintln(os.Stderr, "Error: missing model ID for read")
-			os.Exit(1)
-		}
-		template_module.CLIReadSingleModel(args[4])
-	case "update":
-		if len(args) < 6 {
-			fmt.Fprintln(os.Stderr, "Error: missing model ID or JSON string for update")
-			os.Exit(1)
-		}
-		template_module.CLIUpdateSingleModel(args[4], args[5])
-	case "delete":
-		if len(args) < 5 {
-			fmt.Fprintln(os.Stderr, "Error: missing model ID for delete")
-			os.Exit(1)
-		}
-		template_module.CLIDeleteSingleModel(args[4])
-	case "list":
-		offset := 0
-		limit := 50
-		// Parse optional flags
-		for i := 4; i < len(args); i++ {
-			if strings.HasPrefix(args[i], "--offset=") {
-				val := strings.TrimPrefix(args[i], "--offset=")
-				if parsed, err := strconv.Atoi(val); err == nil {
-					offset = parsed
-				}
-			} else if strings.HasPrefix(args[i], "--limit=") {
-				val := strings.TrimPrefix(args[i], "--limit=")
-				if parsed, err := strconv.Atoi(val); err == nil {
-					limit = parsed
-				}
-			}
-		}
-		template_module.CLIListSingleModel(offset, limit)
 	default:
-		fmt.Fprintf(os.Stderr, "Error: unknown action '%s'\n", action)
+		fmt.Fprintf(os.Stderr, "Error: unknown module '%s'\n", module)
 		printHelp()
 		os.Exit(1)
 	}
+
 }
 
 //
