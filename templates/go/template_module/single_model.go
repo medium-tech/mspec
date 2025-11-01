@@ -1,9 +1,12 @@
 package template_module
 
 import (
+	"bytes"
 	"encoding/json"
-	"os"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
 
 	"github.com/medium-tech/mspec/templates/go/mspec"
 )
@@ -11,7 +14,6 @@ import (
 //
 // data model
 //
-
 
 type SingleEnumType string
 
@@ -31,7 +33,6 @@ func IsValidSingleEnum(s string) bool {
 	}
 	return false
 }
-
 
 type SingleModel struct {
 	ID             *string        `json:"id,omitempty"`
@@ -115,32 +116,253 @@ func (m *SingleModel) Print() {
 // http client
 //
 
+const DefaultHost = "http://localhost:5005"
+
 func HttpCreateSingleModel(jsonData string) {
 	model, err := FromJSON(jsonData)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error parsing JSON: %v\n", err)
-		return
+		os.Exit(1)
 	}
-	model.Print()
-	// TODO: Implement HTTP create logic
+
+	// Convert to JSON for request
+	requestBody, err := json.Marshal(model)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error marshaling JSON: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Make HTTP request
+	url := DefaultHost + "/api/template-module/single-model"
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(requestBody))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating single model: %v\n", err)
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	// Handle HTTP errors
+	if resp.StatusCode == 401 {
+		fmt.Fprintf(os.Stderr, "Error creating single model: authentication error\n")
+		os.Exit(1)
+	} else if resp.StatusCode == 403 {
+		fmt.Fprintf(os.Stderr, "Error creating single model: forbidden\n")
+		os.Exit(1)
+	} else if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Fprintf(os.Stderr, "Error creating single model: HTTP %d: %s\n", resp.StatusCode, string(body))
+		os.Exit(1)
+	}
+
+	// Parse response
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading response: %v\n", err)
+		os.Exit(1)
+	}
+
+	createdModel, err := FromJSON(string(responseBody))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing response: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Created:")
+	createdModel.Print()
 }
 
 func HttpReadSingleModel(modelID string) {
-	fmt.Printf("HttpReadSingleModel called with ID: %s\n", modelID)
-	// TODO: Implement HTTP read logic
+	url := DefaultHost + "/api/template-module/single-model/" + modelID
+
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading single model: %v\n", err)
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	// Handle HTTP errors
+	if resp.StatusCode == 401 {
+		fmt.Fprintf(os.Stderr, "Error reading single model: authentication error\n")
+		os.Exit(1)
+	} else if resp.StatusCode == 403 {
+		fmt.Fprintf(os.Stderr, "Error reading single model: forbidden\n")
+		os.Exit(1)
+	} else if resp.StatusCode == 404 {
+		fmt.Fprintf(os.Stderr, "Error: single model %s not found\n", modelID)
+		os.Exit(1)
+	} else if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Fprintf(os.Stderr, "Error reading single model: HTTP %d: %s\n", resp.StatusCode, string(body))
+		os.Exit(1)
+	}
+
+	// Parse response
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading response: %v\n", err)
+		os.Exit(1)
+	}
+
+	model, err := FromJSON(string(responseBody))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing response: %v\n", err)
+		os.Exit(1)
+	}
+
+	model.Print()
 }
 
 func HttpUpdateSingleModel(modelID string, jsonData string) {
-	fmt.Printf("HttpUpdateSingleModel called with ID: %s and JSON: %s\n", modelID, jsonData)
-	// TODO: Implement HTTP update logic
+	model, err := FromJSON(jsonData)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing JSON: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Set the ID if not already set
+	if model.ID == nil {
+		model.ID = &modelID
+	}
+
+	// Convert to JSON for request
+	requestBody, err := json.Marshal(model)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error marshaling JSON: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Make HTTP request
+	url := DefaultHost + "/api/template-module/single-model/" + modelID
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(requestBody))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating request: %v\n", err)
+		os.Exit(1)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error updating single model: %v\n", err)
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	// Handle HTTP errors
+	if resp.StatusCode == 401 {
+		fmt.Fprintf(os.Stderr, "Error updating single model: authentication error\n")
+		os.Exit(1)
+	} else if resp.StatusCode == 403 {
+		fmt.Fprintf(os.Stderr, "Error updating single model: forbidden\n")
+		os.Exit(1)
+	} else if resp.StatusCode == 404 {
+		fmt.Fprintf(os.Stderr, "Error: single model %s not found\n", modelID)
+		os.Exit(1)
+	} else if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Fprintf(os.Stderr, "Error updating single model: HTTP %d: %s\n", resp.StatusCode, string(body))
+		os.Exit(1)
+	}
+
+	// Parse response
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading response: %v\n", err)
+		os.Exit(1)
+	}
+
+	updatedModel, err := FromJSON(string(responseBody))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing response: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Updated:")
+	updatedModel.Print()
 }
 
 func HttpDeleteSingleModel(modelID string) {
-	fmt.Printf("HttpDeleteSingleModel called with ID: %s\n", modelID)
-	// TODO: Implement HTTP delete logic
+	url := DefaultHost + "/api/template-module/single-model/" + modelID
+
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating request: %v\n", err)
+		os.Exit(1)
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error deleting single model: %v\n", err)
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	// Handle HTTP errors
+	if resp.StatusCode == 401 {
+		fmt.Fprintf(os.Stderr, "Error deleting single model: authentication error\n")
+		os.Exit(1)
+	} else if resp.StatusCode == 403 {
+		fmt.Fprintf(os.Stderr, "Error deleting single model: forbidden\n")
+		os.Exit(1)
+	} else if resp.StatusCode == 404 {
+		fmt.Fprintf(os.Stderr, "Error: single model %s not found\n", modelID)
+		os.Exit(1)
+	} else if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Fprintf(os.Stderr, "Error deleting single model: HTTP %d: %s\n", resp.StatusCode, string(body))
+		os.Exit(1)
+	}
+
+	fmt.Printf("Deleted single model %s\n", modelID)
 }
 
 func HttpListSingleModel(offset int, limit int) {
-	fmt.Printf("HttpListSingleModel called with offset: %d, limit: %d\n", offset, limit)
-	// TODO: Implement HTTP list logic
+	url := fmt.Sprintf("%s/api/template-module/single-model?offset=%d&limit=%d", DefaultHost, offset, limit)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error listing single models: %v\n", err)
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	// Handle HTTP errors
+	if resp.StatusCode == 401 {
+		fmt.Fprintf(os.Stderr, "Error listing single models: authentication error\n")
+		os.Exit(1)
+	} else if resp.StatusCode == 403 {
+		fmt.Fprintf(os.Stderr, "Error listing single models: forbidden\n")
+		os.Exit(1)
+	} else if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Fprintf(os.Stderr, "Error listing single models: HTTP %d: %s\n", resp.StatusCode, string(body))
+		os.Exit(1)
+	}
+
+	// Parse response
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading response: %v\n", err)
+		os.Exit(1)
+	}
+
+	var listResponse struct {
+		Total int           `json:"total"`
+		Items []SingleModel `json:"items"`
+	}
+
+	err = json.Unmarshal(responseBody, &listResponse)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing response: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Total: %d\n", listResponse.Total)
+	fmt.Printf("Showing %d items:\n", len(listResponse.Items))
+	for i, model := range listResponse.Items {
+		fmt.Printf("\n[%d] ", i+1)
+		model.Print()
+	}
 }
