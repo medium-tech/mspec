@@ -15,14 +15,15 @@ var (
 	dbErr  error
 )
 
-// GetDB returns a singleton SQLite database connection
-func GetDB() (*sql.DB, error) {
+// GetDB returns a singleton SQLite database connection using the path from context
+func GetDB(ctx *Context) (*sql.DB, error) {
 	dbOnce.Do(func() {
-		// Get database path from environment or use default
-		dbPath := os.Getenv("MSPEC_DB_PATH")
-		if dbPath == "" {
-			// Default to ./data/app.db
-			dbPath = filepath.Join("data", "app.db")
+		// Get database path from context
+		dbPath := ctx.DBFile
+
+		// If it's a relative path, put it in the data directory
+		if !filepath.IsAbs(dbPath) {
+			dbPath = filepath.Join("data", dbPath)
 		}
 
 		// Ensure the directory exists

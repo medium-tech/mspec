@@ -317,8 +317,8 @@ func HttpListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleM
 // database operations
 //
 
-func DBCreateTableSingleModel() (map[string]string, *mapp.MspecError) {
-	db, err := mapp.GetDB()
+func DBCreateTableSingleModel(ctx *mapp.Context) (map[string]string, *mapp.MspecError) {
+	db, err := mapp.GetDB(ctx)
 	if err != nil {
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
 	}
@@ -335,7 +335,6 @@ func DBCreateTableSingleModel() (map[string]string, *mapp.MspecError) {
 	);
 
 	CREATE INDEX IF NOT EXISTS idx_single_model_enum ON single_model(single_enum);
-	CREATE INDEX IF NOT EXISTS idx_single_model_created_at ON single_model(created_at);
 	`
 
 	_, err = db.Exec(createTableSQL)
@@ -350,8 +349,8 @@ func DBCreateTableSingleModel() (map[string]string, *mapp.MspecError) {
 	return response, nil
 }
 
-func DBCreateSingleModel(model *SingleModel) (*SingleModel, *mapp.MspecError) {
-	db, err := mapp.GetDB()
+func DBCreateSingleModel(ctx *mapp.Context, model *SingleModel) (*SingleModel, *mapp.MspecError) {
+	db, err := mapp.GetDB(ctx)
 	if err != nil {
 		return nil, &mapp.MspecError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
 	}
@@ -389,7 +388,7 @@ func DBCreateSingleModel(model *SingleModel) (*SingleModel, *mapp.MspecError) {
 	return model, nil
 }
 
-func DBReadSingleModel(modelID string) (*SingleModel, *mapp.MspecError) {
+func DBReadSingleModel(ctx *mapp.Context, modelID string) (*SingleModel, *mapp.MspecError) {
 	// Placeholder: This will query SQLite
 	model := &SingleModel{
 		ID:             &modelID,
@@ -403,7 +402,7 @@ func DBReadSingleModel(modelID string) (*SingleModel, *mapp.MspecError) {
 	return model, nil
 }
 
-func DBUpdateSingleModel(modelID string, model *SingleModel) (*SingleModel, *mapp.MspecError) {
+func DBUpdateSingleModel(ctx *mapp.Context, modelID string, model *SingleModel) (*SingleModel, *mapp.MspecError) {
 	// Placeholder: This will update in SQLite
 	if model.ID == nil {
 		model.ID = &modelID
@@ -411,12 +410,12 @@ func DBUpdateSingleModel(modelID string, model *SingleModel) (*SingleModel, *map
 	return model, nil
 }
 
-func DBDeleteSingleModel(modelID string) *mapp.MspecError {
+func DBDeleteSingleModel(ctx *mapp.Context, modelID string) *mapp.MspecError {
 	// Placeholder: This will delete from SQLite
 	return nil
 }
 
-func DBListSingleModel(offset int, limit int) (*ListSingleModelResponse, *mapp.MspecError) {
+func DBListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleModelResponse, *mapp.MspecError) {
 	// Placeholder: This will query SQLite with pagination
 	items := []SingleModel{}
 	for i := 0; i < 3; i++ {
@@ -471,7 +470,7 @@ func CLIParseSingleModel(args []string) (interface{}, *mapp.MspecError) {
 		if command != "db" {
 			return nil, &mapp.MspecError{Message: "create-table is only available for db command", Code: "invalid_action"}
 		}
-		return CLIDbCreateTableSingleModel()
+		return CLIDbCreateTableSingleModel(ctx)
 	case "create":
 		if len(args) < 5 {
 			return nil, &mapp.MspecError{Message: "missing JSON string for create", Code: "missing_argument"}
@@ -529,7 +528,7 @@ func CLICreateSingleModel(command string, ctx *mapp.Context, jsonData string) (*
 	if command == "http" {
 		createdModel, mspecErr = HttpCreateSingleModel(ctx, model)
 	} else {
-		createdModel, mspecErr = DBCreateSingleModel(model)
+		createdModel, mspecErr = DBCreateSingleModel(ctx, model)
 	}
 
 	if mspecErr != nil {
@@ -546,7 +545,7 @@ func CLIReadSingleModel(command string, ctx *mapp.Context, modelID string) (*Sin
 	if command == "http" {
 		model, mspecErr = HttpReadSingleModel(ctx, modelID)
 	} else {
-		model, mspecErr = DBReadSingleModel(modelID)
+		model, mspecErr = DBReadSingleModel(ctx, modelID)
 	}
 
 	if mspecErr != nil {
@@ -568,7 +567,7 @@ func CLIUpdateSingleModel(command string, ctx *mapp.Context, modelID string, jso
 	if command == "http" {
 		updatedModel, mspecErr = HttpUpdateSingleModel(ctx, modelID, model)
 	} else {
-		updatedModel, mspecErr = DBUpdateSingleModel(modelID, model)
+		updatedModel, mspecErr = DBUpdateSingleModel(ctx, modelID, model)
 	}
 
 	if mspecErr != nil {
@@ -584,7 +583,7 @@ func CLIDeleteSingleModel(command string, ctx *mapp.Context, modelID string) (ma
 	if command == "http" {
 		mspecErr = HttpDeleteSingleModel(ctx, modelID)
 	} else {
-		mspecErr = DBDeleteSingleModel(modelID)
+		mspecErr = DBDeleteSingleModel(ctx, modelID)
 	}
 
 	if mspecErr != nil {
@@ -605,7 +604,7 @@ func CLIListSingleModel(command string, ctx *mapp.Context, offset int, limit int
 	if command == "http" {
 		listResponse, mspecErr = HttpListSingleModel(ctx, offset, limit)
 	} else {
-		listResponse, mspecErr = DBListSingleModel(offset, limit)
+		listResponse, mspecErr = DBListSingleModel(ctx, offset, limit)
 	}
 
 	if mspecErr != nil {
@@ -617,8 +616,8 @@ func CLIListSingleModel(command string, ctx *mapp.Context, offset int, limit int
 
 // other cli commands //
 
-func CLIDbCreateTableSingleModel() (map[string]string, *mapp.MspecError) {
-	response, mspecErr := DBCreateTableSingleModel()
+func CLIDbCreateTableSingleModel(ctx *mapp.Context) (map[string]string, *mapp.MspecError) {
+	response, mspecErr := DBCreateTableSingleModel(ctx)
 	if mspecErr != nil {
 		return nil, mspecErr
 	}
