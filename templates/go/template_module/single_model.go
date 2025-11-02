@@ -334,6 +334,24 @@ func HttpListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleM
 //go:embed sql/single_model_create_table.sql
 var createTableSQL string
 
+//go:embed sql/single_model_insert.sql
+var insertSQL string
+
+//go:embed sql/single_model_select_by_id.sql
+var selectByIDSQL string
+
+//go:embed sql/single_model_update.sql
+var updateSQL string
+
+//go:embed sql/single_model_delete.sql
+var deleteSQL string
+
+//go:embed sql/single_model_count.sql
+var countSQL string
+
+//go:embed sql/single_model_list.sql
+var listSQL string
+
 func DBCreateTableSingleModel(ctx *mapp.Context) (map[string]string, *mapp.MappError) {
 	db, err := mapp.GetDB(ctx)
 	if err != nil {
@@ -362,11 +380,7 @@ func DBCreateSingleModel(ctx *mapp.Context, model *SingleModel) (*SingleModel, *
 	// Format datetime as RFC3339 for SQLite storage
 	datetimeStr := model.SingleDatetime.Time.Format(time.RFC3339)
 
-	insertSQL := `
-	INSERT INTO single_model (single_bool, single_int, single_float, single_string, single_enum, single_datetime)
-	VALUES (?, ?, ?, ?, ?, ?)
-	`
-
+	// Use embedded SQL
 	result, err := db.Exec(insertSQL,
 		model.SingleBool,
 		model.SingleInt,
@@ -398,18 +412,13 @@ func DBReadSingleModel(ctx *mapp.Context, modelID string) (*SingleModel, *mapp.M
 		return nil, &mapp.MappError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
 	}
 
-	query := `
-	SELECT id, single_bool, single_int, single_float, single_string, single_enum, single_datetime
-	FROM single_model
-	WHERE id = ?
-	`
-
 	var model SingleModel
 	var id int
 	var singleBool int
 	var datetimeStr string
 
-	err = db.QueryRow(query, modelID).Scan(
+	// Use embedded SQL
+	err = db.QueryRow(selectByIDSQL, modelID).Scan(
 		&id,
 		&singleBool,
 		&model.SingleInt,
@@ -451,12 +460,7 @@ func DBUpdateSingleModel(ctx *mapp.Context, modelID string, model *SingleModel) 
 	// Format datetime as RFC3339 for SQLite storage
 	datetimeStr := model.SingleDatetime.Time.Format(time.RFC3339)
 
-	updateSQL := `
-	UPDATE single_model
-	SET single_bool = ?, single_int = ?, single_float = ?, single_string = ?, single_enum = ?, single_datetime = ?
-	WHERE id = ?
-	`
-
+	// Use embedded SQL
 	result, err := db.Exec(updateSQL,
 		model.SingleBool,
 		model.SingleInt,
@@ -493,8 +497,7 @@ func DBDeleteSingleModel(ctx *mapp.Context, modelID string) *mapp.MappError {
 		return &mapp.MappError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
 	}
 
-	deleteSQL := `DELETE FROM single_model WHERE id = ?`
-
+	// Use embedded SQL
 	_, err = db.Exec(deleteSQL, modelID)
 	if err != nil {
 		return &mapp.MappError{Message: fmt.Sprintf("error deleting single model: %v", err), Code: "db_error"}
@@ -510,23 +513,15 @@ func DBListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleMod
 		return nil, &mapp.MappError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
 	}
 
-	// Get total count
+	// Get total count using embedded SQL
 	var total int
-	countQuery := `SELECT COUNT(*) FROM single_model`
-	err = db.QueryRow(countQuery).Scan(&total)
+	err = db.QueryRow(countSQL).Scan(&total)
 	if err != nil {
 		return nil, &mapp.MappError{Message: fmt.Sprintf("error counting single models: %v", err), Code: "db_error"}
 	}
 
-	// Get paginated items
-	query := `
-	SELECT id, single_bool, single_int, single_float, single_string, single_enum, single_datetime
-	FROM single_model
-	ORDER BY id
-	LIMIT ? OFFSET ?
-	`
-
-	rows, err := db.Query(query, limit, offset)
+	// Get paginated items using embedded SQL
+	rows, err := db.Query(listSQL, limit, offset)
 	if err != nil {
 		return nil, &mapp.MappError{Message: fmt.Sprintf("error listing single models: %v", err), Code: "db_error"}
 	}
