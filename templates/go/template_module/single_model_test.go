@@ -80,6 +80,26 @@ func TestFromJSON_RequiredFields(t *testing.T) {
 	}
 }
 
+func TestFromJSON_ExtraFields(t *testing.T) {
+	jsonStr := `{
+		"single_bool": true,
+		"single_int": 42,
+		"single_float": 3.14,
+		"single_string": "test",
+		"single_enum": "red",
+		"single_datetime": "2000-01-11T12:34:56",
+		"extra_field": "not allowed"
+	}`
+
+	_, err := FromJSON(jsonStr)
+	if err == nil {
+		t.Error("Expected error for extra field")
+	}
+	if !strings.Contains(err.Error(), "extra field found: extra_field") {
+		t.Errorf("Expected 'extra field found' error, got: %v", err)
+	}
+}
+
 func TestFromJSON_InvalidEnum(t *testing.T) {
 	jsonStr := `{
 		"single_bool": true,
