@@ -38,7 +38,7 @@ func main() {
 	}
 
 	var result interface{}
-	var err *mapp.MspecError
+	var err *mapp.MappError
 
 	switch module {
 	case "template-module":
@@ -50,10 +50,10 @@ func main() {
 			printTemplateModuleHelp()
 			os.Exit(0)
 		default:
-			err = &mapp.MspecError{Message: fmt.Sprintf("unknown model type '%s'", model), Code: "unknown_model"}
+			err = &mapp.MappError{Message: fmt.Sprintf("unknown model type '%s'", model), Code: "unknown_model"}
 		}
 	default:
-		err = &mapp.MspecError{Message: fmt.Sprintf("unknown module '%s'", module), Code: "unknown_module"}
+		err = &mapp.MappError{Message: fmt.Sprintf("unknown module '%s'", module), Code: "unknown_module"}
 	}
 
 	// Handle errors
@@ -67,7 +67,7 @@ func main() {
 	if result != nil {
 		jsonBytes, marshalErr := json.MarshalIndent(result, "", "  ")
 		if marshalErr != nil {
-			errorOutput := mapp.MspecError{Message: fmt.Sprintf("error formatting JSON: %v", marshalErr), Code: "format_error"}
+			errorOutput := mapp.MappError{Message: fmt.Sprintf("error formatting JSON: %v", marshalErr), Code: "format_error"}
 			jsonBytes, _ := json.MarshalIndent(errorOutput, "", "  ")
 			fmt.Println(string(jsonBytes))
 			os.Exit(1)

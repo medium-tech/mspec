@@ -39,13 +39,13 @@ func ContextFromEnv() *Context {
 // custom error
 //
 
-type MspecError struct {
+type MappError struct {
 	Message string `json:"message"`
 	Code    string `json:"code,omitempty"`
 }
 
-func (e *MspecError) Error() string {
-	return fmt.Sprintf("MspecError :: %s :: %s", e.Code, e.Message)
+func (e *MappError) Error() string {
+	return fmt.Sprintf("MappError :: %s :: %s", e.Code, e.Message)
 }
 
 //

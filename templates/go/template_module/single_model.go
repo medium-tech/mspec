@@ -103,12 +103,12 @@ func FromJSON(jsonStr string) (*SingleModel, error) {
 // http client
 //
 
-func HttpCreateSingleModel(ctx *mapp.Context, model *SingleModel) (*SingleModel, *mapp.MspecError) {
+func HttpCreateSingleModel(ctx *mapp.Context, model *SingleModel) (*SingleModel, *mapp.MappError) {
 	// Convert to JSON for request //
 
 	requestBody, err := json.Marshal(model)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error marshaling JSON: %v", err), Code: "marshal_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error marshaling JSON: %v", err), Code: "marshal_error"}
 	}
 
 	// Make HTTP request //
@@ -116,74 +116,74 @@ func HttpCreateSingleModel(ctx *mapp.Context, model *SingleModel) (*SingleModel,
 	url := ctx.ClientHost + "/api/template-module/single-model"
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error creating single model: %v", err), Code: "http_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error creating single model: %v", err), Code: "http_error"}
 	}
 	defer resp.Body.Close()
 
 	// Handle HTTP errors //
 
 	if resp.StatusCode == 401 {
-		return nil, &mapp.MspecError{Message: "authentication error", Code: "authentication_error"}
+		return nil, &mapp.MappError{Message: "authentication error", Code: "authentication_error"}
 	} else if resp.StatusCode == 403 {
-		return nil, &mapp.MspecError{Message: "forbidden", Code: "forbidden"}
+		return nil, &mapp.MappError{Message: "forbidden", Code: "forbidden"}
 	} else if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, &mapp.MspecError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
+		return nil, &mapp.MappError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
 	}
 
 	// Parse response //
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error reading response: %v", err), Code: "read_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error reading response: %v", err), Code: "read_error"}
 	}
 
 	createdModel, err := FromJSON(string(responseBody))
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing response: %v", err), Code: "parse_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error parsing response: %v", err), Code: "parse_error"}
 	}
 
 	return createdModel, nil
 }
 
-func HttpReadSingleModel(ctx *mapp.Context, modelID string) (*SingleModel, *mapp.MspecError) {
+func HttpReadSingleModel(ctx *mapp.Context, modelID string) (*SingleModel, *mapp.MappError) {
 	url := ctx.ClientHost + "/api/template-module/single-model/" + modelID
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error reading single model: %v", err), Code: "http_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error reading single model: %v", err), Code: "http_error"}
 	}
 	defer resp.Body.Close()
 
 	// Handle HTTP errors //
 
 	if resp.StatusCode == 401 {
-		return nil, &mapp.MspecError{Message: "authentication error", Code: "authentication_error"}
+		return nil, &mapp.MappError{Message: "authentication error", Code: "authentication_error"}
 	} else if resp.StatusCode == 403 {
-		return nil, &mapp.MspecError{Message: "forbidden", Code: "forbidden"}
+		return nil, &mapp.MappError{Message: "forbidden", Code: "forbidden"}
 	} else if resp.StatusCode == 404 {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
 	} else if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, &mapp.MspecError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
+		return nil, &mapp.MappError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
 	}
 
 	// Parse response //
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error reading response: %v", err), Code: "read_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error reading response: %v", err), Code: "read_error"}
 	}
 
 	model, err := FromJSON(string(responseBody))
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing response: %v", err), Code: "parse_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error parsing response: %v", err), Code: "parse_error"}
 	}
 
 	return model, nil
 }
 
-func HttpUpdateSingleModel(ctx *mapp.Context, modelID string, model *SingleModel) (*SingleModel, *mapp.MspecError) {
+func HttpUpdateSingleModel(ctx *mapp.Context, modelID string, model *SingleModel) (*SingleModel, *mapp.MappError) {
 	// Set the ID if not already set //
 
 	if model.ID == nil {
@@ -194,7 +194,7 @@ func HttpUpdateSingleModel(ctx *mapp.Context, modelID string, model *SingleModel
 
 	requestBody, err := json.Marshal(model)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error marshaling JSON: %v", err), Code: "marshal_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error marshaling JSON: %v", err), Code: "marshal_error"}
 	}
 
 	// Make HTTP request //
@@ -202,71 +202,71 @@ func HttpUpdateSingleModel(ctx *mapp.Context, modelID string, model *SingleModel
 	url := ctx.ClientHost + "/api/template-module/single-model/" + modelID
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error creating request: %v", err), Code: "request_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error creating request: %v", err), Code: "request_error"}
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error updating single model: %v", err), Code: "http_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error updating single model: %v", err), Code: "http_error"}
 	}
 	defer resp.Body.Close()
 
 	// Handle HTTP errors //
 
 	if resp.StatusCode == 401 {
-		return nil, &mapp.MspecError{Message: "authentication error", Code: "authentication_error"}
+		return nil, &mapp.MappError{Message: "authentication error", Code: "authentication_error"}
 	} else if resp.StatusCode == 403 {
-		return nil, &mapp.MspecError{Message: "forbidden", Code: "forbidden"}
+		return nil, &mapp.MappError{Message: "forbidden", Code: "forbidden"}
 	} else if resp.StatusCode == 404 {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
 	} else if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, &mapp.MspecError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
+		return nil, &mapp.MappError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
 	}
 
 	// Parse response //
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error reading response: %v", err), Code: "read_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error reading response: %v", err), Code: "read_error"}
 	}
 
 	updatedModel, err := FromJSON(string(responseBody))
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing response: %v", err), Code: "parse_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error parsing response: %v", err), Code: "parse_error"}
 	}
 
 	return updatedModel, nil
 }
 
-func HttpDeleteSingleModel(ctx *mapp.Context, modelID string) *mapp.MspecError {
+func HttpDeleteSingleModel(ctx *mapp.Context, modelID string) *mapp.MappError {
 	url := ctx.ClientHost + "/api/template-module/single-model/" + modelID
 
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
-		return &mapp.MspecError{Message: fmt.Sprintf("error creating request: %v", err), Code: "request_error"}
+		return &mapp.MappError{Message: fmt.Sprintf("error creating request: %v", err), Code: "request_error"}
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return &mapp.MspecError{Message: fmt.Sprintf("error deleting single model: %v", err), Code: "http_error"}
+		return &mapp.MappError{Message: fmt.Sprintf("error deleting single model: %v", err), Code: "http_error"}
 	}
 	defer resp.Body.Close()
 
 	// Handle HTTP errors //
 
 	if resp.StatusCode == 401 {
-		return &mapp.MspecError{Message: "authentication error", Code: "authentication_error"}
+		return &mapp.MappError{Message: "authentication error", Code: "authentication_error"}
 	} else if resp.StatusCode == 403 {
-		return &mapp.MspecError{Message: "forbidden", Code: "forbidden"}
+		return &mapp.MappError{Message: "forbidden", Code: "forbidden"}
 	} else if resp.StatusCode == 404 {
-		return &mapp.MspecError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
+		return &mapp.MappError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
 	} else if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
-		return &mapp.MspecError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
+		return &mapp.MappError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
 	}
 
 	return nil
@@ -277,37 +277,37 @@ type ListSingleModelResponse struct {
 	Items []SingleModel `json:"items"`
 }
 
-func HttpListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleModelResponse, *mapp.MspecError) {
+func HttpListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleModelResponse, *mapp.MappError) {
 	url := fmt.Sprintf("%s/api/template-module/single-model?offset=%d&limit=%d", ctx.ClientHost, offset, limit)
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error listing single models: %v", err), Code: "http_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error listing single models: %v", err), Code: "http_error"}
 	}
 	defer resp.Body.Close()
 
 	// Handle HTTP errors //
 
 	if resp.StatusCode == 401 {
-		return nil, &mapp.MspecError{Message: "authentication error", Code: "authentication_error"}
+		return nil, &mapp.MappError{Message: "authentication error", Code: "authentication_error"}
 	} else if resp.StatusCode == 403 {
-		return nil, &mapp.MspecError{Message: "forbidden", Code: "forbidden"}
+		return nil, &mapp.MappError{Message: "forbidden", Code: "forbidden"}
 	} else if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, &mapp.MspecError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
+		return nil, &mapp.MappError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
 	}
 
 	// Parse response //
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error reading response: %v", err), Code: "read_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error reading response: %v", err), Code: "read_error"}
 	}
 
 	var listResponse ListSingleModelResponse
 	err = json.Unmarshal(responseBody, &listResponse)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing response: %v", err), Code: "parse_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error parsing response: %v", err), Code: "parse_error"}
 	}
 
 	return &listResponse, nil
@@ -317,10 +317,10 @@ func HttpListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleM
 // database operations
 //
 
-func DBCreateTableSingleModel(ctx *mapp.Context) (map[string]string, *mapp.MspecError) {
+func DBCreateTableSingleModel(ctx *mapp.Context) (map[string]string, *mapp.MappError) {
 	db, err := mapp.GetDB(ctx)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
 	}
 
 	createTableSQL := `
@@ -339,7 +339,7 @@ func DBCreateTableSingleModel(ctx *mapp.Context) (map[string]string, *mapp.Mspec
 
 	_, err = db.Exec(createTableSQL)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error creating table: %v", err), Code: "db_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error creating table: %v", err), Code: "db_error"}
 	}
 
 	response := map[string]string{
@@ -349,10 +349,10 @@ func DBCreateTableSingleModel(ctx *mapp.Context) (map[string]string, *mapp.Mspec
 	return response, nil
 }
 
-func DBCreateSingleModel(ctx *mapp.Context, model *SingleModel) (*SingleModel, *mapp.MspecError) {
+func DBCreateSingleModel(ctx *mapp.Context, model *SingleModel) (*SingleModel, *mapp.MappError) {
 	db, err := mapp.GetDB(ctx)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
 	}
 
 	// Format datetime as RFC3339 for SQLite storage
@@ -372,13 +372,13 @@ func DBCreateSingleModel(ctx *mapp.Context, model *SingleModel) (*SingleModel, *
 		datetimeStr,
 	)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error creating single model: %v", err), Code: "db_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error creating single model: %v", err), Code: "db_error"}
 	}
 
 	// Get the inserted ID
 	id, err := result.LastInsertId()
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error getting inserted ID: %v", err), Code: "db_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error getting inserted ID: %v", err), Code: "db_error"}
 	}
 
 	// Convert ID to string and set it on the model
@@ -388,10 +388,10 @@ func DBCreateSingleModel(ctx *mapp.Context, model *SingleModel) (*SingleModel, *
 	return model, nil
 }
 
-func DBReadSingleModel(ctx *mapp.Context, modelID string) (*SingleModel, *mapp.MspecError) {
+func DBReadSingleModel(ctx *mapp.Context, modelID string) (*SingleModel, *mapp.MappError) {
 	db, err := mapp.GetDB(ctx)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
 	}
 
 	query := `
@@ -416,9 +416,9 @@ func DBReadSingleModel(ctx *mapp.Context, modelID string) (*SingleModel, *mapp.M
 	)
 	if err != nil {
 		if err.Error() == "sql: no rows in result set" {
-			return nil, &mapp.MspecError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
+			return nil, &mapp.MappError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
 		}
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error reading single model: %v", err), Code: "db_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error reading single model: %v", err), Code: "db_error"}
 	}
 
 	// Convert ID to string
@@ -431,17 +431,17 @@ func DBReadSingleModel(ctx *mapp.Context, modelID string) (*SingleModel, *mapp.M
 	// Parse datetime
 	parsedTime, err := time.Parse(time.RFC3339, datetimeStr)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing datetime: %v", err), Code: "parse_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error parsing datetime: %v", err), Code: "parse_error"}
 	}
 	model.SingleDatetime = mapp.DateTime{Time: parsedTime}
 
 	return &model, nil
 }
 
-func DBUpdateSingleModel(ctx *mapp.Context, modelID string, model *SingleModel) (*SingleModel, *mapp.MspecError) {
+func DBUpdateSingleModel(ctx *mapp.Context, modelID string, model *SingleModel) (*SingleModel, *mapp.MappError) {
 	db, err := mapp.GetDB(ctx)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
 	}
 
 	// Format datetime as RFC3339 for SQLite storage
@@ -463,16 +463,16 @@ func DBUpdateSingleModel(ctx *mapp.Context, modelID string, model *SingleModel) 
 		modelID,
 	)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error updating single model: %v", err), Code: "db_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error updating single model: %v", err), Code: "db_error"}
 	}
 
 	// Check if any rows were affected
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error checking rows affected: %v", err), Code: "db_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error checking rows affected: %v", err), Code: "db_error"}
 	}
 	if rowsAffected == 0 {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
 	}
 
 	// Set the ID on the model
@@ -483,27 +483,27 @@ func DBUpdateSingleModel(ctx *mapp.Context, modelID string, model *SingleModel) 
 	return model, nil
 }
 
-func DBDeleteSingleModel(ctx *mapp.Context, modelID string) *mapp.MspecError {
+func DBDeleteSingleModel(ctx *mapp.Context, modelID string) *mapp.MappError {
 	db, err := mapp.GetDB(ctx)
 	if err != nil {
-		return &mapp.MspecError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
+		return &mapp.MappError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
 	}
 
 	deleteSQL := `DELETE FROM single_model WHERE id = ?`
 
 	_, err = db.Exec(deleteSQL, modelID)
 	if err != nil {
-		return &mapp.MspecError{Message: fmt.Sprintf("error deleting single model: %v", err), Code: "db_error"}
+		return &mapp.MappError{Message: fmt.Sprintf("error deleting single model: %v", err), Code: "db_error"}
 	}
 
 	// Idempotent: successful even if record doesn't exist
 	return nil
 }
 
-func DBListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleModelResponse, *mapp.MspecError) {
+func DBListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleModelResponse, *mapp.MappError) {
 	db, err := mapp.GetDB(ctx)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
 	}
 
 	// Get total count
@@ -511,7 +511,7 @@ func DBListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleMod
 	countQuery := `SELECT COUNT(*) FROM single_model`
 	err = db.QueryRow(countQuery).Scan(&total)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error counting single models: %v", err), Code: "db_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error counting single models: %v", err), Code: "db_error"}
 	}
 
 	// Get paginated items
@@ -524,7 +524,7 @@ func DBListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleMod
 
 	rows, err := db.Query(query, limit, offset)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error listing single models: %v", err), Code: "db_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error listing single models: %v", err), Code: "db_error"}
 	}
 	defer rows.Close()
 
@@ -545,7 +545,7 @@ func DBListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleMod
 			&datetimeStr,
 		)
 		if err != nil {
-			return nil, &mapp.MspecError{Message: fmt.Sprintf("error scanning row: %v", err), Code: "db_error"}
+			return nil, &mapp.MappError{Message: fmt.Sprintf("error scanning row: %v", err), Code: "db_error"}
 		}
 
 		// Convert ID to string
@@ -558,7 +558,7 @@ func DBListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleMod
 		// Parse datetime
 		parsedTime, err := time.Parse(time.RFC3339, datetimeStr)
 		if err != nil {
-			return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing datetime: %v", err), Code: "parse_error"}
+			return nil, &mapp.MappError{Message: fmt.Sprintf("error parsing datetime: %v", err), Code: "parse_error"}
 		}
 		model.SingleDatetime = mapp.DateTime{Time: parsedTime}
 
@@ -567,7 +567,7 @@ func DBListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleMod
 
 	// Check for errors from iterating over rows
 	if err = rows.Err(); err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error iterating rows: %v", err), Code: "db_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error iterating rows: %v", err), Code: "db_error"}
 	}
 
 	response := &ListSingleModelResponse{
@@ -581,7 +581,7 @@ func DBListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleMod
 // cli
 //
 
-func CLIParseSingleModel(args []string) (interface{}, *mapp.MspecError) {
+func CLIParseSingleModel(args []string) (interface{}, *mapp.MappError) {
 
 	command := args[2]
 
@@ -594,11 +594,11 @@ func CLIParseSingleModel(args []string) (interface{}, *mapp.MspecError) {
 		printSingleModelHelp()
 		return nil, nil
 	default:
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("unknown command '%s'", command), Code: "unknown_command"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("unknown command '%s'", command), Code: "unknown_command"}
 	}
 
 	if len(args) < 4 {
-		return nil, &mapp.MspecError{Message: "missing action argument", Code: "missing_argument"}
+		return nil, &mapp.MappError{Message: "missing action argument", Code: "missing_argument"}
 	}
 
 	action := args[3]
@@ -606,27 +606,27 @@ func CLIParseSingleModel(args []string) (interface{}, *mapp.MspecError) {
 	switch action {
 	case "create-table":
 		if command != "db" {
-			return nil, &mapp.MspecError{Message: "create-table is only available for db command", Code: "invalid_action"}
+			return nil, &mapp.MappError{Message: "create-table is only available for db command", Code: "invalid_action"}
 		}
 		return CLIDbCreateTableSingleModel(ctx)
 	case "create":
 		if len(args) < 5 {
-			return nil, &mapp.MspecError{Message: "missing JSON string for create", Code: "missing_argument"}
+			return nil, &mapp.MappError{Message: "missing JSON string for create", Code: "missing_argument"}
 		}
 		return CLICreateSingleModel(command, ctx, args[4])
 	case "read":
 		if len(args) < 5 {
-			return nil, &mapp.MspecError{Message: "missing model ID for read", Code: "missing_argument"}
+			return nil, &mapp.MappError{Message: "missing model ID for read", Code: "missing_argument"}
 		}
 		return CLIReadSingleModel(command, ctx, args[4])
 	case "update":
 		if len(args) < 6 {
-			return nil, &mapp.MspecError{Message: "missing model ID or JSON string for update", Code: "missing_argument"}
+			return nil, &mapp.MappError{Message: "missing model ID or JSON string for update", Code: "missing_argument"}
 		}
 		return CLIUpdateSingleModel(command, ctx, args[4], args[5])
 	case "delete":
 		if len(args) < 5 {
-			return nil, &mapp.MspecError{Message: "missing model ID for delete", Code: "missing_argument"}
+			return nil, &mapp.MappError{Message: "missing model ID for delete", Code: "missing_argument"}
 		}
 		return CLIDeleteSingleModel(command, ctx, args[4])
 	case "list":
@@ -648,20 +648,20 @@ func CLIParseSingleModel(args []string) (interface{}, *mapp.MspecError) {
 		}
 		return CLIListSingleModel(command, ctx, offset, limit)
 	default:
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("unknown action '%s'", action), Code: "unknown_action"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("unknown action '%s'", action), Code: "unknown_action"}
 	}
 }
 
 // cli crud wrappers //
 
-func CLICreateSingleModel(command string, ctx *mapp.Context, jsonData string) (*SingleModel, *mapp.MspecError) {
+func CLICreateSingleModel(command string, ctx *mapp.Context, jsonData string) (*SingleModel, *mapp.MappError) {
 	model, err := FromJSON(jsonData)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
 	}
 
 	var createdModel *SingleModel
-	var mspecErr *mapp.MspecError
+	var mspecErr *mapp.MappError
 
 	if command == "http" {
 		createdModel, mspecErr = HttpCreateSingleModel(ctx, model)
@@ -676,9 +676,9 @@ func CLICreateSingleModel(command string, ctx *mapp.Context, jsonData string) (*
 	return createdModel, nil
 }
 
-func CLIReadSingleModel(command string, ctx *mapp.Context, modelID string) (*SingleModel, *mapp.MspecError) {
+func CLIReadSingleModel(command string, ctx *mapp.Context, modelID string) (*SingleModel, *mapp.MappError) {
 	var model *SingleModel
-	var mspecErr *mapp.MspecError
+	var mspecErr *mapp.MappError
 
 	if command == "http" {
 		model, mspecErr = HttpReadSingleModel(ctx, modelID)
@@ -693,14 +693,14 @@ func CLIReadSingleModel(command string, ctx *mapp.Context, modelID string) (*Sin
 	return model, nil
 }
 
-func CLIUpdateSingleModel(command string, ctx *mapp.Context, modelID string, jsonData string) (*SingleModel, *mapp.MspecError) {
+func CLIUpdateSingleModel(command string, ctx *mapp.Context, modelID string, jsonData string) (*SingleModel, *mapp.MappError) {
 	model, err := FromJSON(jsonData)
 	if err != nil {
-		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
 	}
 
 	var updatedModel *SingleModel
-	var mspecErr *mapp.MspecError
+	var mspecErr *mapp.MappError
 
 	if command == "http" {
 		updatedModel, mspecErr = HttpUpdateSingleModel(ctx, modelID, model)
@@ -715,8 +715,8 @@ func CLIUpdateSingleModel(command string, ctx *mapp.Context, modelID string, jso
 	return updatedModel, nil
 }
 
-func CLIDeleteSingleModel(command string, ctx *mapp.Context, modelID string) (map[string]string, *mapp.MspecError) {
-	var mspecErr *mapp.MspecError
+func CLIDeleteSingleModel(command string, ctx *mapp.Context, modelID string) (map[string]string, *mapp.MappError) {
+	var mspecErr *mapp.MappError
 
 	if command == "http" {
 		mspecErr = HttpDeleteSingleModel(ctx, modelID)
@@ -735,9 +735,9 @@ func CLIDeleteSingleModel(command string, ctx *mapp.Context, modelID string) (ma
 	return response, nil
 }
 
-func CLIListSingleModel(command string, ctx *mapp.Context, offset int, limit int) (*ListSingleModelResponse, *mapp.MspecError) {
+func CLIListSingleModel(command string, ctx *mapp.Context, offset int, limit int) (*ListSingleModelResponse, *mapp.MappError) {
 	var listResponse *ListSingleModelResponse
-	var mspecErr *mapp.MspecError
+	var mspecErr *mapp.MappError
 
 	if command == "http" {
 		listResponse, mspecErr = HttpListSingleModel(ctx, offset, limit)
@@ -754,7 +754,7 @@ func CLIListSingleModel(command string, ctx *mapp.Context, offset int, limit int
 
 // other cli commands //
 
-func CLIDbCreateTableSingleModel(ctx *mapp.Context) (map[string]string, *mapp.MspecError) {
+func CLIDbCreateTableSingleModel(ctx *mapp.Context) (map[string]string, *mapp.MappError) {
 	response, mspecErr := DBCreateTableSingleModel(ctx)
 	if mspecErr != nil {
 		return nil, mspecErr
