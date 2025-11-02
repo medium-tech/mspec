@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/medium-tech/mspec/templates/go/mapp"
 )
@@ -313,23 +314,78 @@ func HttpListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleM
 }
 
 //
-// database operations (placeholder)
+// database operations
 //
 
 func DBCreateTableSingleModel() (map[string]string, *mapp.MspecError) {
-	// Placeholder: This will create the SQLite table
+	db, err := mapp.GetDB()
+	if err != nil {
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
+	}
+
+	createTableSQL := `
+	CREATE TABLE IF NOT EXISTS single_model (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		single_bool INTEGER NOT NULL,
+		single_int INTEGER NOT NULL,
+		single_float REAL NOT NULL,
+		single_string TEXT NOT NULL,
+		single_enum TEXT NOT NULL CHECK(single_enum IN ('red', 'green', 'blue')),
+		single_datetime TEXT NOT NULL
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_single_model_enum ON single_model(single_enum);
+	CREATE INDEX IF NOT EXISTS idx_single_model_created_at ON single_model(created_at);
+	`
+
+	_, err = db.Exec(createTableSQL)
+	if err != nil {
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("error creating table: %v", err), Code: "db_error"}
+	}
+
 	response := map[string]string{
-		"message": "table single_model created (placeholder)",
+		"message": "table single_model created successfully",
 		"status":  "success",
 	}
 	return response, nil
 }
 
 func DBCreateSingleModel(model *SingleModel) (*SingleModel, *mapp.MspecError) {
-	// Placeholder: This will insert into SQLite
-	// For now, just return the model with a placeholder ID
-	id := "placeholder-id-123"
-	model.ID = &id
+	db, err := mapp.GetDB()
+	if err != nil {
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
+	}
+
+	// Format datetime as RFC3339 for SQLite storage
+	datetimeStr := model.SingleDatetime.Time.Format(time.RFC3339)
+
+	insertSQL := `
+	INSERT INTO single_model (single_bool, single_int, single_float, single_string, single_enum, single_datetime)
+	VALUES (?, ?, ?, ?, ?, ?)
+	`
+
+	result, err := db.Exec(insertSQL,
+		model.SingleBool,
+		model.SingleInt,
+		model.SingleFloat,
+		model.SingleString,
+		model.SingleEnum,
+		datetimeStr,
+	)
+	if err != nil {
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("error creating single model: %v", err), Code: "db_error"}
+	}
+
+	// Get the inserted ID
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("error getting inserted ID: %v", err), Code: "db_error"}
+	}
+
+	// Convert ID to string and set it on the model
+	idStr := fmt.Sprintf("%d", id)
+	model.ID = &idStr
+
 	return model, nil
 }
 
