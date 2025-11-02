@@ -141,7 +141,10 @@ Examples:
 //
 
 func startServer(ctx *mapp.Context) {
-	http.HandleFunc("/", helloHandler)
+
+	template_module.ServerRegisterRoutesSingleModel(ctx)
+
+	http.HandleFunc("/", notFoundHandler)
 
 	if ctx.ServerPort < 1 || ctx.ServerPort > 65535 {
 		fmt.Fprintf(os.Stderr, "Error: invalid port '%d' (must be 1-65535)\n", ctx.ServerPort)
@@ -158,7 +161,10 @@ func startServer(ctx *mapp.Context) {
 	}
 }
 
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain")
-	fmt.Fprintf(w, "hello.world\n")
+func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Printf("NOT FOUND %s\n", r.URL.Path)
+
+	w.WriteHeader(http.StatusNotFound)
+	json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
 }
