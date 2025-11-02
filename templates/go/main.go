@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 
@@ -151,7 +150,12 @@ func startServer(ctx *mapp.Context) {
 
 	addr := fmt.Sprintf(":%d", ctx.ServerPort)
 	fmt.Printf("Starting server on http://localhost%s\n", addr)
-	log.Fatal(http.ListenAndServe(addr, nil))
+
+	err := http.ListenAndServe(addr, nil)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: failed to start server on port %d: %v\n", ctx.ServerPort, err)
+		os.Exit(1)
+	}
 }
 
 func helloHandler(w http.ResponseWriter, r *http.Request) {
