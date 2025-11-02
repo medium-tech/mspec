@@ -840,3 +840,198 @@ Examples:
   ./main template-module single-model db create-table
   ./main template-module single-model db list`)
 }
+
+//
+// server
+//
+
+// ServerCreateSingleModel handles POST /api/template-module/single-model
+func ServerCreateSingleModel(ctx *mapp.Context, w http.ResponseWriter, r *http.Request) {
+	// Read request body
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to read request body"})
+		return
+	}
+
+	// Parse JSON into model
+	model, parseErr := FromJSON(string(body))
+	if parseErr != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": parseErr.Error()})
+		return
+	}
+
+	// Create in database
+	created, mappErr := DBCreateSingleModel(ctx, model)
+	if mappErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": mappErr.Message})
+		return
+	}
+
+	// Log and respond
+	fmt.Printf("POST template-module.single-model - id: %s\n", *created.ID)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(created)
+}
+
+// ServerReadSingleModel handles GET /api/template-module/single-model/{id}
+func ServerReadSingleModel(ctx *mapp.Context, w http.ResponseWriter, r *http.Request, modelID string) {
+	// Read from database
+	model, mappErr := DBReadSingleModel(ctx, modelID)
+	if mappErr != nil {
+		if mappErr.Code == "not_found" {
+			fmt.Printf("GET template-module.single-model/%s - Not Found\n", modelID)
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": mappErr.Message})
+		return
+	}
+
+	// Log and respond
+	fmt.Printf("GET template-module.single-model/%s\n", modelID)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(model)
+}
+
+// ServerUpdateSingleModel handles PUT /api/template-module/single-model/{id}
+func ServerUpdateSingleModel(ctx *mapp.Context, w http.ResponseWriter, r *http.Request, modelID string) {
+	// Read request body
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to read request body"})
+		return
+	}
+
+	// Parse JSON into model
+	model, parseErr := FromJSON(string(body))
+	if parseErr != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": parseErr.Error()})
+		return
+	}
+
+	// Verify ID matches
+	if model.ID != nil && *model.ID != modelID {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "single model id mismatch"})
+		return
+	}
+
+	// Update in database
+	updated, mappErr := DBUpdateSingleModel(ctx, modelID, model)
+	if mappErr != nil {
+		if mappErr.Code == "not_found" {
+			fmt.Printf("PUT template-module.single-model/%s - Not Found\n", modelID)
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": mappErr.Message})
+		return
+	}
+
+	// Log and respond
+	fmt.Printf("PUT template-module.single-model/%s\n", modelID)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(updated)
+}
+
+// ServerDeleteSingleModel handles DELETE /api/template-module/single-model/{id}
+func ServerDeleteSingleModel(ctx *mapp.Context, w http.ResponseWriter, r *http.Request, modelID string) {
+	// Delete from database
+	mappErr := DBDeleteSingleModel(ctx, modelID)
+	if mappErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": mappErr.Message})
+		return
+	}
+
+	// Log and respond
+	fmt.Printf("DELETE template-module.single-model/%s\n", modelID)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// ServerListSingleModel handles GET /api/template-module/single-model
+func ServerListSingleModel(ctx *mapp.Context, w http.ResponseWriter, r *http.Request) {
+	// Parse query parameters
+	offset := 0
+	limit := 25
+
+	if offsetStr := r.URL.Query().Get("offset"); offsetStr != "" {
+		if val, err := strconv.Atoi(offsetStr); err == nil {
+			offset = val
+		}
+	}
+
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if val, err := strconv.Atoi(limitStr); err == nil {
+			limit = val
+		}
+	}
+
+	// List from database
+	result, mappErr := DBListSingleModel(ctx, offset, limit)
+	if mappErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": mappErr.Message})
+		return
+	}
+
+	// Log and respond
+	fmt.Printf("GET template-module.single-model\n")
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(result)
+}
+
+// ServerRegisterRoutesSingleModel registers all single-model routes
+func ServerRegisterRoutesSingleModel(ctx *mapp.Context) {
+	// Model routes - /api/template-module/single-model
+	http.HandleFunc("/api/template-module/single-model", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			ServerCreateSingleModel(ctx, w, r)
+		case http.MethodGet:
+			ServerListSingleModel(ctx, w, r)
+		default:
+			fmt.Printf("ERROR 405 template-module.single-model\n")
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			json.NewEncoder(w).Encode(map[string]string{"error": "invalid request method"})
+		}
+	})
+
+	// Instance routes - /api/template-module/single-model/{id}
+	http.HandleFunc("/api/template-module/single-model/", func(w http.ResponseWriter, r *http.Request) {
+		// Extract ID from path
+		path := strings.TrimPrefix(r.URL.Path, "/api/template-module/single-model/")
+		if path == "" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		modelID := path
+
+		switch r.Method {
+		case http.MethodGet:
+			ServerReadSingleModel(ctx, w, r, modelID)
+		case http.MethodPut:
+			ServerUpdateSingleModel(ctx, w, r, modelID)
+		case http.MethodDelete:
+			ServerDeleteSingleModel(ctx, w, r, modelID)
+		default:
+			fmt.Printf("ERROR 405 template-module.single-model/%s\n", modelID)
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			json.NewEncoder(w).Encode(map[string]string{"error": "invalid request method"})
+		}
+	})
+}
