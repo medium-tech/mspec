@@ -2,6 +2,7 @@ package template_module
 
 import (
 	"bytes"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -330,26 +331,16 @@ func HttpListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleM
 // database operations
 //
 
+//go:embed sql/single_model_create_table.sql
+var createTableSQL string
+
 func DBCreateTableSingleModel(ctx *mapp.Context) (map[string]string, *mapp.MappError) {
 	db, err := mapp.GetDB(ctx)
 	if err != nil {
 		return nil, &mapp.MappError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
 	}
 
-	createTableSQL := `
-	CREATE TABLE IF NOT EXISTS single_model (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		single_bool INTEGER NOT NULL,
-		single_int INTEGER NOT NULL,
-		single_float REAL NOT NULL,
-		single_string TEXT NOT NULL,
-		single_enum TEXT NOT NULL CHECK(single_enum IN ('red', 'green', 'blue')),
-		single_datetime TEXT NOT NULL
-	);
-
-	CREATE INDEX IF NOT EXISTS idx_single_model_enum ON single_model(single_enum);
-	`
-
+	// Use embedded SQL
 	_, err = db.Exec(createTableSQL)
 	if err != nil {
 		return nil, &mapp.MappError{Message: fmt.Sprintf("error creating table: %v", err), Code: "db_error"}
