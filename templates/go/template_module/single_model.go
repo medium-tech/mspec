@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -28,12 +29,7 @@ const (
 var singleEnumOptions = []string{"red", "green", "blue"}
 
 func IsValidSingleEnum(s string) bool {
-	for _, v := range singleEnumOptions {
-		if s == v {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(singleEnumOptions, s)
 }
 
 type SingleModel struct {
@@ -79,6 +75,23 @@ func FromJSON(jsonStr string) (*SingleModel, error) {
 	for _, field := range requiredFields {
 		if _, exists := rawData[field]; !exists {
 			return nil, fmt.Errorf("missing required field: %s", field)
+		}
+	}
+
+	// Check for extra fields //
+	allowedFields := []string{
+		"id",
+		"single_bool",
+		"single_int",
+		"single_float",
+		"single_string",
+		"single_enum",
+		"single_datetime",
+	}
+
+	for field := range rawData {
+		if !slices.Contains(allowedFields, field) {
+			return nil, fmt.Errorf("extra field found: %s", field)
 		}
 	}
 
