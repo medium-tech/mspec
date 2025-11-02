@@ -389,51 +389,197 @@ func DBCreateSingleModel(ctx *mapp.Context, model *SingleModel) (*SingleModel, *
 }
 
 func DBReadSingleModel(ctx *mapp.Context, modelID string) (*SingleModel, *mapp.MspecError) {
-	// Placeholder: This will query SQLite
-	model := &SingleModel{
-		ID:             &modelID,
-		SingleBool:     true,
-		SingleInt:      42,
-		SingleFloat:    3.14,
-		SingleString:   "placeholder data from db",
-		SingleEnum:     "blue",
-		SingleDatetime: mapp.DateTime{},
+	db, err := mapp.GetDB(ctx)
+	if err != nil {
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
 	}
-	return model, nil
+
+	query := `
+	SELECT id, single_bool, single_int, single_float, single_string, single_enum, single_datetime
+	FROM single_model
+	WHERE id = ?
+	`
+
+	var model SingleModel
+	var id int
+	var singleBool int
+	var datetimeStr string
+
+	err = db.QueryRow(query, modelID).Scan(
+		&id,
+		&singleBool,
+		&model.SingleInt,
+		&model.SingleFloat,
+		&model.SingleString,
+		&model.SingleEnum,
+		&datetimeStr,
+	)
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			return nil, &mapp.MspecError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
+		}
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("error reading single model: %v", err), Code: "db_error"}
+	}
+
+	// Convert ID to string
+	idStr := fmt.Sprintf("%d", id)
+	model.ID = &idStr
+
+	// Convert SQLite integer to bool
+	model.SingleBool = singleBool != 0
+
+	// Parse datetime
+	parsedTime, err := time.Parse(time.RFC3339, datetimeStr)
+	if err != nil {
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing datetime: %v", err), Code: "parse_error"}
+	}
+	model.SingleDatetime = mapp.DateTime{Time: parsedTime}
+
+	return &model, nil
 }
 
 func DBUpdateSingleModel(ctx *mapp.Context, modelID string, model *SingleModel) (*SingleModel, *mapp.MspecError) {
-	// Placeholder: This will update in SQLite
+	db, err := mapp.GetDB(ctx)
+	if err != nil {
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
+	}
+
+	// Format datetime as RFC3339 for SQLite storage
+	datetimeStr := model.SingleDatetime.Time.Format(time.RFC3339)
+
+	updateSQL := `
+	UPDATE single_model
+	SET single_bool = ?, single_int = ?, single_float = ?, single_string = ?, single_enum = ?, single_datetime = ?
+	WHERE id = ?
+	`
+
+	result, err := db.Exec(updateSQL,
+		model.SingleBool,
+		model.SingleInt,
+		model.SingleFloat,
+		model.SingleString,
+		model.SingleEnum,
+		datetimeStr,
+		modelID,
+	)
+	if err != nil {
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("error updating single model: %v", err), Code: "db_error"}
+	}
+
+	// Check if any rows were affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("error checking rows affected: %v", err), Code: "db_error"}
+	}
+	if rowsAffected == 0 {
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
+	}
+
+	// Set the ID on the model
 	if model.ID == nil {
 		model.ID = &modelID
 	}
+
 	return model, nil
 }
 
 func DBDeleteSingleModel(ctx *mapp.Context, modelID string) *mapp.MspecError {
-	// Placeholder: This will delete from SQLite
+	db, err := mapp.GetDB(ctx)
+	if err != nil {
+		return &mapp.MspecError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
+	}
+
+	deleteSQL := `DELETE FROM single_model WHERE id = ?`
+
+	result, err := db.Exec(deleteSQL, modelID)
+	if err != nil {
+		return &mapp.MspecError{Message: fmt.Sprintf("error deleting single model: %v", err), Code: "db_error"}
+	}
+
+	// Check if any rows were affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return &mapp.MspecError{Message: fmt.Sprintf("error checking rows affected: %v", err), Code: "db_error"}
+	}
+	if rowsAffected == 0 {
+		return &mapp.MspecError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
+	}
+
 	return nil
 }
 
 func DBListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleModelResponse, *mapp.MspecError) {
-	// Placeholder: This will query SQLite with pagination
+	db, err := mapp.GetDB(ctx)
+	if err != nil {
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
+	}
+
+	// Get total count
+	var total int
+	countQuery := `SELECT COUNT(*) FROM single_model`
+	err = db.QueryRow(countQuery).Scan(&total)
+	if err != nil {
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("error counting single models: %v", err), Code: "db_error"}
+	}
+
+	// Get paginated items
+	query := `
+	SELECT id, single_bool, single_int, single_float, single_string, single_enum, single_datetime
+	FROM single_model
+	ORDER BY id
+	LIMIT ? OFFSET ?
+	`
+
+	rows, err := db.Query(query, limit, offset)
+	if err != nil {
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("error listing single models: %v", err), Code: "db_error"}
+	}
+	defer rows.Close()
+
 	items := []SingleModel{}
-	for i := 0; i < 3; i++ {
-		id := fmt.Sprintf("placeholder-id-%d", offset+i+1)
-		item := SingleModel{
-			ID:             &id,
-			SingleBool:     i%2 == 0,
-			SingleInt:      100 + i,
-			SingleFloat:    1.5 * float64(i),
-			SingleString:   fmt.Sprintf("placeholder item %d", i+1),
-			SingleEnum:     "green",
-			SingleDatetime: mapp.DateTime{},
+	for rows.Next() {
+		var model SingleModel
+		var id int
+		var singleBool int
+		var datetimeStr string
+
+		err = rows.Scan(
+			&id,
+			&singleBool,
+			&model.SingleInt,
+			&model.SingleFloat,
+			&model.SingleString,
+			&model.SingleEnum,
+			&datetimeStr,
+		)
+		if err != nil {
+			return nil, &mapp.MspecError{Message: fmt.Sprintf("error scanning row: %v", err), Code: "db_error"}
 		}
-		items = append(items, item)
+
+		// Convert ID to string
+		idStr := fmt.Sprintf("%d", id)
+		model.ID = &idStr
+
+		// Convert SQLite integer to bool
+		model.SingleBool = singleBool != 0
+
+		// Parse datetime
+		parsedTime, err := time.Parse(time.RFC3339, datetimeStr)
+		if err != nil {
+			return nil, &mapp.MspecError{Message: fmt.Sprintf("error parsing datetime: %v", err), Code: "parse_error"}
+		}
+		model.SingleDatetime = mapp.DateTime{Time: parsedTime}
+
+		items = append(items, model)
+	}
+
+	// Check for errors from iterating over rows
+	if err = rows.Err(); err != nil {
+		return nil, &mapp.MspecError{Message: fmt.Sprintf("error iterating rows: %v", err), Code: "db_error"}
 	}
 
 	response := &ListSingleModelResponse{
-		Total: 100, // placeholder total
+		Total: total,
 		Items: items,
 	}
 	return response, nil
