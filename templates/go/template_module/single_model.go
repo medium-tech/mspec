@@ -491,20 +491,12 @@ func DBDeleteSingleModel(ctx *mapp.Context, modelID string) *mapp.MspecError {
 
 	deleteSQL := `DELETE FROM single_model WHERE id = ?`
 
-	result, err := db.Exec(deleteSQL, modelID)
+	_, err = db.Exec(deleteSQL, modelID)
 	if err != nil {
 		return &mapp.MspecError{Message: fmt.Sprintf("error deleting single model: %v", err), Code: "db_error"}
 	}
 
-	// Check if any rows were affected
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return &mapp.MspecError{Message: fmt.Sprintf("error checking rows affected: %v", err), Code: "db_error"}
-	}
-	if rowsAffected == 0 {
-		return &mapp.MspecError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
-	}
-
+	// Idempotent: successful even if record doesn't exist
 	return nil
 }
 

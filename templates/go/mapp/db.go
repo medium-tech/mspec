@@ -10,21 +10,49 @@ import (
 )
 
 var (
-	db     *sql.DB
-	dbOnce sync.Once
-	dbErr  error
+	db      *sql.DB
+	dbOnce  sync.Once
+	dbErr   error
+	dbPath  string
+	dbMutex sync.Mutex
 )
+
+// ResetDB closes the current database connection and resets the singleton
+// This is primarily for testing purposes
+func ResetDB() {
+	dbMutex.Lock()
+	defer dbMutex.Unlock()
+
+	if db != nil {
+		db.Close()
+	}
+	db = nil
+	dbErr = nil
+	dbPath = ""
+	dbOnce = sync.Once{}
+}
 
 // GetDB returns a singleton SQLite database connection using the path from context
 func GetDB(ctx *Context) (*sql.DB, error) {
-	dbOnce.Do(func() {
-		// Get database path from context
-		dbPath := ctx.DBFile
+	dbMutex.Lock()
+	defer dbMutex.Unlock()
 
-		// If it's a relative path, put it in the data directory
-		if !filepath.IsAbs(dbPath) {
-			dbPath = filepath.Join("data", dbPath)
-		}
+	// Get database path from context
+	contextDBPath := ctx.DBFile
+	if !filepath.IsAbs(contextDBPath) {
+		contextDBPath = filepath.Join("data", contextDBPath)
+	}
+
+	// If we already have a connection to a different database, reset
+	if db != nil && dbPath != contextDBPath {
+		db.Close()
+		db = nil
+		dbErr = nil
+		dbOnce = sync.Once{}
+	}
+
+	dbOnce.Do(func() {
+		dbPath = contextDBPath
 
 		// Ensure the directory exists
 		dir := filepath.Dir(dbPath)
