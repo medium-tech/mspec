@@ -7,16 +7,8 @@ import (
 	"testing"
 )
 
-// These tests build the binary and test the CLI interface
-// They require the Python server to be running at http://localhost:5005
-
-func buildBinary(t *testing.T) {
-	cmd := exec.Command("go", "build", "-o", "main_test", "main.go")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("Failed to build binary: %v\n%s", err, string(output))
-	}
-}
+// These tests use the main_test binary built by test.sh
+// They require the Go server to be running at http://localhost:5005
 
 func runCLI(t *testing.T, args ...string) (string, int) {
 	cmdArgs := append([]string{"./main_test"}, args...)
@@ -36,8 +28,6 @@ func runCLI(t *testing.T, args ...string) (string, int) {
 }
 
 func TestCLI_Help(t *testing.T) {
-	buildBinary(t)
-
 	output, exitCode := runCLI(t, "--help")
 
 	if exitCode != 0 {
@@ -52,8 +42,6 @@ func TestCLI_Help(t *testing.T) {
 }
 
 func TestCLI_InvalidCommand(t *testing.T) {
-	buildBinary(t)
-
 	output, exitCode := runCLI(t, "invalid-command")
 
 	if exitCode == 0 {
@@ -65,8 +53,6 @@ func TestCLI_InvalidCommand(t *testing.T) {
 }
 
 func TestCLI_CreateSingleModel(t *testing.T) {
-	buildBinary(t)
-
 	jsonInput := `{"single_bool":false,"single_int":42,"single_float":3.14,"single_string":"cli test","single_enum":"red","single_datetime":"2000-01-11T12:34:56"}`
 
 	output, exitCode := runCLI(t, "template-module", "single-model", "http", "create", jsonInput)
@@ -98,8 +84,6 @@ func TestCLI_CreateSingleModel(t *testing.T) {
 }
 
 func TestCLI_CreateSingleModel_InvalidJSON(t *testing.T) {
-	buildBinary(t)
-
 	output, exitCode := runCLI(t, "template-module", "single-model", "http", "create", "{invalid json}")
 
 	if exitCode == 0 {
@@ -126,8 +110,6 @@ func TestCLI_CreateSingleModel_InvalidJSON(t *testing.T) {
 }
 
 func TestCLI_CreateSingleModel_MissingRequiredField(t *testing.T) {
-	buildBinary(t)
-
 	jsonInput := `{"single_int":42}` // missing required fields
 
 	output, exitCode := runCLI(t, "template-module", "single-model", "http", "create", jsonInput)
@@ -149,8 +131,6 @@ func TestCLI_CreateSingleModel_MissingRequiredField(t *testing.T) {
 }
 
 func TestCLI_ReadSingleModel_NotFound(t *testing.T) {
-	buildBinary(t)
-
 	output, exitCode := runCLI(t, "template-module", "single-model", "http", "read", "nonexistent-id-99999")
 
 	if exitCode == 0 {
@@ -173,8 +153,6 @@ func TestCLI_ReadSingleModel_NotFound(t *testing.T) {
 }
 
 func TestCLI_ListSingleModel(t *testing.T) {
-	buildBinary(t)
-
 	output, exitCode := runCLI(t, "template-module", "single-model", "http", "list", "--offset=0", "--limit=5")
 
 	if exitCode != 0 {
@@ -207,8 +185,6 @@ func TestCLI_ListSingleModel(t *testing.T) {
 }
 
 func TestCLI_DeleteSingleModel(t *testing.T) {
-	buildBinary(t)
-
 	// First create a model to delete
 	jsonInput := `{"single_bool":true,"single_int":999,"single_float":1.1,"single_string":"delete me","single_enum":"blue","single_datetime":"2000-01-11T12:34:56"}`
 	createOutput, exitCode := runCLI(t, "template-module", "single-model", "http", "create", jsonInput)
@@ -248,8 +224,6 @@ func TestCLI_DeleteSingleModel(t *testing.T) {
 }
 
 func TestCLI_UpdateSingleModel(t *testing.T) {
-	buildBinary(t)
-
 	// First create a model to update
 	jsonInput := `{"single_bool":true,"single_int":100,"single_float":2.2,"single_string":"original","single_enum":"green","single_datetime":"2000-01-11T12:34:56"}`
 	createOutput, exitCode := runCLI(t, "template-module", "single-model", "http", "create", jsonInput)

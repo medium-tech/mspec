@@ -16,13 +16,13 @@ echo "Port 5005 is available"
 
 # Build the server
 echo ""
-echo "Building Go server..."
-go build -o main main.go
+echo "Building Go binary for testing..."
+go build -o main_test main.go
 
 # Start the Go server in the background
 echo ""
 echo "Starting Go server on port 5005..."
-MAPP_SERVER_PORT=5005 ./main server > /tmp/go-test-server.log 2>&1 &
+MAPP_SERVER_PORT=5005 ./main_test server > /tmp/go-test-server.log 2>&1 &
 SERVER_PID=$!
 
 # Function to cleanup on exit
@@ -32,6 +32,7 @@ cleanup() {
     kill $SERVER_PID 2>/dev/null || true
     wait $SERVER_PID 2>/dev/null || true
     rm -f /tmp/go-test-server.log
+    rm -f ./main_test
 }
 
 # Register cleanup function to run on script exit
@@ -66,11 +67,6 @@ go test -v ./template_module -run "^TestHttp"
 echo ""
 echo "Running CLI tests..."
 go test -v . -run "^TestCLI"
-
-# Clean up test binary
-if [ -f "./main_test" ]; then
-    rm ./main_test
-fi
 
 echo ""
 echo "=== All tests passed! ==="
