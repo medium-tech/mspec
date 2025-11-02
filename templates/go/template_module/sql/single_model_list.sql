@@ -5,7 +5,7 @@ SELECT
     single_float,
     single_string,
     single_enum,
-    single_datetime
+    single_datetime,
 FROM single_model
 ORDER BY id
 LIMIT ? OFFSET ?

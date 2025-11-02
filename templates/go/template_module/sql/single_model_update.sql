@@ -5,5 +5,5 @@ SET
     single_float = ?,
     single_string = ?,
     single_enum = ?,
-    single_datetime = ?
+    single_datetime = ?,
 WHERE id = ?

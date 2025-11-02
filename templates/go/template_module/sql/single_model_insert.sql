@@ -4,6 +4,13 @@ INSERT INTO single_model (
     single_float, 
     single_string, 
     single_enum, 
-    single_datetime
+    single_datetime,
 )
-VALUES (?, ?, ?, ?, ?, ?)
+VALUES (
+    ?, 
+    ?, 
+    ?, 
+    ?, 
+    ?, 
+    ?,
+)
