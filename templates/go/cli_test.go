@@ -36,9 +36,6 @@ func TestCLI_Help(t *testing.T) {
 	if !strings.Contains(output, "Usage:") {
 		t.Error("Help output doesn't contain 'Usage:'")
 	}
-	if !strings.Contains(output, "template-module single-model http create") {
-		t.Error("Help output doesn't contain 'template-module single-model http create'")
-	}
 }
 
 func TestCLI_InvalidCommand(t *testing.T) {
@@ -47,7 +44,7 @@ func TestCLI_InvalidCommand(t *testing.T) {
 	if exitCode == 0 {
 		t.Error("Expected non-zero exit code for invalid command")
 	}
-	if !strings.Contains(output, "Error") {
+	if !strings.Contains(output, "unknown_module") {
 		t.Error("Expected error message")
 	}
 }

@@ -1,3 +1,4 @@
+// mtemplate :: {"module": "template module", "model": "single model"}
 package template_module
 
 import (
@@ -19,19 +20,34 @@ import (
 // data model
 //
 
+// for :: {% for field in model.enum_fields %} ::{"SingleEnum": "field.name.pascal_case", "singleEnum": "field.name.camel_case"}
 type SingleEnumType string
 
 const (
-	SingleEnumRed   SingleEnumType = "red"
+	// for :: {% for value in field.enum %} :: {"red": "value"}
+	SingleEnumRed SingleEnumType = "red"
+	// end for ::
+	// ignore ::
 	SingleEnumGreen SingleEnumType = "green"
 	SingleEnumBlue  SingleEnumType = "blue"
+	// end ignore
 )
 
-var singleEnumOptions = []string{"red", "green", "blue"}
+var singleEnumOptions = []string{
+	// for :: {% for value in field.enum %} :: {"red": "value"}
+	"red",
+	// end for ::
+	// ignore ::
+	"green",
+	"blue",
+	// end ignore
+}
 
 func IsValidSingleEnum(s string) bool {
 	return slices.Contains(singleEnumOptions, s)
 }
+
+// end for ::
 
 type SingleModel struct {
 	ID             *string       `json:"id,omitempty"`
@@ -580,7 +596,10 @@ func DBListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleMod
 // cli
 //
 
-func CLIParseSingleModel(args []string) (interface{}, *mapp.MappError) {
+func CLIParseSingleModel(args []string, num_args int) (interface{}, *mapp.MappError) {
+	if num_args < 3 {
+		return nil, &mapp.MappError{Message: "missing command argument", Code: "missing_argument"}
+	}
 
 	command := args[2]
 
@@ -589,14 +608,14 @@ func CLIParseSingleModel(args []string) (interface{}, *mapp.MappError) {
 	switch command {
 	case "http", "db":
 		// Validate command is supported
-	case "help":
+	case "help", "--help", "-h":
 		printSingleModelHelp()
 		return nil, nil
 	default:
 		return nil, &mapp.MappError{Message: fmt.Sprintf("unknown command '%s'", command), Code: "unknown_command"}
 	}
 
-	if len(args) < 4 {
+	if num_args < 4 {
 		return nil, &mapp.MappError{Message: "missing action argument", Code: "missing_argument"}
 	}
 
@@ -609,22 +628,22 @@ func CLIParseSingleModel(args []string) (interface{}, *mapp.MappError) {
 		}
 		return CLIDbCreateTableSingleModel(ctx)
 	case "create":
-		if len(args) < 5 {
+		if num_args < 5 {
 			return nil, &mapp.MappError{Message: "missing JSON string for create", Code: "missing_argument"}
 		}
 		return CLICreateSingleModel(command, ctx, args[4])
 	case "read":
-		if len(args) < 5 {
+		if num_args < 5 {
 			return nil, &mapp.MappError{Message: "missing model ID for read", Code: "missing_argument"}
 		}
 		return CLIReadSingleModel(command, ctx, args[4])
 	case "update":
-		if len(args) < 6 {
+		if num_args < 6 {
 			return nil, &mapp.MappError{Message: "missing model ID or JSON string for update", Code: "missing_argument"}
 		}
 		return CLIUpdateSingleModel(command, ctx, args[4], args[5])
 	case "delete":
-		if len(args) < 5 {
+		if num_args < 5 {
 			return nil, &mapp.MappError{Message: "missing model ID for delete", Code: "missing_argument"}
 		}
 		return CLIDeleteSingleModel(command, ctx, args[4])

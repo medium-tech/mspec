@@ -23,3 +23,5 @@ go build -o main main.go
 
 - `main.go` - Main hello world program
 - `go.mod` - Go module definition
+
+# mtemplate :: {"scope": "app"}

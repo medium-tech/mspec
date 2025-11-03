@@ -1,4 +1,5 @@
 #!/bin/bash
+# mtemplate :: {"scope": "app"}
 
 set -e
 
@@ -69,4 +70,4 @@ echo "Running CLI tests..."
 go test -v . -run "^TestCLI"
 
 echo ""
-echo "=== All tests passed! ==="
+echo "=== PASSED ==="

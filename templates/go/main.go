@@ -39,29 +39,34 @@ func main() {
 	}
 
 	module := args[0]
-
-	// Require at least 3 args for actual commands
-	if len(args) < 3 {
-		fmt.Fprintln(os.Stderr, "Error: insufficient arguments")
-		printHelp()
-		os.Exit(1)
-	}
+	var model string
+	num_args := len(args)
 
 	var result interface{}
 	var cliErr *mapp.MappError
 
 	switch module {
+	// for :: {% for module in modules %} :: {"template-module": "module.name.kebab_case"}
 	case "template-module":
-		model := args[1]
+
+		if num_args < 2 {
+			cliErr = &mapp.MappError{Message: "missing command argument", Code: "missing_argument"}
+			break
+		} else {
+			model = args[1]
+		}
 		switch model {
+		// for :: {% for model in module.models %} :: {"single-model": "model.name.kebab_case"}
 		case "single-model":
-			result, cliErr = template_module.CLIParseSingleModel(args)
-		case "help":
+			result, cliErr = template_module.CLIParseSingleModel(args, num_args)
+		// end for ::
+		case "help", "--help", "-h":
 			printTemplateModuleHelp()
 			os.Exit(0)
 		default:
 			cliErr = &mapp.MappError{Message: fmt.Sprintf("unknown model type '%s'", model), Code: "unknown_model"}
 		}
+	// end for ::
 	default:
 		cliErr = &mapp.MappError{Message: fmt.Sprintf("unknown module '%s'", module), Code: "unknown_module"}
 	}
@@ -90,6 +95,20 @@ func main() {
 // help menu
 //
 
+var availableModules = []string{
+	// for :: {% for module in modules %} :: {"template-module": "module.name.kebab_case"}
+	"template-module",
+	// end for ::
+}
+
+func availableModulesList() string {
+	result := ""
+	for _, module := range availableModules {
+		result += fmt.Sprintf("  %s\n", module)
+	}
+	return result
+}
+
 func printHelp() {
 	fmt.Printf(`Usage:
   ./main -h | --help | help
@@ -101,39 +120,33 @@ func printHelp() {
   ./main <module> help
       Displays help for a specific module.
 
-  ./main <module> <model>
+  ./main <module> <model> help
       Displays help for a specific model.
 
 Available modules:
-  template-module    Example module with CRUD operations
-
+%s
 Environment variables:
   MAPP_SERVER_PORT    The server port (default: %d)
   MAPP_CLIENT_HOST    The client host URL (default: %s)
-  MAPP_DB_FILE       The database file path (default: %s)
-
-Examples:
-  ./main server 8080
-  ./main template-module help
-  ./main template-module single-model
-  ./main template-module single-model http create '{"single_bool":true,...}'`, mapp.MappServerPortDefault, mapp.MappClientHostDefault, mapp.MappDBFileDefault)
+  MAPP_DB_FILE       The database file path (default: %s)`,
+		availableModulesList(), mapp.MappServerPortDefault, mapp.MappClientHostDefault, mapp.MappDBFileDefault)
 }
 
+// for :: {% for module in modules %} :: {"template-module": "module.name.kebab_case", "TemplateModule": "module.name.pascal_case"}
 func printTemplateModuleHelp() {
-	fmt.Println(`Template Module Help
+	helpText := "TemplateModule Help\n\n"
+	helpText += "The template-module provides example CRUD operations for data models.\n\n"
+	helpText += "Available models:\n"
 
-The template-module provides example CRUD operations for data models.
+	// for :: {% for model in module.models %} :: {"single-model": "model.name.kebab_case"}
+	helpText += fmt.Sprintf("  %s\n", "single-model")
+	// end for ::
 
-Available models:
-  single-model    A model with single-value fields (bool, int, float, string, enum, datetime)
+	helpText += "\nUsage:\n"
+	helpText += "  ./main template-module <model> help         Show model-specific help\n"
+	helpText += "  ./main template-module <model> <command>    Execute a command\n"
 
-Usage:
-  ./main template-module <model>              Show model-specific help
-  ./main template-module <model> <command>    Execute a command
-
-Examples:
-  ./main template-module single-model         Show single-model help
-  ./main template-module single-model help    Show single-model help`)
+	fmt.Println(helpText)
 }
 
 //
