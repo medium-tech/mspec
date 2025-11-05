@@ -782,7 +782,7 @@ func CLIDbCreateTableSingleModel(ctx *mapp.Context) (map[string]string, *mapp.Ma
 }
 
 func printSingleModelHelp() {
-	fmt.Println(`Single Model Help
+	fmt.Println(`SingleModel Help
 
 The single-model supports CRUD operations via HTTP or database commands.
 

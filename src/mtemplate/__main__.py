@@ -32,6 +32,7 @@ parser.add_argument('--disable-strict', action='store_true', help='disable jinja
 parser.add_argument('--use-cache', action='store_true', default=True, help='use cached templates if available (default: True)')
 parser.add_argument('--no-cache', action='store_true', help='do not use cached templates, extract fresh templates')
 parser.add_argument('--cmd', type=str, nargs='*', default=None, help='CLI command for template app (used with "test-spec" command)')
+parser.add_argument('--host', type=str, default=None, help='host for http client in "test-spec" command (if host diff than in spec file)')
 
 args = parser.parse_args()
 
@@ -69,11 +70,9 @@ elif args.command == 'test':
         run_server_and_app_tests(args.source_dir)
 
 elif args.command == 'test-spec':
-    result = test_spec(args.spec, args.cmd)
-    if result:
-        print('Spec tests passed')
-    else:
-        print('Spec tests failed')
+    result = test_spec(args.spec, args.cmd, args.host)
+    if not result:
+        raise SystemExit(1)
 
 elif args.command == 'slots':
     if args.app in ['both', 'py']:
