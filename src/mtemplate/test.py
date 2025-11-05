@@ -6,35 +6,59 @@ from mspec.core import load_generator_spec
 
 class TestMTemplateApp(unittest.TestCase):
 
+    """
+    Test suite for the mtemplate app generation spec
+
+    Generated App:
+        While the applications have their own tests, this suite
+        exits to ensure that the generated application matches the
+        expected behavior as defined in the spec. This is necessary
+        to validate the code generation process.
+
+    Template Apps:
+        This test suite is also used to validate the template apps
+        themselves. (Currently just mspec/templates/go)
+
+    """
+
     spec: dict
     cmd: list[str]
     host: str | None
+
+    def _run_cmd(self, cmd:list[str]) -> subprocess.CompletedProcess:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, f'exit {result.returncode} for command "{" ".join(cmd)}" output: {result.stdout + result.stderr}')
+        return result
 
     def test_help_menus(self):
 
         # global help #
 
-        for cmd in ['help', '--help', '-h']:
-            global_help_cmd = self.cmd + [cmd]
-            result = subprocess.run(global_help_cmd, capture_output=True, text=True)
-            self.assertEqual(result.returncode, 0)
+        for global_help_arg in ['help', '--help', '-h']:
+            global_help_cmd = self.cmd + [global_help_arg]
+            result = self._run_cmd(global_help_cmd)
             self.assertIn('Displays this global help information.', result.stdout)
 
         # module help #
 
-        for cmd in ['help', '--help', '-h']:
-            module_help_cmd = self.cmd + ['template-module', cmd]
-            result = subprocess.run(module_help_cmd, capture_output=True, text=True)
-            self.assertEqual(result.returncode, 0)
-            self.assertIn(f'TemplateModule Help', result.stdout)
+        try:
+            modules: dict = self.spec['modules']
+        except KeyError:
+            raise ValueError('No modules found in spec for help menu testing')
 
-        # model help #
+        for module in modules.values():
+            for module_help_arg in ['help', '--help', '-h']:
+                module_help_cmd = self.cmd + [module['name']['kebab_case'], module_help_arg]
+                result = self._run_cmd(module_help_cmd)
+                self.assertIn(f'{module["name"]["pascal_case"]} Help', result.stdout)
 
-        for cmd in ['help', '--help', '-h']:
-            model_help_cmd = self.cmd + ['template-module', 'single-model', cmd]
-            result = subprocess.run(model_help_cmd, capture_output=True, text=True)
-            self.assertEqual(result.returncode, 0)
-            self.assertIn(f'SingleModel Help', result.stdout)
+            # each model in module help #
+
+            for model in module.get('models', {}).values():
+                for model_help_arg in ['help', '--help', '-h']:
+                    model_help_cmd = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], model_help_arg]
+                    result = self._run_cmd(model_help_cmd)
+                    self.assertIn(f'{model["name"]["pascal_case"]} Help', result.stdout)
 
 
     def test_bad_commands(self):
