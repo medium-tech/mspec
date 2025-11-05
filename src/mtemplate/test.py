@@ -81,10 +81,10 @@ class TestMTemplateApp(unittest.TestCase):
         except KeyError:
             raise ValueError('No default_host found in spec and no host provided for testing')
 
-    def test_cli_db_commands(self):
+    def _test_cli_crud_commands(self, command_type:str):
         for module in self.spec['modules'].values():
             for model_name, model in module['models'].items():
-                model_db_args = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], 'db']
+                model_db_args = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], command_type]
 
                 # create #
 
@@ -129,9 +129,11 @@ class TestMTemplateApp(unittest.TestCase):
                 self.assertEqual(read_output['code'], 'not_found', f'Read after delete for {model_name} did not return not_found code')
                 self.assertEqual(read_output['message'], f'{model["name"]["lower_case"]} {created_model_id} not found', f'Read after delete for {model_name} did not return correct message')
 
+    def test_cli_db_commands(self):
+        self._test_cli_crud_commands('db')
 
     def test_cli_http_commands(self):
-        pass
+        self._test_cli_crud_commands('http')
 
 
 def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None) -> bool:
