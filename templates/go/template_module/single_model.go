@@ -891,7 +891,10 @@ func ServerReadSingleModel(ctx *mapp.Context, w http.ResponseWriter, r *http.Req
 		if mappErr.Code == "not_found" {
 			fmt.Printf("GET template-module.single-model/%s - Not Found\n", modelID)
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "not found"})
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": fmt.Sprintf("single model %s not found", modelID),
+				"code":  "not_found",
+			})
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
@@ -964,7 +967,8 @@ func ServerDeleteSingleModel(ctx *mapp.Context, w http.ResponseWriter, r *http.R
 
 	// Log and respond
 	fmt.Printf("DELETE template-module.single-model/%s\n", modelID)
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]bool{"acknowledged": true})
 }
 
 // ServerListSingleModel handles GET /api/template-module/single-model

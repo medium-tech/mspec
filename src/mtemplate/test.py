@@ -3,6 +3,10 @@ import json
 import subprocess
 
 from pathlib import Path
+from typing import Optional
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError
+
 from mspec.core import load_generator_spec
 
 def example_from_model(model:dict, index=0) -> dict:
@@ -16,6 +20,19 @@ def example_from_model(model:dict, index=0) -> dict:
         data[field_name] = value
 
     return data
+
+def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None) -> dict:
+
+    request = Request(
+        ctx['host'] + endpoint,
+        method=method, 
+        headers=ctx['headers'], 
+        data=request_body
+    )
+
+    with urlopen(request) as response:
+        response_body = response.read().decode('utf-8')
+        return json.loads(response_body)
 
 class TestMTemplateApp(unittest.TestCase):
     
@@ -46,7 +63,7 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertEqual(result.returncode, expected_code, msg)
         return result
 
-    def test_help_menus(self):
+    def test_cli_help_menus(self):
 
         # global help #
 
@@ -70,21 +87,15 @@ class TestMTemplateApp(unittest.TestCase):
                     model_help_cmd = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], model_help_arg]
                     result = self._run_cmd(model_help_cmd)
                     self.assertIn(f'{model["name"]["pascal_case"]} Help', result.stdout)
-
-
-    def test_bad_commands(self):
-        pass
-
-    def test_server_api(self):
-        try:
-            client_host = self.spec['client']['default_host'] if self.host is None else self.host
-        except KeyError:
-            raise ValueError('No default_host found in spec and no host provided for testing')
-
+    
     def _test_cli_crud_commands(self, command_type:str):
         for module in self.spec['modules'].values():
+            module_name_kebab = module["name"]["kebab_case"]
+
             for model_name, model in module['models'].items():
-                model_db_args = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], command_type]
+                model_name_kebab = model["name"]["kebab_case"]
+
+                model_db_args = self.cmd + [module_name_kebab, model_name_kebab, command_type]
 
                 # create #
 
@@ -135,6 +146,92 @@ class TestMTemplateApp(unittest.TestCase):
     def test_cli_http_commands(self):
         self._test_cli_crud_commands('http')
 
+    def test_cli_bad_commands(self):
+        pass
+
+    def test_server_crud_endpoints(self):
+        
+        ctx = {
+            'headers': {
+                'Content-Type': 'application/json',
+            }
+        }
+
+        try:
+            ctx['host'] = self.spec['client']['default_host'] if self.host is None else self.host
+        except KeyError:
+            raise ValueError('No default_host found in spec and no host provided for testing')
+        
+        for module in self.spec['modules'].values():
+            module_name_kebab = module["name"]["kebab_case"]
+            for model_name, model in module['models'].items():
+                model_name_kebab = model["name"]["kebab_case"]
+
+                # create #
+
+                example_to_create = example_from_model(model)
+                created_model = request(
+                    ctx,
+                    'POST',
+                    f'/api/{module_name_kebab}/{model_name_kebab}',
+                    json.dumps(example_to_create).encode()
+                )
+
+                created_model_id = created_model.pop('id')  # remove id for comparison
+                self.assertEqual(created_model, example_to_create, f'Created {model_name} (id: {created_model_id}) does not match example data')
+
+                # read #
+
+                read_model = request(
+                    ctx,
+                    'GET',
+                    f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
+                    None
+                )
+                read_model_id = read_model.pop('id')
+                self.assertEqual(read_model, example_to_create, f'Read {model_name} id: {read_model_id} does not match example data')
+                self.assertEqual(read_model_id, created_model_id, f'Read {model_name} id: {read_model_id} does not match created id: {created_model_id}')
+
+                # update #
+
+                try:
+                    updated_example = example_from_model(model, index=1)
+                except ValueError as e:
+                    raise ValueError(f'Need at least 2 examples for update testing: {e}')
+                updated_model = request(
+                    ctx,
+                    'PUT',
+                    f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
+                    json.dumps(updated_example).encode()
+                )
+                updated_model_id = updated_model.pop('id')
+                self.assertEqual(updated_model, updated_example, f'Updated {model_name} id: {updated_model_id} does not match updated example data')
+                self.assertEqual(updated_model_id, created_model_id, f'Updated {model_name} id: {updated_model_id} does not match created id: {created_model_id}')
+
+                # delete #
+
+                delete_output = request(
+                    ctx,
+                    'DELETE',
+                    f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
+                    None
+                )
+                self.assertEqual(delete_output, {'acknowledged': True}, f'Delete {model_name} id: {created_model_id} did not return acknowledgement')
+
+                # read after delete #
+
+                try:
+                    request(
+                        ctx,
+                        'GET',
+                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
+                        None
+                    )
+                    self.fail(f'Read after delete for {model_name} id: {created_model_id} did not raise NotFoundError')
+                except HTTPError as e:
+                    self.assertEqual(e.code, 404, f'Read after delete for {model_name} id: {created_model_id} did not return 404 Not Found')
+                    read_output = json.loads(e.fp.read().decode('utf-8'))
+                    self.assertEqual(read_output['code'], 'not_found', f'Read after delete for {model_name} id: {created_model_id} did not return not_found code')
 
 def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None) -> bool:
     if cli_args is None:
