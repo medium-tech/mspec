@@ -507,6 +507,36 @@ class TestMTemplateApp(unittest.TestCase):
 
                     self.assertEqual(page_count, expected_pages, f'Pagination for {model_name} returned {page_count} pages, expected {expected_pages}')
 
+    def test_server_validation_error(self):
+        ctx = {
+            'headers': {
+                'Content-Type': 'application/json',
+            }
+        }
+
+        ctx.update(self.crud_ctx)
+        
+        for module in self.spec['modules'].values():
+            module_name_kebab = module['name']['kebab_case']
+            for model in module['models'].values():
+                model_name_kebab = model['name']['kebab_case']
+
+                for invalid_example in model_validation_errors(model):
+
+                    try:
+                        request(
+                            ctx,
+                            'POST',
+                            f'/api/{module_name_kebab}/{model_name_kebab}',
+                            json.dumps(invalid_example).encode()
+                        )
+                        self.fail(f'Expected validation error for {model["name"]["pascal_case"]} with invalid data {invalid_example}')
+                    except HTTPError as e:
+                        self.assertEqual(e.code, 400, f'Expected 400 Bad Request for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {e.code}')
+                        error_response = json.loads(e.fp.read().decode('utf-8'))
+                        self.assertEqual(error_response['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_response["code"]}')
+                        self.assertTrue(error_response['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_response["message"]}')
+
 
 def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None) -> bool:
     if cli_args is None:

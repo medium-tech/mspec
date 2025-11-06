@@ -868,7 +868,10 @@ func ServerCreateSingleModel(ctx *mapp.Context, w http.ResponseWriter, r *http.R
 	model, parseErr := FromJSON(string(body))
 	if parseErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": parseErr.Error()})
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Validation Error: " + parseErr.Error(),
+			"code":    "validation_error",
+		})
 		return
 	}
 
