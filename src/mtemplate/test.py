@@ -4,7 +4,7 @@ import subprocess
 import glob
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Generator
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
@@ -21,6 +21,15 @@ def example_from_model(model:dict, index=0) -> dict:
         data[field_name] = value
 
     return data
+
+def model_validation_errors(model:dict) -> Generator[dict, None, None]:
+    example = example_from_model(model)
+
+    for field_name, field in model.get('fields', {}).items():
+        for invalid_value in field.get('validation_errors', []):
+            example[field_name] = invalid_value
+
+            yield example | {field_name: invalid_value}
 
 def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None) -> dict:
 
@@ -266,8 +275,6 @@ class TestMTemplateApp(unittest.TestCase):
     def test_cli_http_crud(self):
         self._test_cli_crud_commands('http')
 
-
-
     def _test_cli_pagination_command(self, command_type:str):
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
@@ -337,8 +344,31 @@ class TestMTemplateApp(unittest.TestCase):
                     result = self._run_cmd(model_help_cmd)
                     self.assertIn(f'{model['name']['pascal_case']} Help', result.stdout)
     
-    def test_cli_bad_commands(self):
-        pass
+    def _test_cli_validation_error(self, module_name_kebab:str, model:dict, command_type:str):
+        for invalid_example in model_validation_errors(model):
+            model_name_kebab = model['name']['kebab_case']
+
+            model_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(invalid_example)]
+
+            result = self._run_cmd(model_command, expected_code=1, env=self.crud_ctx)
+
+            error_output = json.loads(result.stdout)
+            self.assertEqual(error_output['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output["code"]}')
+            self.assertTrue(error_output['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_output["message"]}')
+
+    def test_cli_db_validation_error(self):
+        for module in self.spec['modules'].values():
+            module_name_kebab = module['name']['kebab_case']
+
+            for model_name, model in module['models'].items():
+                self._test_cli_validation_error(module_name_kebab, model, 'db')
+
+    def test_cli_http_validation_error(self):
+        for module in self.spec['modules'].values():
+            module_name_kebab = module['name']['kebab_case']
+
+            for model_name, model in module['models'].items():
+                self._test_cli_validation_error(module_name_kebab, model, 'http')
 
     def test_server_crud_endpoints(self):
         

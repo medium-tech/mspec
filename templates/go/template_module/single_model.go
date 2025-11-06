@@ -90,8 +90,12 @@ func FromJSON(jsonStr string) (*SingleModel, error) {
 	}
 
 	for _, field := range requiredFields {
-		if _, exists := rawData[field]; !exists {
+		value, exists := rawData[field]
+		if !exists {
 			return nil, fmt.Errorf("missing required field: %s", field)
+		}
+		if value == nil {
+			return nil, fmt.Errorf("field %s cannot be null", field)
 		}
 	}
 
@@ -675,7 +679,7 @@ func CLIParseSingleModel(args []string, num_args int) (interface{}, *mapp.MappEr
 func CLICreateSingleModel(command string, ctx *mapp.Context, jsonData string) (*SingleModel, *mapp.MappError) {
 	model, err := FromJSON(jsonData)
 	if err != nil {
-		return nil, &mapp.MappError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("Validation Error: %v", err), Code: "validation_error"}
 	}
 
 	var createdModel *SingleModel
@@ -714,7 +718,7 @@ func CLIReadSingleModel(command string, ctx *mapp.Context, modelID string) (*Sin
 func CLIUpdateSingleModel(command string, ctx *mapp.Context, modelID string, jsonData string) (*SingleModel, *mapp.MappError) {
 	model, err := FromJSON(jsonData)
 	if err != nil {
-		return nil, &mapp.MappError{Message: fmt.Sprintf("error parsing JSON: %v", err), Code: "parse_error"}
+		return nil, &mapp.MappError{Message: fmt.Sprintf("Validation Error: %v", err), Code: "validation_error"}
 	}
 
 	var updatedModel *SingleModel

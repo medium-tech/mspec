@@ -36,7 +36,7 @@ modules:
             examples:
               - true
               - false
-            failures:
+            validation_errors:
               - null
               - 0
               - 1
@@ -53,7 +53,7 @@ modules:
               - 1
               - 202
               - 26
-            failures:
+            validation_errors:
               - null
               - true
               - 3.14
@@ -67,7 +67,7 @@ modules:
               - 3.14
               - 0.99
               - 2.71
-            failures:
+            validation_errors:
               - null
               - true
               - 100
@@ -81,7 +81,7 @@ modules:
               - 'something'
               - 'another thing'
               - 'more text'
-            failures:
+            validation_errors:
               - null
               - true
               - 123
@@ -99,7 +99,7 @@ modules:
               - 'red'
               - 'green'
               - 'blue'
-            failures:
+            validation_errors:
               - null
               - true
               - 100
@@ -113,7 +113,7 @@ modules:
             examples:
               - "2000-01-11T12:34:56"
               - "2020-10-02T15:30:00"
-            failures:
+            validation_errors:
               - null
               - true
               - 1
