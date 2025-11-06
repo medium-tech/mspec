@@ -360,14 +360,14 @@ class TestMTemplateApp(unittest.TestCase):
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
 
-            for model_name, model in module['models'].items():
+            for model in module['models'].values():
                 self._test_cli_validation_error(module_name_kebab, model, 'db')
 
     def test_cli_http_validation_error(self):
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
 
-            for model_name, model in module['models'].items():
+            for model in module['models'].values():
                 self._test_cli_validation_error(module_name_kebab, model, 'http')
 
     def test_server_crud_endpoints(self):

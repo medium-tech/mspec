@@ -38,6 +38,7 @@ modules:
               - false
             validation_errors:
               - null
+              - ''
               - 0
               - 1
               - 0.0
@@ -81,6 +82,7 @@ modules:
               - 'something'
               - 'another thing'
               - 'more text'
+              - ''
             validation_errors:
               - null
               - true
