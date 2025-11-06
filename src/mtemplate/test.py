@@ -345,13 +345,13 @@ class TestMTemplateApp(unittest.TestCase):
                     self.assertIn(f'{model['name']['pascal_case']} Help', result.stdout)
     
     def _test_cli_validation_error(self, module_name_kebab:str, model:dict, command_type:str):
-        
+
         model_name_kebab = model['name']['kebab_case']
 
         # create model to attempt to update with invalid data #
 
-        example_to_create = example_from_model(model)
-        args = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(example_to_create)]
+        example_to_update = example_from_model(model)
+        args = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(example_to_update)]
         result = self._run_cmd(args, env=self.crud_ctx)
         update_model_id = str(json.loads(result.stdout)['id'])
 
@@ -374,6 +374,13 @@ class TestMTemplateApp(unittest.TestCase):
             error_output = json.loads(result.stdout)
             self.assertEqual(error_output['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output["code"]}')
             self.assertTrue(error_output['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_output["message"]}')
+
+        # read back original example to ensure it was not modified #
+
+        result = self._run_cmd(self.cmd + [module_name_kebab, model_name_kebab, command_type, 'read', update_model_id], env=self.crud_ctx)
+        read_model = json.loads(result.stdout)
+        del read_model['id']
+        self.assertEqual(read_model, example_to_update, f'Read {model["name"]["pascal_case"]} does not match original example data after validation error tests')
 
     def test_cli_db_validation_error(self):
         for module in self.spec['modules'].values():
@@ -540,7 +547,16 @@ class TestMTemplateApp(unittest.TestCase):
             for model in module['models'].values():
                 model_name_kebab = model['name']['kebab_case']
 
+                # create model to attempt to update with invalid data #
+
+                example_to_create = example_from_model(model)
+                args = self.cmd + [module_name_kebab, model_name_kebab, 'db', 'create', json.dumps(example_to_create)]
+                result = self._run_cmd(args, env=self.crud_ctx)
+                update_model_id = str(json.loads(result.stdout)['id'])
+
                 for invalid_example in model_validation_errors(model):
+
+                    # create with invalid data #
 
                     try:
                         request(
@@ -555,7 +571,22 @@ class TestMTemplateApp(unittest.TestCase):
                         error_response = json.loads(e.fp.read().decode('utf-8'))
                         self.assertEqual(error_response['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_response["code"]}')
                         self.assertTrue(error_response['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_response["message"]}')
+                        
+                    # update with invalid data #
 
+                    try:
+                        request(
+                            ctx,
+                            'PUT',
+                            f'/api/{module_name_kebab}/{model_name_kebab}/{update_model_id}',
+                            json.dumps(invalid_example).encode()
+                        )
+                        self.fail(f'Expected validation error for {model["name"]["pascal_case"]} with invalid data {invalid_example}')
+                    except HTTPError as e:
+                        self.assertEqual(e.code, 400, f'Expected 400 Bad Request for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {e.code}')
+                        error_response = json.loads(e.fp.read().decode('utf-8'))
+                        self.assertEqual(error_response['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_response["code"]}')
+                        self.assertTrue(error_response['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_response["message"]}')
 
 def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None) -> bool:
     if cli_args is None:
