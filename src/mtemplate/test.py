@@ -246,6 +246,13 @@ class TestMTemplateApp(unittest.TestCase):
                 self.assertEqual(delete_output['id'], created_model_id, f'Deleted {model_name} ID does not match created ID')
                 self.assertEqual(delete_output['message'], f'deleted {model['name']['lower_case']} {created_model_id}')
 
+                # confirm delete is idempotent #
+
+                result = self._run_cmd(model_db_args + ['delete', str(created_model_id)], env=self.crud_ctx)
+                delete_output = json.loads(result.stdout)
+                self.assertEqual(delete_output['id'], created_model_id, f'Deleted {model_name} ID does not match created ID')
+                self.assertEqual(delete_output['message'], f'deleted {model['name']['lower_case']} {created_model_id}')
+
                 # read after delete #
 
                 result = self._run_cmd(model_db_args + ['read', str(created_model_id)], expected_code=1, env=self.crud_ctx)
@@ -253,11 +260,57 @@ class TestMTemplateApp(unittest.TestCase):
                 self.assertEqual(read_output['code'], 'not_found', f'Read after delete for {model_name} did not return not_found code')
                 self.assertEqual(read_output['message'], f'{model['name']['lower_case']} {created_model_id} not found', f'Read after delete for {model_name} did not return correct message')
 
-    def test_cli_db_commands(self):
+    def test_cli_db_crud(self):
         self._test_cli_crud_commands('db')
 
-    def test_cli_http_commands(self):
+    def test_cli_http_crud(self):
         self._test_cli_crud_commands('http')
+
+
+
+    def _test_cli_pagination_command(self, command_type:str):
+        for module in self.spec['modules'].values():
+            module_name_kebab = module['name']['kebab_case']
+
+            for model_name, model in module['models'].items():
+                model_name_kebab = model['name']['kebab_case']
+
+                model_list_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'list']
+
+                for case in self.pagination_cases:
+                    limit = case['limit']
+                    expected_pages = case['expected_pages']
+
+                    # paginate #
+
+                    offset = 0
+                    page_count = 0
+
+                    while True:
+
+                        result = self._run_cmd(model_list_command + [f'--limit={limit}', f'--offset={offset}'], env=self.pagination_ctx)
+
+                        response = json.loads(result.stdout)
+
+                        self.assertEqual(response['total'], self.pagination_total_models, f'Pagination for {model_name} page {page_count} returned incorrect total')
+ 
+                        items = response['items']
+                        self.assertLessEqual(len(items), limit, f'Pagination for {model_name} returned more items than limit {limit}')
+                        
+                        if len(items) == 0:
+                            break
+
+                        page_count += 1
+
+                        offset += limit
+
+                    self.assertEqual(page_count, expected_pages, f'Pagination for {model_name} returned {page_count} pages, expected {expected_pages}')
+
+    def test_cli_db_pagination(self):
+        self._test_cli_pagination_command('db')
+
+    def test_cli_http_pagination(self):
+        self._test_cli_pagination_command('http')
 
     def test_cli_help_menus(self):
 
@@ -353,6 +406,16 @@ class TestMTemplateApp(unittest.TestCase):
                 )
                 self.assertEqual(delete_output, {'acknowledged': True}, f'Delete {model_name} id: {created_model_id} did not return acknowledgement')
 
+                # confirm delete is idempotent #
+
+                delete_output = request(
+                    ctx,
+                    'DELETE',
+                    f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
+                    None
+                )
+                self.assertEqual(delete_output, {'acknowledged': True}, f'Delete {model_name} id: {created_model_id} did not return acknowledgement')
+
                 # read after delete #
 
                 try:
@@ -387,6 +450,7 @@ class TestMTemplateApp(unittest.TestCase):
                     expected_pages = case['expected_pages']
 
                     # paginate #
+
                     offset = 0
                     page_count = 0
 
