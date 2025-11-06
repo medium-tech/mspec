@@ -24,7 +24,7 @@ def example_from_model(model:dict, index=0) -> dict:
 def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None) -> dict:
 
     request = Request(
-        ctx['host'] + endpoint,
+        ctx['MAPP_CLIENT_HOST'] + endpoint,
         method=method, 
         headers=ctx['headers'], 
         data=request_body
@@ -57,16 +57,24 @@ class TestMTemplateApp(unittest.TestCase):
     cmd: list[str]
     host: str | None
 
-    crud_db_file = Path('test_crud_db.sqlite3')
-    crud_ctx = {'MAPP_DB_FILE': str(crud_db_file.resolve())}
+    crud_db_file = Path('data/test_crud_db.sqlite3')
+    crud_ctx = {
+        'MAPP_DB_FILE': str(crud_db_file.resolve()),
+    }
 
-    pagination_db_file = Path('test_pagination_db.sqlite3')
-    pagination_ctx = {'MAPP_DB_FILE': str(pagination_db_file.resolve())}
+    pagination_db_file = Path('data/test_pagination_db.sqlite3')
+    pagination_ctx = {
+        'MAPP_DB_FILE': str(pagination_db_file.resolve()),
+    }
 
     pagination_total_models = 25
 
     @classmethod
     def setUpClass(cls):
+
+        cls.crud_db_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # delete test db files #
 
         try:
             cls.crud_db_file.unlink()
@@ -77,6 +85,19 @@ class TestMTemplateApp(unittest.TestCase):
             cls.pagination_db_file.unlink()
         except FileNotFoundError:
             pass
+
+        # configure ctx #
+
+        default_host = cls.spec['client']['default_host']
+        default_port = int(default_host.split(':')[-1])
+
+        crud_port = default_port + 1
+        cls.crud_ctx['MAPP_SERVER_PORT'] = str(crud_port)
+        cls.crud_ctx['MAPP_CLIENT_HOST'] = f'http://localhost:{crud_port}'
+
+        pagination_port = default_port + 2
+        cls.pagination_ctx['MAPP_SERVER_PORT'] = str(pagination_port)
+        cls.pagination_ctx['MAPP_CLIENT_HOST'] = f'http://localhost:{pagination_port}'
 
         # setup tables in test dbs #
 
@@ -113,6 +134,47 @@ class TestMTemplateApp(unittest.TestCase):
                     )
                     if result.returncode != 0:
                         raise RuntimeError(f'Error seeding table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
+                    
+        # start servers #
+
+        cls.server_processes = []
+
+        for ctx in [cls.crud_ctx, cls.pagination_ctx]:
+            server_cmd = cls.cmd + ['server']
+            process = subprocess.Popen(server_cmd, env=ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            cls.server_processes.append(process)
+    
+    @classmethod
+    def tearDownClass(cls):
+        # write server logs #
+
+        for i, process in enumerate(cls.server_processes):
+            stdout, stderr = process.communicate(timeout=5)
+            with open(f'data/test_server_{i}_stdout.log', 'w') as f:
+                f.write(stdout)
+            with open(f'data/test_server_{i}_stderr.log', 'w') as f:
+                f.write(stderr)
+
+        # stop servers #
+
+        for process in cls.server_processes:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+        
+        # delete test db files #
+
+        try:
+            cls.crud_db_file.unlink()
+        except FileNotFoundError:
+            pass
+
+        try:
+            cls.pagination_db_file.unlink()
+        except FileNotFoundError:
+            pass
 
     def _run_cmd(self, cmd:list[str], expected_code=0, env:Optional[dict[str, str]] = None) -> subprocess.CompletedProcess:
         result = subprocess.run(cmd, capture_output=True, text=True, env=env)
@@ -214,10 +276,12 @@ class TestMTemplateApp(unittest.TestCase):
             }
         }
 
-        try:
-            ctx['host'] = self.spec['client']['default_host'] if self.host is None else self.host
-        except KeyError:
-            raise ValueError('No default_host found in spec and no host provided for testing')
+        ctx.update(self.crud_ctx)
+
+        # try:
+        #     ctx['host'] = self.spec['client']['default_host'] if self.host is None else self.host
+        # except KeyError:
+        #     raise ValueError('No default_host found in spec and no host provided for testing')
         
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
