@@ -1,6 +1,7 @@
 import unittest
 import json
 import subprocess
+import glob
 
 from pathlib import Path
 from typing import Optional
@@ -134,10 +135,18 @@ class TestMTemplateApp(unittest.TestCase):
                     )
                     if result.returncode != 0:
                         raise RuntimeError(f'Error seeding table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
-                    
+        
+        # delete server logs #
+
+        for log_file in glob.glob('data/test_server_*.log'):
+            try:
+                Path(log_file).unlink()
+            except FileNotFoundError:
+                pass
+        
         # start servers #
 
-        cls.server_processes = []
+        cls.server_processes:list[subprocess.Popen] = []
 
         for ctx in [cls.crud_ctx, cls.pagination_ctx]:
             server_cmd = cls.cmd + ['server']
@@ -146,21 +155,25 @@ class TestMTemplateApp(unittest.TestCase):
     
     @classmethod
     def tearDownClass(cls):
+
         # write server logs #
 
-        for i, process in enumerate(cls.server_processes):
-            stdout, stderr = process.communicate(timeout=5)
-            with open(f'data/test_server_{i}_stdout.log', 'w') as f:
-                f.write(stdout)
-            with open(f'data/test_server_{i}_stderr.log', 'w') as f:
-                f.write(stderr)
+        for process in cls.server_processes:
+            try:
+                stdout, stderr = process.communicate(timeout=5)
+                with open(f'data/test_server_{process.pid}_stdout.log', 'w') as f:
+                    f.write(stdout)
+                with open(f'data/test_server_{process.pid}_stderr.log', 'w') as f:
+                    f.write(stderr)
+            except Exception as e:
+                print(f'Error capturing server process {process.pid} output: {e}')
 
         # stop servers #
 
         for process in cls.server_processes:
             process.terminate()
             try:
-                process.wait(timeout=5)
+                process.wait(timeout=10)
             except subprocess.TimeoutExpired:
                 process.kill()
         
