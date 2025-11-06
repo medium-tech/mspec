@@ -70,6 +70,13 @@ class TestMTemplateApp(unittest.TestCase):
 
     pagination_total_models = 25
 
+    pagination_cases = [
+        {'limit': 1, 'expected_pages': 25},
+        {'limit': 5, 'expected_pages': 5},
+        {'limit': 10, 'expected_pages': 3},
+        {'limit': 25, 'expected_pages': 1},
+    ]
+
     @classmethod
     def setUpClass(cls):
 
@@ -289,11 +296,6 @@ class TestMTemplateApp(unittest.TestCase):
         }
 
         ctx.update(self.crud_ctx)
-
-        # try:
-        #     ctx['host'] = self.spec['client']['default_host'] if self.host is None else self.host
-        # except KeyError:
-        #     raise ValueError('No default_host found in spec and no host provided for testing')
         
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
@@ -365,6 +367,52 @@ class TestMTemplateApp(unittest.TestCase):
                     self.assertEqual(e.code, 404, f'Read after delete for {model_name} id: {created_model_id} did not return 404 Not Found')
                     read_output = json.loads(e.fp.read().decode('utf-8'))
                     self.assertEqual(read_output['code'], 'not_found', f'Read after delete for {model_name} id: {created_model_id} did not return not_found code')
+
+    def test_server_pagination_endpoints(self):
+        ctx = {
+            'headers': {
+                'Content-Type': 'application/json',
+            }
+        }
+
+        ctx.update(self.pagination_ctx)
+        
+        for module in self.spec['modules'].values():
+            module_name_kebab = module['name']['kebab_case']
+            for model_name, model in module['models'].items():
+                model_name_kebab = model['name']['kebab_case']
+
+                for case in self.pagination_cases:
+                    limit = case['limit']
+                    expected_pages = case['expected_pages']
+
+                    # paginate #
+                    offset = 0
+                    page_count = 0
+
+                    while True:
+
+                        response = request(
+                            ctx,
+                            'GET',
+                            f'/api/{module_name_kebab}/{model_name_kebab}?limit={limit}&offset={offset}',
+                            None
+                        )
+
+                        self.assertEqual(response['total'], self.pagination_total_models, f'Pagination for {model_name} page {page_count} returned incorrect total')
+ 
+                        items = response['items']
+                        self.assertLessEqual(len(items), limit, f'Pagination for {model_name} returned more items than limit {limit}')
+                        
+                        if len(items) == 0:
+                            break
+
+                        page_count += 1
+
+                        offset += limit
+
+                    self.assertEqual(page_count, expected_pages, f'Pagination for {model_name} returned {page_count} pages, expected {expected_pages}')
+
 
 def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None) -> bool:
     if cli_args is None:
