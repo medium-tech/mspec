@@ -57,37 +57,37 @@ class TestMTemplateApp(unittest.TestCase):
     cmd: list[str]
     host: str | None
 
-    def _run_cmd(self, cmd:list[str], expected_code=0) -> subprocess.CompletedProcess:
-        result = subprocess.run(cmd, capture_output=True, text=True)
+    crud_db_file = Path('test_crud_db.sqlite3')
+
+    @classmethod
+    def setUpClass(cls):
+        print('SETUP CLASS')
+
+        try:
+            cls.crud_db_file.unlink()
+        except FileNotFoundError:
+            pass
+
+        env = {'MAPP_DB_FILE': str(cls.crud_db_file.resolve())}
+
+        for module in cls.spec['modules'].values():
+            module_name_kebab = module["name"]["kebab_case"]
+
+            for model_name, model in module['models'].items():
+                model_name_kebab = model["name"]["kebab_case"]
+
+                create_table_args = cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create-table']
+
+                result = subprocess.run(create_table_args, capture_output=True, text=True, env=env)
+                if result.returncode != 0:
+                    raise RuntimeError(f'Error creating table for {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
+
+    def _run_cmd(self, cmd:list[str], expected_code=0, env:Optional[dict[str, str]] = None) -> subprocess.CompletedProcess:
+        result = subprocess.run(cmd, capture_output=True, text=True, env=env)
         msg = f'expected {expected_code} got {result.returncode} for command "{" ".join(cmd)}" output: {result.stdout + result.stderr}'
         self.assertEqual(result.returncode, expected_code, msg)
         return result
 
-    def test_cli_help_menus(self):
-
-        # global help #
-
-        for global_help_arg in ['help', '--help', '-h']:
-            global_help_cmd = self.cmd + [global_help_arg]
-            result = self._run_cmd(global_help_cmd)
-            self.assertIn('Displays this global help information.', result.stdout)
-
-        # module help #
-
-        for module in self.spec['modules'].values():
-            for module_help_arg in ['help', '--help', '-h']:
-                module_help_cmd = self.cmd + [module['name']['kebab_case'], module_help_arg]
-                result = self._run_cmd(module_help_cmd)
-                self.assertIn(f'{module["name"]["pascal_case"]} Help', result.stdout)
-
-            # each model in module help #
-
-            for model in module.get('models', {}).values():
-                for model_help_arg in ['help', '--help', '-h']:
-                    model_help_cmd = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], model_help_arg]
-                    result = self._run_cmd(model_help_cmd)
-                    self.assertIn(f'{model["name"]["pascal_case"]} Help', result.stdout)
-    
     def _test_cli_crud_commands(self, command_type:str):
         for module in self.spec['modules'].values():
             module_name_kebab = module["name"]["kebab_case"]
@@ -146,6 +146,31 @@ class TestMTemplateApp(unittest.TestCase):
     def test_cli_http_commands(self):
         self._test_cli_crud_commands('http')
 
+    def test_cli_help_menus(self):
+
+        # global help #
+
+        for global_help_arg in ['help', '--help', '-h']:
+            global_help_cmd = self.cmd + [global_help_arg]
+            result = self._run_cmd(global_help_cmd)
+            self.assertIn('Displays this global help information.', result.stdout)
+
+        # module help #
+
+        for module in self.spec['modules'].values():
+            for module_help_arg in ['help', '--help', '-h']:
+                module_help_cmd = self.cmd + [module['name']['kebab_case'], module_help_arg]
+                result = self._run_cmd(module_help_cmd)
+                self.assertIn(f'{module["name"]["pascal_case"]} Help', result.stdout)
+
+            # each model in module help #
+
+            for model in module.get('models', {}).values():
+                for model_help_arg in ['help', '--help', '-h']:
+                    model_help_cmd = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], model_help_arg]
+                    result = self._run_cmd(model_help_cmd)
+                    self.assertIn(f'{model["name"]["pascal_case"]} Help', result.stdout)
+    
     def test_cli_bad_commands(self):
         pass
 
@@ -235,7 +260,7 @@ class TestMTemplateApp(unittest.TestCase):
 
 def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None) -> bool:
     if cli_args is None:
-        raise ValueError('args must be provided as a list of strings (can be empty list)')
+        raise ValueError('args must be provided as a list of strings')
 
     test_suite = unittest.TestSuite()
     TestMTemplateApp.spec = load_generator_spec(spec_path)
@@ -247,5 +272,9 @@ def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None) -> bool:
 
     runner = unittest.TextTestRunner()
     result = runner.run(test_suite)
+
+    TestMTemplateApp.spec = None
+    TestMTemplateApp.cmd = None
+    TestMTemplateApp.host = None
 
     return result.wasSuccessful()
