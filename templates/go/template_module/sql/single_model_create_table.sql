@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS single_model (
 	-- for :: {% for field in model.non_list_fields %} :: {}
 	-- insert :: macro_by_type('go_sql_create_field', field.type_id, model=model, field=field)
 	-- end for :: clip_trailing_comma
-)
+);
+
 -- macro :: go_sql_create_index_enum
-CREATE INDEX IF NOT EXISTS idx_single_model_enum ON single_model(single_enum)
+CREATE INDEX IF NOT EXISTS idx_single_model_enum ON single_model(single_enum);

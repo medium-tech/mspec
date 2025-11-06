@@ -58,49 +58,81 @@ class TestMTemplateApp(unittest.TestCase):
     host: str | None
 
     crud_db_file = Path('test_crud_db.sqlite3')
+    crud_ctx = {'MAPP_DB_FILE': str(crud_db_file.resolve())}
+
+    pagination_db_file = Path('test_pagination_db.sqlite3')
+    pagination_ctx = {'MAPP_DB_FILE': str(pagination_db_file.resolve())}
+
+    pagination_total_models = 25
 
     @classmethod
     def setUpClass(cls):
-        print('SETUP CLASS')
 
         try:
             cls.crud_db_file.unlink()
         except FileNotFoundError:
             pass
 
-        env = {'MAPP_DB_FILE': str(cls.crud_db_file.resolve())}
+        try:
+            cls.pagination_db_file.unlink()
+        except FileNotFoundError:
+            pass
+
+        # setup tables in test dbs #
 
         for module in cls.spec['modules'].values():
-            module_name_kebab = module["name"]["kebab_case"]
+            module_name_kebab = module['name']['kebab_case']
 
-            for model_name, model in module['models'].items():
-                model_name_kebab = model["name"]["kebab_case"]
+            for model in module['models'].values():
+                model_name_kebab = model['name']['kebab_case']
 
                 create_table_args = cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create-table']
 
-                result = subprocess.run(create_table_args, capture_output=True, text=True, env=env)
+                result = subprocess.run(create_table_args, capture_output=True, text=True, env=cls.crud_ctx)
                 if result.returncode != 0:
-                    raise RuntimeError(f'Error creating table for {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
+                    raise RuntimeError(f'Error creating table for crud db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
+                
+                result = subprocess.run(create_table_args, capture_output=True, text=True, env=cls.pagination_ctx)
+                if result.returncode != 0:
+                    raise RuntimeError(f'Error creating table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
+        
+        # seed pagination db #
+
+        for module in cls.spec['modules'].values():
+            module_name_kebab = module['name']['kebab_case']
+
+            for model in module['models'].values():
+                model_name_kebab = model['name']['kebab_case']
+                for _ in range(cls.pagination_total_models):
+                    example_model = example_from_model(model, index=0)
+                    result = subprocess.run(
+                        cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create', json.dumps(example_model)],
+                        text=True,
+                        capture_output=True,
+                        env=cls.pagination_ctx
+                    )
+                    if result.returncode != 0:
+                        raise RuntimeError(f'Error seeding table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
 
     def _run_cmd(self, cmd:list[str], expected_code=0, env:Optional[dict[str, str]] = None) -> subprocess.CompletedProcess:
         result = subprocess.run(cmd, capture_output=True, text=True, env=env)
-        msg = f'expected {expected_code} got {result.returncode} for command "{" ".join(cmd)}" output: {result.stdout + result.stderr}'
+        msg = f'expected {expected_code} got {result.returncode} for command "{' '.join(cmd)}" output: {result.stdout + result.stderr}'
         self.assertEqual(result.returncode, expected_code, msg)
         return result
 
     def _test_cli_crud_commands(self, command_type:str):
         for module in self.spec['modules'].values():
-            module_name_kebab = module["name"]["kebab_case"]
+            module_name_kebab = module['name']['kebab_case']
 
             for model_name, model in module['models'].items():
-                model_name_kebab = model["name"]["kebab_case"]
+                model_name_kebab = model['name']['kebab_case']
 
                 model_db_args = self.cmd + [module_name_kebab, model_name_kebab, command_type]
 
                 # create #
 
                 example_to_create = example_from_model(model)
-                result = self._run_cmd(model_db_args + ['create', json.dumps(example_to_create)])
+                result = self._run_cmd(model_db_args + ['create', json.dumps(example_to_create)], env=self.crud_ctx)
                 created_model = json.loads(result.stdout)
 
                 created_model_id = created_model.pop('id')  # remove id for comparison
@@ -108,7 +140,7 @@ class TestMTemplateApp(unittest.TestCase):
 
                 # read #
 
-                result = self._run_cmd(model_db_args + ['read', str(created_model_id)])
+                result = self._run_cmd(model_db_args + ['read', str(created_model_id)], env=self.crud_ctx)
                 read_model = json.loads(result.stdout)
                 read_model_id = read_model.pop('id')
                 self.assertEqual(read_model, example_to_create, f'Read {model_name} does not match example data')
@@ -120,7 +152,7 @@ class TestMTemplateApp(unittest.TestCase):
                     updated_example = example_from_model(model, index=1)
                 except ValueError as e:
                     raise ValueError(f'Need at least 2 examples for update testing: {e}')
-                result = self._run_cmd(model_db_args + ['update', created_model_id, json.dumps(updated_example)])
+                result = self._run_cmd(model_db_args + ['update', created_model_id, json.dumps(updated_example)], env=self.crud_ctx)
                 updated_model = json.loads(result.stdout)
                 updated_model_id = updated_model.pop('id')
                 self.assertEqual(updated_model, updated_example, f'Updated {model_name} does not match updated example data')
@@ -128,17 +160,17 @@ class TestMTemplateApp(unittest.TestCase):
 
                 # delete #
 
-                result = self._run_cmd(model_db_args + ['delete', str(created_model_id)])
+                result = self._run_cmd(model_db_args + ['delete', str(created_model_id)], env=self.crud_ctx)
                 delete_output = json.loads(result.stdout)
                 self.assertEqual(delete_output['id'], created_model_id, f'Deleted {model_name} ID does not match created ID')
-                self.assertEqual(delete_output['message'], f'deleted {model["name"]["lower_case"]} {created_model_id}')
+                self.assertEqual(delete_output['message'], f'deleted {model['name']['lower_case']} {created_model_id}')
 
                 # read after delete #
 
-                result = self._run_cmd(model_db_args + ['read', str(created_model_id)], expected_code=1)
+                result = self._run_cmd(model_db_args + ['read', str(created_model_id)], expected_code=1, env=self.crud_ctx)
                 read_output = json.loads(result.stdout)
                 self.assertEqual(read_output['code'], 'not_found', f'Read after delete for {model_name} did not return not_found code')
-                self.assertEqual(read_output['message'], f'{model["name"]["lower_case"]} {created_model_id} not found', f'Read after delete for {model_name} did not return correct message')
+                self.assertEqual(read_output['message'], f'{model['name']['lower_case']} {created_model_id} not found', f'Read after delete for {model_name} did not return correct message')
 
     def test_cli_db_commands(self):
         self._test_cli_crud_commands('db')
@@ -161,7 +193,7 @@ class TestMTemplateApp(unittest.TestCase):
             for module_help_arg in ['help', '--help', '-h']:
                 module_help_cmd = self.cmd + [module['name']['kebab_case'], module_help_arg]
                 result = self._run_cmd(module_help_cmd)
-                self.assertIn(f'{module["name"]["pascal_case"]} Help', result.stdout)
+                self.assertIn(f'{module['name']['pascal_case']} Help', result.stdout)
 
             # each model in module help #
 
@@ -169,7 +201,7 @@ class TestMTemplateApp(unittest.TestCase):
                 for model_help_arg in ['help', '--help', '-h']:
                     model_help_cmd = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], model_help_arg]
                     result = self._run_cmd(model_help_cmd)
-                    self.assertIn(f'{model["name"]["pascal_case"]} Help', result.stdout)
+                    self.assertIn(f'{model['name']['pascal_case']} Help', result.stdout)
     
     def test_cli_bad_commands(self):
         pass
@@ -188,9 +220,9 @@ class TestMTemplateApp(unittest.TestCase):
             raise ValueError('No default_host found in spec and no host provided for testing')
         
         for module in self.spec['modules'].values():
-            module_name_kebab = module["name"]["kebab_case"]
+            module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
-                model_name_kebab = model["name"]["kebab_case"]
+                model_name_kebab = model['name']['kebab_case']
 
                 # create #
 
