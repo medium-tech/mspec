@@ -156,26 +156,25 @@ class TestMTemplateApp(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
 
-        # write server logs #
+        # stop servers and capture logs #
 
         for process in cls.server_processes:
+            process.terminate()
             try:
-                stdout, stderr = process.communicate(timeout=5)
+                stdout, stderr = process.communicate(timeout=10)
+                with open(f'data/test_server_{process.pid}_stdout.log', 'w') as f:
+                    f.write(stdout)
+                with open(f'data/test_server_{process.pid}_stderr.log', 'w') as f:
+                    f.write(stderr)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                stdout, stderr = process.communicate()
                 with open(f'data/test_server_{process.pid}_stdout.log', 'w') as f:
                     f.write(stdout)
                 with open(f'data/test_server_{process.pid}_stderr.log', 'w') as f:
                     f.write(stderr)
             except Exception as e:
                 print(f'Error capturing server process {process.pid} output: {e}')
-
-        # stop servers #
-
-        for process in cls.server_processes:
-            process.terminate()
-            try:
-                process.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                process.kill()
         
         # delete test db files #
 
