@@ -17,14 +17,16 @@ import (
 )
 
 //
-// data model
+// types
 //
 
 // for :: {% for field in model.enum_fields %} ::{"SingleEnum": "field.name.pascal_case", "singleEnum": "field.name.camel_case"}
+// SingleEnum //
+
 type SingleEnumType string
 
 const (
-	// for :: {% for value in field.enum %} :: {"red": "value"}
+	// for :: {% for value in field.enum %} :: {"red": "value", "Red": "value.capitalize()", "SingleEnum": "field.name.pascal_case"}
 	SingleEnumRed SingleEnumType = "red"
 	// end for ::
 	// ignore ::
@@ -48,6 +50,10 @@ func IsValidSingleEnum(s string) bool {
 }
 
 // end for ::
+
+//
+// model
+//
 
 type SingleModel struct {
 	ID             *string       `json:"id,omitempty"`
