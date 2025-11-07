@@ -35,7 +35,7 @@ const (
 	// end ignore
 )
 
-var singleEnumOptions = []string{
+var SingleEnumOptions = []string{
 	// for :: {% for value in field.enum %} :: {"red": "value"}
 	"red",
 	// end for ::
@@ -46,7 +46,7 @@ var singleEnumOptions = []string{
 }
 
 func IsValidSingleEnum(s string) bool {
-	return slices.Contains(singleEnumOptions, s)
+	return slices.Contains(SingleEnumOptions, s)
 }
 
 // end for ::
@@ -55,14 +55,40 @@ func IsValidSingleEnum(s string) bool {
 // model
 //
 
+var SingleModelFieldList = []string{
+	// macro :: go_field_list :: {"single_bool": "field.name.snake_case"}
+	"single_bool",
+	// macro :: go_field_list :: {"single_int": "field.name.snake_case"}
+	// ignore ::
+	"single_int",
+	"single_float",
+	"single_string",
+	"single_enum",
+	"single_datetime",
+	// end ignore
+	// for :: {% for field in model.fields.values() %} :: {}
+	// insert :: macro.go_field_list(field=field)
+	// end for ::
+}
+
 type SingleModel struct {
-	ID             *string       `json:"id,omitempty"`
-	SingleBool     bool          `json:"single_bool"`
-	SingleInt      int           `json:"single_int"`
-	SingleFloat    float64       `json:"single_float"`
-	SingleString   string        `json:"single_string"`
-	SingleEnum     string        `json:"single_enum"`
+	ID *string `json:"id,omitempty"`
+	// macro :: go_struct_field_bool :: {"single_bool": "field.name.snake_case", "SingleBool": "field.name.pascal_case"}
+	SingleBool bool `json:"single_bool"`
+	// macro :: go_struct_field_int :: {"single_int": "field.name.snake_case", "SingleInt": "field.name.pascal_case"}
+	SingleInt int `json:"single_int"`
+	// macro :: go_struct_field_float :: {"single_float": "field.name.snake_case", "SingleFloat": "field.name.pascal_case"}
+	SingleFloat float64 `json:"single_float"`
+	// macro :: go_struct_field_str :: {"single_string": "field.name.snake_case", "SingleString": "field.name.pascal_case"}
+	SingleString string `json:"single_string"`
+	// macro :: go_struct_field_str_enum :: {"single_enum": "field.name.snake_case", "SingleEnum": "field.name.pascal_case"}
+	SingleEnum string `json:"single_enum"`
+	// macro :: go_struct_field_datetime :: {"single_datetime": "field.name.snake_case", "SingleDatetime": "field.name.pascal_case"}
 	SingleDatetime mapp.DateTime `json:"single_datetime"`
+	// end macro ::
+	// for :: {% for field in model.fields.values() %} :: {}
+	// insert :: macro_by_type('go_struct_field', field.type_id, field=field)
+	// end for ::
 }
 
 func (m *SingleModel) ToJSON() (string, error) {
@@ -86,16 +112,7 @@ func FromJSON(jsonStr string) (*SingleModel, error) {
 
 	// Check required fields //
 
-	requiredFields := []string{
-		"single_bool",
-		"single_int",
-		"single_float",
-		"single_string",
-		"single_enum",
-		"single_datetime",
-	}
-
-	for _, field := range requiredFields {
+	for _, field := range SingleModelFieldList {
 		value, exists := rawData[field]
 		if !exists {
 			return nil, fmt.Errorf("missing required field: %s", field)
@@ -106,18 +123,9 @@ func FromJSON(jsonStr string) (*SingleModel, error) {
 	}
 
 	// Check for extra fields //
-	allowedFields := []string{
-		"id",
-		"single_bool",
-		"single_int",
-		"single_float",
-		"single_string",
-		"single_enum",
-		"single_datetime",
-	}
 
 	for field := range rawData {
-		if !slices.Contains(allowedFields, field) {
+		if !slices.Contains(SingleModelFieldList, field) && field != "id" {
 			return nil, fmt.Errorf("extra field found: %s", field)
 		}
 	}
@@ -130,11 +138,13 @@ func FromJSON(jsonStr string) (*SingleModel, error) {
 		return nil, fmt.Errorf("error parsing fields: %w", err)
 	}
 
-	// Validate enum value //
+	// for :: {% for field in model.enum_fields %} ::{"SingleEnum": "field.name.pascal_case", "single_enum": "field.name.camel_case"}
+	// single_enum enum value //
 
 	if !IsValidSingleEnum(model.SingleEnum) {
-		return nil, fmt.Errorf("invalid enum value for single_enum: %s (must be one of: %v)", model.SingleEnum, singleEnumOptions)
+		return nil, fmt.Errorf("invalid enum value for single_enum: %s (must be one of: %v)", model.SingleEnum, SingleEnumOptions)
 	}
+	// end for ::
 
 	return &model, nil
 }
@@ -164,8 +174,10 @@ func HttpCreateSingleModel(ctx *mapp.Context, model *SingleModel) (*SingleModel,
 
 	if resp.StatusCode == 401 {
 		return nil, &mapp.MappError{Message: "authentication error", Code: "authentication_error"}
+
 	} else if resp.StatusCode == 403 {
 		return nil, &mapp.MappError{Message: "forbidden", Code: "forbidden"}
+
 	} else if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, &mapp.MappError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
@@ -199,10 +211,13 @@ func HttpReadSingleModel(ctx *mapp.Context, modelID string) (*SingleModel, *mapp
 
 	if resp.StatusCode == 401 {
 		return nil, &mapp.MappError{Message: "authentication error", Code: "authentication_error"}
+
 	} else if resp.StatusCode == 403 {
 		return nil, &mapp.MappError{Message: "forbidden", Code: "forbidden"}
+
 	} else if resp.StatusCode == 404 {
 		return nil, &mapp.MappError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
+
 	} else if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, &mapp.MappError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
@@ -257,10 +272,13 @@ func HttpUpdateSingleModel(ctx *mapp.Context, modelID string, model *SingleModel
 
 	if resp.StatusCode == 401 {
 		return nil, &mapp.MappError{Message: "authentication error", Code: "authentication_error"}
+
 	} else if resp.StatusCode == 403 {
 		return nil, &mapp.MappError{Message: "forbidden", Code: "forbidden"}
+
 	} else if resp.StatusCode == 404 {
 		return nil, &mapp.MappError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
+
 	} else if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, &mapp.MappError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
@@ -300,10 +318,13 @@ func HttpDeleteSingleModel(ctx *mapp.Context, modelID string) *mapp.MappError {
 
 	if resp.StatusCode == 401 {
 		return &mapp.MappError{Message: "authentication error", Code: "authentication_error"}
+
 	} else if resp.StatusCode == 403 {
 		return &mapp.MappError{Message: "forbidden", Code: "forbidden"}
+
 	} else if resp.StatusCode == 404 {
 		return &mapp.MappError{Message: fmt.Sprintf("single model %s not found", modelID), Code: "not_found"}
+
 	} else if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
 		return &mapp.MappError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
@@ -330,8 +351,10 @@ func HttpListSingleModel(ctx *mapp.Context, offset int, limit int) (*ListSingleM
 
 	if resp.StatusCode == 401 {
 		return nil, &mapp.MappError{Message: "authentication error", Code: "authentication_error"}
+
 	} else if resp.StatusCode == 403 {
 		return nil, &mapp.MappError{Message: "forbidden", Code: "forbidden"}
+
 	} else if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, &mapp.MappError{Message: string(body), Code: fmt.Sprintf("http_%d", resp.StatusCode)}
@@ -403,17 +426,22 @@ func DBCreateSingleModel(ctx *mapp.Context, model *SingleModel) (*SingleModel, *
 		return nil, &mapp.MappError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
 	}
 
-	// Format datetime as RFC3339 for SQLite storage
-	datetimeStr := model.SingleDatetime.Time.Format(time.RFC3339)
-
 	// Use embedded SQL
 	result, err := db.Exec(insertSQL,
+		// macro :: go_db_insert_bool :: {"SingleBool": "field.name.pascal_case"}
 		model.SingleBool,
+		// macro :: go_db_insert_any :: {"SingleInt": "field.name.pascal_case"}
 		model.SingleInt,
+		// end macro ::
 		model.SingleFloat,
 		model.SingleString,
 		model.SingleEnum,
-		datetimeStr,
+		// macro :: go_db_insert_datetime :: {"SingleDatetime": "field.name.pascal_case"}
+		model.SingleDatetime.Time.Format(time.RFC3339),
+		// end macro ::
+		// for :: {% for field in model.non_list_fields %} :: {}
+		// insert :: macro_by_type('go_db_insert', field.type_id, field=field)
+		// end for ::
 	)
 	if err != nil {
 		return nil, &mapp.MappError{Message: fmt.Sprintf("error creating single model: %v", err), Code: "db_error"}
@@ -440,18 +468,33 @@ func DBReadSingleModel(ctx *mapp.Context, modelID string) (*SingleModel, *mapp.M
 
 	var model SingleModel
 	var id int
-	var singleBool int
-	var datetimeStr string
+	// for :: {% for field in model.non_list_fields if field.type_id == 'bool' %} :: {"singleBool": "field.name.camel_case"}
+	var singleBoolRaw int
+	// end for ::
+	// for :: {% for field in model.non_list_fields if field.type_id == 'datetime' %} :: {"singleDatetime": "field.name.camel_case"}
+	var singleDatetimeRaw string
+	// end for ::
 
 	// Use embedded SQL
 	err = db.QueryRow(selectByIDSQL, modelID).Scan(
 		&id,
-		&singleBool,
+		// macro :: go_db_read_bool :: {"singleBool": "field.name.camel_case"}
+		&singleBoolRaw,
+		// end macro ::
+		// ignore ::
+		// macro :: go_db_read_any :: {"singleInt": "field.name.camel_case"}
 		&model.SingleInt,
+		// end macro ::
 		&model.SingleFloat,
 		&model.SingleString,
 		&model.SingleEnum,
-		&datetimeStr,
+		// end ignore
+		// macro :: go_db_read_datetime :: {"singleDatetime": "field.name.camel_case"}
+		&singleDatetimeRaw,
+		// end macro ::
+		// for :: {% for field in model.non_list_fields %} :: {}
+		// insert :: macro_by_type('go_db_read', field.type_id, field=field)
+		// end for ::
 	)
 	if err != nil {
 		if err.Error() == "sql: no rows in result set" {
@@ -464,15 +507,19 @@ func DBReadSingleModel(ctx *mapp.Context, modelID string) (*SingleModel, *mapp.M
 	idStr := fmt.Sprintf("%d", id)
 	model.ID = &idStr
 
+	// for :: {% for field in model.non_list_fields if field.type_id == 'bool' %} :: {"singleBool": "field.name.camel_case"}
 	// Convert SQLite integer to bool
-	model.SingleBool = singleBool != 0
+	model.SingleBool = singleBoolRaw != 0
+	// end for ::
 
+	// for :: {% for field in model.non_list_fields if field.type_id == 'datetime' %} :: {"singleDatetime": "field.name.camel_case"}
 	// Parse datetime
-	parsedTime, err := time.Parse(time.RFC3339, datetimeStr)
+	parsedTime, err := time.Parse(time.RFC3339, singleDatetimeRaw)
 	if err != nil {
 		return nil, &mapp.MappError{Message: fmt.Sprintf("error parsing datetime: %v", err), Code: "parse_error"}
 	}
 	model.SingleDatetime = mapp.DateTime{Time: parsedTime}
+	// end for ::
 
 	return &model, nil
 }
@@ -483,17 +530,30 @@ func DBUpdateSingleModel(ctx *mapp.Context, modelID string, model *SingleModel) 
 		return nil, &mapp.MappError{Message: fmt.Sprintf("error connecting to database: %v", err), Code: "db_error"}
 	}
 
+	// for :: {% for field in model.non_list_fields if field.type_id == 'datetime' %} :: {"singleDatetime": "field.name.camel_case"}
 	// Format datetime as RFC3339 for SQLite storage
-	datetimeStr := model.SingleDatetime.Time.Format(time.RFC3339)
+	singleDatetimeStr := model.SingleDatetime.Time.Format(time.RFC3339)
+	// end for ::
 
 	// Use embedded SQL
 	result, err := db.Exec(updateSQL,
+		// macro :: go_db_update_any :: {"SingleBool": "field.name.pascal_case"}
 		model.SingleBool,
+		// macro :: go_db_update_any :: {"SingleInt": "field.name.pascal_case"}
+		model.SingleInt,
+		// end macro ::
+		// ignore ::
 		model.SingleInt,
 		model.SingleFloat,
 		model.SingleString,
 		model.SingleEnum,
-		datetimeStr,
+		// end ignore
+		// macro :: go_db_update_datetime :: {"SingleDatetime": "field.name.pascal_case"}
+		singleDatetimeStr,
+		// end macro ::
+		// for :: {% for field in model.non_list_fields %} :: {}
+		// insert :: macro_by_type('go_db_update', field.type_id, field=field)
+		// end for ::
 		modelID,
 	)
 	if err != nil {
