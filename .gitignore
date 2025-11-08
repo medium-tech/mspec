@@ -15,3 +15,5 @@ out/
 src/mtemplate/.cache/
 unittest*.log
 server.pid
+*.so
+*.h
