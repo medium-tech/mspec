@@ -101,7 +101,7 @@ def load_lingo_script_spec(spec_file:str, display:bool=False) -> dict:
 
     return contents
 
-def load_generator_spec(spec_file:str) -> dict:
+def load_generator_spec(spec_file:str, try_builtin:bool=True) -> dict:
     """
     open and parse spec file into dict,
     first try to load from the path as provided,
@@ -111,8 +111,11 @@ def load_generator_spec(spec_file:str) -> dict:
         contents = load_json_or_yaml(spec_file)
 
     except FileNotFoundError:
-        _path = sample_generator_spec_dir / spec_file
-        contents = load_json_or_yaml(_path)
+        if try_builtin:
+            _path = sample_generator_spec_dir / spec_file
+            contents = load_json_or_yaml(_path)
+        else:
+            raise
 
     try:
         if contents['lingo']['version'] != 'generator-beta-1':
