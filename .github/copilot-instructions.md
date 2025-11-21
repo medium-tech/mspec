@@ -233,3 +233,30 @@ Before PyPI release:
 - 🔴 File upload/CID support (planned)
 
 See `TODO.md` for detailed roadmap with status indicators (🔴 not started, 🟡 in progress, 🟢 finished).
+
+
+# Code Style Guidelines
+
+All code generated for this repository must follow the code style guidelines in the project README. Key points:
+
+- **Quotes:**
+  - Use single quotes (`'`) for string literals
+  - Use triple double quotes (`"""`) for docstrings only
+  - For f-strings: use single quotes for simple cases, double quotes for complex f-strings with single quotes inside
+- **Whitespace:**
+  - Two lines around major section headers and between classes
+  - One line around minor section headers and between functions
+- **Section Headers:**
+  - Major: `#` borders (e.g. `#\n# section name\n#`)
+  - Minor: hash suffix (e.g. `# section name #`)
+  - Descriptive comments should be simple and clear
+- **Unused code:**
+  - No unused imports or variables
+- **Error handling:**
+  - Fail early and loudly (prefer exceptions over silent failure)
+  - Raise exceptions, do not call `sys.exit()` in library code
+- **General:**
+  - Follow the example code blocks in the README
+  - Match the layout and conventions of the Python template app
+
+Refer to the [README](../README.md#code-style-guidelines) for full details and examples. All Copilot completions and code suggestions must adhere to these rules.
