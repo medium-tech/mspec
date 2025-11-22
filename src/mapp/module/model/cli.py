@@ -1,7 +1,14 @@
+import json
+
+from mapp.errors import MappError
 from mapp.module.model.db import *
 from mapp.module.model.http import *
+from mapp.module.model.data import convert_data_to_model, new_model_class
+
 
 def add_model_subparser(subparsers, model_spec):
+
+    model_class = new_model_class(model_spec)
 
     # 
     # init model cli
@@ -25,7 +32,13 @@ def add_model_subparser(subparsers, model_spec):
     # create #
     create_parser = http_actions.add_parser('create', help='HTTP create')
     create_parser.add_argument('json', help='JSON string for model creation')
-    create_parser.set_defaults(func=http_model_create)
+    def cli_http_model_create(args):
+        try:
+            http_model_create(model_class, json.loads(args.json))
+        except json.JSONDecodeError as e:
+            raise MappError('INVALID_JSON', f'Invalid JSON: {e}')
+        
+    create_parser.set_defaults(func=cli_http_model_create)
 
     # read #
     read_parser = http_actions.add_parser('read', help='HTTP read')
