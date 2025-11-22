@@ -5,7 +5,7 @@ from urllib.error import HTTPError
 
 from mapp.context import MappContext
 from mapp.errors import *
-from mapp.types import from_json, to_json, list_from_json
+from mapp.types import model_from_json, model_to_json, list_from_json
 
 
 __all__ = [
@@ -25,7 +25,7 @@ def http_model_create(ctx: MappContext, model_class:type, model:object) -> objec
     model_kebab = model_class._model_spec['name']['kebab_case']
 
     url = f'{ctx.host}/api/{module_kebab}/{model_kebab}'
-    request_body = to_json(model).encode()
+    request_body = model_to_json(model).encode()
 
     # send request #
 
@@ -33,7 +33,7 @@ def http_model_create(ctx: MappContext, model_class:type, model:object) -> objec
         request = Request(url, headers=ctx.headers, method='POST', data=request_body)
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return from_json(model_class, response_body)
+            return model_from_json(model_class, response_body)
         
     except HTTPError as e:
         if e.code >= 400:
@@ -59,7 +59,7 @@ def http_model_read(ctx: MappContext, model_class: type, model_id: str) -> objec
         request = Request(url, headers=ctx.headers, method='GET')
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return from_json(model_class, response_body)
+            return model_from_json(model_class, response_body)
         
     except HTTPError as e:
         if e.code >= 400:
@@ -86,7 +86,7 @@ def http_model_update(ctx: MappContext, model_class: type, model_id: str, model:
         request = Request(url, headers=ctx.headers, method='PUT', data=request_body)
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return from_json(model_class, response_body)
+            return model_from_json(model_class, response_body)
         
     except HTTPError as e:
         if e.code >= 400:

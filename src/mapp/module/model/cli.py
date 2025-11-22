@@ -38,7 +38,7 @@ def add_model_subparser(subparsers, model_spec):
     def cli_http_model_create(args):        
         incoming_model = convert_json_to_model(model_class, args.json)
         new_model = http_model_create(model_class, incoming_model)
-        print(to_json(new_model, sort_keys=True, indent=4))
+        print(model_to_json(new_model, sort_keys=True, indent=4))
 
     create_parser.set_defaults(func=cli_http_model_create)
 
@@ -47,7 +47,7 @@ def add_model_subparser(subparsers, model_spec):
     read_parser.add_argument('model_id', type=str, help='ID of the model to read')
     def cli_http_model_read(args):
         model = http_model_read(model_class, args.model_id)
-        print(to_json(model, sort_keys=True, indent=4))
+        print(model_to_json(model, sort_keys=True, indent=4))
 
     read_parser.set_defaults(func=cli_http_model_read)
 
@@ -58,7 +58,7 @@ def add_model_subparser(subparsers, model_spec):
     def cli_http_model_update(args):
         incoming_model = convert_json_to_model(model_class, args.json)
         updated_model = http_model_update(model_class, args.model_id, incoming_model)
-        print(to_json(updated_model, sort_keys=True, indent=4))
+        print(model_to_json(updated_model, sort_keys=True, indent=4))
         
     update_parser.set_defaults(func=cli_http_model_update)
 
@@ -67,7 +67,7 @@ def add_model_subparser(subparsers, model_spec):
     delete_parser.add_argument('model_id', type=str, help='ID of the model to delete')
     def cli_http_model_delete(args):
         http_model_delete(model_class, args.model_id)
-        print(to_json({'acknowledged': True}, sort_keys=True, indent=4))
+        print(model_to_json({'acknowledged': True}, sort_keys=True, indent=4))
 
     delete_parser.set_defaults(func=cli_http_model_delete)
 
@@ -97,7 +97,7 @@ def add_model_subparser(subparsers, model_spec):
     create_table_parser = db_actions.add_parser('create-table', help='Creates the model table in the local SQLite database.')
     def cli_db_model_create_table(args):
         db_model_create_table(model_class)
-        print(to_json({'acknowledged': True}, sort_keys=True, indent=4))
+        print(model_to_json({'acknowledged': True}, sort_keys=True, indent=4))
     create_table_parser.set_defaults(func=cli_db_model_create_table)
 
     # create #
@@ -106,7 +106,7 @@ def add_model_subparser(subparsers, model_spec):
     def cli_db_model_create(args):
         incoming_model = convert_json_to_model(model_class, args.json)
         new_model = db_model_create(model_class, incoming_model)
-        print(to_json(new_model, sort_keys=True, indent=4))
+        print(model_to_json(new_model, sort_keys=True, indent=4))
     db_create_parser.set_defaults(func=cli_db_model_create)
 
     # read #
@@ -114,7 +114,7 @@ def add_model_subparser(subparsers, model_spec):
     db_read_parser.add_argument('model_id', type=str, help='ID of the model to read')
     def cli_db_model_read(args):
         model = db_model_read(model_class, args.model_id)
-        print(to_json(model, sort_keys=True, indent=4))
+        print(model_to_json(model, sort_keys=True, indent=4))
     db_read_parser.set_defaults(func=cli_db_model_read)
 
     # update #
@@ -124,7 +124,7 @@ def add_model_subparser(subparsers, model_spec):
     def cli_db_model_update(args):
         incoming_model = convert_json_to_model(model_class, args.json)
         updated_model = db_model_update(model_class, args.model_id, incoming_model)
-        print(to_json(updated_model, sort_keys=True, indent=4))
+        print(model_to_json(updated_model, sort_keys=True, indent=4))
     db_update_parser.set_defaults(func=cli_db_model_update)
 
     # delete #
@@ -132,7 +132,7 @@ def add_model_subparser(subparsers, model_spec):
     db_delete_parser.add_argument('model_id', type=str, help='ID of the model to delete')
     def cli_db_model_delete(args):
         db_model_delete(model_class, args.model_id)
-        print(to_json({'acknowledged': True}, sort_keys=True, indent=4))
+        print(model_to_json({'acknowledged': True}, sort_keys=True, indent=4))
     db_delete_parser.set_defaults(func=cli_db_model_delete)
 
     # list #

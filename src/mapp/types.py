@@ -18,8 +18,8 @@ __all__ = [
     'get_python_type',
     'validate_model',
 
-    'to_json',
-    'from_json',
+    'model_to_json',
+    'model_from_json',
     'list_to_json',
     'list_from_json'
 ]
@@ -314,7 +314,7 @@ class MappJsonEncoder(json.JSONEncoder):
 
 # individual model #
 
-def to_json(obj:object, sort_keys=False, indent=None) -> str:
+def model_to_json(obj:object, sort_keys=False, indent=None) -> str:
     try:
         return json.dumps(
             obj, 
@@ -325,7 +325,7 @@ def to_json(obj:object, sort_keys=False, indent=None) -> str:
     except Exception as e:
         raise MappValidationError(f'Error serializing to JSON: {e}')    
 
-def from_json(json_str:str, model_class:type) -> object:
+def model_from_json(json_str:str, model_class:type) -> object:
     try:
         data = json.loads(json_str)
         return model_class(**data)
