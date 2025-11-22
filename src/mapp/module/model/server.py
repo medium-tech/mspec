@@ -7,7 +7,7 @@ from template_module.single_model.db import *
 
 
 __all__ = [
-    'single_model_routes'
+    'model_routes'
 ]
 
 
@@ -15,7 +15,7 @@ __all__ = [
 # router
 #
 
-def single_model_routes(ctx:dict, env:dict, raw_req_body:bytes):
+def model_routes(ctx:dict, env:dict, raw_req_body:bytes):
 
     # single model - instance routes #
 
