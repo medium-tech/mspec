@@ -2,7 +2,7 @@ from datetime import datetime
 
 from mapp.context import MappContext
 from mapp.errors import NotFoundError
-from mapp.types import DATETIME_FORMAT_STR, ModelListResult, validate_model
+from mapp.types import DATETIME_FORMAT_STR, ModelListResult, validate_model, Acknowledgment
 
 
 __all__ = [
@@ -234,7 +234,7 @@ def db_model_update(ctx:MappContext, model_class: type, model_id: str, obj: obje
     ctx.db.commit()
     return obj
 
-def db_model_delete(ctx:MappContext, model_class: type, model_id: str):
+def db_model_delete(ctx:MappContext, model_class: type, model_id: str) -> Acknowledgment:
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']
 
@@ -252,6 +252,7 @@ def db_model_delete(ctx:MappContext, model_class: type, model_id: str):
         raise NotFoundError(f'{model_snake_case} {model_id} not found')
     
     ctx.db.commit()
+    return Acknowledgment()
 
 def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, limit: int = 50) -> ModelListResult:
     model_spec = model_class._model_spec

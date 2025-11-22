@@ -66,8 +66,8 @@ def add_model_subparser(subparsers, model_spec):
     delete_parser = http_actions.add_parser('delete', help='HTTP delete')
     delete_parser.add_argument('model_id', type=str, help='ID of the model to delete')
     def cli_http_model_delete(args):
-        http_model_delete(model_class, args.model_id)
-        print(model_to_json({'acknowledged': True}, sort_keys=True, indent=4))
+        ack = http_model_delete(model_class, args.model_id)
+        print(model_to_json(ack, sort_keys=True, indent=4))
 
     delete_parser.set_defaults(func=cli_http_model_delete)
 
@@ -131,8 +131,8 @@ def add_model_subparser(subparsers, model_spec):
     db_delete_parser = db_actions.add_parser('delete', help='Deletes a single model from the local SQLite database.')
     db_delete_parser.add_argument('model_id', type=str, help='ID of the model to delete')
     def cli_db_model_delete(args):
-        db_model_delete(model_class, args.model_id)
-        print(model_to_json({'acknowledged': True}, sort_keys=True, indent=4))
+        ack = db_model_delete(model_class, args.model_id)
+        print(model_to_json(ack, sort_keys=True, indent=4))
     db_delete_parser.set_defaults(func=cli_db_model_delete)
 
     # list #

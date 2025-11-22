@@ -5,7 +5,7 @@ from urllib.error import HTTPError
 
 from mapp.context import MappContext
 from mapp.errors import *
-from mapp.types import model_from_json, model_to_json, list_from_json
+from mapp.types import model_from_json, model_to_json, list_from_json, Acknowledgment
 
 
 __all__ = [
@@ -98,7 +98,7 @@ def http_model_update(ctx: MappContext, model_class: type, model_id: str, model:
     except Exception as e:
         raise MappError(f'Error updating model: {e}')
 
-def http_model_delete(ctx: MappContext, model_class: type, model_id: str):
+def http_model_delete(ctx: MappContext, model_class: type, model_id: str) -> Acknowledgment:
 
     # init #
 
@@ -111,7 +111,16 @@ def http_model_delete(ctx: MappContext, model_class: type, model_id: str):
     try:
         request = Request(url, headers=ctx.headers, method='DELETE')
         with urlopen(request) as response:
-            _ = response.read().decode('utf-8')
+            try:
+                response_body = response.read().decode('utf-8')
+                response_data = json.loads(response_body)
+            except json.JSONDecodeError:
+                raise MappError('INVALID_RESPONSE', 'Invalid response received when deleting model.')
+            
+            if response_data == {'acknowledged': True}:
+                return Acknowledgment()
+            else:
+                raise MappError('INVALID_RESPONSE', 'Invalid response received when deleting model.')
 
     except HTTPError as e:
         if e.code >= 400:

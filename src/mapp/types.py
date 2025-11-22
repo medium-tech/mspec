@@ -26,6 +26,10 @@ __all__ = [
 
 DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
 
+
+class Acknowledgment:
+    pass
+
 #
 # model
 #
@@ -309,6 +313,8 @@ class MappJsonEncoder(json.JSONEncoder):
             return obj.strftime(DATETIME_FORMAT_STR)
         elif hasattr(obj, '_asdict'):
             return obj._asdict()
+        elif isinstance(obj, Acknowledgment):
+            return {'acknowledged': True}
         else:
             return super().default(obj)
 
