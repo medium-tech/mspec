@@ -1,4 +1,4 @@
-def http_model_create(args):
+def http_model_create(model_class:type, data:dict):
     print('[PLACEHOLDER] Would create a single model via HTTP API.')
 
 def http_model_read(args):
