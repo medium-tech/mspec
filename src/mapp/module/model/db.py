@@ -1,10 +1,8 @@
-import sqlite3
-
 from datetime import datetime
 
 from mapp.context import MappContext
 from mapp.errors import NotFoundError
-from mapp.module.model.type import DATETIME_FORMAT_STR, ModelListResult
+from mapp.module.model.type import DATETIME_FORMAT_STR, ModelListResult, validate_model
 
 __all__ = [
     'db_model_create_table',
@@ -69,6 +67,8 @@ def db_model_create_table(ctx:MappContext, model_class: type):
 def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
 
     # init #
+
+    validate_model(model_class, obj)
     
     if obj.id is not None:
         raise ValueError('id must be null to create a new item')
@@ -173,6 +173,9 @@ def db_model_read(ctx:MappContext, model_class: type, model_id: str):
     return model_class(**data)
 
 def db_model_update(ctx:MappContext, model_class: type, model_id: str, obj: object):
+
+    validate_model(model_class, obj)
+
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']
 

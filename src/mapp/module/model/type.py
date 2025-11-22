@@ -1,3 +1,5 @@
+import json
+
 from collections import namedtuple
 from typing import Any
 from datetime import datetime
@@ -15,6 +17,26 @@ __all__ = [
 ]
 
 DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
+
+#
+# json
+#
+
+class MappJsonEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.strftime(DATETIME_FORMAT_STR)
+        else:
+            return super().default(obj)
+
+def to_json(obj:object, sort_keys=False, indent=None) -> str:
+    return json.dumps(
+        obj._asdict(), 
+        sort_keys=sort_keys, 
+        indent=indent, 
+        cls=MappJsonEncoder
+    )
 
 #
 # model
