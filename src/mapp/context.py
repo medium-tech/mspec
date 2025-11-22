@@ -22,6 +22,7 @@ class MappContext:
     server_port: int
     client_host: str
     db:DBContext
+    log:callable
 
 
 def get_context_from_env():
@@ -33,10 +34,11 @@ def get_context_from_env():
     return MappContext(
         server_port=int(os.getenv('MAPP_SERVER_PORT', 8000)),
         client_host=os.getenv('MAPP_CLIENT_HOST', 'http://localhost:8000'),
+        log=lambda msg: msg,   # passthru log
         db=DBContext(
             db_url=db_url,
             connection=db_conn,
             cursor=db_conn.cursor(),
-            commit=db_conn.commit
+            commit=db_conn.commit,
         )
     )

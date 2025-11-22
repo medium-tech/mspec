@@ -23,6 +23,7 @@ __all__ = [
     'validate_model',
 
     'model_to_json',
+    'to_json',
     'model_from_json',
     'list_to_json',
     'list_from_json'
@@ -33,6 +34,14 @@ DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
 
 class Acknowledgment:
     pass
+
+
+class PlainTextResponse(Exception):
+    content_type = 'text/plain'
+    def __init__(self, status:str, text:str) -> None:
+        super().__init__('PlainTextResponse')
+        self.status = status
+        self.text = text
 
 
 class JSONResponse(Exception):
@@ -341,7 +350,9 @@ def model_to_json(obj:object, sort_keys=False, indent=None) -> str:
             cls=MappJsonEncoder
         )
     except Exception as e:
-        raise MappValidationError(f'Error serializing to JSON: {e}')    
+        raise MappValidationError(f'Error serializing to JSON: {e}')
+    
+to_json = model_to_json  # alias
 
 def model_from_json(json_str:str, model_class:type) -> object:
     try:
