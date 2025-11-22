@@ -1,5 +1,15 @@
 from mapp.context import MappContext
 
+
+__all__ = [
+    'http_model_create',
+    'http_model_read',
+    'http_model_update',
+    'http_model_delete',
+    'http_model_list'
+]
+
+
 def http_model_create(ctx: MappContext, model_class:type, model:object) -> object:
     print('[PLACEHOLDER] Would create a single model via HTTP API.')
 
