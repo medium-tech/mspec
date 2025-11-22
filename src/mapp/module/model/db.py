@@ -1,6 +1,9 @@
 import sqlite3
 
+from datetime import datetime
+
 from mapp.context import MappContext
+from mapp.errors import NotFoundError
 
 __all__ = [
     'db_model_create_table',
@@ -63,7 +66,7 @@ def db_model_create_table(ctx:MappContext, model_class: type):
     ctx.db.commit()
 
 
-def db_model_create(ctx:MappContext, model_class: type, obj: object):
+def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
 
     # init #
     
@@ -111,7 +114,34 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object):
     return obj
 
 def db_model_read(ctx:MappContext, model_class: type, model_id: str):
-    print(f'[PLACEHOLDER] Would read model with id={model_id} from the local SQLite database.')
+    model_spec = model_class._model_spec
+    model_snake_case = model_spec['name']['snake_case']
+
+    # read non list fields #
+
+    field_names = ['id'] + [field['name']['snake_case'] for field in model_spec['non_list_fields']]
+    select_fields = ', '.join(f"'{f}'" for f in field_names)
+    sql = f'SELECT {select_fields} FROM {model_snake_case} WHERE id = ?'
+
+    row = ctx.db.cursor.execute(sql, (model_id,)).fetchone()
+    if row is None:
+        raise NotFoundError(f'{model_snake_case} {model_id} not found')
+
+    # convert non list fields #
+
+    data = {}
+    for index, field in enumerate(model_spec['non_list_fields']):
+        match field['type']:
+            case 'bool':
+                value = bool(row[index])
+            case 'datetime' if row[index] is not None:
+                value = datetime.fromisoformat(row[index])
+            case _:
+                value = row[index]
+
+    data[field] = value
+
+    return model_class(**data)
 
 def db_model_update(ctx:MappContext, model_class: type, model_id: str, data: dict):
     print(f'[PLACEHOLDER] Would update model with id={model_id} in the local SQLite database.')

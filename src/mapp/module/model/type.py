@@ -1,5 +1,6 @@
 from collections import namedtuple
 from typing import Any
+from datetime import datetime
 
 from mapp.errors import MappValidationError
 
@@ -129,6 +130,13 @@ def convert_value(field_type:str, raw_value:Any, strict=False) -> Any:
             return float(raw_value)
         case 'str':
             return str(raw_value)
+        case 'datetime':
+            if isinstance(raw_value, datetime):
+                return raw_value
+            elif isinstance(raw_value, str):
+                return datetime.fromisoformat(raw_value)
+            else:
+                raise ValueError(f'Cannot convert type "{type(raw_value)}" to datetime')
         case _:
             raise ValueError(f'Unsupported field type: {field_type}')
 
@@ -158,7 +166,7 @@ def get_python_type(field_type:str) -> type:
         case _:
             raise ValueError(f'Unsupported field type: {field_type}')
 
-def validate_model(model_class:type, model_instance:object) -> tuple[bool, dict[str|str]]:
+def validate_model(model_class:type, model_instance:object) -> object:
     """
     Validates a model instance against its model class specification.
 
@@ -240,3 +248,5 @@ def validate_model(model_class:type, model_instance:object) -> tuple[bool, dict[
 
     if total_errors > 0:
         raise MappValidationError('Model validation failed.', errors)
+    
+    return model_instance

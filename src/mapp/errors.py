@@ -12,6 +12,12 @@ class MappError(Exception):
                 'message': self.error_message
             }
         }
+
+
+class NotFoundError(MappError):
+    def __init__(self, message: str):
+        super().__init__('NOT_FOUND', message)
+
     
 class MappValidationError(MappError):
     def __init__(self, message: str, field_errors:dict):
