@@ -3,6 +3,15 @@ from typing import Any
 
 from mapp.errors import MappValidationError
 
+__all__ = [
+    'new_model_class',
+    'new_model',
+    'convert_data_to_model',
+    'convert_value',
+    'get_python_type',
+    'validate_model',
+]
+
 
 def new_model_class(model_spec:dict) -> type:
     """
@@ -17,7 +26,7 @@ def new_model_class(model_spec:dict) -> type:
 
     try:
         class_name = model_spec['name']['pascal_case']
-        fields = [field['name'] for field in model_spec['fields']]
+        fields = [field['name']['snake_case'] for field in model_spec['fields'].values()]
     except KeyError as e:
         raise ValueError(f'Missing required model specification key: {e}')
     

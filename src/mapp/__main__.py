@@ -6,6 +6,11 @@ from mapp.errors import MappError
 from mapp.module import cli as module_cli
 
 
+__all__ = [
+    'main'
+]
+
+
 def main(spec_path:str):
 
     # load spec #

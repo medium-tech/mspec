@@ -1,9 +1,13 @@
 import json
 
+from mapp.types import convert_data_to_model, new_model_class
 from mapp.errors import MappError
 from mapp.module.model.db import *
 from mapp.module.model.http import *
-from mapp.module.model.data import convert_data_to_model, new_model_class
+
+__all__ = [
+    'add_model_subparser'
+]
 
 
 def add_model_subparser(subparsers, model_spec):
@@ -94,36 +98,59 @@ def add_model_subparser(subparsers, model_spec):
     db_parser = io_subparsers.add_parser('db', help='Interact with the model via local SQLite database')
     db_actions = db_parser.add_subparsers(dest='action', required=True)
 
+
     # create-table #
-    create_table_parser = db_actions.add_parser('create-table', help='Creates the single_model table in the local SQLite database.')
-    create_table_parser.set_defaults(func=db_model_create_table)
+    create_table_parser = db_actions.add_parser('create-table', help='Creates the model table in the local SQLite database.')
+    def cli_db_model_create_table(args):
+        db_model_create_table(model_class)
+    create_table_parser.set_defaults(func=cli_db_model_create_table)
 
     # create #
     db_create_parser = db_actions.add_parser('create', help='Creates a single model in the local SQLite database.')
     db_create_parser.add_argument('json', help='JSON string for model creation')
-    db_create_parser.set_defaults(func=db_model_create)
+    def cli_db_model_create(args):
+        try:
+            data = json.loads(args.json)
+        except json.JSONDecodeError as e:
+            raise MappError('INVALID_JSON', f'Invalid JSON: {e}')
+        incoming_model = convert_data_to_model(model_class, data)
+        db_model_create(model_class, incoming_model)
+    db_create_parser.set_defaults(func=cli_db_model_create)
 
     # read #
     db_read_parser = db_actions.add_parser('read', help='Reads a single model from the local SQLite database.')
-    db_read_parser.add_argument('model_id', help='ID of the model to read')
-    db_read_parser.set_defaults(func=db_model_read)
+    db_read_parser.add_argument('model_id', type=str, help='ID of the model to read')
+    def cli_db_model_read(args):
+        db_model_read(model_class, args.model_id)
+    db_read_parser.set_defaults(func=cli_db_model_read)
 
     # update #
     db_update_parser = db_actions.add_parser('update', help='Updates a single model in the local SQLite database.')
-    db_update_parser.add_argument('model_id', help='ID of the model to update')
+    db_update_parser.add_argument('model_id', type=str, help='ID of the model to update')
     db_update_parser.add_argument('json', help='JSON string for model update')
-    db_update_parser.set_defaults(func=db_model_update)
+    def cli_db_model_update(args):
+        try:
+            data = json.loads(args.json)
+        except json.JSONDecodeError as e:
+            raise MappError('INVALID_JSON', f'Invalid JSON: {e}')
+        incoming_model = convert_data_to_model(model_class, data)
+        db_model_update(model_class, args.model_id, incoming_model)
+    db_update_parser.set_defaults(func=cli_db_model_update)
 
     # delete #
     db_delete_parser = db_actions.add_parser('delete', help='Deletes a single model from the local SQLite database.')
-    db_delete_parser.add_argument('model_id', help='ID of the model to delete')
-    db_delete_parser.set_defaults(func=db_model_delete)
+    db_delete_parser.add_argument('model_id', type=str, help='ID of the model to delete')
+    def cli_db_model_delete(args):
+        db_model_delete(model_class, args.model_id)
+    db_delete_parser.set_defaults(func=cli_db_model_delete)
 
     # list #
     db_list_parser = db_actions.add_parser('list', help='Lists models from the local SQLite database with optional pagination.')
     db_list_parser.add_argument('--offset', type=int, default=0, help='Offset for pagination')
     db_list_parser.add_argument('--limit', type=int, default=50, help='Limit for pagination')
-    db_list_parser.set_defaults(func=db_model_list)
+    def cli_db_model_list(args):
+        db_model_list(model_class, offset=args.offset, limit=args.limit)
+    db_list_parser.set_defaults(func=cli_db_model_list)
 
     # help #
     db_help_parser = db_actions.add_parser('help', help='Show help for this command', aliases=['-h', '--help'])

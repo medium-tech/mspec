@@ -1,5 +1,10 @@
 from mapp.errors import MappError
-from mapp.module.model import cli as model_cli
+from mapp.module.model.cli import add_model_subparser
+
+
+__all__ = [
+    'add_module_subparser'
+]
 
 def add_module_subparser(subparsers, module_spec):
 
@@ -21,5 +26,4 @@ def add_module_subparser(subparsers, module_spec):
         raise MappError('NO_MODELS_DEFINED', f'No models defined in module: {module_kebab_case}')
 
     for model in spec_models.values():
-        model_cli.add_model_subparser(model_subparsers, model)
-
+        add_model_subparser(model_subparsers, model)
