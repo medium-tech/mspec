@@ -8,6 +8,10 @@ from dataclasses import dataclass, asdict
 from mapp.errors import MappValidationError
 
 __all__ = [
+    'DATETIME_FORMAT_STR',
+    'Acknowledgment',
+    'JSONResponse',
+    
     'new_model_class',
     'new_model',
     'ModelListResult',
@@ -29,6 +33,14 @@ DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
 
 class Acknowledgment:
     pass
+
+
+class JSONResponse(Exception):
+    content_type = 'application/json'
+    def __init__(self, status:str, data:dict|None=None) -> None:
+        super().__init__('JSONResponse')
+        self.status = status
+        self.data = data
 
 #
 # model

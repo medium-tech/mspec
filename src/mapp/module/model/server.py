@@ -1,9 +1,11 @@
 import json
 import re
+
 from urllib.parse import parse_qs
-from core.exceptions import NotFoundError, RequestError, JSONResponse
-from template_module.single_model.model import SingleModel
-from template_module.single_model.db import *
+
+from mapp.errors import NotFoundError, RequestError
+from mapp.context import MappContext
+from mapp.types import JSONResponse
 
 
 __all__ = [
@@ -15,7 +17,7 @@ __all__ = [
 # router
 #
 
-def model_routes(ctx:dict, env:dict, raw_req_body:bytes):
+def model_routes(ctx: MappContext, model_class:type, env:dict, raw_req_body:bytes):
 
     # single model - instance routes #
 
