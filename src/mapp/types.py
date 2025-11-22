@@ -3,69 +3,34 @@ import json
 from collections import namedtuple
 from typing import Any
 from datetime import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 from mapp.errors import MappValidationError
 
 __all__ = [
     'new_model_class',
     'new_model',
+    'ModelListResult',
+
     'convert_data_to_model',
+    'convert_json_to_model',
     'convert_value',
     'get_python_type',
     'validate_model',
+
+    'to_json',
+    'from_json',
+    'list_to_json',
+    'list_from_json'
 ]
 
 DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
 
 #
-# json
-#
-
-class MappJsonEncoder(json.JSONEncoder):
-
-    def default(self, obj):
-        if isinstance(obj, datetime):
-            return obj.strftime(DATETIME_FORMAT_STR)
-        else:
-            return super().default(obj)
-
-def to_json(obj:object, sort_keys=False, indent=None) -> str:
-    try:
-        return json.dumps(
-            obj._asdict(), 
-            sort_keys=sort_keys, 
-            indent=indent, 
-            cls=MappJsonEncoder
-        )
-    except Exception as e:
-        raise MappValidationError(f'Error serializing to JSON: {e}')    
-
-def from_json(json_str:str, model_class:type) -> object:
-    try:
-        data = json.loads(json_str)
-        return model_class(**data)
-    except json.JSONDecodeError as e:
-        raise MappValidationError(f'Invalid JSON: {e}')
-    except TypeError as e:
-        raise MappValidationError(f'Error creating model instance: {e}')
-    
-def list_from_json(json_str:str, model_class:type) -> 'ModelListResult':
-    try:
-        data = json.loads(json_str)
-        items = [model_class(**item) for item in data['items']]
-        total = data['total']
-        return ModelListResult(items=items, total=total)
-    
-    except json.JSONDecodeError as e:
-        raise MappValidationError(f'Invalid JSON: {e}')
-    
-    except TypeError as e:
-        raise MappValidationError(f'Error creating model instance: {e}')
-
-#
 # model
 #
+
+# class and instances #
 
 def new_model_class(model_spec:dict) -> type:
     """
@@ -106,7 +71,14 @@ def new_model(model_class:type, data:dict):
         return model_class(**data)
     except TypeError as e:
         raise ValueError(f'Error creating model instance: {e}')
-    
+
+@dataclass
+class ModelListResult:
+    items: list
+    total: int
+
+# conversion and validation #
+     
 def convert_data_to_model(model_class:type, data:dict):
     """
     Converts a dictionary of data into an instance of the specified model class.
@@ -149,6 +121,27 @@ def convert_data_to_model(model_class:type, data:dict):
             raise ValueError(f'Error converting field "{field_name}" to type "{field_type}": {e}')
 
     return new_model(model_class, converted_data)
+
+def convert_json_to_model(model_class:type, json_str:str):
+    """
+    Converts a JSON string into an instance of the specified model class.
+
+    Will convert types as necessary based on the model class definition.
+
+    Args:
+        model_class (type): The model class to instantiate.
+        json_str (str): A JSON string representing the model data.
+
+    Returns:
+        object: An instance of the model class.
+    """
+
+    try:
+        data = json.loads(json_str)
+    except json.JSONDecodeError as e:
+        raise ValueError(f'Invalid JSON: {e}')
+
+    return convert_data_to_model(model_class, data)
 
 def convert_value(field_type:str, raw_value:Any, strict=False) -> Any:
     """
@@ -304,7 +297,65 @@ def validate_model(model_class:type, model_instance:object) -> object:
     
     return model_instance
 
-@dataclass
-class ModelListResult:
-    items: list
-    total: int
+
+#
+# json
+#
+
+class MappJsonEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.strftime(DATETIME_FORMAT_STR)
+        elif hasattr(obj, '_asdict'):
+            return obj._asdict()
+        else:
+            return super().default(obj)
+
+# individual model #
+
+def to_json(obj:object, sort_keys=False, indent=None) -> str:
+    try:
+        return json.dumps(
+            obj, 
+            sort_keys=sort_keys, 
+            indent=indent, 
+            cls=MappJsonEncoder
+        )
+    except Exception as e:
+        raise MappValidationError(f'Error serializing to JSON: {e}')    
+
+def from_json(json_str:str, model_class:type) -> object:
+    try:
+        data = json.loads(json_str)
+        return model_class(**data)
+    except json.JSONDecodeError as e:
+        raise MappValidationError(f'Invalid JSON: {e}')
+    except TypeError as e:
+        raise MappValidationError(f'Error creating model instance: {e}')
+
+# model list #
+   
+def list_to_json(model_list:ModelListResult, sort_keys=False, indent=None) -> str:
+    try:
+        return json.dumps(
+            asdict(model_list),
+            sort_keys=sort_keys,
+            indent=indent,
+            cls=MappJsonEncoder
+        )
+    except Exception as e:
+        raise MappValidationError(f'Error serializing to JSON: {e}')
+    
+def list_from_json(json_str:str, model_class:type) -> 'ModelListResult':
+    try:
+        data = json.loads(json_str)
+        items = [model_class(**item) for item in data['items']]
+        total = data['total']
+        return ModelListResult(items=items, total=total)
+    
+    except json.JSONDecodeError as e:
+        raise MappValidationError(f'Invalid JSON: {e}')
+    
+    except TypeError as e:
+        raise MappValidationError(f'Error creating model instance: {e}')

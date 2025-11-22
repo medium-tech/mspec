@@ -5,7 +5,7 @@ from urllib.error import HTTPError
 
 from mapp.context import MappContext
 from mapp.errors import *
-from mapp.module.model.type import from_json, to_json, list_from_json, ModelListResult
+from mapp.types import from_json, to_json, list_from_json
 
 
 __all__ = [

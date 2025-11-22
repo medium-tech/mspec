@@ -2,7 +2,8 @@ from datetime import datetime
 
 from mapp.context import MappContext
 from mapp.errors import NotFoundError
-from mapp.module.model.type import DATETIME_FORMAT_STR, ModelListResult, validate_model
+from mapp.types import DATETIME_FORMAT_STR, ModelListResult, validate_model
+
 
 __all__ = [
     'db_model_create_table',
