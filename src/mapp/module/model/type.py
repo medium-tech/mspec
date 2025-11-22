@@ -23,10 +23,10 @@ def new_model_class(model_spec:dict) -> type:
     Returns:
         type: A dynamically created model class.
     """
-
+    fields = ['id']
     try:
         class_name = model_spec['name']['pascal_case']
-        fields = [field['name']['snake_case'] for field in model_spec['fields'].values()]
+        fields += [field['name']['snake_case'] for field in model_spec['fields'].values()]
     except KeyError as e:
         raise ValueError(f'Missing required model specification key: {e}')
     

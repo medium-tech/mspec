@@ -1,6 +1,6 @@
 import json
 
-from mapp.types import convert_data_to_model, new_model_class
+from mapp.module.model.type import convert_data_to_model, new_model_class
 from mapp.errors import MappError
 from mapp.module.model.db import *
 from mapp.module.model.http import *
