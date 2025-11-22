@@ -13,7 +13,54 @@ __all__ = [
 
 
 def db_model_create_table(ctx:MappContext, model_class: type):
-    print('[PLACEHOLDER] Would create the table for the model in the local SQLite database.')
+    model_spec = model_class._model_spec
+    model_snake_case = model_spec['name']['snake_case']
+
+    # non list fields #
+    
+    columns = ['id INTEGER PRIMARY KEY']
+    for field in model_spec['non_list_fields']:
+        field_name = field['name']['snake_case']
+        field_type = field['type']
+        
+        match field_type:
+            case 'bool':
+                sql_type = 'INTEGER'
+            case 'int':
+                sql_type = 'INTEGER'
+            case 'float':
+                sql_type = 'REAL'
+            case 'str' | 'enum':
+                sql_type = 'TEXT'
+            case 'datetime':
+                sql_type = 'TEXT'
+            case _:
+                raise ValueError(f'Unsupported field type: {field_type}')
+            
+        columns.append(f"'{field_name}' {sql_type}")
+
+    columns_str = ', '.join(columns)
+    main_sql_table = f"CREATE TABLE IF NOT EXISTS {model_snake_case}({columns_str})"
+    ctx.db.cursor.execute(main_sql_table)
+
+    # list fields #
+
+    for field in model_spec['list_fields']:
+        field_name = field['name']['snake_case']
+        list_table_name = f'{model_snake_case}_{field_name}'
+        
+        list_sql_table = f"""CREATE TABLE IF NOT EXISTS {list_table_name}(
+            id INTEGER PRIMARY KEY,
+            value,
+            position INTEGER,
+            {model_snake_case}_id INTEGER REFERENCES {model_snake_case}(id)
+        )"""
+        ctx.db.cursor.execute(list_sql_table)
+
+        index_sql = f"CREATE INDEX IF NOT EXISTS {list_table_name}_index ON {list_table_name}({model_snake_case}_id)"
+        ctx.db.cursor.execute(index_sql)
+
+    ctx.db.commit()
 
 
 def db_model_create(ctx:MappContext, model_class: type, obj: object):
