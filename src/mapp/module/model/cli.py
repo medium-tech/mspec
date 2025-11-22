@@ -3,7 +3,9 @@ from mapp.module.model.http import *
 
 def add_model_subparser(subparsers, model_spec):
 
-    # init model cli #
+    # 
+    # init model cli
+    #
 
     model_kebab_case = model_spec['name']['kebab_case']
     model_parser = subparsers.add_parser(model_kebab_case, help=f'Model: {model_kebab_case}')
