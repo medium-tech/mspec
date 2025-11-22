@@ -1,6 +1,7 @@
 from collections import namedtuple
 from typing import Any
 from datetime import datetime
+from dataclasses import dataclass
 
 from mapp.errors import MappValidationError
 
@@ -14,6 +15,10 @@ __all__ = [
 ]
 
 DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
+
+#
+# model
+#
 
 def new_model_class(model_spec:dict) -> type:
     """
@@ -251,3 +256,8 @@ def validate_model(model_class:type, model_instance:object) -> object:
         raise MappValidationError('Model validation failed.', errors)
     
     return model_instance
+
+@dataclass
+class ModelListResult:
+    items: list
+    total: int

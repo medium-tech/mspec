@@ -4,7 +4,7 @@ from datetime import datetime
 
 from mapp.context import MappContext
 from mapp.errors import NotFoundError
-from mapp.module.model.type import DATETIME_FORMAT_STR
+from mapp.module.model.type import DATETIME_FORMAT_STR, ModelListResult
 
 __all__ = [
     'db_model_create_table',
@@ -65,7 +65,6 @@ def db_model_create_table(ctx:MappContext, model_class: type):
         ctx.db.cursor.execute(index_sql)
 
     ctx.db.commit()
-
 
 def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
 
@@ -157,7 +156,7 @@ def db_model_read(ctx:MappContext, model_class: type, model_id: str):
         list_table_name = f'{model_snake_case}_{field_name}'
 
         cursor = ctx.db.cursor.execute(
-            f"SELECT value FROM {list_table_name} WHERE {model_snake_case}_id = ? ORDER BY position ASC",
+            f'SELECT value FROM {list_table_name} WHERE {model_snake_case}_id = ? ORDER BY position ASC',
             (model_id,)
         )
 
@@ -173,11 +172,142 @@ def db_model_read(ctx:MappContext, model_class: type, model_id: str):
 
     return model_class(**data)
 
-def db_model_update(ctx:MappContext, model_class: type, model_id: str, data: dict):
-    print(f'[PLACEHOLDER] Would update model with id={model_id} in the local SQLite database.')
+def db_model_update(ctx:MappContext, model_class: type, model_id: str, obj: object):
+    model_spec = model_class._model_spec
+    model_snake_case = model_spec['name']['snake_case']
+
+    #
+    # non list fields
+    #
+
+    # prepare sql #
+
+    fields = []
+    values = []
+
+    for field in model_spec['non_list_fields']:
+        field_name = field['name']['snake_case']
+        value = getattr(obj, field_name)
+
+        if field['type'] == 'datetime':
+            value = value.isoformat()
+
+        fields.append(f"'{field_name}' = ?")
+        values.append(value)
+
+    values.append(model_id)
+    set_clause = ', '.join(fields)
+    sql = f'UPDATE {model_snake_case} SET {set_clause} WHERE id = ?'
+
+    # execute sql #
+
+    result = ctx.db.cursor.execute(sql, values)
+    if result.rowcount == 0:
+        raise NotFoundError(f'{model_snake_case} {model_id} not found')
+
+    #
+    # list fields
+    #
+
+    for field in model_spec['list_fields']:
+        field_name = field['name']['snake_case']
+        list_table_name = f'{model_snake_case}_{field_name}'
+
+        # clear existing values #
+
+        ctx.db.cursor.execute(f'DELETE FROM {list_table_name} WHERE {model_snake_case}_id = ?', (model_id,))
+
+        # insert new values #
+        
+        for pos, value in enumerate(getattr(obj, field_name)):
+            ctx.db.cursor.execute(
+                f'INSERT INTO {list_table_name} (value, position, {model_snake_case}_id) VALUES (?, ?, ?)',
+                (value, pos, model_id)
+            )
+
+    # finish #
+
+    ctx.db.commit()
+    return obj
 
 def db_model_delete(ctx:MappContext, model_class: type, model_id: str):
-    print(f'[PLACEHOLDER] Would delete model with id={model_id} from the local SQLite database.')
+    model_spec = model_class._model_spec
+    model_snake_case = model_spec['name']['snake_case']
 
-def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, limit: int = 50):
-    print(f'[PLACEHOLDER] Would list models from the local SQLite database with offset={offset} and limit={limit}.')
+    # list tables #
+
+    for field in model_spec['list_fields']:
+        field_name = field['name']['snake_case']
+        list_table_name = f'{model_snake_case}_{field_name}'
+        ctx.db.cursor.execute(f'DELETE FROM {list_table_name} WHERE {model_snake_case}_id = ?', (model_id,))
+
+    # main table #
+
+    result = ctx.db.cursor.execute(f'DELETE FROM {model_snake_case} WHERE id = ?', (model_id,))
+    if result.rowcount == 0:
+        raise NotFoundError(f'{model_snake_case} {model_id} not found')
+    
+    ctx.db.commit()
+
+def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, limit: int = 50) -> ModelListResult:
+    model_spec = model_class._model_spec
+    model_snake_case = model_spec['name']['snake_case']
+
+    # query #
+
+    sql = f'SELECT * FROM {model_snake_case} ORDER BY id LIMIT ? OFFSET ?'
+    rows = ctx.db.cursor.execute(sql, (limit, offset)).fetchall()
+    
+    # convert results #
+
+    models = []
+
+    for row in rows:
+        data = {'id': str(row[0])}
+
+        # convert non list fields #
+
+        for index, field in enumerate(model_spec['non_list_fields'], start=1):
+            field_name = field['name']['snake_case']
+            match field['type']:
+                case 'bool':
+                    value = bool(row[index])
+                case 'datetime' if row[index] is not None:
+                    value = datetime.strptime(row[index], DATETIME_FORMAT_STR).replace(microsecond=0)
+                case _:
+                    value = row[index]
+
+            data[field_name] = value
+
+        # query for and convert list fields #
+
+        for field in model_spec['list_fields']:
+
+            field_name = field['name']['snake_case']
+            list_table_name = f'{model_snake_case}_{field_name}'
+
+            cursor = ctx.db.cursor.execute(
+                f'SELECT value FROM {list_table_name} WHERE {model_snake_case}_id = ? ORDER BY position ASC',
+                (data['id'],)
+            )
+
+            match field['element_type']:
+                case 'bool':
+                    convert_element = bool
+                case 'datetime' if row[index] is not None:
+                    convert_element = lambda x: datetime.strptime(x, DATETIME_FORMAT_STR).replace(microsecond=0)
+                case _:
+                    convert_element = lambda x: x
+
+            data[field_name] = [convert_element(row[0]) for row in cursor.fetchall()]
+
+        models.append(model_class(**data))
+
+    # result #
+        
+    total_items = ctx.db.cursor.execute(f'SELECT COUNT(*) FROM {model_snake_case}').fetchone()[0]
+
+    return ModelListResult(
+        items=models, 
+        total=total_items
+    )
