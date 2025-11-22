@@ -13,25 +13,53 @@ def add_model_subparser(subparsers, model_spec):
     help_parser = io_subparsers.add_parser('help', help='Show help for this model', aliases=['-h', '--help'])
     help_parser.set_defaults(func=lambda args: model_parser.print_help())
 
-    # parse http actions #
+    #
+    # http
+    #
 
     http_parser = io_subparsers.add_parser('http', help='Interact with the model via HTTP API')
     http_actions = http_parser.add_subparsers(dest='action', required=True)
-    http_action_map = [
-        ('create', 'Creates a single model via HTTP API', http_model_create),
-        ('read', 'Reads a single model via HTTP API', http_model_read),
-        ('update', 'Updates a single model via HTTP API', http_model_update),
-        ('delete', 'Deletes a single model via HTTP API', http_model_delete),
-        ('list', 'Lists models via HTTP API with optional pagination', http_model_list)
-    ]
-    for action, help_text, func in http_action_map:
-        action_parser = http_actions.add_parser(action, help=help_text)
-        action_parser.set_defaults(func=func)
+
+    # create #
+
+    create_parser = http_actions.add_parser('create', help='HTTP create')
+    create_parser.add_argument('json', help='JSON string for model creation')
+    create_parser.set_defaults(func=http_model_create)
+
+    # read #
+
+    read_parser = http_actions.add_parser('read', help='HTTP read')
+    read_parser.add_argument('model_id', help='ID of the model to read')
+    read_parser.set_defaults(func=http_model_read)
+
+    # update #
+
+    update_parser = http_actions.add_parser('update', help='HTTP update')
+    update_parser.add_argument('model_id', help='ID of the model to update')
+    update_parser.add_argument('json', help='JSON string for model update')
+    update_parser.set_defaults(func=http_model_update)
+
+    # delete #
+    
+    delete_parser = http_actions.add_parser('delete', help='HTTP delete')
+    delete_parser.add_argument('model_id', help='ID of the model to delete')
+    delete_parser.set_defaults(func=http_model_delete)
+
+    # list #
+
+    list_parser = http_actions.add_parser('list', help='HTTP list')
+    list_parser.add_argument('--offset', type=int, default=0, help='Offset for pagination')
+    list_parser.add_argument('--limit', type=int, default=50, help='Limit for pagination')
+    list_parser.set_defaults(func=http_model_list)
+
+    # help #
 
     http_help_parser = http_actions.add_parser('help', help='Show help for this command', aliases=['-h', '--help'])
     http_help_parser.set_defaults(func=lambda args, p=http_parser: p.print_help())
 
-    # parse db actions #
+    #
+    # db
+    #
 
     db_parser = io_subparsers.add_parser('db', help='Interact with the model via local SQLite database')
     db_actions = db_parser.add_subparsers(dest='action', required=True)
