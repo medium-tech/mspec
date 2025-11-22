@@ -15,7 +15,7 @@ def main(spec_path:str):
     except FileNotFoundError:
         raise MappError('SPEC_FILE_NOT_FOUND', f'Spec file not found: {spec_path}')
 
-    # init cli #
+    # init application cli #
 
     parser = argparse.ArgumentParser(description='mapp CLI (Python template app)', prog='mapp')
     subparsers = parser.add_subparsers(dest='module', help='Available modules', required=False)
@@ -24,6 +24,7 @@ def main(spec_path:str):
     help_parser.set_defaults(func=lambda args: parser.print_help())
 
     # parsers for each module #
+
     try:
         spec_modules = spec['modules']
     except KeyError:
@@ -40,7 +41,6 @@ def main(spec_path:str):
         args.func(args)
     else:
         parser.print_help()
-
 
 if __name__ == "__main__":
     main(os.environ.get('MAPP_SPEC_FILE', 'template-app.yaml'))
