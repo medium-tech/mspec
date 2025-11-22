@@ -13,6 +13,7 @@ __all__ = [
     'validate_model',
 ]
 
+DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
 
 def new_model_class(model_spec:dict) -> type:
     """
@@ -134,7 +135,7 @@ def convert_value(field_type:str, raw_value:Any, strict=False) -> Any:
             if isinstance(raw_value, datetime):
                 return raw_value
             elif isinstance(raw_value, str):
-                return datetime.fromisoformat(raw_value)
+                return datetime.strptime(raw_value, DATETIME_FORMAT_STR)
             else:
                 raise ValueError(f'Cannot convert type "{type(raw_value)}" to datetime')
         case _:

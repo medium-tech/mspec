@@ -4,6 +4,7 @@ from datetime import datetime
 
 from mapp.context import MappContext
 from mapp.errors import NotFoundError
+from mapp.module.model.type import DATETIME_FORMAT_STR
 
 __all__ = [
     'db_model_create_table',
@@ -76,7 +77,7 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
     model_spec = model_class._model_spec
     model_snake_case = model_class._model_spec['name']['snake_case']
 
-    # prepare sql #
+    # non list sql #
     
     fields = []
     values = []
@@ -84,14 +85,12 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
 
     for field in model_spec['non_list_fields']:
         field_name = field['name']['snake_case']
-        if field_name == 'id':
-            continue
 
         fields.append(field_name)
         value = getattr(obj, field_name)
         
         if field['type'] == 'datetime':
-            value = value.isoformat() if value is not None else None
+            value = value.isoformat()
 
         values.append(value)
         placeholders.append('?')
@@ -102,15 +101,24 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
     # call db #
 
     sql = f'INSERT INTO {model_snake_case} (' + fields_str + ') VALUES (' + placeholder_str + ')'
-
     result = ctx.db.cursor.execute(sql, values)
     assert result.rowcount == 1
     assert result.lastrowid is not None
-    ctx.db.commit()
-
-     # return # 
-     
     obj.id = str(result.lastrowid)
+
+    # list fields sql #
+
+    for field in model_spec['list_fields']:
+        field_name = field['name']['snake_case']
+        list_table_name = f'{model_snake_case}_{field_name}'
+        values_list = getattr(obj, field_name, [])
+        for pos, value in enumerate(values_list):
+            ctx.db.cursor.execute(
+                f"INSERT INTO {list_table_name} (value, position, {model_snake_case}_id) VALUES (?, ?, ?)",
+                (value, pos, obj.id)
+            )
+
+    ctx.db.commit()
     return obj
 
 def db_model_read(ctx:MappContext, model_class: type, model_id: str):
@@ -130,16 +138,38 @@ def db_model_read(ctx:MappContext, model_class: type, model_id: str):
     # convert non list fields #
 
     data = {}
-    for index, field in enumerate(model_spec['non_list_fields']):
+    for idx, field in enumerate(model_spec['non_list_fields']):
+        field_name = field['name']['snake_case']
         match field['type']:
             case 'bool':
-                value = bool(row[index])
-            case 'datetime' if row[index] is not None:
-                value = datetime.fromisoformat(row[index])
+                value = bool(row[idx])
+            case 'datetime' if row[idx] is not None:
+                value = datetime.strptime(row[idx], DATETIME_FORMAT_STR).replace(microsecond=0)
             case _:
-                value = row[index]
+                value = row[idx]
+        data[field_name] = value
 
-    data[field] = value
+    # read list fields #
+
+    for field in model_spec['list_fields']:
+
+        field_name = field['name']['snake_case']
+        list_table_name = f'{model_snake_case}_{field_name}'
+
+        cursor = ctx.db.cursor.execute(
+            f"SELECT value FROM {list_table_name} WHERE {model_snake_case}_id = ? ORDER BY position ASC",
+            (model_id,)
+        )
+
+        match field['element_type']:
+            case 'bool':
+                convert_element = bool
+            case 'datetime' if row[idx] is not None:
+                convert_element = lambda x: datetime.strptime(x, DATETIME_FORMAT_STR).replace(microsecond=0)
+            case _:
+                convert_element = lambda x: x
+
+        data[field_name] = [convert_element(row[0]) for row in cursor.fetchall()]
 
     return model_class(**data)
 
