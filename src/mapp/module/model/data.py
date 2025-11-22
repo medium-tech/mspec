@@ -87,7 +87,6 @@ def convert_data_to_model(model_class:type, data:dict):
 
     return new_model(model_class, converted_data)
 
-
 def convert_value(field_type:str, raw_value:Any, strict=False) -> Any:
     """
     Converts a raw value to the specified field type.
