@@ -31,12 +31,37 @@ class MappJsonEncoder(json.JSONEncoder):
             return super().default(obj)
 
 def to_json(obj:object, sort_keys=False, indent=None) -> str:
-    return json.dumps(
-        obj._asdict(), 
-        sort_keys=sort_keys, 
-        indent=indent, 
-        cls=MappJsonEncoder
-    )
+    try:
+        return json.dumps(
+            obj._asdict(), 
+            sort_keys=sort_keys, 
+            indent=indent, 
+            cls=MappJsonEncoder
+        )
+    except Exception as e:
+        raise MappValidationError(f'Error serializing to JSON: {e}')    
+
+def from_json(json_str:str, model_class:type) -> object:
+    try:
+        data = json.loads(json_str)
+        return model_class(**data)
+    except json.JSONDecodeError as e:
+        raise MappValidationError(f'Invalid JSON: {e}')
+    except TypeError as e:
+        raise MappValidationError(f'Error creating model instance: {e}')
+    
+def list_from_json(json_str:str, model_class:type) -> 'ModelListResult':
+    try:
+        data = json.loads(json_str)
+        items = [model_class(**item) for item in data['items']]
+        total = data['total']
+        return ModelListResult(items=items, total=total)
+    
+    except json.JSONDecodeError as e:
+        raise MappValidationError(f'Invalid JSON: {e}')
+    
+    except TypeError as e:
+        raise MappValidationError(f'Error creating model instance: {e}')
 
 #
 # model

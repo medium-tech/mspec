@@ -5,7 +5,7 @@ from urllib.error import HTTPError
 
 from mapp.context import MappContext
 from mapp.errors import *
-from mapp.module.model.type import to_json, ModelListResult
+from mapp.module.model.type import from_json, to_json, list_from_json, ModelListResult
 
 
 __all__ = [
@@ -33,7 +33,7 @@ def http_model_create(ctx: MappContext, model_class:type, model:object) -> objec
         request = Request(url, headers=ctx.headers, method='POST', data=request_body)
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return model_class(**json.loads(response_body))
+            return from_json(model_class, response_body)
         
     except HTTPError as e:
         if e.code >= 400:
@@ -59,7 +59,7 @@ def http_model_read(ctx: MappContext, model_class: type, model_id: str) -> objec
         request = Request(url, headers=ctx.headers, method='GET')
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return model_class(**json.loads(response_body))
+            return from_json(model_class, response_body)
         
     except HTTPError as e:
         if e.code >= 400:
@@ -86,7 +86,7 @@ def http_model_update(ctx: MappContext, model_class: type, model_id: str, model:
         request = Request(url, headers=ctx.headers, method='PUT', data=request_body)
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return model_class(**json.loads(response_body))
+            return from_json(model_class, response_body)
         
     except HTTPError as e:
         if e.code >= 400:
@@ -137,11 +137,7 @@ def http_model_list(ctx: MappContext, model_class: type, offset: int = 0, limit:
         request = Request(url, headers=ctx.headers, method='GET')
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            response_data = json.loads(response_body)
-            return ModelListResult(
-                total=response_data['total'],
-                items=[model_class(**item) for item in response_data['items']]
-            )
+            return list_from_json(response_body, model_class)
         
     except HTTPError as e:
         if e.code >= 400:
