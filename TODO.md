@@ -16,6 +16,17 @@
 |--|--|--|
 |🔴|🟡|🟢|
 
+## mapp framework
+* 🔴 bootstrap app
+* 🔴 unittests passing
+* 🔴 generate browser1 ui?
+* 🔴 serve hello world lingo page from server
+    * 🔴 lingo index page
+    * 🔴 lingo module page
+    * 🔴 lingo model page
+* 🔴 export static site
+* 🔴 lingo model (see below)
+
 ## main template prototype
 The main prototype are the python + browser 1 browser template apps.
 
