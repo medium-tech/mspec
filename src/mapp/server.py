@@ -3,11 +3,11 @@ import time
 import uwsgi
 from traceback import format_exc
 
-from mapp.context import get_context_from_env, MappContext
+from mapp.context import get_context_from_env, MappContext, RequestContext
 from mapp.errors import *
 from mapp.types import JSONResponse, PlainTextResponse, to_json
 
-def debug_routes(ctx: MappContext, env:dict, raw_req_body:bytes):
+def debug_routes(server_ctx: MappContext, request_ctx: RequestContext, env:dict, raw_req_body:bytes):
     output = ''
     keys = sorted(env.keys())
     longest_key_len = max(len(key) for key in keys)

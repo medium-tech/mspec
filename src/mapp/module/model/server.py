@@ -1,37 +1,29 @@
 import json
 import re
 
-from dataclasses import dataclass
 from urllib.parse import parse_qs
 
 from mapp.errors import NotFoundError, RequestError
-from mapp.context import MappContext
+from mapp.context import MappContext, RequestContext, RouteContext
 from mapp.types import JSONResponse, model_to_json, list_to_json, ModelListResult
 from mapp.module.model.db import *
 
 
 __all__ = [
+    'create_model_routes',
     'model_routes'
 ]
-
-@dataclass
-class RouteConfig:
-    model_class: type
-    model_snake_case: str
-    module_snake_case: str
-    api_instance_regex: str
-    api_model_regex: str
 
 
 #
 # router
 #
 
-def create_model_routes(model_class:type):
+def create_model_routes(model_class:type) -> callable:
     model_snake_case = model_class._model_spec['name']['snake_case']
     module_snake_case = model_class._model_spec['module']['snake_case']
 
-    config = RouteConfig(
+    route_ctx = RouteContext(
         model_class=model_class,
         model_snake_case=model_snake_case,
         module_snake_case=module_snake_case,
@@ -39,93 +31,87 @@ def create_model_routes(model_class:type):
         api_model_regex=rf'/api/{module_snake_case}/{model_snake_case}'
     )
 
-def model_routes(ctx: MappContext, env:dict, raw_req_body:bytes, route:RouteConfig):
+    return lambda server, request: model_routes(route_ctx, server, request)
 
-    #
-    # init
-    #
-    
-    # model_snake_case = model_class._model_spec['name']['snake_case']
-    # module_snake_case = model_class._model_spec['module']['snake_case']
-    # api_instance_regex = rf'/api/{module_snake_case}/{model_snake_case}/(.+)'
-    # api_model_regex = rf'/api/{module_snake_case}/{model_snake_case}'
+def model_routes(route: RouteContext, server: MappContext, request: RequestContext):
+
 
     #
     # instance routes
     #
 
-    if (instance := re.match(api_instance_regex, env['PATH_INFO'])) is not None:
+    if (instance := re.match(route.api_instance_regex, request.env['PATH_INFO'])) is not None:
         instance_id = instance.group(1)
 
         # read #
 
-        if env['REQUEST_METHOD'] == 'GET':
+        if request.env['REQUEST_METHOD'] == 'GET':
             try:
-                item = db_model_read(ctx, model_class, instance_id)
-                ctx.log(f'GET {module_snake_case}.{model_snake_case}/{instance_id}')
+                item = db_model_read(server, route.model_class, instance_id)
+                server.log(f'GET {route.module_snake_case}.{route.model_snake_case}/{instance_id}')
                 raise JSONResponse('200 OK', model_to_json(item))
             
             except NotFoundError:
-                ctx.log(f'GET {module_snake_case}.{model_snake_case}/{instance_id} - Not Found')
-                raise RequestError('404 Not Found', f'not found {module_snake_case}.{model_snake_case}.{instance_id}')
+                server.log(f'GET {route.module_snake_case}.{route.model_snake_case}/{instance_id} - Not Found')
+                raise RequestError('404 Not Found', f'not found {route.module_snake_case}.{route.model_snake_case}.{instance_id}')
 
         # update #
 
-        elif env['REQUEST_METHOD'] == 'PUT':
-            incoming_item = model_class(**json.loads(raw_req_body.decode('utf-8')))
+        elif request.env['REQUEST_METHOD'] == 'PUT':
+            incoming_item = route.model_class(**json.loads(request.raw_req_body.decode('utf-8')))
 
             if instance_id != str(incoming_item.id):
-                raise RequestError('400 Bad Request', f'{model_snake_case} id mismatch')
+                raise RequestError('400 Bad Request', f'{route.model_snake_case} id mismatch')
             try:
-                updated_item = db_model_update(ctx, model_class, instance_id, incoming_item)
+                updated_item = db_model_update(server, route.model_class, instance_id, incoming_item)
             except NotFoundError:
-                ctx.log(f'PUT {module_snake_case}.{model_snake_case}/{instance_id} - Not Found')
-                raise RequestError('404 Not Found', f'not found {module_snake_case}.{model_snake_case}.{instance_id}')
+                server.log(f'PUT {route.module_snake_case}.{route.model_snake_case}/{instance_id} - Not Found')
+                raise RequestError('404 Not Found', f'not found {route.module_snake_case}.{route.model_snake_case}.{instance_id}')
             
-            ctx.log(f'PUT {module_snake_case}.{model_snake_case}/{instance_id}')
+            server.log(f'PUT {route.module_snake_case}.{route.model_snake_case}/{instance_id}')
             raise JSONResponse('200 OK', model_to_json(updated_item))
 
         # delete #
 
-        elif env['REQUEST_METHOD'] == 'DELETE':
-            ack = db_model_delete(ctx, model_class, instance_id)
-            ctx.log(f'DELETE {module_snake_case}.{model_snake_case}/{instance_id}')
+        elif request.env['REQUEST_METHOD'] == 'DELETE':
+            ack = db_model_delete(server, route.model_class, instance_id)
+            server.log(f'DELETE {route.module_snake_case}.{route.model_snake_case}/{instance_id}')
             raise JSONResponse('204 No Content', ack)
         
         # invalid method #
 
         else:
-            ctx.log(f'ERROR 405 {module_snake_case}.{model_snake_case}/{instance_id}')
+            server.log(f'ERROR 405 {route.module_snake_case}.{route.model_snake_case}/{instance_id}')
             raise RequestError('405 Method Not Allowed', 'invalid request method')
 
     #
     # model routes
     #
 
-    elif re.match(api_model_regex, env['PATH_INFO']):
+    elif re.match(route.api_model_regex, request.env['PATH_INFO']):
 
         # create #
 
-        if env['REQUEST_METHOD'] == 'POST':
-            incoming_item = model_class(**json.loads(raw_req_body.decode('utf-8')))
-            item = db_model_create(ctx, model_class, incoming_item)
+        if request.env['REQUEST_METHOD'] == 'POST':
+            incoming_item = route.model_class(**json.loads(request.raw_req_body.decode('utf-8')))
+            item = db_model_create(server, route.model_class, incoming_item)
 
-            ctx.log(f'POST {module_snake_case}.{model_snake_case} - id: {item.id}')
+            server.log(f'POST {route.module_snake_case}.{route.model_snake_case} - id: {item.id}')
             raise JSONResponse('200 OK', model_to_json(item))
         
         # list #
         
-        elif env['REQUEST_METHOD'] == 'GET':
-            query = parse_qs(env['QUERY_STRING'])
+        elif request.env['REQUEST_METHOD'] == 'GET':
+            query = parse_qs(request.env['QUERY_STRING'])
             offset = int(query.get('offset', [0])[0])
             limit = int(query.get('limit', [25])[0])
 
-            items = db_model_list(ctx, model_class, offset=offset, limit=limit)
-            ctx.log(f'GET {module_snake_case}.{model_snake_case}')
+            items = db_model_list(server, route.model_class, offset=offset, limit=limit)
+            server.log(f'GET {route.module_snake_case}.{route.model_snake_case}')
 
             result = ModelListResult(items=items, total=len(items))
             raise JSONResponse('200 OK', list_to_json(result))
         
         else:
-            ctx.log(f'ERROR 405 {module_snake_case}.{model_snake_case}')
+            server.log(f'ERROR 405 {route.module_snake_case}.{route.model_snake_case}')
             raise RequestError('405 Method Not Allowed', 'invalid request method')

@@ -5,6 +5,14 @@ import sqlite3
 from pathlib import Path
 from dataclasses import dataclass
 
+__all__ = [
+    'DEFAULT_DB_PATH',
+    'DBContext',
+    'RouteContext',
+    'RequestContext',
+    'MappContext',
+    'get_context_from_env'
+]
 
 DEFAULT_DB_PATH = Path(__file__).parent / 'db.sqlite3'
 
@@ -16,6 +24,24 @@ class DBContext:
     cursor: sqlite3.Cursor
     commit: callable
 
+
+@dataclass
+class RouteContext:
+    model_class: type
+    model_snake_case: str
+    module_snake_case: str
+    api_instance_regex: str
+    api_model_regex: str
+
+
+@dataclass
+class RequestContext:
+    env: dict
+    raw_req_body: bytes
+
+#
+# mapp context
+#
 
 @dataclass
 class MappContext:
