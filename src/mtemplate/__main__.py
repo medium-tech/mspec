@@ -63,7 +63,7 @@ elif args.command == 'render':
     
     if args.app == 'bootstrap':
         bootstrap_out = None if args.output is None else args.output / 'bootstrap'
-        MappBootstrapProject.render(load_generator_spec(args.spec), args.env_file, bootstrap_out, args.debug, args.disable_strict, use_cache)
+        MappBootstrapProject.render(args.spec, load_generator_spec(args.spec), args.env_file, bootstrap_out, args.debug, args.disable_strict, use_cache)
 
 elif args.command == 'setup':
     if args.source_dir is None:
