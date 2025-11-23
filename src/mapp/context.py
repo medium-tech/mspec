@@ -5,6 +5,9 @@ import sqlite3
 from pathlib import Path
 from dataclasses import dataclass
 
+from mapp.errors import MappError
+from mspec.core import load_mapp_spec
+
 __all__ = [
     'DEFAULT_DB_PATH',
     'DBContext',
@@ -68,3 +71,17 @@ def get_context_from_env():
             commit=db_conn.commit,
         )
     )
+
+#
+# mapp spec file
+#
+
+os.environ.get('MAPP_SPEC_FILE', 'template-app.yaml')
+
+def spec_from_env() -> dict:
+    spec_path = os.environ.get('MAPP_SPEC_FILE', 'mapp-spec.yaml')
+
+    try:
+        return load_mapp_spec(spec_path)
+    except FileNotFoundError:
+        raise MappError('SPEC_FILE_NOT_FOUND', f'Spec file not found: {spec_path}')

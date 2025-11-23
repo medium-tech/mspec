@@ -124,3 +124,5 @@ def load_generator_spec(spec_file:str, try_builtin:bool=True) -> dict:
         raise ValueError(f'No lingo.version defined in spec file: {spec_file}')
 
     return init_generator_spec(contents)
+
+load_mapp_spec = load_generator_spec  # alias for backward compatibility

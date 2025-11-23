@@ -3,19 +3,38 @@ import time
 import uwsgi
 from traceback import format_exc
 
-from mapp.context import get_context_from_env, MappContext, RequestContext
+from mapp.context import get_context_from_env, MappContext, RequestContext, RouteContext
 from mapp.errors import *
 from mapp.types import JSONResponse, PlainTextResponse, to_json
 
-def debug_routes(server_ctx: MappContext, request_ctx: RequestContext, env:dict, raw_req_body:bytes):
-    output = ''
-    keys = sorted(env.keys())
-    longest_key_len = max(len(key) for key in keys)
-    for key in keys:
-        output += f'{key:<{longest_key_len}}: {env[key]}\n'
+
+def debug_routes(route: RouteContext, server: MappContext, request: RequestContext):
+    column_width = 42
+
+    output = 'Debug Info\n\n'
+
+    output += 'MappContext:\n'
+    output += f'MappContext.server_port ::{server.server_port:<{column_width}}\n'
+    output += f'MappContext.client_host ::{server.client_host:<{column_width}}\n'
+    output += f'MappContext.log ::{type(server.log)=:<{column_width}}\n\n'
+    output += f'MappContext.db ::{type(server.db)=:<{column_width}}\n'
+    output += f' :: DBContext.db_url ::{server.db.db_url:<{column_width}}\n'
+    output += f' :: DBContext.connection ::{type(server.db.connection)=:<{column_width}}\n'
+    output += f' :: DBContext.cursor ::{type(server.db.cursor)=:<{column_width}}\n'
+    output += f' :: DBContext.commit ::{type(server.db.commit)=:<{column_width}}\n\n'
+
+    output += f'RequestContext.raw_req_body ::{request.raw_req_body:<{column_width}} {type(request.raw_req_body)=} {len(request.raw_req_body)=}\n'
+    output += 'RequestContext.env ::\n\n'
+    for key in request.env:
+        output += f' :: {key:<{column_width}}:: {request.env[key]}\n'
+    output += '\n'
 
     debug_delay = os.environ.get('DEBUG_DELAY', None)
-    output += f'\nDEBUG_DELAY: {debug_delay}\n'
+    output += f'DEBUG_DELAY :: {debug_delay}\n\n'
+
+    output += f'RouteContext :: {route}\n'
+    output += ' :: unused in debug_routes\n'
+
     raise PlainTextResponse('200 OK', output)
 
 
@@ -27,9 +46,13 @@ route_list = [debug_routes]
 
 def application(env, start_response):
 
-    # best practice is to always consume body if it exists: https://uwsgi-docs.readthedocs.io/en/latest/ThingsToKnow.html
-    req_body:bytes = env['wsgi.input'].read()
-    env['wsgi.input'].close()
+    request = RequestContext(
+        env=env,
+        # best practice is to always consume body if it exists: https://uwsgi-docs.readthedocs.io/en/latest/ThingsToKnow.html
+        raw_req_body=env['wsgi.input'].read()
+    )
+   
+    request.env['wsgi.input'].close()
 
     try:
         debug_delay = float(os.environ['DEBUG_DELAY'])
@@ -39,7 +62,7 @@ def application(env, start_response):
 
     for route in route_list:
         try:
-            route(request_context, env, req_body)
+            route(server_ctx, request)
 
         # success responses #
 

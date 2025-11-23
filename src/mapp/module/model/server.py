@@ -35,7 +35,6 @@ def create_model_routes(model_class:type) -> callable:
 
 def model_routes(route: RouteContext, server: MappContext, request: RequestContext):
 
-
     #
     # instance routes
     #

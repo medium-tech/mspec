@@ -1,7 +1,7 @@
 import os
 import argparse
 
-from mspec.core import load_generator_spec
+from mapp.context import spec_from_env
 from mapp.errors import MappError
 from mapp.module import cli as module_cli
 
@@ -11,14 +11,7 @@ __all__ = [
 ]
 
 
-def main(spec_path:str):
-
-    # load spec #
-
-    try:
-        spec = load_generator_spec(spec_path)
-    except FileNotFoundError:
-        raise MappError('SPEC_FILE_NOT_FOUND', f'Spec file not found: {spec_path}')
+def main(spec:dict):
 
     # init application cli #
 
@@ -48,4 +41,5 @@ def main(spec_path:str):
         parser.print_help()
 
 if __name__ == "__main__":
-    main(os.environ.get('MAPP_SPEC_FILE', 'template-app.yaml'))
+    mapp_spec = spec_from_env()
+    main(mapp_spec)
