@@ -57,7 +57,7 @@ for module in spec_modules.values():
     try:
         spec_models = module['models']
     except KeyError:
-        continue
+        raise MappError('NO_MODELS_DEFINED', f'No models defined in module: {module["name"]["kebab_case"]}')
 
     for model in spec_models.values():
         route_resolver, model_class = create_model_routes(module, model)

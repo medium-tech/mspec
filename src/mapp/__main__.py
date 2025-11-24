@@ -1,8 +1,8 @@
-import os
 import argparse
 
-from mapp.context import spec_from_env
+from mapp.context import MappContext, spec_from_env, get_context_from_env
 from mapp.errors import MappError
+from mapp.db import create_tables
 from mapp.module import cli as module_cli
 
 
@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 
-def main(spec:dict):
+def main(ctx: MappContext, spec:dict):
 
     # init application cli #
 
@@ -20,6 +20,9 @@ def main(spec:dict):
 
     help_parser = subparsers.add_parser('help', help='Show top-level help', aliases=['-h', '--help'])
     help_parser.set_defaults(func=lambda args: parser.print_help())
+
+    create_tables_parser = subparsers.add_parser('create-tables', help='Create all tables for app')
+    create_tables_parser.set_defaults(func=lambda ctx, args: create_tables(ctx, spec))
 
     # parsers for each module #
 
@@ -36,10 +39,11 @@ def main(spec:dict):
     args = parser.parse_args()
 
     if hasattr(args, 'func'):
-        args.func(args)
+        args.func(ctx, args)
     else:
         parser.print_help()
 
 if __name__ == "__main__":
+    cli_ctx = get_context_from_env()
     mapp_spec = spec_from_env()
-    main(mapp_spec)
+    main(cli_ctx, mapp_spec)

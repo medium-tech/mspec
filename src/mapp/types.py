@@ -72,6 +72,7 @@ def new_model_class(model_spec:dict, module_spec:Optional[dict]=None) -> type:
         class_name = model_spec['name']['pascal_case']
         fields += [field['name']['snake_case'] for field in model_spec['fields'].values()]
     except KeyError as e:
+        breakpoint()
         raise ValueError(f'Missing required model specification key: {e}')
     
     new_class = namedtuple(class_name, fields)

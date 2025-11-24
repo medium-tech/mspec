@@ -78,7 +78,7 @@ elif args.command == 'test':
         run_server_and_app_tests(args.source_dir)
 
 elif args.command == 'test-spec':
-    result = test_spec(args.spec, args.cmd, args.host)
+    result = test_spec(args.spec, args.cmd, args.host, args.env_file)
     if not result:
         raise SystemExit(1)
 

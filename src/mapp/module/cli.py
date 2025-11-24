@@ -16,7 +16,7 @@ def add_module_subparser(subparsers, module_spec):
     model_subparsers = module_parser.add_subparsers(dest='model', required=False)
 
     help_parser = model_subparsers.add_parser('help', help='Show help for this module', aliases=['-h', '--help'])
-    help_parser.set_defaults(func=lambda args: module_parser.print_help())
+    help_parser.set_defaults(func=lambda ctx, args: module_parser.print_help())
 
     # parsers for each model #
 

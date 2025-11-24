@@ -10,6 +10,8 @@ from urllib.error import HTTPError
 
 from mspec.core import load_generator_spec
 
+from dotenv import dotenv_values
+
 def example_from_model(model:dict, index=0) -> dict:
     data = {}
     for field_name, field in model.get('fields', {}).items():
@@ -66,6 +68,7 @@ class TestMTemplateApp(unittest.TestCase):
     spec: dict
     cmd: list[str]
     host: str | None
+    env_file: str | None
 
     crud_db_file = Path('data/test_crud_db.sqlite3')
     crud_ctx = {
@@ -102,6 +105,13 @@ class TestMTemplateApp(unittest.TestCase):
             cls.pagination_db_file.unlink()
         except FileNotFoundError:
             pass
+
+        # env file #
+
+        if cls.env_file:
+            env_vars = dotenv_values(cls.env_file)
+            cls.crud_ctx.update(env_vars)
+            cls.pagination_ctx.update(env_vars)
 
         # configure ctx #
 
@@ -588,7 +598,7 @@ class TestMTemplateApp(unittest.TestCase):
                         self.assertEqual(error_response['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_response["code"]}')
                         self.assertTrue(error_response['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_response["message"]}')
 
-def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None) -> bool:
+def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:str|None) -> bool:
     if cli_args is None:
         raise ValueError('args must be provided as a list of strings')
 
@@ -596,6 +606,7 @@ def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None) -> bool:
     TestMTemplateApp.spec = load_generator_spec(spec_path)
     TestMTemplateApp.cmd = cli_args
     TestMTemplateApp.host = host
+    TestMTemplateApp.env_file = env_file
 
     tests = unittest.TestLoader().loadTestsFromTestCase(TestMTemplateApp)
     test_suite.addTests(tests)
