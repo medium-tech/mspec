@@ -1,39 +1,41 @@
 import os
+import re
 import time
 import uwsgi
 from traceback import format_exc
 
-from mapp.context import get_context_from_env, MappContext, RequestContext, RouteContext
+from mapp.context import get_context_from_env, MappContext, RequestContext, spec_from_env
 from mapp.errors import *
 from mapp.types import JSONResponse, PlainTextResponse, to_json
+from mapp.module.model.server import create_model_routes
 
 
-def debug_routes(route: RouteContext, server: MappContext, request: RequestContext):
-    column_width = 42
+def debug_routes(server: MappContext, request: RequestContext):
+    if re.match('/api/debug', request.env['PATH_INFO']) is None:
+        return
+    
+    main_col = 30
+    header_col = 42
 
     output = 'Debug Info\n\n'
 
     output += 'MappContext:\n'
-    output += f'MappContext.server_port ::{server.server_port:<{column_width}}\n'
-    output += f'MappContext.client_host ::{server.client_host:<{column_width}}\n'
-    output += f'MappContext.log ::{type(server.log)=:<{column_width}}\n\n'
-    output += f'MappContext.db ::{type(server.db)=:<{column_width}}\n'
-    output += f' :: DBContext.db_url ::{server.db.db_url:<{column_width}}\n'
-    output += f' :: DBContext.connection ::{type(server.db.connection)=:<{column_width}}\n'
-    output += f' :: DBContext.cursor ::{type(server.db.cursor)=:<{column_width}}\n'
-    output += f' :: DBContext.commit ::{type(server.db.commit)=:<{column_width}}\n\n'
-
-    output += f'RequestContext.raw_req_body ::{request.raw_req_body:<{column_width}} {type(request.raw_req_body)=} {len(request.raw_req_body)=}\n'
+    output += f' :: {"MappContext.server_port": <{main_col}}:: {server.server_port}\n'
+    output += f' :: {"MappContext.client_host": <{main_col}}:: {server.client_host}\n'
+    output += f' :: {"MappContext.log": <{main_col}}:: {str(type(server.log))}\n\n'
+    output += f' :: {"MappContext.db": <{main_col}}:: {str(type(server.db))}\n'
+    output += f'   :: {"DBContext.db_url": <{header_col}}:: {str(server.db.db_url)}\n'
+    output += f'   :: {"DBContext.connection": <{header_col}}:: {str(type(server.db.connection))}\n'
+    output += f'   :: {"DBContext.cursor": <{header_col}}:: {str(type(server.db.cursor))}\n'
+    output += f'   :: {"DBContext.commit": <{header_col}}:: {str(type(server.db.commit))}\n\n'
+    output += f'RequestContext.raw_req_body ::{str(type(request.raw_req_body))} {len(request.raw_req_body)=}\n'
     output += 'RequestContext.env ::\n\n'
     for key in request.env:
-        output += f' :: {key:<{column_width}}:: {request.env[key]}\n'
+        output += f' :: {key:<{header_col}}:: {request.env[key]}\n'
     output += '\n'
 
     debug_delay = os.environ.get('DEBUG_DELAY', None)
     output += f'DEBUG_DELAY :: {debug_delay}\n\n'
-
-    output += f'RouteContext :: {route}\n'
-    output += ' :: unused in debug_routes\n'
 
     raise PlainTextResponse('200 OK', output)
 
@@ -41,8 +43,25 @@ def debug_routes(route: RouteContext, server: MappContext, request: RequestConte
 server_ctx = get_context_from_env()
 server_ctx.log = uwsgi.log
 
-route_list = [debug_routes]
+route_list = []
 
+spec = spec_from_env()
+
+try:
+    spec_modules = spec['modules']
+except KeyError:
+    raise MappError('NO_MODULES_DEFINED', 'No modules defined in the spec file.')
+
+for module in spec_modules.values():
+    try:
+        spec_models = module['models']
+    except KeyError:
+        continue
+
+    for model in spec_models.values():
+        route_list.append(create_model_routes(module, model))
+
+route_list.append(debug_routes)
 
 def application(env, start_response):
 

@@ -1,7 +1,7 @@
 import json
 
 from collections import namedtuple
-from typing import Any
+from typing import Any, Optional
 from datetime import datetime
 from dataclasses import dataclass, asdict
 
@@ -57,7 +57,7 @@ class JSONResponse(Exception):
 
 # class and instances #
 
-def new_model_class(model_spec:dict) -> type:
+def new_model_class(model_spec:dict, module_spec:Optional[dict]=None) -> type:
     """
     Dynamically creates a model class based on the provided model specification.
 
@@ -76,6 +76,7 @@ def new_model_class(model_spec:dict) -> type:
     
     new_class = namedtuple(class_name, fields)
     new_class._model_spec = model_spec
+    new_class._module_spec = module_spec
     return new_class
 
 def new_model(model_class:type, data:dict):

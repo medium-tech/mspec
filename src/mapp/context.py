@@ -31,8 +31,8 @@ class DBContext:
 @dataclass
 class RouteContext:
     model_class: type
-    model_snake_case: str
-    module_snake_case: str
+    model_kebab_case: str
+    module_kebab_case: str
     api_instance_regex: str
     api_model_regex: str
 

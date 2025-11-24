@@ -17,7 +17,7 @@
 |🔴|🟡|🟢|
 
 ## mapp framework
-* 🔴 bootstrap app
+* 🟡 bootstrap app
 * 🔴 unittests passing
 * 🔴 generate browser1 ui?
 * 🔴 serve hello world lingo page from server
