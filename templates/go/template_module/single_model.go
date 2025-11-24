@@ -543,7 +543,6 @@ func DBUpdateSingleModel(ctx *mapp.Context, modelID string, model *SingleModel) 
 		model.SingleInt,
 		// end macro ::
 		// ignore ::
-		model.SingleInt,
 		model.SingleFloat,
 		model.SingleString,
 		model.SingleEnum,
