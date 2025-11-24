@@ -238,6 +238,8 @@ class TestMTemplateApp(unittest.TestCase):
 
                 # update #
 
+                breakpoint()
+
                 try:
                     updated_example = example_from_model(model, index=1)
                 except ValueError as e:

@@ -19,7 +19,10 @@ __all__ = [
 # router
 #
 
-def create_model_routes(module_spec:dict, model_spec:dict) -> callable:
+def create_model_routes(module_spec:dict, model_spec:dict) -> tuple[callable, type]:
+    """
+    Take a module and model spec and return a route resolver function for that model along with the model class.
+    """
     model_class = new_model_class(model_spec, module_spec)
     model_kebab_case = model_class._model_spec['name']['kebab_case']
     module_kebab_case = model_class._module_spec['name']['kebab_case']
@@ -32,7 +35,8 @@ def create_model_routes(module_spec:dict, model_spec:dict) -> callable:
         api_model_regex=rf'/api/{module_kebab_case}/{model_kebab_case}'
     )
 
-    return lambda server, request: model_routes(route_ctx, server, request)
+    route_resolver = lambda server, request: model_routes(route_ctx, server, request)
+    return route_resolver, model_class
 
 def model_routes(route: RouteContext, server: MappContext, request: RequestContext):
 
@@ -106,11 +110,10 @@ def model_routes(route: RouteContext, server: MappContext, request: RequestConte
             offset = int(query.get('offset', [0])[0])
             limit = int(query.get('limit', [25])[0])
 
-            items = db_model_list(server, route.model_class, offset=offset, limit=limit)
+            result = db_model_list(server, route.model_class, offset=offset, limit=limit)
             server.log(f'GET {route.module_kebab_case}.{route.model_kebab_case}')
 
-            result = ModelListResult(items=items, total=len(items))
-            raise JSONResponse('200 OK', list_to_json(result))
+            raise JSONResponse('200 OK', result)
         
         else:
             server.log(f'ERROR 405 {route.module_kebab_case}.{route.model_kebab_case}')

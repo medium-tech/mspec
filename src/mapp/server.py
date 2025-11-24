@@ -7,6 +7,7 @@ from traceback import format_exc
 from mapp.context import get_context_from_env, MappContext, RequestContext, spec_from_env
 from mapp.errors import *
 from mapp.types import JSONResponse, PlainTextResponse, to_json
+from mapp.module.model.db import db_model_create_table
 from mapp.module.model.server import create_model_routes
 
 
@@ -59,7 +60,9 @@ for module in spec_modules.values():
         continue
 
     for model in spec_models.values():
-        route_list.append(create_model_routes(module, model))
+        route_resolver, model_class = create_model_routes(module, model)
+        route_list.append(route_resolver)
+        db_model_create_table(server_ctx, model_class)
 
 route_list.append(debug_routes)
 

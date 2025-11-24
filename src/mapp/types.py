@@ -337,6 +337,8 @@ class MappJsonEncoder(json.JSONEncoder):
             return obj._asdict()
         elif isinstance(obj, Acknowledgment):
             return {'acknowledged': True}
+        elif hasattr(obj, '__dataclass_fields__'):
+            return asdict(obj)
         else:
             return super().default(obj)
 
