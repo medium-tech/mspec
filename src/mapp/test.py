@@ -46,6 +46,15 @@ def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None
         response_body = response.read().decode('utf-8')
         return json.loads(response_body)
 
+def env_to_string(env:dict) -> str:
+    out = ''
+    for key, value in env.items():
+        if ' ' in value:
+            out += f'{key}="{value}"\n'
+        else:
+            out += f'{key}={value}\n'
+    return out
+
 class TestMTemplateApp(unittest.TestCase):
     
     maxDiff = None
@@ -104,7 +113,10 @@ class TestMTemplateApp(unittest.TestCase):
         except FileNotFoundError:
             pass
         
-        if not cls.use_cache:
+        if cls.use_cache:
+            pagination_db_exists = cls.pagination_db_file.exists()
+        else:
+            pagination_db_exists = False
             try:
                 cls.pagination_db_file.unlink()
                 print(':: Deleted existing pagination db file ::')
@@ -129,8 +141,7 @@ class TestMTemplateApp(unittest.TestCase):
         crud_env['MAPP_DB_URL'] = str(cls.crud_db_file.resolve())
 
         with open(cls.crud_envfile, 'w') as f:
-            for k, v in crud_env.items():
-                f.write(f'{k}={v}\n')
+            f.write(env_to_string(crud_env))
 
         cls.crud_ctx = {'MAPP_ENV_FILE': str(cls.crud_envfile.resolve())}
 
@@ -143,8 +154,7 @@ class TestMTemplateApp(unittest.TestCase):
         pagination_env['MAPP_DB_URL'] = str(cls.pagination_db_file.resolve())
 
         with open(cls.pagination_envfile, 'w') as f:
-            for k, v in pagination_env.items():
-                f.write(f'{k}={v}\n')
+            f.write(env_to_string(pagination_env))
 
         cls.pagination_ctx = {'MAPP_ENV_FILE': str(cls.pagination_envfile.resolve())}
 
@@ -161,7 +171,6 @@ class TestMTemplateApp(unittest.TestCase):
                 create_table_args = cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create-table']
 
                 # create crud table #
-                print(f' :: create table cmd :: {" ".join(create_table_args)}')
 
                 crud_result = subprocess.run(create_table_args, capture_output=True, text=True, env=cls.crud_ctx)
                 if crud_result.returncode != 0:
@@ -177,28 +186,25 @@ class TestMTemplateApp(unittest.TestCase):
 
                 # create pagination table #
                 
-                result = subprocess.run(create_table_args, capture_output=True, text=True, env=cls.pagination_ctx)
-                if result.returncode != 0:
-                    raise RuntimeError(f'Error creating table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
-                
-                try:
-                    pagination_output = json.loads(result.stdout)
-                    assert pagination_output['acknowledged'] is True
-                    assert model_name_snake in pagination_output['message']
-                    assert pagination_output['message'].endswith(cls.pagination_db_file.name)
-                except AssertionError as e:
-                    raise RuntimeError(f'AssertionError {e} while creating table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
-                
-                print(f' :: Created tables for {module_name_kebab}.{model_name_kebab} ::')
-        
-        breakpoint()
+                if not pagination_db_exists:
+                    result = subprocess.run(create_table_args, capture_output=True, text=True, env=cls.pagination_ctx)
+                    if result.returncode != 0:
+                        raise RuntimeError(f'Error creating table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
+                    
+                    try:
+                        pagination_output = json.loads(result.stdout)
+                        assert pagination_output['acknowledged'] is True
+                        assert model_name_snake in pagination_output['message']
+                        assert pagination_output['message'].endswith(cls.pagination_db_file.name)
+                    except AssertionError as e:
+                        raise RuntimeError(f'AssertionError {e} while creating table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
         
         # seed pagination db #
 
-        if cls.pagination_db_file.exists():
+        if cls.use_cache and pagination_db_exists:
             print('  :: Using cached pagination db ::')
         else:
-            print(f'  :: Seeding pagination db :: {cls.use_cache=}')
+            print(f'  :: Seeding pagination db ::')
             for module in cls.spec['modules'].values():
                 module_name_kebab = module['name']['kebab_case']
 
@@ -235,12 +241,12 @@ class TestMTemplateApp(unittest.TestCase):
             process = subprocess.Popen(server_cmd, env=ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             cls.server_processes.append(process)
 
-        print(':: Setup complete ::')
+        print('  :: Setup complete ::')
     
     @classmethod
     def tearDownClass(cls):
 
-        print(':: Tearing down TestMTemplateApp')
+        print('\n:: Tearing down TestMTemplateApp')
 
         # stop servers and capture logs #
 
@@ -261,23 +267,6 @@ class TestMTemplateApp(unittest.TestCase):
                     f.write(stderr)
             except Exception as e:
                 print(f'Error capturing server process {process.pid} output: {e}')
-        
-        # delete test db files #
-
-        try:
-            cls.crud_db_file.unlink()
-        except FileNotFoundError:
-            pass
-
-        breakpoint()
-        
-        if not cls.use_cache:
-            print(':: Cleaning up pagination db file ::')
-            try:
-                cls.pagination_db_file.unlink()
-                print(':: Deleted pagination db file ::')
-            except FileNotFoundError:
-                pass
         
         print(':: Teardown complete ::')
 
