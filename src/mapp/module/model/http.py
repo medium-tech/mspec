@@ -132,13 +132,13 @@ def http_model_delete(ctx: MappContext, model_class: type, model_id: str) -> Ack
     except Exception as e:
         raise MappError(f'Error deleting model: {e}')
 
-def http_model_list(ctx: MappContext, model_class: type, offset: int = 0, limit: int = 50) -> dict:
+def http_model_list(ctx: MappContext, model_class: type, offset: int = 0, size: int = 50) -> dict:
 
     # init #
 
     module_kebab = model_class._model_spec['module']['kebab_case']
     model_kebab = model_class._model_spec['name']['kebab_case']
-    url = f'{ctx.host}/api/{module_kebab}/{model_kebab}?offset={offset}&limit={limit}'
+    url = f'{ctx.host}/api/{module_kebab}/{model_kebab}?offset={offset}&size={size}'
 
     # send request #
 

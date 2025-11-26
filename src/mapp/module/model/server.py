@@ -107,9 +107,9 @@ def model_routes(route: RouteContext, server: MappContext, request: RequestConte
         elif request.env['REQUEST_METHOD'] == 'GET':
             query = parse_qs(request.env['QUERY_STRING'])
             offset = int(query.get('offset', [0])[0])
-            limit = int(query.get('limit', [25])[0])
+            size = int(query.get('size', [25])[0])
 
-            result = db_model_list(server, route.model_class, offset=offset, limit=limit)
+            result = db_model_list(server, route.model_class, offset=offset, size=size)
             server.log(f'GET {route.module_kebab_case}.{route.model_kebab_case}')
 
             raise JSONResponse('200 OK', result)

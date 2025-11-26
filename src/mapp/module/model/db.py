@@ -253,14 +253,14 @@ def db_model_delete(ctx:MappContext, model_class: type, model_id: str) -> Acknow
     ctx.db.commit()
     return Acknowledgment()
 
-def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, limit: int = 50) -> ModelListResult:
+def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int = 50) -> ModelListResult:
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']
 
     # query #
 
     sql = f'SELECT * FROM {model_snake_case} ORDER BY id LIMIT ? OFFSET ?'
-    rows = ctx.db.cursor.execute(sql, (limit, offset)).fetchall()
+    rows = ctx.db.cursor.execute(sql, (size, offset)).fetchall()
     
     # convert results #
 

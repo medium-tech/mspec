@@ -74,11 +74,10 @@ def add_model_subparser(subparsers, model_spec):
     # list #
     list_parser = http_actions.add_parser('list', help='HTTP list')
     list_parser.add_argument('--offset', type=int, default=0, help='Offset for pagination')
-    list_parser.add_argument('--limit', type=int, default=50, help='Limit for pagination')
+    list_parser.add_argument('--size', type=int, default=50, help='Page size for pagination')
     def cli_http_model_list(ctx, args):
-        result = http_model_list(ctx, model_class, offset=args.offset, limit=args.limit)
+        result = http_model_list(ctx, model_class, offset=args.offset, size=args.size)
         print(to_json(result, sort_keys=True, indent=4))
-        
     list_parser.set_defaults(func=cli_http_model_list)
 
     # help #
@@ -143,9 +142,9 @@ def add_model_subparser(subparsers, model_spec):
     # list #
     db_list_parser = db_actions.add_parser('list', help='Lists models from the local SQLite database with optional pagination.')
     db_list_parser.add_argument('--offset', type=int, default=0, help='Offset for pagination')
-    db_list_parser.add_argument('--limit', type=int, default=50, help='Limit for pagination')
+    db_list_parser.add_argument('--size', type=int, default=50, help='Page size for pagination')
     def cli_db_model_list(ctx, args):
-        result = db_model_list(ctx, model_class, offset=args.offset, limit=args.limit)
+        result = db_model_list(ctx, model_class, offset=args.offset, size=args.size)
         print(to_json(result, sort_keys=True, indent=4))
     db_list_parser.set_defaults(func=cli_db_model_list)
 
