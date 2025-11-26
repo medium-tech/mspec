@@ -94,6 +94,9 @@ def new_model(model_class:type, data:dict):
         object: An instance of the model class.
     """
 
+    if 'id' not in data:
+        data['id'] = None
+
     try:
         return model_class(**data)
     except TypeError as e:
@@ -126,7 +129,7 @@ def convert_data_to_model(model_class:type, data:dict):
 
     for field in model_class._model_spec['fields'].values():
 
-        field_name = field['name']
+        field_name = field['name']['snake_case']
         field_type = field['type']
 
         try:
@@ -236,6 +239,8 @@ def get_python_type(field_type:str) -> type:
             return float
         case 'str':
             return str
+        case 'datetime':
+            return datetime
         case _:
             raise ValueError(f'Unsupported field type: {field_type}')
 
@@ -265,7 +270,7 @@ def validate_model(model_class:type, model_instance:object) -> object:
 
         # field definition #
 
-        field_name = field['name']
+        field_name = field['name']['snake_case']
         field_type = field['type']
         required = field.get('required', False)
 

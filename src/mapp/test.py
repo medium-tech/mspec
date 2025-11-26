@@ -153,14 +153,15 @@ class TestMTemplateApp(unittest.TestCase):
                 model_name_kebab = model['name']['kebab_case']
                 for _ in range(cls.pagination_total_models):
                     example_model = example_from_model(model, index=0)
+                    seed_cmd = cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create', json.dumps(example_model)]
                     result = subprocess.run(
-                        cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create', json.dumps(example_model)],
+                        seed_cmd,
                         text=True,
                         capture_output=True,
                         env=cls.pagination_ctx
                     )
                     if result.returncode != 0:
-                        raise RuntimeError(f'Error seeding table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
+                        raise RuntimeError(f':: ERROR seeding table for pagination db "{module_name_kebab}.{model_name_kebab}" :: COMMAND :: {" ".join(seed_cmd)} :: OUTPUT :: {result.stdout + result.stderr}')
         
         # delete server logs #
 
@@ -602,14 +603,24 @@ def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:st
     if cli_args is None:
         raise ValueError('args must be provided as a list of strings')
 
+    import fnmatch
     test_suite = unittest.TestSuite()
     TestMTemplateApp.spec = load_generator_spec(spec_path)
     TestMTemplateApp.cmd = cli_args
     TestMTemplateApp.host = host
     TestMTemplateApp.env_file = env_file
 
-    tests = unittest.TestLoader().loadTestsFromTestCase(TestMTemplateApp)
-    test_suite.addTests(tests)
+    # Support test filtering by name
+    test_filters = getattr(test_spec, '_test_filters', None)
+    loader = unittest.TestLoader()
+    if test_filters:
+        # Only add tests matching any filter pattern
+        for test_name in loader.getTestCaseNames(TestMTemplateApp):
+            if any(fnmatch.fnmatch(test_name, pat) for pat in test_filters):
+                test_suite.addTest(TestMTemplateApp(test_name))
+    else:
+        tests = loader.loadTestsFromTestCase(TestMTemplateApp)
+        test_suite.addTests(tests)
 
     runner = unittest.TextTestRunner()
     result = runner.run(test_suite)
@@ -627,7 +638,14 @@ if __name__ == '__main__':
     parser.add_argument('--cmd', type=str, nargs='*', required=True, help='CLI command for generated app')
     parser.add_argument('--host', type=str, default=None, help='host for http client in tests (if host diff than in spec file)')
     parser.add_argument('--env-file', type=str, default=None, help='path to .env file to load for tests')
+    parser.add_argument('--test-filter', type=str, nargs='*', default=None, help='Glob pattern(s) to filter test names (e.g. test_cli_db*)')
 
     args = parser.parse_args()
+
+    if args.test_filter:
+        # Attach filter patterns to test_spec function for access
+        test_spec._test_filters = args.test_filter
+    else:
+        test_spec._test_filters = None
 
     test_spec(args.spec, args.cmd, args.host, args.env_file)
