@@ -20,7 +20,7 @@ def main(ctx: MappContext, spec:dict):
     subparsers = parser.add_subparsers(dest='module', help='Available modules', required=False)
 
     help_parser = subparsers.add_parser('help', help='Show top-level help', aliases=['-h', '--help'])
-    help_parser.set_defaults(func=lambda args: parser.print_help())
+    help_parser.set_defaults(func=lambda ctx, args: parser.print_help())
 
     create_tables_parser = subparsers.add_parser('create-tables', help='Create all tables for app')
     create_tables_parser.set_defaults(func=lambda ctx, args: create_tables(ctx, spec))

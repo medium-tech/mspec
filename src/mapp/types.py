@@ -156,7 +156,6 @@ def convert_data_to_model(model_class:type, data:dict):
                 converted_data[field_name] = convert_value(field_type, raw_value)
 
         except (ValueError, TypeError) as e:
-            breakpoint()
             raise ValueError(f'Error converting field "{field_name}" to type "{field_type}": {e}')
 
     return new_model(model_class, converted_data)

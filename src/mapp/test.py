@@ -49,6 +49,7 @@ def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None
 class TestMTemplateApp(unittest.TestCase):
     
     maxDiff = None
+    test_dir = 'mapp-tests'
 
     """
     Test suite for the mtemplate app generation spec
@@ -70,12 +71,12 @@ class TestMTemplateApp(unittest.TestCase):
     host: str | None
     env_file: str | None
 
-    crud_db_file = Path('data/test_crud_db.sqlite3')
+    crud_db_file = Path(f'{test_dir}/test_crud_db.sqlite3')
     crud_ctx = {
         'MAPP_DB_FILE': str(crud_db_file.resolve()),
     }
 
-    pagination_db_file = Path('data/test_pagination_db.sqlite3')
+    pagination_db_file = Path(f'{test_dir}/test_pagination_db.sqlite3')
     pagination_ctx = {
         'MAPP_DB_FILE': str(pagination_db_file.resolve()),
     }
@@ -91,6 +92,8 @@ class TestMTemplateApp(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+
+        print(':: Setting up TestMTemplateApp')
 
         cls.crud_db_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -128,6 +131,7 @@ class TestMTemplateApp(unittest.TestCase):
 
         # setup tables in test dbs #
 
+        print('  :: Creating tables in test dbs ::')
         for module in cls.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
 
@@ -146,6 +150,7 @@ class TestMTemplateApp(unittest.TestCase):
         
         # seed pagination db #
 
+        print('  :: Seeding pagination db ::')
         for module in cls.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
 
@@ -165,7 +170,7 @@ class TestMTemplateApp(unittest.TestCase):
         
         # delete server logs #
 
-        for log_file in glob.glob('data/test_server_*.log'):
+        for log_file in glob.glob(f'{cls.test_dir}/test_server_*.log'):
             try:
                 Path(log_file).unlink()
             except FileNotFoundError:
@@ -173,12 +178,16 @@ class TestMTemplateApp(unittest.TestCase):
         
         # start servers #
 
+        print('  :: Starting server processes ::')
+
         cls.server_processes:list[subprocess.Popen] = []
 
         for ctx in [cls.crud_ctx, cls.pagination_ctx]:
             server_cmd = cls.cmd + ['server']
             process = subprocess.Popen(server_cmd, env=ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             cls.server_processes.append(process)
+
+        print(':: Setup complete ::')
     
     @classmethod
     def tearDownClass(cls):
@@ -189,16 +198,16 @@ class TestMTemplateApp(unittest.TestCase):
             process.terminate()
             try:
                 stdout, stderr = process.communicate(timeout=10)
-                with open(f'data/test_server_{process.pid}_stdout.log', 'w') as f:
+                with open(f'{cls.test_dir}/test_server_{process.pid}_stdout.log', 'w') as f:
                     f.write(stdout)
-                with open(f'data/test_server_{process.pid}_stderr.log', 'w') as f:
+                with open(f'{cls.test_dir}/test_server_{process.pid}_stderr.log', 'w') as f:
                     f.write(stderr)
             except subprocess.TimeoutExpired:
                 process.kill()
                 stdout, stderr = process.communicate()
-                with open(f'data/test_server_{process.pid}_stdout.log', 'w') as f:
+                with open(f'{cls.test_dir}/test_server_{process.pid}_stdout.log', 'w') as f:
                     f.write(stdout)
-                with open(f'data/test_server_{process.pid}_stderr.log', 'w') as f:
+                with open(f'{cls.test_dir}/test_server_{process.pid}_stderr.log', 'w') as f:
                     f.write(stderr)
             except Exception as e:
                 print(f'Error capturing server process {process.pid} output: {e}')
