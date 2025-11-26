@@ -44,6 +44,17 @@ def main(ctx: MappContext, spec:dict):
         parser.print_help()
 
 if __name__ == "__main__":
-    cli_ctx = get_context_from_env()
-    mapp_spec = spec_from_env()
-    main(cli_ctx, mapp_spec)
+    
+    try:
+        mapp_spec = spec_from_env()
+    except MappError as e:
+        if e.code == 'SPEC_FILE_NOT_FOUND':
+            print(
+                ':: ERROR :: SPEC_FILE_NOT_FOUND\n'
+                '  :: Set with MAPP_SPEC_FILE env variable.\n'
+                '  :: Run "python -m mspec -h" to discover built in example specs.')
+        else:
+            raise
+    else:
+        cli_ctx = get_context_from_env()
+        main(cli_ctx, mapp_spec)

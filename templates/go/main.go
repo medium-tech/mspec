@@ -15,6 +15,18 @@ import (
 //
 
 func main() {
+
+	/////////////
+
+	// this app uses the old mtemplate.test module for testing
+	// it should be migrated to the new mapp.test after the python
+	// mapp module is fully implemented. it will have minor
+	// api/response/error msg differences
+
+	fmt.Println(":: WARNING :: migrate this app to new mapp.test module")
+
+	/////////////
+
 	args := os.Args[1:]
 
 	if len(args) == 0 {

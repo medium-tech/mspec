@@ -599,7 +599,6 @@ class TestMTemplateApp(unittest.TestCase):
                         self.assertTrue(error_response['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_response["message"]}')
 
 def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:str|None) -> bool:
-    print('\n:: WARNING :: this test is deprecated, use mapp.test\n\n')
     if cli_args is None:
         raise ValueError('args must be provided as a list of strings')
 
@@ -620,3 +619,7 @@ def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:st
     TestMTemplateApp.host = None
 
     return result.wasSuccessful()
+
+if __name__ == '__main__':
+    import argparse
+    print('hi.')
