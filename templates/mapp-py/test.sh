@@ -4,4 +4,4 @@
 
 set -e
 
-python -m mtemplate test-spec --cmd ./run.sh  --spec test-gen.yaml --env-file .env
+python -m mapp.test test-gen.yaml --cmd ./run.sh --env-file .env
