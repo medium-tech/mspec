@@ -72,7 +72,6 @@ def new_model_class(model_spec:dict, module_spec:Optional[dict]=None) -> type:
         class_name = model_spec['name']['pascal_case']
         fields += [field['name']['snake_case'] for field in model_spec['fields'].values()]
     except KeyError as e:
-        breakpoint()
         raise ValueError(f'Missing required model specification key: {e}')
     
     new_class = namedtuple(class_name, fields)
@@ -187,10 +186,12 @@ def convert_json_to_model(model_class:type, json_str:str, model_id:Optional[str]
         raise ValueError(f'Invalid JSON: {e}')
     
     try:
+        # if id is in both json and argument, they must match
         json_id = data['id']
         if model_id is not None and str(json_id) != str(model_id):
             raise ValueError('Model ID in JSON does not match the provided model_id argument.')
     except KeyError:
+        # id provided as arg and not in json, set it
         if model_id is not None:
             data['id'] = model_id
 
@@ -376,7 +377,7 @@ class MappJsonEncoder(json.JSONEncoder):
 def model_to_json(obj:object, sort_keys=False, indent=None) -> str:
     try:
         return json.dumps(
-            obj, 
+            obj._asdict(), 
             sort_keys=sort_keys, 
             indent=indent, 
             cls=MappJsonEncoder
@@ -386,10 +387,22 @@ def model_to_json(obj:object, sort_keys=False, indent=None) -> str:
     
 to_json = model_to_json  # alias
 
-def model_from_json(json_str:str, model_class:type) -> object:
+def model_from_json(json_str:str, model_class:type, model_id:Optional[str]=None) -> object:
     try:
         data = json.loads(json_str)
-        return model_class(**data)
+
+        try:
+            # if id is in both json and argument, they must match
+            json_id = data['id']
+            if model_id is not None and str(json_id) != str(model_id):
+                raise ValueError('Model ID in JSON does not match the provided model_id argument.')
+        except KeyError:
+            # id provided as arg and not in json, set it
+            if model_id is not None:
+                data['id'] = model_id
+
+
+        return new_model(model_class, data)
     except json.JSONDecodeError as e:
         raise MappValidationError(f'Invalid JSON: {e}')
     except TypeError as e:

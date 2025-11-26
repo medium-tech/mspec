@@ -106,7 +106,8 @@ def add_model_subparser(subparsers, model_spec):
     def cli_db_model_create(ctx, args):
         incoming_model = convert_json_to_model(model_class, args.json)
         new_model = db_model_create(ctx, model_class, incoming_model)
-        print(model_to_json(new_model, sort_keys=True, indent=4))
+        json_out = model_to_json(new_model, sort_keys=True, indent=4)
+        print(json_out)
     db_create_parser.set_defaults(func=cli_db_model_create)
 
     # read #
@@ -122,7 +123,7 @@ def add_model_subparser(subparsers, model_spec):
     db_update_parser.add_argument('model_id', type=str, help='ID of the model to update')
     db_update_parser.add_argument('json', help='JSON string for model update')
     def cli_db_model_update(ctx, args):
-        incoming_model = convert_json_to_model(model_class, args.json)
+        incoming_model = convert_json_to_model(model_class, args.json, args.model_id)
         if incoming_model.id is None:
             incoming_model = incoming_model._replace(id=args.model_id)
         elif incoming_model.id != args.model_id:
