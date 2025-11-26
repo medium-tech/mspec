@@ -49,7 +49,11 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
 
 
     # create #
-    create_parser = http_actions.add_parser('create', help='HTTP create', description=http_desc + ' :: create')
+    create_parser = http_actions.add_parser(
+        'create', 
+        help='Creates a single model via HTTP API.',
+        description=http_desc + ' :: create'
+    )
     create_parser.add_argument('json', help='JSON string for model creation')
     def cli_http_model_create(ctx, args):        
         incoming_model = convert_json_to_model(model_class, args.json)
@@ -59,7 +63,11 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
     create_parser.set_defaults(func=cli_http_model_create)
 
     # read #
-    read_parser = http_actions.add_parser('read', help='HTTP read', description=http_desc + ' :: read')
+    read_parser = http_actions.add_parser(
+        'read', 
+        help='Reads a single model via HTTP API.', 
+        description=http_desc + ' :: read'
+    )
     read_parser.add_argument('model_id', type=str, help='ID of the model to read')
     def cli_http_model_read(ctx, args):
         model = http_model_read(ctx, model_class, args.model_id)
@@ -68,7 +76,11 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
     read_parser.set_defaults(func=cli_http_model_read)
 
     # update #
-    update_parser = http_actions.add_parser('update', help='HTTP update', description=http_desc + ' :: update')
+    update_parser = http_actions.add_parser(
+        'update', 
+        help='Updates a single model via HTTP API.', 
+        description=http_desc + ' :: update'
+    )
     update_parser.add_argument('model_id', type=str, help='ID of the model to update')
     update_parser.add_argument('json', help='JSON string for model update')
     def cli_http_model_update(ctx, args):
@@ -79,7 +91,11 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
     update_parser.set_defaults(func=cli_http_model_update)
 
     # delete #
-    delete_parser = http_actions.add_parser('delete', help='HTTP delete', description=http_desc + ' :: delete')
+    delete_parser = http_actions.add_parser(
+        'delete', 
+        help='Deletes a single model via HTTP API.',
+        description=http_desc + ' :: delete'
+    )
     delete_parser.add_argument('model_id', type=str, help='ID of the model to delete')
     def cli_http_model_delete(ctx, args):
         ack = http_model_delete(ctx, model_class, args.model_id)
@@ -88,7 +104,11 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
     delete_parser.set_defaults(func=cli_http_model_delete)
 
     # list #
-    list_parser = http_actions.add_parser('list', help='HTTP list', description=http_desc + ' :: list')
+    list_parser = http_actions.add_parser(
+        'list', 
+        help='Lists models via HTTP API with optional pagination.',
+        description=http_desc + ' :: list'
+    )
     list_parser.add_argument('--offset', type=int, default=0, help='Offset for pagination')
     list_parser.add_argument('--size', type=int, default=50, help='Page size for pagination')
     def cli_http_model_list(ctx, args):
