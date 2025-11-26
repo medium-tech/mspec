@@ -145,7 +145,7 @@ class TestMTemplateApp(unittest.TestCase):
         with open(cls.pagination_envfile, 'w') as f:
             for k, v in pagination_env.items():
                 f.write(f'{k}={v}\n')
-                
+
         cls.pagination_ctx = {'MAPP_ENV_FILE': str(cls.pagination_envfile.resolve())}
 
         # setup tables in test dbs #
@@ -161,6 +161,7 @@ class TestMTemplateApp(unittest.TestCase):
                 create_table_args = cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create-table']
 
                 # create crud table #
+                print(f' :: create table cmd :: {" ".join(create_table_args)}')
 
                 crud_result = subprocess.run(create_table_args, capture_output=True, text=True, env=cls.crud_ctx)
                 if crud_result.returncode != 0:
@@ -190,7 +191,7 @@ class TestMTemplateApp(unittest.TestCase):
                 
                 print(f' :: Created tables for {module_name_kebab}.{model_name_kebab} ::')
         
-                breakpoint()
+        breakpoint()
         
         # seed pagination db #
 
