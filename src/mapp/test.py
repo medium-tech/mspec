@@ -111,10 +111,9 @@ class TestMTemplateApp(unittest.TestCase):
 
         # env file #
 
-        if cls.env_file:
-            env_vars = dotenv_values(cls.env_file)
-            cls.crud_ctx.update(env_vars)
-            cls.pagination_ctx.update(env_vars)
+        env_vars = dotenv_values(cls.env_file)
+        cls.crud_ctx.update(env_vars)
+        cls.pagination_ctx.update(env_vars)
 
         # configure ctx #
 
@@ -685,8 +684,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Test mapp spec app', prog='mapp.test')
     parser.add_argument('spec', type=str, help='spec file to test')
     parser.add_argument('--cmd', type=str, nargs='*', required=True, help='CLI command for generated app')
+    parser.add_argument('--env-file', type=str, required=True, help='path to .env file to load for tests')
     parser.add_argument('--host', type=str, default=None, help='host for http client in tests (if host diff than in spec file)')
-    parser.add_argument('--env-file', type=str, default=None, help='path to .env file to load for tests')
     parser.add_argument('--test-filter', type=str, nargs='*', default=None, help='Glob pattern(s) to filter test names (e.g. test_cli_db*)')
     parser.add_argument('--use-cache', action='store_true', help='Use cached test resources if available')
 
