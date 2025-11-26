@@ -6,13 +6,15 @@ __all__ = [
     'add_module_subparser'
 ]
 
-def add_module_subparser(subparsers, module_spec):
+def add_module_subparser(subparsers, spec:dict, module:dict):
 
     # init module cli #
+    project_name = spec['project']['name']['pascal_case']
+    module_kebab_case = module['name']['kebab_case']
+    module_snake_case = module['name']['snake_case']
+    description = f':: {project_name} :: {module_snake_case}'
 
-    module_kebab_case = module_spec['name']['kebab_case']
-
-    module_parser = subparsers.add_parser(module_kebab_case, help=f'Module: {module_kebab_case}')
+    module_parser = subparsers.add_parser(module_kebab_case, help=f'Module: {module_kebab_case}', description=description)
     model_subparsers = module_parser.add_subparsers(dest='model', required=False)
 
     help_parser = model_subparsers.add_parser('help', help='Show help for this module', aliases=['-h', '--help'])
@@ -21,9 +23,9 @@ def add_module_subparser(subparsers, module_spec):
     # parsers for each model #
 
     try:
-        spec_models = module_spec['models']
+        spec_models = module['models']
     except KeyError:
         raise MappError('NO_MODELS_DEFINED', f'No models defined in module: {module_kebab_case}')
 
     for model in spec_models.values():
-        add_model_subparser(model_subparsers, model)
+        add_model_subparser(model_subparsers, spec, module, model)

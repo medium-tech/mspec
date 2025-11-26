@@ -16,7 +16,9 @@ def main(ctx: MappContext, spec:dict):
 
     # init application cli #
 
-    parser = argparse.ArgumentParser(description='mapp CLI (Python template app)', prog='mapp')
+    project_name = spec['project']['name']['pascal_case']
+
+    parser = argparse.ArgumentParser(description=f':: {project_name}', prog='mapp')
     subparsers = parser.add_subparsers(dest='module', help='Available modules', required=False)
 
     help_parser = subparsers.add_parser('help', help='Show top-level help', aliases=['-h', '--help'])
@@ -33,7 +35,7 @@ def main(ctx: MappContext, spec:dict):
         raise MappError('NO_MODULES_DEFINED', 'No modules defined in the spec file.')
 
     for module in spec_modules.values():
-        module_cli.add_module_subparser(subparsers, module)
+        module_cli.add_module_subparser(subparsers, spec, module)
 
     # parse args and run program #
 

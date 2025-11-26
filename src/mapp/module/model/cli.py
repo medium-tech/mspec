@@ -8,32 +8,48 @@ __all__ = [
 ]
 
 
-def add_model_subparser(subparsers, model_spec):
+def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
 
-    model_class = new_model_class(model_spec)
+    model_class = new_model_class(model)
 
     # 
     # init model cli
     #
 
-    model_kebab_case = model_spec['name']['kebab_case']
-    model_parser = subparsers.add_parser(model_kebab_case, help=f'Model: {model_kebab_case}')
+    project_name = spec['project']['name']['pascal_case']
+    module_snake_case = module['name']['snake_case']
+    model_snake_case = model['name']['snake_case']
+    model_kebab_case = model['name']['kebab_case']
+
+    description = f':: {project_name} :: {module_snake_case} :: {model_snake_case}'
+
+    model_parser = subparsers.add_parser(model_kebab_case, help=f'Model: {model_kebab_case}', description=description)
 
     io_subparsers = model_parser.add_subparsers(dest='io', required=True)
 
-    help_parser = io_subparsers.add_parser('help', help='Show help for this model', aliases=['-h', '--help'])
+    help_parser = io_subparsers.add_parser(
+        'help', 
+        help='Show help for this model', 
+        aliases=['-h', '--help']
+    )
     help_parser.set_defaults(func=lambda ctx, args: model_parser.print_help())
 
     #
     # http
     #
 
-    http_parser = io_subparsers.add_parser('http', help='Interact with the model via HTTP API')
+    http_desc = description + ' :: http'
+
+    http_parser = io_subparsers.add_parser(
+        'http', 
+        help='Interact with the model via HTTP API',
+        description=http_desc
+    )
     http_actions = http_parser.add_subparsers(dest='action', required=True)
 
 
     # create #
-    create_parser = http_actions.add_parser('create', help='HTTP create')
+    create_parser = http_actions.add_parser('create', help='HTTP create', description=http_desc + ' :: create')
     create_parser.add_argument('json', help='JSON string for model creation')
     def cli_http_model_create(ctx, args):        
         incoming_model = convert_json_to_model(model_class, args.json)
@@ -43,7 +59,7 @@ def add_model_subparser(subparsers, model_spec):
     create_parser.set_defaults(func=cli_http_model_create)
 
     # read #
-    read_parser = http_actions.add_parser('read', help='HTTP read')
+    read_parser = http_actions.add_parser('read', help='HTTP read', description=http_desc + ' :: read')
     read_parser.add_argument('model_id', type=str, help='ID of the model to read')
     def cli_http_model_read(ctx, args):
         model = http_model_read(ctx, model_class, args.model_id)
@@ -52,7 +68,7 @@ def add_model_subparser(subparsers, model_spec):
     read_parser.set_defaults(func=cli_http_model_read)
 
     # update #
-    update_parser = http_actions.add_parser('update', help='HTTP update')
+    update_parser = http_actions.add_parser('update', help='HTTP update', description=http_desc + ' :: update')
     update_parser.add_argument('model_id', type=str, help='ID of the model to update')
     update_parser.add_argument('json', help='JSON string for model update')
     def cli_http_model_update(ctx, args):
@@ -63,7 +79,7 @@ def add_model_subparser(subparsers, model_spec):
     update_parser.set_defaults(func=cli_http_model_update)
 
     # delete #
-    delete_parser = http_actions.add_parser('delete', help='HTTP delete')
+    delete_parser = http_actions.add_parser('delete', help='HTTP delete', description=http_desc + ' :: delete')
     delete_parser.add_argument('model_id', type=str, help='ID of the model to delete')
     def cli_http_model_delete(ctx, args):
         ack = http_model_delete(ctx, model_class, args.model_id)
@@ -72,7 +88,7 @@ def add_model_subparser(subparsers, model_spec):
     delete_parser.set_defaults(func=cli_http_model_delete)
 
     # list #
-    list_parser = http_actions.add_parser('list', help='HTTP list')
+    list_parser = http_actions.add_parser('list', help='HTTP list', description=http_desc + ' :: list')
     list_parser.add_argument('--offset', type=int, default=0, help='Offset for pagination')
     list_parser.add_argument('--size', type=int, default=50, help='Page size for pagination')
     def cli_http_model_list(ctx, args):
@@ -88,19 +104,32 @@ def add_model_subparser(subparsers, model_spec):
     # db
     #
 
-    db_parser = io_subparsers.add_parser('db', help='Interact with the model via local SQLite database')
+    db_desc = description + ' :: db'
+    db_parser = io_subparsers.add_parser(
+        'db', 
+        help='Interact with the model via local SQLite database', 
+        description=db_desc
+    )
     db_actions = db_parser.add_subparsers(dest='action', required=True)
 
 
     # create-table #
-    create_table_parser = db_actions.add_parser('create-table', help='Creates the model table in the local SQLite database.')
+    create_table_parser = db_actions.add_parser(
+        'create-table', 
+        help='Creates the model table in the local SQLite database.',
+        description=db_desc + ' :: create-table'
+    )
     def cli_db_model_create_table(ctx, args):
         db_model_create_table(ctx, model_class)
         print(model_to_json({'acknowledged': True}, sort_keys=True, indent=4))
     create_table_parser.set_defaults(func=cli_db_model_create_table)
 
     # create #
-    db_create_parser = db_actions.add_parser('create', help='Creates a single model in the local SQLite database.')
+    db_create_parser = db_actions.add_parser(
+        'create', 
+        help='Creates a single model in the local SQLite database.',
+        description=db_desc + ' :: create'
+    )
     db_create_parser.add_argument('json', help='JSON string for model creation')
     def cli_db_model_create(ctx, args):
         incoming_model = convert_json_to_model(model_class, args.json)
@@ -110,7 +139,11 @@ def add_model_subparser(subparsers, model_spec):
     db_create_parser.set_defaults(func=cli_db_model_create)
 
     # read #
-    db_read_parser = db_actions.add_parser('read', help='Reads a single model from the local SQLite database.')
+    db_read_parser = db_actions.add_parser(
+        'read', 
+        help='Reads a single model from the local SQLite database.',
+        description=db_desc + ' :: read'
+    )
     db_read_parser.add_argument('model_id', type=str, help='ID of the model to read')
     def cli_db_model_read(ctx, args):
         model = db_model_read(ctx, model_class, args.model_id)
@@ -118,7 +151,11 @@ def add_model_subparser(subparsers, model_spec):
     db_read_parser.set_defaults(func=cli_db_model_read)
 
     # update #
-    db_update_parser = db_actions.add_parser('update', help='Updates a single model in the local SQLite database.')
+    db_update_parser = db_actions.add_parser(
+        'update', 
+        help='Updates a single model in the local SQLite database.',
+        description=db_desc + ' :: update'
+    )
     db_update_parser.add_argument('model_id', type=str, help='ID of the model to update')
     db_update_parser.add_argument('json', help='JSON string for model update')
     def cli_db_model_update(ctx, args):
@@ -132,7 +169,11 @@ def add_model_subparser(subparsers, model_spec):
     db_update_parser.set_defaults(func=cli_db_model_update)
 
     # delete #
-    db_delete_parser = db_actions.add_parser('delete', help='Deletes a single model from the local SQLite database.')
+    db_delete_parser = db_actions.add_parser(
+        'delete', 
+        help='Deletes a single model from the local SQLite database.',
+        description=db_desc + ' :: delete'
+    )
     db_delete_parser.add_argument('model_id', type=str, help='ID of the model to delete')
     def cli_db_model_delete(ctx, args):
         ack = db_model_delete(ctx, model_class, args.model_id)
@@ -140,7 +181,11 @@ def add_model_subparser(subparsers, model_spec):
     db_delete_parser.set_defaults(func=cli_db_model_delete)
 
     # list #
-    db_list_parser = db_actions.add_parser('list', help='Lists models from the local SQLite database with optional pagination.')
+    db_list_parser = db_actions.add_parser(
+        'list', 
+        help='Lists models from the local SQLite database with optional pagination.',
+        description=db_desc + ' :: list'
+    )
     db_list_parser.add_argument('--offset', type=int, default=0, help='Offset for pagination')
     db_list_parser.add_argument('--size', type=int, default=50, help='Page size for pagination')
     def cli_db_model_list(ctx, args):
