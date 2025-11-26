@@ -82,8 +82,10 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
     fields = []
     values = []
     placeholders = []
+    has_non_list_fields = False
 
     for field in model_spec['non_list_fields']:
+        has_non_list_fields = True
         field_name = field['name']['snake_case']
 
         fields.append(field_name)
@@ -95,13 +97,16 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
         values.append(value)
         placeholders.append('?')
 
-    fields_str = ', '.join(f"'{f}'" for f in fields)
-    placeholder_str = ', '.join(placeholders)
+    if has_non_list_fields:
+        fields_str = ', '.join(f"'{f}'" for f in fields)
+        placeholder_str = ', '.join(placeholders)
+        non_list_sql = f'INSERT INTO {model_snake_case} (' + fields_str + ') VALUES (' + placeholder_str + ')'
+    else:
+        non_list_sql = f'INSERT INTO {model_snake_case} DEFAULT VALUES'
 
     # call db #
 
-    sql = f'INSERT INTO {model_snake_case} (' + fields_str + ') VALUES (' + placeholder_str + ')'
-    result = ctx.db.cursor.execute(sql, values)
+    result = ctx.db.cursor.execute(non_list_sql, values)
     assert result.rowcount == 1
     assert result.lastrowid is not None
     obj = obj._replace(id=str(result.lastrowid))

@@ -151,11 +151,12 @@ def convert_data_to_model(model_class:type, data:dict):
 
         try:
             if isinstance(raw_value, list):
-                converted_data[field_name] = [convert_value(field_type, v) for v in raw_value]
+                converted_data[field_name] = [convert_value(field['element_type'], v) for v in raw_value]
             else:
                 converted_data[field_name] = convert_value(field_type, raw_value)
 
         except (ValueError, TypeError) as e:
+            breakpoint()
             raise ValueError(f'Error converting field "{field_name}" to type "{field_type}": {e}')
 
     return new_model(model_class, converted_data)
@@ -236,6 +237,11 @@ def convert_value(field_type:str, raw_value:Any, strict=False) -> Any:
                 return datetime.strptime(raw_value, DATETIME_FORMAT_STR)
             else:
                 raise ValueError(f'Cannot convert type "{type(raw_value)}" to datetime')
+        # case 'list':
+        #     if isinstance(raw_value, list):
+        #         return raw_value
+        #     else:
+        #         raise ValueError(f'Cannot convert type "{type(raw_value)}" to list')
         case _:
             raise ValueError(f'Unsupported field type: {field_type}')
 
