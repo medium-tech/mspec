@@ -73,9 +73,11 @@ class TestMTemplateApp(unittest.TestCase):
     use_cache: bool
 
     crud_db_file = Path(f'{test_dir}/test_crud_db.sqlite3')
+    crud_envfile = Path(f'{test_dir}/crud.env')
     crud_ctx = {}
 
     pagination_db_file = Path(f'{test_dir}/test_pagination_db.sqlite3')
+    pagination_envfile = Path(f'{test_dir}/pagination.env')
     pagination_ctx = {}
 
     pagination_total_models = 25
@@ -108,27 +110,43 @@ class TestMTemplateApp(unittest.TestCase):
                 print(':: Deleted existing pagination db file ::')
             except FileNotFoundError:
                 pass
+        
+        #
+        # create test env files
+        #
 
-        # env file #
-
+        # base env #
         env_vars = dotenv_values(cls.env_file)
-        cls.crud_ctx.update(env_vars)
-        cls.pagination_ctx.update(env_vars)
 
-        # configure ctx #
+        # crud env file #
 
         default_host = cls.spec['client']['default_host']
         default_port = int(default_host.split(':')[-1])
-
         crud_port = default_port + 1
-        cls.crud_ctx['MAPP_SERVER_PORT'] = str(crud_port)
-        cls.crud_ctx['MAPP_CLIENT_HOST'] = f'http://localhost:{crud_port}'
-        cls.crud_ctx['MAPP_DB_URL'] = str(cls.crud_db_file.resolve())
+        crud_env = dict(env_vars)
+        crud_env['MAPP_SERVER_PORT'] = str(crud_port)
+        crud_env['MAPP_CLIENT_HOST'] = f'http://localhost:{crud_port}'
+        crud_env['MAPP_DB_URL'] = str(cls.crud_db_file.resolve())
+
+        with open(cls.crud_envfile, 'w') as f:
+            for k, v in crud_env.items():
+                f.write(f'{k}={v}\n')
+
+        cls.crud_ctx = {'MAPP_ENV_FILE': str(cls.crud_envfile.resolve())}
+
+        # pagination env file #
 
         pagination_port = default_port + 2
-        cls.pagination_ctx['MAPP_SERVER_PORT'] = str(pagination_port)
-        cls.pagination_ctx['MAPP_CLIENT_HOST'] = f'http://localhost:{pagination_port}'
-        cls.pagination_ctx['MAPP_DB_URL'] = str(cls.pagination_db_file.resolve())
+        pagination_env = dict(env_vars)
+        pagination_env['MAPP_SERVER_PORT'] = str(pagination_port)
+        pagination_env['MAPP_CLIENT_HOST'] = f'http://localhost:{pagination_port}'
+        pagination_env['MAPP_DB_URL'] = str(cls.pagination_db_file.resolve())
+
+        with open(cls.pagination_envfile, 'w') as f:
+            for k, v in pagination_env.items():
+                f.write(f'{k}={v}\n')
+                
+        cls.pagination_ctx = {'MAPP_ENV_FILE': str(cls.pagination_envfile.resolve())}
 
         # setup tables in test dbs #
 
