@@ -127,6 +127,16 @@ def convert_data_to_model(model_class:type, data:dict):
 
     converted_data = {}
 
+    try:
+        if isinstance(data['id'], str):
+            converted_data['id'] = data['id']
+        elif isinstance(data['id'], int):
+            converted_data['id'] = str(data['id'])
+        elif data['id'] is not None:
+            raise ValueError('Model ID must be a string, int or None')
+    except KeyError:
+        pass
+
     for field in model_class._model_spec['fields'].values():
 
         field_name = field['name']['snake_case']
@@ -152,15 +162,20 @@ def convert_data_to_model(model_class:type, data:dict):
 
     return new_model(model_class, converted_data)
 
-def convert_json_to_model(model_class:type, json_str:str):
+def convert_json_to_model(model_class:type, json_str:str, model_id:Optional[str]=None):
     """
     Converts a JSON string into an instance of the specified model class.
 
     Will convert types as necessary based on the model class definition.
 
+    Id may be provided in the json or as a separate argument. It can also be omitted in both.
+
+    If they are both provided they must match.
+
     Args:
         model_class (type): The model class to instantiate.
         json_str (str): A JSON string representing the model data.
+        model_id (Optional[str]): An optional model ID to set on the instance.
 
     Returns:
         object: An instance of the model class.
@@ -170,6 +185,14 @@ def convert_json_to_model(model_class:type, json_str:str):
         data = json.loads(json_str)
     except json.JSONDecodeError as e:
         raise ValueError(f'Invalid JSON: {e}')
+    
+    try:
+        json_id = data['id']
+        if model_id is not None and str(json_id) != str(model_id):
+            raise ValueError('Model ID in JSON does not match the provided model_id argument.')
+    except KeyError:
+        if model_id is not None:
+            data['id'] = model_id
 
     return convert_data_to_model(model_class, data)
 

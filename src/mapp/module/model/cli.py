@@ -123,7 +123,11 @@ def add_model_subparser(subparsers, model_spec):
     db_update_parser.add_argument('json', help='JSON string for model update')
     def cli_db_model_update(ctx, args):
         incoming_model = convert_json_to_model(model_class, args.json)
-        updated_model = db_model_update(ctx, model_class, args.model_id, incoming_model)
+        if incoming_model.id is None:
+            incoming_model = incoming_model._replace(id=args.model_id)
+        elif incoming_model.id != args.model_id:
+            raise MappError('ID_MISMATCH', 'Model ID in JSON does not match the provided model_id argument.')
+        updated_model = db_model_update(ctx, model_class, incoming_model)
         print(model_to_json(updated_model, sort_keys=True, indent=4))
     db_update_parser.set_defaults(func=cli_db_model_update)
 

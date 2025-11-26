@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from mapp.context import MappContext
-from mapp.errors import NotFoundError
+from mapp.errors import NotFoundError, MappError
 from mapp.types import DATETIME_FORMAT_STR, ModelListResult, validate_model, Acknowledgment
 
 
@@ -104,7 +104,7 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
     result = ctx.db.cursor.execute(sql, values)
     assert result.rowcount == 1
     assert result.lastrowid is not None
-    obj.id = str(result.lastrowid)
+    obj = obj._replace(id=str(result.lastrowid))
 
     # list fields sql #
 
@@ -173,7 +173,10 @@ def db_model_read(ctx:MappContext, model_class: type, model_id: str):
 
     return model_class(**data)
 
-def db_model_update(ctx:MappContext, model_class: type, model_id: str, obj: object):
+def db_model_update(ctx:MappContext, model_class: type, obj: object):
+
+    if obj.id is None:
+        raise MappError('MODEL_ID_NOT_PROVIDED', 'id must be provided to update an item')
 
     validate_model(model_class, obj)
 
@@ -199,7 +202,7 @@ def db_model_update(ctx:MappContext, model_class: type, model_id: str, obj: obje
         fields.append(f"'{field_name}' = ?")
         values.append(value)
 
-    values.append(model_id)
+    values.append(obj.id)
     set_clause = ', '.join(fields)
     sql = f'UPDATE {model_snake_case} SET {set_clause} WHERE id = ?'
 
@@ -207,7 +210,7 @@ def db_model_update(ctx:MappContext, model_class: type, model_id: str, obj: obje
 
     result = ctx.db.cursor.execute(sql, values)
     if result.rowcount == 0:
-        raise NotFoundError(f'{model_snake_case} {model_id} not found')
+        raise NotFoundError(f'{model_snake_case} {obj.id} not found')
 
     #
     # list fields
@@ -219,19 +222,20 @@ def db_model_update(ctx:MappContext, model_class: type, model_id: str, obj: obje
 
         # clear existing values #
 
-        ctx.db.cursor.execute(f'DELETE FROM {list_table_name} WHERE {model_snake_case}_id = ?', (model_id,))
+        ctx.db.cursor.execute(f'DELETE FROM {list_table_name} WHERE {model_snake_case}_id = ?', (obj.id,))
 
         # insert new values #
         
         for pos, value in enumerate(getattr(obj, field_name)):
             ctx.db.cursor.execute(
                 f'INSERT INTO {list_table_name} (value, position, {model_snake_case}_id) VALUES (?, ?, ?)',
-                (value, pos, model_id)
+                (value, pos, obj.id)
             )
 
     # finish #
 
     ctx.db.commit()
+    
     return obj
 
 def db_model_delete(ctx:MappContext, model_class: type, model_id: str) -> Acknowledgment:

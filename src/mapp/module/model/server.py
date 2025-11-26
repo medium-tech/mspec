@@ -5,7 +5,7 @@ from urllib.parse import parse_qs
 
 from mapp.errors import NotFoundError, RequestError
 from mapp.context import MappContext, RequestContext, RouteContext
-from mapp.types import JSONResponse, model_to_json, list_to_json, ModelListResult, new_model_class
+from mapp.types import JSONResponse, convert_json_to_model, model_to_json, new_model_class
 from mapp.module.model.db import *
 
 
@@ -62,10 +62,9 @@ def model_routes(route: RouteContext, server: MappContext, request: RequestConte
         # update #
 
         elif request.env['REQUEST_METHOD'] == 'PUT':
-            incoming_item = route.model_class(**json.loads(request.raw_req_body.decode('utf-8')))
+            req_body = request.raw_req_body.decode('utf-8')
+            incoming_item = convert_json_to_model(route.model_class, req_body, instance_id)
 
-            if instance_id != str(incoming_item.id):
-                raise RequestError('400 Bad Request', f'{route.model_kebab_case} id mismatch')
             try:
                 updated_item = db_model_update(server, route.model_class, instance_id, incoming_item)
             except NotFoundError:
