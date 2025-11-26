@@ -140,8 +140,8 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
         description=db_desc + ' :: create-table'
     )
     def cli_db_model_create_table(ctx, args):
-        db_model_create_table(ctx, model_class)
-        print(model_to_json({'acknowledged': True}, sort_keys=True, indent=4))
+        ack = db_model_create_table(ctx, model_class)
+        print(model_to_json(ack, sort_keys=True, indent=4))
     create_table_parser.set_defaults(func=cli_db_model_create_table)
 
     # create #

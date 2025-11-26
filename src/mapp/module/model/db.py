@@ -15,7 +15,7 @@ __all__ = [
 ]
 
 
-def db_model_create_table(ctx:MappContext, model_class: type):
+def db_model_create_table(ctx:MappContext, model_class: type) -> Acknowledgment:
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']
 
@@ -64,6 +64,8 @@ def db_model_create_table(ctx:MappContext, model_class: type):
         ctx.db.cursor.execute(index_sql)
 
     ctx.db.commit()
+
+    return Acknowledgment(f'Table {model_snake_case} created or already exists in {ctx.db.db_url}')
 
 def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
 

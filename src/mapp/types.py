@@ -32,7 +32,8 @@ DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
 
 
 class Acknowledgment:
-    pass
+    def __init__(self, message: str = 'No additional information') -> None:
+        self.message = message
 
 
 class PlainTextResponse(Exception):
@@ -375,7 +376,10 @@ class MappJsonEncoder(json.JSONEncoder):
         elif hasattr(obj, '_asdict'):
             return obj._asdict()
         elif isinstance(obj, Acknowledgment):
-            return {'acknowledged': True}
+            return {
+                'acknowledged': True,
+                'message': obj.message
+            }
         elif hasattr(obj, '__dataclass_fields__'):
             return asdict(obj)
         else:

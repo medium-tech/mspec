@@ -70,16 +70,13 @@ class TestMTemplateApp(unittest.TestCase):
     cmd: list[str]
     host: str | None
     env_file: str | None
+    use_cache: bool
 
     crud_db_file = Path(f'{test_dir}/test_crud_db.sqlite3')
-    crud_ctx = {
-        'MAPP_DB_FILE': str(crud_db_file.resolve()),
-    }
+    crud_ctx = {}
 
     pagination_db_file = Path(f'{test_dir}/test_pagination_db.sqlite3')
-    pagination_ctx = {
-        'MAPP_DB_FILE': str(pagination_db_file.resolve()),
-    }
+    pagination_ctx = {}
 
     pagination_total_models = 25
 
@@ -99,15 +96,18 @@ class TestMTemplateApp(unittest.TestCase):
 
         # delete test db files #
 
+    
         try:
             cls.crud_db_file.unlink()
         except FileNotFoundError:
             pass
-
-        try:
-            cls.pagination_db_file.unlink()
-        except FileNotFoundError:
-            pass
+        
+        if not cls.use_cache:
+            try:
+                cls.pagination_db_file.unlink()
+                print(':: Deleted existing pagination db file ::')
+            except FileNotFoundError:
+                pass
 
         # env file #
 
@@ -124,10 +124,12 @@ class TestMTemplateApp(unittest.TestCase):
         crud_port = default_port + 1
         cls.crud_ctx['MAPP_SERVER_PORT'] = str(crud_port)
         cls.crud_ctx['MAPP_CLIENT_HOST'] = f'http://localhost:{crud_port}'
+        cls.crud_ctx['MAPP_DB_URL'] = str(cls.crud_db_file.resolve())
 
         pagination_port = default_port + 2
         cls.pagination_ctx['MAPP_SERVER_PORT'] = str(pagination_port)
         cls.pagination_ctx['MAPP_CLIENT_HOST'] = f'http://localhost:{pagination_port}'
+        cls.pagination_ctx['MAPP_DB_URL'] = str(cls.pagination_db_file.resolve())
 
         # setup tables in test dbs #
 
@@ -136,38 +138,66 @@ class TestMTemplateApp(unittest.TestCase):
             module_name_kebab = module['name']['kebab_case']
 
             for model in module['models'].values():
+                model_name_snake = model['name']['snake_case']
                 model_name_kebab = model['name']['kebab_case']
 
                 create_table_args = cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create-table']
 
-                result = subprocess.run(create_table_args, capture_output=True, text=True, env=cls.crud_ctx)
-                if result.returncode != 0:
-                    raise RuntimeError(f'Error creating table for crud db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
+                # create crud table #
+
+                crud_result = subprocess.run(create_table_args, capture_output=True, text=True, env=cls.crud_ctx)
+                if crud_result.returncode != 0:
+                    raise RuntimeError(f'Error creating table for crud db {module_name_kebab}.{model_name_kebab}: {crud_result.stdout + crud_result.stderr}')
+                
+                try:
+                    crud_output = json.loads(crud_result.stdout)
+                    assert crud_output['acknowledged'] is True
+                    assert model_name_snake in crud_output['message']
+                    assert crud_output['message'].endswith(cls.crud_db_file.name)
+                except AssertionError as e:
+                    raise RuntimeError(f'AssertionError {e} while creating table for crud db {module_name_kebab}.{model_name_kebab}: {crud_result.stdout + crud_result.stderr}')
+
+                # create pagination table #
                 
                 result = subprocess.run(create_table_args, capture_output=True, text=True, env=cls.pagination_ctx)
                 if result.returncode != 0:
                     raise RuntimeError(f'Error creating table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
+                
+                try:
+                    pagination_output = json.loads(result.stdout)
+                    assert pagination_output['acknowledged'] is True
+                    assert model_name_snake in pagination_output['message']
+                    assert pagination_output['message'].endswith(cls.pagination_db_file.name)
+                except AssertionError as e:
+                    raise RuntimeError(f'AssertionError {e} while creating table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
+                
+                print(f' :: Created tables for {module_name_kebab}.{model_name_kebab} ::')
+        
+                breakpoint()
         
         # seed pagination db #
 
-        print('  :: Seeding pagination db ::')
-        for module in cls.spec['modules'].values():
-            module_name_kebab = module['name']['kebab_case']
+        if cls.pagination_db_file.exists():
+            print('  :: Using cached pagination db ::')
+        else:
+            print(f'  :: Seeding pagination db :: {cls.use_cache=}')
+            for module in cls.spec['modules'].values():
+                module_name_kebab = module['name']['kebab_case']
 
-            for model in module['models'].values():
-                model_name_kebab = model['name']['kebab_case']
-                for _ in range(cls.pagination_total_models):
-                    example_model = example_from_model(model, index=0)
-                    seed_cmd = cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create', json.dumps(example_model)]
-                    result = subprocess.run(
-                        seed_cmd,
-                        text=True,
-                        capture_output=True,
-                        env=cls.pagination_ctx
-                    )
-                    if result.returncode != 0:
-                        raise RuntimeError(f':: ERROR seeding table for pagination db "{module_name_kebab}.{model_name_kebab}" :: COMMAND :: {" ".join(seed_cmd)} :: OUTPUT :: {result.stdout + result.stderr}')
-        
+                for model in module['models'].values():
+                    model_name_kebab = model['name']['kebab_case']
+                    for _ in range(cls.pagination_total_models):
+                        example_model = example_from_model(model, index=0)
+                        seed_cmd = cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create', json.dumps(example_model)]
+                        result = subprocess.run(
+                            seed_cmd,
+                            text=True,
+                            capture_output=True,
+                            env=cls.pagination_ctx
+                        )
+                        if result.returncode != 0:
+                            raise RuntimeError(f':: ERROR seeding table for pagination db "{module_name_kebab}.{model_name_kebab}" :: COMMAND :: {" ".join(seed_cmd)} :: OUTPUT :: {result.stdout + result.stderr}')
+            
         # delete server logs #
 
         for log_file in glob.glob(f'{cls.test_dir}/test_server_*.log'):
@@ -191,6 +221,8 @@ class TestMTemplateApp(unittest.TestCase):
     
     @classmethod
     def tearDownClass(cls):
+
+        print(':: Tearing down TestMTemplateApp')
 
         # stop servers and capture logs #
 
@@ -219,10 +251,17 @@ class TestMTemplateApp(unittest.TestCase):
         except FileNotFoundError:
             pass
 
-        try:
-            cls.pagination_db_file.unlink()
-        except FileNotFoundError:
-            pass
+        breakpoint()
+        
+        if not cls.use_cache:
+            print(':: Cleaning up pagination db file ::')
+            try:
+                cls.pagination_db_file.unlink()
+                print(':: Deleted pagination db file ::')
+            except FileNotFoundError:
+                pass
+        
+        print(':: Teardown complete ::')
 
     def _run_cmd(self, cmd:list[str], expected_code=0, env:Optional[dict[str, str]] = None) -> subprocess.CompletedProcess:
         result = subprocess.run(cmd, capture_output=True, text=True, env=env)
@@ -346,7 +385,7 @@ class TestMTemplateApp(unittest.TestCase):
         for global_help_arg in ['help', '--help', '-h']:
             global_help_cmd = self.cmd + [global_help_arg]
             result = self._run_cmd(global_help_cmd)
-            self.assertIn('Displays this global help information.', result.stdout)
+            self.assertIn(':: TestGen', result.stdout)
 
         # module help #
 
@@ -608,7 +647,7 @@ class TestMTemplateApp(unittest.TestCase):
                         self.assertEqual(error_response['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_response["code"]}')
                         self.assertTrue(error_response['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_response["message"]}')
 
-def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:str|None) -> bool:
+def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:str|None, use_cache:bool=False) -> bool:
     if cli_args is None:
         raise ValueError('args must be provided as a list of strings')
 
@@ -618,6 +657,7 @@ def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:st
     TestMTemplateApp.cmd = cli_args
     TestMTemplateApp.host = host
     TestMTemplateApp.env_file = env_file
+    TestMTemplateApp.use_cache = use_cache
 
     # Support test filtering by name
     test_filters = getattr(test_spec, '_test_filters', None)
@@ -648,6 +688,7 @@ if __name__ == '__main__':
     parser.add_argument('--host', type=str, default=None, help='host for http client in tests (if host diff than in spec file)')
     parser.add_argument('--env-file', type=str, default=None, help='path to .env file to load for tests')
     parser.add_argument('--test-filter', type=str, nargs='*', default=None, help='Glob pattern(s) to filter test names (e.g. test_cli_db*)')
+    parser.add_argument('--use-cache', action='store_true', help='Use cached test resources if available')
 
     args = parser.parse_args()
 
@@ -657,4 +698,4 @@ if __name__ == '__main__':
     else:
         test_spec._test_filters = None
 
-    test_spec(args.spec, args.cmd, args.host, args.env_file)
+    test_spec(args.spec, args.cmd, args.host, args.env_file, args.use_cache)

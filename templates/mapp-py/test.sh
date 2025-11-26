@@ -4,4 +4,4 @@
 
 set -e
 
-python -m mapp.test test-gen.yaml --cmd ./run.sh --env-file .env --test-filter "test_cli_help_menus"
+python -m mapp.test test-gen.yaml --cmd ./run.sh --env-file .env --test-filter "test_cli_help_menus" --use-cache
