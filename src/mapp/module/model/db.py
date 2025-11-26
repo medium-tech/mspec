@@ -127,9 +127,7 @@ def db_model_read(ctx:MappContext, model_class: type, model_id: str):
 
     # read non list fields #
 
-    field_names = ['id'] + [field['name']['snake_case'] for field in model_spec['non_list_fields']]
-    select_fields = ', '.join(f"'{f}'" for f in field_names)
-    sql = f'SELECT {select_fields} FROM {model_snake_case} WHERE id = ?'
+    sql = f'SELECT * FROM {model_snake_case} WHERE id=?'
 
     row = ctx.db.cursor.execute(sql, (model_id,)).fetchone()
     if row is None:
@@ -137,8 +135,8 @@ def db_model_read(ctx:MappContext, model_class: type, model_id: str):
 
     # convert non list fields #
 
-    data = {}
-    for idx, field in enumerate(model_spec['non_list_fields']):
+    data = {'id': model_id}
+    for idx, field in enumerate(model_spec['non_list_fields'], start=1):
         field_name = field['name']['snake_case']
         match field['type']:
             case 'bool':
@@ -251,10 +249,7 @@ def db_model_delete(ctx:MappContext, model_class: type, model_id: str) -> Acknow
 
     # main table #
 
-    result = ctx.db.cursor.execute(f'DELETE FROM {model_snake_case} WHERE id = ?', (model_id,))
-    if result.rowcount == 0:
-        raise NotFoundError(f'{model_snake_case} {model_id} not found')
-    
+    ctx.db.cursor.execute(f'DELETE FROM {model_snake_case} WHERE id = ?', (model_id,))
     ctx.db.commit()
     return Acknowledgment()
 

@@ -47,7 +47,7 @@ class ServerError(MappError):
         super().__init__('SERVER_ERROR', message)
 
 
-class NotFoundError(RequestError):
+class NotFoundError(MappError):
     def __init__(self, message: str):
         super().__init__('NOT_FOUND', message)
 

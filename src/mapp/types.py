@@ -5,7 +5,7 @@ from typing import Any, Optional
 from datetime import datetime
 from dataclasses import dataclass, asdict
 
-from mapp.errors import MappValidationError
+from mapp.errors import MappValidationError, MappError
 
 __all__ = [
     'DATETIME_FORMAT_STR',
@@ -25,7 +25,6 @@ __all__ = [
     'model_to_json',
     'to_json',
     'model_from_json',
-    'list_to_json',
     'list_from_json'
 ]
 
@@ -363,6 +362,11 @@ class MappJsonEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime):
             return obj.strftime(DATETIME_FORMAT_STR)
+        elif isinstance(obj, ModelListResult):
+            return {
+                'items': [item._asdict() for item in obj.items],
+                'total': obj.total
+            }
         elif hasattr(obj, '_asdict'):
             return obj._asdict()
         elif isinstance(obj, Acknowledgment):
@@ -377,13 +381,13 @@ class MappJsonEncoder(json.JSONEncoder):
 def model_to_json(obj:object, sort_keys=False, indent=None) -> str:
     try:
         return json.dumps(
-            obj._asdict(), 
+            obj._asdict() if hasattr(obj, '_asdict') else obj,
             sort_keys=sort_keys, 
             indent=indent, 
             cls=MappJsonEncoder
         )
     except Exception as e:
-        raise MappValidationError(f'Error serializing to JSON: {e}')
+        raise MappError('ERROR_SERIALIZING_TO_JSON', f'Error serializing to JSON: {e}')
     
 to_json = model_to_json  # alias
 
@@ -409,17 +413,6 @@ def model_from_json(json_str:str, model_class:type, model_id:Optional[str]=None)
         raise MappValidationError(f'Error creating model instance: {e}')
 
 # model list #
-   
-def list_to_json(model_list:ModelListResult, sort_keys=False, indent=None) -> str:
-    try:
-        return json.dumps(
-            asdict(model_list),
-            sort_keys=sort_keys,
-            indent=indent,
-            cls=MappJsonEncoder
-        )
-    except Exception as e:
-        raise MappValidationError(f'Error serializing to JSON: {e}')
     
 def list_from_json(json_str:str, model_class:type) -> 'ModelListResult':
     try:

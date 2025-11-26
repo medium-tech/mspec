@@ -1,4 +1,5 @@
 import argparse
+import json
 
 from mapp.context import MappContext, spec_from_env, get_context_from_env
 from mapp.errors import MappError
@@ -39,7 +40,10 @@ def main(ctx: MappContext, spec:dict):
     args = parser.parse_args()
 
     if hasattr(args, 'func'):
-        args.func(ctx, args)
+        try:
+            args.func(ctx, args)
+        except MappError as e:
+            print(json.dumps(e.to_dict(), sort_keys=True, indent=4))
     else:
         parser.print_help()
 

@@ -77,7 +77,7 @@ def add_model_subparser(subparsers, model_spec):
     list_parser.add_argument('--limit', type=int, default=50, help='Limit for pagination')
     def cli_http_model_list(ctx, args):
         result = http_model_list(ctx, model_class, offset=args.offset, limit=args.limit)
-        print(list_to_json(result, sort_keys=True, indent=4))
+        print(to_json(result, sort_keys=True, indent=4))
         
     list_parser.set_defaults(func=cli_http_model_list)
 
@@ -137,7 +137,7 @@ def add_model_subparser(subparsers, model_spec):
     db_delete_parser.add_argument('model_id', type=str, help='ID of the model to delete')
     def cli_db_model_delete(ctx, args):
         ack = db_model_delete(ctx, model_class, args.model_id)
-        print(model_to_json(ack, sort_keys=True, indent=4))
+        print(to_json(ack, sort_keys=True, indent=4))
     db_delete_parser.set_defaults(func=cli_db_model_delete)
 
     # list #
@@ -146,7 +146,7 @@ def add_model_subparser(subparsers, model_spec):
     db_list_parser.add_argument('--limit', type=int, default=50, help='Limit for pagination')
     def cli_db_model_list(ctx, args):
         result = db_model_list(ctx, model_class, offset=args.offset, limit=args.limit)
-        print(list_to_json(result, sort_keys=True, indent=4))
+        print(to_json(result, sort_keys=True, indent=4))
     db_list_parser.set_defaults(func=cli_db_model_list)
 
     # help #
