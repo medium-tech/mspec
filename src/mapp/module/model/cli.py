@@ -154,9 +154,13 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
         help='Creates the model table in the local SQLite database.',
         description=db_desc + ' :: create-table'
     )
+    create_table_parser.add_argument('help', nargs='?', help='Show help for this command')
     def cli_db_model_create_table(ctx, args):
-        ack = db_model_create_table(ctx, model_class)
-        print(model_to_json(ack, sort_keys=True, indent=4))
+        if args.help == 'help':
+            create_table_parser.print_help()
+        else:
+            ack = db_model_create_table(ctx, model_class)
+            print(model_to_json(ack, sort_keys=True, indent=4))
     create_table_parser.set_defaults(func=cli_db_model_create_table)
 
     # create #

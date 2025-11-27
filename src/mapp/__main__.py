@@ -24,8 +24,19 @@ def main(ctx: MappContext, spec:dict):
     help_parser = subparsers.add_parser('help', help='Show top-level help', aliases=['-h', '--help'])
     help_parser.set_defaults(func=lambda ctx, args: parser.print_help())
 
-    create_tables_parser = subparsers.add_parser('create-tables', help='Create all tables for app')
-    create_tables_parser.set_defaults(func=lambda ctx, args: create_tables(ctx, spec))
+    create_tables_parser = subparsers.add_parser(
+        'create-tables', 
+        help='Create all tables for app', 
+        description=f':: {project_name} :: create-tables'
+    )
+    create_tables_parser.add_argument('help', nargs='?', help='Show help for this command')
+    def cli_create_tables(ctx, args):
+        if args.help == 'help':
+            create_tables_parser.print_help()
+        else:
+            ack = create_tables(ctx, spec)
+            print(json.dumps(ack.to_dict(), sort_keys=True, indent=4))
+    create_tables_parser.set_defaults(func=cli_create_tables)
 
     # parsers for each module #
 

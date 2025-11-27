@@ -388,6 +388,7 @@ class TestMTemplateApp(unittest.TestCase):
     def test_cli_help_menus(self):
 
         # global help #
+
         project_kebab = self.spec['project']['name']['kebab_case']
 
         global_help_text = ':: ' + project_kebab
@@ -396,6 +397,14 @@ class TestMTemplateApp(unittest.TestCase):
             global_help_cmd = self.cmd + [global_help_arg]
             global_help = self._run_cmd(global_help_cmd)
             self.assertIn(global_help_text, global_help.stdout)
+
+        # create tables help #
+
+        create_tables_help_text = global_help_text + ' :: create-tables'
+        for create_tables_help_arg in ['help', '--help', '-h']:
+            create_tables_help_cmd = self.cmd + ['create-tables', create_tables_help_arg]
+            create_tables_help = self._run_cmd(create_tables_help_cmd)
+            self.assertIn(create_tables_help_text, create_tables_help.stdout)
 
         # module help #
 
@@ -417,6 +426,8 @@ class TestMTemplateApp(unittest.TestCase):
                     model_help = self._run_cmd(model_help_cmd)
                     self.assertIn(model_help_text, model_help.stdout)
 
+                # each io (db / http) help #
+
                 for io in ['db', 'http']:
                     io_help_text = model_help_text + f' :: {io}'
 
@@ -425,13 +436,20 @@ class TestMTemplateApp(unittest.TestCase):
                         io_help = self._run_cmd(io_help_cmd)
                         self.assertIn(io_help_text, io_help.stdout)
 
-                    for op in ['create', 'read', 'update', 'delete', 'list']:
+                    # each operation help #
+                    crud_ops = ['create', 'read', 'update', 'delete', 'list']
+                    if io == 'db':
+                        ops_to_run = crud_ops + ['create-table']
+                    else:
+                        ops_to_run = crud_ops
+
+                    for op in ops_to_run:
                         op_help_text = io_help_text + f' :: {op}'
 
                         for op_help_arg in ['help', '--help', '-h']:
                             op_help_cmd = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], io, op, op_help_arg]
                             op_help = self._run_cmd(op_help_cmd)
-                            self.assertIn(op_help_text, op_help.stdout)
+                            self.assertIn(op_help_text, op_help.stdout.replace('\n', ''))
     
     def _test_cli_validation_error(self, module_name_kebab:str, model:dict, command_type:str):
 
