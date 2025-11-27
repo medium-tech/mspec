@@ -16,7 +16,7 @@ def main(ctx: MappContext, spec:dict):
 
     # init application cli #
 
-    project_name = spec['project']['name']['pascal_case']
+    project_name = spec['project']['name']['kebab_case']
 
     parser = argparse.ArgumentParser(description=f':: {project_name}', prog='mapp')
     subparsers = parser.add_subparsers(dest='module', help='Available modules', required=False)

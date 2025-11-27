@@ -388,27 +388,50 @@ class TestMTemplateApp(unittest.TestCase):
     def test_cli_help_menus(self):
 
         # global help #
+        project_kebab = self.spec['project']['name']['kebab_case']
+
+        global_help_text = ':: ' + project_kebab
 
         for global_help_arg in ['help', '--help', '-h']:
             global_help_cmd = self.cmd + [global_help_arg]
-            result = self._run_cmd(global_help_cmd)
-            self.assertIn(':: TestGen', result.stdout)
+            global_help = self._run_cmd(global_help_cmd)
+            self.assertIn(global_help_text, global_help.stdout)
 
         # module help #
 
         for module in self.spec['modules'].values():
+            module_help_text = global_help_text + f' :: {module["name"]["kebab_case"]}'
+
             for module_help_arg in ['help', '--help', '-h']:
                 module_help_cmd = self.cmd + [module['name']['kebab_case'], module_help_arg]
-                result = self._run_cmd(module_help_cmd)
-                self.assertIn(f'{module['name']['pascal_case']} Help', result.stdout)
+                module_help = self._run_cmd(module_help_cmd)
+                self.assertIn(module_help_text, module_help.stdout)
 
             # each model in module help #
 
             for model in module.get('models', {}).values():
+                model_help_text = module_help_text + f' :: {model["name"]["kebab_case"]}'
+
                 for model_help_arg in ['help', '--help', '-h']:
                     model_help_cmd = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], model_help_arg]
-                    result = self._run_cmd(model_help_cmd)
-                    self.assertIn(f'{model['name']['pascal_case']} Help', result.stdout)
+                    model_help = self._run_cmd(model_help_cmd)
+                    self.assertIn(model_help_text, model_help.stdout)
+
+                for io in ['db', 'http']:
+                    io_help_text = model_help_text + f' :: {io}'
+
+                    for io_help_arg in ['help', '--help', '-h']:
+                        io_help_cmd = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], io, io_help_arg]
+                        io_help = self._run_cmd(io_help_cmd)
+                        self.assertIn(io_help_text, io_help.stdout)
+
+                    for op in ['create', 'read', 'update', 'delete', 'list']:
+                        op_help_text = io_help_text + f' :: {op}'
+
+                        for op_help_arg in ['help', '--help', '-h']:
+                            op_help_cmd = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], io, op, op_help_arg]
+                            op_help = self._run_cmd(op_help_cmd)
+                            self.assertIn(op_help_text, op_help.stdout)
     
     def _test_cli_validation_error(self, module_name_kebab:str, model:dict, command_type:str):
 

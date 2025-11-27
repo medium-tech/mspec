@@ -16,12 +16,11 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
     # init model cli
     #
 
-    project_name = spec['project']['name']['pascal_case']
-    module_snake_case = module['name']['snake_case']
-    model_snake_case = model['name']['snake_case']
+    project_name = spec['project']['name']['kebab_case']
+    module_kebab_case = module['name']['kebab_case']
     model_kebab_case = model['name']['kebab_case']
 
-    description = f':: {project_name} :: {module_snake_case} :: {model_snake_case}'
+    description = f':: {project_name} :: {module_kebab_case} :: {model_kebab_case}'
 
     model_parser = subparsers.add_parser(model_kebab_case, help=f'Model: {model_kebab_case}', description=description)
 
@@ -55,10 +54,13 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
         description=http_desc + ' :: create'
     )
     create_parser.add_argument('json', help='JSON string for model creation')
-    def cli_http_model_create(ctx, args):        
-        incoming_model = convert_json_to_model(model_class, args.json)
-        new_model = http_model_create(ctx, model_class, incoming_model)
-        print(model_to_json(new_model, sort_keys=True, indent=4))
+    def cli_http_model_create(ctx, args):
+        if args.json == 'help':
+            create_parser.print_help()
+        else: 
+            incoming_model = convert_json_to_model(model_class, args.json)
+            new_model = http_model_create(ctx, model_class, incoming_model)
+            print(model_to_json(new_model, sort_keys=True, indent=4))
 
     create_parser.set_defaults(func=cli_http_model_create)
 

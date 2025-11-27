@@ -9,10 +9,9 @@ __all__ = [
 def add_module_subparser(subparsers, spec:dict, module:dict):
 
     # init module cli #
-    project_name = spec['project']['name']['pascal_case']
+    project_name = spec['project']['name']['kebab_case']
     module_kebab_case = module['name']['kebab_case']
-    module_snake_case = module['name']['snake_case']
-    description = f':: {project_name} :: {module_snake_case}'
+    description = f':: {project_name} :: {module_kebab_case}'
 
     module_parser = subparsers.add_parser(module_kebab_case, help=f'Module: {module_kebab_case}', description=description)
     model_subparsers = module_parser.add_subparsers(dest='model', required=False)
