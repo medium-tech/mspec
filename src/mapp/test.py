@@ -2,6 +2,7 @@ import unittest
 import json
 import subprocess
 import glob
+import multiprocessing
 
 from pathlib import Path
 from typing import Optional, Generator
@@ -80,6 +81,8 @@ class TestMTemplateApp(unittest.TestCase):
     host: str | None
     env_file: str | None
     use_cache: bool
+    threads: int = 4
+    pool: Optional[multiprocessing.Pool] = None
 
     crud_db_file = Path(f'{test_dir}/test_crud_db.sqlite3')
     crud_envfile = Path(f'{test_dir}/crud.env')
@@ -128,6 +131,7 @@ class TestMTemplateApp(unittest.TestCase):
         #
 
         # base env #
+
         env_vars = dotenv_values(cls.env_file)
 
         # crud env file #
@@ -157,6 +161,10 @@ class TestMTemplateApp(unittest.TestCase):
             f.write(env_to_string(pagination_env))
 
         cls.pagination_ctx = {'MAPP_ENV_FILE': str(cls.pagination_envfile.resolve())}
+
+        # open process pool #
+
+        cls.pool = multiprocessing.Pool(processes=cls.threads)
 
         # setup tables in test dbs #
 
@@ -247,6 +255,12 @@ class TestMTemplateApp(unittest.TestCase):
     def tearDownClass(cls):
 
         print('\n:: Tearing down TestMTemplateApp')
+
+        # stop pool #
+
+        if cls.pool:
+            cls.pool.close()
+            cls.pool.join()
 
         # stop servers and capture logs #
 
@@ -419,6 +433,7 @@ class TestMTemplateApp(unittest.TestCase):
             # each model in module help #
 
             for model in module.get('models', {}).values():
+            
                 model_help_text = module_help_text + f' :: {model["name"]["kebab_case"]}'
 
                 for model_help_arg in ['help', '--help', '-h']:
