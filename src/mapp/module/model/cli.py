@@ -10,7 +10,7 @@ __all__ = [
 
 def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
 
-    model_class = new_model_class(model)
+    model_class = new_model_class(model, module)
 
     # 
     # init model cli
@@ -72,8 +72,11 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
     )
     read_parser.add_argument('model_id', type=str, help='ID of the model to read')
     def cli_http_model_read(ctx, args):
-        model = http_model_read(ctx, model_class, args.model_id)
-        print(model_to_json(model, sort_keys=True, indent=4))
+        if args.model_id == 'help':
+            read_parser.print_help()
+        else:
+            model = http_model_read(ctx, model_class, args.model_id)
+            print(model_to_json(model, sort_keys=True, indent=4))
 
     read_parser.set_defaults(func=cli_http_model_read)
 
@@ -84,11 +87,14 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
         description=http_desc + ' :: update'
     )
     update_parser.add_argument('model_id', type=str, help='ID of the model to update')
-    update_parser.add_argument('json', help='JSON string for model update')
+    update_parser.add_argument('json', nargs='?', help='JSON string for model update')
     def cli_http_model_update(ctx, args):
-        incoming_model = convert_json_to_model(model_class, args.json)
-        updated_model = http_model_update(ctx, model_class, args.model_id, incoming_model)
-        print(model_to_json(updated_model, sort_keys=True, indent=4))
+        if args.model_id == 'help':
+            update_parser.print_help()
+        else:
+            incoming_model = convert_json_to_model(model_class, args.json)
+            updated_model = http_model_update(ctx, model_class, args.model_id, incoming_model)
+            print(model_to_json(updated_model, sort_keys=True, indent=4))
         
     update_parser.set_defaults(func=cli_http_model_update)
 
@@ -100,8 +106,11 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
     )
     delete_parser.add_argument('model_id', type=str, help='ID of the model to delete')
     def cli_http_model_delete(ctx, args):
-        ack = http_model_delete(ctx, model_class, args.model_id)
-        print(model_to_json(ack, sort_keys=True, indent=4))
+        if args.model_id == 'help':
+            delete_parser.print_help()
+        else:
+            ack = http_model_delete(ctx, model_class, args.model_id)
+            print(model_to_json(ack, sort_keys=True, indent=4))
 
     delete_parser.set_defaults(func=cli_http_model_delete)
 
@@ -111,11 +120,15 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
         help='Lists models via HTTP API with optional pagination.',
         description=http_desc + ' :: list'
     )
+    list_parser.add_argument('help', nargs='?', help='Show help for this command')
     list_parser.add_argument('--offset', type=int, default=0, help='Offset for pagination')
     list_parser.add_argument('--size', type=int, default=50, help='Page size for pagination')
     def cli_http_model_list(ctx, args):
-        result = http_model_list(ctx, model_class, offset=args.offset, size=args.size)
-        print(to_json(result, sort_keys=True, indent=4))
+        if args.help == 'help':
+            list_parser.print_help()
+        else:
+            result = http_model_list(ctx, model_class, offset=args.offset, size=args.size)
+            print(to_json(result, sort_keys=True, indent=4))
     list_parser.set_defaults(func=cli_http_model_list)
 
     # help #
@@ -154,10 +167,13 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
     )
     db_create_parser.add_argument('json', help='JSON string for model creation')
     def cli_db_model_create(ctx, args):
-        incoming_model = convert_json_to_model(model_class, args.json)
-        new_model = db_model_create(ctx, model_class, incoming_model)
-        json_out = model_to_json(new_model, sort_keys=True, indent=4)
-        print(json_out)
+        if args.json == 'help':
+            db_create_parser.print_help()
+        else:
+            incoming_model = convert_json_to_model(model_class, args.json)
+            new_model = db_model_create(ctx, model_class, incoming_model)
+            print(model_to_json(new_model, sort_keys=True, indent=4))
+
     db_create_parser.set_defaults(func=cli_db_model_create)
 
     # read #
@@ -168,8 +184,11 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
     )
     db_read_parser.add_argument('model_id', type=str, help='ID of the model to read')
     def cli_db_model_read(ctx, args):
-        model = db_model_read(ctx, model_class, args.model_id)
-        print(model_to_json(model, sort_keys=True, indent=4))
+        if args.model_id == 'help':
+            db_read_parser.print_help()
+        else:
+            model = db_model_read(ctx, model_class, args.model_id)
+            print(model_to_json(model, sort_keys=True, indent=4))
     db_read_parser.set_defaults(func=cli_db_model_read)
 
     # update #
@@ -179,15 +198,19 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
         description=db_desc + ' :: update'
     )
     db_update_parser.add_argument('model_id', type=str, help='ID of the model to update')
-    db_update_parser.add_argument('json', help='JSON string for model update')
+    # optional json argument
+    db_update_parser.add_argument('json', nargs='?', help='JSON string for model update')
     def cli_db_model_update(ctx, args):
-        incoming_model = convert_json_to_model(model_class, args.json, args.model_id)
-        if incoming_model.id is None:
-            incoming_model = incoming_model._replace(id=args.model_id)
-        elif incoming_model.id != args.model_id:
-            raise MappError('ID_MISMATCH', 'Model ID in JSON does not match the provided model_id argument.')
-        updated_model = db_model_update(ctx, model_class, incoming_model)
-        print(model_to_json(updated_model, sort_keys=True, indent=4))
+        if args.model_id == 'help':
+            db_update_parser.print_help()
+        else:
+            incoming_model = convert_json_to_model(model_class, args.json, args.model_id)
+            if incoming_model.id is None:
+                incoming_model = incoming_model._replace(id=args.model_id)
+            elif incoming_model.id != args.model_id:
+                raise MappError('ID_MISMATCH', 'Model ID in JSON does not match the provided model_id argument.')
+            updated_model = db_model_update(ctx, model_class, incoming_model)
+            print(model_to_json(updated_model, sort_keys=True, indent=4))
     db_update_parser.set_defaults(func=cli_db_model_update)
 
     # delete #
@@ -198,8 +221,11 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
     )
     db_delete_parser.add_argument('model_id', type=str, help='ID of the model to delete')
     def cli_db_model_delete(ctx, args):
-        ack = db_model_delete(ctx, model_class, args.model_id)
-        print(to_json(ack, sort_keys=True, indent=4))
+        if args.model_id == 'help':
+            db_delete_parser.print_help()
+        else:
+            ack = db_model_delete(ctx, model_class, args.model_id)
+            print(to_json(ack, sort_keys=True, indent=4))
     db_delete_parser.set_defaults(func=cli_db_model_delete)
 
     # list #
@@ -208,11 +234,16 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
         help='Lists models from the local SQLite database with optional pagination.',
         description=db_desc + ' :: list'
     )
+    # help for list command
+    db_list_parser.add_argument('help', nargs='?', help='Show help for this command')
     db_list_parser.add_argument('--offset', type=int, default=0, help='Offset for pagination')
     db_list_parser.add_argument('--size', type=int, default=50, help='Page size for pagination')
     def cli_db_model_list(ctx, args):
-        result = db_model_list(ctx, model_class, offset=args.offset, size=args.size)
-        print(to_json(result, sort_keys=True, indent=4))
+        if args.help == 'help':
+            db_list_parser.print_help()
+        else:
+            result = db_model_list(ctx, model_class, offset=args.offset, size=args.size)
+            print(to_json(result, sort_keys=True, indent=4))
     db_list_parser.set_defaults(func=cli_db_model_list)
 
     # help #

@@ -136,7 +136,7 @@ def http_model_list(ctx: MappContext, model_class: type, offset: int = 0, size: 
 
     # init #
 
-    module_kebab = model_class._model_spec['module']['kebab_case']
+    module_kebab = model_class._module_spec['name']['kebab_case']
     model_kebab = model_class._model_spec['name']['kebab_case']
     url = f'{ctx.host}/api/{module_kebab}/{model_kebab}?offset={offset}&size={size}'
 
