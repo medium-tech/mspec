@@ -13,6 +13,10 @@ from mspec.core import load_generator_spec
 
 from dotenv import dotenv_values
 
+def run_help_cmd(cmd_args, env):
+    result = subprocess.run(cmd_args, capture_output=True, text=True, env=env)
+    return (cmd_args, result.returncode, result.stdout, result.stderr)
+
 def example_from_model(model:dict, index=0) -> dict:
     data = {}
     for field_name, field in model.get('fields', {}).items():
@@ -81,7 +85,7 @@ class TestMTemplateApp(unittest.TestCase):
     host: str | None
     env_file: str | None
     use_cache: bool
-    threads: int = 4
+    threads: int = 8
     pool: Optional[multiprocessing.Pool] = None
 
     crud_db_file = Path(f'{test_dir}/test_crud_db.sqlite3')
@@ -401,57 +405,61 @@ class TestMTemplateApp(unittest.TestCase):
 
     def test_cli_help_menus(self):
 
-        # global help #
+        help_jobs = []
 
         project_kebab = self.spec['project']['name']['kebab_case']
-
         global_help_text = ':: ' + project_kebab
 
+        # global help
         for global_help_arg in ['help', '--help', '-h']:
-            global_help_cmd = self.cmd + [global_help_arg]
-            global_help = self._run_cmd(global_help_cmd)
-            self.assertIn(global_help_text, global_help.stdout)
+            args = self.cmd + [global_help_arg]
+            env = self.crud_ctx
+            def assertion(stdout, stderr, code, args=args):
+                self.assertEqual(code, 0, f"Global help failed: {' '.join(args)}\n{stdout}\n{stderr}")
+                self.assertIn(global_help_text, stdout)
+            help_jobs.append((args, env, assertion))
 
-        # create tables help #
-
+        # create tables help
         create_tables_help_text = global_help_text + ' :: create-tables'
         for create_tables_help_arg in ['help', '--help', '-h']:
-            create_tables_help_cmd = self.cmd + ['create-tables', create_tables_help_arg]
-            create_tables_help = self._run_cmd(create_tables_help_cmd)
-            self.assertIn(create_tables_help_text, create_tables_help.stdout)
+            args = self.cmd + ['create-tables', create_tables_help_arg]
+            env = self.crud_ctx
+            def assertion(stdout, stderr, code, args=args):
+                self.assertEqual(code, 0, f"Create-tables help failed: {' '.join(args)}\n{stdout}\n{stderr}")
+                self.assertIn(create_tables_help_text, stdout)
+            help_jobs.append((args, env, assertion))
 
-        # module help #
-
+        # module/model/io/op help
         for module in self.spec['modules'].values():
             module_help_text = global_help_text + f' :: {module["name"]["kebab_case"]}'
-
             for module_help_arg in ['help', '--help', '-h']:
-                module_help_cmd = self.cmd + [module['name']['kebab_case'], module_help_arg]
-                module_help = self._run_cmd(module_help_cmd)
-                self.assertIn(module_help_text, module_help.stdout)
-
-            # each model in module help #
+                args = self.cmd + [module['name']['kebab_case'], module_help_arg]
+                env = self.crud_ctx
+                def assertion(stdout, stderr, code, args=args, expected=module_help_text):
+                    self.assertEqual(code, 0, f"Module help failed: {' '.join(args)}\n{stdout}\n{stderr}")
+                    self.assertIn(expected, stdout)
+                help_jobs.append((args, env, assertion))
 
             for model in module.get('models', {}).values():
-            
                 model_help_text = module_help_text + f' :: {model["name"]["kebab_case"]}'
-
                 for model_help_arg in ['help', '--help', '-h']:
-                    model_help_cmd = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], model_help_arg]
-                    model_help = self._run_cmd(model_help_cmd)
-                    self.assertIn(model_help_text, model_help.stdout)
-
-                # each io (db / http) help #
+                    args = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], model_help_arg]
+                    env = self.crud_ctx
+                    def assertion(stdout, stderr, code, args=args, expected=model_help_text):
+                        self.assertEqual(code, 0, f"Model help failed: {' '.join(args)}\n{stdout}\n{stderr}")
+                        self.assertIn(expected, stdout)
+                    help_jobs.append((args, env, assertion))
 
                 for io in ['db', 'http']:
                     io_help_text = model_help_text + f' :: {io}'
-
                     for io_help_arg in ['help', '--help', '-h']:
-                        io_help_cmd = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], io, io_help_arg]
-                        io_help = self._run_cmd(io_help_cmd)
-                        self.assertIn(io_help_text, io_help.stdout)
+                        args = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], io, io_help_arg]
+                        env = self.crud_ctx
+                        def assertion(stdout, stderr, code, args=args, expected=io_help_text):
+                            self.assertEqual(code, 0, f"IO help failed: {' '.join(args)}\n{stdout}\n{stderr}")
+                            self.assertIn(expected, stdout)
+                        help_jobs.append((args, env, assertion))
 
-                    # each operation help #
                     crud_ops = ['create', 'read', 'update', 'delete', 'list']
                     if io == 'db':
                         ops_to_run = crud_ops + ['create-table']
@@ -460,11 +468,19 @@ class TestMTemplateApp(unittest.TestCase):
 
                     for op in ops_to_run:
                         op_help_text = io_help_text + f' :: {op}'
-
                         for op_help_arg in ['help', '--help', '-h']:
-                            op_help_cmd = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], io, op, op_help_arg]
-                            op_help = self._run_cmd(op_help_cmd)
-                            self.assertIn(op_help_text, op_help.stdout.replace('\n', ''))
+                            args = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], io, op, op_help_arg]
+                            env = self.crud_ctx
+                            def assertion(stdout, stderr, code, args=args, expected=op_help_text):
+                                self.assertEqual(code, 0, f"Op help failed: {' '.join(args)}\n{stdout}\n{stderr}")
+                                self.assertIn(expected, stdout.replace('\n', ''))
+                            help_jobs.append((args, env, assertion))
+
+        with multiprocessing.Pool(processes=self.threads) as pool:
+            results = pool.starmap(run_help_cmd, [(args, env) for args, env, _ in help_jobs])
+
+        for (args, code, stdout, stderr), (_, _, assertion) in zip(results, help_jobs):
+            assertion(stdout, stderr, code, args)
     
     def _test_cli_validation_error(self, module_name_kebab:str, model:dict, command_type:str):
 
