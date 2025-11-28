@@ -1,4 +1,5 @@
 import unittest
+import fnmatch
 import json
 import subprocess
 import glob
@@ -173,7 +174,7 @@ class TestMTemplateApp(unittest.TestCase):
         """
         Testing Table Creation
 
-        There are two clis commands to create tables in MAPP:
+        There are two cli commands to create tables in MAPP:
             - mapp create-tables
             - mapp <module> <model> db create-table
 
@@ -746,7 +747,6 @@ def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:st
     if cli_args is None:
         raise ValueError('args must be provided as a list of strings')
 
-    import fnmatch
     test_suite = unittest.TestSuite()
     TestMTemplateApp.spec = load_generator_spec(spec_path)
     TestMTemplateApp.cmd = cli_args
