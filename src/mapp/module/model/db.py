@@ -65,7 +65,7 @@ def db_model_create_table(ctx:MappContext, model_class: type) -> Acknowledgment:
 
     ctx.db.commit()
 
-    return Acknowledgment(f'Table {model_snake_case} created or already exists in {ctx.db.db_url}')
+    return Acknowledgment(f'Table {model_snake_case} created or already exists.')
 
 def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
 

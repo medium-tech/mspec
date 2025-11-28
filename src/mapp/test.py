@@ -170,6 +170,37 @@ class TestMTemplateApp(unittest.TestCase):
 
         cls.pool = multiprocessing.Pool(processes=cls.threads)
 
+        """
+        Testing Table Creation
+
+        There are two clis commands to create tables in MAPP:
+            - mapp create-tables
+            - mapp <module> <model> db create-table
+
+        The first command creates all tables for all models in all modules.
+        The second command creates all tables for a specific model.
+
+        In these tests we create 2 environments, one for testing CRUD ops
+        and one for testing pagination. We use the first command to create
+        tables for the CRUD environment, and the second command to create
+        tables for the pagination environment. This allows us to test both
+        methods of table creation.
+        """
+
+        # create crud table #
+
+        crud_create_tables_cmd = cls.cmd + ['create-tables']
+        crud_result = subprocess.run(crud_create_tables_cmd, capture_output=True, text=True, env=cls.crud_ctx)
+        if crud_result.returncode != 0:
+            raise RuntimeError(f'Error creating tables for crud db: {crud_result.stdout + crud_result.stderr}')
+        
+        try:
+            crud_output = json.loads(crud_result.stdout)
+            assert crud_output['acknowledged'] is True
+            assert crud_output['message'] == 'All tables created or already existed.'
+        except AssertionError as e:
+            raise RuntimeError(f'AssertionError {e} while creating table for crud db {module_name_kebab}.{model_name_kebab}: {crud_result.stdout + crud_result.stderr}')
+
         # setup tables in test dbs #
 
         print('  :: Creating tables in test dbs ::')
@@ -182,20 +213,6 @@ class TestMTemplateApp(unittest.TestCase):
 
                 create_table_args = cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create-table']
 
-                # create crud table #
-
-                crud_result = subprocess.run(create_table_args, capture_output=True, text=True, env=cls.crud_ctx)
-                if crud_result.returncode != 0:
-                    raise RuntimeError(f'Error creating table for crud db {module_name_kebab}.{model_name_kebab}: {crud_result.stdout + crud_result.stderr}')
-                
-                try:
-                    crud_output = json.loads(crud_result.stdout)
-                    assert crud_output['acknowledged'] is True
-                    assert model_name_snake in crud_output['message']
-                    assert crud_output['message'].endswith(cls.crud_db_file.name)
-                except AssertionError as e:
-                    raise RuntimeError(f'AssertionError {e} while creating table for crud db {module_name_kebab}.{model_name_kebab}: {crud_result.stdout + crud_result.stderr}')
-
                 # create pagination table #
                 
                 if not pagination_db_exists:
@@ -207,7 +224,6 @@ class TestMTemplateApp(unittest.TestCase):
                         pagination_output = json.loads(result.stdout)
                         assert pagination_output['acknowledged'] is True
                         assert model_name_snake in pagination_output['message']
-                        assert pagination_output['message'].endswith(cls.pagination_db_file.name)
                     except AssertionError as e:
                         raise RuntimeError(f'AssertionError {e} while creating table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
         

@@ -35,6 +35,12 @@ class Acknowledgment:
     def __init__(self, message: str = 'No additional information') -> None:
         self.message = message
 
+    def to_dict(self) -> dict:
+        return {
+            'acknowledged': True,
+            'message': self.message
+        }
+
 
 class PlainTextResponse(Exception):
     content_type = 'text/plain'

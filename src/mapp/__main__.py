@@ -35,6 +35,7 @@ def main(ctx: MappContext, spec:dict):
             create_tables_parser.print_help()
         else:
             ack = create_tables(ctx, spec)
+            # return ack
             print(json.dumps(ack.to_dict(), sort_keys=True, indent=4))
     create_tables_parser.set_defaults(func=cli_create_tables)
 
