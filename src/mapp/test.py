@@ -315,6 +315,8 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertEqual(result.returncode, expected_code, msg)
         return result
 
+    # crud tests #
+
     def _test_cli_crud_commands(self, command_type:str):
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
@@ -379,181 +381,6 @@ class TestMTemplateApp(unittest.TestCase):
 
     def test_cli_http_crud(self):
         self._test_cli_crud_commands('http')
-
-    def _test_cli_pagination_command(self, command_type:str):
-        for module in self.spec['modules'].values():
-            module_name_kebab = module['name']['kebab_case']
-
-            for model_name, model in module['models'].items():
-                model_name_kebab = model['name']['kebab_case']
-
-                model_list_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'list']
-
-                for case in self.pagination_cases:
-                    limit = case['limit']
-                    expected_pages = case['expected_pages']
-
-                    # paginate #
-
-                    offset = 0
-                    page_count = 0
-
-                    while True:
-
-                        result = self._run_cmd(model_list_command + [f'--limit={limit}', f'--offset={offset}'], env=self.pagination_ctx)
-
-                        response = json.loads(result.stdout)
-
-                        self.assertEqual(response['total'], self.pagination_total_models, f'Pagination for {model_name} page {page_count} returned incorrect total')
- 
-                        items = response['items']
-                        self.assertLessEqual(len(items), limit, f'Pagination for {model_name} returned more items than limit {limit}')
-                        
-                        if len(items) == 0:
-                            break
-
-                        page_count += 1
-
-                        offset += limit
-
-                    self.assertEqual(page_count, expected_pages, f'Pagination for {model_name} returned {page_count} pages, expected {expected_pages}')
-
-    def test_cli_db_pagination(self):
-        self._test_cli_pagination_command('db')
-
-    def test_cli_http_pagination(self):
-        self._test_cli_pagination_command('http')
-
-    def test_cli_help_menus(self):
-
-        help_jobs = []
-
-        project_kebab = self.spec['project']['name']['kebab_case']
-        global_help_text = ':: ' + project_kebab
-
-        # global help
-        for global_help_arg in ['help', '--help', '-h']:
-            args = self.cmd + [global_help_arg]
-            env = self.crud_ctx
-            def assertion(stdout, stderr, code, args=args):
-                self.assertEqual(code, 0, f"Global help failed: {' '.join(args)}\n{stdout}\n{stderr}")
-                self.assertIn(global_help_text, stdout)
-            help_jobs.append((args, env, assertion))
-
-        # create tables help
-        create_tables_help_text = global_help_text + ' :: create-tables'
-        for create_tables_help_arg in ['help', '--help', '-h']:
-            args = self.cmd + ['create-tables', create_tables_help_arg]
-            env = self.crud_ctx
-            def assertion(stdout, stderr, code, args=args):
-                self.assertEqual(code, 0, f"Create-tables help failed: {' '.join(args)}\n{stdout}\n{stderr}")
-                self.assertIn(create_tables_help_text, stdout)
-            help_jobs.append((args, env, assertion))
-
-        # module/model/io/op help
-        for module in self.spec['modules'].values():
-            module_help_text = global_help_text + f' :: {module["name"]["kebab_case"]}'
-            for module_help_arg in ['help', '--help', '-h']:
-                args = self.cmd + [module['name']['kebab_case'], module_help_arg]
-                env = self.crud_ctx
-                def assertion(stdout, stderr, code, args=args, expected=module_help_text):
-                    self.assertEqual(code, 0, f"Module help failed: {' '.join(args)}\n{stdout}\n{stderr}")
-                    self.assertIn(expected, stdout)
-                help_jobs.append((args, env, assertion))
-
-            for model in module.get('models', {}).values():
-                model_help_text = module_help_text + f' :: {model["name"]["kebab_case"]}'
-                for model_help_arg in ['help', '--help', '-h']:
-                    args = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], model_help_arg]
-                    env = self.crud_ctx
-                    def assertion(stdout, stderr, code, args=args, expected=model_help_text):
-                        self.assertEqual(code, 0, f"Model help failed: {' '.join(args)}\n{stdout}\n{stderr}")
-                        self.assertIn(expected, stdout)
-                    help_jobs.append((args, env, assertion))
-
-                for io in ['db', 'http']:
-                    io_help_text = model_help_text + f' :: {io}'
-                    for io_help_arg in ['help', '--help', '-h']:
-                        args = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], io, io_help_arg]
-                        env = self.crud_ctx
-                        def assertion(stdout, stderr, code, args=args, expected=io_help_text):
-                            self.assertEqual(code, 0, f"IO help failed: {' '.join(args)}\n{stdout}\n{stderr}")
-                            self.assertIn(expected, stdout)
-                        help_jobs.append((args, env, assertion))
-
-                    crud_ops = ['create', 'read', 'update', 'delete', 'list']
-                    if io == 'db':
-                        ops_to_run = crud_ops + ['create-table']
-                    else:
-                        ops_to_run = crud_ops
-
-                    for op in ops_to_run:
-                        op_help_text = io_help_text + f' :: {op}'
-                        for op_help_arg in ['help', '--help', '-h']:
-                            args = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], io, op, op_help_arg]
-                            env = self.crud_ctx
-                            def assertion(stdout, stderr, code, args=args, expected=op_help_text):
-                                self.assertEqual(code, 0, f"Op help failed: {' '.join(args)}\n{stdout}\n{stderr}")
-                                self.assertIn(expected, stdout.replace('\n', ''))
-                            help_jobs.append((args, env, assertion))
-
-        with multiprocessing.Pool(processes=self.threads) as pool:
-            results = pool.starmap(run_cmd, [(args, env) for args, env, _ in help_jobs])
-
-        for (args, code, stdout, stderr), (_, _, assertion) in zip(results, help_jobs):
-            assertion(stdout, stderr, code, args)
-    
-    def _test_cli_validation_error(self, module_name_kebab:str, model:dict, command_type:str):
-
-        model_name_kebab = model['name']['kebab_case']
-
-        # create model to attempt to update with invalid data #
-
-        example_to_update = example_from_model(model)
-        args = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(example_to_update)]
-        result = self._run_cmd(args, env=self.crud_ctx)
-        update_model_id = str(json.loads(result.stdout)['id'])
-
-        for invalid_example in model_validation_errors(model):
-            model_name_kebab = model['name']['kebab_case']
-
-            # create #
-
-            model_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(invalid_example)]
-            result = self._run_cmd(model_command, expected_code=1, env=self.crud_ctx)
-
-            error_output = json.loads(result.stdout)
-            self.assertEqual(error_output['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output["code"]}')
-            self.assertTrue(error_output['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_output["message"]}')
-
-            # update #
-
-            model_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'update', update_model_id, json.dumps(invalid_example)]
-            result = self._run_cmd(model_command, expected_code=1, env=self.crud_ctx)
-            error_output = json.loads(result.stdout)
-            self.assertEqual(error_output['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output["code"]}')
-            self.assertTrue(error_output['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_output["message"]}')
-
-        # read back original example to ensure it was not modified #
-
-        result = self._run_cmd(self.cmd + [module_name_kebab, model_name_kebab, command_type, 'read', update_model_id], env=self.crud_ctx)
-        read_model = json.loads(result.stdout)
-        del read_model['id']
-        self.assertEqual(read_model, example_to_update, f'Read {model["name"]["pascal_case"]} does not match original example data after validation error tests')
-
-    def test_cli_db_validation_error(self):
-        for module in self.spec['modules'].values():
-            module_name_kebab = module['name']['kebab_case']
-
-            for model in module['models'].values():
-                self._test_cli_validation_error(module_name_kebab, model, 'db')
-
-    def test_cli_http_validation_error(self):
-        for module in self.spec['modules'].values():
-            module_name_kebab = module['name']['kebab_case']
-
-            for model in module['models'].values():
-                self._test_cli_validation_error(module_name_kebab, model, 'http')
 
     def test_server_crud_endpoints(self):
         
@@ -646,6 +473,52 @@ class TestMTemplateApp(unittest.TestCase):
                     read_output = json.loads(e.fp.read().decode('utf-8'))
                     self.assertEqual(read_output['code'], 'not_found', f'Read after delete for {model_name} id: {created_model_id} did not return not_found code')
 
+    # pagination tests #
+
+    def _test_cli_pagination_command(self, command_type:str):
+        for module in self.spec['modules'].values():
+            module_name_kebab = module['name']['kebab_case']
+
+            for model_name, model in module['models'].items():
+                model_name_kebab = model['name']['kebab_case']
+
+                model_list_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'list']
+
+                for case in self.pagination_cases:
+                    limit = case['limit']
+                    expected_pages = case['expected_pages']
+
+                    # paginate #
+
+                    offset = 0
+                    page_count = 0
+
+                    while True:
+
+                        result = self._run_cmd(model_list_command + [f'--limit={limit}', f'--offset={offset}'], env=self.pagination_ctx)
+
+                        response = json.loads(result.stdout)
+
+                        self.assertEqual(response['total'], self.pagination_total_models, f'Pagination for {model_name} page {page_count} returned incorrect total')
+ 
+                        items = response['items']
+                        self.assertLessEqual(len(items), limit, f'Pagination for {model_name} returned more items than limit {limit}')
+                        
+                        if len(items) == 0:
+                            break
+
+                        page_count += 1
+
+                        offset += limit
+
+                    self.assertEqual(page_count, expected_pages, f'Pagination for {model_name} returned {page_count} pages, expected {expected_pages}')
+
+    def test_cli_db_pagination(self):
+        self._test_cli_pagination_command('db')
+
+    def test_cli_http_pagination(self):
+        self._test_cli_pagination_command('http')
+
     def test_server_pagination_endpoints(self):
         ctx = {
             'headers': {
@@ -692,60 +565,144 @@ class TestMTemplateApp(unittest.TestCase):
 
                     self.assertEqual(page_count, expected_pages, f'Pagination for {model_name} returned {page_count} pages, expected {expected_pages}')
 
-    def test_server_validation_error(self):
-        ctx = {
-            'headers': {
-                'Content-Type': 'application/json',
-            }
-        }
+    # validation tests #
 
-        ctx.update(self.crud_ctx)
-        
+    def _test_cli_validation_error(self, module_name_kebab:str, model:dict, command_type:str):
+
+        model_name_kebab = model['name']['kebab_case']
+
+        # create model to attempt to update with invalid data #
+
+        example_to_update = example_from_model(model)
+        args = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(example_to_update)]
+        result = self._run_cmd(args, env=self.crud_ctx)
+        update_model_id = str(json.loads(result.stdout)['id'])
+
+        for invalid_example in model_validation_errors(model):
+            model_name_kebab = model['name']['kebab_case']
+
+            # create #
+
+            model_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(invalid_example)]
+            result = self._run_cmd(model_command, expected_code=1, env=self.crud_ctx)
+
+            error_output = json.loads(result.stdout)
+            self.assertEqual(error_output['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output["code"]}')
+            self.assertTrue(error_output['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_output["message"]}')
+
+            # update #
+
+            model_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'update', update_model_id, json.dumps(invalid_example)]
+            result = self._run_cmd(model_command, expected_code=1, env=self.crud_ctx)
+            error_output = json.loads(result.stdout)
+            self.assertEqual(error_output['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output["code"]}')
+            self.assertTrue(error_output['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_output["message"]}')
+
+        # read back original example to ensure it was not modified #
+
+        result = self._run_cmd(self.cmd + [module_name_kebab, model_name_kebab, command_type, 'read', update_model_id], env=self.crud_ctx)
+        read_model = json.loads(result.stdout)
+        del read_model['id']
+        self.assertEqual(read_model, example_to_update, f'Read {model["name"]["pascal_case"]} does not match original example data after validation error tests')
+
+    def test_cli_db_validation_error(self):
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
+
             for model in module['models'].values():
-                model_name_kebab = model['name']['kebab_case']
+                self._test_cli_validation_error(module_name_kebab, model, 'db')
 
-                # create model to attempt to update with invalid data #
+    def test_cli_http_validation_error(self):
+        for module in self.spec['modules'].values():
+            module_name_kebab = module['name']['kebab_case']
 
-                example_to_create = example_from_model(model)
-                args = self.cmd + [module_name_kebab, model_name_kebab, 'db', 'create', json.dumps(example_to_create)]
-                result = self._run_cmd(args, env=self.crud_ctx)
-                update_model_id = str(json.loads(result.stdout)['id'])
+            for model in module['models'].values():
+                self._test_cli_validation_error(module_name_kebab, model, 'http')
 
-                for invalid_example in model_validation_errors(model):
+    def test_server_validation_error(self):
+        raise NotImplementedError('server validation error tests not yet implemented')
 
-                    # create with invalid data #
+    # other tests #
 
-                    try:
-                        request(
-                            ctx,
-                            'POST',
-                            f'/api/{module_name_kebab}/{model_name_kebab}',
-                            json.dumps(invalid_example).encode()
-                        )
-                        self.fail(f'Expected validation error for {model["name"]["pascal_case"]} with invalid data {invalid_example}')
-                    except HTTPError as e:
-                        self.assertEqual(e.code, 400, f'Expected 400 Bad Request for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {e.code}')
-                        error_response = json.loads(e.fp.read().decode('utf-8'))
-                        self.assertEqual(error_response['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_response["code"]}')
-                        self.assertTrue(error_response['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_response["message"]}')
-                        
-                    # update with invalid data #
+    def test_cli_help_menus(self):
 
-                    try:
-                        request(
-                            ctx,
-                            'PUT',
-                            f'/api/{module_name_kebab}/{model_name_kebab}/{update_model_id}',
-                            json.dumps(invalid_example).encode()
-                        )
-                        self.fail(f'Expected validation error for {model["name"]["pascal_case"]} with invalid data {invalid_example}')
-                    except HTTPError as e:
-                        self.assertEqual(e.code, 400, f'Expected 400 Bad Request for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {e.code}')
-                        error_response = json.loads(e.fp.read().decode('utf-8'))
-                        self.assertEqual(error_response['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_response["code"]}')
-                        self.assertTrue(error_response['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_response["message"]}')
+        help_jobs = []
+
+        project_kebab = self.spec['project']['name']['kebab_case']
+        global_help_text = ':: ' + project_kebab
+
+        # global help
+        for global_help_arg in ['help', '--help', '-h']:
+            args = self.cmd + [global_help_arg]
+            env = self.crud_ctx
+            def assertion(stdout, stderr, code, args=args):
+                self.assertEqual(code, 0, f"Global help failed: {' '.join(args)}\n{stdout}\n{stderr}")
+                self.assertIn(global_help_text, stdout)
+            help_jobs.append((args, env, assertion))
+
+        # create tables help
+        create_tables_help_text = global_help_text + ' :: create-tables'
+        for create_tables_help_arg in ['help', '--help', '-h']:
+            args = self.cmd + ['create-tables', create_tables_help_arg]
+            env = self.crud_ctx
+            def assertion(stdout, stderr, code, args=args):
+                self.assertEqual(code, 0, f"Create-tables help failed: {' '.join(args)}\n{stdout}\n{stderr}")
+                self.assertIn(create_tables_help_text, stdout)
+            help_jobs.append((args, env, assertion))
+
+        # module/model/io/op help
+        for module in self.spec['modules'].values():
+            module_help_text = global_help_text + f' :: {module["name"]["kebab_case"]}'
+            for module_help_arg in ['help', '--help', '-h']:
+                args = self.cmd + [module['name']['kebab_case'], module_help_arg]
+                env = self.crud_ctx
+                def assertion(stdout, stderr, code, args=args, expected=module_help_text):
+                    self.assertEqual(code, 0, f"Module help failed: {' '.join(args)}\n{stdout}\n{stderr}")
+                    self.assertIn(expected, stdout)
+                help_jobs.append((args, env, assertion))
+
+            for model in module.get('models', {}).values():
+                model_help_text = module_help_text + f' :: {model["name"]["kebab_case"]}'
+                for model_help_arg in ['help', '--help', '-h']:
+                    args = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], model_help_arg]
+                    env = self.crud_ctx
+                    def assertion(stdout, stderr, code, args=args, expected=model_help_text):
+                        self.assertEqual(code, 0, f"Model help failed: {' '.join(args)}\n{stdout}\n{stderr}")
+                        self.assertIn(expected, stdout)
+                    help_jobs.append((args, env, assertion))
+
+                for io in ['db', 'http']:
+                    io_help_text = model_help_text + f' :: {io}'
+                    for io_help_arg in ['help', '--help', '-h']:
+                        args = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], io, io_help_arg]
+                        env = self.crud_ctx
+                        def assertion(stdout, stderr, code, args=args, expected=io_help_text):
+                            self.assertEqual(code, 0, f"IO help failed: {' '.join(args)}\n{stdout}\n{stderr}")
+                            self.assertIn(expected, stdout)
+                        help_jobs.append((args, env, assertion))
+
+                    crud_ops = ['create', 'read', 'update', 'delete', 'list']
+                    if io == 'db':
+                        ops_to_run = crud_ops + ['create-table']
+                    else:
+                        ops_to_run = crud_ops
+
+                    for op in ops_to_run:
+                        op_help_text = io_help_text + f' :: {op}'
+                        for op_help_arg in ['help', '--help', '-h']:
+                            args = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], io, op, op_help_arg]
+                            env = self.crud_ctx
+                            def assertion(stdout, stderr, code, args=args, expected=op_help_text):
+                                self.assertEqual(code, 0, f"Op help failed: {' '.join(args)}\n{stdout}\n{stderr}")
+                                self.assertIn(expected, stdout.replace('\n', ''))
+                            help_jobs.append((args, env, assertion))
+
+        with multiprocessing.Pool(processes=self.threads) as pool:
+            results = pool.starmap(run_cmd, [(args, env) for args, env, _ in help_jobs])
+
+        for (args, code, stdout, stderr), (_, _, assertion) in zip(results, help_jobs):
+            assertion(stdout, stderr, code, args)
+    
 
 def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:str|None, use_cache:bool=False) -> bool:
     if cli_args is None:
