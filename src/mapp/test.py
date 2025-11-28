@@ -14,7 +14,7 @@ from mspec.core import load_generator_spec
 
 from dotenv import dotenv_values
 
-def run_help_cmd(cmd_args, env):
+def run_cmd(cmd_args, env):
     result = subprocess.run(cmd_args, capture_output=True, text=True, env=env)
     return (cmd_args, result.returncode, result.stdout, result.stderr)
 
@@ -186,6 +186,10 @@ class TestMTemplateApp(unittest.TestCase):
         tables for the CRUD environment, and the second command to create
         tables for the pagination environment. This allows us to test both
         methods of table creation.
+
+        --use-cache can be used to skip recreating the pagination db as it is
+        expensive seed. This is fine for development testing, but full testing
+        should be done without the flag to ensure table creation works from scratch.
         """
 
         # create crud table #
@@ -494,7 +498,7 @@ class TestMTemplateApp(unittest.TestCase):
                             help_jobs.append((args, env, assertion))
 
         with multiprocessing.Pool(processes=self.threads) as pool:
-            results = pool.starmap(run_help_cmd, [(args, env) for args, env, _ in help_jobs])
+            results = pool.starmap(run_cmd, [(args, env) for args, env, _ in help_jobs])
 
         for (args, code, stdout, stderr), (_, _, assertion) in zip(results, help_jobs):
             assertion(stdout, stderr, code, args)
