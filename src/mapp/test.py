@@ -100,10 +100,10 @@ class TestMTemplateApp(unittest.TestCase):
     pagination_total_models = 25
 
     pagination_cases = [
-        {'limit': 1, 'expected_pages': 25},
-        {'limit': 5, 'expected_pages': 5},
-        {'limit': 10, 'expected_pages': 3},
-        {'limit': 25, 'expected_pages': 1},
+        {'size': 1, 'expected_pages': 25},
+        {'size': 5, 'expected_pages': 5},
+        {'size': 10, 'expected_pages': 3},
+        {'size': 25, 'expected_pages': 1},
     ]
 
     @classmethod
@@ -489,7 +489,7 @@ class TestMTemplateApp(unittest.TestCase):
                 model_list_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'list']
 
                 for case in self.pagination_cases:
-                    limit = case['limit']
+                    size = case['size']
                     expected_pages = case['expected_pages']
 
                     # paginate #
@@ -499,21 +499,21 @@ class TestMTemplateApp(unittest.TestCase):
 
                     while True:
 
-                        result = self._run_cmd(model_list_command + [f'--limit={limit}', f'--offset={offset}'], env=self.pagination_ctx)
+                        result = self._run_cmd(model_list_command + [f'--size={size}', f'--offset={offset}'], env=self.pagination_ctx)
 
                         response = json.loads(result.stdout)
 
                         self.assertEqual(response['total'], self.pagination_total_models, f'Pagination for {model_name} page {page_count} returned incorrect total')
  
                         items = response['items']
-                        self.assertLessEqual(len(items), limit, f'Pagination for {model_name} returned more items than limit {limit}')
+                        self.assertLessEqual(len(items), size, f'Pagination for {model_name} returned more items than size {size}')
                         
                         if len(items) == 0:
                             break
 
                         page_count += 1
 
-                        offset += limit
+                        offset += size
 
                     self.assertEqual(page_count, expected_pages, f'Pagination for {model_name} returned {page_count} pages, expected {expected_pages}')
 
@@ -538,7 +538,7 @@ class TestMTemplateApp(unittest.TestCase):
                 model_name_kebab = model['name']['kebab_case']
 
                 for case in self.pagination_cases:
-                    limit = case['limit']
+                    size = case['size']
                     expected_pages = case['expected_pages']
 
                     # paginate #
@@ -551,21 +551,21 @@ class TestMTemplateApp(unittest.TestCase):
                         response = request(
                             ctx,
                             'GET',
-                            f'/api/{module_name_kebab}/{model_name_kebab}?limit={limit}&offset={offset}',
+                            f'/api/{module_name_kebab}/{model_name_kebab}?size={size}&offset={offset}',
                             None
                         )
 
                         self.assertEqual(response['total'], self.pagination_total_models, f'Pagination for {model_name} page {page_count} returned incorrect total')
  
                         items = response['items']
-                        self.assertLessEqual(len(items), limit, f'Pagination for {model_name} returned more items than limit {limit}')
+                        self.assertLessEqual(len(items), size, f'Pagination for {model_name} returned more items than size {size}')
                         
                         if len(items) == 0:
                             break
 
                         page_count += 1
 
-                        offset += limit
+                        offset += size
 
                     self.assertEqual(page_count, expected_pages, f'Pagination for {model_name} returned {page_count} pages, expected {expected_pages}')
 

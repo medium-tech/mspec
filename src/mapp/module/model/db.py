@@ -294,7 +294,7 @@ def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int
 
         # query for and convert list fields #
 
-        for field in model_spec['list_fields']:
+        for index, field in enumerate(model_spec['list_fields'], start=1):
 
             field_name = field['name']['snake_case']
             list_table_name = f'{model_snake_case}_{field_name}'
@@ -303,12 +303,12 @@ def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int
                 f'SELECT value FROM {list_table_name} WHERE {model_snake_case}_id = ? ORDER BY position ASC',
                 (data['id'],)
             )
-
+            
             match field['element_type']:
                 case 'bool':
                     convert_element = bool
-                case 'datetime' if row[index] is not None:
-                    convert_element = lambda x: datetime.strptime(x, DATETIME_FORMAT_STR).replace(microsecond=0)
+                case 'datetime':
+                    convert_element = lambda x: datetime.strptime(x, DATETIME_DB_FORMAT_STR).replace(microsecond=0)
                 case _:
                     convert_element = lambda x: x
 
