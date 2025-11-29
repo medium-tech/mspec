@@ -153,6 +153,7 @@ class TestMTemplateApp(unittest.TestCase):
             f.write(env_to_string(crud_env))
 
         cls.crud_ctx = {'MAPP_ENV_FILE': str(cls.crud_envfile.resolve())}
+        cls.crud_ctx.update(crud_env)
 
         # pagination env file #
 
@@ -166,6 +167,7 @@ class TestMTemplateApp(unittest.TestCase):
             f.write(env_to_string(pagination_env))
 
         cls.pagination_ctx = {'MAPP_ENV_FILE': str(cls.pagination_envfile.resolve())}
+        cls.pagination_ctx.update(pagination_env)
 
         # open process pool #
 
