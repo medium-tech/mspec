@@ -1,3 +1,4 @@
+import os
 import unittest
 import fnmatch
 import json
@@ -5,6 +6,7 @@ import subprocess
 import glob
 import re
 import multiprocessing
+import shutil
 
 from pathlib import Path
 from typing import Optional, Generator
@@ -113,24 +115,14 @@ class TestMTemplateApp(unittest.TestCase):
 
         print(':: Setting up TestMTemplateApp')
 
-        cls.crud_db_file.parent.mkdir(parents=True, exist_ok=True)
-
-        # delete test db files #
+        # delete old files #
     
-        try:
-            cls.crud_db_file.unlink()
-        except FileNotFoundError:
-            pass
-        
-        if cls.use_cache:
-            pagination_db_exists = cls.pagination_db_file.exists()
-        else:
-            pagination_db_exists = False
-            try:
-                cls.pagination_db_file.unlink()
-                print(':: Deleted existing pagination db file ::')
-            except FileNotFoundError:
-                pass
+        if not cls.use_cache:
+            shutil.rmtree(cls.test_dir, ignore_errors=True)
+
+        os.makedirs(cls.test_dir, exist_ok=True)
+
+        pagination_db_exists = cls.pagination_db_file.exists()
         
         #
         # create test env files
