@@ -90,7 +90,9 @@ class TestMTemplateApp(unittest.TestCase):
     host: str | None
     env_file: str | None
     use_cache: bool
+    app_type: str = ''
     threads: int = 8
+
     pool: Optional[multiprocessing.Pool] = None
 
     crud_db_file = Path(f'{test_dir}/test_crud_db.sqlite3')
@@ -263,27 +265,28 @@ class TestMTemplateApp(unittest.TestCase):
 
         # create server configs #
 
-        with open('uwsgi.yaml', 'r') as f:
-            uwsgi_config = f.read()
+        if cls.app_type == 'python':
+            with open('uwsgi.yaml', 'r') as f:
+                uwsgi_config = f.read()
 
-        port_pattern = r'http:\s*:\d+'
-        pid_file_pattern = r'safe-pidfile:\s*.+'
+            port_pattern = r'http:\s*:\d+'
+            pid_file_pattern = r'safe-pidfile:\s*.+'
 
-        cls.crud_pidfile = f'{cls.test_dir}/uwsgi_crud.pid'
-        cls.pagination_pidfile = f'{cls.test_dir}/uwsgi_pagination.pid'
+            cls.crud_pidfile = f'{cls.test_dir}/uwsgi_crud.pid'
+            cls.pagination_pidfile = f'{cls.test_dir}/uwsgi_pagination.pid'
 
-        cls.crud_uwsgi_config = f'{cls.test_dir}/uwsgi_crud.yaml'
-        cls.pagination_uwsgi_config = f'{cls.test_dir}/uwsgi_pagination.yaml'
+            cls.crud_uwsgi_config = f'{cls.test_dir}/uwsgi_crud.yaml'
+            cls.pagination_uwsgi_config = f'{cls.test_dir}/uwsgi_pagination.yaml'
 
-        with open(cls.crud_uwsgi_config, 'w') as f:
-            crud_uwsgi_config = re.sub(port_pattern, f'http: :{crud_port}', uwsgi_config)
-            crud_uwsgi_config = re.sub(pid_file_pattern, f'safe-pidfile: {cls.crud_pidfile}', crud_uwsgi_config)
-            f.write(crud_uwsgi_config)
-        
-        with open(cls.pagination_uwsgi_config, 'w') as f:
-            pagination_uwsgi_config = re.sub(port_pattern, f'http: :{pagination_port}', uwsgi_config)
-            pagination_uwsgi_config = re.sub(pid_file_pattern, f'safe-pidfile: {cls.pagination_pidfile}', pagination_uwsgi_config)
-            f.write(pagination_uwsgi_config)
+            with open(cls.crud_uwsgi_config, 'w') as f:
+                crud_uwsgi_config = re.sub(port_pattern, f'http: :{crud_port}', uwsgi_config)
+                crud_uwsgi_config = re.sub(pid_file_pattern, f'safe-pidfile: {cls.crud_pidfile}', crud_uwsgi_config)
+                f.write(crud_uwsgi_config)
+            
+            with open(cls.pagination_uwsgi_config, 'w') as f:
+                pagination_uwsgi_config = re.sub(port_pattern, f'http: :{pagination_port}', uwsgi_config)
+                pagination_uwsgi_config = re.sub(pid_file_pattern, f'safe-pidfile: {cls.pagination_pidfile}', pagination_uwsgi_config)
+                f.write(pagination_uwsgi_config)
         
         # start servers #
 
@@ -300,8 +303,6 @@ class TestMTemplateApp(unittest.TestCase):
         cls.server_processes.append(process)
 
         print('  :: Setup complete ::')
-
-        breakpoint()  # --- IGNORE ---
     
     @classmethod
     def tearDownClass(cls):
@@ -749,7 +750,7 @@ class TestMTemplateApp(unittest.TestCase):
             assertion(stdout, stderr, code, args)
     
 
-def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:str|None, use_cache:bool=False) -> bool:
+def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:str|None, use_cache:bool=False, app_type:str='') -> bool:
     if cli_args is None:
         raise ValueError('args must be provided as a list of strings')
 
@@ -759,6 +760,7 @@ def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:st
     TestMTemplateApp.host = host
     TestMTemplateApp.env_file = env_file
     TestMTemplateApp.use_cache = use_cache
+    TestMTemplateApp.app_type = app_type
 
     # Support test filtering by name
     test_filters = getattr(test_spec, '_test_filters', None)
@@ -790,6 +792,7 @@ if __name__ == '__main__':
     parser.add_argument('--host', type=str, default=None, help='host for http client in tests (if host diff than in spec file)')
     parser.add_argument('--test-filter', type=str, nargs='*', default=None, help='Glob pattern(s) to filter test names (e.g. test_cli_db*)')
     parser.add_argument('--use-cache', action='store_true', help='Use cached test resources if available')
+    parser.add_argument('--app-type', type=str, default='', help='Supply "python" to run setup for python apps')
 
     args = parser.parse_args()
 
@@ -799,4 +802,4 @@ if __name__ == '__main__':
     else:
         test_spec._test_filters = None
 
-    test_spec(args.spec, args.cmd, args.host, args.env_file, args.use_cache)
+    test_spec(args.spec, args.cmd, args.host, args.env_file, args.use_cache, args.app_type)
