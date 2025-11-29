@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 # ===================================== #
@@ -65,6 +64,6 @@ if [[ "$1" == "stop" ]]; then
   uwsgi --stop "$PID_FILE"
   exit $?
 else
-  uwsgi --yaml "$CONFIG_FILE" --pidfile "$PID_FILE"
+  uwsgi --yaml "$CONFIG_FILE"
   exit $?
 fi

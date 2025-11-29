@@ -3,6 +3,7 @@ import fnmatch
 import json
 import subprocess
 import glob
+import re
 import multiprocessing
 
 from pathlib import Path
@@ -265,6 +266,30 @@ class TestMTemplateApp(unittest.TestCase):
                 Path(log_file).unlink()
             except FileNotFoundError:
                 pass
+
+        # create server configs #
+
+        with open('uwsgi.yaml', 'r') as f:
+            uwsgi_config = f.read()
+
+        port_pattern = r'http:\s*:\d+'
+        pid_file_pattern = r'safe-pidfile:\s*.+'
+
+        cls.crud_pidfile = f'{cls.test_dir}/uwsgi_crud.pid'
+        cls.pagination_pidfile = f'{cls.test_dir}/uwsgi_pagination.pid'
+
+        cls.crud_uwsgi_config = f'{cls.test_dir}/uwsgi_crud.yaml'
+        cls.pagination_uwsgi_config = f'{cls.test_dir}/uwsgi_pagination.yaml'
+
+        with open(cls.crud_uwsgi_config, 'w') as f:
+            crud_uwsgi_config = re.sub(port_pattern, f'http: :{crud_port}', uwsgi_config)
+            crud_uwsgi_config = re.sub(pid_file_pattern, f'safe-pidfile: {cls.crud_pidfile}', crud_uwsgi_config)
+            f.write(crud_uwsgi_config)
+        
+        with open(cls.pagination_uwsgi_config, 'w') as f:
+            pagination_uwsgi_config = re.sub(port_pattern, f'http: :{pagination_port}', uwsgi_config)
+            pagination_uwsgi_config = re.sub(pid_file_pattern, f'safe-pidfile: {cls.pagination_pidfile}', pagination_uwsgi_config)
+            f.write(pagination_uwsgi_config)
         
         # start servers #
 
@@ -272,12 +297,17 @@ class TestMTemplateApp(unittest.TestCase):
 
         cls.server_processes:list[subprocess.Popen] = []
 
-        for ctx in [cls.crud_ctx, cls.pagination_ctx]:
-            server_cmd = cls.cmd + ['server']
-            process = subprocess.Popen(server_cmd, env=ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            cls.server_processes.append(process)
+        crud_server_cmd = ['./server.sh', '--pid-file', cls.crud_pidfile, '--config', cls.crud_uwsgi_config]
+        process = subprocess.Popen(crud_server_cmd, env=cls.crud_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        cls.server_processes.append(process)
+
+        pagination_server_cmd = ['./server.sh', '--pid-file', cls.pagination_pidfile, '--config', cls.pagination_uwsgi_config]
+        process = subprocess.Popen(pagination_server_cmd, env=cls.pagination_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        cls.server_processes.append(process)
 
         print('  :: Setup complete ::')
+
+        breakpoint()  # --- IGNORE ---
     
     @classmethod
     def tearDownClass(cls):
