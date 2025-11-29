@@ -645,17 +645,18 @@ class TestMTemplateApp(unittest.TestCase):
 
                     while True:
 
-                        response = request(
+                        status, response = request(
                             ctx,
                             'GET',
                             f'/api/{module_name_kebab}/{model_name_kebab}?size={size}&offset={offset}',
                             None
                         )
 
-                        self.assertEqual(response['total'], self.pagination_total_models, f'Pagination for {model_name} page {page_count} returned incorrect total')
+                        self.assertEqual(status, 200, f'Pagination for {model_name_kebab} page {page_count} did not return status 200 OK, response: {response}')
+                        self.assertEqual(response['total'], self.pagination_total_models, f'Pagination for {model_name_kebab} page {page_count} returned incorrect total')
  
                         items = response['items']
-                        self.assertLessEqual(len(items), size, f'Pagination for {model_name} returned more items than size {size}')
+                        self.assertLessEqual(len(items), size, f'Pagination for {model_name_kebab} returned more items than size {size}')
                         
                         if len(items) == 0:
                             break
