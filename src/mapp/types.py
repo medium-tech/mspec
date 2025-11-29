@@ -29,7 +29,6 @@ __all__ = [
 ]
 
 DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
-DATETIME_DB_FORMAT_STR = '%Y-%m-%d %H:%M:%S'
 
 class Acknowledgment:
     def __init__(self, message: str = 'No additional information') -> None:

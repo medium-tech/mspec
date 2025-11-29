@@ -2,7 +2,7 @@ from datetime import datetime
 
 from mapp.context import MappContext
 from mapp.errors import NotFoundError, MappError
-from mapp.types import DATETIME_FORMAT_STR, DATETIME_DB_FORMAT_STR, ModelListResult, validate_model, Acknowledgment
+from mapp.types import DATETIME_FORMAT_STR, ModelListResult, validate_model, Acknowledgment
 
 
 __all__ = [
@@ -120,6 +120,8 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
         list_table_name = f'{model_snake_case}_{field_name}'
         values_list = getattr(obj, field_name, [])
         for pos, value in enumerate(values_list):
+            if field['element_type'] == 'datetime':
+                value = value.isoformat()
             ctx.db.cursor.execute(
                 f"INSERT INTO {list_table_name} (value, position, {model_snake_case}_id) VALUES (?, ?, ?)",
                 (value, pos, obj.id)
@@ -171,7 +173,7 @@ def db_model_read(ctx:MappContext, model_class: type, model_id: str):
             case 'bool':
                 convert_element = bool
             case 'datetime':
-                convert_element = lambda x: datetime.strptime(x, DATETIME_DB_FORMAT_STR).replace(microsecond=0)
+                convert_element = lambda x: datetime.strptime(x, DATETIME_FORMAT_STR).replace(microsecond=0)
             case _:
                 convert_element = lambda x: x
 
@@ -234,6 +236,8 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
         # insert new values #
         
         for pos, value in enumerate(getattr(obj, field_name)):
+            if field['element_type'] == 'datetime':
+                value = value.isoformat()
             ctx.db.cursor.execute(
                 f'INSERT INTO {list_table_name} (value, position, {model_snake_case}_id) VALUES (?, ?, ?)',
                 (value, pos, obj.id)
@@ -308,7 +312,7 @@ def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int
                 case 'bool':
                     convert_element = bool
                 case 'datetime':
-                    convert_element = lambda x: datetime.strptime(x, DATETIME_DB_FORMAT_STR).replace(microsecond=0)
+                    convert_element = lambda x: datetime.strptime(x, DATETIME_FORMAT_STR).replace(microsecond=0)
                 case _:
                     convert_element = lambda x: x
 
