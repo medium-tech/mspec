@@ -302,9 +302,11 @@ class TestMTemplateApp(unittest.TestCase):
 
         process = subprocess.Popen(crud_server_cmd, env=cls.crud_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         cls.server_processes.append(process)
+        print('    :: ', ' '.join(crud_server_cmd))
 
         process = subprocess.Popen(pagination_server_cmd, env=cls.pagination_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         cls.server_processes.append(process)
+        print('    :: ', ' '.join(pagination_server_cmd))
 
         print('  :: Setup complete ::')
     
@@ -320,10 +322,15 @@ class TestMTemplateApp(unittest.TestCase):
         if cls.pool:
             cls.pool.close()
             cls.pool.join()
-
+        
         if cls.app_type == 'python':
-            subprocess.run(['./server.sh', 'stop', '--pid-file', cls.crud_pidfile], env=cls.crud_ctx, check=True, capture_output=True)
-            subprocess.run(['./server.sh', 'stop', '--pid-file', cls.pagination_pidfile], env=cls.pagination_ctx, check=True, capture_output=True)
+            try:
+                subprocess.run(['./server.sh', 'stop', '--pid-file', cls.crud_pidfile], env=cls.crud_ctx, check=True, capture_output=True, timeout=15)
+                subprocess.run(['./server.sh', 'stop', '--pid-file', cls.pagination_pidfile], env=cls.pagination_ctx, check=True, capture_output=True, timeout=15)
+            except subprocess.TimeoutExpired:
+                print('    :: Timeout expired while stopping servers ::')
+            except subprocess.CalledProcessError as e:
+                print(f'    :: Error stopping servers: {e} :: {e.output} :: {e.stderr} ::')
 
         # stop servers and capture logs #
 
@@ -354,6 +361,20 @@ class TestMTemplateApp(unittest.TestCase):
         msg = f'expected {expected_code} got {result.returncode} for command "{' '.join(cmd)}" output: {result.stdout + result.stderr}'
         self.assertEqual(result.returncode, expected_code, msg)
         return result
+    
+    def _check_servers_running(self):
+        error = False
+        print(f'_check_servers_running :: Checking server processes ::')
+        for process in self.server_processes:
+            if not process.poll() is None:
+                error = True
+                print(f' :: Checking server process {process.pid} ::')
+                stdout, stderr = process.communicate()
+                print(f':: ERROR: Server process {process.pid} has exited unexpectedly ::')
+                print(f':: STDOUT ::\n{stdout}')
+                print(f':: STDERR ::\n{stderr}')
+
+        self.assertFalse(error, 'One or more server processes have exited unexpectedly')
 
     # crud tests #
 
@@ -428,6 +449,8 @@ class TestMTemplateApp(unittest.TestCase):
         self._test_cli_crud_commands('http')
 
     def test_server_crud_endpoints(self):
+
+        self._check_servers_running()
         
         ctx = {
             'headers': {
@@ -575,6 +598,9 @@ class TestMTemplateApp(unittest.TestCase):
         self._test_cli_pagination_command('http')
 
     def test_server_pagination_endpoints(self):
+
+        self._check_servers_running()
+        
         ctx = {
             'headers': {
                 'Content-Type': 'application/json',
@@ -675,6 +701,7 @@ class TestMTemplateApp(unittest.TestCase):
                 self._test_cli_validation_error(module_name_kebab, model, 'http')
 
     def test_server_validation_error(self):
+        self._check_servers_running()
         raise NotImplementedError('server validation error tests not yet implemented')
 
     # other tests #
