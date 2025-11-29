@@ -121,8 +121,14 @@ def application(env, start_response):
             content_type = JSONResponse.content_type
             break
 
+        except MappValidationError as e:
+            body = e.to_dict()
+            status_code = '400 Bad Request'
+            content_type = JSONResponse.content_type
+            break
+
         except RequestError as e:
-            body = {'code': 'REQUEST_ERROR', 'message': e.msg}
+            body = e.to_dict()
             status_code = e.status
             content_type = JSONResponse.content_type 
             break

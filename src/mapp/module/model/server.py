@@ -5,7 +5,7 @@ from urllib.parse import parse_qs
 
 from mapp.errors import NotFoundError, RequestError
 from mapp.context import MappContext, RequestContext, RouteContext
-from mapp.types import JSONResponse, model_from_json, model_to_json, new_model_class
+from mapp.types import JSONResponse, model_from_json, model_to_json, new_model_class, convert_json_to_model
 from mapp.module.model.db import *
 
 
@@ -53,33 +53,41 @@ def model_routes(route: RouteContext, server: MappContext, request: RequestConte
             try:
                 item = db_model_read(server, route.model_class, instance_id)
                 server.log(f'GET {route.module_kebab_case}.{route.model_kebab_case}/{instance_id}')
-                raise JSONResponse('200 OK', model_to_json(item))
+                raise JSONResponse('200 OK', item)
             
             except NotFoundError:
                 server.log(f'GET {route.module_kebab_case}.{route.model_kebab_case}/{instance_id} - Not Found')
-                raise RequestError('404 Not Found', f'not found {route.module_kebab_case}.{route.model_kebab_case}.{instance_id}')
+                raise
 
         # update #
 
         elif request.env['REQUEST_METHOD'] == 'PUT':
             req_body = request.raw_req_body.decode('utf-8')
-            incoming_item = model_from_json(req_body, route.model_class, instance_id)
+            incoming_item = convert_json_to_model(route.model_class, req_body)
+            if incoming_item.id is None:
+                incoming_item = incoming_item._replace(id=instance_id)
+            elif incoming_item.id != instance_id:
+                server.log(f'PUT {route.module_kebab_case}.{route.model_kebab_case}/{instance_id} - ID Mismatch')
+                raise RequestError(
+                    '400 Bad Request', 
+                    f'ID mismatch for {route.module_kebab_case}.{route.model_kebab_case} update: URL id {instance_id} != body id {incoming_item.id}'
+                )
 
             try:
-                updated_item = db_model_update(server, route.model_class, instance_id, incoming_item)
+                updated_item = db_model_update(server, route.model_class, incoming_item)
             except NotFoundError:
                 server.log(f'PUT {route.module_kebab_case}.{route.model_kebab_case}/{instance_id} - Not Found')
-                raise RequestError('404 Not Found', f'not found {route.module_kebab_case}.{route.model_kebab_case}.{instance_id}')
+                raise
             
             server.log(f'PUT {route.module_kebab_case}.{route.model_kebab_case}/{instance_id}')
-            raise JSONResponse('200 OK', model_to_json(updated_item))
+            raise JSONResponse('200 OK', updated_item)
 
         # delete #
 
         elif request.env['REQUEST_METHOD'] == 'DELETE':
             ack = db_model_delete(server, route.model_class, instance_id)
             server.log(f'DELETE {route.module_kebab_case}.{route.model_kebab_case}/{instance_id}')
-            raise JSONResponse('204 No Content', ack)
+            raise JSONResponse('200 OK', ack)
         
         # invalid method #
 
@@ -96,11 +104,11 @@ def model_routes(route: RouteContext, server: MappContext, request: RequestConte
         # create #
 
         if request.env['REQUEST_METHOD'] == 'POST':
-            incoming_item = model_from_json(request.raw_req_body.decode('utf-8'), route.model_class)
+            incoming_item = convert_json_to_model(route.model_class, request.raw_req_body.decode('utf-8'))
             item = db_model_create(server, route.model_class, incoming_item)
 
             server.log(f'POST {route.module_kebab_case}.{route.model_kebab_case} - id: {item.id}')
-            raise JSONResponse('200 OK', model_to_json(item))
+            raise JSONResponse('200 OK', item)
         
         # list #
         

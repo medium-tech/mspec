@@ -44,19 +44,31 @@ def model_validation_errors(model:dict) -> Generator[dict, None, None]:
 
             yield example | {field_name: invalid_value}
 
-def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None) -> dict:
+def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None) -> tuple[int, dict]:
+    """send request and returnn status code and response body as dict"""
 
-    request = Request(
+    req = Request(
         ctx['MAPP_CLIENT_HOST'] + endpoint,
         method=method, 
         headers=ctx['headers'], 
         data=request_body,
     )
 
-    with urlopen(request, timeout=10) as response:
-        response_body = response.read().decode('utf-8')
-        return json.loads(response_body)
-
+    try:
+        with urlopen(req, timeout=10) as response:
+            body = response.read().decode('utf-8')
+            status = response.status
+        
+    except HTTPError as e:
+        body = e.read().decode('utf-8')
+        status = e.code
+    
+    try:
+        response_data = json.loads(body)
+        return status, response_data
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f'Invalid JSON from {method} {endpoint}, resp length: {len(body)}: {body}')
+    
 def env_to_string(env:dict) -> str:
     out = ''
     for key, value in env.items():
@@ -467,24 +479,25 @@ class TestMTemplateApp(unittest.TestCase):
                 # create #
 
                 example_to_create = example_from_model(model)
-                created_model = request(
+                created_status, created_model = request(
                     ctx,
                     'POST',
                     f'/api/{module_name_kebab}/{model_name_kebab}',
                     json.dumps(example_to_create).encode()
                 )
-
+                self.assertEqual(created_status, 200, f'Create {model_name} did not return status 200 OK, response: {created_model}')
                 created_model_id = created_model.pop('id')  # remove id for comparison
                 self.assertEqual(created_model, example_to_create, f'Created {model_name} (id: {created_model_id}) does not match example data')
 
                 # read #
 
-                read_model = request(
+                read_status, read_model = request(
                     ctx,
                     'GET',
                     f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
                     None
                 )
+                self.assertEqual(read_status, 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}')
                 read_model_id = read_model.pop('id')
                 self.assertEqual(read_model, example_to_create, f'Read {model_name} id: {read_model_id} does not match example data')
                 self.assertEqual(read_model_id, created_model_id, f'Read {model_name} id: {read_model_id} does not match created id: {created_model_id}')
@@ -495,50 +508,58 @@ class TestMTemplateApp(unittest.TestCase):
                     updated_example = example_from_model(model, index=1)
                 except ValueError as e:
                     raise ValueError(f'Need at least 2 examples for update testing: {e}')
-                updated_model = request(
+                updated_status, updated_model = request(
                     ctx,
                     'PUT',
                     f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
                     json.dumps(updated_example).encode()
                 )
+                self.assertEqual(updated_status, 200, f'Update {model_name} id: {created_model_id} did not return status 200 OK, response: {updated_model}')
                 updated_model_id = updated_model.pop('id')
                 self.assertEqual(updated_model, updated_example, f'Updated {model_name} id: {updated_model_id} does not match updated example data')
                 self.assertEqual(updated_model_id, created_model_id, f'Updated {model_name} id: {updated_model_id} does not match created id: {created_model_id}')
 
                 # delete #
 
-                delete_output = request(
+                delete_status, delete_output = request(
                     ctx,
                     'DELETE',
                     f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
                     None
                 )
-                self.assertEqual(delete_output, {'acknowledged': True}, f'Delete {model_name} id: {created_model_id} did not return acknowledgement')
+                self.assertEqual(delete_status, 200, f'Delete {model_name} id: {created_model_id} did not return status 200 OK, response: {delete_output}')
+                self.assertIn('acknowledged', delete_output, f'Delete {model_name} id: {created_model_id} did not return acknowledgement field')
+                self.assertTrue(delete_output['acknowledged'], f'Delete {model_name} id: {created_model_id} did not return acknowledged=True')
+                self.assertIn('message', delete_output, f'Delete {model_name} id: {created_model_id} did not return message field')
+                expected_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
+                self.assertTrue(delete_output['message'].startswith(expected_msg), f'Delete {model_name} id: {created_model_id} did not return correct message')
 
                 # confirm delete is idempotent #
 
-                delete_output = request(
+                delete_status, delete_output = request(
                     ctx,
                     'DELETE',
                     f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
                     None
                 )
-                self.assertEqual(delete_output, {'acknowledged': True}, f'Delete {model_name} id: {created_model_id} did not return acknowledgement')
+                self.assertEqual(delete_status, 200, f'Delete (2nd) {model_name} id: {created_model_id} did not return status 200 OK, response: {delete_output}')
+                self.assertIn('acknowledged', delete_output, f'Delete {model_name} id: {created_model_id} did not return acknowledgement field')
+                self.assertTrue(delete_output['acknowledged'], f'Delete {model_name} id: {created_model_id} did not return acknowledged=True')
+                self.assertIn('message', delete_output, f'Delete {model_name} id: {created_model_id} did not return message field')
+                expected_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
+                self.assertTrue(delete_output['message'].startswith(expected_msg), f'Delete {model_name} id: {created_model_id} did not return correct message')
 
                 # read after delete #
 
-                try:
-                    request(
-                        ctx,
-                        'GET',
-                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
-                        None
-                    )
-                    self.fail(f'Read after delete for {model_name} id: {created_model_id} did not raise NotFoundError')
-                except HTTPError as e:
-                    self.assertEqual(e.code, 404, f'Read after delete for {model_name} id: {created_model_id} did not return 404 Not Found')
-                    read_output = json.loads(e.fp.read().decode('utf-8'))
-                    self.assertEqual(read_output['code'], 'not_found', f'Read after delete for {model_name} id: {created_model_id} did not return not_found code')
+                re_read_status, re_read_model = request(
+                    ctx,
+                    'GET',
+                    f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
+                    None
+                )
+            
+                self.assertEqual(re_read_status, 404, f'Read after delete for {model_name} id: {created_model_id} did not return 404 Not Found, resp: {re_read_model}')
+                self.assertEqual(re_read_model['code'], 'NOT_FOUND', f'Read after delete for {model_name} id: {created_model_id} did not return not_found code')
 
     # pagination tests #
 
