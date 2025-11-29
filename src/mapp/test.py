@@ -265,6 +265,9 @@ class TestMTemplateApp(unittest.TestCase):
 
         # create server configs #
 
+        crud_server_cmd = cls.cmd + ['server']
+        pagination_server_cmd = cls.cmd + ['server']
+
         if cls.app_type == 'python':
             with open('uwsgi.yaml', 'r') as f:
                 uwsgi_config = f.read()
@@ -277,6 +280,9 @@ class TestMTemplateApp(unittest.TestCase):
 
             cls.crud_uwsgi_config = f'{cls.test_dir}/uwsgi_crud.yaml'
             cls.pagination_uwsgi_config = f'{cls.test_dir}/uwsgi_pagination.yaml'
+
+            crud_server_cmd = ['./server.sh', '--pid-file', cls.crud_pidfile, '--config', cls.crud_uwsgi_config]
+            pagination_server_cmd = ['./server.sh', '--pid-file', cls.pagination_pidfile, '--config', cls.pagination_uwsgi_config]
 
             with open(cls.crud_uwsgi_config, 'w') as f:
                 crud_uwsgi_config = re.sub(port_pattern, f'http: :{crud_port}', uwsgi_config)
@@ -294,11 +300,9 @@ class TestMTemplateApp(unittest.TestCase):
 
         cls.server_processes:list[subprocess.Popen] = []
 
-        crud_server_cmd = ['./server.sh', '--pid-file', cls.crud_pidfile, '--config', cls.crud_uwsgi_config]
         process = subprocess.Popen(crud_server_cmd, env=cls.crud_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         cls.server_processes.append(process)
 
-        pagination_server_cmd = ['./server.sh', '--pid-file', cls.pagination_pidfile, '--config', cls.pagination_uwsgi_config]
         process = subprocess.Popen(pagination_server_cmd, env=cls.pagination_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         cls.server_processes.append(process)
 
@@ -317,6 +321,10 @@ class TestMTemplateApp(unittest.TestCase):
             cls.pool.close()
             cls.pool.join()
 
+        if cls.app_type == 'python':
+            subprocess.run(['uwsgi', 'stop', '--pid-file', cls.crud_pidfile], check=True)
+            subprocess.run(['uwsgi', 'stop', '--pid-file', cls.pagination_pidfile], check=True)
+
         # stop servers and capture logs #
 
         for process in cls.server_processes:
@@ -329,6 +337,7 @@ class TestMTemplateApp(unittest.TestCase):
                 with open(f'{cls.test_dir}/test_server_{process.pid}_stderr.log', 'w') as f:
                     f.write(stderr)
             except subprocess.TimeoutExpired:
+                print('    :: Server process did not terminate in time, killing process ::')
                 process.kill()
                 stdout, stderr = process.communicate()
                 with open(f'{cls.test_dir}/test_server_{process.pid}_stdout.log', 'w') as f:

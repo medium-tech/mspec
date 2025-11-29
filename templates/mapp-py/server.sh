@@ -17,7 +17,7 @@ if [ -n "$MAPP_ENV_FILE" ]; then
 fi
 
 usage() {
-  echo "\nUsage: $0 [options]\n"
+  echo -e "\nUsage: $0 [options]\n"
   echo "Options:"
   echo "  --env-file <path>     Path to .env file (default: .env) "
   echo "                          or supply via MAPP_ENV_FILE env var"

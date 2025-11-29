@@ -47,4 +47,4 @@ if [[ ${#TEST_FILTERS[@]} -gt 0 ]]; then
 	TF_ARGS="--test-filter ${TEST_FILTERS[@]}"
 fi
 
-python -m mapp.test test-gen.yaml --cmd ./run.sh --env-file .env $TF_ARGS $USE_CACHE
+python -m mapp.test test-gen.yaml --cmd ./run.sh --env-file .env $TF_ARGS $USE_CACHE --app-type python
