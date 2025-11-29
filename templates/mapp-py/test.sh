@@ -18,14 +18,17 @@ if [[ "$1" == "--help" || "$1" == "-h" ]]; then
 	exit 0
 fi
 
-TEST_FILTER=""
+TEST_FILTERS=()
 USE_CACHE=""
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
 		--test-filter|-f)
-			TEST_FILTER="--test-filter $2"
-			shift 2
+			shift
+			while [[ $# -gt 0 && ! $1 =~ ^- ]]; do
+				TEST_FILTERS+=("$1")
+				shift
+			done
 			;;
 		--use-cache)
 			USE_CACHE="--use-cache"
@@ -39,4 +42,9 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
-python -m mapp.test test-gen.yaml --cmd ./run.sh --env-file .env $TEST_FILTER $USE_CACHE
+TF_ARGS=""
+if [[ ${#TEST_FILTERS[@]} -gt 0 ]]; then
+	TF_ARGS="--test-filter ${TEST_FILTERS[@]}"
+fi
+
+python -m mapp.test test-gen.yaml --cmd ./run.sh --env-file .env $TF_ARGS $USE_CACHE
