@@ -145,7 +145,8 @@ class TestMTemplateApp(unittest.TestCase):
         with open(cls.crud_envfile, 'w') as f:
             f.write(env_to_string(crud_env))
 
-        cls.crud_ctx = {'MAPP_ENV_FILE': str(cls.crud_envfile.resolve())}
+        cls.crud_ctx = os.environ.copy()
+        cls.crud_ctx['MAPP_ENV_FILE'] = str(cls.crud_envfile.resolve())
         cls.crud_ctx.update(crud_env)
 
         # pagination env file #
@@ -159,7 +160,8 @@ class TestMTemplateApp(unittest.TestCase):
         with open(cls.pagination_envfile, 'w') as f:
             f.write(env_to_string(pagination_env))
 
-        cls.pagination_ctx = {'MAPP_ENV_FILE': str(cls.pagination_envfile.resolve())}
+        cls.pagination_ctx = os.environ.copy()
+        cls.pagination_ctx['MAPP_ENV_FILE'] = str(cls.pagination_envfile.resolve())
         cls.pagination_ctx.update(pagination_env)
 
         # open process pool #
@@ -308,6 +310,8 @@ class TestMTemplateApp(unittest.TestCase):
 
         # stop pool #
 
+        print('  :: Closing process pool ::')
+
         if cls.pool:
             cls.pool.close()
             cls.pool.join()
@@ -315,6 +319,7 @@ class TestMTemplateApp(unittest.TestCase):
         # stop servers and capture logs #
 
         for process in cls.server_processes:
+            print(f'  :: Stopping server process {process.pid} ::')
             process.terminate()
             try:
                 stdout, stderr = process.communicate(timeout=10)
