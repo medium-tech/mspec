@@ -12,15 +12,15 @@ PID_FILE="app/server.pid"
 CONFIG_FILE="./uwsgi.yaml"
 
 # If ENVFILE env var is set, use it for env file path
-if [ -n "$ENVFILE" ]; then
-  ENVFILE="$ENVFILE"
+if [ -n "$MAPP_ENV_FILE" ]; then
+  ENVFILE="$MAPP_ENV_FILE"
 fi
 
 usage() {
   echo "\nUsage: $0 [options]\n"
   echo "Options:"
   echo "  --env-file <path>     Path to .env file (default: .env) "
-  echo "                          or supply via ENVFILE env var"
+  echo "                          or supply via MAPP_ENV_FILE env var"
   echo "  --pid-file <path>     Path to PID file (default: app/server.pid)"
   echo "  --config <path>       Path to uwsgi config file (default: ./uwsgi.yaml)"
   echo "  -h, --help            Show this help message and exit\n"
@@ -58,6 +58,14 @@ if [ -f "$ENVFILE" ]; then
   source "$ENVFILE"
   set +o allexport
 fi
+
+echo "Using env file: $ENVFILE"
+echo "Using PID file: $PID_FILE"
+echo "Using config file: $CONFIG_FILE"
+echo "VIRTUAL_ENV: $VIRTUAL_ENV"
+
+# echo output of "which python"
+echo "Using Python executable: $(which python)"
 
 # If first argument is 'stop', stop uwsgi using the pid file
 if [[ "$1" == "stop" ]]; then
