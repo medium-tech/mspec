@@ -58,6 +58,7 @@ def main(ctx: MappContext, spec:dict):
             args.func(ctx, args)
         except MappError as e:
             print(json.dumps(e.to_dict(), sort_keys=True, indent=4))
+            raise SystemExit(1)
     else:
         parser.print_help()
 

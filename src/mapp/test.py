@@ -114,7 +114,6 @@ class TestMTemplateApp(unittest.TestCase):
         cls.crud_db_file.parent.mkdir(parents=True, exist_ok=True)
 
         # delete test db files #
-
     
         try:
             cls.crud_db_file.unlink()
@@ -359,22 +358,27 @@ class TestMTemplateApp(unittest.TestCase):
 
                 result = self._run_cmd(model_db_args + ['delete', str(created_model_id)], env=self.crud_ctx)
                 delete_output = json.loads(result.stdout)
-                self.assertEqual(delete_output['id'], created_model_id, f'Deleted {model_name} ID does not match created ID')
-                self.assertEqual(delete_output['message'], f'deleted {model['name']['lower_case']} {created_model_id}')
+                self.assertEqual(delete_output['acknowledged'], True, f'Delete {model_name} ID did not return acknowledgement')
+                expected_delete_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
+                self.assertTrue(delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message')
 
                 # confirm delete is idempotent #
 
                 result = self._run_cmd(model_db_args + ['delete', str(created_model_id)], env=self.crud_ctx)
                 delete_output = json.loads(result.stdout)
-                self.assertEqual(delete_output['id'], created_model_id, f'Deleted {model_name} ID does not match created ID')
-                self.assertEqual(delete_output['message'], f'deleted {model['name']['lower_case']} {created_model_id}')
+                self.assertTrue(delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message')
 
                 # read after delete #
 
                 result = self._run_cmd(model_db_args + ['read', str(created_model_id)], expected_code=1, env=self.crud_ctx)
-                read_output = json.loads(result.stdout)
-                self.assertEqual(read_output['code'], 'not_found', f'Read after delete for {model_name} did not return not_found code')
-                self.assertEqual(read_output['message'], f'{model['name']['lower_case']} {created_model_id} not found', f'Read after delete for {model_name} did not return correct message')
+                try:
+                    read_output_err = json.loads(result.stdout)['error']
+                    self.assertEqual(read_output_err['code'], 'NOT_FOUND', f'Read after delete for {model_name} did not return NOT_FOUND code for id {created_model_id}')
+                    self.assertEqual(read_output_err['message'], f'{model["name"]["snake_case"]} {created_model_id} not found', f'Read after delete for {model_name} did not return correct message for id {created_model_id}')
+                except KeyError as e:
+                    raise RuntimeError(f'KeyError {e} while reading after delete for {model_name} id {created_model_id}: {result.stdout + result.stderr}')
+                except json.JSONDecodeError as e:
+                    raise RuntimeError(f'JSONDecodeError {e} while reading after delete for {model_name} id {created_model_id}: {result.stdout + result.stderr}')
 
     def test_cli_db_crud(self):
         self._test_cli_crud_commands('db')
@@ -721,7 +725,7 @@ def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:st
     if test_filters:
         # Only add tests matching any filter pattern
         for test_name in loader.getTestCaseNames(TestMTemplateApp):
-            if any(fnmatch.fnmatch(test_name, pat) for pat in test_filters):
+            if any(fnmatch.fnmatch(test_name, pat) or pat in test_name for pat in test_filters):
                 test_suite.addTest(TestMTemplateApp(test_name))
     else:
         tests = loader.loadTestsFromTestCase(TestMTemplateApp)

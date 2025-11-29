@@ -2,7 +2,7 @@ from datetime import datetime
 
 from mapp.context import MappContext
 from mapp.errors import NotFoundError, MappError
-from mapp.types import DATETIME_FORMAT_STR, ModelListResult, validate_model, Acknowledgment
+from mapp.types import DATETIME_FORMAT_STR, DATETIME_DB_FORMAT_STR, ModelListResult, validate_model, Acknowledgment
 
 
 __all__ = [
@@ -136,45 +136,46 @@ def db_model_read(ctx:MappContext, model_class: type, model_id: str):
 
     sql = f'SELECT * FROM {model_snake_case} WHERE id=?'
 
-    row = ctx.db.cursor.execute(sql, (model_id,)).fetchone()
-    if row is None:
+    main_row = ctx.db.cursor.execute(sql, (model_id,)).fetchone()
+    if main_row is None:
         raise NotFoundError(f'{model_snake_case} {model_id} not found')
 
     # convert non list fields #
 
     data = {'id': model_id}
-    for idx, field in enumerate(model_spec['non_list_fields'], start=1):
+    for index, field in enumerate(model_spec['non_list_fields'], start=1):
         field_name = field['name']['snake_case']
         match field['type']:
             case 'bool':
-                value = bool(row[idx])
-            case 'datetime' if row[idx] is not None:
-                value = datetime.strptime(row[idx], DATETIME_FORMAT_STR).replace(microsecond=0)
+                value = bool(main_row[index])
+            case 'datetime' if main_row[index] is not None:
+                value = datetime.strptime(main_row[index], DATETIME_FORMAT_STR).replace(microsecond=0)
             case _:
-                value = row[idx]
+                value = main_row[index]
         data[field_name] = value
 
     # read list fields #
 
-    for field in model_spec['list_fields']:
+    for index, field in enumerate(model_spec['list_fields']):
 
         field_name = field['name']['snake_case']
         list_table_name = f'{model_snake_case}_{field_name}'
 
-        cursor = ctx.db.cursor.execute(
+        list_cursor = ctx.db.cursor.execute(
             f'SELECT value FROM {list_table_name} WHERE {model_snake_case}_id = ? ORDER BY position ASC',
             (model_id,)
         )
+        assert list_cursor is not None
 
         match field['element_type']:
             case 'bool':
                 convert_element = bool
-            case 'datetime' if row[idx] is not None:
-                convert_element = lambda x: datetime.strptime(x, DATETIME_FORMAT_STR).replace(microsecond=0)
+            case 'datetime':
+                convert_element = lambda x: datetime.strptime(x, DATETIME_DB_FORMAT_STR).replace(microsecond=0)
             case _:
                 convert_element = lambda x: x
 
-        data[field_name] = [convert_element(row[0]) for row in cursor.fetchall()]
+        data[field_name] = [convert_element(row[0]) for row in list_cursor.fetchall()]
 
     return model_class(**data)
 
@@ -194,7 +195,7 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
 
     # prepare sql #
 
-    fields = []
+    non_list_fields = []
     values = []
 
     for field in model_spec['non_list_fields']:
@@ -204,18 +205,19 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
         if field['type'] == 'datetime':
             value = value.isoformat()
 
-        fields.append(f"'{field_name}' = ?")
+        non_list_fields.append(f"'{field_name}' = ?")
         values.append(value)
 
-    values.append(obj.id)
-    set_clause = ', '.join(fields)
-    sql = f'UPDATE {model_snake_case} SET {set_clause} WHERE id = ?'
+    if len(non_list_fields) > 0:
+        values.append(obj.id)
+        set_clause = ', '.join(non_list_fields)
+        sql = f'UPDATE {model_snake_case} SET {set_clause} WHERE id=?'
 
-    # execute sql #
+        # execute sql #
 
-    result = ctx.db.cursor.execute(sql, values)
-    if result.rowcount == 0:
-        raise NotFoundError(f'{model_snake_case} {obj.id} not found')
+        result = ctx.db.cursor.execute(sql, values)
+        if result.rowcount == 0:
+            raise NotFoundError(f'{model_snake_case} {obj.id} not found')
 
     #
     # list fields
@@ -258,7 +260,7 @@ def db_model_delete(ctx:MappContext, model_class: type, model_id: str) -> Acknow
 
     ctx.db.cursor.execute(f'DELETE FROM {model_snake_case} WHERE id = ?', (model_id,))
     ctx.db.commit()
-    return Acknowledgment()
+    return Acknowledgment(f'{model_snake_case} {model_id} has been deleted or was already absent.')
 
 def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int = 50) -> ModelListResult:
     model_spec = model_class._model_spec

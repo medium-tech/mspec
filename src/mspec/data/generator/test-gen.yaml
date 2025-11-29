@@ -213,6 +213,7 @@ modules:
             type: str
             examples:
               - "my@email.com"
+              - "my-other@email.com"
             random: random_email
           
           phone_number:
