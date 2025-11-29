@@ -5,7 +5,7 @@ from urllib.parse import parse_qs
 
 from mapp.errors import NotFoundError, RequestError
 from mapp.context import MappContext, RequestContext, RouteContext
-from mapp.types import JSONResponse, convert_json_to_model, model_to_json, new_model_class
+from mapp.types import JSONResponse, model_from_json, model_to_json, new_model_class
 from mapp.module.model.db import *
 
 
@@ -63,7 +63,7 @@ def model_routes(route: RouteContext, server: MappContext, request: RequestConte
 
         elif request.env['REQUEST_METHOD'] == 'PUT':
             req_body = request.raw_req_body.decode('utf-8')
-            incoming_item = convert_json_to_model(route.model_class, req_body, instance_id)
+            incoming_item = model_from_json(req_body, route.model_class, instance_id)
 
             try:
                 updated_item = db_model_update(server, route.model_class, instance_id, incoming_item)
@@ -96,7 +96,7 @@ def model_routes(route: RouteContext, server: MappContext, request: RequestConte
         # create #
 
         if request.env['REQUEST_METHOD'] == 'POST':
-            incoming_item = route.model_class(**json.loads(request.raw_req_body.decode('utf-8')))
+            incoming_item = model_from_json(request.raw_req_body.decode('utf-8'), route.model_class)
             item = db_model_create(server, route.model_class, incoming_item)
 
             server.log(f'POST {route.module_kebab_case}.{route.model_kebab_case} - id: {item.id}')

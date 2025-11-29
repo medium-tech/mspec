@@ -6,6 +6,7 @@ import subprocess
 import glob
 import re
 import multiprocessing
+import time
 import shutil
 
 from pathlib import Path
@@ -49,10 +50,10 @@ def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None
         ctx['MAPP_CLIENT_HOST'] + endpoint,
         method=method, 
         headers=ctx['headers'], 
-        data=request_body
+        data=request_body,
     )
 
-    with urlopen(request) as response:
+    with urlopen(request, timeout=10) as response:
         response_body = response.read().decode('utf-8')
         return json.loads(response_body)
 
@@ -307,7 +308,7 @@ class TestMTemplateApp(unittest.TestCase):
         process = subprocess.Popen(pagination_server_cmd, env=cls.pagination_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         cls.server_processes.append(process)
         print('    :: ', ' '.join(pagination_server_cmd))
-
+        time.sleep(1)
         print('  :: Setup complete ::')
     
     @classmethod
@@ -353,6 +354,9 @@ class TestMTemplateApp(unittest.TestCase):
                     f.write(stderr)
             except Exception as e:
                 print(f'Error capturing server process {process.pid} output: {e}')
+
+            if process.returncode is not None and process.returncode > 0:
+                print(f'    :: Server process {process.pid} exited with code {process.returncode} ::')
         
         print(':: Teardown complete ::')
 
@@ -364,15 +368,10 @@ class TestMTemplateApp(unittest.TestCase):
     
     def _check_servers_running(self):
         error = False
-        print(f'_check_servers_running :: Checking server processes ::')
         for process in self.server_processes:
-            if not process.poll() is None:
+            retcode = process.poll()
+            if retcode is not None:
                 error = True
-                print(f' :: Checking server process {process.pid} ::')
-                stdout, stderr = process.communicate()
-                print(f':: ERROR: Server process {process.pid} has exited unexpectedly ::')
-                print(f':: STDOUT ::\n{stdout}')
-                print(f':: STDERR ::\n{stderr}')
 
         self.assertFalse(error, 'One or more server processes have exited unexpectedly')
 
