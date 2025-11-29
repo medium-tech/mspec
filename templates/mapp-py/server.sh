@@ -8,14 +8,20 @@
 set -e
 
 # Defaults
-ENV_FILE=".env"
+ENVFILE=".env"
 PID_FILE="app/server.pid"
 CONFIG_FILE="./uwsgi.yaml"
+
+# If ENVFILE env var is set, use it for env file path
+if [ -n "$ENVFILE" ]; then
+  ENVFILE="$ENVFILE"
+fi
 
 usage() {
   echo "\nUsage: $0 [options]\n"
   echo "Options:"
-  echo "  --env-file <path>     Path to .env file (default: .env)"
+  echo "  --env-file <path>     Path to .env file (default: .env) "
+  echo "                          or supply via ENVFILE env var"
   echo "  --pid-file <path>     Path to PID file (default: app/server.pid)"
   echo "  --config <path>       Path to uwsgi config file (default: ./uwsgi.yaml)"
   echo "  -h, --help            Show this help message and exit\n"
@@ -26,7 +32,7 @@ usage() {
 while [[ $# -gt 0 ]]; do
   case $1 in
     --env-file)
-      ENV_FILE="$2"
+      ENVFILE="$2"
       shift 2
       ;;
     --pid-file)
@@ -48,9 +54,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Load environment variables if env file exists
-if [ -f "$ENV_FILE" ]; then
+if [ -f "$ENVFILE" ]; then
   set -o allexport
-  source "$ENV_FILE"
+  source "$ENVFILE"
   set +o allexport
 fi
 
