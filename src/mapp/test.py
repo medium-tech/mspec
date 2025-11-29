@@ -322,8 +322,8 @@ class TestMTemplateApp(unittest.TestCase):
             cls.pool.join()
 
         if cls.app_type == 'python':
-            subprocess.run(['uwsgi', 'stop', '--pid-file', cls.crud_pidfile], check=True)
-            subprocess.run(['uwsgi', 'stop', '--pid-file', cls.pagination_pidfile], check=True)
+            subprocess.run(['./server.sh', 'stop', '--pid-file', cls.crud_pidfile], env=cls.crud_ctx, check=True, capture_output=True)
+            subprocess.run(['./server.sh', 'stop', '--pid-file', cls.pagination_pidfile], env=cls.pagination_ctx, check=True, capture_output=True)
 
         # stop servers and capture logs #
 

@@ -10,6 +10,7 @@ set -e
 ENVFILE=".env"
 PID_FILE="app/server.pid"
 CONFIG_FILE="./uwsgi.yaml"
+STOP=false
 
 # If ENVFILE env var is set, use it for env file path
 if [ -n "$MAPP_ENV_FILE" ]; then
@@ -30,6 +31,10 @@ usage() {
 # Parse arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
+    stop)
+      STOP=true
+      shift
+      ;;
     --env-file)
       ENVFILE="$2"
       shift 2
@@ -68,7 +73,7 @@ echo "VIRTUAL_ENV: $VIRTUAL_ENV"
 echo "Using Python executable: $(which python)"
 
 # If first argument is 'stop', stop uwsgi using the pid file
-if [[ "$1" == "stop" ]]; then
+if [[ "$STOP" == true ]]; then
   uwsgi --stop "$PID_FILE"
   exit $?
 else
