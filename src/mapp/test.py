@@ -238,22 +238,23 @@ class TestMTemplateApp(unittest.TestCase):
             print('  :: Using cached pagination db ::')
         else:
             print(f'  :: Seeding pagination db ::')
+            seed_jobs = []
             for module in cls.spec['modules'].values():
                 module_name_kebab = module['name']['kebab_case']
 
                 for model in module['models'].values():
                     model_name_kebab = model['name']['kebab_case']
+
                     for _ in range(cls.pagination_total_models):
                         example_model = example_from_model(model, index=0)
                         seed_cmd = cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create', json.dumps(example_model)]
-                        result = subprocess.run(
-                            seed_cmd,
-                            text=True,
-                            capture_output=True,
-                            env=cls.pagination_ctx
-                        )
-                        if result.returncode != 0:
-                            raise RuntimeError(f':: ERROR seeding table for pagination db "{module_name_kebab}.{model_name_kebab}" :: COMMAND :: {" ".join(seed_cmd)} :: OUTPUT :: {result.stdout + result.stderr}')
+                        seed_jobs.append((seed_cmd, cls.pagination_ctx))
+
+            results = cls.pool.starmap(run_cmd, seed_jobs)
+
+            for (cmd_args, code, stdout, stderr) in results:
+                if code != 0:
+                    raise RuntimeError(f':: ERROR seeding table for pagination db :: COMMAND :: {" ".join(cmd_args)} :: OUTPUT :: {stdout + stderr}')
             
         # delete server logs #
 
@@ -506,8 +507,7 @@ class TestMTemplateApp(unittest.TestCase):
 
         # run tests #
 
-        with self.pool or multiprocessing.Pool(processes=self.threads) as pool:
-            results = pool.starmap(run_cmd, commands)
+        results = self.pool.starmap(run_cmd, commands)
 
         # confirm results #
         
