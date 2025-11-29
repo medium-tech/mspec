@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Optional, Generator
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
+from collections import defaultdict
 
 from mspec.core import load_generator_spec
 
@@ -480,42 +481,53 @@ class TestMTemplateApp(unittest.TestCase):
     # pagination tests #
 
     def _test_cli_pagination_command(self, command_type:str):
+
+        # init tests #
+
+        commands = []
+        test_cases = []
+
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
 
-            for model_name, model in module['models'].items():
+            for model in module['models'].values():
                 model_name_kebab = model['name']['kebab_case']
-
                 model_list_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'list']
 
                 for case in self.pagination_cases:
                     size = case['size']
                     expected_pages = case['expected_pages']
-
-                    # paginate #
-
                     offset = 0
-                    page_count = 0
 
-                    while True:
-
-                        result = self._run_cmd(model_list_command + [f'--size={size}', f'--offset={offset}'], env=self.pagination_ctx)
-
-                        response = json.loads(result.stdout)
-
-                        self.assertEqual(response['total'], self.pagination_total_models, f'Pagination for {model_name} page {page_count} returned incorrect total')
- 
-                        items = response['items']
-                        self.assertLessEqual(len(items), size, f'Pagination for {model_name} returned more items than size {size}')
-                        
-                        if len(items) == 0:
-                            break
-
-                        page_count += 1
-
+                    for page in range(expected_pages):
+                        commands.append((model_list_command + [f'--size={size}', f'--offset={offset}'], self.pagination_ctx))
+                        test_cases.append((module_name_kebab, model_name_kebab, size, expected_pages, page, offset))
                         offset += size
 
-                    self.assertEqual(page_count, expected_pages, f'Pagination for {model_name} returned {page_count} pages, expected {expected_pages}')
+        # run tests #
+
+        with self.pool or multiprocessing.Pool(processes=self.threads) as pool:
+            results = pool.starmap(run_cmd, commands)
+
+        # confirm results #
+        
+        grouped = defaultdict(list)
+        for (module_name_kebab, model_name_kebab, size, expected_pages, page, offset), (cmd_args, code, stdout, stderr) in zip(test_cases, results):
+            key = (module_name_kebab, model_name_kebab, size, expected_pages)
+            grouped[key].append((page, offset, code, stdout, stderr))
+
+        for (module_name_kebab, model_name_kebab, size, expected_pages), pages in grouped.items():
+            pages.sort()
+            page_count = 0
+            for page, offset, code, stdout, stderr in pages:
+                response = json.loads(stdout)
+                self.assertEqual(response['total'], self.pagination_total_models, f'Pagination for {model_name_kebab} page {page} returned incorrect total')
+                items = response['items']
+                self.assertLessEqual(len(items), size, f'Pagination for {model_name_kebab} returned more items than size {size}')
+                if len(items) == 0:
+                    break
+                page_count += 1
+            self.assertEqual(page_count, expected_pages, f'Pagination for {model_name_kebab} returned {page_count} pages, expected {expected_pages}')
 
     def test_cli_db_pagination(self):
         self._test_cli_pagination_command('db')
