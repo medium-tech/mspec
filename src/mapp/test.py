@@ -723,7 +723,76 @@ class TestMTemplateApp(unittest.TestCase):
 
     def test_server_validation_error(self):
         self._check_servers_running()
-        raise NotImplementedError('server validation error tests not yet implemented')
+        ctx = {
+            'headers': {
+                'Content-Type': 'application/json',
+            }
+        }
+        ctx.update(self.crud_ctx)
+
+        for module in self.spec['modules'].values():
+            module_name_kebab = module['name']['kebab_case']
+            for model in module['models'].values():
+                model_name_kebab = model['name']['kebab_case']
+
+                # create a valid model to update with invalid data
+                example_to_update = example_from_model(model)
+                create_status, create_resp = request(
+                    ctx,
+                    'POST',
+                    f'/api/{module_name_kebab}/{model_name_kebab}',
+                    json.dumps(example_to_update).encode()
+                )
+                self.assertEqual(create_status, 200, f'Create for validation error test failed: {create_resp}')
+                update_model_id = str(create_resp['id'])
+
+                for invalid_example in model_validation_errors(model):
+                    # create (invalid)
+                    status, output = request(
+                        ctx,
+                        'POST',
+                        f'/api/{module_name_kebab}/{model_name_kebab}',
+                        json.dumps(invalid_example).encode()
+                    )
+                    self.assertEqual(status, 400, f'Expected 400 for invalid create, got {status}, resp: {output}')
+                    self.assertEqual(
+                        output['code'], 
+                        'VALIDATION_ERROR', 
+                        f'Expected VALIDATION_ERROR code for {model_name_kebab} with invalid data {invalid_example}, got {output}'
+                    )
+                    self.assertTrue(
+                        output['message'].startswith('Validation Error: '), 
+                        f'Unexpected message for {model_name_kebab} with invalid data {invalid_example}, got {output}'
+                    )
+
+                    # update (invalid)
+                    status, output = request(
+                        ctx,
+                        'PUT',
+                        f'/api/{module_name_kebab}/{model_name_kebab}/{update_model_id}',
+                        json.dumps(invalid_example).encode()
+                    )
+                    self.assertEqual(status, 400, f'Expected 400 for invalid update, got {status}, resp: {output}')
+                    self.assertEqual(
+                        output['code'], 
+                        'VALIDATION_ERROR', 
+                        f'Expected VALIDATION_ERROR code for {model_name_kebab} with invalid data {invalid_example}, got {output}'
+                    )
+                    self.assertTrue(
+                        output['message'].startswith('Validation Error: '), 
+                        f'Unexpected message for {model_name_kebab} with invalid data {invalid_example}, got {output}'
+                    )
+
+                # read back original example to ensure it was not modified
+                status, read_model = request(
+                    ctx,
+                    'GET',
+                    f'/api/{module_name_kebab}/{model_name_kebab}/{update_model_id}',
+                    None
+                )
+                self.assertEqual(status, 200, f'Read after validation error for {model["name"]["pascal_case"]} did not return 200 OK, resp: {read_model}')
+                del read_model['id']
+                self.assertEqual(read_model, example_to_update, f'Read after validation error for {model["name"]["pascal_case"]} does not match original example data')
 
     # other tests #
 
