@@ -649,13 +649,14 @@ class TestMTemplateApp(unittest.TestCase):
                     page_count = 0
 
                     while True:
-
+                        start = time.time()
                         status, response = request(
                             ctx,
                             'GET',
                             f'/api/{module_name_kebab}/{model_name_kebab}?size={size}&offset={offset}',
                             None
                         )
+                        elapsed = time.time() - start
 
                         self.assertEqual(status, 200, f'Pagination for {model_name_kebab} page {page_count} did not return status 200 OK, response: {response}')
                         self.assertEqual(response['total'], self.pagination_total_models, f'Pagination for {model_name_kebab} page {page_count} returned incorrect total')
@@ -666,9 +667,13 @@ class TestMTemplateApp(unittest.TestCase):
                         if len(items) == 0:
                             break
 
+                        print('  :: ', f'/api/{module_name_kebab}/{model_name_kebab}?size={size}&offset={offset}', f'response time: {elapsed:.3f}s', f'items returned: {len(items)}')
+
                         page_count += 1
 
                         offset += size
+
+                        time.sleep(0.2)
 
                     self.assertEqual(page_count, expected_pages, f'Pagination for {model_name} returned {page_count} pages, expected {expected_pages}')
 
