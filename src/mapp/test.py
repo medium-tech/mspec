@@ -559,7 +559,7 @@ class TestMTemplateApp(unittest.TestCase):
                 )
             
                 self.assertEqual(re_read_status, 404, f'Read after delete for {model_name} id: {created_model_id} did not return 404 Not Found, resp: {re_read_model}')
-                self.assertEqual(re_read_model['code'], 'NOT_FOUND', f'Read after delete for {model_name} id: {created_model_id} did not return not_found code')
+                self.assertEqual(re_read_model.get('error', {}).get('code', '-'), 'NOT_FOUND', f'Read after delete for {model_name} id: {created_model_id} did not return not_found code, resp: {re_read_model}')
 
     # pagination tests #
 
