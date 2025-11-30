@@ -68,6 +68,8 @@ route_list.append(debug_routes)
 
 def application(env, start_response):
 
+    server_ctx.log(f'REQUEST - {env["REQUEST_METHOD"]} {env["PATH_INFO"]}')
+
     request = RequestContext(
         env=env,
         # best practice is to always consume body if it exists: https://uwsgi-docs.readthedocs.io/en/latest/ThingsToKnow.html

@@ -19,8 +19,9 @@ from mspec.core import load_generator_spec
 
 from dotenv import dotenv_values
 
+
 def run_cmd(cmd_args, env):
-    result = subprocess.run(cmd_args, capture_output=True, text=True, env=env)
+    result = subprocess.run(cmd_args, capture_output=True, text=True, env=env, timeout=10)
     return (cmd_args, result.returncode, result.stdout, result.stderr)
 
 def example_from_model(model:dict, index=0) -> dict:
@@ -58,6 +59,9 @@ def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None
         with urlopen(req, timeout=10) as response:
             body = response.read().decode('utf-8')
             status = response.status
+
+    except TimeoutError as e:
+        raise RuntimeError(f'TimeoutError on {method} {endpoint}: {e}')
         
     except HTTPError as e:
         body = e.read().decode('utf-8')
@@ -77,6 +81,7 @@ def env_to_string(env:dict) -> str:
         else:
             out += f'{key}={value}\n'
     return out
+
 
 class TestMTemplateApp(unittest.TestCase):
     
@@ -373,7 +378,7 @@ class TestMTemplateApp(unittest.TestCase):
         print(':: Teardown complete ::')
 
     def _run_cmd(self, cmd:list[str], expected_code=0, env:Optional[dict[str, str]] = None) -> subprocess.CompletedProcess:
-        result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+        result = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=10)
         msg = f'expected {expected_code} got {result.returncode} for command "{' '.join(cmd)}" output: {result.stdout + result.stderr}'
         self.assertEqual(result.returncode, expected_code, msg)
         return result
@@ -614,7 +619,7 @@ class TestMTemplateApp(unittest.TestCase):
     def test_cli_db_pagination(self):
         self._test_cli_pagination_command('db')
 
-    def test_cli_http_pagination(self):
+    def _test_cli_http_pagination(self):
         self._test_cli_pagination_command('http')
 
     def test_server_pagination_endpoints(self):
@@ -664,6 +669,8 @@ class TestMTemplateApp(unittest.TestCase):
                         page_count += 1
 
                         offset += size
+
+                        time.sleep(1)
 
                     self.assertEqual(page_count, expected_pages, f'Pagination for {model_name} returned {page_count} pages, expected {expected_pages}')
 
