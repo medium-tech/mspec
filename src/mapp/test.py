@@ -292,12 +292,15 @@ class TestMTemplateApp(unittest.TestCase):
 
             port_pattern = r'http:\s*:\d+'
             pid_file_pattern = r'safe-pidfile:\s*.+'
+            stats_pattern = r'stats:\s*.+'
 
             cls.crud_pidfile = f'{cls.test_dir}/uwsgi_crud.pid'
             cls.pagination_pidfile = f'{cls.test_dir}/uwsgi_pagination.pid'
+            cls.crud_stats_socket = f'{cls.test_dir}/stats_crud.socket'
 
             cls.crud_uwsgi_config = f'{cls.test_dir}/uwsgi_crud.yaml'
             cls.pagination_uwsgi_config = f'{cls.test_dir}/uwsgi_pagination.yaml'
+            cls.pagination_stats_socket = f'{cls.test_dir}/stats_pagination.socket'
 
             crud_server_cmd = ['./server.sh', '--pid-file', cls.crud_pidfile, '--config', cls.crud_uwsgi_config]
             pagination_server_cmd = ['./server.sh', '--pid-file', cls.pagination_pidfile, '--config', cls.pagination_uwsgi_config]
@@ -305,11 +308,13 @@ class TestMTemplateApp(unittest.TestCase):
             with open(cls.crud_uwsgi_config, 'w') as f:
                 crud_uwsgi_config = re.sub(port_pattern, f'http: :{crud_port}', uwsgi_config)
                 crud_uwsgi_config = re.sub(pid_file_pattern, f'safe-pidfile: {cls.crud_pidfile}', crud_uwsgi_config)
+                crud_uwsgi_config = re.sub(stats_pattern, f'stats: {cls.crud_stats_socket}', crud_uwsgi_config)
                 f.write(crud_uwsgi_config)
             
             with open(cls.pagination_uwsgi_config, 'w') as f:
                 pagination_uwsgi_config = re.sub(port_pattern, f'http: :{pagination_port}', uwsgi_config)
                 pagination_uwsgi_config = re.sub(pid_file_pattern, f'safe-pidfile: {cls.pagination_pidfile}', pagination_uwsgi_config)
+                pagination_uwsgi_config = re.sub(stats_pattern, f'stats: {cls.pagination_stats_socket}', pagination_uwsgi_config)
                 f.write(pagination_uwsgi_config)
         
         # start servers #
