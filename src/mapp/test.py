@@ -109,7 +109,7 @@ class TestMTemplateApp(unittest.TestCase):
     env_file: str | None
     use_cache: bool
     app_type: str = ''
-    threads: int = 8
+    threads: int = 1
 
     pool: Optional[multiprocessing.Pool] = None
 
@@ -619,7 +619,7 @@ class TestMTemplateApp(unittest.TestCase):
     def test_cli_db_pagination(self):
         self._test_cli_pagination_command('db')
 
-    def _test_cli_http_pagination(self):
+    def test_cli_http_pagination(self):
         self._test_cli_pagination_command('http')
 
     def test_server_pagination_endpoints(self):
@@ -669,8 +669,6 @@ class TestMTemplateApp(unittest.TestCase):
                         page_count += 1
 
                         offset += size
-
-                        time.sleep(1)
 
                     self.assertEqual(page_count, expected_pages, f'Pagination for {model_name} returned {page_count} pages, expected {expected_pages}')
 
