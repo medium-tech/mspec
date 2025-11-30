@@ -27,4 +27,6 @@ def add_module_subparser(subparsers, spec:dict, module:dict):
         raise MappError('NO_MODELS_DEFINED', f'No models defined in module: {module_kebab_case}')
 
     for model in spec_models.values():
+        if model.get('hidden', False) is True:
+            continue
         add_model_subparser(model_subparsers, spec, module, model)

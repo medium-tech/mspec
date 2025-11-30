@@ -47,6 +47,8 @@ def main(ctx: MappContext, spec:dict):
         raise MappError('NO_MODULES_DEFINED', 'No modules defined in the spec file.')
 
     for module in spec_modules.values():
+        if module.get('hidden', False) is True:
+            continue
         module_cli.add_module_subparser(subparsers, spec, module)
 
     # parse args and run program #

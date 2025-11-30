@@ -57,6 +57,11 @@ example_parser.add_argument(
     action='store_true',
     help='Display the result of the example spec instead of writing to file'
 )
+example_parser.add_argument(
+    '--init',
+    action='store_true',
+    help='If displaying, initialize the spec before displaying'
+)
 
 # examples command #
 
@@ -144,9 +149,9 @@ if args.command == 'specs':
 elif args.command == 'example':
 
     directories = [
-        sample_browser2_spec_dir,
-        sample_generator_spec_dir,
-        sample_lingo_script_spec_dir
+        SAMPLE_BROWSER2_SPEC_DIR,
+        SAMPLE_GENERATOR_SPEC_DIR,
+        SAMPLE_LINGO_SCRIPT_SPEC_DIR
     ]
 
     for directory in directories:
@@ -154,8 +159,13 @@ elif args.command == 'example':
         if spec_path.exists():
             output_path = Path.cwd() / args.spec
             if args.display:
-                with open(spec_path, 'r') as f:
-                    print(f.read())
+                if args.init:
+                    display = load_generator_spec(spec_path, try_examples=False)
+                    print(json.dumps(display, indent=4))
+
+                else:
+                    with open(spec_path, 'r') as f:
+                        print(f.read())
 
             else:
                 if output_path.exists():
@@ -179,7 +189,7 @@ elif args.command == 'example':
         raise SystemExit(1)
 
 elif args.command == 'examples':
-    shutil.copytree(sample_data_dir, args.output_dir, dirs_exist_ok=True)
+    shutil.copytree(SAMPLE_DATA_DIR, args.output_dir, dirs_exist_ok=True)
 
 elif args.command == 'run':
     spec = load_browser2_spec(args.spec, display=True)

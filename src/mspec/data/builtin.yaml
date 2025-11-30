@@ -1,0 +1,56 @@
+lingo:
+  version: 'builtin-beta-1'
+
+modules:
+  auth:
+    hidden: true
+    name:
+      lower_case: 'auth'
+
+    models:
+      user:
+        name:
+          lower_case: 'user'
+
+        fields:
+
+          name:
+            name:
+              lower_case: 'name'
+            type: str
+            examples:
+              - 'alice'
+              - 'bob'
+
+          email:
+            name:
+              lower_case: 'email'
+            type: str
+            examples:
+              - 'alice@example.com'
+              - 'bob@example.com'
+
+      password_hash:
+        name:
+          lower_case: 'password hash'
+
+        fields:
+
+          hash:
+            name:
+              lower_case: 'hash'
+            type: str
+            examples:
+              - 'hashed_password_1'
+              - 'hashed_password_2'
+          
+          user_id:
+            name:
+              lower_case: 'user id'
+            type: foreign_key
+            references:
+              table: 'user'
+              field: 'id'
+            examples:
+              - "1"
+              - "2"

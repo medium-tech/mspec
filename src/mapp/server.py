@@ -55,12 +55,18 @@ except KeyError:
     raise MappError('NO_MODULES_DEFINED', 'No modules defined in the spec file.')
 
 for module in spec_modules.values():
+    if module.get('hidden', False) is True:
+        continue
+
     try:
         spec_models = module['models']
     except KeyError:
         raise MappError('NO_MODELS_DEFINED', f'No models defined in module: {module["name"]["kebab_case"]}')
 
     for model in spec_models.values():
+        if model.get('hidden', False) is True:
+            continue
+
         route_resolver, model_class = create_model_routes(module, model)
         route_list.append(route_resolver)
         db_model_create_table(server_ctx, model_class)

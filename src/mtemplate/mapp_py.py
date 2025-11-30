@@ -3,7 +3,7 @@ import secrets
 
 from pathlib import Path
 
-from mspec.core import sample_generator_spec_dir
+from mspec.core import SAMPLE_GENERATOR_SPEC_DIR
 from mtemplate import MTemplateProject
 
 import yaml
@@ -47,7 +47,7 @@ class MappPyProject(MTemplateProject):
             print(f':: copied spec file {spec_file} to {mapp_file}')
 
         except FileNotFoundError:
-            builtin_spec = sample_generator_spec_dir / spec_file
+            builtin_spec = SAMPLE_GENERATOR_SPEC_DIR / spec_file
             try:
                 shutil.copyfile(builtin_spec, mapp_file)
                 print(f':: copied builtin spec file {builtin_spec} to {mapp_file}')

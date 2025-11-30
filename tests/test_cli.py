@@ -5,7 +5,7 @@ import subprocess
 import sys
 import json
 from pathlib import Path
-from mspec.core import sample_lingo_script_spec_dir, builtin_spec_files
+from mspec.core import SAMPLE_LINGO_SCRIPT_SPEC_DIR, builtin_spec_files
 from .core import TESTS_TMP_DIR
 
 ALL_SPECS = [files for files in builtin_spec_files().values()]
@@ -233,7 +233,7 @@ class TestCLI(unittest.TestCase):
 
     def test_execute_command_all_param_types(self):
         """Test the execute command with all_param_types.json"""
-        test_data_path = sample_lingo_script_spec_dir / 'all_param_types_test_data.json'
+        test_data_path = SAMPLE_LINGO_SCRIPT_SPEC_DIR / 'all_param_types_test_data.json'
         with open(test_data_path) as f:
             test_data = json.load(f)
 
