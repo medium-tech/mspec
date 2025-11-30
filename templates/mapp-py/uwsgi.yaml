@@ -5,13 +5,11 @@ uwsgi:
   master: true
   safe-pidfile: app/server.pid
   stats: app/stats.socket
-  max-requests: 50
-  limit-as: 128
-  reload-on-rss: 96
+  log-master: true
+  logto: app/server.log
   processes: 1
   lazy-apps: true
-  cheaper-rss-limit-soft: 64
-  harakiri-verbose: true
+
   # for :: {% for module in modules.values() %} :: {"template-module":"module.name.kebab_case"}
       # for :: {% for model in module.models.values() %} :: {"single-model": "model.name.kebab_case", "single model": "model.name.lower_case"}
 

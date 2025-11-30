@@ -2,7 +2,6 @@ import os
 import re
 import time
 import uwsgi
-import tracemalloc
 
 from traceback import format_exc
 
@@ -11,9 +10,6 @@ from mapp.errors import *
 from mapp.types import JSONResponse, PlainTextResponse, to_json
 from mapp.module.model.db import db_model_create_table
 from mapp.module.model.server import create_model_routes
-
-
-tracemalloc.start()
 
 
 def debug_routes(server: MappContext, request: RequestContext):
@@ -159,9 +155,7 @@ def application(env, start_response):
 
     start_response(status_code, [('Content-Type', content_type)])
 
-    current, peak = tracemalloc.get_traced_memory()
-
-    server_ctx.log(f'RESPONSE - {status_code} - Mem current: {current / 1024:.2f} KiB, Mem peak: {peak / 1024:.2f} KiB')
+    server_ctx.log(f'RESPONSE - {status_code} - {env["REQUEST_METHOD"]} {env["PATH_INFO"]}')
     if content_type == JSONResponse.content_type:
         return [to_json(body).encode('utf-8')]
     else:
