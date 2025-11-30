@@ -109,7 +109,7 @@ class TestMTemplateApp(unittest.TestCase):
     env_file: str | None
     use_cache: bool
     app_type: str = ''
-    threads: int = 1
+    threads: int = 8
 
     pool: Optional[multiprocessing.Pool] = None
 
@@ -677,8 +677,6 @@ class TestMTemplateApp(unittest.TestCase):
                         page_count += 1
 
                         offset += size
-
-                        time.sleep(0.2)
 
                     self.assertEqual(page_count, expected_pages, f'Pagination for {model_name} returned {page_count} pages, expected {expected_pages}')
 
