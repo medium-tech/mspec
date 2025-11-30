@@ -27,6 +27,10 @@ class DBContext:
     cursor: sqlite3.Cursor
     commit: callable
 
+@dataclass
+class ClientContext:
+    host: str
+    headers: dict
 
 @dataclass
 class RouteContext:
@@ -49,7 +53,7 @@ class RequestContext:
 @dataclass
 class MappContext:
     server_port: int
-    client_host: str
+    client: ClientContext
     db:DBContext
     log:callable
 
@@ -61,9 +65,14 @@ def get_context_from_env():
     db_conn = sqlite3.connect(db_url, uri=True)
     atexit.register(lambda: db_conn.close())
 
+    client_host = os.getenv('MAPP_CLIENT_HOST', 'http://localhost:8000')
+
     return MappContext(
         server_port=int(os.getenv('MAPP_SERVER_PORT', 8000)),
-        client_host=os.getenv('MAPP_CLIENT_HOST', 'http://localhost:8000'),
+        client=ClientContext(
+            host=client_host,
+            headers={},
+        ),
         log=lambda msg: msg,   # passthru log
         db=DBContext(
             db_url=db_url,

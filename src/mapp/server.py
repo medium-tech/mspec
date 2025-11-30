@@ -104,7 +104,7 @@ def application(env, start_response):
 
         except NotFoundError as e:
             # for when a model is not found
-            body = {'code': 'NOT_FOUND', 'message': str(e)}
+            body = e.to_dict()
             status_code = '404 Not Found'
             content_type = JSONResponse.content_type
             break

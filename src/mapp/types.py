@@ -34,6 +34,15 @@ class Acknowledgment:
     def __init__(self, message: str = 'No additional information') -> None:
         self.message = message
 
+    @classmethod
+    def from_dict(cls, data: dict) -> 'Acknowledgment':
+        if not data.get('acknowledged', False):
+            raise ValueError('Acknowledgment data does not indicate success.')
+        try:
+            return cls(message=data['message'])
+        except KeyError:
+            raise ValueError('Acknowledgment data is missing required "message" field.')
+
     def to_dict(self) -> dict:
         return {
             'acknowledged': True,

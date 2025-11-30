@@ -1,3 +1,6 @@
+import json
+
+
 class MappError(Exception):
     
     def __init__(self, code:str, message: str):
@@ -40,6 +43,37 @@ class RequestError(MappError):
                 return NotFoundError(str(exc))
             case _:
                 return RequestError(str(exc))
+            
+class ResponseError(MappError):
+    def __init__(self, message: str):
+        super().__init__('RESPONSE_ERROR', message)
+
+    @classmethod
+    def from_json(cls, json_data: str) -> 'ResponseError':
+        try:
+            data = json.loads(json_data)
+        except json.JSONDecodeError:
+            raise ValueError('Invalid JSON data.')
+
+        return cls.from_dict(data)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'ResponseError':
+        try:
+            code = data['error']['code']
+            message = data['error']['message']
+        except KeyError:
+            raise ValueError('Invalid error data format.')
+
+        match code:
+            case 'NOT_FOUND':
+                return NotFoundError(message)
+            case 'AUTHENTICATION_ERROR':
+                return AuthenticationError(message)
+            case 'FORBIDDEN_ERROR':
+                return ForbiddenError(message)
+            case _:
+                return ResponseError(message)
 
 
 class ServerError(MappError):

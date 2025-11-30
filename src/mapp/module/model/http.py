@@ -21,52 +21,52 @@ def http_model_create(ctx: MappContext, model_class:type, model:object) -> objec
 
     # init #
 
-    module_kebab = model_class._model_spec['module']['kebab_case']
+    module_kebab = model_class._module_spec['name']['kebab_case']
     model_kebab = model_class._model_spec['name']['kebab_case']
 
-    url = f'{ctx.host}/api/{module_kebab}/{model_kebab}'
+    url = f'{ctx.client.host}/api/{module_kebab}/{model_kebab}'
     request_body = model_to_json(model).encode()
 
     # send request #
 
     try:
-        request = Request(url, headers=ctx.headers, method='POST', data=request_body)
+        request = Request(url, headers=ctx.client.headers, method='POST', data=request_body)
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return model_from_json(model_class, response_body)
+            return model_from_json(response_body, model_class)
         
     except HTTPError as e:
-        if e.code >= 400:
+        if e.code >= 500:
             raise ServerError(f'Got {e.code}: {e}')
         
         else:
-            RequestError.from_code(e.code, e)
+            raise ResponseError.from_json(e.read().decode('utf-8'))
     
     except Exception as e:
-        raise MappError(f'Error creating model: {e}')
+        raise MappError('UNKNOWN_ERROR', f'Error creating model: {e}')
 
 def http_model_read(ctx: MappContext, model_class: type, model_id: str) -> object:
 
     # init #
 
-    module_kebab = model_class._model_spec['module']['kebab_case']
+    module_kebab = model_class._module_spec['name']['kebab_case']
     model_kebab = model_class._model_spec['name']['kebab_case']
-    url = f'{ctx.host}/api/{module_kebab}/{model_kebab}/{model_id}'
+    url = f'{ctx.client.host}/api/{module_kebab}/{model_kebab}/{model_id}'
 
     # send request #
 
     try:
-        request = Request(url, headers=ctx.headers, method='GET')
+        request = Request(url, headers=ctx.client.headers, method='GET')
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return model_from_json(model_class, response_body)
+            return model_from_json(response_body, model_class)
         
     except HTTPError as e:
-        if e.code >= 400:
+        if e.code >= 500:
             raise ServerError(f'Got {e.code}: {e}')
         
         else:
-            raise RequestError.from_code(e.code, e)
+            raise ResponseError.from_json(e.read().decode('utf-8'))
     
     except Exception as e:
         raise MappError(f'Error reading model: {e}')
@@ -75,25 +75,25 @@ def http_model_update(ctx: MappContext, model_class: type, model_id: str, model:
 
     # init #
 
-    module_kebab = model_class._model_spec['module']['kebab_case']
+    module_kebab = model_class._module_spec['name']['kebab_case']
     model_kebab = model_class._model_spec['name']['kebab_case']
-    url = f'{ctx.host}/api/{module_kebab}/{model_kebab}/{model_id}'
-    request_body = json.dumps(model._asdict()).encode()
+    url = f'{ctx.client.host}/api/{module_kebab}/{model_kebab}/{model_id}'
+    request_body = model_to_json(model).encode()
 
     # send request #
 
     try:
-        request = Request(url, headers=ctx.headers, method='PUT', data=request_body)
+        request = Request(url, headers=ctx.client.headers, method='PUT', data=request_body)
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return model_from_json(model_class, response_body)
+            return model_from_json(response_body, model_class)
         
     except HTTPError as e:
-        if e.code >= 400:
+        if e.code >= 500:
             raise ServerError(f'Got {e.code}: {e}')
         
         else:
-            raise RequestError.from_code(e.code, e)
+            raise ResponseError.from_json(e.read().decode('utf-8'))
 
     except Exception as e:
         raise MappError(f'Error updating model: {e}')
@@ -102,14 +102,14 @@ def http_model_delete(ctx: MappContext, model_class: type, model_id: str) -> Ack
 
     # init #
 
-    module_kebab = model_class._model_spec['module']['kebab_case']
+    module_kebab = model_class._module_spec['name']['kebab_case']
     model_kebab = model_class._model_spec['name']['kebab_case']
-    url = f'{ctx.host}/api/{module_kebab}/{model_kebab}/{model_id}'
+    url = f'{ctx.client.host}/api/{module_kebab}/{model_kebab}/{model_id}'
 
     # send request #
 
     try:
-        request = Request(url, headers=ctx.headers, method='DELETE')
+        request = Request(url, headers=ctx.client.headers, method='DELETE')
         with urlopen(request) as response:
             try:
                 response_body = response.read().decode('utf-8')
@@ -117,17 +117,17 @@ def http_model_delete(ctx: MappContext, model_class: type, model_id: str) -> Ack
             except json.JSONDecodeError:
                 raise MappError('INVALID_RESPONSE', 'Invalid response received when deleting model.')
             
-            if response_data == {'acknowledged': True}:
-                return Acknowledgment()
-            else:
+            try:
+                return Acknowledgment.from_dict(response_data)
+            except ValueError:
                 raise MappError('INVALID_RESPONSE', 'Invalid response received when deleting model.')
 
     except HTTPError as e:
-        if e.code >= 400:
+        if e.code >= 500:
             raise ServerError(f'Got {e.code}: {e}')
         
         else:
-            raise RequestError.from_code(e.code, e)
+            raise ResponseError.from_json(e.read().decode('utf-8'))
         
     except Exception as e:
         raise MappError(f'Error deleting model: {e}')
@@ -138,22 +138,22 @@ def http_model_list(ctx: MappContext, model_class: type, offset: int = 0, size: 
 
     module_kebab = model_class._module_spec['name']['kebab_case']
     model_kebab = model_class._model_spec['name']['kebab_case']
-    url = f'{ctx.host}/api/{module_kebab}/{model_kebab}?offset={offset}&size={size}'
+    url = f'{ctx.client.host}/api/{module_kebab}/{model_kebab}?offset={offset}&size={size}'
 
     # send request #
 
     try:
-        request = Request(url, headers=ctx.headers, method='GET')
+        request = Request(url, headers=ctx.client.headers, method='GET')
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
             return list_from_json(response_body, model_class)
         
     except HTTPError as e:
-        if e.code >= 400:
+        if e.code >= 500:
             raise ServerError(f'Got {e.code}: {e}')
         
         else:
-            raise RequestError.from_code(e.code, e)
+            raise ResponseError.from_json(e.read().decode('utf-8'))
         
     except Exception as e:
         raise MappError(f'Error listing models: {e}')
