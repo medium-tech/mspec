@@ -5,12 +5,18 @@ import uwsgi
 
 from traceback import format_exc
 
+from mapp.auth import init_auth_module
 from mapp.context import get_context_from_env, MappContext, RequestContext, spec_from_env
 from mapp.errors import *
 from mapp.types import JSONResponse, PlainTextResponse, to_json
 from mapp.module.model.db import db_model_create_table
 from mapp.module.model.server import create_model_routes
 
+#
+# debug
+#
+
+MAPP_SERVER_DEVELOPMENT_MODE = os.environ.get('MAPP_SERVER_DEVELOPMENT_MODE', 'false').lower() == 'true'
 
 def debug_routes(server: MappContext, request: RequestContext):
     if re.match('/api/debug', request.env['PATH_INFO']) is None:
@@ -42,15 +48,24 @@ def debug_routes(server: MappContext, request: RequestContext):
     raise PlainTextResponse('200 OK', output)
 
 
+#
+# context
+#
+
 server_ctx = get_context_from_env()
 server_ctx.log = uwsgi.log
 
+#
+# init server routes
+#
+
 route_list = []
 
-spec = spec_from_env()
+mapp_spec = spec_from_env()
+auth_enabled = init_auth_module(mapp_spec)
 
 try:
-    spec_modules = spec['modules']
+    spec_modules = mapp_spec['modules']
 except KeyError:
     raise MappError('NO_MODULES_DEFINED', 'No modules defined in the spec file.')
 
@@ -58,12 +73,7 @@ for module in spec_modules.values():
     if module.get('hidden', False) is True:
         continue
 
-    try:
-        spec_models = module['models']
-    except KeyError:
-        raise MappError('NO_MODELS_DEFINED', f'No models defined in module: {module["name"]["kebab_case"]}')
-
-    for model in spec_models.values():
+    for model in module.get('models', {}).values():
         if model.get('hidden', False) is True:
             continue
 
@@ -71,7 +81,18 @@ for module in spec_modules.values():
         route_list.append(route_resolver)
         db_model_create_table(server_ctx, model_class)
 
-route_list.append(debug_routes)
+    for op in module.get('ops', {}).values():
+        if op.get('hidden', False) is True:
+            continue
+        route_resolver = create_model_routes(module, model)
+        route_list.append(route_resolver)
+
+if MAPP_SERVER_DEVELOPMENT_MODE is True:
+    route_list.append(debug_routes)
+
+#
+# wsgi application
+#
 
 def application(env, start_response):
 
@@ -84,6 +105,9 @@ def application(env, start_response):
     )
    
     request.env['wsgi.input'].close()
+
+    assert server_ctx.current_user is None
+    server_ctx.current_user = lambda: None  # placeholder to get user/session from headers
 
     try:
         debug_delay = float(os.environ['DEBUG_DELAY'])

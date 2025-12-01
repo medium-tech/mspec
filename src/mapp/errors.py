@@ -16,7 +16,6 @@ class MappError(Exception):
             }
         }
 
-    
 class MappValidationError(MappError):
     def __init__(self, message: str, field_errors:dict):
         super().__init__('VALIDATION_ERROR', message)
@@ -26,7 +25,6 @@ class MappValidationError(MappError):
         error_dict = super().to_dict()
         error_dict['error']['field_errors'] = self.field_errors
         return error_dict
-
 
 class RequestError(MappError):
     def __init__(self, message: str):
@@ -75,21 +73,17 @@ class ResponseError(MappError):
             case _:
                 return ResponseError(message)
 
-
 class ServerError(MappError):
     def __init__(self, message: str):
         super().__init__('SERVER_ERROR', message)
-
 
 class NotFoundError(MappError):
     def __init__(self, message: str):
         super().__init__('NOT_FOUND', message)
 
-
 class AuthenticationError(RequestError):
-    def __init__(self, message: str):
-        super().__init__('AUTHENTICATION_ERROR', message)
-
+    def __init__(self):
+        super().__init__('AUTHENTICATION_ERROR', 'Invalid username or password')
 
 class ForbiddenError(RequestError):
     def __init__(self, message: str):

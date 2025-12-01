@@ -4,6 +4,7 @@ import sqlite3
 
 from pathlib import Path
 from dataclasses import dataclass
+from typing import Optional
 
 from mapp.errors import MappError
 from mspec.core import load_mapp_spec
@@ -56,6 +57,7 @@ class MappContext:
     client: ClientContext
     db:DBContext
     log:callable
+    current_user:Optional[callable]=None
 
 
 def get_context_from_env():

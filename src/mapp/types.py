@@ -374,7 +374,6 @@ def validate_model(model_class:type, model_instance:object) -> object:
     
     return model_instance
 
-
 #
 # json
 #

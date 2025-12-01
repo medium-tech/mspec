@@ -1,6 +1,7 @@
 import argparse
 import json
 
+from mapp.auth import init_auth_module
 from mapp.context import MappContext, spec_from_env, get_context_from_env
 from mapp.errors import MappError
 from mapp.db import create_tables
@@ -68,6 +69,7 @@ if __name__ == "__main__":
     
     try:
         mapp_spec = spec_from_env()
+        
     except MappError as e:
         if e.code == 'SPEC_FILE_NOT_FOUND':
             print(
@@ -77,5 +79,7 @@ if __name__ == "__main__":
         else:
             raise
     else:
+        auth_enabled = init_auth_module(mapp_spec)
         cli_ctx = get_context_from_env()
+        cli_ctx.current_user = placeholder_function
         main(cli_ctx, mapp_spec)

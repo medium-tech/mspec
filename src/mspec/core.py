@@ -162,7 +162,10 @@ def init_generator_spec(spec:dict) -> dict:
     except KeyError:
         raise ValueError('No modules defined in the spec file.')
     
-    use_builtin_modules = project.get('use_builtin_modules', True)
+    try:
+        use_builtin_modules = project['use_builtin_modules']
+    except Exception:
+        use_builtin_modules = True
     
     if use_builtin_modules is True:
         try:
