@@ -286,4 +286,13 @@ def init_generator_spec(spec:dict) -> dict:
                     'max_models_per_user': None
                 }
         
+        #
+        # ops
+        #
+
+        for op in module.get('ops', {}).values():
+            for key, value in generate_names(op['name']['lower_case']).items():
+                if key not in op['name']:
+                    op['name'][key] = value
+
     return spec

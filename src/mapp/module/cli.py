@@ -1,5 +1,5 @@
 from mapp.errors import MappError
-from mapp.module.model.cli import add_model_subparser
+from mapp.module.model.cli import add_model_subparser, add_op_subparser
 
 
 __all__ = [
@@ -25,3 +25,10 @@ def add_module_subparser(subparsers, spec:dict, module:dict):
         if model.get('hidden', False) is True:
             continue
         add_model_subparser(model_subparsers, spec, module, model)
+
+    # parsers for each op #
+
+    for op in module.get('ops', {}).values():
+        if op.get('hidden', False) is True:
+            continue
+        add_op_subparser(model_subparsers, spec, module, op)

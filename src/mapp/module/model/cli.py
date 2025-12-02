@@ -4,7 +4,8 @@ from mapp.module.model.db import *
 from mapp.module.model.http import *
 
 __all__ = [
-    'add_model_subparser'
+    'add_model_subparser',
+    'add_op_subparser'
 ]
 
 
@@ -253,3 +254,49 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
     # help #
     db_help_parser = db_actions.add_parser('help', help='Show help for this command', aliases=['-h', '--help'])
     db_help_parser.set_defaults(func=lambda ctx, args, p=db_parser: p.print_help())
+
+
+def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
+
+    # 
+    # init ops cli
+    #
+
+    project_name = spec['project']['name']['kebab_case']
+    module_kebab_case = module['name']['kebab_case']
+    op_kebab_case = op['name']['kebab_case']
+
+    description = f':: {project_name} :: {module_kebab_case} :: {op_kebab_case}'
+
+    op_parser = subparsers.add_parser(op_kebab_case, help=f'Operation: {op_kebab_case}', description=description)
+    
+    io_subparsers = op_parser.add_subparsers(dest='io', required=True)
+
+    help_parser = io_subparsers.add_parser(
+        'help', 
+        help='Show help for this operation', 
+        aliases=['-h', '--help']
+    )
+    help_parser.set_defaults(func=lambda ctx, args: op_parser.print_help())
+
+    # http #
+    
+    http_desc = description + ' :: http'
+
+    http_parser = io_subparsers.add_parser(
+        'http', 
+        help='Run operation via HTTP API',
+        description=http_desc
+    )
+    http_actions = http_parser.add_subparsers(dest='action', required=True)
+
+    # run #
+
+    run_desc = http_desc + ' :: run'
+
+    run_parser = io_subparsers.add_parser(
+        'run', 
+        help='Run operation locally',
+        description=run_desc
+    )
+    run_actions = run_parser.add_subparsers(dest='action', required=True)
