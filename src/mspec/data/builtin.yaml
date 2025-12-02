@@ -1,157 +1,158 @@
 lingo:
-  version: 'builtin-beta-1'
+    version: "builtin-beta-1"
 
 modules:
-  auth:
-    name:
-      lower_case: 'auth'
-
-    ops:
-      create_user:
-        description: 'Create a new user with name and email'
-        python:
-          import: 'from mapp.auth import create_user'
-          call: 'create_user'
-
-        params:
-          name:
-            type: str
-            description: 'Name of the user'
-          email:
-            type: str
-            description: 'Email of the user'
-          password:
-            type: str
-            description: 'Password for the user'
-          password_confirm:
-            type: str
-            description: 'Password confirmation'
-
-        output:
-          id:
-            type: int
-            description: 'ID of the created user'
-          name:
-            type: str
-            description: 'Name of the created user'
-          email:
-            type: str
-            description: 'Email of the created user'
-
-      login_user:
-        description: 'Login a user with email and password'
-
-        python:
-          import: 'from mapp.auth import login_user'
-          call: 'login_user'
-
-        params:
-          email:
-            type: str
-            description: 'Email of the user'
-          password:
-            type: str
-            description: 'Password for the user'
-
-        output:
-          access_token:
-            type: str
-            description: 'Access token for the logged in user'
-          token_type:
-            type: str
-            description: 'Type of the token'
-      
-      current_user:
-        description: 'Get the current logged in user'
-        python:
-          import: 'from mapp.auth import current_user'
-          call: 'current_user'
-        params: {}
-        output:
-          id:
-            type: int
-            description: 'ID of the current user'
-          name:
-            type: str
-            description: 'Name of the current user'
-          email:
-            type: str
-            description: 'Email of the current user'
-
-      logout_user:
-        description: 'Logout the current user'
-        python:
-          import: 'from mapp.auth import logout_user'
-          call: 'logout_user'
-        params: {}
-        output:
-          acknowledged:
-            type: bool
-            description: 'Whether the logout was successful'
-          message:
-            type: str
-            description: 'Acknowledgement message'
-
-      delete_user:
-        description: 'Delete currently logged in user'
-        python:
-          import: 'from mapp.auth import delete_user'
-          call: 'delete_user'
-        params: {}
-        output:
-          acknowledged:
-            type: bool
-            description: 'Whether the deletion was successful'
-          message:
-            type: str
-            description: 'Acknowledgement message'
-
-    models:
-      user:
-        hidden: true
+    auth:
         name:
-          lower_case: 'user'
+            lower_case: "auth"
 
-        fields:
+        ops:
+            create_user:
+                name:
+                    lower_case: "create user"
 
-          name:
-            name:
-              lower_case: 'name'
-            type: str
-            examples:
-              - 'alice'
-              - 'bob'
+                description: "Create a new user with name and email"
+                
+                python:
+                    call: "auth.create_user"
 
-          email:
-            name:
-              lower_case: 'email'
-            type: str
-            examples:
-              - 'alice@example.com'
-              - 'bob@example.com'
+                params:
+                    name:
+                        type: str
+                        description: "Name of the user"
+                    email:
+                        type: str
+                        description: "Email of the user"
+                    password:
+                        type: str
+                        description: "Password for the user"
+                    password_confirm:
+                        type: str
+                        description: "Password confirmation"
 
-      password_hash:
-        hidden: true
-        name:
-          lower_case: 'password hash'
+                output:
+                    id:
+                        type: int
+                        description: "ID of the created user"
+                    name:
+                        type: str
+                        description: "Name of the created user"
+                    email:
+                        type: str
+                        description: "Email of the created user"
 
-        fields:
+            login_user:
+                description: "Login a user with email and password"
 
-          hash:
-            name:
-              lower_case: 'hash'
-            type: str
-            examples:
-              - 'hashed_password_1'
-              - 'hashed_password_2'
-          
-          user_id:
-            name:
-              lower_case: 'user id'
-            type: foreign_key
-            references:
-              table: 'user'
-              field: 'id'
-            examples:
-              - "1"
-              - "2"
+                python:
+                    import: "from mapp.auth import login_user"
+                    call: "login_user"
+
+                params:
+                    email:
+                        type: str
+                        description: "Email of the user"
+                    password:
+                        type: str
+                        description: "Password for the user"
+
+                output:
+                    access_token:
+                        type: str
+                        description: "Access token for the logged in user"
+                    token_type:
+                        type: str
+                        description: "Type of the token"
+
+            current_user:
+                description: "Get the current logged in user"
+                python:
+                    import: "from mapp.auth import current_user"
+                    call: "current_user"
+                params: {}
+                output:
+                    id:
+                        type: int
+                        description: "ID of the current user"
+                    name:
+                        type: str
+                        description: "Name of the current user"
+                    email:
+                        type: str
+                        description: "Email of the current user"
+
+            logout_user:
+                description: "Logout the current user"
+                python:
+                    import: "from mapp.auth import logout_user"
+                    call: "logout_user"
+                params: {}
+                output:
+                    acknowledged:
+                        type: bool
+                        description: "Whether the logout was successful"
+                    message:
+                        type: str
+                        description: "Acknowledgement message"
+
+            delete_user:
+                description: "Delete currently logged in user"
+                python:
+                    import: "from mapp.auth import delete_user"
+                    call: "delete_user"
+                params: {}
+                output:
+                    acknowledged:
+                        type: bool
+                        description: "Whether the deletion was successful"
+                    message:
+                        type: str
+                        description: "Acknowledgement message"
+
+        models:
+            user:
+                hidden: true
+                name:
+                    lower_case: "user"
+
+                fields:
+                    name:
+                        name:
+                            lower_case: "name"
+                        type: str
+                        examples:
+                            - "alice"
+                            - "bob"
+
+                    email:
+                        name:
+                            lower_case: "email"
+                        type: str
+                        examples:
+                            - "alice@example.com"
+                            - "bob@example.com"
+
+            password_hash:
+                hidden: true
+                name:
+                    lower_case: "password hash"
+
+                fields:
+                    hash:
+                        name:
+                            lower_case: "hash"
+                        type: str
+                        examples:
+                            - "hashed_password_1"
+                            - "hashed_password_2"
+
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        references:
+                            table: "user"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"

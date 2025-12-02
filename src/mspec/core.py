@@ -165,6 +165,7 @@ def init_generator_spec(spec:dict) -> dict:
     try:
         use_builtin_modules = project['use_builtin_modules']
     except Exception:
+        project['use_builtin_modules'] = True
         use_builtin_modules = True
     
     if use_builtin_modules is True:

@@ -2,5 +2,8 @@
     "python.analysis.extraPaths": [
         "./templates/py/src",
         "./dist/py/src"
-    ]
+	],
+	"[yaml]": {
+		"editor.tabSize": 4
+	}
 }

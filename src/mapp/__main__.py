@@ -81,5 +81,5 @@ if __name__ == "__main__":
     else:
         auth_enabled = init_auth_module(mapp_spec)
         cli_ctx = get_context_from_env()
-        cli_ctx.current_user = placeholder_function
+        cli_ctx.current_user = lambda: 'placeholder'
         main(cli_ctx, mapp_spec)
