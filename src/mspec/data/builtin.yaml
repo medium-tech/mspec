@@ -7,15 +7,13 @@ modules:
             lower_case: "auth"
 
         ops:
+
             create_user:
                 name:
                     lower_case: "create user"
-
                 description: "Create a new user with name and email"
-                
                 python:
                     call: "auth.create_user"
-
                 params:
                     name:
                         type: str
@@ -29,7 +27,6 @@ modules:
                     password_confirm:
                         type: str
                         description: "Password confirmation"
-
                 output:
                     id:
                         type: int
@@ -41,13 +38,14 @@ modules:
                         type: str
                         description: "Email of the created user"
 
-            login_user:
-                description: "Login a user with email and password"
 
+            login_user:
+                name:
+                    lower_case: "login user"
+                description: "Login a user with email and password"
                 python:
                     import: "from mapp.auth import login_user"
                     call: "login_user"
-
                 params:
                     email:
                         type: str
@@ -55,7 +53,6 @@ modules:
                     password:
                         type: str
                         description: "Password for the user"
-
                 output:
                     access_token:
                         type: str
@@ -64,7 +61,10 @@ modules:
                         type: str
                         description: "Type of the token"
 
+
             current_user:
+                name:
+                    lower_case: "current user"
                 description: "Get the current logged in user"
                 python:
                     import: "from mapp.auth import current_user"
@@ -81,7 +81,10 @@ modules:
                         type: str
                         description: "Email of the current user"
 
+
             logout_user:
+                name:
+                    lower_case: "logout user"
                 description: "Logout the current user"
                 python:
                     import: "from mapp.auth import logout_user"
@@ -95,7 +98,10 @@ modules:
                         type: str
                         description: "Acknowledgement message"
 
+
             delete_user:
+                name:
+                    lower_case: "delete user"
                 description: "Delete currently logged in user"
                 python:
                     import: "from mapp.auth import delete_user"
