@@ -16,25 +16,39 @@ modules:
                     call: "auth.create_user"
                 params:
                     name:
+                        name:
+                            lower_case: "name"
                         type: str
                         description: "Name of the user"
                     email:
+                        name:
+                            lower_case: "email"
                         type: str
                         description: "Email of the user"
                     password:
+                        name:
+                            lower_case: "password"
                         type: str
                         description: "Password for the user"
                     password_confirm:
+                        name:
+                            lower_case: "password confirm"
                         type: str
                         description: "Password confirmation"
                 output:
                     id:
+                        name:
+                            lower_case: "id"
                         type: int
                         description: "ID of the created user"
                     name:
+                        name:
+                            lower_case: "name"
                         type: str
                         description: "Name of the created user"
                     email:
+                        name:
+                            lower_case: "email"
                         type: str
                         description: "Email of the created user"
 
@@ -48,16 +62,24 @@ modules:
                     call: "login_user"
                 params:
                     email:
+                        name:
+                            lower_case: "email"
                         type: str
                         description: "Email of the user"
                     password:
+                        name:
+                            lower_case: "password"
                         type: str
                         description: "Password for the user"
                 output:
                     access_token:
+                        name:
+                            lower_case: "access token"
                         type: str
                         description: "Access token for the logged in user"
                     token_type:
+                        name:
+                            lower_case: "token type"
                         type: str
                         description: "Type of the token"
 
@@ -72,12 +94,18 @@ modules:
                 params: {}
                 output:
                     id:
+                        name:
+                            lower_case: "id"
                         type: int
                         description: "ID of the current user"
                     name:
+                        name:
+                            lower_case: "name"
                         type: str
                         description: "Name of the current user"
                     email:
+                        name:
+                            lower_case: "email"
                         type: str
                         description: "Email of the current user"
 
@@ -92,9 +120,13 @@ modules:
                 params: {}
                 output:
                     acknowledged:
+                        name:
+                            lower_case: "acknowledged"
                         type: bool
                         description: "Whether the logout was successful"
                     message:
+                        name:
+                            lower_case: "message"
                         type: str
                         description: "Acknowledgement message"
 
@@ -109,9 +141,13 @@ modules:
                 params: {}
                 output:
                     acknowledged:
+                        name:
+                            lower_case: "acknowledged"
                         type: bool
                         description: "Whether the deletion was successful"
                     message:
+                        name:
+                            lower_case: "message"
                         type: str
                         description: "Acknowledgement message"
 
