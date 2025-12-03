@@ -11,6 +11,7 @@ from mapp.errors import *
 from mapp.types import JSONResponse, PlainTextResponse, to_json
 from mapp.module.model.db import db_model_create_table
 from mapp.module.model.server import create_model_routes
+from mapp.module.model.server import create_op_routes
 
 #
 # debug
@@ -84,7 +85,7 @@ for module in spec_modules.values():
     for op in module.get('ops', {}).values():
         if op.get('hidden', False) is True:
             continue
-        route_resolver = create_model_routes(module, model)
+        route_resolver = create_op_routes(module, op)
         route_list.append(route_resolver)
 
 if MAPP_SERVER_DEVELOPMENT_MODE is True:
