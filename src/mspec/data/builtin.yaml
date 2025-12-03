@@ -58,8 +58,7 @@ modules:
                     lower_case: "login user"
                 description: "Login a user with email and password"
                 python:
-                    import: "from mapp.auth import login_user"
-                    call: "login_user"
+                    call: "auth.login_user"
                 params:
                     email:
                         name:
@@ -89,8 +88,7 @@ modules:
                     lower_case: "current user"
                 description: "Get the current logged in user"
                 python:
-                    import: "from mapp.auth import current_user"
-                    call: "current_user"
+                    call: "auth.current_user"
                 params: {}
                 output:
                     id:
@@ -115,8 +113,7 @@ modules:
                     lower_case: "logout user"
                 description: "Logout the current user"
                 python:
-                    import: "from mapp.auth import logout_user"
-                    call: "logout_user"
+                    call: "auth.logout_user"
                 params: {}
                 output:
                     acknowledged:
@@ -136,8 +133,7 @@ modules:
                     lower_case: "delete user"
                 description: "Delete currently logged in user"
                 python:
-                    import: "from mapp.auth import delete_user"
-                    call: "delete_user"
+                    call: "auth.delete_user"
                 params: {}
                 output:
                     acknowledged:

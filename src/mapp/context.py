@@ -46,9 +46,12 @@ class ModelRouteContext:
 
 @dataclass
 class OpRouteContext:
+    params_class: type
+    output_class: type
     op_kebab_case: str
     module_kebab_case: str
     api_op_regex: str
+    run_op: callable
 
 
 @dataclass

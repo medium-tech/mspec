@@ -14,6 +14,9 @@ __all__ = [
     
     'new_model_class',
     'new_model',
+    'new_op_classes',
+    'new_op_params',
+    'new_op_output',
     'ModelListResult',
 
     'convert_data_to_model',
@@ -21,6 +24,8 @@ __all__ = [
     'convert_value',
     'get_python_type',
     'validate_model',
+    'validate_op_params',
+    'validate_op_output',
 
     'model_to_json',
     'to_json',
@@ -114,6 +119,68 @@ def new_model(model_class:type, data:dict):
         return model_class(**data)
     except TypeError as e:
         raise ValueError(f'Error creating model instance: {e}')
+
+def new_op_classes(op_spec:dict, module_spec:Optional[dict]=None) -> tuple[type, type]:
+    """
+    Dynamically creates a model class based on the provided model specification.
+
+    Args:
+        op_spec (dict): The specification dictionary for the op.
+
+    Returns:
+        tuple[type, type]: A tuple containing the dynamically created op params class and output class
+            in that order.
+    """
+
+    # create params class #
+
+    params_fields = []
+
+    try:
+        class_name = op_spec['name']['pascal_case']
+        params_fields += [field['name']['snake_case'] for field in op_spec['params'].values()]
+    except KeyError as e:
+        raise ValueError(f'Missing required model specification key: {e}')
+    
+    params_class = namedtuple(f'{class_name}Params', params_fields)
+    params_class._op_spec = op_spec
+    params_class._module_spec = module_spec
+
+    # create output class #
+
+    output_fields = []
+
+    try:
+        output_fields += [field['name']['snake_case'] for field in op_spec['output'].values()]
+    except KeyError as e:
+        raise ValueError(f'Missing required model specification key: {e}')
+    
+    output_class = namedtuple(f'{class_name}Output', output_fields)
+    output_class._op_spec = op_spec
+    output_class._module_spec = module_spec
+
+    return params_class, output_class
+
+def new_op_params(op_class:type, data:dict):
+    """
+    Creates an instance of the given op class using the provided data.
+
+    No data type conversion is performed. Use convert_data_to_model for that.
+
+    Args:
+        op_class (type): The op class to instantiate.
+        data (dict): A dictionary containing field values for the op.
+
+    Returns:
+        object: An instance of the op param class.
+    """
+
+    try:
+        return op_class(**data)
+    except TypeError as e:
+        raise ValueError(f'Error creating op instance: {e}')
+    
+new_op_output = new_op_params  # alias
 
 @dataclass
 class ModelListResult:
@@ -289,21 +356,20 @@ def get_python_type(field_type:str) -> type:
         case _:
             raise ValueError(f'Unsupported field type: {field_type}')
 
-def validate_model(model_class:type, model_instance:object) -> object:
+def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
     """
     Validates a model instance against its model class specification.
 
     Args:
-        model_class (type): The model class.
-        model_instance (object): The model instance to validate.
+        obj_class (type): The obj class to validate against.
+        obj_instance (object): The obj instance to validate.
         
         
     Returns:
-        The model instance if it is valid.
-
+        The obj instance
 
     Raises:        
-        MappValidationError: If the model instance is invalid, containing a dictionary of error messages if any. 
+        MappValidationError: If the obj instance is invalid, containing a dictionary of error messages if any. 
             For any fields with validation errors, the dictionary will contain the field name as the key
             and the first error message for that field as the value.
     """
@@ -311,7 +377,7 @@ def validate_model(model_class:type, model_instance:object) -> object:
     errors = {}
     total_errors = 0
 
-    for field in model_class._model_spec['fields'].values():
+    for field in data_spec.values():
 
         # field definition #
 
@@ -322,7 +388,7 @@ def validate_model(model_class:type, model_instance:object) -> object:
         # get value #
 
         try:
-            value = getattr(model_instance, field_name)
+            value = getattr(obj_instance, field_name)
         except AttributeError:
             if required:
                 errors[field_name] = f'Field "{field_name}" is missing from the model instance.'
@@ -370,9 +436,30 @@ def validate_model(model_class:type, model_instance:object) -> object:
                     break
 
     if total_errors > 0:
-        raise MappValidationError('Model validation failed.', errors)
+        raise MappValidationError(err_msg, errors)
     
-    return model_instance
+    return obj_instance
+
+def validate_model(model_class:type, model_instance:object) -> object:
+    return _validate_obj(
+        model_class._model_spec['fields'], 
+        model_instance,
+        f'Model Validation failed for: {model_class._model_spec["name"]["pascal_case"]}'
+    )
+
+def validate_op_params(op_class:type, op_params_instance:object) -> object:
+    return _validate_obj(
+        op_class._op_spec['params'], 
+        op_params_instance,
+        f'Op Params Validation failed for: {op_class._op_spec["name"]["pascal_case"]}'
+    )
+
+def validate_op_output(op_class:type, op_output_instance:object) -> object:
+    return _validate_obj(
+        op_class._op_spec['output'], 
+        op_output_instance,
+        f'Op {op_class._op_spec["name"]["pascal_case"]} returned an invalid output'
+    )
 
 #
 # json
