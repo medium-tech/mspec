@@ -302,6 +302,26 @@ def init_generator_spec(spec:dict) -> dict:
 
                 module_op_names.append(op['name'][key])
 
+            try:
+                op_params = op['params']
+            except KeyError:
+                raise ValueError(f'No params defined in op {op["name"]["lower_case"]} in module {module_snake}')
+            
+            try:
+                op_output = op['output']
+            except KeyError:
+                raise ValueError(f'No output defined in op {op["name"]["lower_case"]} in module {module_snake}')
+
+            for param in op_params.values():
+                for key, value in generate_names(param['name']['lower_case']).items():
+                    if key not in param['name']:
+                        param['name'][key] = value
+            
+            for out_field in op_output.values():
+                for key, value in generate_names(out_field['name']['lower_case']).items():
+                    if key not in out_field['name']:
+                        out_field['name'][key] = value
+
         # check for duplicate names #
 
         duplicate_names = set(module_model_names) & set(module_op_names)

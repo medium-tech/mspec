@@ -25,7 +25,7 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
 
     description = f':: {project_name} :: {module_kebab_case} :: {model_kebab_case}'
 
-    model_fields = [f"\n  :: {field['name']['snake_case']} - {field['type']}" for field in model['fields'].values()]
+    model_fields = [f"\n    :: {field['name']['snake_case']} - {field['type']}" for field in model['fields'].values()]
     model_fields_str = ''.join(model_fields)
 
     model_parser = subparsers.add_parser(
@@ -276,9 +276,22 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
     module_kebab_case = module['name']['kebab_case']
     op_kebab_case = op['name']['kebab_case']
 
-    op_description = f':: {project_name} :: {module_kebab_case} :: {op_kebab_case}'
+    op_path = f':: {project_name} :: {module_kebab_case} :: {op_kebab_case}'
 
-    op_parser = subparsers.add_parser(op_kebab_case, help=f'Operation: {op_kebab_case}', description=op_description)
+    param_fields = [f"\n        :: {param['name']['snake_case']} - {param['type']}" for param in op['params'].values()]
+    param_fields_str = ''.join(param_fields)
+
+    output_fields = [f"\n        :: {output['name']['snake_case']} - {output['type']}" for output in op['output'].values()]
+    output_fields_str = ''.join(output_fields)
+
+    op_desc = '\n    :: params' + param_fields_str + '\n    :: output' + output_fields_str
+
+    op_parser = subparsers.add_parser(
+        op_kebab_case, 
+        help=f'Operation: {op_kebab_case}', 
+        description=op_path + op_desc, 
+        formatter_class=argparse.RawTextHelpFormatter
+    )
     
     io_subparsers = op_parser.add_subparsers(dest='io', required=True)
 
@@ -291,7 +304,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
 
     # http #
     
-    http_desc = op_description + ' :: http'
+    http_desc = op_path + ' :: http'
 
     http_parser = io_subparsers.add_parser(
         'http', 
@@ -302,7 +315,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
 
     # run #
 
-    run_desc = op_description + ' :: run'
+    run_desc = op_path + ' :: run'
 
     run_parser = io_subparsers.add_parser(
         'run', 
