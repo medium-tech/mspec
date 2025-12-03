@@ -12,7 +12,7 @@ from mspec.core import load_mapp_spec
 __all__ = [
     'DEFAULT_DB_PATH',
     'DBContext',
-    'RouteContext',
+    'ModelRouteContext',
     'RequestContext',
     'MappContext',
     'get_context_from_env'
@@ -28,18 +28,27 @@ class DBContext:
     cursor: sqlite3.Cursor
     commit: callable
 
+
 @dataclass
 class ClientContext:
     host: str
     headers: dict
 
+
 @dataclass
-class RouteContext:
+class ModelRouteContext:
     model_class: type
     model_kebab_case: str
     module_kebab_case: str
     api_instance_regex: str
     api_model_regex: str
+
+
+@dataclass
+class OpRouteContext:
+    op_kebab_case: str
+    module_kebab_case: str
+    api_op_regex: str
 
 
 @dataclass

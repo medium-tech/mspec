@@ -1,11 +1,10 @@
-import json
 import re
 
 from urllib.parse import parse_qs
 
 from mapp.errors import NotFoundError, RequestError
-from mapp.context import MappContext, RequestContext, RouteContext
-from mapp.types import JSONResponse, model_from_json, model_to_json, new_model_class, convert_json_to_model
+from mapp.context import MappContext, RequestContext, ModelRouteContext, OpRouteContext
+from mapp.types import JSONResponse, new_model_class, convert_json_to_model
 from mapp.module.model.db import *
 
 
@@ -27,7 +26,7 @@ def create_model_routes(module_spec:dict, model_spec:dict) -> tuple[callable, ty
     model_kebab_case = model_class._model_spec['name']['kebab_case']
     module_kebab_case = model_class._module_spec['name']['kebab_case']
 
-    route_ctx = RouteContext(
+    route_ctx = ModelRouteContext(
         model_class=model_class,
         model_kebab_case=model_kebab_case,
         module_kebab_case=module_kebab_case,
@@ -38,7 +37,7 @@ def create_model_routes(module_spec:dict, model_spec:dict) -> tuple[callable, ty
     route_resolver = lambda server, request: model_routes(route_ctx, server, request)
     return route_resolver, model_class
 
-def model_routes(route: RouteContext, server: MappContext, request: RequestContext):
+def model_routes(route: ModelRouteContext, server: MappContext, request: RequestContext):
 
     #
     # instance routes
@@ -125,3 +124,16 @@ def model_routes(route: RouteContext, server: MappContext, request: RequestConte
         else:
             server.log(f'ERROR 405 {route.module_kebab_case}.{route.model_kebab_case}')
             raise RequestError('405 Method Not Allowed', 'invalid request method')
+
+def create_op_routes(module_spec:dict, op_spec:dict) -> tuple[callable, type]:
+    op_kebab_case = op_spec['name']['kebab_case']
+    module_kebab_case = module_spec['name']['kebab_case']
+
+    op_ctx = OpRouteContext(
+        op_kebab_case=op_kebab_case,
+        module_kebab_case=module_kebab_case,
+        api_op_regex=rf'/api/{module_kebab_case}/ops/{op_kebab_case}'
+    )
+
+def op_routes():
+    pass
