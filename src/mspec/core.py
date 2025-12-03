@@ -153,10 +153,6 @@ def init_generator_spec(spec:dict) -> dict:
         if key not in project['name']:
             project['name'][key] = value
 
-    #
-    # modules
-    #
-
     try:
         spec_modules:dict = spec['modules']
     except KeyError:
@@ -178,6 +174,10 @@ def init_generator_spec(spec:dict) -> dict:
             if module_name not in spec_modules:
                 spec_modules[module_name] = module
 
+    #
+    # modules
+    #
+
     for module in spec_modules.values():
         for key, value in generate_names(module['name']['lower_case']).items():
             if key not in module['name']:
@@ -189,10 +189,15 @@ def init_generator_spec(spec:dict) -> dict:
         # models
         #
 
+        module_model_names = []
+        module_op_names = []
+
         for model in module['models'].values():
             for key, value in generate_names(model['name']['lower_case']).items():
                 if key not in model['name']:
                     model['name'][key] = value
+
+                module_model_names.append(model['name'][key])
 
             model_snake = model['name']['snake_case']
 
@@ -294,5 +299,14 @@ def init_generator_spec(spec:dict) -> dict:
             for key, value in generate_names(op['name']['lower_case']).items():
                 if key not in op['name']:
                     op['name'][key] = value
+
+                module_op_names.append(op['name'][key])
+
+        # check for duplicate names #
+
+        duplicate_names = set(module_model_names) & set(module_op_names)
+        num_dupe_names = len(duplicate_names)
+        if num_dupe_names > 0:
+            raise ValueError(f'{num_dupe_names} duplicate model and op names in module {module_snake}: {duplicate_names}')
 
     return spec

@@ -266,9 +266,9 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
     module_kebab_case = module['name']['kebab_case']
     op_kebab_case = op['name']['kebab_case']
 
-    description = f':: {project_name} :: {module_kebab_case} :: {op_kebab_case}'
+    op_description = f':: {project_name} :: {module_kebab_case} :: {op_kebab_case}'
 
-    op_parser = subparsers.add_parser(op_kebab_case, help=f'Operation: {op_kebab_case}', description=description)
+    op_parser = subparsers.add_parser(op_kebab_case, help=f'Operation: {op_kebab_case}', description=op_description)
     
     io_subparsers = op_parser.add_subparsers(dest='io', required=True)
 
@@ -281,7 +281,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
 
     # http #
     
-    http_desc = description + ' :: http'
+    http_desc = op_description + ' :: http'
 
     http_parser = io_subparsers.add_parser(
         'http', 
@@ -292,7 +292,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
 
     # run #
 
-    run_desc = http_desc + ' :: run'
+    run_desc = op_description + ' :: run'
 
     run_parser = io_subparsers.add_parser(
         'run', 
