@@ -11,7 +11,7 @@ from mapp.errors import *
 from mapp.types import JSONResponse, PlainTextResponse, to_json
 from mapp.module.model.db import db_model_create_table
 from mapp.module.model.server import create_model_routes
-from mapp.module.model.server import create_op_routes
+from mapp.module.op.server import create_op_routes
 
 #
 # debug

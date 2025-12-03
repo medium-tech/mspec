@@ -17,15 +17,21 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
     module_kebab_case = module['name']['kebab_case']
     op_kebab_case = op['name']['kebab_case']
 
+    # create help text #
+
     op_path = f':: {project_name} :: {module_kebab_case} :: {op_kebab_case}'
 
-    param_fields = [f"\n        :: {param['name']['snake_case']} - {param['type']}" for param in op['params'].values()]
+    params = op['params'].values()
+    param_fields = [f"\n        :: {p['name']['snake_case']} - {p['type']}" for p in params]
     param_fields_str = ''.join(param_fields)
 
-    output_fields = [f"\n        :: {output['name']['snake_case']} - {output['type']}" for output in op['output'].values()]
+    outputs = op['output'].values()
+    output_fields = [f"\n        :: {o['name']['snake_case']} - {o['type']}" for o in outputs]
     output_fields_str = ''.join(output_fields)
 
     op_docs = '\n    :: params' + param_fields_str + '\n    :: output' + output_fields_str
+
+    # list of ops at module level #
 
     op_parser = subparsers.add_parser(
         op_kebab_case, 
@@ -44,7 +50,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
     help_parser.set_defaults(func=lambda ctx, args: op_parser.print_help())
 
     #
-    # http
+    # run op via http
     #
 
     http_desc = op_path + ' :: http'
@@ -65,7 +71,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
     http_parser.set_defaults(func=cli_op_http)
 
     #
-    # run
+    # run op locally
     #
 
     run_desc = op_path + ' :: run'
