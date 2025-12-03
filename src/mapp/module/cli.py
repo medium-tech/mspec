@@ -1,5 +1,6 @@
 from mapp.errors import MappError
-from mapp.module.model.cli import add_model_subparser, add_op_subparser
+from mapp.module.model.cli import add_model_subparser
+from mapp.module.op.cli import add_op_subparser
 
 
 __all__ = [
