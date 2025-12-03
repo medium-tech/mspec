@@ -141,7 +141,7 @@ def _get_user_id_from_token(ctx:dict, token:str) -> str:
 # extneral
 #
 
-def create_user(ctx: MappContext, **params) -> dict:
+def create_user(ctx: MappContext, params:object) -> dict:
     """
     Create a new user in the auth module.
     ctx: MappContext - The application context.
@@ -157,7 +157,7 @@ def create_user(ctx: MappContext, **params) -> dict:
         email: str - The email of the newly created user.
     """
 
-def login_user(ctx: MappContext, **params):
+def login_user(ctx: MappContext, params:object):
     """
     Log in a user in the auth module.
     ctx: MappContext - The application context.
@@ -170,7 +170,7 @@ def login_user(ctx: MappContext, **params):
         token_type: str - The type of the token.
     """
 
-def current_user(ctx: MappContext, **params):
+def current_user(ctx: MappContext, params:object):
     """
     Get the current logged-in user in the auth module.
     ctx: MappContext - The application context.
@@ -182,7 +182,7 @@ def current_user(ctx: MappContext, **params):
         email: str - The email of the current user.
     """
 
-def logout_user(ctx: MappContext, **params):
+def logout_user(ctx: MappContext, params:object):
     """
     Log out a user in the auth module.
     ctx: MappContext - The application context.
@@ -193,7 +193,7 @@ def logout_user(ctx: MappContext, **params):
         message: str - Confirmation message of logout.
     """
 
-def delete_user(ctx: MappContext, **params):
+def delete_user(ctx: MappContext, params:object):
     """
     Delete a user in the auth module.
     ctx: MappContext - The application context.
