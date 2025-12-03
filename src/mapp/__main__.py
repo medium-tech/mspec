@@ -19,7 +19,11 @@ def main(ctx: MappContext, spec:dict):
 
     project_name = spec['project']['name']['kebab_case']
 
-    parser = argparse.ArgumentParser(description=f':: {project_name}', prog='mapp')
+    parser = argparse.ArgumentParser(
+        prog='mapp',
+        description=f':: {project_name}', 
+        formatter_class=argparse.RawTextHelpFormatter
+    )
     subparsers = parser.add_subparsers(dest='module', help='Available modules', required=False)
 
     help_parser = subparsers.add_parser('help', help='Show top-level help', aliases=['-h', '--help'])

@@ -1,3 +1,5 @@
+import argparse
+
 from mapp.types import *
 from mapp.errors import MappError
 from mapp.module.model.db import *
@@ -23,7 +25,15 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
 
     description = f':: {project_name} :: {module_kebab_case} :: {model_kebab_case}'
 
-    model_parser = subparsers.add_parser(model_kebab_case, help=f'Model: {model_kebab_case}', description=description)
+    model_fields = [f"\n  :: {field['name']['snake_case']} - {field['type']}" for field in model['fields'].values()]
+    model_fields_str = ''.join(model_fields)
+
+    model_parser = subparsers.add_parser(
+        model_kebab_case, 
+        help=f'Model: {model_kebab_case}', 
+        description=description + model_fields_str,
+        formatter_class=argparse.RawTextHelpFormatter
+    )
 
     io_subparsers = model_parser.add_subparsers(dest='io', required=True)
 
