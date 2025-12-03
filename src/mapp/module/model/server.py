@@ -23,8 +23,8 @@ def create_model_routes(module_spec:dict, model_spec:dict) -> tuple[callable, ty
     Take a module and model spec and return a route resolver function for that model along with the model class.
     """
     model_class = new_model_class(model_spec, module_spec)
-    model_kebab_case = model_class._model_spec['name']['kebab_case']
-    module_kebab_case = model_class._module_spec['name']['kebab_case']
+    model_kebab_case = model_spec['name']['kebab_case']
+    module_kebab_case = module_spec['name']['kebab_case']
 
     route_ctx = ModelRouteContext(
         model_class=model_class,

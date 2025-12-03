@@ -145,7 +145,7 @@ def create_user(ctx: MappContext, params:object) -> dict:
     """
     Create a new user in the auth module.
     ctx: MappContext - The application context.
-    params: dict - Parameters for the new user.
+    params: object - Parameters for the new user.
         name: str - The name of the user.
         email: str - The email of the user.
         password: str - The password for the user.
@@ -156,12 +156,17 @@ def create_user(ctx: MappContext, params:object) -> dict:
         name: str - The name of the newly created user.
         email: str - The email of the newly created user.
     """
+    return {
+        'id': 'user-123',
+        'name': params.get('name', 'placeholder_name'),
+        'email': params.get('email', 'placeholder@example.com'),
+    }
 
 def login_user(ctx: MappContext, params:object):
     """
     Log in a user in the auth module.
     ctx: MappContext - The application context.
-    params: dict - Parameters for login.
+    params: object - Parameters for login.
         email: str - The email of the user.
         password: str - The password for the user.
 
@@ -169,38 +174,55 @@ def login_user(ctx: MappContext, params:object):
         access_token: str - The access token for the logged-in user.
         token_type: str - The type of the token.
     """
+    return {
+        'access_token': 'token-abc123',
+        'token_type': 'bearer',
+    }
 
 def current_user(ctx: MappContext, params:object):
     """
     Get the current logged-in user in the auth module.
     ctx: MappContext - The application context.
-    params: dict - No params needed for current user.
+    params: object - No params needed for current user.
 
     return: dict
         id: str - The ID of the current user.
         name: str - The name of the current user.
         email: str - The email of the current user.
     """
+    return {
+        'id': 'user-123',
+        'name': 'current_user',
+        'email': 'current@example.com',
+    }
 
 def logout_user(ctx: MappContext, params:object):
     """
     Log out a user in the auth module.
     ctx: MappContext - The application context.
-    params: dict - No params needed for logout.
+    params: object - No params needed for logout.
 
     return: dict
         acknowledged: bool - Whether the logout was successful.
         message: str - Confirmation message of logout.
     """
+    return {
+        'acknowledged': True,
+        'message': 'User logged out successfully.',
+    }
 
 def delete_user(ctx: MappContext, params:object):
     """
     Delete a user in the auth module.
     ctx: MappContext - The application context.
-    params: dict - Parameters for deleting a user.
+    params: object - Parameters for deleting a user.
         user_id: str - The ID of the user to delete.
 
     return: dict
         acknowledged: bool - Whether the deletion was successful.
         message: str - Confirmation message of deletion.
     """
+    return {
+        'acknowledged': True,
+        'message': f"User {params.get('user_id', 'user-123')} deleted successfully.",
+    }

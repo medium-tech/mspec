@@ -64,7 +64,7 @@ def op_create_callable(param_class:type, output_class:type) -> object:
 		
 		validate_op_params(param_class, params)
 
-		op_output = op_callable(params)
+		op_output = op_callable(ctx, params)
 
 		return validate_op_output(output_class, op_output)
 

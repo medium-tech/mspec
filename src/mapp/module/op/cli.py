@@ -88,6 +88,9 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
         if args.json == 'help':
             run_parser.print_help()
         else:
-            print('placeholder for local op run')
+            param_class, output_class = new_op_classes(op, module)
+            op_function = op_create_callable(param_class, output_class)
+            output = op_function(ctx, {})
+            print(to_json(output, sort_keys=True, indent=4))
 
     run_parser.set_defaults(func=cli_op_run)
