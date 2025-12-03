@@ -284,12 +284,12 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
     output_fields = [f"\n        :: {output['name']['snake_case']} - {output['type']}" for output in op['output'].values()]
     output_fields_str = ''.join(output_fields)
 
-    op_desc = '\n    :: params' + param_fields_str + '\n    :: output' + output_fields_str
+    op_docs = '\n    :: params' + param_fields_str + '\n    :: output' + output_fields_str
 
     op_parser = subparsers.add_parser(
         op_kebab_case, 
         help=f'Operation: {op_kebab_case}', 
-        description=op_path + op_desc, 
+        description=op_path + op_docs, 
         formatter_class=argparse.RawTextHelpFormatter
     )
     
@@ -302,24 +302,44 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
     )
     help_parser.set_defaults(func=lambda ctx, args: op_parser.print_help())
 
-    # http #
-    
+    #
+    # http
+    #
+
     http_desc = op_path + ' :: http'
 
     http_parser = io_subparsers.add_parser(
         'http', 
         help='Run operation via HTTP API',
-        description=http_desc
+        description=http_desc + op_docs,
+        formatter_class=argparse.RawTextHelpFormatter
     )
-    http_actions = http_parser.add_subparsers(dest='action', required=True)
+    http_parser.add_argument('json', help='JSON string for operation input')
+    def cli_op_http(ctx, args):
+        if args.json == 'help':
+            http_parser.print_help()
+        else:
+            print('placeholder for http op call')
 
-    # run #
+    http_parser.set_defaults(func=cli_op_http)
+
+    #
+    # run
+    #
 
     run_desc = op_path + ' :: run'
 
     run_parser = io_subparsers.add_parser(
         'run', 
         help='Run operation locally',
-        description=run_desc
+        description=run_desc + op_docs,
+        formatter_class=argparse.RawTextHelpFormatter
     )
-    run_actions = run_parser.add_subparsers(dest='action', required=True)
+    run_parser.add_argument('json', help='JSON string for operation input')
+    def cli_op_run(ctx, args):
+        if args.json == 'help':
+            run_parser.print_help()
+        else:
+            print('placeholder for local op run')
+
+    run_parser.set_defaults(func=cli_op_run)
