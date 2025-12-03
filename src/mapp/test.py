@@ -230,6 +230,9 @@ class TestMTemplateApp(unittest.TestCase):
             module_name_kebab = module['name']['kebab_case']
 
             for model in module['models'].values():
+                if model['hidden'] is True:
+                    continue
+                
                 model_name_snake = model['name']['snake_case']
                 model_name_kebab = model['name']['kebab_case']
 
@@ -260,6 +263,9 @@ class TestMTemplateApp(unittest.TestCase):
                 module_name_kebab = module['name']['kebab_case']
 
                 for model in module['models'].values():
+                    if model['hidden'] is True:
+                        continue
+
                     model_name_kebab = model['name']['kebab_case']
 
                     for _ in range(cls.pagination_total_models):

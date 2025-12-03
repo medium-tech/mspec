@@ -22,31 +22,46 @@ def db_model_create_table(ctx:MappContext, model_class: type) -> Acknowledgment:
     # non list fields #
     
     columns = ['id INTEGER PRIMARY KEY']
+    indexes = []
     for field in model_spec['non_list_fields']:
         field_name = field['name']['snake_case']
         field_type = field['type']
-        
+
         match field_type:
             case 'bool':
-                sql_type = 'INTEGER'
+                col_def = f'{field_name} INTEGER'
             case 'int':
-                sql_type = 'INTEGER'
+                col_def = f'{field_name} INTEGER'
             case 'float':
-                sql_type = 'REAL'
+                col_def = f'{field_name} REAL'
             case 'str' | 'enum':
-                sql_type = 'TEXT'
+                col_def = f'{field_name} TEXT'
             case 'datetime':
-                sql_type = 'TEXT'
+                col_def = f'{field_name} TEXT'
+            case 'foreign_key':
+                ref_table = field['references']['table']
+                ref_field = field['references']['field']
+                col_def = f"'{field_name}' INTEGER REFERENCES {ref_table}({ref_field})"
             case _:
                 raise ValueError(f'Unsupported field type: {field_type}')
             
-        columns.append(f"'{field_name}' {sql_type}")
+        columns.append(col_def)
+
+        if field_type == 'foreign_key':
+            indexes.append(f"CREATE INDEX IF NOT EXISTS {model_snake_case}_{field_name}_fk_index ON {model_snake_case}('{field_name}')")
+
+    # create main table #
 
     columns_str = ', '.join(columns)
     main_sql_table = f"CREATE TABLE IF NOT EXISTS {model_snake_case}({columns_str})"
     ctx.db.cursor.execute(main_sql_table)
 
-    # list fields #
+    # create foreign key indexes #
+
+    for index_sql in indexes:
+        ctx.db.cursor.execute(index_sql)
+
+    # list field tables and indexes #
 
     for field in model_spec['list_fields']:
         field_name = field['name']['snake_case']

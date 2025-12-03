@@ -199,6 +199,9 @@ def init_generator_spec(spec:dict) -> dict:
 
                 module_model_names.append(model['name'][key])
 
+            if 'hidden' not in model:
+                model['hidden'] = False
+
             model_snake = model['name']['snake_case']
 
             model_path = f'{module_snake}.{model_snake}'
