@@ -108,7 +108,6 @@ def application(env, start_response):
     request.env['wsgi.input'].close()
 
     assert server_ctx.current_user is None
-    server_ctx.current_user = lambda: None  # placeholder to get user/session from headers
 
     try:
         debug_delay = float(os.environ['DEBUG_DELAY'])

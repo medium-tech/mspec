@@ -63,12 +63,21 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
         description=http_desc + op_docs,
         formatter_class=argparse.RawTextHelpFormatter
     )
-    http_parser.add_argument('json', help='JSON string for operation input')
+    http_parser.add_argument('json', nargs='?', help='JSON string for operation input')
     def cli_op_http(ctx, args):
         if args.json == 'help':
             http_parser.print_help()
         else:
-            print('placeholder for http op call')
+            param_class, output_class = new_op_classes(op, module)
+
+            if args.json is None:
+                params = new_op_params(param_class, dict())
+            else:
+                params = json_to_op_params_w_convert(args.json, param_class)
+
+            output = http_run_op(ctx, param_class, output_class, params)
+
+            print(to_json(output, sort_keys=True, indent=4))
 
     http_parser.set_defaults(func=cli_op_http)
 

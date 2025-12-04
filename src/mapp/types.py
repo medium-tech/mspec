@@ -10,27 +10,35 @@ from mapp.errors import MappValidationError, MappError
 __all__ = [
     'DATETIME_FORMAT_STR',
     'Acknowledgment',
+    'PlainTextResponse',
     'JSONResponse',
+    'ModelListResult',
     
     'new_model_class',
     'new_model',
     'new_op_classes',
     'new_op_params',
     'new_op_output',
-    'ModelListResult',
-
+   
     'convert_dict_to_model',
-    'json_to_model_w_convert',
-    '_convert_incoming_value',
-    '_get_python_type_for_field',
+    'convert_dict_to_op_params',
+
     'validate_model',
     'validate_op_params',
     'validate_op_output',
 
+    'MappJsonEncoder',
     'model_to_json',
-    'to_json',
     'json_to_model',
-    'model_list_from_json'
+    'json_to_model_w_convert',
+    'model_list_from_json',
+    'to_json',
+
+    'json_to_op_params',
+    'json_to_op_params_w_convert',
+    'json_to_op_output',
+    'op_output_to_json',
+    'op_params_to_json'
 ]
 
 DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
@@ -57,7 +65,6 @@ class Acknowledgment:
             'message': self.message
         }
 
-
 class PlainTextResponse(Exception):
     content_type = 'text/plain'
     def __init__(self, status:str, text:str) -> None:
@@ -65,13 +72,17 @@ class PlainTextResponse(Exception):
         self.status = status
         self.text = text
 
-
 class JSONResponse(Exception):
     content_type = 'application/json'
     def __init__(self, status:str, data:dict|None=None) -> None:
         super().__init__('JSONResponse')
         self.status = status
         self.data = data
+
+@dataclass
+class ModelListResult:
+    items: list
+    total: int
 
 #
 # data
@@ -183,12 +194,24 @@ def new_op_params(op_class:type, data:dict):
     except TypeError as e:
         raise ValueError(f'Error creating op instance: {e}')
     
-new_op_output = new_op_params  # alias
+def new_op_output(op_class:type, data:dict):
+    """
+    Creates an instance of the given op output class using the provided data.
 
-@dataclass
-class ModelListResult:
-    items: list
-    total: int
+    No data type conversion is performed. Use convert_data_to_model for that.
+
+    Args:
+        op_class (type): The op output class to instantiate.
+        data (dict): A dictionary containing field values for the op output.
+
+    Returns:
+        object: An instance of the op output class.
+    """
+
+    try:
+        return op_class(**data)
+    except TypeError as e:
+        raise ValueError(f'Error creating op output instance: {e}')
 
 # conversion #
 
@@ -482,7 +505,6 @@ class MappJsonEncoder(json.JSONEncoder):
 
 # model #
 
-
 def model_to_json(obj:object, sort_keys=False, indent=None) -> str:
     try:
         return json.dumps(
@@ -580,7 +602,7 @@ def json_to_op_params(json_str:str, op_class:type) -> object:
     except TypeError as e:
         raise MappValidationError(f'Error creating op params instance: {e}')
 
-def json_to_op_params_w_convert(op_class:type, json_str:str) -> object:
+def json_to_op_params_w_convert(json_str:str, op_class:type) -> object:
     """
     Converts a JSON string into an instance of the specified op param class.
 
@@ -601,4 +623,14 @@ def json_to_op_params_w_convert(op_class:type, json_str:str) -> object:
     
     return convert_dict_to_op_params(op_class, data)
 
+def json_to_op_output(json_str:str, op_class:type) -> object:
+    try:
+        data = json.loads(json_str)
+        return new_op_output(op_class, data)
+    except json.JSONDecodeError as e:
+        raise MappValidationError(f'Invalid JSON: {e}')
+    except TypeError as e:
+        raise MappValidationError(f'Error creating op output instance: {e}')
+
 op_output_to_json = to_json
+op_params_to_json = to_json
