@@ -39,7 +39,7 @@ modules:
                     id:
                         name:
                             lower_case: "id"
-                        type: int
+                        type: str
                         description: "ID of the created user"
                     name:
                         name:
@@ -94,7 +94,7 @@ modules:
                     id:
                         name:
                             lower_case: "id"
-                        type: int
+                        type: str
                         description: "ID of the current user"
                     name:
                         name:

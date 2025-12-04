@@ -68,7 +68,7 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
         if args.json == 'help':
             create_parser.print_help()
         else: 
-            incoming_model = convert_json_to_model(model_class, args.json)
+            incoming_model = json_to_model_w_convert(model_class, args.json)
             new_model = http_model_create(ctx, model_class, incoming_model)
             print(model_to_json(new_model, sort_keys=True, indent=4))
 
@@ -102,7 +102,7 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
         if args.model_id == 'help':
             update_parser.print_help()
         else:
-            incoming_model = convert_json_to_model(model_class, args.json)
+            incoming_model = json_to_model_w_convert(model_class, args.json)
             updated_model = http_model_update(ctx, model_class, args.model_id, incoming_model)
             print(model_to_json(updated_model, sort_keys=True, indent=4))
         
@@ -184,7 +184,7 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
         if args.json == 'help':
             db_create_parser.print_help()
         else:
-            incoming_model = convert_json_to_model(model_class, args.json)
+            incoming_model = json_to_model_w_convert(model_class, args.json)
             new_model = db_model_create(ctx, model_class, incoming_model)
             print(model_to_json(new_model, sort_keys=True, indent=4))
 
@@ -218,7 +218,7 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
         if args.model_id == 'help':
             db_update_parser.print_help()
         else:
-            incoming_model = convert_json_to_model(model_class, args.json, args.model_id)
+            incoming_model = json_to_model_w_convert(model_class, args.json, args.model_id)
             if incoming_model.id is None:
                 incoming_model = incoming_model._replace(id=args.model_id)
             elif incoming_model.id != args.model_id:

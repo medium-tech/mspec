@@ -4,7 +4,7 @@ from typing import NamedTuple
 
 from mapp.context import MappContext
 from mapp.errors import AuthenticationError, MappError
-from mapp.types import new_model_class
+from mapp.types import new_model_class, Acknowledgment
 
 MAPP_AUTH_SECRET_KEY = os.environ.get('MAPP_AUTH_SECRET_KEY')   # openssl rand -hex 32
 MAPP_AUTH_LOGIN_EXPIRATION_MINUTES = os.environ.get('MAPP_AUTH_LOGIN_EXPIRATION_MINUTES', 60 * 24 * 7)
@@ -25,11 +25,24 @@ class User(NamedTuple):
     name: str
     email: str
 
-
 class PasswordHash(NamedTuple):
     id: str
     user_id: str
     hash: str
+
+class CreateUserOutput(NamedTuple):
+    id: str
+    name: str
+    email: str
+
+class LoginUserOutput(NamedTuple):
+    access_token: str
+    token_type: str
+
+class CurrentUserOutput(NamedTuple):
+    id: str
+    name: str
+    email: str
 
 
 def init_auth_module(spec: dict) -> bool:
@@ -53,17 +66,31 @@ def init_auth_module(spec: dict) -> bool:
         auth_module = spec['modules']['auth']
         user = auth_module['models']['user']
         password_hash = auth_module['models']['password_hash']
+        create_user_output = auth_module['ops']['create_user']['output']
+        login_user_output = auth_module['ops']['login_user']['output']
+        current_user_output = auth_module['ops']['current_user']['output']
     except KeyError as e:
         raise MappError('INVALID_SPEC', f'Builtin auth module is missing key: {e}')
     
     global User
-    global PasswordHash
-
     User._model_spec = user
     User._module_spec = auth_module
 
+    global PasswordHash
     PasswordHash._model_spec = password_hash
     PasswordHash._module_spec = auth_module
+
+    global CreateUserOutput
+    CreateUserOutput._op_spec = create_user_output
+    CreateUserOutput._module_spec = auth_module
+
+    global LoginUserOutput
+    LoginUserOutput._op_spec = login_user_output
+    LoginUserOutput._module_spec = auth_module
+
+    global CurrentUserOutput
+    CurrentUserOutput._op_spec = current_user_output
+    CurrentUserOutput._module_spec = auth_module
 
     return True
 
@@ -141,7 +168,7 @@ def _get_user_id_from_token(ctx:dict, token:str) -> str:
 # extneral
 #
 
-def create_user(ctx: MappContext, params:object) -> dict:
+def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
     """
     Create a new user in the auth module.
     ctx: MappContext - The application context.
@@ -151,18 +178,18 @@ def create_user(ctx: MappContext, params:object) -> dict:
         password: str - The password for the user.
         password_confirm: str - Confirmation of the password.
 
-    return: dict
+    return: CreateUserOutput
         id: str - The ID of the newly created user.
         name: str - The name of the newly created user.
         email: str - The email of the newly created user.
     """
-    return {
-        'id': 'user-123',
-        'name': params.get('name', 'placeholder_name'),
-        'email': params.get('email', 'placeholder@example.com'),
-    }
+    return CreateUserOutput(
+        id='123',
+        name=params.name,
+        email=params.email,
+    )
 
-def login_user(ctx: MappContext, params:object):
+def login_user(ctx: MappContext, params:object) -> LoginUserOutput:
     """
     Log in a user in the auth module.
     ctx: MappContext - The application context.
@@ -170,59 +197,53 @@ def login_user(ctx: MappContext, params:object):
         email: str - The email of the user.
         password: str - The password for the user.
 
-    return: dict
+    return: LoginUserOutput
         access_token: str - The access token for the logged-in user.
         token_type: str - The type of the token.
     """
-    return {
-        'access_token': 123,
-        'token_type': 'bearer',
-    }
+    return LoginUserOutput(
+        access_token='fake-jwt-token',
+        token_type='bearer'
+    )
 
-def current_user(ctx: MappContext, params:object):
+def current_user(ctx: MappContext, params:object) -> CurrentUserOutput:
     """
     Get the current logged-in user in the auth module.
     ctx: MappContext - The application context.
     params: object - No params needed for current user.
 
-    return: dict
+    return: CurrentUserOutput
         id: str - The ID of the current user.
         name: str - The name of the current user.
         email: str - The email of the current user.
     """
-    return {
-        'id': 'user-123',
-        'name': 'current_user',
-        'email': 'current@example.com',
-    }
+    return CurrentUserOutput(
+        id='123',
+        name='John Doe',
+        email='current@example.com'
+    )
 
-def logout_user(ctx: MappContext, params:object):
+def logout_user(ctx: MappContext, params:object) -> Acknowledgment:
     """
     Log out a user in the auth module.
     ctx: MappContext - The application context.
     params: object - No params needed for logout.
 
-    return: dict
+    return: Acknowledgment
         acknowledged: bool - Whether the logout was successful.
         message: str - Confirmation message of logout.
     """
-    return {
-        'acknowledged': True,
-        'message': 'User logged out successfully.',
-    }
+    return Acknowledgment('User logged out successfully')
 
-def delete_user(ctx: MappContext, params:object):
+def delete_user(ctx: MappContext, params:object) -> Acknowledgment:
     """
     Delete a user in the auth module.
     ctx: MappContext - The application context.
     params: object - Parameters for deleting a user.
         user_id: str - The ID of the user to delete.
 
-    return: dict
+    return: Acknowledgment
         acknowledged: bool - Whether the deletion was successful.
         message: str - Confirmation message of deletion.
     """
-    return {
-        'acknowledged': True,
-        'message': f"User {params.get('user_id', 'user-123')} deleted successfully.",
-    }
+    return Acknowledgment('User deleted successfully')

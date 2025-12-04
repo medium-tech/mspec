@@ -3,6 +3,7 @@ import argparse
 from mapp.types import *
 from mapp.module.op.run import op_create_callable
 from mapp.module.op.http import http_run_op
+from mapp.types import json_to_op_params_w_convert
 
 __all__ = [
 	'add_op_subparser'
@@ -83,14 +84,22 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
         description=run_desc + op_docs,
         formatter_class=argparse.RawTextHelpFormatter
     )
-    run_parser.add_argument('json', help='JSON string for operation input')
+    run_parser.add_argument('json', nargs='?', help='JSON string for operation input')
     def cli_op_run(ctx, args):
         if args.json == 'help':
             run_parser.print_help()
+
         else:
             param_class, output_class = new_op_classes(op, module)
             op_function = op_create_callable(param_class, output_class)
-            output = op_function(ctx, {})
+
+            if args.json is None:
+                params = new_op_params(param_class, dict())
+            else:
+                params = json_to_op_params_w_convert(param_class, args.json)
+
+            output = op_function(ctx, params)
+
             print(to_json(output, sort_keys=True, indent=4))
 
     run_parser.set_defaults(func=cli_op_run)

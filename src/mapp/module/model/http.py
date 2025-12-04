@@ -5,7 +5,7 @@ from urllib.error import HTTPError
 
 from mapp.context import MappContext
 from mapp.errors import *
-from mapp.types import json_to_model, model_to_json, list_from_json, Acknowledgment
+from mapp.types import json_to_model, model_to_json, model_list_from_json, Acknowledgment
 
 
 __all__ = [
@@ -146,7 +146,7 @@ def http_model_list(ctx: MappContext, model_class: type, offset: int = 0, size: 
         request = Request(url, headers=ctx.client.headers, method='GET')
         with urlopen(request) as response:
             response_body = response.read().decode('utf-8')
-            return list_from_json(response_body, model_class)
+            return model_list_from_json(response_body, model_class)
         
     except HTTPError as e:
         if e.code >= 500:

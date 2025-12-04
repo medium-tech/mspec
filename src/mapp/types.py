@@ -20,7 +20,7 @@ __all__ = [
     'ModelListResult',
 
     'convert_dict_to_model',
-    'convert_json_to_model',
+    'json_to_model_w_convert',
     '_convert_incoming_value',
     '_get_python_type_for_field',
     'validate_model',
@@ -30,7 +30,7 @@ __all__ = [
     'model_to_json',
     'to_json',
     'json_to_model',
-    'list_from_json'
+    'model_list_from_json'
 ]
 
 DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
@@ -38,6 +38,7 @@ DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
 class Acknowledgment:
     def __init__(self, message: str = 'No additional information') -> None:
         self.message = message
+        self.acknowledged = True
 
     @classmethod
     def from_dict(cls, data: dict) -> 'Acknowledgment':
@@ -49,8 +50,10 @@ class Acknowledgment:
             raise ValueError('Acknowledgment data is missing required "message" field.')
 
     def to_dict(self) -> dict:
+        if not self.acknowledged:
+            raise ValueError('Acknowledgment instance does not indicate success.')
         return {
-            'acknowledged': True,
+            'acknowledged': self.acknowledged,
             'message': self.message
         }
 
@@ -477,7 +480,43 @@ class MappJsonEncoder(json.JSONEncoder):
         else:
             return super().default(obj)
 
-def convert_json_to_model(model_class:type, json_str:str, model_id:Optional[str]=None):
+# model #
+
+
+def model_to_json(obj:object, sort_keys=False, indent=None) -> str:
+    try:
+        return json.dumps(
+            obj._asdict() if hasattr(obj, '_asdict') else obj,
+            sort_keys=sort_keys, 
+            indent=indent, 
+            cls=MappJsonEncoder
+        )
+    except Exception as e:
+        raise MappError('ERROR_SERIALIZING_TO_JSON', f'Error serializing to JSON: {e}')
+    
+def json_to_model(json_str:str, model_class:type, model_id:Optional[str]=None) -> object:
+    try:
+        data = json.loads(json_str)
+
+        try:
+            # if id is in both json and argument, they must match
+            json_id = data['id']
+            if model_id is not None and str(json_id) != str(model_id):
+                raise ValueError('Model ID in JSON does not match the provided model_id argument.')
+        except KeyError:
+            # id provided as arg and not in json, set it
+            if model_id is not None:
+                data['id'] = model_id
+
+        return new_model(model_class, data)
+    
+    except json.JSONDecodeError as e:
+        raise MappValidationError(f'Invalid JSON: {e}')
+    
+    except TypeError as e:
+        raise MappValidationError(f'Error creating model instance: {e}')
+   
+def json_to_model_w_convert(model_class:type, json_str:str, model_id:Optional[str]=None):
     """
     Converts a JSON string into an instance of the specified model class.
 
@@ -515,45 +554,7 @@ def convert_json_to_model(model_class:type, json_str:str, model_id:Optional[str]
 
     return convert_dict_to_model(model_class, data)
 
-# individual model #
-
-def model_to_json(obj:object, sort_keys=False, indent=None) -> str:
-    try:
-        return json.dumps(
-            obj._asdict() if hasattr(obj, '_asdict') else obj,
-            sort_keys=sort_keys, 
-            indent=indent, 
-            cls=MappJsonEncoder
-        )
-    except Exception as e:
-        raise MappError('ERROR_SERIALIZING_TO_JSON', f'Error serializing to JSON: {e}')
-    
-to_json = model_to_json  # alias
-
-def json_to_model(json_str:str, model_class:type, model_id:Optional[str]=None) -> object:
-    try:
-        data = json.loads(json_str)
-
-        try:
-            # if id is in both json and argument, they must match
-            json_id = data['id']
-            if model_id is not None and str(json_id) != str(model_id):
-                raise ValueError('Model ID in JSON does not match the provided model_id argument.')
-        except KeyError:
-            # id provided as arg and not in json, set it
-            if model_id is not None:
-                data['id'] = model_id
-
-
-        return new_model(model_class, data)
-    except json.JSONDecodeError as e:
-        raise MappValidationError(f'Invalid JSON: {e}')
-    except TypeError as e:
-        raise MappValidationError(f'Error creating model instance: {e}')
-
-# model list #
-    
-def list_from_json(json_str:str, model_class:type) -> 'ModelListResult':
+def model_list_from_json(json_str:str, model_class:type) -> 'ModelListResult':
     try:
         data = json.loads(json_str)
         items = [model_class(**item) for item in data['items']]
@@ -565,3 +566,39 @@ def list_from_json(json_str:str, model_class:type) -> 'ModelListResult':
     
     except TypeError as e:
         raise MappValidationError(f'Error creating model instance: {e}')
+
+to_json = model_to_json # alias for generic use
+
+# op #
+
+def json_to_op_params(json_str:str, op_class:type) -> object:
+    try:
+        data = json.loads(json_str)
+        return new_op_params(op_class, data)
+    except json.JSONDecodeError as e:
+        raise MappValidationError(f'Invalid JSON: {e}')
+    except TypeError as e:
+        raise MappValidationError(f'Error creating op params instance: {e}')
+
+def json_to_op_params_w_convert(op_class:type, json_str:str) -> object:
+    """
+    Converts a JSON string into an instance of the specified op param class.
+
+    Will convert types as necessary based on the op class definition.
+
+    Args:
+        op_class (type): The op param class to instantiate.
+        json_str (str): A JSON string representing the op param data.
+
+    Returns:
+        object: An instance of the op param class.
+    """
+
+    try:
+        data = json.loads(json_str)
+    except json.JSONDecodeError as e:
+        raise ValueError(f'Invalid JSON: {e}')
+    
+    return convert_dict_to_op_params(op_class, data)
+
+op_output_to_json = to_json
