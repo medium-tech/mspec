@@ -231,6 +231,12 @@ def init_generator_spec(spec:dict) -> dict:
                         field['name'][key] = value
 
                 try:
+                    if not isinstance(field['required'], bool):
+                        raise ValueError(f'field {field_name} in model {model_path} has invalid required value, must be bool')
+                except KeyError:
+                    field['required'] = True
+
+                try:
                     field['examples'][0]
                 except (KeyError, IndexError):
                     raise ValueError(f'field {field_name} does not have an example in model {model_path}')
@@ -299,11 +305,14 @@ def init_generator_spec(spec:dict) -> dict:
         #
 
         for op in module.get('ops', {}).values():
+
             for key, value in generate_names(op['name']['lower_case']).items():
                 if key not in op['name']:
                     op['name'][key] = value
 
                 module_op_names.append(op['name'][key])
+
+            op_path = f'{module_snake}.{op["name"]["snake_case"]}'
 
             try:
                 op_params = op['params']
@@ -315,15 +324,27 @@ def init_generator_spec(spec:dict) -> dict:
             except KeyError:
                 raise ValueError(f'No output defined in op {op["name"]["lower_case"]} in module {module_snake}')
 
-            for param in op_params.values():
+            for param_name, param in op_params.items():
                 for key, value in generate_names(param['name']['lower_case']).items():
                     if key not in param['name']:
                         param['name'][key] = value
+
+                try:
+                    if not isinstance(param['required'], bool):
+                        raise ValueError(f'param {param_name} in op {op_path} has invalid required value, must be bool')
+                except KeyError:
+                    param['required'] = True
             
-            for out_field in op_output.values():
+            for out_name, out_field in op_output.items():
                 for key, value in generate_names(out_field['name']['lower_case']).items():
                     if key not in out_field['name']:
                         out_field['name'][key] = value
+
+                try:
+                    if not isinstance(out_field['required'], bool):
+                        raise ValueError(f'output field {out_name} in op {op_path} has invalid required value, must be bool')
+                except KeyError:
+                    out_field['required'] = True
 
         # check for duplicate names #
 

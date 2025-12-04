@@ -175,7 +175,7 @@ def login_user(ctx: MappContext, params:object):
         token_type: str - The type of the token.
     """
     return {
-        'access_token': 'token-abc123',
+        'access_token': 123,
         'token_type': 'bearer',
     }
 

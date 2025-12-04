@@ -19,10 +19,10 @@ __all__ = [
     'new_op_output',
     'ModelListResult',
 
-    'convert_data_to_model',
-    'convert_json_to_model',
-    'convert_value',
-    'get_python_type',
+    'convert_dict_to_model',
+    'json_to_model',
+    '_convert_incoming_value',
+    '_get_python_type_for_field',
     'validate_model',
     'validate_op_params',
     'validate_op_output',
@@ -71,7 +71,7 @@ class JSONResponse(Exception):
         self.data = data
 
 #
-# model
+# data
 #
 
 # class and instances #
@@ -187,100 +187,9 @@ class ModelListResult:
     items: list
     total: int
 
-# conversion and validation #
-     
-def convert_data_to_model(model_class:type, data:dict):
-    """
-    Converts a dictionary of data into an instance of the specified model class.
+# conversion #
 
-    Will convert types as necessary based on the model class definition.
-
-    Useful for user input like CLI args.
-
-    Args:
-        model_class (type): The model class to instantiate.
-        data (dict): A dictionary containing field values for the model.
-
-    Returns:
-        object: An instance of the model class.
-    """
-
-    converted_data = {}
-
-    try:
-        if isinstance(data['id'], str):
-            converted_data['id'] = data['id']
-        elif isinstance(data['id'], int):
-            converted_data['id'] = str(data['id'])
-        elif data['id'] is not None:
-            raise ValueError('Model ID must be a string, int or None')
-    except KeyError:
-        pass
-
-    for field in model_class._model_spec['fields'].values():
-
-        field_name = field['name']['snake_case']
-        field_type = field['type']
-
-        try:
-            raw_value = data[field_name]
-        except KeyError:
-            """
-            ignore this error, this function only converts provided fields,
-            it does not validate the data
-            """
-            continue
-
-        try:
-            if isinstance(raw_value, list):
-                converted_data[field_name] = [convert_value(field['element_type'], v) for v in raw_value]
-            else:
-                converted_data[field_name] = convert_value(field_type, raw_value)
-
-        except (ValueError, TypeError) as e:
-            raise ValueError(f'Error converting field "{field_name}" to type "{field_type}": {e}')
-
-    return new_model(model_class, converted_data)
-
-def convert_json_to_model(model_class:type, json_str:str, model_id:Optional[str]=None):
-    """
-    Converts a JSON string into an instance of the specified model class.
-
-    Will convert types as necessary based on the model class definition.
-
-    Id may be provided in the json or as a separate argument. It can also be omitted in both.
-
-    If they are both provided they must match.
-
-    Args:
-        model_class (type): The model class to instantiate.
-        json_str (str): A JSON string representing the model data.
-        model_id (Optional[str]): An optional model ID to set on the instance.
-
-    Returns:
-        object: An instance of the model class.
-    """
-
-    try:
-        data = json.loads(json_str)
-    except json.JSONDecodeError as e:
-        raise ValueError(f'Invalid JSON: {e}')
-    
-    try:
-        # if id is in both json and argument, they must match
-        json_id = data['id']
-        if model_id is not None and str(json_id) != str(model_id):
-            raise ValueError('Model ID in JSON does not match the provided model_id argument.')
-    except TypeError:
-        raise MappError('INVALID_JSON', 'Provided JSON is not a valid object.')
-    except KeyError:
-        # id provided as arg and not in json, set it
-        if model_id is not None:
-            data['id'] = model_id
-
-    return convert_data_to_model(model_class, data)
-
-def convert_value(field_type:str, raw_value:Any, strict=False) -> Any:
+def _convert_incoming_value(field_type:str, raw_value:Any, strict=False) -> Any:
     """
     Converts a raw value to the specified field type.
     Args:
@@ -328,7 +237,88 @@ def convert_value(field_type:str, raw_value:Any, strict=False) -> Any:
         case _:
             raise ValueError(f'Unsupported field type: {field_type}')
 
-def get_python_type(field_type:str) -> type:
+def _convert_incoming_fields(data_spec:dict, data:object) -> dict:
+
+    converted_data = {}
+
+    for field in data_spec.values():
+
+        field_name = field['name']['snake_case']
+        field_type = field['type']
+
+        try:
+            raw_value = data[field_name]
+        except KeyError:
+            """
+            ignore this error, this function only converts provided fields,
+            it does not validate the data
+            """
+            continue
+
+        try:
+            if isinstance(raw_value, list):
+                converted_data[field_name] = [_convert_incoming_value(field['element_type'], v) for v in raw_value]
+            else:
+                converted_data[field_name] = _convert_incoming_value(field_type, raw_value)
+
+        except (ValueError, TypeError) as e:
+            raise ValueError(f'Error converting field "{field_name}" to type "{field_type}": {e}')
+
+    return converted_data
+     
+def convert_dict_to_model(model_class:type, data:dict):
+    """
+    Converts a dictionary of data into an instance of the specified model class.
+
+    Will convert types as necessary based on the model class definition.
+
+    Useful for user input like CLI args.
+
+    Args:
+        model_class (type): The model class to instantiate.
+        data (dict): A dictionary containing field values for the model.
+
+    Returns:
+        object: An instance of the model class.
+    """
+
+    converted_data = _convert_incoming_fields(model_class._model_spec['fields'], data)
+
+    try:
+        if isinstance(data['id'], str):
+            converted_data['id'] = data['id']
+        elif isinstance(data['id'], int):
+            converted_data['id'] = str(data['id'])
+        elif data['id'] is not None:
+            raise ValueError('Model ID must be a string, int or None')
+    except KeyError:
+        pass
+
+    return new_model(model_class, converted_data)
+
+def convert_dict_to_op_params(op_class:type, data:dict):
+    """
+    Converts a dictionary of data into an instance of the specified op param class.
+
+    Will convert types as necessary based on the op class definition.
+
+    Useful for user input like CLI args.
+
+    Args:
+        op_class (type): The op param class to instantiate.
+        data (dict): A dictionary containing field values for the op params.
+
+    Returns:
+        object: An instance of the op param class.
+    """
+
+    converted_data = _convert_incoming_fields(op_class._op_spec['params'], data)
+
+    return new_op_params(op_class, converted_data)
+
+# validation #
+
+def _get_python_type_for_field(field_type:str) -> type:
     """
     Maps a field type string to the corresponding Python type.
 
@@ -403,7 +393,7 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
 
             # confirm value type #
 
-            python_type = get_python_type(field_type)
+            python_type = _get_python_type_for_field(field_type)
 
             if not isinstance(value, python_type):
                 errors[field_name] = f'Field "{field_name}" is not of type "{field_type}".'
@@ -425,7 +415,7 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
             except KeyError:
                 raise ValueError(f'Field "{field_name}" of type "list" is missing required "element_type".')
             
-            python_type = get_python_type(element_type)
+            python_type = _get_python_type_for_field(element_type)
 
             # confirm type of elements #
 
@@ -486,6 +476,44 @@ class MappJsonEncoder(json.JSONEncoder):
             return asdict(obj)
         else:
             return super().default(obj)
+
+def json_to_model(model_class:type, json_str:str, model_id:Optional[str]=None):
+    """
+    Converts a JSON string into an instance of the specified model class.
+
+    Will convert types as necessary based on the model class definition.
+
+    Id may be provided in the json or as a separate argument. It can also be omitted in both.
+
+    If they are both provided they must match.
+
+    Args:
+        model_class (type): The model class to instantiate.
+        json_str (str): A JSON string representing the model data.
+        model_id (Optional[str]): An optional model ID to set on the instance.
+
+    Returns:
+        object: An instance of the model class.
+    """
+
+    try:
+        data = json.loads(json_str)
+    except json.JSONDecodeError as e:
+        raise ValueError(f'Invalid JSON: {e}')
+    
+    try:
+        # if id is in both json and argument, they must match
+        json_id = data['id']
+        if model_id is not None and str(json_id) != str(model_id):
+            raise ValueError('Model ID in JSON does not match the provided model_id argument.')
+    except TypeError:
+        raise MappError('INVALID_JSON', 'Provided JSON is not a valid object.')
+    except KeyError:
+        # id provided as arg and not in json, set it
+        if model_id is not None:
+            data['id'] = model_id
+
+    return convert_dict_to_model(model_class, data)
 
 # individual model #
 
