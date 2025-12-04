@@ -4,7 +4,7 @@ from urllib.parse import parse_qs
 
 from mapp.errors import NotFoundError, RequestError
 from mapp.context import MappContext, RequestContext, ModelRouteContext, OpRouteContext
-from mapp.types import JSONResponse, new_model_class, json_to_model
+from mapp.types import JSONResponse, new_model_class, convert_json_to_model
 from mapp.module.model.db import *
 
 
@@ -62,15 +62,7 @@ def model_routes(route: ModelRouteContext, server: MappContext, request: Request
 
         elif request.env['REQUEST_METHOD'] == 'PUT':
             req_body = request.raw_req_body.decode('utf-8')
-            incoming_item = json_to_model(route.model_class, req_body)
-            if incoming_item.id is None:
-                incoming_item = incoming_item._replace(id=instance_id)
-            elif incoming_item.id != instance_id:
-                server.log(f'PUT {route.module_kebab_case}.{route.model_kebab_case}/{instance_id} - ID Mismatch')
-                raise RequestError(
-                    '400 Bad Request', 
-                    f'ID mismatch for {route.module_kebab_case}.{route.model_kebab_case} update: URL id {instance_id} != body id {incoming_item.id}'
-                )
+            incoming_item = convert_json_to_model(route.model_class, req_body, instance_id)
 
             try:
                 updated_item = db_model_update(server, route.model_class, incoming_item)
@@ -103,7 +95,7 @@ def model_routes(route: ModelRouteContext, server: MappContext, request: Request
         # create #
 
         if request.env['REQUEST_METHOD'] == 'POST':
-            incoming_item = json_to_model(route.model_class, request.raw_req_body.decode('utf-8'))
+            incoming_item = convert_json_to_model(route.model_class, request.raw_req_body.decode('utf-8'))
             item = db_model_create(server, route.model_class, incoming_item)
 
             server.log(f'POST {route.module_kebab_case}.{route.model_kebab_case} - id: {item.id}')

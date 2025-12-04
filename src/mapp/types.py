@@ -20,7 +20,7 @@ __all__ = [
     'ModelListResult',
 
     'convert_dict_to_model',
-    'json_to_model',
+    'convert_json_to_model',
     '_convert_incoming_value',
     '_get_python_type_for_field',
     'validate_model',
@@ -29,7 +29,7 @@ __all__ = [
 
     'model_to_json',
     'to_json',
-    'model_from_json',
+    'json_to_model',
     'list_from_json'
 ]
 
@@ -477,7 +477,7 @@ class MappJsonEncoder(json.JSONEncoder):
         else:
             return super().default(obj)
 
-def json_to_model(model_class:type, json_str:str, model_id:Optional[str]=None):
+def convert_json_to_model(model_class:type, json_str:str, model_id:Optional[str]=None):
     """
     Converts a JSON string into an instance of the specified model class.
 
@@ -530,7 +530,7 @@ def model_to_json(obj:object, sort_keys=False, indent=None) -> str:
     
 to_json = model_to_json  # alias
 
-def model_from_json(json_str:str, model_class:type, model_id:Optional[str]=None) -> object:
+def json_to_model(json_str:str, model_class:type, model_id:Optional[str]=None) -> object:
     try:
         data = json.loads(json_str)
 
