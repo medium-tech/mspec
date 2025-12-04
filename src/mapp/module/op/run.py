@@ -1,7 +1,7 @@
 from mapp import auth
 from mapp.context import MappContext
 from mapp.errors import MappError
-from mapp.types import validate_op_params, validate_op_output
+from mapp.types import new_op_params, validate_op_params, validate_op_output
 
 __all__ = [
 	'op_create_callable'
@@ -61,7 +61,7 @@ def op_create_callable(param_class:type, output_class:type) -> object:
 	# create application wrapper #
 
 	def run_op(ctx: MappContext, params:object) -> object:
-		
+		param_obj = new_op_params(param_class, params)
 		validate_op_params(param_class, params)
 
 		op_output = op_callable(ctx, params)
