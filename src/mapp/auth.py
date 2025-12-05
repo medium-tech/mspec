@@ -1,4 +1,5 @@
 import os
+import re
 import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -9,7 +10,7 @@ from jwt import ExpiredSignatureError, InvalidTokenError
 
 from mapp.context import MappContext
 from mapp.errors import AuthenticationError, MappError
-from mapp.types import new_model_class, Acknowledgment
+from mapp.types import validate_model, Acknowledgment
 
 MAPP_AUTH_SECRET_KEY = os.environ.get('MAPP_AUTH_SECRET_KEY')   # openssl rand -hex 32
 MAPP_AUTH_LOGIN_EXPIRATION_MINUTES = os.environ.get('MAPP_AUTH_LOGIN_EXPIRATION_MINUTES', 60 * 24 * 7)
@@ -178,6 +179,8 @@ def _get_user_id_from_token(ctx:dict, token:str) -> str:
 # external
 #
 
+EMAIL_REGEX = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
 def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
     """
     Create a new user in the auth module.
@@ -187,30 +190,65 @@ def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
     password = params.password
     password_confirm = params.password_confirm
 
-    if not name or not email or not password:
-        raise MappError('INVALID_INPUT', 'Name, email, and password are required')
+    # validate input #
+
+    field_errors = {}
+
+    if name == '' or name is None:
+        field_errors['name'] = 'Name cannot be empty'
+
+    if not re.match(EMAIL_REGEX, email):
+        field_errors['email'] = 'Invalid email format'
     
-    if password_confirm is not None and password != password_confirm:
-        raise MappError('INVALID_INPUT', 'Passwords do not match')
+    if password is '' or password is None:
+        field_errors['password'] = 'Password cannot be empty'
+
+    if password != password_confirm:
+        field_errors['password_confirm'] = 'Password confirmation does not match password'
+
+    if field_errors:
+        raise MappError('Could not create user', field_errors=field_errors)
     
-    # Check if user exists
+    # check if user exists
+
     existing = ctx.db.cursor.execute(
         'SELECT id FROM user WHERE email = ?', (email,)
     ).fetchone()
 
     if existing:
-        raise MappError('USER_EXISTS', 'A user with this email already exists')
+        ctx.log(f'Could not create user, email already exists: {email}')
+        raise AuthenticationError()
     
-    # Insert user
-    user_id = secrets.token_hex(16)
+    # Generate unique user_id
+    for _ in range(3):
+        user_id = secrets.token_hex(16)
+        collision = ctx.db.cursor.execute(
+            'SELECT id FROM user WHERE id = ?', (user_id,)
+        ).fetchone()
+        if not collision:
+            break
+    else:
+        ctx.log(f'Could not create user, failed to generate unique user ID for {email}')
+        raise AuthenticationError()
+
     ctx.db.cursor.execute(
         'INSERT INTO user (id, name, email) VALUES (?, ?, ?)',
         (user_id, name, email)
     )
-    
+
     # Hash password
     pw_hash = _get_password_hash(password)
-    pw_hash_id = secrets.token_hex(16)
+    for _ in range(3):
+        pw_hash_id = secrets.token_hex(16)
+        collision = ctx.db.cursor.execute(
+            'SELECT id FROM password_hash WHERE id = ?', (pw_hash_id,)
+        ).fetchone()
+        if not collision:
+            break
+    else:
+        ctx.log(f'Could not create user, failed to generate unique password hash ID for {email}')
+        raise AuthenticationError()
+
     ctx.db.cursor.execute(
         'INSERT INTO password_hash (id, user_id, hash) VALUES (?, ?, ?)',
         (pw_hash_id, user_id, pw_hash)
