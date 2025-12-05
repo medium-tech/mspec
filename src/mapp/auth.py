@@ -330,11 +330,14 @@ def logout_user(ctx: MappContext, params:object) -> Acknowledgment:
         message: str - Confirmation message of logout.
     """
 
+    # get current user #
+
     user, access_token = ctx.current_user()
     if user is None or not access_token:
         return Acknowledgment('No user logged in')
 
-    # Extract session id (jti) from access_token
+    # extract session id (jti) from access_token #
+
     try:
         payload = jwt.decode(access_token, MAPP_AUTH_SECRET_KEY, algorithms=['HS256'])
         jti = payload.get('jti')
@@ -343,12 +346,14 @@ def logout_user(ctx: MappContext, params:object) -> Acknowledgment:
     except Exception:
         raise AuthenticationError()
 
+    # delete session from db #
+    
     ctx.db.cursor.execute(
         'DELETE FROM session WHERE id = ?', (jti,)
     )
     ctx.db.commit()
 
-    return Acknowledgment('User logged out or had no active session')
+    return Acknowledgment('User logged out successfully')
 
 def delete_user(ctx: MappContext, params:object) -> Acknowledgment:
     """
