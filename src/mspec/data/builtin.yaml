@@ -170,6 +170,39 @@ modules:
                             - "alice@example.com"
                             - "bob@example.com"
 
+            user_session:
+                hidden: true
+                name:
+                    lower_case: "user session"
+
+                fields:
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        references:
+                            table: "user"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    session_token:
+                        name:
+                            lower_case: "session token"
+                        type: str
+                        examples:
+                            - "token_abc123"
+                            - "token_def456"
+
+                    created_at:
+                        name:
+                            lower_case: "created at"
+                        type: datetime
+                        examples:
+                            - "2023-01-01T12:00:00Z"
+                            - "2023-01-02T15:30:00Z"
+
             password_hash:
                 hidden: true
                 name:

@@ -31,6 +31,11 @@ class User(NamedTuple):
     name: str
     email: str
 
+class UserSession(NamedTuple):
+    id: str
+    user_id: str
+    created_at: datetime
+
 class PasswordHash(NamedTuple):
     id: str
     user_id: str
@@ -71,6 +76,7 @@ def init_auth_module(spec: dict) -> bool:
     try:
         auth_module = spec['modules']['auth']
         user = auth_module['models']['user']
+        user_session = auth_module['models']['user_session']
         password_hash = auth_module['models']['password_hash']
         create_user_output = auth_module['ops']['create_user']['output']
         login_user_output = auth_module['ops']['login_user']['output']
@@ -81,6 +87,10 @@ def init_auth_module(spec: dict) -> bool:
     global User
     User._model_spec = user
     User._module_spec = auth_module
+
+    global UserSession
+    UserSession._model_spec = user_session
+    UserSession._module_spec = auth_module
 
     global PasswordHash
     PasswordHash._model_spec = password_hash
@@ -155,12 +165,13 @@ def _check_user_credentials(ctx: MappContext, email: str, password: str) -> str:
 
 def _create_access_token(data: dict):
     expires = datetime.now(timezone.utc) + timedelta(minutes=int(MAPP_AUTH_LOGIN_EXPIRATION_MINUTES))
+    jti = secrets.token_hex(16)
     data_to_encode = data.copy()
-    data_to_encode.update({'exp': expires, 'sub': data.get('sub')})
+    data_to_encode.update({'exp': expires, 'sub': data.get('sub'), 'jti': jti})
     if MAPP_AUTH_SECRET_KEY is None:
         raise AuthenticationError()
     token = jwt.encode(data_to_encode, MAPP_AUTH_SECRET_KEY, algorithm='HS256')
-    return token, 'bearer'
+    return token, 'bearer', jti
 
 def _get_user_id_from_token(ctx:dict, token:str) -> str:
     """parse a JWT token and return the user id as a string,
@@ -169,8 +180,15 @@ def _get_user_id_from_token(ctx:dict, token:str) -> str:
     try:
         payload = jwt.decode(token, MAPP_AUTH_SECRET_KEY, algorithms=['HS256'])
         user_id: str = payload.get('sub')
-        if user_id is None:
+        jti: str = payload.get('jti')
+        if user_id is None or jti is None:
             raise AuthenticationError('Could not validate credentials')
+        # Check session table for jti
+        session = ctx.db.cursor.execute(
+            'SELECT id FROM session WHERE id = ?', (jti,)
+        ).fetchone()
+        if not session:
+            raise AuthenticationError('Session expired or logged out')
         return user_id
     except (ExpiredSignatureError, InvalidTokenError, Exception):
         raise AuthenticationError('Could not validate credentials')
@@ -267,7 +285,13 @@ def login_user(ctx: MappContext, params:object) -> LoginUserOutput:
     email = params.email.strip().lower()
     password = params.password
     user_id = _check_user_credentials(ctx, email, password)
-    token, token_type = _create_access_token({'sub': user_id})
+    token, token_type, jti = _create_access_token({'sub': user_id})
+    # Create session record
+    ctx.db.cursor.execute(
+        'INSERT INTO session (id, user_id, created_at) VALUES (?, ?, ?)',
+        (jti, user_id, datetime.now(timezone.utc))
+    )
+    ctx.db.commit()
     return LoginUserOutput(
         access_token=token,
         token_type=token_type
@@ -300,7 +324,21 @@ def logout_user(ctx: MappContext, params:object) -> Acknowledgment:
         acknowledged: bool - Whether the logout was successful.
         message: str - Confirmation message of logout.
     """
-    return Acknowledgment('User logged out successfully')
+    # Expect params to have access_token
+    token = getattr(params, 'access_token', None)
+    if not token:
+        return Acknowledgment('No token provided')
+    try:
+        payload = jwt.decode(token, MAPP_AUTH_SECRET_KEY, algorithms=['HS256'])
+        jti = payload.get('jti')
+        if jti:
+            ctx.db.cursor.execute('DELETE FROM session WHERE id = ?', (jti,))
+            ctx.db.commit()
+            return Acknowledgment('User logged out successfully')
+        else:
+            return Acknowledgment('Invalid token')
+    except Exception:
+        return Acknowledgment('Invalid token')
 
 def delete_user(ctx: MappContext, params:object) -> Acknowledgment:
     """
