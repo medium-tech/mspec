@@ -1,6 +1,11 @@
 import os
+import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import NamedTuple
+
+import jwt
+from jwt import ExpiredSignatureError, InvalidTokenError
 
 from mapp.context import MappContext
 from mapp.errors import AuthenticationError, MappError
@@ -99,10 +104,19 @@ def init_auth_module(spec: dict) -> bool:
 #
 
 def _verify_password(plain_password:str, hashed_password:str) -> bool:
-    pass
+    try:
+        salt, hash_hex = hashed_password.split('$')
+        salt_bytes = bytes.fromhex(salt)
+        hash_bytes = bytes.fromhex(hash_hex)
+        test_hash = hashlib.pbkdf2_hmac('sha256', plain_password.encode('utf-8'), salt_bytes, 100_000)
+        return secrets.compare_digest(test_hash, hash_bytes)
+    except Exception:
+        return False
 
 def _get_password_hash(password:str) -> str:
-    pass
+    salt = secrets.token_bytes(16)
+    hash_bytes = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100_000)
+    return f'{salt.hex()}${hash_bytes.hex()}'
 
 def _check_user_credentials(ctx: MappContext, email: str, password: str) -> str:
     """
@@ -139,14 +153,11 @@ def _check_user_credentials(ctx: MappContext, email: str, password: str) -> str:
     return str(user_id_result[0])
 
 def _create_access_token(data: dict):
-    expires = datetime.now(timezone.utc) + timedelta(minutes=MAPP_AUTH_LOGIN_EXPIRATION_MINUTES)
-
+    expires = datetime.now(timezone.utc) + timedelta(minutes=int(MAPP_AUTH_LOGIN_EXPIRATION_MINUTES))
     data_to_encode = data.copy()
-    data_to_encode.update({'exp': expires})
-
+    data_to_encode.update({'exp': expires, 'sub': data.get('sub')})
     if MAPP_AUTH_SECRET_KEY is None:
         raise AuthenticationError()
-    
     token = jwt.encode(data_to_encode, MAPP_AUTH_SECRET_KEY, algorithm='HS256')
     return token, 'bearer'
 
@@ -160,7 +171,7 @@ def _get_user_id_from_token(ctx:dict, token:str) -> str:
         if user_id is None:
             raise AuthenticationError('Could not validate credentials')
         return user_id
-    except JWTError:
+    except (ExpiredSignatureError, InvalidTokenError, Exception):
         raise AuthenticationError('Could not validate credentials')
 
 #
@@ -170,39 +181,58 @@ def _get_user_id_from_token(ctx:dict, token:str) -> str:
 def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
     """
     Create a new user in the auth module.
-    ctx: MappContext - The application context.
-    params: object - Parameters for the new user.
-        name: str - The name of the user.
-        email: str - The email of the user.
-        password: str - The password for the user.
-        password_confirm: str - Confirmation of the password.
-
-    return: CreateUserOutput
-        id: str - The ID of the newly created user.
-        name: str - The name of the newly created user.
-        email: str - The email of the newly created user.
     """
+    name = params.name.strip()
+    email = params.email.strip().lower()
+    password = params.password
+    password_confirm = params.password_confirm
+
+    if not name or not email or not password:
+        raise MappError('INVALID_INPUT', 'Name, email, and password are required')
+    
+    if password_confirm is not None and password != password_confirm:
+        raise MappError('INVALID_INPUT', 'Passwords do not match')
+    
+    # Check if user exists
+    existing = ctx.db.cursor.execute(
+        'SELECT id FROM user WHERE email = ?', (email,)
+    ).fetchone()
+
+    if existing:
+        raise MappError('USER_EXISTS', 'A user with this email already exists')
+    
+    # Insert user
+    user_id = secrets.token_hex(16)
+    ctx.db.cursor.execute(
+        'INSERT INTO user (id, name, email) VALUES (?, ?, ?)',
+        (user_id, name, email)
+    )
+    
+    # Hash password
+    pw_hash = _get_password_hash(password)
+    pw_hash_id = secrets.token_hex(16)
+    ctx.db.cursor.execute(
+        'INSERT INTO password_hash (id, user_id, hash) VALUES (?, ?, ?)',
+        (pw_hash_id, user_id, pw_hash)
+    )
+    ctx.db.commit()
     return CreateUserOutput(
-        id='123',
-        name=params.name,
-        email=params.email,
+        id=user_id,
+        name=name,
+        email=email,
     )
 
 def login_user(ctx: MappContext, params:object) -> LoginUserOutput:
     """
     Log in a user in the auth module.
-    ctx: MappContext - The application context.
-    params: object - Parameters for login.
-        email: str - The email of the user.
-        password: str - The password for the user.
-
-    return: LoginUserOutput
-        access_token: str - The access token for the logged-in user.
-        token_type: str - The type of the token.
     """
+    email = params.email.strip().lower()
+    password = params.password
+    user_id = _check_user_credentials(ctx, email, password)
+    token, token_type = _create_access_token({'sub': user_id})
     return LoginUserOutput(
-        access_token='fake-jwt-token',
-        token_type='bearer'
+        access_token=token,
+        token_type=token_type
     )
 
 def current_user(ctx: MappContext, params:object) -> CurrentUserOutput:
