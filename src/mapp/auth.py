@@ -331,12 +331,20 @@ def logout_user(ctx: MappContext, params:object) -> Acknowledgment:
     """
 
     user, access_token = ctx.current_user()
-    if user is None:
+    if user is None or not access_token:
         return Acknowledgment('No user logged in')
 
-    # Find and delete all sessions for this user
+    # Extract session id (jti) from access_token
+    try:
+        payload = jwt.decode(access_token, MAPP_AUTH_SECRET_KEY, algorithms=['HS256'])
+        jti = payload.get('jti')
+        if not jti:
+            return Acknowledgment('Invalid session token')
+    except Exception:
+        return Acknowledgment('Invalid session token')
+
     deleted = ctx.db.cursor.execute(
-        'DELETE FROM session WHERE user_id = ?', (user.id,)
+        'DELETE FROM session WHERE id = ?', (jti,)
     ).rowcount
     ctx.db.commit()
     if deleted:
