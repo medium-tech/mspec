@@ -4,9 +4,10 @@ import sqlite3
 
 from pathlib import Path
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Callable
 
 from mapp.errors import MappError
+from mapp.auth import User
 from mspec.core import load_mapp_spec
 
 __all__ = [
@@ -63,13 +64,15 @@ class RequestContext:
 # mapp context
 #
 
+CurrentUserFunc = Callable[[], Optional[User]]
+
 @dataclass
 class MappContext:
     server_port: int
     client: ClientContext
     db:DBContext
-    log:callable
-    current_user:Optional[callable]=None
+    log:Callable[[str], None]
+    current_user:Optional[CurrentUserFunc]=None
 
 
 def get_context_from_env():

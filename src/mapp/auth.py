@@ -308,11 +308,16 @@ def current_user(ctx: MappContext, params:object) -> CurrentUserOutput:
         name: str - The name of the current user.
         email: str - The email of the current user.
     """
-    return CurrentUserOutput(
-        id='123',
-        name='John Doe',
-        email='current@example.com'
-    )
+
+    if (user := ctx.current_user()) is None:
+        raise AuthenticationError()
+    
+    else:
+        return CurrentUserOutput(
+            id=user.id,
+            name=user.name,
+            email=user.email
+        )
 
 def logout_user(ctx: MappContext, params:object) -> Acknowledgment:
     """
@@ -324,6 +329,13 @@ def logout_user(ctx: MappContext, params:object) -> Acknowledgment:
         acknowledged: bool - Whether the logout was successful.
         message: str - Confirmation message of logout.
     """
+
+    user = ctx.current_user()
+    if user is None:
+        return Acknowledgment('No user logged in')
+
+    
+
     # Expect params to have access_token
     token = getattr(params, 'access_token', None)
     if not token:
