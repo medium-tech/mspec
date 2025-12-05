@@ -163,9 +163,8 @@ def _get_user_id_from_token(ctx:dict, token:str) -> str:
     except JWTError:
         raise AuthenticationError('Could not validate credentials')
 
-
 #
-# extneral
+# external
 #
 
 def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
