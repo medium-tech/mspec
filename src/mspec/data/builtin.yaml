@@ -114,7 +114,16 @@ modules:
                 description: "Logout the current user"
                 python:
                     call: "auth.logout_user"
-                params: {}
+                params:
+                    mode:
+                        name:
+                            lower_case: "mode"
+                        type: str
+                        enum:
+                            - "all"
+                            - "current"
+                            - "others"
+                        description: "Logout mode, use all to logout from all sessions, current to logout from current session, others to logout all sessions except this one"
                 output:
                     acknowledged:
                         name:
