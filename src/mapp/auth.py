@@ -400,3 +400,18 @@ def delete_user(ctx: MappContext, params:object) -> Acknowledgment:
     )
     ctx.db.commit()
     return Acknowledgment('User deleted successfully')
+
+def drop_sessions(ctx: MappContext, params:object) -> Acknowledgment:
+    """
+    Drop all user sessions for all users
+    ctx: MappContext - The application context.
+    params: object - No params needed for dropping sessions.
+    return: Acknowledgment
+        acknowledged: bool - Whether the operation was successful.
+        message: str - Confirmation message of operation.
+    """
+    ctx.db.cursor.execute(
+        'DELETE FROM session'
+    )
+    ctx.db.commit()
+    return Acknowledgment('All sessions dropped successfully')

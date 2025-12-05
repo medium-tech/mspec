@@ -82,7 +82,6 @@ modules:
                         type: str
                         description: "Type of the token"
 
-
             current_user:
                 name:
                     lower_case: "current user"
@@ -106,7 +105,6 @@ modules:
                             lower_case: "email"
                         type: str
                         description: "Email of the current user"
-
 
             logout_user:
                 name:
@@ -136,7 +134,6 @@ modules:
                         type: str
                         description: "Acknowledgement message"
 
-
             delete_user:
                 name:
                     lower_case: "delete user"
@@ -150,6 +147,25 @@ modules:
                             lower_case: "acknowledged"
                         type: bool
                         description: "Whether the deletion was successful"
+                    message:
+                        name:
+                            lower_case: "message"
+                        type: str
+                        description: "Acknowledgement message"
+
+            drop_sessions:
+                name:
+                    lower_case: "drop sessions"
+                description: "Drop all sessions"
+                python:
+                    call: "auth.drop_sessions"
+                params: {}
+                output:
+                    acknowledged:
+                        name:
+                            lower_case: "acknowledged"
+                        type: bool
+                        description: "Always true, indicates the operation was successful"
                     message:
                         name:
                             lower_case: "message"
