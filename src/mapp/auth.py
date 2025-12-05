@@ -308,8 +308,8 @@ def current_user(ctx: MappContext, params:object) -> CurrentUserOutput:
         name: str - The name of the current user.
         email: str - The email of the current user.
     """
-
-    if (user := ctx.current_user()) is None:
+    user, _ = ctx.current_user()
+    if user is None:
         raise AuthenticationError()
     
     else:
@@ -330,27 +330,19 @@ def logout_user(ctx: MappContext, params:object) -> Acknowledgment:
         message: str - Confirmation message of logout.
     """
 
-    user = ctx.current_user()
+    user, access_token = ctx.current_user()
     if user is None:
         return Acknowledgment('No user logged in')
 
-    
-
-    # Expect params to have access_token
-    token = getattr(params, 'access_token', None)
-    if not token:
-        return Acknowledgment('No token provided')
-    try:
-        payload = jwt.decode(token, MAPP_AUTH_SECRET_KEY, algorithms=['HS256'])
-        jti = payload.get('jti')
-        if jti:
-            ctx.db.cursor.execute('DELETE FROM session WHERE id = ?', (jti,))
-            ctx.db.commit()
-            return Acknowledgment('User logged out successfully')
-        else:
-            return Acknowledgment('Invalid token')
-    except Exception:
-        return Acknowledgment('Invalid token')
+    # Find and delete all sessions for this user
+    deleted = ctx.db.cursor.execute(
+        'DELETE FROM session WHERE user_id = ?', (user.id,)
+    ).rowcount
+    ctx.db.commit()
+    if deleted:
+        return Acknowledgment('User logged out successfully')
+    else:
+        return Acknowledgment('No active session found for user')
 
 def delete_user(ctx: MappContext, params:object) -> Acknowledgment:
     """
