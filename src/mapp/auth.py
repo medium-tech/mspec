@@ -336,25 +336,40 @@ def logout_user(ctx: MappContext, params:object) -> Acknowledgment:
     if user is None or not access_token:
         return Acknowledgment('No user logged in')
 
-    # extract session id (jti) from access_token #
-
     try:
         payload = jwt.decode(access_token, MAPP_AUTH_SECRET_KEY, algorithms=['HS256'])
         jti = payload.get('jti')
         if not jti:
-            raise AuthenticationError()
+            return Acknowledgment('Invalid session token')
     except Exception:
-        raise AuthenticationError()
+        return Acknowledgment('Invalid session token')
 
-    # delete session from db #
-    
-    ctx.db.cursor.execute(
-        'DELETE FROM session WHERE id = ?', (jti,)
-    )
-    ctx.db.commit()
-
-    return Acknowledgment('User logged out successfully')
-
+    match params.mode:
+        case 'current':
+            ctx.db.cursor.execute(
+                'DELETE FROM session WHERE id = ?', (jti,)
+            )
+            ctx.db.commit()
+            return Acknowledgment('Current session logged out successfully')
+        
+        case 'others':
+            ctx.db.cursor.execute(
+                'DELETE FROM session WHERE user_id = ? AND id != ?', (user.id, jti)
+            )
+            ctx.db.commit()
+            return Acknowledgment('Other sessions logged out successfully')
+        
+        case 'all':
+            ctx.db.cursor.execute(
+                'DELETE FROM session WHERE user_id = ?', (user.id,)
+            )
+            ctx.db.commit()
+            return Acknowledgment('All sessions logged out successfully')
+        
+        case _:
+            # shouldn't get here due to param validation
+            raise MappError('INVALID_LOGOUT_MODE', f'Unknown logout mode: {params.mode}')
+        
 def delete_user(ctx: MappContext, params:object) -> Acknowledgment:
     """
     Delete a user in the auth module.
