@@ -64,7 +64,7 @@ class RequestContext:
 # mapp context
 #
 
-CurrentUserFuncReturn = tuple[User | str]
+CurrentUserFuncReturn = tuple[Optional[User], str]
 CurrentUserFunc = Callable[[], Optional[CurrentUserFuncReturn]]
 
 @dataclass
