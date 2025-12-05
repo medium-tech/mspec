@@ -366,4 +366,22 @@ def delete_user(ctx: MappContext, params:object) -> Acknowledgment:
         acknowledged: bool - Whether the deletion was successful.
         message: str - Confirmation message of deletion.
     """
+
+    # get current user #
+
+    user, _ = ctx.current_user()
+    if user is None:
+        raise AuthenticationError()
+
+    # delete all sessions for this user #
+
+    ctx.db.cursor.execute(
+        'DELETE FROM session WHERE user_id = ?', (user.id,)
+    )
+    # delete user record #
+    
+    ctx.db.cursor.execute(
+        'DELETE FROM user WHERE id = ?', (user.id,)
+    )
+    ctx.db.commit()
     return Acknowledgment('User deleted successfully')
