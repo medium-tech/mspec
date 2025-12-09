@@ -105,7 +105,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
             param_class, output_class = new_op_classes(op, module)
             op_function = op_create_callable(param_class, output_class)
 
-            if args.json is None:
+            if args.json is None and not args.interactive:
                 params = new_op_params(param_class, dict())
             else:
                 params = cli_op_user_input(param_class, args.json, args.interactive)

@@ -9,7 +9,7 @@ import jwt
 from jwt import ExpiredSignatureError, InvalidTokenError
 
 from mapp.context import MappContext
-from mapp.errors import AuthenticationError, MappError
+from mapp.errors import AuthenticationError, MappError, MappValidationError
 from mapp.types import (
     Acknowledgment,
     User,
@@ -179,6 +179,8 @@ def _get_user_id_from_token(ctx:dict, token:str) -> str:
 EMAIL_REGEX = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
 def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
+    err_msg = 'Could not create user'
+
     """
     Create a new user in the auth module.
     """
@@ -204,7 +206,7 @@ def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
         field_errors['password_confirm'] = 'Password confirmation does not match password'
 
     if field_errors:
-        raise MappError('Could not create user', field_errors=field_errors)
+        raise MappValidationError(err_msg, field_errors)
     
     # check if user exists
 
@@ -214,11 +216,11 @@ def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
 
     if existing:
         ctx.log(f'Could not create user, email already exists: {email}')
-        raise AuthenticationError()
+        raise AuthenticationError(err_msg)
     
     # Generate unique user_id
     for _ in range(3):
-        user_id = secrets.token_hex(16)
+        user_id = secrets.randbits(63)
         collision = ctx.db.cursor.execute(
             'SELECT id FROM user WHERE id = ?', (user_id,)
         ).fetchone()
@@ -226,7 +228,7 @@ def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
             break
     else:
         ctx.log(f'Could not create user, failed to generate unique user ID for {email}')
-        raise AuthenticationError()
+        raise AuthenticationError(err_msg)
 
     ctx.db.cursor.execute(
         'INSERT INTO user (id, name, email) VALUES (?, ?, ?)',
@@ -236,7 +238,7 @@ def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
     # Hash password
     pw_hash = _get_password_hash(password)
     for _ in range(3):
-        pw_hash_id = secrets.token_hex(16)
+        pw_hash_id = secrets.randbits(63)
         collision = ctx.db.cursor.execute(
             'SELECT id FROM password_hash WHERE id = ?', (pw_hash_id,)
         ).fetchone()
@@ -244,7 +246,7 @@ def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
             break
     else:
         ctx.log(f'Could not create user, failed to generate unique password hash ID for {email}')
-        raise AuthenticationError()
+        raise AuthenticationError(err_msg)
 
     ctx.db.cursor.execute(
         'INSERT INTO password_hash (id, user_id, hash) VALUES (?, ?, ?)',
@@ -252,7 +254,7 @@ def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
     )
     ctx.db.commit()
     return CreateUserOutput(
-        id=user_id,
+        id=str(user_id),
         name=name,
         email=email,
     )

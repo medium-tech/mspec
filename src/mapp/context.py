@@ -119,18 +119,30 @@ def _cli_get_secure_input(spec:dict, json_str:str, interactive:bool) -> dict:
 
     # get json data #
 
-    try:
-        json_data = json.loads(json_str)
-    except json.JSONDecodeError as e:
-        raise ValueError(f'Invalid JSON: {e}')
+    if json_str is None:
+        json_data = dict()
+    else:
+        try:
+            json_data = json.loads(json_str)
+        except json.JSONDecodeError as e:
+            raise ValueError(f'Invalid JSON: {e}')
     
-    # if interactive, prompt for secure inputs #
+    # if interactive, prompt for inputs not provided #
 
     if interactive:
-        for param in spec.values():
-            if param['secure_input']:
-                user_input = getpass.getpass(f"Enter value for {param['name']['snake_case']}: ")
-                json_data.update({param['name']['snake_case']: user_input})
+
+        for field in spec.values():
+
+            name = field['name']['snake_case']
+
+            if name not in json_data:
+
+                if field['secure_input']:
+                    user_input = getpass.getpass(f'Enter value for {name}:')
+                else:
+                    user_input = input(f'Enter value for {name}: ')
+
+                json_data.update({name: user_input})
 
     return json_data
 

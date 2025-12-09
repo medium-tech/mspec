@@ -81,10 +81,10 @@ class NotFoundError(MappError):
     def __init__(self, message: str):
         super().__init__('NOT_FOUND', message)
 
-class AuthenticationError(RequestError):
-    def __init__(self):
-        super().__init__('AUTHENTICATION_ERROR', 'Invalid username or password')
+class AuthenticationError(MappError):
+    def __init__(self, message: str):
+        super().__init__('AUTHENTICATION_ERROR', message)
 
-class ForbiddenError(RequestError):
+class ForbiddenError(MappError):
     def __init__(self, message: str):
         super().__init__('FORBIDDEN_ERROR', message)
