@@ -54,6 +54,7 @@ class CurrentUserOutput(NamedTuple):
     id: str
     name: str
     email: str
+    number_of_sessions: int
 
 
 def init_auth_module(spec: dict) -> bool:
@@ -313,10 +314,15 @@ def current_user(ctx: MappContext, params:object) -> CurrentUserOutput:
         raise AuthenticationError()
     
     else:
+        number_of_sessions = ctx.db.cursor.execute(
+            'SELECT COUNT(*) FROM session WHERE user_id = ?', (user.id,)
+        ).fetchone()[0]
+        
         return CurrentUserOutput(
             id=user.id,
             name=user.name,
-            email=user.email
+            email=user.email,
+            number_of_sessions=number_of_sessions
         )
 
 def logout_user(ctx: MappContext, params:object) -> Acknowledgment:

@@ -105,6 +105,11 @@ modules:
                             lower_case: "email"
                         type: str
                         description: "Email of the current user"
+                    number_of_sessions:
+                        name:
+                            lower_case: "number of sessions"
+                        type: int
+                        description: "Number of active sessions for the current user"
 
             logout_user:
                 name:
