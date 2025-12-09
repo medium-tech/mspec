@@ -317,7 +317,7 @@ def current_user(ctx: MappContext, params:object) -> CurrentUserOutput:
         number_of_sessions = ctx.db.cursor.execute(
             'SELECT COUNT(*) FROM session WHERE user_id = ?', (user.id,)
         ).fetchone()[0]
-        
+
         return CurrentUserOutput(
             id=user.id,
             name=user.name,
@@ -352,29 +352,27 @@ def logout_user(ctx: MappContext, params:object) -> Acknowledgment:
 
     match params.mode:
         case 'current':
-            ctx.db.cursor.execute(
-                'DELETE FROM session WHERE id = ?', (jti,)
-            )
-            ctx.db.commit()
-            return Acknowledgment('Current session logged out successfully')
+            sql = 'DELETE FROM session WHERE id = ? AND user_id = ?'
+            values = (jti,)
+            msg = 'Current session logged out successfully'
         
         case 'others':
-            ctx.db.cursor.execute(
-                'DELETE FROM session WHERE user_id = ? AND id != ?', (user.id, jti)
-            )
-            ctx.db.commit()
-            return Acknowledgment('Other sessions logged out successfully')
+            sql = 'DELETE FROM session WHERE user_id = ? AND id != ?'
+            values = (user.id, jti)
+            msg = 'Other sessions logged out successfully'
         
         case 'all':
-            ctx.db.cursor.execute(
-                'DELETE FROM session WHERE user_id = ?', (user.id,)
-            )
-            ctx.db.commit()
-            return Acknowledgment('All sessions logged out successfully')
+            sql = 'DELETE FROM session WHERE user_id = ?'
+            values = (user.id,)
+            msg = 'All sessions logged out successfully'
         
         case _:
             # shouldn't get here due to param validation
             raise MappError('INVALID_LOGOUT_MODE', f'Unknown logout mode: {params.mode}')
+        
+    ctx.db.cursor.execute(sql, values)
+    ctx.db.commit()
+    return Acknowledgment(msg)
         
 def delete_user(ctx: MappContext, params:object) -> Acknowledgment:
     """
