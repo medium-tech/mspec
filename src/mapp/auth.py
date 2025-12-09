@@ -56,7 +56,6 @@ class CurrentUserOutput(NamedTuple):
     email: str
     number_of_sessions: int
 
-
 def init_auth_module(spec: dict) -> bool:
     """
     If spec.project.use_builtin_modules is True:

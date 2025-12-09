@@ -4,6 +4,7 @@ from mapp.types import *
 from mapp.module.op.run import op_create_callable
 from mapp.module.op.http import http_run_op
 from mapp.types import json_to_op_params_w_convert
+from mapp.context import cli_op_user_input
 
 __all__ = [
 	'add_op_subparser'
@@ -64,6 +65,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
         formatter_class=argparse.RawTextHelpFormatter
     )
     http_parser.add_argument('json', nargs='?', help='JSON string for operation input')
+    http_parser.add_argument('--interactive', '-i', action='store_true', help='Prompt for secure inputs')
     def cli_op_http(ctx, args):
         if args.json == 'help':
             http_parser.print_help()
@@ -73,7 +75,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
             if args.json is None:
                 params = new_op_params(param_class, dict())
             else:
-                params = json_to_op_params_w_convert(args.json, param_class)
+                params = cli_op_user_input(param_class, args.json, args.interactive)
 
             output = http_run_op(ctx, param_class, output_class, params)
 
@@ -94,6 +96,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
         formatter_class=argparse.RawTextHelpFormatter
     )
     run_parser.add_argument('json', nargs='?', help='JSON string for operation input')
+    run_parser.add_argument('--interactive', '-i', action='store_true', help='Prompt for secure inputs')
     def cli_op_run(ctx, args):
         if args.json == 'help':
             run_parser.print_help()
@@ -105,7 +108,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
             if args.json is None:
                 params = new_op_params(param_class, dict())
             else:
-                params = json_to_op_params_w_convert(param_class, args.json)
+                params = cli_op_user_input(param_class, args.json, args.interactive)
 
             output = op_function(ctx, params)
 

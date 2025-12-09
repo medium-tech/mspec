@@ -29,11 +29,13 @@ modules:
                         name:
                             lower_case: "password"
                         type: str
+                        secure_input: true
                         description: "Password for the user"
                     password_confirm:
                         name:
                             lower_case: "password confirm"
                         type: str
+                        secure_input: true
                         description: "Password confirmation"
                 output:
                     id:
@@ -52,7 +54,6 @@ modules:
                         type: str
                         description: "Email of the created user"
 
-
             login_user:
                 name:
                     lower_case: "login user"
@@ -70,6 +71,7 @@ modules:
                             lower_case: "password"
                         type: str
                         description: "Password for the user"
+                        secure_input: true
                 output:
                     access_token:
                         name:
@@ -178,6 +180,7 @@ modules:
                         description: "Acknowledgement message"
 
         models:
+
             user:
                 hidden: true
                 name:

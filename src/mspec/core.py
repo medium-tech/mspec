@@ -334,6 +334,13 @@ def init_generator_spec(spec:dict) -> dict:
                         raise ValueError(f'param {param_name} in op {op_path} has invalid required value, must be bool')
                 except KeyError:
                     param['required'] = True
+
+                try:
+                    if param['secure_input']:
+                        if not param['type'] != 'str':
+                            raise ValueError(f'param {param_name} in op {op_path} must be string type to use secure_input')
+                except KeyError:
+                    param['secure_input'] = False
             
             for out_name, out_field in op_output.items():
                 for key, value in generate_names(out_field['name']['lower_case']).items():

@@ -1,5 +1,6 @@
 import argparse
 
+from mapp.context import cli_model_user_input
 from mapp.types import *
 from mapp.errors import MappError
 from mapp.module.model.db import *
@@ -64,11 +65,12 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
         description=http_desc + ' :: create'
     )
     create_parser.add_argument('json', help='JSON string for model creation')
+    create_parser.add_argument('--interactive', '-i', action='store_true', help='Prompt for secure inputs')
     def cli_http_model_create(ctx, args):
         if args.json == 'help':
             create_parser.print_help()
         else: 
-            incoming_model = json_to_model_w_convert(model_class, args.json)
+            incoming_model = cli_model_user_input(model_class, args.json, args.interactive)
             new_model = http_model_create(ctx, model_class, incoming_model)
             print(model_to_json(new_model, sort_keys=True, indent=4))
 
@@ -98,11 +100,12 @@ def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
     )
     update_parser.add_argument('model_id', type=str, help='ID of the model to update')
     update_parser.add_argument('json', nargs='?', help='JSON string for model update')
+    update_parser.add_argument('--interactive', '-i', action='store_true', help='Prompt for secure inputs')
     def cli_http_model_update(ctx, args):
         if args.model_id == 'help':
             update_parser.print_help()
         else:
-            incoming_model = json_to_model_w_convert(model_class, args.json)
+            incoming_model = cli_model_user_input(model_class, args.json, args.interactive)
             updated_model = http_model_update(ctx, model_class, args.model_id, incoming_model)
             print(model_to_json(updated_model, sort_keys=True, indent=4))
         

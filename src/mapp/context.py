@@ -1,6 +1,8 @@
 import os
+import json
 import atexit
 import sqlite3
+import getpass
 
 from pathlib import Path
 from dataclasses import dataclass
@@ -8,6 +10,7 @@ from typing import Optional, Callable
 
 from mapp.errors import MappError
 from mapp.auth import User
+from mapp.types import convert_dict_to_op_params, convert_dict_to_model
 from mspec.core import load_mapp_spec
 
 __all__ = [
@@ -111,3 +114,34 @@ def spec_from_env() -> dict:
         return load_mapp_spec(spec_path)
     except FileNotFoundError:
         raise MappError('SPEC_FILE_NOT_FOUND', f'Spec file not found: {spec_path}')
+
+#
+# cli
+#
+
+def _cli_get_secure_input(spec:dict, json_str:str, interactive:bool) -> dict:
+
+    # get json data #
+
+    try:
+        json_data = json.loads(json_str)
+    except json.JSONDecodeError as e:
+        raise ValueError(f'Invalid JSON: {e}')
+    
+    # if interactive, prompt for secure inputs #
+    
+    if interactive:
+        for param in spec.values():
+            if param['secure_input']:
+                user_input = getpass.getpass(f"Enter value for {param['name']['snake_case']}: ")
+                json_data.update({param['name']['snake_case']: user_input})
+
+    return json_data
+
+def cli_model_user_input(model_class:type, json_str:str, interactive:bool) -> dict:
+    data = _cli_get_secure_input(model_class._model_spec['fields'], json_str, interactive)
+    return convert_dict_to_model(model_class, data)
+
+def cli_op_user_input(op_class:type, json_str:str, interactive:bool) -> dict:
+    data = _cli_get_secure_input(op_class._op_spec['params'], json_str, interactive)
+    return convert_dict_to_op_params(op_class, data)
