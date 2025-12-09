@@ -1,7 +1,7 @@
 import json
 
 from collections import namedtuple
-from typing import Any, Optional
+from typing import Any, Optional, NamedTuple, Callable
 from datetime import datetime
 from dataclasses import dataclass, asdict
 
@@ -41,6 +41,10 @@ __all__ = [
     'op_params_to_json'
 ]
 
+#
+# generics
+#
+
 DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
 
 class Acknowledgment:
@@ -79,16 +83,28 @@ class JSONResponse(Exception):
         self.status = status
         self.data = data
 
-@dataclass
-class ModelListResult:
-    items: list
-    total: int
+#
+# auth
+#
+
+class User(NamedTuple):
+    id: str
+    name: str
+    email: str
+
+CurrentUserFuncReturn = tuple[Optional[User], str]
+CurrentUserFunc = Callable[[], Optional[CurrentUserFuncReturn]]
 
 #
 # data
 #
 
 # class and instances #
+
+@dataclass
+class ModelListResult:
+    items: list
+    total: int
 
 def new_model_class(model_spec:dict, module_spec:Optional[dict]=None) -> type:
     """

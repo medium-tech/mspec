@@ -10,7 +10,7 @@ from jwt import ExpiredSignatureError, InvalidTokenError
 
 from mapp.context import MappContext
 from mapp.errors import AuthenticationError, MappError
-from mapp.types import validate_model, Acknowledgment
+from mapp.types import User, Acknowledgment
 
 MAPP_AUTH_SECRET_KEY = os.environ.get('MAPP_AUTH_SECRET_KEY')   # openssl rand -hex 32
 MAPP_AUTH_LOGIN_EXPIRATION_MINUTES = os.environ.get('MAPP_AUTH_LOGIN_EXPIRATION_MINUTES', 60 * 24 * 7)
@@ -26,10 +26,6 @@ __all__ = [
     'delete_user'
 ]
 
-class User(NamedTuple):
-    id: str
-    name: str
-    email: str
 
 class UserSession(NamedTuple):
     id: str

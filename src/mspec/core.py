@@ -337,7 +337,7 @@ def init_generator_spec(spec:dict) -> dict:
 
                 try:
                     if param['secure_input']:
-                        if not param['type'] != 'str':
+                        if param['type'] != 'str':
                             raise ValueError(f'param {param_name} in op {op_path} must be string type to use secure_input')
                 except KeyError:
                     param['secure_input'] = False

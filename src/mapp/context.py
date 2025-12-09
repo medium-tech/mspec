@@ -9,8 +9,7 @@ from dataclasses import dataclass
 from typing import Optional, Callable
 
 from mapp.errors import MappError
-from mapp.auth import User
-from mapp.types import convert_dict_to_op_params, convert_dict_to_model
+from mapp.types import convert_dict_to_op_params, convert_dict_to_model, CurrentUserFunc
 from mspec.core import load_mapp_spec
 
 __all__ = [
@@ -66,9 +65,6 @@ class RequestContext:
 #
 # mapp context
 #
-
-CurrentUserFuncReturn = tuple[Optional[User], str]
-CurrentUserFunc = Callable[[], Optional[CurrentUserFuncReturn]]
 
 @dataclass
 class MappContext:
@@ -129,7 +125,7 @@ def _cli_get_secure_input(spec:dict, json_str:str, interactive:bool) -> dict:
         raise ValueError(f'Invalid JSON: {e}')
     
     # if interactive, prompt for secure inputs #
-    
+
     if interactive:
         for param in spec.values():
             if param['secure_input']:
