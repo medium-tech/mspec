@@ -12,8 +12,17 @@ __all__ = [
     'Acknowledgment',
     'PlainTextResponse',
     'JSONResponse',
+
+    'User',
+    'UserSession',
+    'PasswordHash',
+    'CreateUserOutput',
+    'LoginUserOutput',
+    'CurrentUserOutput',
+    'CurrentUserFuncReturn',
+    'CurrentUserFunc',
+
     'ModelListResult',
-    
     'new_model_class',
     'new_model',
     'new_op_classes',
@@ -91,6 +100,32 @@ class User(NamedTuple):
     id: str
     name: str
     email: str
+
+class UserSession(NamedTuple):
+    id: str
+    user_id: str
+    created_at: datetime
+
+class PasswordHash(NamedTuple):
+    id: str
+    user_id: str
+    hash: str
+
+class CreateUserOutput(NamedTuple):
+    id: str
+    name: str
+    email: str
+
+class LoginUserOutput(NamedTuple):
+    access_token: str
+    token_type: str
+
+class CurrentUserOutput(NamedTuple):
+    id: str
+    name: str
+    email: str
+    number_of_sessions: int
+
 
 CurrentUserFuncReturn = tuple[Optional[User], str]
 CurrentUserFunc = Callable[[], Optional[CurrentUserFuncReturn]]

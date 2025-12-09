@@ -10,7 +10,15 @@ from jwt import ExpiredSignatureError, InvalidTokenError
 
 from mapp.context import MappContext
 from mapp.errors import AuthenticationError, MappError
-from mapp.types import User, Acknowledgment
+from mapp.types import (
+    Acknowledgment,
+    User,
+    UserSession,
+    PasswordHash,
+    CreateUserOutput,
+    LoginUserOutput,
+    CurrentUserOutput
+)
 
 MAPP_AUTH_SECRET_KEY = os.environ.get('MAPP_AUTH_SECRET_KEY')   # openssl rand -hex 32
 MAPP_AUTH_LOGIN_EXPIRATION_MINUTES = os.environ.get('MAPP_AUTH_LOGIN_EXPIRATION_MINUTES', 60 * 24 * 7)
@@ -26,31 +34,6 @@ __all__ = [
     'delete_user'
 ]
 
-
-class UserSession(NamedTuple):
-    id: str
-    user_id: str
-    created_at: datetime
-
-class PasswordHash(NamedTuple):
-    id: str
-    user_id: str
-    hash: str
-
-class CreateUserOutput(NamedTuple):
-    id: str
-    name: str
-    email: str
-
-class LoginUserOutput(NamedTuple):
-    access_token: str
-    token_type: str
-
-class CurrentUserOutput(NamedTuple):
-    id: str
-    name: str
-    email: str
-    number_of_sessions: int
 
 def init_auth_module(spec: dict) -> bool:
     """
@@ -214,7 +197,7 @@ def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
     if not re.match(EMAIL_REGEX, email):
         field_errors['email'] = 'Invalid email format'
     
-    if password is '' or password is None:
+    if password == '' or password is None:
         field_errors['password'] = 'Password cannot be empty'
 
     if password != password_confirm:
