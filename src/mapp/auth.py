@@ -92,10 +92,11 @@ def init_auth_module(spec: dict) -> bool:
 # internal
 #
 
+ROOT_PASSWORD_HASH_FILE = MAPP_APP_PATH / '.mapp-root-password'
+
 def _verify_root_password(user_input:str) -> str:
-    root_pw_file = MAPP_APP_PATH / '.mapp-root-password'
     try:
-        with open(root_pw_file, 'r', encoding='utf-8') as f:
+        with open(ROOT_PASSWORD_HASH_FILE, 'r', encoding='utf-8') as f:
             stored_password = f.read().strip()
     except FileNotFoundError:
         raise AuthenticationError('Root password file not found')
@@ -104,6 +105,21 @@ def _verify_root_password(user_input:str) -> str:
         raise AuthenticationError('Could not authenticate')
     
     return stored_password
+
+def _create_root_password_hash(password:str, password_confirm:str) -> str:
+    if password != password_confirm:
+        field_errors = {'password_confirm': 'Password confirmation does not match password'}
+        raise MappValidationError('Could not create root password', field_errors)
+    
+    root_hash = _get_password_hash(password)
+
+    try:
+        with open(ROOT_PASSWORD_HASH_FILE, 'w', encoding='utf-8') as f:
+            f.write(root_hash)
+    except Exception as e:
+        raise MappError('ROOT_PASSWORD_FILE_ERROR', f'Could not write root password file: {e}')
+    
+    del root_hash
 
 def _verify_password(plain_password:str, hashed_password:str) -> bool:
     try:
