@@ -18,6 +18,8 @@
 
 ## mapp framework
 * 🟡 bootstrap app
+    * create tests for auth via cli
+    * create tests for auth via http
 * 🔴 unittests passing
 * 🔴 generate browser1 ui?
 * 🔴 serve hello world lingo page from server

@@ -23,7 +23,8 @@ __all__ = [
     'get_context_from_env'
 ]
 
-DEFAULT_DB_PATH = Path(__file__).parent / 'db.sqlite3'
+MAPP_APP_PATH = Path(os.getenv('MAPP_APP_PATH', os.getcwd()))
+DEFAULT_DB_PATH = Path(MAPP_APP_PATH) / 'db.sqlite3'
 
 
 @dataclass

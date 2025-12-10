@@ -4,12 +4,10 @@ import time
 import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
-from typing import NamedTuple
 
 import jwt
-from jwt import ExpiredSignatureError, InvalidTokenError
 
-from mapp.context import MappContext
+from mapp.context import MappContext, MAPP_APP_PATH
 from mapp.errors import AuthenticationError, MappError, MappValidationError
 from mapp.types import (
     Acknowledgment,
@@ -93,6 +91,19 @@ def init_auth_module(spec: dict) -> bool:
 #
 # internal
 #
+
+def _verify_root_password(user_input:str) -> str:
+    root_pw_file = MAPP_APP_PATH / '.mapp-root-password'
+    try:
+        with open(root_pw_file, 'r', encoding='utf-8') as f:
+            stored_password = f.read().strip()
+    except FileNotFoundError:
+        raise AuthenticationError('Root password file not found')
+
+    if user_input != stored_password:
+        raise AuthenticationError('Could not authenticate')
+    
+    return stored_password
 
 def _verify_password(plain_password:str, hashed_password:str) -> bool:
     try:
@@ -422,7 +433,7 @@ def delete_user(ctx: MappContext, params:object) -> Acknowledgment:
     ctx.db.cursor.execute(
         'DELETE FROM user_session WHERE user_id = ?', (user.id,)
     )
-    
+
     # delete user record #
     
     ctx.db.cursor.execute(
@@ -440,6 +451,9 @@ def drop_sessions(ctx: MappContext, params:object) -> Acknowledgment:
         acknowledged: bool - Whether the operation was successful.
         message: str - Confirmation message of operation.
     """
+
+    _verify_root_password(params.root_password)
+
     ctx.db.cursor.execute(
         'DELETE FROM user_session'
     )

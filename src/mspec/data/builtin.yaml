@@ -167,7 +167,13 @@ modules:
                 description: "Drop all sessions"
                 python:
                     call: "auth.drop_sessions"
-                params: {}
+                params:
+                    root_password:
+                        name:
+                            lower_case: "root password"
+                        type: str
+                        secure_input: true
+                        description: "Root password to authorize dropping all sessions"
                 output:
                     acknowledged:
                         name:
