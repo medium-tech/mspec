@@ -77,6 +77,7 @@ modules:
                         name:
                             lower_case: "access token"
                         type: str
+                        secure: true
                         description: "Access token for the logged in user"
                     token_type:
                         name:

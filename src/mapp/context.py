@@ -162,7 +162,7 @@ def get_cli_access_token(ctx: MappContext) -> str:
     except KeyError:
         access_token = cli_load_session(ctx)
         if access_token is None:
-            raise MappError('NO_CLI_ACCESS_TOKEN', 'No session found, set MAPP_CLI_ACCESS_TOKEN or login via "mapp auth login-user".')
+            raise MappError('NO_CLI_ACCESS_TOKEN', 'No session found, set MAPP_CLI_ACCESS_TOKEN or login via \'mapp auth login-user\'.')
         ctx.log('Logged in via local CLI session.')
     
     return access_token

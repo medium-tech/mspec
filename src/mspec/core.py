@@ -347,6 +347,9 @@ def init_generator_spec(spec:dict) -> dict:
                     if key not in out_field['name']:
                         out_field['name'][key] = value
 
+                if 'secure' not in out_field:
+                    out_field['secure'] = False
+
                 try:
                     if not isinstance(out_field['required'], bool):
                         raise ValueError(f'output field {out_name} in op {op_path} has invalid required value, must be bool')

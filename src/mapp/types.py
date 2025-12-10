@@ -48,7 +48,8 @@ __all__ = [
     'json_to_op_params_w_convert',
     'json_to_op_output',
     'op_output_to_json',
-    'op_params_to_json'
+    'op_params_to_json',
+    'redact_secure_fields'
 ]
 
 #
@@ -688,3 +689,28 @@ def json_to_op_output(json_str:str, op_class:type) -> object:
 
 op_output_to_json = to_json
 op_params_to_json = to_json
+
+def redact_secure_fields(spec:dict, obj:object) -> object:
+    """
+    Redacts secure fields from a model or op instance.
+
+    Args:
+        spec (dict): The specification dictionary for the model or op.
+        obj (object): The model or op instance.
+
+    Returns:
+        dict: A dictionary representation of the object with secure fields redacted.
+    """
+
+    if isinstance(obj, Acknowledgment):
+        return obj  # nothing to redact
+
+    replacements = {}
+
+    for field in spec.values():
+
+        field_name = field['name']['snake_case']
+        if field['secure']:
+            replacements[field_name] = 'REDACTED'
+
+    return obj._replace(**replacements)

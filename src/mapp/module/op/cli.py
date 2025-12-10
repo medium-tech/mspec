@@ -119,12 +119,14 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
             else:
                 params = cli_op_user_input(param_class, args.json, args.interactive)
 
-            output = op_function(ctx, params)
+            raw_output = op_function(ctx, params)
             if args.module == 'auth':
                 if args.model == 'login-user':
-                    cli_write_session(ctx, output.access_token)
+                    cli_write_session(ctx, raw_output.access_token)
                 elif args.model == 'logout-user':
                     cli_delete_session()
+
+            output = redact_secure_fields(output_class._op_spec['output'], raw_output)
             print(to_json(output, sort_keys=True, indent=4))
 
     run_parser.set_defaults(func=cli_op_run)
