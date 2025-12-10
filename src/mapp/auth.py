@@ -94,32 +94,19 @@ def init_auth_module(spec: dict) -> bool:
 
 ROOT_PASSWORD_HASH_FILE = MAPP_APP_PATH / '.mapp-root-password'
 
-def _verify_root_password(user_input:str) -> str:
+def _verify_root_password(user_input:str) -> bool:
+    """returns True if root password is correct, else raises AuthenticationError"""
+
     try:
         with open(ROOT_PASSWORD_HASH_FILE, 'r', encoding='utf-8') as f:
-            stored_password = f.read().strip()
+            root_pw_hash = f.read().strip()
     except FileNotFoundError:
         raise AuthenticationError('Root password file not found')
 
-    if user_input != stored_password:
-        raise AuthenticationError('Could not authenticate')
+    if not _verify_password(user_input, root_pw_hash):
+        raise AuthenticationError('Invalid root password')
     
-    return stored_password
-
-def _create_root_password_hash(password:str, password_confirm:str) -> str:
-    if password != password_confirm:
-        field_errors = {'password_confirm': 'Password confirmation does not match password'}
-        raise MappValidationError('Could not create root password', field_errors)
-    
-    root_hash = _get_password_hash(password)
-
-    try:
-        with open(ROOT_PASSWORD_HASH_FILE, 'w', encoding='utf-8') as f:
-            f.write(root_hash)
-    except Exception as e:
-        raise MappError('ROOT_PASSWORD_FILE_ERROR', f'Could not write root password file: {e}')
-    
-    del root_hash
+    return True
 
 def _verify_password(plain_password:str, hashed_password:str) -> bool:
     try:
@@ -468,7 +455,7 @@ def drop_sessions(ctx: MappContext, params:object) -> Acknowledgment:
         message: str - Confirmation message of operation.
     """
 
-    _verify_root_password(params.root_password)
+    assert _verify_root_password(params.root_password) is True
 
     ctx.db.cursor.execute(
         'DELETE FROM user_session'
