@@ -7,6 +7,8 @@ import getpass
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional, Callable
+from cryptography.fernet import Fernet
+import base64
 
 from mapp.errors import MappError
 from mapp.types import convert_dict_to_op_params, convert_dict_to_model, CurrentAccessTokenFunc
@@ -116,18 +118,35 @@ def spec_from_env() -> dict:
 
 CLI_SESSION_FILE_PATH = os.path.join(os.path.expanduser('~'), '.mapp', 'cli_session.json')
 
-def cli_load_session() -> str | None:
+def _get_fernet(ctx:MappContext) -> Fernet:
+    key_hex = os.environ.get('MAPP_AUTH_SECRET_KEY')
+    if not key_hex:
+        raise MappError('NO_SECRET_KEY', 'MAPP_AUTH_SECRET_KEY not set in environment')
     try:
-        with open(CLI_SESSION_FILE_PATH, 'r') as f:
-            return f.read().strip()
+        key_bytes = bytes.fromhex(key_hex)
+        fernet_key = base64.urlsafe_b64encode(key_bytes)
+    except Exception as e:
+        ctx.log(f'Error getting fernet key: {e.__class__.__name__}: {e}')
+        raise MappError('INVALID_SECRET_KEY', 'MAPP_AUTH_SECRET_KEY is invalid')
+    
+    return Fernet(fernet_key)
+
+def cli_load_session(ctx:MappContext) -> str | None:
+    try:
+        with open(CLI_SESSION_FILE_PATH, 'rb') as f:
+            encrypted = f.read()
+        cipher = _get_fernet(ctx)
+        return cipher.decrypt(encrypted).decode()
     except FileNotFoundError:
         return None
     
-def cli_write_session(acess_token: str):
+def cli_write_session(ctx:MappContext, access_token: str):
     session_dir = os.path.dirname(CLI_SESSION_FILE_PATH)
     os.makedirs(session_dir, exist_ok=True)
-    with open(CLI_SESSION_FILE_PATH, 'w') as f:
-        f.write(acess_token)
+    cipher = _get_fernet(ctx)
+    encrypted = cipher.encrypt(access_token.encode())
+    with open(CLI_SESSION_FILE_PATH, 'wb') as f:
+        f.write(encrypted)
 
 def cli_delete_session():
     try:
@@ -141,7 +160,7 @@ def get_cli_access_token(ctx: MappContext) -> str:
         access_token = os.environ['MAPP_CLI_ACCESS_TOKEN']
         ctx.log('Logged in via MAPP_CLI_ACCESS_TOKEN env variable.')
     except KeyError:
-        access_token = cli_load_session()
+        access_token = cli_load_session(ctx)
         if access_token is None:
             raise MappError('NO_CLI_ACCESS_TOKEN', 'No session found, set MAPP_CLI_ACCESS_TOKEN or login via "mapp auth login-user".')
         ctx.log('Logged in via local CLI session.')

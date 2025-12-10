@@ -122,7 +122,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
             output = op_function(ctx, params)
             if args.module == 'auth':
                 if args.model == 'login-user':
-                    cli_write_session(output.access_token)
+                    cli_write_session(ctx, output.access_token)
                 elif args.model == 'logout-user':
                     cli_delete_session()
             print(to_json(output, sort_keys=True, indent=4))
