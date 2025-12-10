@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Optional, Callable
 
 from mapp.errors import MappError
-from mapp.types import convert_dict_to_op_params, convert_dict_to_model, CurrentUserFunc
+from mapp.types import convert_dict_to_op_params, convert_dict_to_model, CurrentAccessTokenFunc
 from mspec.core import load_mapp_spec
 
 __all__ = [
@@ -72,8 +72,7 @@ class MappContext:
     client: ClientContext
     db:DBContext
     log:Callable[[str], None]
-    current_user:Optional[CurrentUserFunc]=None
-
+    current_access_token:Optional[CurrentAccessTokenFunc]=None
 
 def get_context_from_env():
 

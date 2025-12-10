@@ -55,6 +55,8 @@ def op_create_callable(param_class:type, output_class:type) -> object:
 			op_callable = auth.logout_user
 		case 'auth.delete_user':
 			op_callable = auth.delete_user
+		case 'auth.drop_sessions':
+			op_callable = auth.drop_sessions
 		case _:
 			raise MappError('UNKNOWN_OP_CALL', f'Unknown op python.call: {py_call}')
 		

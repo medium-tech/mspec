@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 
 from mapp.auth import init_auth_module
 from mapp.context import MappContext, spec_from_env, get_context_from_env
@@ -24,6 +25,7 @@ def main(ctx: MappContext, spec:dict):
         description=f':: {project_name}', 
         formatter_class=argparse.RawTextHelpFormatter
     )
+    parser.add_argument('--log', action='store_true', help='Enable logging output to console')
     subparsers = parser.add_subparsers(dest='module', help='Available modules', required=False)
 
     help_parser = subparsers.add_parser('help', help='Show top-level help', aliases=['-h', '--help'])
@@ -60,6 +62,9 @@ def main(ctx: MappContext, spec:dict):
 
     args = parser.parse_args()
 
+    if args.log is True:
+        ctx.log = cli_logging
+
     if hasattr(args, 'func'):
         try:
             args.func(ctx, args)
@@ -68,6 +73,19 @@ def main(ctx: MappContext, spec:dict):
             raise SystemExit(1)
     else:
         parser.print_help()
+
+
+def get_cli_access_token(ctx: MappContext) -> str:
+    
+    try:
+        access_token = os.environ['MAPP_CLI_ACCESS_TOKEN']
+    except KeyError:
+        raise MappError('NO_CLI_ACCESS_TOKEN', 'Env MAPP_CLI_ACCESS_TOKEN not set, see help to login and get a token.')
+    
+    return access_token
+
+def cli_logging(msg: str):
+    print(f':: log :: {msg}')
 
 if __name__ == "__main__":
     
@@ -85,5 +103,5 @@ if __name__ == "__main__":
     else:
         auth_enabled = init_auth_module(mapp_spec)
         cli_ctx = get_context_from_env()
-        cli_ctx.current_user = lambda: 'placeholder'
+        cli_ctx.current_access_token = lambda: get_cli_access_token(cli_ctx)
         main(cli_ctx, mapp_spec)

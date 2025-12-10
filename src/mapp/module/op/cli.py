@@ -25,12 +25,22 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
     op_path = f':: {project_name} :: {module_kebab_case} :: {op_kebab_case}'
 
     params = op['params'].values()
-    param_fields = [f"\n        :: {p['name']['snake_case']} - {p['type']}" for p in params]
-    param_fields_str = ''.join(param_fields)
+    param_fields_str = ''
+    for p in params:
+        param_fields_str += f"\n        :: {p['name']['snake_case']} - {p['type']}"
+        if 'enum' in p:
+            param_fields_str += f"\n            :: enum choices:"
+            for choice in p['enum']:
+                param_fields_str += f"\n              - {choice}"
 
     outputs = op['output'].values()
-    output_fields = [f"\n        :: {o['name']['snake_case']} - {o['type']}" for o in outputs]
-    output_fields_str = ''.join(output_fields)
+    output_fields_str = ''
+    for o in outputs:
+        output_fields_str += f"\n        :: {o['name']['snake_case']} - {o['type']}"
+        if 'enum' in o:
+            output_fields_str += f"\n            :: enum choices:"
+            for choice in o['enum']:
+                output_fields_str += f"\n              - {choice}"
 
     op_docs = '\n    :: params' + param_fields_str + '\n    :: output' + output_fields_str
 

@@ -1,5 +1,6 @@
 import os
 import re
+import time
 import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -120,6 +121,8 @@ def _check_user_credentials(ctx: MappContext, email: str, password: str) -> str:
     return :: str of user id
     raises :: AuthenticationError
     """
+
+    err_msg = 'Invalid email or password'
     
     user_id_result = ctx.db.cursor.execute(
         "SELECT id FROM user WHERE email = ?",
@@ -127,7 +130,7 @@ def _check_user_credentials(ctx: MappContext, email: str, password: str) -> str:
     ).fetchone()
 
     if user_id_result is None:
-        raise AuthenticationError()
+        raise AuthenticationError(err_msg)
     
     pw_hash_result = ctx.db.cursor.execute(
         "SELECT hash FROM password_hash WHERE user_id = ?", 
@@ -135,43 +138,90 @@ def _check_user_credentials(ctx: MappContext, email: str, password: str) -> str:
     ).fetchone()
 
     if pw_hash_result is None:
-        raise AuthenticationError()
+        raise AuthenticationError(err_msg)
 
     if not _verify_password(password, pw_hash_result[0]):
-        raise AuthenticationError()
+        raise AuthenticationError(err_msg)
     
     return str(user_id_result[0])
 
-def _create_access_token(data: dict):
+def _create_access_token(user_id: str) -> tuple[str, str, int]:
+
+    """
+    Create an access token for a user.
+
+    args ::
+        data :: dict containing the user id as 'sub' key
+
+    return :: tuple of (token:str, token_type:str, jti:int)
+        token - str - The JWT access token with the following fields
+            sub - str - The subject (user id).
+            exp - int - The expiration time as a Unix timestamp.
+            jti - int - The unique identifier for the token.
+        token_type - str - The type of the token, e.g., 'bearer'.
+        jti - int - The unique identifier for the token.
+
+    raises :: AuthenticationError
+    """
+
     expires = datetime.now(timezone.utc) + timedelta(minutes=int(MAPP_AUTH_LOGIN_EXPIRATION_MINUTES))
-    jti = secrets.token_hex(16)
-    data_to_encode = data.copy()
-    data_to_encode.update({'exp': expires, 'sub': data.get('sub'), 'jti': jti})
+    jti = secrets.randbits(63)
+    data_to_encode = {'sub': user_id, 'exp': expires, 'jti': str(jti)}
     if MAPP_AUTH_SECRET_KEY is None:
         raise AuthenticationError()
     token = jwt.encode(data_to_encode, MAPP_AUTH_SECRET_KEY, algorithm='HS256')
     return token, 'bearer', jti
 
-def _get_user_id_from_token(ctx:dict, token:str) -> str:
-    """parse a JWT token and return the user id as a string,
-    raise AuthenticationError if the token is invalid or expired
+def _parse_access_token(ctx:dict, token:str) -> tuple[User, str]:
+    """
+    Parse and validate an access token, returning the associated User.
+    if session is invalid or expired, raises AuthenticationError.
     """
     try:
         payload = jwt.decode(token, MAPP_AUTH_SECRET_KEY, algorithms=['HS256'])
-        user_id: str = payload.get('sub')
-        jti: str = payload.get('jti')
-        if user_id is None or jti is None:
-            raise AuthenticationError('Could not validate credentials')
-        # Check session table for jti
-        session = ctx.db.cursor.execute(
-            'SELECT id FROM session WHERE id = ?', (jti,)
-        ).fetchone()
-        if not session:
-            raise AuthenticationError('Session expired or logged out')
-        return user_id
-    except (ExpiredSignatureError, InvalidTokenError, Exception):
-        raise AuthenticationError('Could not validate credentials')
+        user_id: str = payload['sub']
+        jti: str = payload['jti']
+        exp: int = payload['exp']
+    except Exception as e:
+        ctx.log(f'Caught exception decoding access token: {e.__class__.__name__}: {e}')
+        raise AuthenticationError('Invalid access token')
+    
+    # check if token expired #
+        
+    if time.time() > exp:
 
+        ctx.db.cursor.execute(
+            'DELETE FROM user_session WHERE id = ? AND user_id = ?',
+            (jti, user_id)
+        )
+        ctx.db.commit()
+
+        raise AuthenticationError('Session has expired')
+    
+    # check session exists #
+
+    session_result = ctx.db.cursor.execute(
+        'SELECT id FROM user_session WHERE id = ? AND user_id = ?',
+        (jti, user_id)
+    ).fetchone()
+
+    if session_result is None:
+        raise AuthenticationError('Invalid session token')
+    
+    # load user #
+
+    user_result = ctx.db.cursor.execute(
+        'SELECT id, name, email FROM user WHERE id = ?',
+        (user_id,)
+    ).fetchone()
+
+    user = User(
+        id=str(user_result[0]),
+        name=user_result[1],
+        email=user_result[2]
+    )
+
+    return user, jti
 #
 # external
 #
@@ -266,10 +316,10 @@ def login_user(ctx: MappContext, params:object) -> LoginUserOutput:
     email = params.email.strip().lower()
     password = params.password
     user_id = _check_user_credentials(ctx, email, password)
-    token, token_type, jti = _create_access_token({'sub': user_id})
+    token, token_type, jti = _create_access_token(user_id)
     # Create session record
     ctx.db.cursor.execute(
-        'INSERT INTO session (id, user_id, created_at) VALUES (?, ?, ?)',
+        'INSERT INTO user_session (id, user_id, created_at) VALUES (?, ?, ?)',
         (jti, user_id, datetime.now(timezone.utc))
     )
     ctx.db.commit()
@@ -288,22 +338,23 @@ def current_user(ctx: MappContext, params:object) -> CurrentUserOutput:
         id: str - The ID of the current user.
         name: str - The name of the current user.
         email: str - The email of the current user.
+        number_of_sessions: int - The number of active sessions for the current user.
     """
-    user, _ = ctx.current_user()
-    if user is None:
-        raise AuthenticationError()
-    
-    else:
-        number_of_sessions = ctx.db.cursor.execute(
-            'SELECT COUNT(*) FROM session WHERE user_id = ?', (user.id,)
-        ).fetchone()[0]
+    access_token = ctx.current_access_token()
+    assert access_token is not None
 
-        return CurrentUserOutput(
-            id=user.id,
-            name=user.name,
-            email=user.email,
-            number_of_sessions=number_of_sessions
-        )
+    user, _jti = _parse_access_token(ctx, access_token)
+    
+    number_of_sessions = ctx.db.cursor.execute(
+        'SELECT COUNT(*) FROM user_session WHERE user_id = ?', (user.id,)
+    ).fetchone()[0]
+
+    return CurrentUserOutput(
+        id=user.id,
+        name=user.name,
+        email=user.email,
+        number_of_sessions=number_of_sessions
+    )
 
 def logout_user(ctx: MappContext, params:object) -> Acknowledgment:
     """
@@ -318,31 +369,24 @@ def logout_user(ctx: MappContext, params:object) -> Acknowledgment:
 
     # get current user #
 
-    user, access_token = ctx.current_user()
-    if user is None or not access_token:
-        return Acknowledgment('No user logged in')
+    access_token = ctx.current_access_token()
+    assert access_token is not None
 
-    try:
-        payload = jwt.decode(access_token, MAPP_AUTH_SECRET_KEY, algorithms=['HS256'])
-        jti = payload.get('jti')
-        if not jti:
-            return Acknowledgment('Invalid session token')
-    except Exception:
-        return Acknowledgment('Invalid session token')
+    user, jti = _parse_access_token(ctx, access_token)
 
     match params.mode:
         case 'current':
-            sql = 'DELETE FROM session WHERE id = ? AND user_id = ?'
-            values = (jti,)
+            sql = 'DELETE FROM user_session WHERE id = ? AND user_id = ?'
+            values = (jti, user.id)
             msg = 'Current session logged out successfully'
         
         case 'others':
-            sql = 'DELETE FROM session WHERE user_id = ? AND id != ?'
+            sql = 'DELETE FROM user_session WHERE user_id = ? AND id != ?'
             values = (user.id, jti)
             msg = 'Other sessions logged out successfully'
         
         case 'all':
-            sql = 'DELETE FROM session WHERE user_id = ?'
+            sql = 'DELETE FROM user_session WHERE user_id = ?'
             values = (user.id,)
             msg = 'All sessions logged out successfully'
         
@@ -368,15 +412,17 @@ def delete_user(ctx: MappContext, params:object) -> Acknowledgment:
 
     # get current user #
 
-    user, _ = ctx.current_user()
-    if user is None:
-        raise AuthenticationError()
+    access_token = ctx.current_access_token()
+    assert access_token is not None
+
+    user, jti = _parse_access_token(ctx, access_token)
 
     # delete all sessions for this user #
 
     ctx.db.cursor.execute(
-        'DELETE FROM session WHERE user_id = ?', (user.id,)
+        'DELETE FROM user_session WHERE user_id = ?', (user.id,)
     )
+    
     # delete user record #
     
     ctx.db.cursor.execute(
@@ -395,7 +441,7 @@ def drop_sessions(ctx: MappContext, params:object) -> Acknowledgment:
         message: str - Confirmation message of operation.
     """
     ctx.db.cursor.execute(
-        'DELETE FROM session'
+        'DELETE FROM user_session'
     )
     ctx.db.commit()
     return Acknowledgment('All sessions dropped successfully')

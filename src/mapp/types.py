@@ -21,6 +21,7 @@ __all__ = [
     'CurrentUserOutput',
     'CurrentUserFuncReturn',
     'CurrentUserFunc',
+    'CurrentAccessTokenFunc',
 
     'ModelListResult',
     'new_model_class',
@@ -127,8 +128,10 @@ class CurrentUserOutput(NamedTuple):
     number_of_sessions: int
 
 
-CurrentUserFuncReturn = tuple[Optional[User], str]
-CurrentUserFunc = Callable[[], Optional[CurrentUserFuncReturn]]
+CurrentUserFuncReturn = tuple[Optional[User], str]              # deprecated
+CurrentUserFunc = Callable[[], Optional[CurrentUserFuncReturn]] # deprecated
+
+CurrentAccessTokenFunc = Callable[[], Optional[str]]
 
 #
 # data
