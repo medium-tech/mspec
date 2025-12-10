@@ -3,8 +3,7 @@ import argparse
 from mapp.types import *
 from mapp.module.op.run import op_create_callable
 from mapp.module.op.http import http_run_op
-from mapp.types import json_to_op_params_w_convert
-from mapp.context import cli_op_user_input
+from mapp.context import cli_op_user_input, cli_load_session, cli_write_session, cli_delete_session
 
 __all__ = [
 	'add_op_subparser'
@@ -121,7 +120,11 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
                 params = cli_op_user_input(param_class, args.json, args.interactive)
 
             output = op_function(ctx, params)
-
+            if args.module == 'auth':
+                if args.model == 'login-user':
+                    cli_write_session(output.access_token)
+                elif args.model == 'logout-user':
+                    cli_delete_session()
             print(to_json(output, sort_keys=True, indent=4))
 
     run_parser.set_defaults(func=cli_op_run)

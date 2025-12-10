@@ -3,7 +3,7 @@ import json
 import os
 
 from mapp.auth import init_auth_module
-from mapp.context import MappContext, spec_from_env, get_context_from_env
+from mapp.context import MappContext, spec_from_env, get_context_from_env, get_cli_access_token
 from mapp.errors import MappError
 from mapp.db import create_tables
 from mapp.module import cli as module_cli
@@ -73,16 +73,6 @@ def main(ctx: MappContext, spec:dict):
             raise SystemExit(1)
     else:
         parser.print_help()
-
-
-def get_cli_access_token(ctx: MappContext) -> str:
-    
-    try:
-        access_token = os.environ['MAPP_CLI_ACCESS_TOKEN']
-    except KeyError:
-        raise MappError('NO_CLI_ACCESS_TOKEN', 'Env MAPP_CLI_ACCESS_TOKEN not set, see help to login and get a token.')
-    
-    return access_token
 
 def cli_logging(msg: str):
     print(f':: log :: {msg}')

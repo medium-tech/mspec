@@ -114,6 +114,40 @@ def spec_from_env() -> dict:
 # cli
 #
 
+CLI_SESSION_FILE_PATH = os.path.join(os.path.expanduser('~'), '.mapp', 'cli_session.json')
+
+def cli_load_session() -> str | None:
+    try:
+        with open(CLI_SESSION_FILE_PATH, 'r') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return None
+    
+def cli_write_session(acess_token: str):
+    session_dir = os.path.dirname(CLI_SESSION_FILE_PATH)
+    os.makedirs(session_dir, exist_ok=True)
+    with open(CLI_SESSION_FILE_PATH, 'w') as f:
+        f.write(acess_token)
+
+def cli_delete_session():
+    try:
+        os.remove(CLI_SESSION_FILE_PATH)
+    except FileNotFoundError:
+        pass
+
+def get_cli_access_token(ctx: MappContext) -> str:
+    
+    try:
+        access_token = os.environ['MAPP_CLI_ACCESS_TOKEN']
+        ctx.log('Logged in via MAPP_CLI_ACCESS_TOKEN env variable.')
+    except KeyError:
+        access_token = cli_load_session()
+        if access_token is None:
+            raise MappError('NO_CLI_ACCESS_TOKEN', 'No session found, set MAPP_CLI_ACCESS_TOKEN or login via "mapp auth login-user".')
+        ctx.log('Logged in via local CLI session.')
+    
+    return access_token
+
 def _cli_get_secure_input(spec:dict, json_str:str, interactive:bool) -> dict:
 
     # get json data #
