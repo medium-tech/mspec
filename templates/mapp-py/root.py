@@ -12,8 +12,18 @@ dotenv.load_dotenv(dotenv_path='.env', override=True)
 from mapp.auth import ROOT_PASSWORD_HASH_FILE, _get_password_hash, _verify_root_password
 from mapp.errors import MappError, MappValidationError
 
+def _is_set() -> bool:
+    try:
+        return os.path.getsize(ROOT_PASSWORD_HASH_FILE) > 0
+    except FileNotFoundError:
+        return False
 
 def cmd_create_pw():
+    if _is_set():
+        if input('Root password is already set. Overwrite? (y/N): ').lower() != 'y':
+            print(':: aborting root password set')
+            raise SystemExit(1)
+
     password = getpass('Enter new root password: ')
     password_confirm = getpass('Confirm new root password: ')
 
@@ -32,24 +42,20 @@ def cmd_create_pw():
     print(':: root password set successfully')
 
 def cmd_is_set():
-    try:
-        if os.path.getsize(ROOT_PASSWORD_HASH_FILE) > 0:
-            print(':: root password is set')
-            sys.exit(0)
-        else:
-            print(':: root password is not set')
-            sys.exit(1)
-    except FileNotFoundError:
-        print(':: root password is not set')
-        sys.exit(1)
+    if _is_set():
+        print(':: root password is set')
+        raise SystemExit(0)
+    else:
+        print(':: root password is NOT set')
+        raise SystemExit(1)
 
 def cmd_verify_pw():
     password = getpass('Enter root password: ')
     if _verify_root_password(password):
-        print('Password verified: True')
+        print(':: password verified successfully')
         sys.exit(0)
     else:
-        print('Password verified: False')
+        print(':: password verification failed')
         sys.exit(1)
 
 def main():
