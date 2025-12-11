@@ -310,11 +310,8 @@ def _convert_incoming_value(field_type:str, raw_value:Any, strict=False) -> Any:
                 return datetime.strptime(raw_value, DATETIME_FORMAT_STR)
             else:
                 raise ValueError(f'Cannot convert type "{type(raw_value)}" to datetime')
-        # case 'list':
-        #     if isinstance(raw_value, list):
-        #         return raw_value
-        #     else:
-        #         raise ValueError(f'Cannot convert type "{type(raw_value)}" to list')
+        case 'foreign_key':
+            return str(raw_value)
         case _:
             raise ValueError(f'Unsupported field type: {field_type}')
 
@@ -424,6 +421,8 @@ def _get_python_type_for_field(field_type:str) -> type:
             return str
         case 'datetime':
             return datetime
+        case 'foreign_key':
+            return str
         case _:
             raise ValueError(f'Unsupported field type: {field_type}')
 

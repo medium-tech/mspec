@@ -407,6 +407,115 @@ class TestMTemplateApp(unittest.TestCase):
 
         self.assertFalse(error, 'One or more server processes have exited unexpectedly')
 
+    # builtin - auth tests #
+
+    def _test_user_auth_flow(self, ctx:dict, io_type:str):
+        """
+        test auth command flow via cli <io type> command
+
+        ./mapp auth delete-user <io type>
+            * expect error
+        ./mapp auth current-user <io type>
+            * expect error
+
+        ./mapp auth create-user <io type> {"name": "brad", ...}
+        ./mapp auth login-user <io type> {"email": "...", ...}
+        ./mapp auth current-user <io type>
+        ./mapp auth logout-user <io type> {"mode": "current"}
+        ./mapp auth current-user <io type>
+            * expect error
+        ./mapp auth login-user <io type> {"email": "...", ...}
+        ./mapp auth delete-user <io type>
+        ./mapp auth current-user <io type>
+            * expect error
+        """
+        # Setup
+        cmd = self.cmd
+        env = self.crud_ctx.copy()
+        user_name = 'alice'
+        user_email = f'alice@{io_type}.com'
+        user_password = 'testpass123'
+        
+        # Helper to run a command and return output
+        def run_auth_cmd(args, input_data=None, expected_code=0):
+            if input_data is not None:
+                result = subprocess.run(args, input=input_data, capture_output=True, text=True, env=env)
+            else:
+                result = subprocess.run(args, capture_output=True, text=True, env=env)
+            msg = f'expected {expected_code} got {result.returncode} for command "{' '.join(args)}" output: {result.stdout + result.stderr}'
+            self.assertEqual(result.returncode, expected_code, msg)
+            return result
+
+        # 1. delete-user (should error)
+        result = run_auth_cmd(cmd + ["auth", "delete-user", io_type], expected_code=1)
+        self.assertIn("error", result.stdout.lower())
+
+        # 2. current-user (should error)
+        result = run_auth_cmd(cmd + ["auth", "current-user", io_type], expected_code=1)
+        self.assertIn("error", result.stdout.lower())
+
+        # 3. create-user
+        create_input = json.dumps({"name": user_name, "email": user_email, "password": user_password, "password_confirm": user_password})
+        result = run_auth_cmd(cmd + ["auth", "create-user", io_type, create_input])
+        self.assertIn(user_email, result.stdout)
+
+        # 4. login-user
+        login_input = json.dumps({"email": user_email, "password": user_password})
+        result = run_auth_cmd(cmd + ["auth", "login-user", io_type, login_input])
+        self.assertIn("access_token", result.stdout)
+
+        # 5. current-user (should succeed)
+        result = run_auth_cmd(cmd + ["auth", "current-user", io_type])
+        self.assertIn(user_email, result.stdout)
+
+        # 6. logout-user (current)
+        logout_input = json.dumps({"mode": "current"})
+        result = run_auth_cmd(cmd + ["auth", "logout-user", io_type, logout_input])
+        self.assertIn("logged out", result.stdout.lower())
+
+        # 7. current-user (should error)
+        result = run_auth_cmd(cmd + ["auth", "current-user", io_type], expected_code=1)
+        self.assertIn("error", result.stdout.lower())
+
+        # 8. login-user (again)
+        result = run_auth_cmd(cmd + ["auth", "login-user", io_type, login_input])
+        self.assertIn("access_token", result.stdout)
+
+        # 9. delete-user
+        result = run_auth_cmd(cmd + ["auth", "delete-user", io_type])
+        self.assertIn("deleted", result.stdout.lower())
+
+        # 10. current-user (should error)
+        result = run_auth_cmd(cmd + ["auth", "current-user", io_type], expected_code=1)
+        self.assertIn("error", result.stdout.lower())
+
+    def test_cli_run_auth_flow(self):
+        self._test_user_auth_flow(self.crud_ctx, "run")
+    
+    def test_cli_http_auth_flow(self):
+        """
+        test auth command flow via cli http command
+        
+        ./mapp auth delete-user http
+            * expect error
+        ./mapp auth current-user http
+            * expect error
+
+        ./mapp auth create-user http {"name": "brad", ...}
+        ./mapp auth login-user http {"email": "...", ...}
+        ./mapp auth current-user http
+        ./mapp auth logout-user http {"mode": "current"}
+        ./mapp auth current-user http
+            * expect error
+        ./mapp auth login-user http {"email": "...", ...}
+        ./mapp auth delete-user http
+        ./mapp auth current-user http
+            * expect error
+        """
+
+    def test_server_auth_endpoints(self):
+        pass
+
     # crud tests #
 
     def _test_cli_crud_commands(self, command_type:str):
@@ -853,6 +962,8 @@ class TestMTemplateApp(unittest.TestCase):
                 help_jobs.append((args, env, assertion))
 
             for model in module.get('models', {}).values():
+                if model['hidden']:
+                    continue
                 model_help_text = module_help_text + f' :: {model["name"]["kebab_case"]}'
                 for model_help_arg in ['help', '--help', '-h']:
                     args = self.cmd + [module['name']['kebab_case'], model['name']['kebab_case'], model_help_arg]
