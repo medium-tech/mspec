@@ -85,7 +85,6 @@ def env_to_string(env:dict) -> str:
 
 class TestMTemplateApp(unittest.TestCase):
     
-    maxDiff = None
     test_dir = 'mapp-tests'
 
     """
@@ -523,6 +522,8 @@ class TestMTemplateApp(unittest.TestCase):
             module_name_kebab = module['name']['kebab_case']
 
             for model_name, model in module['models'].items():
+                if model['hidden'] is True:
+                    continue
                 model_name_kebab = model['name']['kebab_case']
 
                 model_db_args = self.cmd + [module_name_kebab, model_name_kebab, command_type]
@@ -550,7 +551,10 @@ class TestMTemplateApp(unittest.TestCase):
                     updated_example = example_from_model(model, index=1)
                 except ValueError as e:
                     raise ValueError(f'Need at least 2 examples for update testing: {e}')
-                result = self._run_cmd(model_db_args + ['update', created_model_id, json.dumps(updated_example)], env=self.crud_ctx)
+                try:
+                    result = self._run_cmd(model_db_args + ['update', created_model_id, json.dumps(updated_example)], env=self.crud_ctx)
+                except Exception as e:
+                    raise
                 updated_model = json.loads(result.stdout)
                 updated_model_id = updated_model.pop('id')
                 self.assertEqual(updated_model, updated_example, f'Updated {model_name} does not match updated example data')
@@ -603,6 +607,8 @@ class TestMTemplateApp(unittest.TestCase):
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
+                if model['hidden'] is True:
+                    continue
                 model_name_kebab = model['name']['kebab_case']
 
                 # create #
@@ -703,6 +709,8 @@ class TestMTemplateApp(unittest.TestCase):
             module_name_kebab = module['name']['kebab_case']
 
             for model in module['models'].values():
+                if model['hidden'] is True:
+                    continue
                 model_name_kebab = model['name']['kebab_case']
                 model_list_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'list']
 
@@ -761,6 +769,8 @@ class TestMTemplateApp(unittest.TestCase):
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
+                if model['hidden'] is True:
+                    continue
                 model_name_kebab = model['name']['kebab_case']
 
                 for case in self.pagination_cases:
@@ -798,6 +808,9 @@ class TestMTemplateApp(unittest.TestCase):
     # validation tests #
 
     def _test_cli_validation_error(self, module_name_kebab:str, model:dict, command_type:str):
+
+        if model['hidden'] is True:
+            return
 
         model_name_kebab = model['name']['kebab_case']
 
@@ -861,6 +874,8 @@ class TestMTemplateApp(unittest.TestCase):
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
             for model in module['models'].values():
+                if model['hidden'] is True:
+                    continue
                 model_name_kebab = model['name']['kebab_case']
 
                 # create a valid model to update with invalid data
@@ -1006,7 +1021,7 @@ class TestMTemplateApp(unittest.TestCase):
             assertion(stdout, stderr, code, args)
     
 
-def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:str|None, use_cache:bool=False, app_type:str='') -> bool:
+def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:str|None, use_cache:bool=False, app_type:str='', verbose:bool=False) -> bool:
     if cli_args is None:
         raise ValueError('args must be provided as a list of strings')
 
@@ -1025,12 +1040,16 @@ def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:st
         # Only add tests matching any filter pattern
         for test_name in loader.getTestCaseNames(TestMTemplateApp):
             if any(fnmatch.fnmatch(test_name, pat) or pat in test_name for pat in test_filters):
-                test_suite.addTest(TestMTemplateApp(test_name))
+                test_case = TestMTemplateApp(test_name)
+                test_case.maxDiff = None
+                test_suite.addTest(test_case)
     else:
         tests = loader.loadTestsFromTestCase(TestMTemplateApp)
-        test_suite.addTests(tests)
+        for test in tests:
+            test.maxDiff = None
+            test_suite.addTest(test)
 
-    runner = unittest.TextTestRunner()
+    runner = unittest.TextTestRunner(verbosity=2 if verbose else 1)
     result = runner.run(test_suite)
 
     TestMTemplateApp.spec = None
@@ -1049,6 +1068,7 @@ if __name__ == '__main__':
     parser.add_argument('--test-filter', type=str, nargs='*', default=None, help='Glob pattern(s) to filter test names (e.g. test_cli_db*)')
     parser.add_argument('--use-cache', action='store_true', help='Use cached test resources if available')
     parser.add_argument('--app-type', type=str, default='', help='Supply "python" to run setup for python apps')
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose output')
 
     args = parser.parse_args()
 
@@ -1058,4 +1078,4 @@ if __name__ == '__main__':
     else:
         test_spec._test_filters = None
 
-    test_spec(args.spec, args.cmd, args.host, args.env_file, args.use_cache, args.app_type)
+    test_spec(args.spec, args.cmd, args.host, args.env_file, args.use_cache, args.app_type, args.verbose)

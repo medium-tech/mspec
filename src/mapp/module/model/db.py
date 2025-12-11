@@ -167,6 +167,8 @@ def db_model_read(ctx:MappContext, model_class: type, model_id: str):
                 value = bool(main_row[index])
             case 'datetime' if main_row[index] is not None:
                 value = datetime.strptime(main_row[index], DATETIME_FORMAT_STR).replace(microsecond=0)
+            case 'foreign_key':
+                value = str(main_row[index])
             case _:
                 value = main_row[index]
         data[field_name] = value

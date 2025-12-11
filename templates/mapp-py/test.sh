@@ -12,6 +12,7 @@ if [[ "$1" == "--help" || "$1" == "-h" ]]; then
 	echo "  --test-filter <pattern>, -f <pattern>  Only run tests matching the pattern (e.g. test_cli_help_menus)"
 	echo "  --use-cache                            Use cached test resources if available"
 	echo "  --help, -h                             Show this help menu"
+	echo "  --verbose, -v                          Show detailed test output"
 	echo
 	echo "Example:"
 	echo "  $0 --test-filter test_cli_help_menus --use-cache"
@@ -20,6 +21,7 @@ fi
 
 TEST_FILTERS=()
 USE_CACHE=""
+VERBOSE=""
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
@@ -29,6 +31,10 @@ while [[ $# -gt 0 ]]; do
 				TEST_FILTERS+=("$1")
 				shift
 			done
+			;;
+		--verbose|-v)
+			VERBOSE="--verbose"
+			shift
 			;;
 		--use-cache)
 			USE_CACHE="--use-cache"
@@ -47,4 +53,4 @@ if [[ ${#TEST_FILTERS[@]} -gt 0 ]]; then
 	TF_ARGS="--test-filter ${TEST_FILTERS[@]}"
 fi
 
-python -m mapp.test test-gen.yaml --cmd ./run.sh --env-file .env $TF_ARGS $USE_CACHE --app-type python
+python -m mapp.test test-gen.yaml --cmd ./run.sh --env-file .env $TF_ARGS $USE_CACHE --app-type python $VERBOSE

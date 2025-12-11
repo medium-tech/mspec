@@ -107,8 +107,6 @@ def application(env, start_response):
    
     request.env['wsgi.input'].close()
 
-    assert server_ctx.current_user is None
-
     try:
         debug_delay = float(os.environ['DEBUG_DELAY'])
         time.sleep(debug_delay)

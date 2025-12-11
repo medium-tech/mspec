@@ -616,17 +616,14 @@ def json_to_model_w_convert(model_class:type, json_str:str, model_id:Optional[st
     except json.JSONDecodeError as e:
         raise ValueError(f'Invalid JSON: {e}')
     
-    try:
-        # if id is in both json and argument, they must match
-        json_id = data['id']
-        if model_id is not None and str(json_id) != str(model_id):
-            raise ValueError('Model ID in JSON does not match the provided model_id argument.')
-    except TypeError:
-        raise MappError('INVALID_JSON', 'Provided JSON is not a valid object.')
-    except KeyError:
-        # id provided as arg and not in json, set it
-        if model_id is not None:
-            data['id'] = model_id
+    json_id = data.get('id', None)
+
+    # ensure ids match if both provided #
+    if model_id is not None and json_id is not None:
+            if str(json_id) != str(model_id):
+                raise ValueError('Model ID in JSON does not match the provided model_id argument.')
+
+    data['id'] = model_id
 
     return convert_dict_to_model(model_class, data)
 
