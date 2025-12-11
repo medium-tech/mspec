@@ -624,8 +624,8 @@ class TestMTemplateApp(unittest.TestCase):
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
-                if model['hidden'] is True:
-                    continue
+
+                hidden = model['hidden']
                 model_name_kebab = model['name']['kebab_case']
 
                 # create #
@@ -637,9 +637,13 @@ class TestMTemplateApp(unittest.TestCase):
                     f'/api/{module_name_kebab}/{model_name_kebab}',
                     json.dumps(example_to_create).encode()
                 )
-                self.assertEqual(created_status, 200, f'Create {model_name} did not return status 200 OK, response: {created_model}')
-                created_model_id = created_model.pop('id')  # remove id for comparison
-                self.assertEqual(created_model, example_to_create, f'Created {model_name} (id: {created_model_id}) does not match example data')
+
+                if hidden:
+                    self.assertEqual(created_status, 404, f'Create hidden {model_name} did not return 404 Not Found, response: {created_model}')
+                else:
+                    self.assertEqual(created_status, 200, f'Create {model_name} did not return status 200 OK, response: {created_model}')
+                    created_model_id = created_model.pop('id')  # remove id for comparison
+                    self.assertEqual(created_model, example_to_create, f'Created {model_name} (id: {created_model_id}) does not match example data')
 
                 # read #
 
@@ -649,10 +653,13 @@ class TestMTemplateApp(unittest.TestCase):
                     f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
                     None
                 )
-                self.assertEqual(read_status, 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}')
-                read_model_id = read_model.pop('id')
-                self.assertEqual(read_model, example_to_create, f'Read {model_name} id: {read_model_id} does not match example data')
-                self.assertEqual(read_model_id, created_model_id, f'Read {model_name} id: {read_model_id} does not match created id: {created_model_id}')
+                if hidden:
+                    self.assertEqual(read_status, 404, f'Read hidden {model_name} id: {created_model_id} did not return 404 Not Found, response: {read_model}')
+                else:
+                    self.assertEqual(read_status, 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}')
+                    read_model_id = read_model.pop('id')
+                    self.assertEqual(read_model, example_to_create, f'Read {model_name} id: {read_model_id} does not match example data')
+                    self.assertEqual(read_model_id, created_model_id, f'Read {model_name} id: {read_model_id} does not match created id: {created_model_id}')
 
                 # update #
 
@@ -660,16 +667,21 @@ class TestMTemplateApp(unittest.TestCase):
                     updated_example = example_from_model(model, index=1)
                 except ValueError as e:
                     raise ValueError(f'Need at least 2 examples for update testing: {e}')
+                
                 updated_status, updated_model = request(
                     ctx,
                     'PUT',
                     f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
                     json.dumps(updated_example).encode()
                 )
-                self.assertEqual(updated_status, 200, f'Update {model_name} id: {created_model_id} did not return status 200 OK, response: {updated_model}')
-                updated_model_id = updated_model.pop('id')
-                self.assertEqual(updated_model, updated_example, f'Updated {model_name} id: {updated_model_id} does not match updated example data')
-                self.assertEqual(updated_model_id, created_model_id, f'Updated {model_name} id: {updated_model_id} does not match created id: {created_model_id}')
+
+                if hidden:
+                    self.assertEqual(updated_status, 404, f'Update hidden {model_name} id: {created_model_id} did not return 404 Not Found, response: {updated_model}')
+                else:
+                    self.assertEqual(updated_status, 200, f'Update {model_name} id: {created_model_id} did not return status 200 OK, response: {updated_model}')
+                    updated_model_id = updated_model.pop('id')
+                    self.assertEqual(updated_model, updated_example, f'Updated {model_name} id: {updated_model_id} does not match updated example data')
+                    self.assertEqual(updated_model_id, created_model_id, f'Updated {model_name} id: {updated_model_id} does not match created id: {created_model_id}')
 
                 # delete #
 
@@ -679,39 +691,44 @@ class TestMTemplateApp(unittest.TestCase):
                     f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
                     None
                 )
-                self.assertEqual(delete_status, 200, f'Delete {model_name} id: {created_model_id} did not return status 200 OK, response: {delete_output}')
-                self.assertIn('acknowledged', delete_output, f'Delete {model_name} id: {created_model_id} did not return acknowledgement field')
-                self.assertTrue(delete_output['acknowledged'], f'Delete {model_name} id: {created_model_id} did not return acknowledged=True')
-                self.assertIn('message', delete_output, f'Delete {model_name} id: {created_model_id} did not return message field')
-                expected_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
-                self.assertTrue(delete_output['message'].startswith(expected_msg), f'Delete {model_name} id: {created_model_id} did not return correct message')
+                if hidden:
+                    self.assertEqual(delete_status, 404, f'Delete hidden {model_name} id: {created_model_id} did not return 404 Not Found, response: {delete_output}')
+                else:
+                    self.assertEqual(delete_status, 200, f'Delete {model_name} id: {created_model_id} did not return status 200 OK, response: {delete_output}')
+                    self.assertIn('acknowledged', delete_output, f'Delete {model_name} id: {created_model_id} did not return acknowledgement field')
+                    self.assertTrue(delete_output['acknowledged'], f'Delete {model_name} id: {created_model_id} did not return acknowledged=True')
+                    self.assertIn('message', delete_output, f'Delete {model_name} id: {created_model_id} did not return message field')
+                    expected_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
+                    self.assertTrue(delete_output['message'].startswith(expected_msg), f'Delete {model_name} id: {created_model_id} did not return correct message')
 
                 # confirm delete is idempotent #
 
-                delete_status, delete_output = request(
-                    ctx,
-                    'DELETE',
-                    f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
-                    None
-                )
-                self.assertEqual(delete_status, 200, f'Delete (2nd) {model_name} id: {created_model_id} did not return status 200 OK, response: {delete_output}')
-                self.assertIn('acknowledged', delete_output, f'Delete {model_name} id: {created_model_id} did not return acknowledgement field')
-                self.assertTrue(delete_output['acknowledged'], f'Delete {model_name} id: {created_model_id} did not return acknowledged=True')
-                self.assertIn('message', delete_output, f'Delete {model_name} id: {created_model_id} did not return message field')
-                expected_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
-                self.assertTrue(delete_output['message'].startswith(expected_msg), f'Delete {model_name} id: {created_model_id} did not return correct message')
+                if not hidden:
+
+                    delete_status, delete_output = request(
+                        ctx,
+                        'DELETE',
+                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
+                        None
+                    )
+                    self.assertEqual(delete_status, 200, f'Delete (2nd) {model_name} id: {created_model_id} did not return status 200 OK, response: {delete_output}')
+                    self.assertIn('acknowledged', delete_output, f'Delete {model_name} id: {created_model_id} did not return acknowledgement field')
+                    self.assertTrue(delete_output['acknowledged'], f'Delete {model_name} id: {created_model_id} did not return acknowledged=True')
+                    self.assertIn('message', delete_output, f'Delete {model_name} id: {created_model_id} did not return message field')
+                    expected_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
+                    self.assertTrue(delete_output['message'].startswith(expected_msg), f'Delete {model_name} id: {created_model_id} did not return correct message')
 
                 # read after delete #
 
-                re_read_status, re_read_model = request(
-                    ctx,
-                    'GET',
-                    f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
-                    None
-                )
-            
-                self.assertEqual(re_read_status, 404, f'Read after delete for {model_name} id: {created_model_id} did not return 404 Not Found, resp: {re_read_model}')
-                self.assertEqual(re_read_model.get('error', {}).get('code', '-'), 'NOT_FOUND', f'Read after delete for {model_name} id: {created_model_id} did not return not_found code, resp: {re_read_model}')
+                    re_read_status, re_read_model = request(
+                        ctx,
+                        'GET',
+                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
+                        None
+                    )
+                
+                    self.assertEqual(re_read_status, 404, f'Read after delete for {model_name} id: {created_model_id} did not return 404 Not Found, resp: {re_read_model}')
+                    self.assertEqual(re_read_model.get('error', {}).get('code', '-'), 'NOT_FOUND', f'Read after delete for {model_name} id: {created_model_id} did not return not_found code, resp: {re_read_model}')
 
     # pagination tests #
 
@@ -726,10 +743,13 @@ class TestMTemplateApp(unittest.TestCase):
             module_name_kebab = module['name']['kebab_case']
 
             for model in module['models'].values():
-                if model['hidden'] is True:
-                    continue
+
                 model_name_kebab = model['name']['kebab_case']
                 model_list_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'list']
+
+                if model['hidden'] is True:
+                    self._run_cmd(model_list_command + ['--size=10', '--offset=0'], expected_code=2, env=self.pagination_ctx)
+                    continue
 
                 for case in self.pagination_cases:
                     size = case['size']
@@ -786,8 +806,7 @@ class TestMTemplateApp(unittest.TestCase):
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
-                if model['hidden'] is True:
-                    continue
+                hidden = model['hidden']
                 model_name_kebab = model['name']['kebab_case']
 
                 for case in self.pagination_cases:
@@ -807,6 +826,10 @@ class TestMTemplateApp(unittest.TestCase):
                             None
                         )
 
+                        if hidden:
+                            self.assertEqual(status, 404, f'Pagination for hidden {model_name_kebab} did not return 404 Not Found, response: {response}')
+                            break
+
                         self.assertEqual(status, 200, f'Pagination for {model_name_kebab} page {page_count} did not return status 200 OK, response: {response}')
                         self.assertEqual(response['total'], self.pagination_total_models, f'Pagination for {model_name_kebab} page {page_count} returned incorrect total')
  
@@ -820,6 +843,9 @@ class TestMTemplateApp(unittest.TestCase):
 
                         offset += size
 
+                    if hidden:
+                        break
+                    
                     self.assertEqual(page_count, expected_pages, f'Pagination for {model_name} returned {page_count} pages, expected {expected_pages}')
 
     # validation tests #
@@ -1054,7 +1080,7 @@ def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:st
     test_filters = getattr(test_spec, '_test_filters', None)
     loader = unittest.TestLoader()
     if test_filters:
-        
+
         # Only add tests matching any filter pattern (glob-style, case-insensitive)
         for test_name in loader.getTestCaseNames(TestMTemplateApp):
             if any(fnmatch.fnmatchcase(test_name.lower(), pat.lower()) for pat in test_filters):
