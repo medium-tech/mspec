@@ -1054,9 +1054,10 @@ def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:st
     test_filters = getattr(test_spec, '_test_filters', None)
     loader = unittest.TestLoader()
     if test_filters:
-        # Only add tests matching any filter pattern
+        
+        # Only add tests matching any filter pattern (glob-style, case-insensitive)
         for test_name in loader.getTestCaseNames(TestMTemplateApp):
-            if any(fnmatch.fnmatch(test_name, pat) or pat in test_name for pat in test_filters):
+            if any(fnmatch.fnmatchcase(test_name.lower(), pat.lower()) for pat in test_filters):
                 test_case = TestMTemplateApp(test_name)
                 test_case.maxDiff = None
                 test_suite.addTest(test_case)

@@ -16,6 +16,7 @@ if [[ "$1" == "--help" || "$1" == "-h" ]]; then
 	echo
 	echo "Example:"
 	echo "  $0 --test-filter test_cli_help_menus --use-cache"
+	echo "  $0 -f 'test_cli_*_crud'"
 	exit 0
 fi
 
