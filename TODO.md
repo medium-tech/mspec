@@ -17,15 +17,20 @@
 |🔴|🟡|🟢|
 
 ## mapp framework
-* 🟡 bootstrap app
-    * create tests for auth via cli
-    * create tests for auth via http
-* 🔴 unittests passing
-* 🔴 generate browser1 ui?
+* 🟢 create tests for auth via cli
+* 🟢 all unittests passing
+* 🔴 create tests for auth via http
 * 🔴 serve hello world lingo page from server
     * 🔴 lingo index page
-    * 🔴 lingo module page
-    * 🔴 lingo model page
+        * 🔴 lingo module page
+            * 🔴 lingo model page
+                * 🔴 create
+                * 🔴 read
+                * 🔴 update
+                * 🔴 delete
+                * 🔴 list
+            * 🔴 lingo op page
+                * 🔴 run
 * 🔴 export static site
 * 🔴 lingo model (see below)
 

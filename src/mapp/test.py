@@ -341,6 +341,8 @@ class TestMTemplateApp(unittest.TestCase):
         print('    :: ', ' '.join(pagination_server_cmd))
         time.sleep(1)
         print('  :: Setup complete ::')
+
+        print(':: test progress :: ', end='', flush=True)
     
     @classmethod
     def tearDownClass(cls):
@@ -522,8 +524,8 @@ class TestMTemplateApp(unittest.TestCase):
             module_name_kebab = module['name']['kebab_case']
 
             for model_name, model in module['models'].items():
-                if model['hidden'] is True:
-                    continue
+                hidden = model['hidden']
+
                 model_name_kebab = model['name']['kebab_case']
 
                 model_db_args = self.cmd + [module_name_kebab, model_name_kebab, command_type]
@@ -531,19 +533,26 @@ class TestMTemplateApp(unittest.TestCase):
                 # create #
 
                 example_to_create = example_from_model(model)
-                result = self._run_cmd(model_db_args + ['create', json.dumps(example_to_create)], env=self.crud_ctx)
-                created_model = json.loads(result.stdout)
 
-                created_model_id = created_model.pop('id')  # remove id for comparison
-                self.assertEqual(created_model, example_to_create, f'Created {model_name} does not match example data')
+                if hidden:
+                    result = self._run_cmd(model_db_args + ['create', json.dumps(example_to_create)], env=self.crud_ctx, expected_code=2)
+                else:
+                    result = self._run_cmd(model_db_args + ['create', json.dumps(example_to_create)], env=self.crud_ctx)
+                    created_model = json.loads(result.stdout)
+
+                    created_model_id = created_model.pop('id')  # remove id for comparison
+                    self.assertEqual(created_model, example_to_create, f'Created {model_name} does not match example data')
 
                 # read #
 
-                result = self._run_cmd(model_db_args + ['read', str(created_model_id)], env=self.crud_ctx)
-                read_model = json.loads(result.stdout)
-                read_model_id = read_model.pop('id')
-                self.assertEqual(read_model, example_to_create, f'Read {model_name} does not match example data')
-                self.assertEqual(read_model_id, created_model_id, f'Read {model_name} ID does not match created ID')
+                if hidden:
+                    result = self._run_cmd(model_db_args + ['read', '1'], env=self.crud_ctx, expected_code=2)
+                else:
+                    result = self._run_cmd(model_db_args + ['read', str(created_model_id)], env=self.crud_ctx)
+                    read_model = json.loads(result.stdout)
+                    read_model_id = read_model.pop('id')
+                    self.assertEqual(read_model, example_to_create, f'Read {model_name} does not match example data')
+                    self.assertEqual(read_model_id, created_model_id, f'Read {model_name} ID does not match created ID')
 
                 # update #
 
@@ -551,40 +560,48 @@ class TestMTemplateApp(unittest.TestCase):
                     updated_example = example_from_model(model, index=1)
                 except ValueError as e:
                     raise ValueError(f'Need at least 2 examples for update testing: {e}')
-                try:
-                    result = self._run_cmd(model_db_args + ['update', created_model_id, json.dumps(updated_example)], env=self.crud_ctx)
-                except Exception as e:
-                    raise
-                updated_model = json.loads(result.stdout)
-                updated_model_id = updated_model.pop('id')
-                self.assertEqual(updated_model, updated_example, f'Updated {model_name} does not match updated example data')
-                self.assertEqual(updated_model_id, created_model_id, f'Updated {model_name} ID does not match created ID')
+            
+                if hidden:
+                    result = self._run_cmd(model_db_args + ['update', created_model_id, json.dumps(updated_example)], env=self.crud_ctx, expected_code=2)
+                else:
+                    try:
+                        result = self._run_cmd(model_db_args + ['update', created_model_id, json.dumps(updated_example)], env=self.crud_ctx)
+                    except Exception as e:
+                        raise
+                    updated_model = json.loads(result.stdout)
+                    updated_model_id = updated_model.pop('id')
+                    self.assertEqual(updated_model, updated_example, f'Updated {model_name} does not match updated example data')
+                    self.assertEqual(updated_model_id, created_model_id, f'Updated {model_name} ID does not match created ID')
 
                 # delete #
 
-                result = self._run_cmd(model_db_args + ['delete', str(created_model_id)], env=self.crud_ctx)
-                delete_output = json.loads(result.stdout)
-                self.assertEqual(delete_output['acknowledged'], True, f'Delete {model_name} ID did not return acknowledgement')
-                expected_delete_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
-                self.assertTrue(delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message')
+                if hidden:
+                    result = self._run_cmd(model_db_args + ['delete', str(created_model_id)], env=self.crud_ctx, expected_code=2)
+                else:
+                    result = self._run_cmd(model_db_args + ['delete', str(created_model_id)], env=self.crud_ctx)
+                    delete_output = json.loads(result.stdout)
+                    self.assertEqual(delete_output['acknowledged'], True, f'Delete {model_name} ID did not return acknowledgement')
+                    expected_delete_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
+                    self.assertTrue(delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message')
 
-                # confirm delete is idempotent #
+                    # confirm delete is idempotent #
 
-                result = self._run_cmd(model_db_args + ['delete', str(created_model_id)], env=self.crud_ctx)
-                delete_output = json.loads(result.stdout)
-                self.assertTrue(delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message')
+                    result = self._run_cmd(model_db_args + ['delete', str(created_model_id)], env=self.crud_ctx)
+                    delete_output = json.loads(result.stdout)
+                    self.assertTrue(delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message')
 
                 # read after delete #
 
-                result = self._run_cmd(model_db_args + ['read', str(created_model_id)], expected_code=1, env=self.crud_ctx)
-                try:
-                    read_output_err = json.loads(result.stdout)['error']
-                    self.assertEqual(read_output_err['code'], 'NOT_FOUND', f'Read after delete for {model_name} did not return NOT_FOUND code for id {created_model_id}')
-                    self.assertEqual(read_output_err['message'], f'{model["name"]["snake_case"]} {created_model_id} not found', f'Read after delete for {model_name} did not return correct message for id {created_model_id}')
-                except KeyError as e:
-                    raise RuntimeError(f'KeyError {e} while reading after delete for {model_name} id {created_model_id}: {result.stdout + result.stderr}')
-                except json.JSONDecodeError as e:
-                    raise RuntimeError(f'JSONDecodeError {e} while reading after delete for {model_name} id {created_model_id}: {result.stdout + result.stderr}')
+                if not hidden:
+                    result = self._run_cmd(model_db_args + ['read', str(created_model_id)], expected_code=1, env=self.crud_ctx)
+                    try:
+                        read_output_err = json.loads(result.stdout)['error']
+                        self.assertEqual(read_output_err['code'], 'NOT_FOUND', f'Read after delete for {model_name} did not return NOT_FOUND code for id {created_model_id}')
+                        self.assertEqual(read_output_err['message'], f'{model["name"]["snake_case"]} {created_model_id} not found', f'Read after delete for {model_name} did not return correct message for id {created_model_id}')
+                    except KeyError as e:
+                        raise RuntimeError(f'KeyError {e} while reading after delete for {model_name} id {created_model_id}: {result.stdout + result.stderr}')
+                    except json.JSONDecodeError as e:
+                        raise RuntimeError(f'JSONDecodeError {e} while reading after delete for {model_name} id {created_model_id}: {result.stdout + result.stderr}')
 
     def test_cli_db_crud(self):
         self._test_cli_crud_commands('db')
