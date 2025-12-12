@@ -45,7 +45,7 @@ def model_validation_errors(model:dict) -> Generator[dict, None, None]:
 
             yield example | {field_name: invalid_value}
 
-def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None) -> tuple[int, dict]:
+def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None, decode_json=True) -> tuple[int, dict]:
     """send request and returnn status code and response body as dict"""
 
     req = Request(
@@ -67,12 +67,15 @@ def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None
         body = e.read().decode('utf-8')
         status = e.code
     
-    try:
-        response_data = json.loads(body)
-        return status, response_data
-    except json.JSONDecodeError as e:
-        raise RuntimeError(f'Invalid JSON from {method} {endpoint}, resp length: {len(body)}: {body}')
-    
+    if decode_json:
+        try:
+            response_data = json.loads(body)
+            return status, response_data
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f'Invalid JSON from {method} {endpoint}, resp length: {len(body)}: {body}')
+    else:
+        return status, body
+
 def env_to_string(env:dict) -> str:
     out = ''
     for key, value in env.items():
@@ -1099,6 +1102,91 @@ class TestMTemplateApp(unittest.TestCase):
                 self.assertEqual(read_model, example_to_update, f'Read after validation error for {model["name"]["pascal_case"]} does not match original example data')
 
     # other tests #
+
+    def test_debug_responses(self):
+        """
+        make request to /api/debug/PlainTextResponse
+            expect 200 with request body:
+              This is a plain text debug response
+        """
+
+        ctx = {
+            'headers': {
+                'Content-Type': 'application/json',
+            }
+        }
+        ctx.update(self.crud_ctx)
+
+        #
+        # success
+        #
+
+        # plain text response #
+
+        status, response = request(ctx, 'GET', '/api/debug/PlainTextResponse', None, decode_json=False)
+        self.assertEqual(status, 200)
+        self.assertEqual(response, 'This is a plain text debug response')
+
+        # json response #
+
+        status, response = request(ctx, 'GET', '/api/debug/JSONResponse', None)
+        self.assertEqual(status, 200)
+        self.assertEqual(response, {'message': 'This is a JSON debug response'})
+
+        #
+        # error
+        #
+
+        # not found response #
+
+        status, response = request(ctx, 'GET', '/api/debug/NotFoundError', None)
+        self.assertEqual(status, 404)
+        self.assertEqual(response.get('error', {}).get('code', '-'), 'NOT_FOUND')
+        self.assertEqual(response.get('error', {}).get('message', ''), 'Debug: NotFoundError thrown')
+
+        # authentication error #
+
+        status, response = request(ctx, 'GET', '/api/debug/AuthenticationError', None)
+        self.assertEqual(status, 401)
+        self.assertEqual(response.get('error', {}).get('code', '-'), 'AUTHENTICATION_ERROR')
+        self.assertEqual(response.get('error', {}).get('message', ''), 'Debug: AuthenticationError thrown')
+
+        # forbidden error #
+
+        status, response = request(ctx, 'GET', '/api/debug/ForbiddenError', None)
+        self.assertEqual(status, 403)
+        self.assertEqual(response.get('error', {}).get('code', '-'), 'FORBIDDEN_ERROR')
+        self.assertEqual(response.get('error', {}).get('message', ''), 'Debug: ForbiddenError thrown')
+
+        # validation error #
+
+        status, response = request(ctx, 'GET', '/api/debug/MappValidationError', None)
+        self.assertEqual(status, 400)
+        self.assertEqual(response.get('error', {}).get('code', '-'), 'VALIDATION_ERROR')
+        self.assertEqual(response.get('error', {}).get('message', ''), 'Debug: MappValidationError thrown')
+        field_errors = response.get('error', {}).get('field_errors', {})
+        self.assertEqual(field_errors, {'field': 'example error'}, f'Unexpected field_errors content: {field_errors}')
+
+        # request error #
+
+        status, response = request(ctx, 'GET', '/api/debug/RequestError', None)
+        self.assertEqual(status, 400)
+        self.assertEqual(response.get('error', {}).get('code', '-'), 'REQUEST_ERROR')
+        self.assertEqual(response.get('error', {}).get('message', ''), 'Debug: RequestError thrown')
+
+        # exception #
+
+        status, response = request(ctx, 'GET', '/api/debug/Exception', None)
+        self.assertEqual(status, 500)
+        error = response.get('error', {})
+        self.assertIn('request_id', error, 'Expected request_id in error response for Exception')
+        self.assertEqual(response.get('error', {}).get('code', '-'), 'INTERNAL_SERVER_ERROR')
+        self.assertEqual(response.get('error', {}).get('message', ''), 'Contact support or check logs for details')
+
+        response_str = json.dumps(response)
+        self.assertNotIn('This error should not be shown to users', response_str, 'Internal error message leaked to user in Exception response')
+
+    
 
     def test_cli_help_menus(self):
 

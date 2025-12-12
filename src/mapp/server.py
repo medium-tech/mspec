@@ -63,10 +63,35 @@ def debug_page(server: MappContext, request: RequestContext):
     return output
 
 def debug_routes(server: MappContext, request: RequestContext):
-    if re.match('/api/debug', request.env['PATH_INFO']) is None:
+    path = request.env['PATH_INFO']
+    # /api/debug (no exception name): show debug_page output
+    if path.rstrip('/') == '/api/debug':
+        raise PlainTextResponse('200 OK', debug_page(server, request))
+
+    # /api/debug/<ExceptionName>: throw example exception
+    match = re.match(r'/api/debug/([a-zA-Z_]+)$', path)
+    if not match:
         return
-    
-    raise PlainTextResponse('200 OK', debug_page(server, request))
+
+    exc_name = match.group(1)
+    if exc_name == 'PlainTextResponse':
+        raise PlainTextResponse('200 OK', 'This is a plain text debug response')
+    elif exc_name == 'JSONResponse':
+        raise JSONResponse('200 OK', {'message': 'This is a JSON debug response'})
+    elif exc_name == 'NotFoundError':
+        raise NotFoundError('Debug: NotFoundError thrown')
+    elif exc_name == 'AuthenticationError':
+        raise AuthenticationError('Debug: AuthenticationError thrown')
+    elif exc_name == 'ForbiddenError':
+        raise ForbiddenError('Debug: ForbiddenError thrown')
+    elif exc_name == 'MappValidationError':
+        raise MappValidationError('Debug: MappValidationError thrown', {'field': 'example error'})
+    elif exc_name == 'RequestError':
+        raise RequestError('Debug: RequestError thrown')
+    elif exc_name == 'Exception':
+        raise Exception('This error should not be shown to user')
+    else:
+        raise NotFoundError(f'Debug: Exception \'{exc_name}\' not found')
 
 
 #
@@ -214,7 +239,7 @@ def application(env, start_response):
 
         except RequestError as e:
             body = e.to_dict()
-            status_code = e.status
+            status_code = '400 Bad Request'
             content_type = JSONResponse.content_type 
             break
 
@@ -224,7 +249,7 @@ def application(env, start_response):
             body = {
                 'error': {
                     'code': 'INTERNAL_SERVER_ERROR',
-                    'message': 'Check logs for details',
+                    'message': 'Contact support or check logs for details',
                     'request_id': str(request_id)
                 }
             }
