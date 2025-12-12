@@ -9,6 +9,7 @@ uwsgi:
     logto: app/server.log
     processes: 4
     lazy-apps: true
+    py-autoreload: 1
 
   # for :: {% for module in modules.values() %} :: {"template-module":"module.name.kebab_case"}
       # for :: {% for model in module.models.values() %} :: {"single-model": "model.name.kebab_case", "single model": "model.name.lower_case"}

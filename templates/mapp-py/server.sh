@@ -64,19 +64,30 @@ if [ -f "$ENVFILE" ]; then
   set +o allexport
 fi
 
-echo "Using env file: $ENVFILE"
-echo "Using PID file: $PID_FILE"
-echo "Using config file: $CONFIG_FILE"
-echo "VIRTUAL_ENV: $VIRTUAL_ENV"
+PORT=$(grep '^[[:space:]]*http:' "$CONFIG_FILE" | sed -E 's/.*http:[[:space:]]*:[[:space:]]*([0-9]+).*/\1/')
 
-# echo output of "which python"
-echo "Using Python executable: $(which python)"
+# Set column width for printf (default: 20, override with COL_WIDTH env var)
+COL_WIDTH="${COL_WIDTH:-16}"
+
+printf "\n::\n:: init mapp environment\n::\n\n"
+
+printf "%-${COL_WIDTH}s %s\n" ":: env file"   "$ENVFILE"
+printf "%-${COL_WIDTH}s %s\n" ":: pid file"   "$PID_FILE"
+printf "%-${COL_WIDTH}s %s\n" ":: config file" "$CONFIG_FILE"
+printf "%-${COL_WIDTH}s %s\n" ":: venv"       "${VIRTUAL_ENV:-}"
+printf "%-${COL_WIDTH}s %s\n" ":: port" "$PORT"
+printf "%-${COL_WIDTH}s %s\n" ":: local url"    "http://localhost:$PORT"
+printf "%-${COL_WIDTH}s %s\n" ":: uwsgi"      "$(which uwsgi)"
+printf "%-${COL_WIDTH}s %s\n" ":: python" "$(which python)"
+printf "%-${COL_WIDTH}s %s\n" ":: pip "    "$(which pip)"
 
 # If first argument is 'stop', stop uwsgi using the pid file
 if [[ "$STOP" == true ]]; then
+  printf "\n::\n:: stopping uwsgi\n::\n\n"
   uwsgi --stop "$PID_FILE"
   exit $?
 else
+  printf "\n::\n:: starting uwsgi\n::\n\n"
   uwsgi --yaml "$CONFIG_FILE"
   exit $?
 fi

@@ -20,10 +20,7 @@ import uwsgi
 
 MAPP_SERVER_DEVELOPMENT_MODE = os.environ.get('MAPP_SERVER_DEVELOPMENT_MODE', 'false').lower() == 'true'
 
-def debug_routes(server: MappContext, request: RequestContext):
-    if re.match('/api/debug', request.env['PATH_INFO']) is None:
-        return
-    
+def debug_page(server: MappContext, request: RequestContext):
     main_col = 36
     header_col = 42
 
@@ -63,7 +60,13 @@ def debug_routes(server: MappContext, request: RequestContext):
     debug_delay = os.environ.get('DEBUG_DELAY', None)
     output += f'DEBUG_DELAY :: {debug_delay}\n\n'
 
-    raise PlainTextResponse('200 OK', output)
+    return output
+
+def debug_routes(server: MappContext, request: RequestContext):
+    if re.match('/api/debug', request.env['PATH_INFO']) is None:
+        return
+    
+    raise PlainTextResponse('200 OK', debug_page(server, request))
 
 
 #
