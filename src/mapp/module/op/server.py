@@ -1,8 +1,9 @@
 import re
+from urllib.parse import parse_qs
 
 from mapp.context import MappContext, OpRouteContext, RequestContext
 from mapp.errors import RequestError
-from mapp.types import JSONResponse, new_op_classes, json_to_op_params_w_convert
+from mapp.types import JSONResponse, new_op_classes, json_to_op_params_w_convert, convert_dict_to_op_params
 from mapp.module.op.run import op_create_callable
 
 
@@ -28,7 +29,18 @@ def op_route(route: OpRouteContext, server: MappContext, request: RequestContext
     
     if re.match(route.api_op_regex, request.env['PATH_INFO']):
 
-        if (method := request.env['REQUEST_METHOD']) == 'POST':
+        req_method = request.env['REQUEST_METHOD']
+
+        if req_method == 'GET':
+            parsed = parse_qs(request.env['QUERY_STRING'])
+            query_params = {key: parsed[key][0] for key in parsed}
+            
+            op_params = convert_dict_to_op_params(route.params_class, query_params)
+            op_output = route.run_op(server, op_params)
+            server.log(f'POST {route.module_kebab_case}.{route.op_kebab_case}')
+            raise JSONResponse('200 OK', op_output)
+        
+        elif req_method == 'POST':
             req_body = request.raw_req_body.decode('utf-8')
             op_params = json_to_op_params_w_convert(req_body, route.params_class)
             op_output = route.run_op(server, op_params)
@@ -36,5 +48,5 @@ def op_route(route: OpRouteContext, server: MappContext, request: RequestContext
             raise JSONResponse('200 OK', op_output)
         
         else:
-            server.log(f'ERROR 405 - Invalid Method {method} - {route.module_kebab_case}.{route.op_kebab_case}')
-            raise RequestError('405 Method Not Allowed', 'invalid request method')
+            server.log(f'ERROR 405 - Invalid Method {req_method} - {route.module_kebab_case}.{route.op_kebab_case}')
+            raise JSONResponse('405 Method Not Allowed', {'error': 'Invalid request method'})

@@ -1,7 +1,6 @@
 import os
 import re
 import time
-import uwsgi
 
 from traceback import format_exc
 
@@ -13,6 +12,8 @@ from mapp.module.model.db import db_model_create_table
 from mapp.module.model.server import create_model_routes
 from mapp.module.op.server import create_op_routes
 
+import uwsgi
+
 #
 # debug
 #
@@ -23,14 +24,25 @@ def debug_routes(server: MappContext, request: RequestContext):
     if re.match('/api/debug', request.env['PATH_INFO']) is None:
         return
     
-    main_col = 30
+    main_col = 36
     header_col = 42
 
     output = 'Debug Info\n\n'
 
+    output += 'Request id: ' + request.request_id + '\n\n'
+
+    try:
+        access_token = server.current_access_token()
+        authorization = '*' * len(access_token)
+    except Exception as e:
+        authorization = f'{e.__class__.__name__}: {str(e)}'
+
+    output += f'Authorization:\n :: {authorization}\n\n'
+
     output += 'MappContext:\n'
     output += f' :: {"MappContext.server_port": <{main_col}}:: {server.server_port}\n'
-    output += f' :: {"MappContext.client_host": <{main_col}}:: {server.client_host}\n'
+    output += f' :: {"MappContext.client.host": <{main_col}}:: {server.client.host}\n'
+    output += f' :: {"MappContext.current_access_token": <{main_col}}:: {str(type(server.current_access_token))}\n'
     output += f' :: {"MappContext.log": <{main_col}}:: {str(type(server.log))}\n\n'
     output += f' :: {"MappContext.db": <{main_col}}:: {str(type(server.db))}\n'
     output += f'   :: {"DBContext.db_url": <{header_col}}:: {str(server.db.db_url)}\n'
@@ -39,8 +51,13 @@ def debug_routes(server: MappContext, request: RequestContext):
     output += f'   :: {"DBContext.commit": <{header_col}}:: {str(type(server.db.commit))}\n\n'
     output += f'RequestContext.raw_req_body ::{str(type(request.raw_req_body))} {len(request.raw_req_body)=}\n'
     output += 'RequestContext.env ::\n\n'
+
     for key in request.env:
-        output += f' :: {key:<{header_col}}:: {request.env[key]}\n'
+        if key == 'HTTP_AUTHORIZATION':
+            output += f' :: {key:<{header_col}}:: {"*" * len(request.env[key])}\n'
+        else:
+            output += f' :: {key:<{header_col}}:: {request.env[key]}\n'
+
     output += '\n'
 
     debug_delay = os.environ.get('DEBUG_DELAY', None)
@@ -53,8 +70,8 @@ def debug_routes(server: MappContext, request: RequestContext):
 # context
 #
 
-server_ctx = get_context_from_env()
-server_ctx.log = uwsgi.log
+main_ctx = get_context_from_env()
+main_ctx.log = uwsgi.log
 
 #
 # init server routes
@@ -80,7 +97,7 @@ for module in spec_modules.values():
 
         route_resolver, model_class = create_model_routes(module, model)
         route_list.append(route_resolver)
-        db_model_create_table(server_ctx, model_class)
+        db_model_create_table(main_ctx, model_class)
 
     for op in module.get('ops', {}).values():
         if op.get('hidden', False) is True:
@@ -97,12 +114,46 @@ if MAPP_SERVER_DEVELOPMENT_MODE is True:
 
 def application(env, start_response):
 
-    server_ctx.log(f'REQUEST - {env["REQUEST_METHOD"]} {env["PATH_INFO"]}')
+    # user from authorization header #
+
+    def access_token_from_request():
+        # expecting HTTP_AUTHORIZATION: 'Bearer <token>'
+        try:
+            auth_header = env['HTTP_AUTHORIZATION']
+        except KeyError:
+            raise AuthenticationError('Not logged in')
+        
+        if not auth_header.startswith('Bearer '):
+            raise AuthenticationError('Invalid authorization header')
+        
+        return auth_header[7:]
+
+    # init request context #
+    
+    assert main_ctx.current_access_token is None
+
+    server_ctx = MappContext(
+        server_port=main_ctx.server_port,
+        client=main_ctx.client,
+        db=main_ctx.db,
+        log=main_ctx.log
+    )
+
+    assert server_ctx.current_access_token is None
+    
+    server_ctx.current_access_token = access_token_from_request
+
+    # init request logging #
+
+    request_id = f'{time.time_ns()}-{os.getpid()}'
+    request_start = time.time()
+    server_ctx.log(f':: REQ :: {request_id} :: {env["REQUEST_METHOD"]} - {env["PATH_INFO"]}')
 
     request = RequestContext(
         env=env,
         # best practice is to always consume body if it exists: https://uwsgi-docs.readthedocs.io/en/latest/ThingsToKnow.html
-        raw_req_body=env['wsgi.input'].read()
+        raw_req_body=env['wsgi.input'].read(),
+        request_id=request_id
     )
    
     request.env['wsgi.input'].close()
@@ -141,13 +192,13 @@ def application(env, start_response):
             break
 
         except AuthenticationError as e:
-            body = {'code': 'UNAUTHORIZED', 'message': str(e)}
+            body = e.to_dict()
             status_code = '401 Unauthorized'
             content_type = JSONResponse.content_type
             break
 
         except ForbiddenError as e:
-            body = {'code': 'FORBIDDEN', 'message': str(e)}
+            body = e.to_dict()
             status_code = '403 Forbidden'
             content_type = JSONResponse.content_type
             break
@@ -167,7 +218,13 @@ def application(env, start_response):
         # uncaught exception | internal server error #
 
         except Exception as e:
-            body = {'code': 'INTERNAL_SERVER_ERROR', 'message': str(e)}
+            body = {
+                'error': {
+                    'code': 'INTERNAL_SERVER_ERROR',
+                    'message': 'Check logs for details',
+                    'request_id': str(request_id)
+                }
+            }
             status_code = '500 Internal Server Error'
             content_type = JSONResponse.content_type
             server_ctx.log(f'ERROR - {e.__class__.__name__} - {e} \n' + format_exc())
@@ -181,9 +238,12 @@ def application(env, start_response):
         status_code = '404 Not Found'
         content_type = JSONResponse.content_type
 
+    elapsed_time = time.time() - request_start
+
+    server_ctx.log(f':: RESP :: {request_id} :: {status_code} :: {elapsed_time:.4f}s')
+
     start_response(status_code, [('Content-Type', content_type)])
 
-    server_ctx.log(f'RESPONSE - {status_code} - {env["REQUEST_METHOD"]} {env["PATH_INFO"]}')
     if content_type == JSONResponse.content_type:
         return [to_json(body).encode('utf-8')]
     else:

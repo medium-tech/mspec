@@ -40,6 +40,9 @@ class ClientContext:
     host: str
     headers: dict
 
+    def set_bearer_token(self, access_token: str):
+        self.headers['Authorization'] = f'Bearer {access_token}'
+
 
 @dataclass
 class ModelRouteContext:
@@ -64,6 +67,7 @@ class OpRouteContext:
 class RequestContext:
     env: dict
     raw_req_body: bytes
+    request_id: str
 
 #
 # mapp context
@@ -133,6 +137,7 @@ def _get_fernet(ctx:MappContext) -> Fernet:
     return Fernet(fernet_key)
 
 def cli_load_session(ctx:MappContext) -> str | None:
+    """TODO: optimize by caching the file contents in memory"""
     try:
         with open(CLI_SESSION_FILE_PATH, 'rb') as f:
             encrypted = f.read()

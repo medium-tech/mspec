@@ -84,7 +84,7 @@ def model_routes(route: ModelRouteContext, server: MappContext, request: Request
 
         else:
             server.log(f'ERROR 405 {route.module_kebab_case}.{route.model_kebab_case}/{instance_id}')
-            raise RequestError('405 Method Not Allowed', 'invalid request method')
+            raise JSONResponse('405 Method Not Allowed', {'error': 'invalid request method'})
 
     #
     # model routes
@@ -115,4 +115,4 @@ def model_routes(route: ModelRouteContext, server: MappContext, request: Request
         
         else:
             server.log(f'ERROR 405 {route.module_kebab_case}.{route.model_kebab_case}')
-            raise RequestError('405 Method Not Allowed', 'invalid request method')
+            raise JSONResponse('405 Method Not Allowed', {'error': 'invalid request method'})
