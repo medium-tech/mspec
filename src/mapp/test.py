@@ -10,6 +10,7 @@ import time
 import shutil
 
 from pathlib import Path
+from copy import deepcopy
 from typing import Optional, Generator
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
@@ -60,7 +61,6 @@ def seed_pagination_item(unique_id, base_cmd, seed_cmd, env, require_auth, model
     seed_cmd.append(json.dumps(model_data))
 
     return run_cmd(seed_cmd, env)
-
 
 def run_cmd(cmd_args, env):
     result = subprocess.run(cmd_args, capture_output=True, text=True, env=env, timeout=10)
@@ -766,6 +766,10 @@ class TestMTemplateApp(unittest.TestCase):
     def _test_cli_crud_commands(self, command_type:str):
 
         logged_out_ctx = self.crud_ctx.copy()
+        alice_user = self.crud_users[0]['user']
+        alice_env = self.crud_users[0]['env']
+        bob_user = self.crud_users[1]['user']
+        bob_env = self.crud_users[1]['env']
 
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
@@ -779,7 +783,7 @@ class TestMTemplateApp(unittest.TestCase):
                 model_db_args = self.cmd + [module_name_kebab, model_name_kebab, command_type]
 
                 if require_login:
-                    ctx = self.crud_users[0]['env']
+                    ctx = alice_env
                 else:
                     ctx = self.crud_ctx
 
@@ -800,7 +804,7 @@ class TestMTemplateApp(unittest.TestCase):
 
                     created_model_id = created_model.pop('id')  # remove id for comparison
                     if require_login:
-                        example_to_create['user_id'] = self.crud_users[0]['user']['id']
+                        example_to_create['user_id'] = alice_user['id']
                     
                     self.assertEqual(created_model, example_to_create, f'Created {model_name} does not match example data')
 
@@ -828,7 +832,7 @@ class TestMTemplateApp(unittest.TestCase):
                     raise ValueError(f'Need at least 2 examples for update testing: {e}')
                 
                 if require_login:
-                    updated_example['user_id'] = self.crud_users[0]['user']['id']
+                    updated_example['user_id'] = alice_user['id']
                 
                 update_args = model_db_args + ['update', created_model_id, json.dumps(updated_example)]
             
@@ -904,6 +908,16 @@ class TestMTemplateApp(unittest.TestCase):
         }
 
         logged_out_ctx.update(self.crud_ctx)
+
+        alice_user = self.crud_users[0]['user']
+        alice_ctx = deepcopy(base_ctx)
+        alice_ctx['headers']['Authorization'] = self.crud_users[0]['env']['Authorization']
+        bob_user = self.crud_users[1]['user']
+        bob_ctx = deepcopy(base_ctx)
+        bob_ctx['headers']['Authorization'] = self.crud_users[1]['env']['Authorization']
+
+        self.assertNotEqual(alice_user['id'], bob_user['id'], 'Alice and Bob users have the same ID, test setup error')
+        self.assertNotEqual(alice_ctx['headers']['Authorization'], bob_ctx['headers']['Authorization'], 'Alice and Bob have the same Authorization header, test setup error')
         
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
@@ -930,8 +944,7 @@ class TestMTemplateApp(unittest.TestCase):
                         *create_args
                     )
                     self.assertEqual(created_status, 401, f'Create {model_name} without login did not return 401 Unauthorized, response: {data}')
-                    ctx = base_ctx.copy()
-                    ctx['headers']['Authorization'] = self.crud_users[0]['env']['Authorization']
+                    ctx = alice_ctx
                 else:
                     ctx = base_ctx
 
@@ -951,8 +964,10 @@ class TestMTemplateApp(unittest.TestCase):
                     self.assertEqual(created_status, 200, f'Create {model_name} did not return status 200 OK, response: {created_model}')
                     created_model_id = created_model.pop('id')  # remove id for comparison
                     if require_login:
-                        example_to_create['user_id'] = self.crud_users[0]['user']['id']
+                        example_to_create['user_id'] = alice_user['id']
+
                     self.assertEqual(created_model, example_to_create, f'Created {model_name} (id: {created_model_id}) does not match example data')
+
 
                 #
                 # read
@@ -997,7 +1012,7 @@ class TestMTemplateApp(unittest.TestCase):
                     raise ValueError(f'Need at least 2 examples for update testing: {e}')
                 
                 if require_login:
-                    updated_example['user_id'] = self.crud_users[0]['user']['id']
+                    updated_example['user_id'] = alice_user['id']
                     
                     update_status, data = request(
                         logged_out_ctx,
@@ -1247,9 +1262,11 @@ class TestMTemplateApp(unittest.TestCase):
         if model['hidden'] is True:
             return
         
+        alice_id = self.crud_users[0]['user']['id']
+        
         if model['auth']['require_login']:
             ctx = self.crud_users[0]['env']
-            example_to_update['user_id'] = self.crud_users[0]['user']['id']
+            example_to_update['user_id'] = alice_id
         else:
             ctx = self.crud_ctx
 
@@ -1287,7 +1304,7 @@ class TestMTemplateApp(unittest.TestCase):
         read_model = json.loads(result.stdout)
         del read_model['id']
         if model['auth']['require_login']:
-            example_to_update['user_id'] = self.crud_users[0]['user']['id']
+            example_to_update['user_id'] = alice_id
         self.assertEqual(read_model, example_to_update, f'Read {model["name"]["pascal_case"]} does not match original example data after validation error tests')
 
     def test_cli_db_validation_error(self):
