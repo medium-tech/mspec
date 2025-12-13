@@ -307,6 +307,7 @@ def db_model_delete(ctx:MappContext, model_class: type, model_id: str) -> Acknow
 
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']
+    msg = f'{model_snake_case} {model_id} has been deleted or was already absent.'
 
     # auth #
 
@@ -316,19 +317,16 @@ def db_model_delete(ctx:MappContext, model_class: type, model_id: str) -> Acknow
 
         # check user id of model owner #
 
-        sql = f'SELECT id, user_id FROM {model_snake_case} WHERE id=? AND user_id=?'
+        sql = f'SELECT id, user_id FROM {model_snake_case} WHERE id=?'
 
-        ctx.db.cursor.execute(sql, (model_id, current_user(ctx, None).id))
+        ctx.db.cursor.execute(sql, (model_id,))
         row = ctx.db.cursor.fetchone()
 
         if row is None:
-            raise NotFoundError(f'{model_snake_case} {model_id} not found or not authorized to delete')
-        
-        if str(row[0]) != model_id:
-            raise NotFoundError(f'{model_snake_case} {model_id} not found or not authorized to delete')
+            return Acknowledgment(msg)
         
         if str(row[1]) != user.id:
-            raise NotFoundError(f'{model_snake_case} {model_id} not found or not authorized to delete')
+            raise AuthenticationError(f'{model_snake_case} {model_id} not found or not authorized to delete')
 
     # list tables #
 
@@ -341,7 +339,7 @@ def db_model_delete(ctx:MappContext, model_class: type, model_id: str) -> Acknow
 
     ctx.db.cursor.execute(f'DELETE FROM {model_snake_case} WHERE id = ?', (model_id,))
     ctx.db.commit()
-    return Acknowledgment(f'{model_snake_case} {model_id} has been deleted or was already absent.')
+    return Acknowledgment(msg)
 
 def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int = 50) -> ModelListResult: 
 

@@ -164,6 +164,7 @@ class TestMTemplateApp(unittest.TestCase):
 
     pagination_db_file = Path(f'{test_dir}/test_pagination_db.sqlite3')
     pagination_envfile = Path(f'{test_dir}/pagination.env')
+    pagination_user = {}
     pagination_ctx = {}
 
     pagination_total_models = 25
@@ -254,7 +255,9 @@ class TestMTemplateApp(unittest.TestCase):
         should be done without the flag to ensure table creation works from scratch.
         """
 
-        # create crud table #
+        print('  :: Creating tables in test dbs ::')
+
+        # create crud tables #
 
         crud_create_tables_cmd = cls.cmd + ['create-tables']
         crud_result = subprocess.run(crud_create_tables_cmd, capture_output=True, text=True, env=cls.crud_ctx)
@@ -271,13 +274,13 @@ class TestMTemplateApp(unittest.TestCase):
         # create 2 crud users #
 
         if cls.spec['project']['use_builtin_modules']:
-            for user in ['alice', 'bob']:
+            for user_name in ['alice', 'bob']:
 
                 # create #
 
                 user_data = {
-                    'name': user,
-                    'email': f'{user}@example.com',
+                    'name': user_name,
+                    'email': f'{user_name}@example.com',
                     'password': 'testpass123',
                     'password_confirm': 'testpass123'
                 }
@@ -285,7 +288,10 @@ class TestMTemplateApp(unittest.TestCase):
                 create_cmd = cls.cmd + ['auth', 'create-user', 'run', json.dumps(user_data)]
                 result = subprocess.run(create_cmd, capture_output=True, text=True, env=cls.crud_ctx)
                 if result.returncode != 0:
-                    raise RuntimeError(f'Error creating crud user {user}:\n{result.stdout + result.stderr}')
+                    raise RuntimeError(f'Error creating crud user {user_name}:\n{result.stdout + result.stderr}')
+                
+                user_id = json.loads(result.stdout)['id']
+                user_data['id'] = user_id
                 
                 # login #
 
@@ -296,17 +302,16 @@ class TestMTemplateApp(unittest.TestCase):
                 # confirm and store #
 
                 if result.returncode != 0:
-                    raise RuntimeError(f'Error logging in crud user {user}:\n{result.stdout + result.stderr}')
+                    raise RuntimeError(f'Error logging in crud user {user_name}:\n{result.stdout + result.stderr}')
                 else:
                     access_token = json.loads(result.stdout)['access_token']
                     user_env = cls.crud_ctx.copy()
                     user_env['MAPP_CLI_ACCESS_TOKEN'] = access_token
-                    user_env['HTTP_AUTHORIZATION'] = f'Bearer {access_token}'
-                    cls.crud_users.append({'user': user, 'env': user_env})
+                    user_env['Authorization'] = f'Bearer {access_token}'
+                    cls.crud_users.append({'user': user_data, 'env': user_env})
 
         # setup tables in test dbs #
 
-        print('  :: Creating tables in test dbs ::')
         for module in cls.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
 
@@ -372,7 +377,39 @@ class TestMTemplateApp(unittest.TestCase):
             for (cmd_args, code, stdout, stderr) in results:
                 if code != 0:
                     raise RuntimeError(f':: ERROR seeding table for pagination db :: COMMAND :: {" ".join(cmd_args)} :: OUTPUT :: {stdout + stderr}')
-            
+        
+            # create pagination user #
+
+            if cls.spec['project']['use_builtin_modules']:
+                print('  :: Creating pagination test user ::')
+
+                user_data = {
+                    'name': 'pagination_tester',
+                    'email': 'pagination_tester@example.com',
+                    'password': 'testpass123',
+                    'password_confirm': 'testpass123'
+                }
+
+                create_cmd = cls.cmd + ['auth', 'create-user', 'run', json.dumps(user_data)]
+                create_result = subprocess.run(create_cmd, capture_output=True, text=True, env=cls.pagination_ctx)
+                if create_result.returncode != 0:
+                    raise RuntimeError(f'Error creating pagination test user: {create_result.stdout + create_result.stderr}')
+                
+                user_id = json.loads(create_result.stdout)['id']
+                user_data['id'] = user_id
+                
+                login_params = {'email': user_data['email'], 'password': 'testpass123'}
+                login_cmd = cls.cmd + ['auth', 'login-user', 'run', json.dumps(login_params), '--show', '--no-session']
+                login_result = subprocess.run(login_cmd, capture_output=True, text=True, env=cls.pagination_ctx)
+                if login_result.returncode != 0:
+                    raise RuntimeError(f'Error logging in pagination test user: {login_result.stdout + login_result.stderr}')
+                
+                access_token = json.loads(login_result.stdout)['access_token']
+                user_env = cls.pagination_ctx.copy()
+                user_env['MAPP_CLI_ACCESS_TOKEN'] = access_token
+                user_env['Authorization'] = f'Bearer {access_token}'
+                cls.pagination_user = {'user': user_data, 'env': user_env}
+
         # delete server logs #
 
         for log_file in glob.glob(f'{cls.test_dir}/test_server_*.log'):
@@ -609,8 +646,8 @@ class TestMTemplateApp(unittest.TestCase):
             * expect error
         """
 
-    def test_server_auth_endpoints(self):
-        pass
+    def test_server_auth_flow(self):
+        raise NotImplementedError('server auth flow test not implemented yet')
 
     # crud tests #
 
@@ -728,13 +765,13 @@ class TestMTemplateApp(unittest.TestCase):
 
         self._check_servers_running()
         
-        ctx = {
+        base_ctx = {
             'headers': {
                 'Content-Type': 'application/json',
             }
         }
 
-        ctx.update(self.crud_ctx)
+        base_ctx.update(self.crud_ctx)
 
         logged_out_ctx = {
             'headers': {
@@ -769,6 +806,10 @@ class TestMTemplateApp(unittest.TestCase):
                         *create_args
                     )
                     self.assertEqual(created_status, 401, f'Create {model_name} without login did not return 401 Unauthorized, response: {data}')
+                    ctx = base_ctx.copy()
+                    ctx['headers']['Authorization'] = self.crud_users[0]['env']['Authorization']
+                else:
+                    ctx = base_ctx
 
                 # send request #
 
@@ -785,6 +826,8 @@ class TestMTemplateApp(unittest.TestCase):
                 else:
                     self.assertEqual(created_status, 200, f'Create {model_name} did not return status 200 OK, response: {created_model}')
                     created_model_id = created_model.pop('id')  # remove id for comparison
+                    if require_login:
+                        example_to_create['user_id'] = self.crud_users[0]['user']['id']
                     self.assertEqual(created_model, example_to_create, f'Created {model_name} (id: {created_model_id}) does not match example data')
 
                 #
@@ -830,6 +873,8 @@ class TestMTemplateApp(unittest.TestCase):
                     raise ValueError(f'Need at least 2 examples for update testing: {e}')
                 
                 if require_login:
+                    updated_example['user_id'] = self.crud_users[0]['user']['id']
+                    
                     update_status, data = request(
                         logged_out_ctx,
                         'PUT',
@@ -991,13 +1036,13 @@ class TestMTemplateApp(unittest.TestCase):
 
         self._check_servers_running()
         
-        ctx = {
+        base_ctx = {
             'headers': {
                 'Content-Type': 'application/json',
             }
         }
 
-        ctx.update(self.pagination_ctx)
+        base_ctx.update(self.pagination_ctx)
 
         logged_out_ctx = {
             'headers': {
@@ -1021,6 +1066,10 @@ class TestMTemplateApp(unittest.TestCase):
                         None
                     )
                     self.assertEqual(status, 401, f'Pagination for {model_name_kebab} without login did not return 401 Unauthorized, response: {response}')
+                    ctx = base_ctx.copy()
+                    ctx['headers']['Authorization'] = self.pagination_user['env']['Authorization']
+                else:
+                    ctx = base_ctx
 
                 for case in self.pagination_cases:
                     size = case['size']
@@ -1042,7 +1091,7 @@ class TestMTemplateApp(unittest.TestCase):
                         if hidden:
                             self.assertEqual(status, 404, f'Pagination for hidden {model_name_kebab} did not return 404 Not Found, response: {response}')
                             break
-
+                        
                         self.assertEqual(status, 200, f'Pagination for {model_name_kebab} page {page_count} did not return status 200 OK, response: {response}')
                         self.assertEqual(response['total'], self.pagination_total_models, f'Pagination for {model_name_kebab} page {page_count} returned incorrect total')
  
@@ -1065,16 +1114,24 @@ class TestMTemplateApp(unittest.TestCase):
 
     def _test_cli_validation_error(self, module_name_kebab:str, model:dict, command_type:str):
 
+        example_to_update = example_from_model(model)
+
         if model['hidden'] is True:
             return
+        
+        if model['auth']['require_login']:
+            ctx = self.crud_users[0]['env']
+            example_to_update['user_id'] = self.crud_users[0]['user']['id']
+        else:
+            ctx = self.crud_ctx
 
         model_name_kebab = model['name']['kebab_case']
 
         # create model to attempt to update with invalid data #
 
-        example_to_update = example_from_model(model)
+        
         args = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(example_to_update)]
-        result = self._run_cmd(args, env=self.crud_ctx)
+        result = self._run_cmd(args, env=ctx)
         update_model_id = str(json.loads(result.stdout)['id'])
 
         for invalid_example in model_validation_errors(model):
@@ -1083,7 +1140,7 @@ class TestMTemplateApp(unittest.TestCase):
             # create #
 
             model_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(invalid_example)]
-            result = self._run_cmd(model_command, expected_code=1, env=self.crud_ctx)
+            result = self._run_cmd(model_command, expected_code=1, env=ctx)
 
             error_output = json.loads(result.stdout)
             self.assertEqual(error_output['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output["code"]}')
@@ -1092,14 +1149,14 @@ class TestMTemplateApp(unittest.TestCase):
             # update #
 
             model_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'update', update_model_id, json.dumps(invalid_example)]
-            result = self._run_cmd(model_command, expected_code=1, env=self.crud_ctx)
+            result = self._run_cmd(model_command, expected_code=1, env=ctx)
             error_output = json.loads(result.stdout)
             self.assertEqual(error_output['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output["code"]}')
             self.assertTrue(error_output['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_output["message"]}')
 
         # read back original example to ensure it was not modified #
 
-        result = self._run_cmd(self.cmd + [module_name_kebab, model_name_kebab, command_type, 'read', update_model_id], env=self.crud_ctx)
+        result = self._run_cmd(self.cmd + [module_name_kebab, model_name_kebab, command_type, 'read', update_model_id], env=ctx)
         read_model = json.loads(result.stdout)
         del read_model['id']
         self.assertEqual(read_model, example_to_update, f'Read {model["name"]["pascal_case"]} does not match original example data after validation error tests')
@@ -1120,12 +1177,12 @@ class TestMTemplateApp(unittest.TestCase):
 
     def test_server_validation_error(self):
         self._check_servers_running()
-        ctx = {
+        base_ctx = {
             'headers': {
                 'Content-Type': 'application/json',
             }
         }
-        ctx.update(self.crud_ctx)
+        base_ctx.update(self.crud_ctx)
 
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
@@ -1133,6 +1190,12 @@ class TestMTemplateApp(unittest.TestCase):
                 if model['hidden'] is True:
                     continue
                 model_name_kebab = model['name']['kebab_case']
+
+                if model['auth']['require_login']:
+                    ctx = base_ctx.copy()
+                    ctx['headers']['Authorization'] = self.crud_users[0]['env']['Authorization']
+                else:
+                    ctx = base_ctx
 
                 # create a valid model to update with invalid data
                 example_to_update = example_from_model(model)
@@ -1190,7 +1253,11 @@ class TestMTemplateApp(unittest.TestCase):
                     None
                 )
                 self.assertEqual(status, 200, f'Read after validation error for {model["name"]["pascal_case"]} did not return 200 OK, resp: {read_model}')
+
                 del read_model['id']
+                if model['auth']['require_login']:
+                    example_to_update['user_id'] = self.crud_users[0]['user']['id']
+                
                 self.assertEqual(read_model, example_to_update, f'Read after validation error for {model["name"]["pascal_case"]} does not match original example data')
 
     # other tests #
@@ -1277,8 +1344,6 @@ class TestMTemplateApp(unittest.TestCase):
 
         response_str = json.dumps(response)
         self.assertNotIn('This error should not be shown to users', response_str, 'Internal error message leaked to user in Exception response')
-
-    
 
     def test_cli_help_menus(self):
 
