@@ -668,8 +668,98 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertEqual(logged_out_delete_status, 401)
         self.assertIn('error', logged_out_delete_resp)
 
+        # 2. current-user (should error)
+        logged_out_current_status, logged_out_current_resp = request(base_ctx, 'GET', '/api/auth/current-user')
+        self.assertEqual(logged_out_current_status, 401)
+        self.assertIn('error', logged_out_current_resp)
 
-        raise NotImplementedError('server auth flow test not implemented yet')
+        # 3. create-user
+        create_status, create_resp = request(
+            base_ctx, 
+            'POST', 
+            '/api/auth/create-user', 
+            request_body=json.dumps({
+                'name': 'alice',
+                'email': 'alice-server@example.com',
+                'password': 'testpass123',
+                'password_confirm': 'testpass123'
+            }).encode()
+        )
+        self.assertEqual(create_status, 200)
+        self.assertIn('id', create_resp)
+
+        # 4. login-user
+        login_status, login_resp = request(
+            base_ctx, 
+            'POST', 
+            '/api/auth/login-user', 
+            request_body=json.dumps({
+                'email': 'alice-server@example.com',
+                'password': 'testpass123'
+            }).encode()
+        )
+        self.assertEqual(login_status, 200)
+        self.assertIn('access_token', login_resp)
+
+        logged_in_ctx = base_ctx.copy()
+        access_token = login_resp['access_token']
+        logged_in_ctx['headers']['Authorization'] = f'Bearer {access_token}'
+
+        # 5. current-user
+        current_status, current_resp = request(
+            logged_in_ctx, 
+            'GET', 
+            '/api/auth/current-user'
+        )
+        self.assertEqual(current_status, 200)
+        self.assertIn('email', current_resp)
+        self.assertEqual(current_resp['email'], 'alice-server@example.com')
+
+        # 6. logout-user (current)
+        logout_status, logout_resp = request(
+            logged_in_ctx, 
+            'POST', 
+            '/api/auth/logout-user', 
+            request_body=json.dumps({'mode': 'current'}).encode()
+        )
+        self.assertEqual(logout_status, 200)
+        self.assertIn('logged out', logout_resp['message'].lower())
+
+        # 7. current-user (should error)
+        logged_out_current_status, logged_out_current_resp = request(base_ctx, 'GET', '/api/auth/current-user')
+        self.assertEqual(logged_out_current_status, 401)
+        self.assertIn('error', logged_out_current_resp)
+
+        # 8. login-user (again)
+        login_status, login_resp = request(
+            base_ctx, 
+            'POST', 
+            '/api/auth/login-user', 
+            request_body=json.dumps({
+                'email': 'alice-server@example.com',
+                'password': 'testpass123'
+            }).encode()
+        )
+        self.assertEqual(login_status, 200)
+        self.assertIn('access_token', login_resp)
+
+        logged_in_ctx = base_ctx.copy()
+        access_token = login_resp['access_token']
+        logged_in_ctx['headers']['Authorization'] = f'Bearer {access_token}'
+
+        # 9. delete-user
+        delete_status, delete_resp = request(
+            logged_in_ctx, 
+            'GET', 
+            '/api/auth/delete-user'
+        )
+        self.assertEqual(delete_status, 200)
+        self.assertIn('deleted', delete_resp['message'].lower())
+
+        # 10. current-user (should error)
+        logged_out_current_status, logged_out_current_resp = request(base_ctx, 'GET', '/api/auth/current-user')
+        self.assertEqual(logged_out_current_status, 401)
+        self.assertIn('error', logged_out_current_resp)
 
     # crud tests #
 
