@@ -987,6 +987,9 @@ class TestMTemplateApp(unittest.TestCase):
     
                 if model['auth']['require_login']:
                     self._run_cmd(model_list_command + ['--size=10', '--offset=0'], expected_code=1, env=logged_out_ctx)
+                    ctx = self.pagination_user['env']
+                else:
+                    ctx = self.pagination_ctx
 
                 if model['hidden'] is True:
                     self._run_cmd(model_list_command + ['--size=10', '--offset=0'], expected_code=2, env=self.pagination_ctx)
@@ -998,7 +1001,7 @@ class TestMTemplateApp(unittest.TestCase):
                     offset = 0
 
                     for page in range(expected_pages):
-                        commands.append((model_list_command + [f'--size={size}', f'--offset={offset}'], self.pagination_ctx))
+                        commands.append((model_list_command + [f'--size={size}', f'--offset={offset}'], ctx))
                         test_cases.append((module_name_kebab, model_name_kebab, size, expected_pages, page, offset))
                         offset += size
 
@@ -1017,6 +1020,7 @@ class TestMTemplateApp(unittest.TestCase):
             pages.sort()
             page_count = 0
             for page, offset, code, stdout, stderr in pages:
+                self.assertEqual(code, 0, f'Pagination for {model_name_kebab} page {page} returned non-zero exit code. STDOUT: {stdout} STDERR: {stderr}')
                 response = json.loads(stdout)
                 self.assertEqual(response['total'], self.pagination_total_models, f'Pagination for {model_name_kebab} page {page} returned incorrect total')
                 items = response['items']
@@ -1129,7 +1133,6 @@ class TestMTemplateApp(unittest.TestCase):
 
         # create model to attempt to update with invalid data #
 
-        
         args = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(example_to_update)]
         result = self._run_cmd(args, env=ctx)
         update_model_id = str(json.loads(result.stdout)['id'])
@@ -1159,6 +1162,8 @@ class TestMTemplateApp(unittest.TestCase):
         result = self._run_cmd(self.cmd + [module_name_kebab, model_name_kebab, command_type, 'read', update_model_id], env=ctx)
         read_model = json.loads(result.stdout)
         del read_model['id']
+        if model['auth']['require_login']:
+            example_to_update['user_id'] = self.crud_users[0]['user']['id']
         self.assertEqual(read_model, example_to_update, f'Read {model["name"]["pascal_case"]} does not match original example data after validation error tests')
 
     def test_cli_db_validation_error(self):
