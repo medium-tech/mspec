@@ -659,12 +659,17 @@ class TestMTemplateApp(unittest.TestCase):
             module_name_kebab = module['name']['kebab_case']
 
             for model_name, model in module['models'].items():
+
                 hidden = model['hidden']
                 require_login = model['auth']['require_login']
-
                 model_name_kebab = model['name']['kebab_case']
 
                 model_db_args = self.cmd + [module_name_kebab, model_name_kebab, command_type]
+
+                if require_login:
+                    ctx = self.crud_users[0]['env']
+                else:
+                    ctx = self.crud_ctx
 
                 # create #
 
@@ -672,12 +677,13 @@ class TestMTemplateApp(unittest.TestCase):
                 create_args = model_db_args + ['create', json.dumps(example_to_create)]
 
                 if hidden:
-                    result = self._run_cmd(create_args, env=self.crud_ctx, expected_code=2)
+                    self._run_cmd(create_args, env=ctx, expected_code=2)
                 else:
                     if require_login:
-                        logged_out_result = self._run_cmd(create_args, env=logged_out_ctx, expected_code=1)
+                        self._run_cmd(create_args, env=logged_out_ctx, expected_code=1)
 
-                    result = self._run_cmd(create_args, env=self.crud_ctx)
+                    result = self._run_cmd(create_args, env=ctx)
+
                     created_model = json.loads(result.stdout)
 
                     created_model_id = created_model.pop('id')  # remove id for comparison
@@ -688,12 +694,12 @@ class TestMTemplateApp(unittest.TestCase):
                 read_args = model_db_args + ['read', str(created_model_id)]
 
                 if hidden:
-                    result = self._run_cmd(read_args, env=self.crud_ctx, expected_code=2)
+                    self._run_cmd(read_args, env=ctx, expected_code=2)
                 else:
                     if require_login:
-                        logged_out_result = self._run_cmd(read_args, env=logged_out_ctx, expected_code=1)
+                        self._run_cmd(read_args, env=logged_out_ctx, expected_code=1)
 
-                    result = self._run_cmd(read_args, env=self.crud_ctx)
+                    result = self._run_cmd(read_args, env=ctx)
                     read_model = json.loads(result.stdout)
                     read_model_id = read_model.pop('id')
                     self.assertEqual(read_model, example_to_create, f'Read {model_name} does not match example data')
@@ -709,12 +715,12 @@ class TestMTemplateApp(unittest.TestCase):
                 update_args = model_db_args + ['update', created_model_id, json.dumps(updated_example)]
             
                 if hidden:
-                    result = self._run_cmd(update_args, env=self.crud_ctx, expected_code=2)
+                    result = self._run_cmd(update_args, env=ctx, expected_code=2)
                 else:
                     if require_login:
                         logged_out_result = self._run_cmd(update_args, env=logged_out_ctx, expected_code=1)
 
-                    result = self._run_cmd(update_args, env=self.crud_ctx)
+                    result = self._run_cmd(update_args, env=ctx)
                     updated_model = json.loads(result.stdout)
                     updated_model_id = updated_model.pop('id')
                     self.assertEqual(updated_model, updated_example, f'Updated {model_name} does not match updated example data')
@@ -725,12 +731,12 @@ class TestMTemplateApp(unittest.TestCase):
                 delete_args = model_db_args + ['delete', str(created_model_id)]
 
                 if hidden:
-                    result = self._run_cmd(delete_args, env=self.crud_ctx, expected_code=2)
+                    result = self._run_cmd(delete_args, env=ctx, expected_code=2)
                 else:
                     if require_login:
                         logged_out_result = self._run_cmd(delete_args, env=logged_out_ctx, expected_code=1)
 
-                    result = self._run_cmd(delete_args, env=self.crud_ctx)
+                    result = self._run_cmd(delete_args, env=ctx)
                     delete_output = json.loads(result.stdout)
                     self.assertEqual(delete_output['acknowledged'], True, f'Delete {model_name} ID did not return acknowledgement')
                     expected_delete_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
@@ -738,14 +744,14 @@ class TestMTemplateApp(unittest.TestCase):
 
                     # confirm delete is idempotent #
 
-                    result = self._run_cmd(model_db_args + ['delete', str(created_model_id)], env=self.crud_ctx)
+                    result = self._run_cmd(model_db_args + ['delete', str(created_model_id)], env=ctx)
                     delete_output = json.loads(result.stdout)
                     self.assertTrue(delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message')
 
                 # read after delete #
 
                 if not hidden:
-                    result = self._run_cmd(model_db_args + ['read', str(created_model_id)], expected_code=1, env=self.crud_ctx)
+                    result = self._run_cmd(model_db_args + ['read', str(created_model_id)], expected_code=1, env=ctx)
                     try:
                         read_output_err = json.loads(result.stdout)['error']
                         self.assertEqual(read_output_err['code'], 'NOT_FOUND', f'Read after delete for {model_name} did not return NOT_FOUND code for id {created_model_id}')
