@@ -840,7 +840,8 @@ class TestMTemplateApp(unittest.TestCase):
                     result = self._run_cmd(update_args, env=ctx, expected_code=2)
                 else:
                     if require_login:
-                        logged_out_result = self._run_cmd(update_args, env=logged_out_ctx, expected_code=1)
+                        self._run_cmd(update_args, env=logged_out_ctx, expected_code=1)
+                        self._run_cmd(update_args, env=bob_env, expected_code=1)
 
                     result = self._run_cmd(update_args, env=ctx)
                     updated_model = json.loads(result.stdout)
@@ -856,7 +857,8 @@ class TestMTemplateApp(unittest.TestCase):
                     result = self._run_cmd(delete_args, env=ctx, expected_code=2)
                 else:
                     if require_login:
-                        logged_out_result = self._run_cmd(delete_args, env=logged_out_ctx, expected_code=1)
+                        self._run_cmd(delete_args, env=logged_out_ctx, expected_code=1)
+                        self._run_cmd(delete_args, env=bob_env, expected_code=1)
 
                     result = self._run_cmd(delete_args, env=ctx)
                     delete_output = json.loads(result.stdout)
@@ -1013,6 +1015,8 @@ class TestMTemplateApp(unittest.TestCase):
                 
                 if require_login:
                     updated_example['user_id'] = alice_user['id']
+
+                    # logged out cannot update #
                     
                     update_status, data = request(
                         logged_out_ctx,
@@ -1021,6 +1025,28 @@ class TestMTemplateApp(unittest.TestCase):
                         json.dumps(updated_example).encode()
                     )
                     self.assertEqual(update_status, 401, f'Update {model_name} without login did not return 401 Unauthorized, response: {data}')
+
+                    # bob cannot update alice's model #
+
+                    update_status, data = request(
+                        bob_ctx,
+                        'PUT',
+                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
+                        json.dumps(updated_example).encode()
+                    )
+                    self.assertEqual(update_status, 401, f'Update {model_name} by non-owner did not return 401 Unauthorized, response: {data}')
+
+                    # read back to confirm not udpated #
+
+                    read_status, read_model = request(
+                        ctx,
+                        'GET',
+                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
+                        None
+                    ) 
+                    self.assertEqual(read_status, 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}')
+                    read_model_id = read_model.pop('id')
+                    self.assertEqual(read_model, example_to_create, f'Read {model_name} id: {read_model_id} does not match example data after failed update attempt')
                 
                 # send request #
 
@@ -1047,6 +1073,9 @@ class TestMTemplateApp(unittest.TestCase):
                 #
 
                 if require_login:
+
+                    # logged out cannot delete #
+
                     delete_status, data = request(
                         logged_out_ctx,
                         'DELETE',
@@ -1054,6 +1083,28 @@ class TestMTemplateApp(unittest.TestCase):
                         None
                     )
                     self.assertEqual(delete_status, 401, f'Delete {model_name} without login did not return 401 Unauthorized, response: {data}')
+
+                    # bob cannot delete alice's model #
+
+                    delete_status, data = request(
+                        bob_ctx,
+                        'DELETE',
+                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
+                        None
+                    )
+                    self.assertEqual(delete_status, 401, f'Delete {model_name} by non-owner did not return 401 Unauthorized, response: {data}')
+
+                    # read back to confirm not deleted #
+
+                    read_status, read_model = request(
+                        ctx,
+                        'GET',
+                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
+                        None
+                    )
+                    self.assertEqual(read_status, 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}')
+                    read_model_id = read_model.pop('id')
+                    self.assertEqual(read_model, updated_example, f'Read {model_name} id: {read_model_id} does not match updated example data after failed delete attempt')
 
                 # send request #
 
