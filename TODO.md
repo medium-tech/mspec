@@ -23,7 +23,7 @@
     * 🟡 server auth
     * 🟡 cli db auth
     * 🟡 cli http auth
-    * 🔴 create 2 users for crud ctx during setup
+    * 🟡 create 2 users for crud ctx during setup
         * 🔴 ensure user a cannot delete/update items from user b
     * 🔴 max models tests
         * 🔴 add test case of max of 0 models

@@ -653,12 +653,21 @@ class TestMTemplateApp(unittest.TestCase):
             * expect error
         """
 
+        self._check_servers_running()
+
         base_ctx = {
             'headers': {
                 'Content-Type': 'application/json',
             }
         }
         base_ctx.update(self.crud_ctx)
+
+        # 1. delete-user (should error)
+
+        logged_out_delete_status, logged_out_delete_resp = request(base_ctx, 'GET', '/api/auth/delete-user')
+        self.assertEqual(logged_out_delete_status, 401)
+        self.assertIn('error', logged_out_delete_resp)
+
 
         raise NotImplementedError('server auth flow test not implemented yet')
 
