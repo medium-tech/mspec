@@ -626,30 +626,40 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertIn("error", result.stdout.lower())
 
     def test_cli_run_auth_flow(self):
-        self._test_user_auth_flow(self.crud_ctx, "run")
+        self._test_user_auth_flow(self.crud_ctx, 'run')
     
     def test_cli_http_auth_flow(self):
+        self._test_user_auth_flow(self.crud_ctx, 'http')
+
+    def test_server_auth_flow(self):
         """
         test auth command flow via cli http command
         
-        ./mapp auth delete-user http
-            * expect error
-        ./mapp auth current-user http
+        /api/auth/delete-user
             * expect error
 
-        ./mapp auth create-user http {"name": "brad", ...}
-        ./mapp auth login-user http {"email": "...", ...}
-        ./mapp auth current-user http
-        ./mapp auth logout-user http {"mode": "current"}
-        ./mapp auth current-user http
+        /api/auth/current-user
             * expect error
-        ./mapp auth login-user http {"email": "...", ...}
-        ./mapp auth delete-user http
-        ./mapp auth current-user http
+
+        /api/auth/create-user {"name": "brad", ...}
+        /api/auth/login-user {"email": "...", ...}
+        /api/auth/current-user
+        /api/auth/logout-user {"mode": "current"}
+        /api/auth/current-user
+            * expect error
+        /api/auth/login-user {"email": "...", ...}
+        /api/auth/delete-user
+        /api/auth/current-user
             * expect error
         """
 
-    def test_server_auth_flow(self):
+        base_ctx = {
+            'headers': {
+                'Content-Type': 'application/json',
+            }
+        }
+        base_ctx.update(self.crud_ctx)
+
         raise NotImplementedError('server auth flow test not implemented yet')
 
     # crud tests #
