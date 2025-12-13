@@ -19,6 +19,48 @@ from mspec.core import load_generator_spec
 
 from dotenv import dotenv_values
 
+def seed_pagination_item(unique_id, base_cmd, seed_cmd, env, require_auth, model_data):
+    if require_auth:
+
+        # it will create a user for each item because some models
+        # have a max number of items per user.
+        # this can be optimized
+
+        # create user #
+
+        user_data = {
+            'name': f'user {unique_id}', 
+            'email': f'user.{unique_id}@example.com', 
+            'password': 'testpass123', 
+            'password_confirm': 'testpass123'
+        }
+        create_user_cmd = base_cmd + ['auth', 'create-user', 'run', json.dumps(user_data)]
+        result = subprocess.run(create_user_cmd, capture_output=True, text=True, env=env, timeout=10)
+        if result.returncode != 0:
+            raise RuntimeError(f'Error creating user for pagination seeding:\n{result.stdout + result.stderr}')
+        
+        user_id = json.loads(result.stdout)['id']
+        model_data['user_id'] = user_id
+        
+        # login user #
+
+        login_data = {
+            'email': user_data['email'],
+            'password': user_data['password']
+        }
+        login_user_cmd = base_cmd + ['auth', 'login-user', 'run', json.dumps(login_data), '--show', '--no-session']
+        result = subprocess.run(login_user_cmd, capture_output=True, text=True, env=env, timeout=10)
+        if result.returncode != 0:
+            raise RuntimeError(f'Error logging in user for pagination seeding:\n{result.stdout + result.stderr}')
+        
+        access_token = json.loads(result.stdout)['access_token']
+
+        env['MAPP_CLI_ACCESS_TOKEN'] = access_token
+        
+    seed_cmd.append(json.dumps(model_data))
+
+    return run_cmd(seed_cmd, env)
+
 
 def run_cmd(cmd_args, env):
     result = subprocess.run(cmd_args, capture_output=True, text=True, env=env, timeout=10)
@@ -117,6 +159,7 @@ class TestMTemplateApp(unittest.TestCase):
 
     crud_db_file = Path(f'{test_dir}/test_crud_db.sqlite3')
     crud_envfile = Path(f'{test_dir}/crud.env')
+    crud_users = []
     crud_ctx = {}
 
     pagination_db_file = Path(f'{test_dir}/test_pagination_db.sqlite3')
@@ -224,6 +267,42 @@ class TestMTemplateApp(unittest.TestCase):
             assert crud_output['message'] == 'All tables created or already existed.'
         except AssertionError as e:
             raise RuntimeError(f'AssertionError {e} while creating table for crud db {module_name_kebab}.{model_name_kebab}: {crud_result.stdout + crud_result.stderr}')
+        
+        # create 2 crud users #
+
+        if cls.spec['project']['use_builtin_modules']:
+            for user in ['alice', 'bob']:
+
+                # create #
+
+                user_data = {
+                    'name': user,
+                    'email': f'{user}@example.com',
+                    'password': 'testpass123',
+                    'password_confirm': 'testpass123'
+                }
+
+                create_cmd = cls.cmd + ['auth', 'create-user', 'run', json.dumps(user_data)]
+                result = subprocess.run(create_cmd, capture_output=True, text=True, env=cls.crud_ctx)
+                if result.returncode != 0:
+                    raise RuntimeError(f'Error creating crud user {user}:\n{result.stdout + result.stderr}')
+                
+                # login #
+
+                login_params = {'email': user_data['email'], 'password': 'testpass123'}
+                login_cmd = cls.cmd + ['auth', 'login-user', 'run', json.dumps(login_params), '--show', '--no-session']
+                result = subprocess.run(login_cmd, capture_output=True, text=True, env=cls.crud_ctx)
+
+                # confirm and store #
+
+                if result.returncode != 0:
+                    raise RuntimeError(f'Error logging in crud user {user}:\n{result.stdout + result.stderr}')
+                else:
+                    access_token = json.loads(result.stdout)['access_token']
+                    user_env = cls.crud_ctx.copy()
+                    user_env['MAPP_CLI_ACCESS_TOKEN'] = access_token
+                    user_env['HTTP_AUTHORIZATION'] = f'Bearer {access_token}'
+                    cls.crud_users.append({'user': user, 'env': user_env})
 
         # setup tables in test dbs #
 
@@ -255,7 +334,7 @@ class TestMTemplateApp(unittest.TestCase):
                     except AssertionError as e:
                         raise RuntimeError(f'AssertionError {e} while creating table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
                     
-        # need to use create-tables command because hidden models cannot be created individually #
+        # still need to use create-tables command because hidden models cannot be created individually #
 
         pagination_create_tables_cmd = cls.cmd + ['create-tables']
         pagination_result = subprocess.run(pagination_create_tables_cmd, capture_output=True, text=True, env=cls.pagination_ctx)
@@ -278,24 +357,17 @@ class TestMTemplateApp(unittest.TestCase):
 
                     model_name_kebab = model['name']['kebab_case']
 
+                    path = f'{module_name_kebab}.{model_name_kebab}'
+
+                    require_auth = model['auth']['require_login']
+
                     for index in range(cls.pagination_total_models):
-                        
-                        if model['auth']['require_login'] is True:
-                            user_data = {
-                                'name': f'user{index}', 
-                                'email': f'user{index}@example.com', 
-                                'password': 'testpass123', 
-                                'password_confirm': 'testpass123'
-                            }
-                            create_user_cmd = cls.cmd + ['auth', 'create-user', 'run', json.dumps(user_data)]
-
-
-
                         example_model = example_from_model(model, index=0)
-                        seed_cmd = cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create', json.dumps(example_model)]
-                        seed_jobs.append((seed_cmd, cls.pagination_ctx))
+                        seed_cmd = cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create']
+                        unique_id = f'{path}.{index}'
+                        seed_jobs.append((unique_id, cls.cmd, seed_cmd, cls.pagination_ctx, require_auth, example_model))
 
-            results = cls.pool.starmap(run_cmd, seed_jobs)
+            results = cls.pool.starmap(seed_pagination_item, seed_jobs)
 
             for (cmd_args, code, stdout, stderr) in results:
                 if code != 0:

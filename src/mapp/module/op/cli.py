@@ -76,6 +76,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
     http_parser.add_argument('json', nargs='?', help='JSON string for operation input')
     http_parser.add_argument('--interactive', '-i', action='store_true', help='Prompt for secure inputs')
     http_parser.add_argument('--show', '-s', action='store_true', help='Show secure fields in output')
+    http_parser.add_argument('--no-session', action='store_true', help='Do not save session after running auth ops')
     def cli_op_http(ctx, args):
         if args.json == 'help':
             http_parser.print_help()
@@ -91,7 +92,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
             raw_output = http_run_op(ctx, param_class, output_class, params)
 
             if args.module == 'auth':
-                if args.model == 'login-user':
+                if args.model == 'login-user' and not args.no_session:
                     cli_write_session(ctx, raw_output.access_token)
                 elif args.model == 'logout-user':
                     cli_delete_session()
@@ -120,6 +121,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
     run_parser.add_argument('json', nargs='?', help='JSON string for operation input')
     run_parser.add_argument('--interactive', '-i', action='store_true', help='Prompt for secure inputs')
     run_parser.add_argument('--show', '-s', action='store_true', help='Show secure fields in output')
+    run_parser.add_argument('--no-session', action='store_true', help='Do not save session after running auth ops')
     def cli_op_run(ctx, args):
         if args.json == 'help':
             run_parser.print_help()
@@ -135,7 +137,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
 
             raw_output = op_function(ctx, params)
             if args.module == 'auth':
-                if args.model == 'login-user':
+                if args.model == 'login-user' and not args.no_session:
                     cli_write_session(ctx, raw_output.access_token)
                 elif args.model == 'logout-user':
                     cli_delete_session()
@@ -144,7 +146,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
                 output = raw_output
             else:
                 output = redact_secure_fields(output_class._op_spec['output'], raw_output)
-                
+
             print(to_json(output, sort_keys=True, indent=4))
 
     run_parser.set_defaults(func=cli_op_run)

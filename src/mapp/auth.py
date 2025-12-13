@@ -281,7 +281,7 @@ def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
 
     if existing:
         ctx.log(f'Could not create user, email already exists: {email}')
-        raise AuthenticationError(err_msg)
+        raise AuthenticationError(err_msg + ': email already exists')
     
     # Generate unique user_id
     for _ in range(3):
@@ -293,7 +293,7 @@ def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
             break
     else:
         ctx.log(f'Could not create user, failed to generate unique user ID for {email}')
-        raise AuthenticationError(err_msg)
+        raise AuthenticationError(err_msg + ': failed to generate unique user ID')
 
     ctx.db.cursor.execute(
         'INSERT INTO user (id, name, email) VALUES (?, ?, ?)',
@@ -311,7 +311,7 @@ def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
             break
     else:
         ctx.log(f'Could not create user, failed to generate unique password hash ID for {email}')
-        raise AuthenticationError(err_msg)
+        raise AuthenticationError(err_msg + ': failed to generate unique password hash ID')
 
     ctx.db.cursor.execute(
         'INSERT INTO password_hash (id, user_id, hash) VALUES (?, ?, ?)',
