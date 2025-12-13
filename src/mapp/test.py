@@ -273,7 +273,10 @@ class TestMTemplateApp(unittest.TestCase):
         
         # create 2 crud users #
 
-        if cls.spec['project']['use_builtin_modules']:
+        if cls.use_cache:
+            raise RuntimeError('Need to fix cache with new auth system')
+
+        if not cls.use_cache and cls.spec['project']['use_builtin_modules']:
             for user_name in ['alice', 'bob']:
 
                 # create #
@@ -564,7 +567,7 @@ class TestMTemplateApp(unittest.TestCase):
         """
         # Setup
         cmd = self.cmd
-        env = self.crud_ctx.copy()
+        env = ctx.copy()
         user_name = 'alice'
         user_email = f'alice@{io_type}.com'
         user_password = 'testpass123'
@@ -687,6 +690,9 @@ class TestMTemplateApp(unittest.TestCase):
                     created_model = json.loads(result.stdout)
 
                     created_model_id = created_model.pop('id')  # remove id for comparison
+                    if require_login:
+                        example_to_create['user_id'] = self.crud_users[0]['user']['id']
+                    
                     self.assertEqual(created_model, example_to_create, f'Created {model_name} does not match example data')
 
                 # read #
@@ -711,6 +717,9 @@ class TestMTemplateApp(unittest.TestCase):
                     updated_example = example_from_model(model, index=1)
                 except ValueError as e:
                     raise ValueError(f'Need at least 2 examples for update testing: {e}')
+                
+                if require_login:
+                    updated_example['user_id'] = self.crud_users[0]['user']['id']
                 
                 update_args = model_db_args + ['update', created_model_id, json.dumps(updated_example)]
             

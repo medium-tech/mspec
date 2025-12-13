@@ -94,7 +94,7 @@ if __name__ == "__main__":
         cli_ctx = get_context_from_env()
 
         cli_ctx.current_access_token = lambda: get_cli_access_token(cli_ctx)
-        if (token := cli_load_session(cli_ctx)) is not None:
+        if (token := get_cli_access_token(cli_ctx)) is not None:
             cli_ctx.client.set_bearer_token(token)
 
         main(cli_ctx, mapp_spec)

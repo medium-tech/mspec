@@ -142,8 +142,10 @@ def cli_load_session(ctx:MappContext) -> str | None:
         with open(CLI_SESSION_FILE_PATH, 'rb') as f:
             encrypted = f.read()
         cipher = _get_fernet(ctx)
+        ctx.log('Loaded CLI session from disk.')
         return cipher.decrypt(encrypted).decode()
     except FileNotFoundError:
+        ctx.log('No CLI session file found on disk.')
         return None
     
 def cli_write_session(ctx:MappContext, access_token: str):
@@ -161,15 +163,16 @@ def cli_delete_session():
         pass
 
 def get_cli_access_token(ctx: MappContext) -> str:
-    
+    ctx.log('Retrieving CLI access token...')
     try:
         access_token = os.environ['MAPP_CLI_ACCESS_TOKEN']
         ctx.log('Logged in via MAPP_CLI_ACCESS_TOKEN env variable.')
     except KeyError:
         access_token = cli_load_session(ctx)
-        if access_token is None:
-            raise MappError('NO_CLI_ACCESS_TOKEN', 'No session found, set MAPP_CLI_ACCESS_TOKEN or login via \'mapp auth login-user\'.')
-        ctx.log('Logged in via local CLI session.')
+        # if access_token is None:
+        #     raise MappError('NO_CLI_ACCESS_TOKEN', 'No session found, set MAPP_CLI_ACCESS_TOKEN or login via \'mapp auth login-user\'.')
+        if access_token is not None:
+            ctx.log('Logged in via local CLI session.')
     
     return access_token
 

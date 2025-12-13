@@ -430,7 +430,8 @@ def delete_user(ctx: MappContext, params:object) -> Acknowledgment:
     # get current user #
 
     access_token = ctx.current_access_token()
-    assert access_token is not None
+    if access_token is None:
+        raise AuthenticationError('Not logged in')
 
     user, jti = _parse_access_token(ctx, access_token)
 
