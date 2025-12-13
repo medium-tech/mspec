@@ -235,7 +235,7 @@ modules:
 
         auth:
           require_login: true
-          max_models_per_user: 1
+          max_models_per_user: 0
 
         fields:
           user_id:
@@ -263,7 +263,37 @@ modules:
 
         auth:
           require_login: true
-          max_models_per_user: 2
+          max_models_per_user: 1
+
+        fields:
+
+          user_id:
+            name:
+              lower_case: 'user id'
+            type: foreign_key
+            references:
+              table: 'user'
+              field: 'id'
+            examples:
+              - "1"
+              - "2"
+              - "3"
+              
+          my_field:
+            name:
+              lower_case: 'my field'
+            type: str
+            examples:
+              - "example1"
+              - "example2"
+
+      custom_limit_model_c:
+        name:
+          lower_case: 'custom limit model c'
+
+        auth:
+          require_login: true
+          max_models_per_user: 5
 
         fields:
 

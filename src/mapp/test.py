@@ -794,6 +794,7 @@ class TestMTemplateApp(unittest.TestCase):
 
                 if hidden:
                     self._run_cmd(create_args, env=ctx, expected_code=2)
+                    created_model_id = '1'
                 else:
                     if require_login:
                         self._run_cmd(create_args, env=logged_out_ctx, expected_code=1)
@@ -814,6 +815,7 @@ class TestMTemplateApp(unittest.TestCase):
 
                 if hidden:
                     self._run_cmd(read_args, env=ctx, expected_code=2)
+                    read_model_id = None
                 else:
                     if require_login:
                         self._run_cmd(read_args, env=logged_out_ctx, expected_code=1)
@@ -823,6 +825,10 @@ class TestMTemplateApp(unittest.TestCase):
                     read_model_id = read_model.pop('id')
                     self.assertEqual(read_model, example_to_create, f'Read {model_name} does not match example data')
                     self.assertEqual(read_model_id, created_model_id, f'Read {model_name} ID does not match created ID')
+
+                    if require_login:
+                        self.assertIsNotNone(read_model['user_id'], f'Read {model_name} user_id is None')
+                        self.assertEqual(read_model['user_id'], alice_user['id'], f'Read {model_name} ID does not match created ID')
 
                 # update #
 
@@ -838,6 +844,7 @@ class TestMTemplateApp(unittest.TestCase):
             
                 if hidden:
                     result = self._run_cmd(update_args, env=ctx, expected_code=2)
+                    updated_model_id = '1'
                 else:
                     if require_login:
                         self._run_cmd(update_args, env=logged_out_ctx, expected_code=1)
@@ -848,6 +855,10 @@ class TestMTemplateApp(unittest.TestCase):
                     updated_model_id = updated_model.pop('id')
                     self.assertEqual(updated_model, updated_example, f'Updated {model_name} does not match updated example data')
                     self.assertEqual(updated_model_id, created_model_id, f'Updated {model_name} ID does not match created ID')
+
+                    if require_login:
+                        self.assertIsNotNone(updated_model['user_id'], f'Updated {model_name} user_id is None')
+                        self.assertEqual(updated_model['user_id'], alice_user['id'], f'Updated {model_name} ID does not match created ID')
 
                 # delete #
 
@@ -884,7 +895,15 @@ class TestMTemplateApp(unittest.TestCase):
                         raise RuntimeError(f'KeyError {e} while reading after delete for {model_name} id {created_model_id}: {result.stdout + result.stderr}')
                     except json.JSONDecodeError as e:
                         raise RuntimeError(f'JSONDecodeError {e} while reading after delete for {model_name} id {created_model_id}: {result.stdout + result.stderr}')
+                    
+                # test data isolation between users #
 
+                if require_login:
+                    self.assertIsNotNone(alice_user['id'], 'Alice user ID is None, test setup error')
+                    self.assertIsNotNone(bob_user['id'], 'Bob user ID is None, test setup error')
+                    self.assertNotEqual(alice_user['id'], bob_user['id'], 'Alice and Bob users have the same ID, test setup error')
+                    self.assertNotEqual(alice_env['MAPP_CLI_ACCESS_TOKEN'], bob_env['MAPP_CLI_ACCESS_TOKEN'], 'Alice and Bob have the same access token, test setup error')
+ 
     def test_cli_db_crud(self):
         self._test_cli_crud_commands('db')
 
@@ -917,9 +936,6 @@ class TestMTemplateApp(unittest.TestCase):
         bob_user = self.crud_users[1]['user']
         bob_ctx = deepcopy(base_ctx)
         bob_ctx['headers']['Authorization'] = self.crud_users[1]['env']['Authorization']
-
-        self.assertNotEqual(alice_user['id'], bob_user['id'], 'Alice and Bob users have the same ID, test setup error')
-        self.assertNotEqual(alice_ctx['headers']['Authorization'], bob_ctx['headers']['Authorization'], 'Alice and Bob have the same Authorization header, test setup error')
         
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
@@ -961,7 +977,7 @@ class TestMTemplateApp(unittest.TestCase):
 
                 if hidden:
                     self.assertEqual(created_status, 404, f'Create hidden {model_name} did not return 404 Not Found, response: {created_model}')
-
+                    created_model_id = '1'
                 else:
                     self.assertEqual(created_status, 200, f'Create {model_name} did not return status 200 OK, response: {created_model}')
                     created_model_id = created_model.pop('id')  # remove id for comparison
@@ -1061,7 +1077,8 @@ class TestMTemplateApp(unittest.TestCase):
 
                 if hidden:
                     self.assertEqual(updated_status, 404, f'Update hidden {model_name} id: {created_model_id} did not return 404 Not Found, response: {updated_model}')
-
+                    updated_model_id = '1'
+                    
                 else:
                     self.assertEqual(updated_status, 200, f'Update {model_name} id: {created_model_id} did not return status 200 OK, response: {updated_model}')
                     updated_model_id = updated_model.pop('id')
@@ -1156,6 +1173,11 @@ class TestMTemplateApp(unittest.TestCase):
                 
                     self.assertEqual(re_read_status, 404, f'Read after delete for {model_name} id: {created_model_id} did not return 404 Not Found, resp: {re_read_model}')
                     self.assertEqual(re_read_model.get('error', {}).get('code', '-'), 'NOT_FOUND', f'Read after delete for {model_name} id: {created_model_id} did not return not_found code, resp: {re_read_model}')
+
+                # confirm data isolation between users #
+
+                self.assertNotEqual(alice_user['id'], bob_user['id'], 'Alice and Bob users have the same ID, test setup error')
+                self.assertNotEqual(alice_ctx['headers']['Authorization'], bob_ctx['headers']['Authorization'], 'Alice and Bob have the same Authorization header, test setup error')
 
     # pagination tests #
 
