@@ -232,6 +232,7 @@ class TestMTemplateApp(unittest.TestCase):
             module_name_kebab = module['name']['kebab_case']
 
             for model in module['models'].values():
+
                 if model['hidden'] is True:
                     continue
                 
@@ -253,6 +254,13 @@ class TestMTemplateApp(unittest.TestCase):
                         assert model_name_snake in pagination_output['message']
                     except AssertionError as e:
                         raise RuntimeError(f'AssertionError {e} while creating table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
+                    
+        # need to use create-tables command because hidden models cannot be created individually #
+
+        pagination_create_tables_cmd = cls.cmd + ['create-tables']
+        pagination_result = subprocess.run(pagination_create_tables_cmd, capture_output=True, text=True, env=cls.pagination_ctx)
+        if pagination_result.returncode != 0:
+            raise RuntimeError(f'Error creating tables for pagination db: {pagination_result.stdout + pagination_result.stderr}')
         
         # seed pagination db #
 
@@ -270,7 +278,19 @@ class TestMTemplateApp(unittest.TestCase):
 
                     model_name_kebab = model['name']['kebab_case']
 
-                    for _ in range(cls.pagination_total_models):
+                    for index in range(cls.pagination_total_models):
+                        
+                        if model['auth']['require_login'] is True:
+                            user_data = {
+                                'name': f'user{index}', 
+                                'email': f'user{index}@example.com', 
+                                'password': 'testpass123', 
+                                'password_confirm': 'testpass123'
+                            }
+                            create_user_cmd = cls.cmd + ['auth', 'create-user', 'run', json.dumps(user_data)]
+
+
+
                         example_model = example_from_model(model, index=0)
                         seed_cmd = cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create', json.dumps(example_model)]
                         seed_jobs.append((seed_cmd, cls.pagination_ctx))

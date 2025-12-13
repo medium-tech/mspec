@@ -299,6 +299,12 @@ def init_generator_spec(spec:dict) -> dict:
                     'require_login': False,
                     'max_models_per_user': None
                 }
+
+            if user_id is not None and model['auth']['require_login'] is False and model['hidden'] is False:
+                raise ValueError(f'model {model_path} has user_id field, auth.require_login must be true')
+            
+            if user_id is None and model['auth']['require_login'] is True:
+                raise ValueError(f'model {model_path} has auth.require_login true, must have user_id field')
         
         #
         # ops

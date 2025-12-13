@@ -4,6 +4,7 @@ import time
 import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 import jwt
 
@@ -342,7 +343,7 @@ def login_user(ctx: MappContext, params:object) -> LoginUserOutput:
         token_type=token_type
     )
 
-def current_user(ctx: MappContext, params:object) -> CurrentUserOutput:
+def current_user(ctx: MappContext, params:Optional[object]=None) -> CurrentUserOutput:
     """
     Get the current logged-in user in the auth module.
     ctx: MappContext - The application context.
@@ -355,7 +356,9 @@ def current_user(ctx: MappContext, params:object) -> CurrentUserOutput:
         number_of_sessions: int - The number of active sessions for the current user.
     """
     access_token = ctx.current_access_token()
-    assert access_token is not None
+    
+    if access_token is None or access_token == '':
+        raise AuthenticationError('Not logged in')
 
     user, _jti = _parse_access_token(ctx, access_token)
     

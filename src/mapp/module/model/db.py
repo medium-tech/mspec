@@ -1,7 +1,8 @@
 from datetime import datetime
 
+from mapp.auth import current_user
 from mapp.context import MappContext
-from mapp.errors import NotFoundError, MappError
+from mapp.errors import AuthenticationError, NotFoundError, MappError
 from mapp.types import DATETIME_FORMAT_STR, ModelListResult, validate_model, Acknowledgment
 
 
@@ -94,6 +95,15 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
     model_spec = model_class._model_spec
     model_snake_case = model_class._model_spec['name']['snake_case']
 
+    # auth #
+
+    if model_class._model_spec['auth']['require_login'] is True:
+        # will raise AuthenticationError if not logged in
+        user = current_user(ctx, None)
+
+        if 'user_id' in model_spec['fields']:
+            obj = obj._replace(user_id=user.id)
+
     # non list sql #
     
     fields = []
@@ -146,8 +156,18 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
     return obj
 
 def db_model_read(ctx:MappContext, model_class: type, model_id: str):
+
+    # init #
+
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']
+
+    # auth #
+
+    if model_class._model_spec['auth']['require_login'] is True:
+        # will raise AuthenticationError if not logged in
+        current_user(ctx, None)
+
 
     # read non list fields #
 
@@ -199,6 +219,8 @@ def db_model_read(ctx:MappContext, model_class: type, model_id: str):
     return model_class(**data)
 
 def db_model_update(ctx:MappContext, model_class: type, obj: object):
+    
+    # init #
 
     if obj.id is None:
         raise MappError('MODEL_ID_NOT_PROVIDED', 'id must be provided to update an item')
@@ -207,6 +229,19 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
 
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']
+
+    # auth #
+
+    if model_class._model_spec['auth']['require_login'] is True:
+        # will raise AuthenticationError if not logged in
+        user = current_user(ctx, None)
+
+        try:
+            if obj.user_id != user.id:
+                raise AuthenticationError('Not authorized to update this item')
+            
+        except AttributeError:
+            """model does not define user_id field"""
 
     #
     # non list fields
@@ -267,8 +302,33 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
     return obj
 
 def db_model_delete(ctx:MappContext, model_class: type, model_id: str) -> Acknowledgment:
+
+    # init #
+
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']
+
+    # auth #
+
+    if model_class._model_spec['auth']['require_login'] is True:
+
+        user = current_user(ctx, None)
+
+        # check user id of model owner #
+
+        sql = f'SELECT id, user_id FROM {model_snake_case} WHERE id=? AND user_id=?'
+
+        ctx.db.cursor.execute(sql, (model_id, current_user(ctx, None).id))
+        row = ctx.db.cursor.fetchone()
+
+        if row is None:
+            raise NotFoundError(f'{model_snake_case} {model_id} not found or not authorized to delete')
+        
+        if str(row[0]) != model_id:
+            raise NotFoundError(f'{model_snake_case} {model_id} not found or not authorized to delete')
+        
+        if str(row[1]) != user.id:
+            raise NotFoundError(f'{model_snake_case} {model_id} not found or not authorized to delete')
 
     # list tables #
 
@@ -283,9 +343,18 @@ def db_model_delete(ctx:MappContext, model_class: type, model_id: str) -> Acknow
     ctx.db.commit()
     return Acknowledgment(f'{model_snake_case} {model_id} has been deleted or was already absent.')
 
-def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int = 50) -> ModelListResult:
+def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int = 50) -> ModelListResult: 
+
+    # init #
+
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']
+
+    # auth #
+
+    if model_class._model_spec['auth']['require_login'] is True:
+        # will raise AuthenticationError if not logged in
+        current_user(ctx, None)
 
     # query #
 
