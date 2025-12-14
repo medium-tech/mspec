@@ -28,6 +28,7 @@
     * 🟢 max models tests
         * 🟢 add test case of max of 0 models
 * 🔴 serve hello world lingo page from server
+    * 🔴 add new functions to javascript lingo interpreter
     * 🔴 lingo index page
         * 🔴 lingo module page
             * 🔴 lingo model page
