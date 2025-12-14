@@ -27,20 +27,22 @@
         * 🟢 ensure user a cannot delete/update items from user b
     * 🟢 max models tests
         * 🟢 add test case of max of 0 models
-* 🔴 serve hello world lingo page from server
+* 🔴 lingo integration to mapp
     * 🔴 add new functions to javascript lingo interpreter
-    * 🔴 lingo index page
-        * 🔴 lingo module page
-            * 🔴 lingo model page
-                * 🔴 create
-                * 🔴 read
-                * 🔴 update
-                * 🔴 delete
-                * 🔴 list
-            * 🔴 lingo op page
-                * 🔴 run
+    * 🔴 built in lingo ui (lingo pages served in mapp by generating html templates with lingo pages)
+        * 🔴 lingo index page
+            * 🔴 lingo module page
+                * 🔴 lingo model page (create lingo widgets/functions for each of the below)
+                    * 🔴 create
+                    * 🔴 read
+                    * 🔴 update
+                    * 🔴 delete
+                    * 🔴 list
+                * 🔴 lingo op page (this will run the op on the backend server and return the result)
+                    * 🔴 run
+        * 🔴 serve additional lingo pages
+            * 🔴 update mspec to support defining other pages and their lingo (for apps running in users local browser)
 * 🔴 export static site
-* 🔴 lingo model (see below)
 
 ## main template prototype
 The main prototype are the python + browser 1 browser template apps.
