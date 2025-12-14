@@ -277,7 +277,8 @@ class TestMTemplateApp(unittest.TestCase):
             raise RuntimeError('Need to fix cache with new auth system')
 
         if not cls.use_cache and cls.spec['project']['use_builtin_modules']:
-            for user_name in ['alice', 'bob']:
+            crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn']
+            for user_name in crud_users:
 
                 # create #
 
@@ -361,6 +362,9 @@ class TestMTemplateApp(unittest.TestCase):
 
                 for model in module['models'].values():
                     if model['hidden'] is True:
+                        continue
+
+                    if model['auth']['max_models_per_user'] == 0:
                         continue
 
                     model_name_kebab = model['name']['kebab_case']
@@ -763,13 +767,14 @@ class TestMTemplateApp(unittest.TestCase):
 
     # crud tests #
 
-    def _test_cli_crud_commands(self, command_type:str):
+    def _test_cli_crud_commands(self, command_type:str, user_index:int):
 
         logged_out_ctx = self.crud_ctx.copy()
-        alice_user = self.crud_users[0]['user']
-        alice_env = self.crud_users[0]['env']
-        bob_user = self.crud_users[1]['user']
-        bob_env = self.crud_users[1]['env']
+        create_user = self.crud_users[user_index]['user']
+        create_user_env = self.crud_users[user_index]['env']
+        other_user = self.crud_users[0]['user']
+        other_user_env = self.crud_users[0]['env']
+        self.assertNotEqual(user_index, 0, 'user_index must not be 0 to ensure different users for testing')
 
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
@@ -779,11 +784,11 @@ class TestMTemplateApp(unittest.TestCase):
                 hidden = model['hidden']
                 require_login = model['auth']['require_login']
                 model_name_kebab = model['name']['kebab_case']
-
+                max_models = model['auth']['max_models_per_user']
                 model_db_args = self.cmd + [module_name_kebab, model_name_kebab, command_type]
 
                 if require_login:
-                    ctx = alice_env
+                    ctx = create_user_env
                 else:
                     ctx = self.crud_ctx
 
@@ -791,23 +796,36 @@ class TestMTemplateApp(unittest.TestCase):
 
                 example_to_create = example_from_model(model)
                 create_args = model_db_args + ['create', json.dumps(example_to_create)]
+                created_model_id = '1'
 
                 if hidden:
                     self._run_cmd(create_args, env=ctx, expected_code=2)
-                    created_model_id = '1'
+                    
                 else:
                     if require_login:
                         self._run_cmd(create_args, env=logged_out_ctx, expected_code=1)
-
-                    result = self._run_cmd(create_args, env=ctx)
-
-                    created_model = json.loads(result.stdout)
-
-                    created_model_id = created_model.pop('id')  # remove id for comparison
-                    if require_login:
-                        example_to_create['user_id'] = alice_user['id']
                     
-                    self.assertEqual(created_model, example_to_create, f'Created {model_name} does not match example data')
+                    num_to_create = 1 if max_models < 0 else max_models
+
+                    for n in range(num_to_create):
+
+                        result = self._run_cmd(create_args, env=ctx)
+
+                        created_model = json.loads(result.stdout)
+
+                        created_model_id = created_model.pop('id')  # remove id for comparison
+                        if require_login:
+                            example_to_create['user_id'] = create_user['id']
+                        
+                        self.assertEqual(created_model, example_to_create, f'Created {model_name} does not match example data {n=}')
+
+                    if max_models >= 0:
+                        # try to create one more than allowed
+                        self._run_cmd(create_args, env=ctx, expected_code=1)
+
+                    if max_models == 0:
+                        continue  # skip rest of tests for this model
+
 
                 # read #
 
@@ -828,7 +846,7 @@ class TestMTemplateApp(unittest.TestCase):
 
                     if require_login:
                         self.assertIsNotNone(read_model['user_id'], f'Read {model_name} user_id is None')
-                        self.assertEqual(read_model['user_id'], alice_user['id'], f'Read {model_name} ID does not match created ID')
+                        self.assertEqual(read_model['user_id'], create_user['id'], f'Read {model_name} ID does not match created ID')
 
                 # update #
 
@@ -838,7 +856,7 @@ class TestMTemplateApp(unittest.TestCase):
                     raise ValueError(f'Need at least 2 examples for update testing: {e}')
                 
                 if require_login:
-                    updated_example['user_id'] = alice_user['id']
+                    updated_example['user_id'] = create_user['id']
                 
                 update_args = model_db_args + ['update', created_model_id, json.dumps(updated_example)]
             
@@ -848,7 +866,7 @@ class TestMTemplateApp(unittest.TestCase):
                 else:
                     if require_login:
                         self._run_cmd(update_args, env=logged_out_ctx, expected_code=1)
-                        self._run_cmd(update_args, env=bob_env, expected_code=1)
+                        self._run_cmd(update_args, env=other_user_env, expected_code=1)
 
                     result = self._run_cmd(update_args, env=ctx)
                     updated_model = json.loads(result.stdout)
@@ -858,7 +876,7 @@ class TestMTemplateApp(unittest.TestCase):
 
                     if require_login:
                         self.assertIsNotNone(updated_model['user_id'], f'Updated {model_name} user_id is None')
-                        self.assertEqual(updated_model['user_id'], alice_user['id'], f'Updated {model_name} ID does not match created ID')
+                        self.assertEqual(updated_model['user_id'], create_user['id'], f'Updated {model_name} ID does not match created ID')
 
                 # delete #
 
@@ -869,7 +887,7 @@ class TestMTemplateApp(unittest.TestCase):
                 else:
                     if require_login:
                         self._run_cmd(delete_args, env=logged_out_ctx, expected_code=1)
-                        self._run_cmd(delete_args, env=bob_env, expected_code=1)
+                        self._run_cmd(delete_args, env=other_user_env, expected_code=1)
 
                     result = self._run_cmd(delete_args, env=ctx)
                     delete_output = json.loads(result.stdout)
@@ -899,16 +917,16 @@ class TestMTemplateApp(unittest.TestCase):
                 # test data isolation between users #
 
                 if require_login:
-                    self.assertIsNotNone(alice_user['id'], 'Alice user ID is None, test setup error')
-                    self.assertIsNotNone(bob_user['id'], 'Bob user ID is None, test setup error')
-                    self.assertNotEqual(alice_user['id'], bob_user['id'], 'Alice and Bob users have the same ID, test setup error')
-                    self.assertNotEqual(alice_env['MAPP_CLI_ACCESS_TOKEN'], bob_env['MAPP_CLI_ACCESS_TOKEN'], 'Alice and Bob have the same access token, test setup error')
+                    self.assertIsNotNone(create_user['id'], 'Create user ID is None, test setup error')
+                    self.assertIsNotNone(other_user['id'], 'Other user ID is None, test setup error')
+                    self.assertNotEqual(create_user['id'], other_user['id'], 'Alice and Bob users have the same ID, test setup error')
+                    self.assertNotEqual(create_user_env['MAPP_CLI_ACCESS_TOKEN'], other_user_env['MAPP_CLI_ACCESS_TOKEN'], 'Alice and Bob have the same access token, test setup error')
  
     def test_cli_db_crud(self):
-        self._test_cli_crud_commands('db')
+        self._test_cli_crud_commands('db', 1)
 
     def test_cli_http_crud(self):
-        self._test_cli_crud_commands('http')
+        self._test_cli_crud_commands('http', 2)
 
     def test_server_crud_endpoints(self):
 
@@ -944,6 +962,7 @@ class TestMTemplateApp(unittest.TestCase):
                 hidden = model['hidden']
                 require_login = model['auth']['require_login']
                 model_name_kebab = model['name']['kebab_case']
+                max_models = model['auth']['max_models_per_user']
 
                 #
                 # create
@@ -968,23 +987,40 @@ class TestMTemplateApp(unittest.TestCase):
 
                 # send request #
 
-                created_status, created_model = request(
-                    ctx,
-                    *create_args
-                )
+                num_to_create = 1 if max_models < 0 else max_models
 
-                # confirm response #
+                created_model_id = '1'
 
-                if hidden:
-                    self.assertEqual(created_status, 404, f'Create hidden {model_name} did not return 404 Not Found, response: {created_model}')
-                    created_model_id = '1'
-                else:
-                    self.assertEqual(created_status, 200, f'Create {model_name} did not return status 200 OK, response: {created_model}')
-                    created_model_id = created_model.pop('id')  # remove id for comparison
-                    if require_login:
-                        example_to_create['user_id'] = alice_user['id']
+                for n in range(num_to_create):
 
-                    self.assertEqual(created_model, example_to_create, f'Created {model_name} (id: {created_model_id}) does not match example data')
+                    created_status, created_model = request(
+                        ctx,
+                        *create_args
+                    )
+
+                    # confirm response #
+
+                    if hidden:
+                        self.assertEqual(created_status, 404, f'Create hidden {model_name} did not return 404 Not Found, {n=} response: {created_model}')
+                        
+                    else:
+                        self.assertEqual(created_status, 200, f'Create {model_name} did not return status 200 OK, {n=} response: {created_model}')
+                        created_model_id = created_model.pop('id')  # remove id for comparison
+                        print(f'created_model_id: {created_model_id}')
+                        if require_login:
+                            example_to_create['user_id'] = alice_user['id']
+
+                        self.assertEqual(created_model, example_to_create, f'Created {model_name} (id: {created_model_id} n: {n}) does not match example data')
+                
+                if max_models >= 0:
+                    max_created_status, max_created_model = request(
+                        ctx,
+                        *create_args
+                    )
+                    self.assertEqual(max_created_status, 400, f'Create {model_name} beyond max_models_per_user did not return 400 Bad Request, response: {max_created_model}')
+
+                if max_models == 0:
+                    continue  # skip rest of tests for this model
 
 
                 #
@@ -1001,13 +1037,15 @@ class TestMTemplateApp(unittest.TestCase):
                     self.assertEqual(read_status, 401, f'Read {model_name} without login did not return 401 Unauthorized, response: {data}')
 
                 # send request #
-
-                read_status, read_model = request(
-                    ctx,
-                    'GET',
-                    f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
-                    None
-                )
+                try:
+                    read_status, read_model = request(
+                        ctx,
+                        'GET',
+                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
+                        None
+                    )
+                except UnboundLocalError as e:
+                    breakpoint()
 
                 # confirm response #
 
@@ -1015,7 +1053,10 @@ class TestMTemplateApp(unittest.TestCase):
                     self.assertEqual(read_status, 404, f'Read hidden {model_name} id: {created_model_id} did not return 404 Not Found, response: {read_model}')
 
                 else:
-                    self.assertEqual(read_status, 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}')
+                    try:
+                        self.assertEqual(read_status, 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}')
+                    except AssertionError as e:
+                        breakpoint()
                     read_model_id = read_model.pop('id')
                     self.assertEqual(read_model, example_to_create, f'Read {model_name} id: {read_model_id} does not match example data')
                     self.assertEqual(read_model_id, created_model_id, f'Read {model_name} id: {read_model_id} does not match created id: {created_model_id}')
@@ -1078,7 +1119,7 @@ class TestMTemplateApp(unittest.TestCase):
                 if hidden:
                     self.assertEqual(updated_status, 404, f'Update hidden {model_name} id: {created_model_id} did not return 404 Not Found, response: {updated_model}')
                     updated_model_id = '1'
-                    
+
                 else:
                     self.assertEqual(updated_status, 200, f'Update {model_name} id: {created_model_id} did not return status 200 OK, response: {updated_model}')
                     updated_model_id = updated_model.pop('id')
@@ -1194,6 +1235,9 @@ class TestMTemplateApp(unittest.TestCase):
 
             for model in module['models'].values():
 
+                if model['auth']['max_models_per_user'] == 0:
+                    continue  # skip models that do not allow any data
+
                 model_name_kebab = model['name']['kebab_case']
                 model_list_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'list']
     
@@ -1271,6 +1315,10 @@ class TestMTemplateApp(unittest.TestCase):
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
+
+                if model['auth']['max_models_per_user'] == 0:
+                    continue  # skip models that do not allow any data
+
                 hidden = model['hidden']
                 model_name_kebab = model['name']['kebab_case']
 
@@ -1328,18 +1376,20 @@ class TestMTemplateApp(unittest.TestCase):
       
     # validation tests #
 
-    def _test_cli_validation_error(self, module_name_kebab:str, model:dict, command_type:str):
-
+    def _test_cli_validation_error(self, module_name_kebab:str, model:dict, command_type:str, user_index:int):
+        if model['auth']['max_models_per_user'] == 0:
+            return  # skip models that do not allow any data
+        
         example_to_update = example_from_model(model)
 
         if model['hidden'] is True:
             return
         
-        alice_id = self.crud_users[0]['user']['id']
+        user_id = self.crud_users[user_index]['user']['id']
         
         if model['auth']['require_login']:
-            ctx = self.crud_users[0]['env']
-            example_to_update['user_id'] = alice_id
+            ctx = self.crud_users[user_index]['env']
+            example_to_update['user_id'] = user_id
         else:
             ctx = self.crud_ctx
 
@@ -1377,7 +1427,7 @@ class TestMTemplateApp(unittest.TestCase):
         read_model = json.loads(result.stdout)
         del read_model['id']
         if model['auth']['require_login']:
-            example_to_update['user_id'] = alice_id
+            example_to_update['user_id'] = user_id
         self.assertEqual(read_model, example_to_update, f'Read {model["name"]["pascal_case"]} does not match original example data after validation error tests')
 
     def test_cli_db_validation_error(self):
@@ -1385,14 +1435,14 @@ class TestMTemplateApp(unittest.TestCase):
             module_name_kebab = module['name']['kebab_case']
 
             for model in module['models'].values():
-                self._test_cli_validation_error(module_name_kebab, model, 'db')
+                self._test_cli_validation_error(module_name_kebab, model, 'db', 3)
 
     def test_cli_http_validation_error(self):
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
 
             for model in module['models'].values():
-                self._test_cli_validation_error(module_name_kebab, model, 'http')
+                self._test_cli_validation_error(module_name_kebab, model, 'http', 4)
 
     def test_server_validation_error(self):
         self._check_servers_running()
@@ -1405,9 +1455,15 @@ class TestMTemplateApp(unittest.TestCase):
 
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
+
             for model in module['models'].values():
+
                 if model['hidden'] is True:
                     continue
+
+                if model['auth']['max_models_per_user'] == 0:
+                    continue  # skip models that do not allow any data
+
                 model_name_kebab = model['name']['kebab_case']
 
                 if model['auth']['require_login']:

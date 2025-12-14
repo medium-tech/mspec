@@ -237,6 +237,12 @@ def application(env, start_response):
             content_type = JSONResponse.content_type
             break
 
+        except MappUserError as e:
+            body = e.to_dict()
+            status_code = '400 Bad Request'
+            content_type = JSONResponse.content_type
+            break
+
         except RequestError as e:
             body = e.to_dict()
             status_code = '400 Bad Request'

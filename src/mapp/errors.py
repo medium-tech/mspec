@@ -15,6 +15,10 @@ class MappError(Exception):
                 'message': self.error_message
             }
         }
+    
+class MappUserError(MappError):
+    def __init__(self, code: str, message: str):
+        super().__init__(code, message)
 
 class MappValidationError(MappError):
     def __init__(self, message: str, field_errors:dict):

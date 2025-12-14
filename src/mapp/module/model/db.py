@@ -2,7 +2,7 @@ from datetime import datetime
 
 from mapp.auth import current_user
 from mapp.context import MappContext
-from mapp.errors import AuthenticationError, NotFoundError, MappError
+from mapp.errors import AuthenticationError, NotFoundError, MappError, MappUserError
 from mapp.types import DATETIME_FORMAT_STR, ModelListResult, validate_model, Acknowledgment
 
 
@@ -103,6 +103,17 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
 
         if 'user_id' in model_spec['fields']:
             obj = obj._replace(user_id=user.id)
+
+        max_models = model_class._model_spec['auth']['max_models_per_user']
+
+        if max_models >= 0:
+            existing_count = ctx.db.cursor.execute(
+                f'SELECT COUNT(*) FROM {model_snake_case} WHERE user_id = ?',
+                (user.id,)
+            ).fetchone()[0]
+
+            if existing_count >= max_models:
+                raise MappUserError('MAX_MODELS_EXCEEDED', f'Maximum number of models ({max_models}) for user exceeded.')
 
     # non list sql #
     

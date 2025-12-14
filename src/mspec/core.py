@@ -293,11 +293,11 @@ def init_generator_spec(spec:dict) -> dict:
                 if 'require_login' not in model['auth']:
                     model['auth']['require_login'] = False
                 if 'max_models_per_user' not in model['auth']:
-                    model['auth']['max_models_per_user'] = None
+                    model['auth']['max_models_per_user'] = -1
             else:
                 model['auth'] = {
                     'require_login': False,
-                    'max_models_per_user': None
+                    'max_models_per_user': -1
                 }
 
             if user_id is not None and model['auth']['require_login'] is False and model['hidden'] is False:
