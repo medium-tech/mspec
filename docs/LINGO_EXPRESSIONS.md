@@ -119,6 +119,66 @@
     - **items** `list`
   - **return:** `str`
 
+### Math Functions
+`add` - perform addition on `a` and `b` and return the result
+  - **args:**
+    - **a** `int|float`
+    - **b** `int|float`
+  - **return:** `int|float`
+
+`sub` - perform subtraction on `a` and `b` and return the result
+  - **args:**
+    - **a** `int|float`
+    - **b** `int|float`
+  - **return:** `int|float`
+
+`mul` - perform multiplication on `a` and `b` and return the result
+  - **args:**
+    - **a** `int|float`
+    - **b** `int|float`
+  - **return:** `int|float`
+
+`div` - perform division on `a` and `b` and return the result
+  - **args:**
+    - **a** `int|float`
+    - **b** `int|float`
+  - **return:** `float`
+
+`floordiv` - perform floor division on `a` and `b` and return the result
+  - **args:**
+    - **a** `int|float`
+    - **b** `int|float`
+  - **return:** `int`
+
+`mod` - perform modulo on `a` and `b` and return the result
+  - **args:**
+    - **a** `int|float`
+    - **b** `int|float`
+  - **return:** `int|float`
+
+`pow` - raise `a` to the power of `b` and return the result
+  - **args:**
+    - **a** `int|float`
+    - **b** `int|float`
+  - **return:** `int|float`
+
+`min` - return the minimum of `a` and `b`
+  - **args:**
+    - **a** `int|float`
+    - **b** `int|float`
+  - **return:** `int|float`
+
+`max` - return the maximum of `a` and `b`
+  - **args:**
+    - **a** `int|float`
+    - **b** `int|float`
+  - **return:** `int|float`
+
+`abs` - return the absolute value of `number`
+  - **args:**
+    - **number** `int|float`
+  - **return:** `int|float`
+
 ## Control Flow
 
 ### Branch (if/elif/else)
