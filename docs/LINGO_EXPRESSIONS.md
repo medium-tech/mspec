@@ -179,6 +179,48 @@
     - **number** `int|float`
   - **return:** `int|float`
 
+### Sequence Functions
+`len` - return the length of a string or list
+  - **args:**
+    - **object** `str|list`
+  - **return:** `int`
+
+`range` - create a range of integers
+  - **args:**
+    - **start** `int` (default: 0)
+    - **stop** `int`
+    - **step** `int` (default: 1)
+  - **return:** `list`
+
+`slice` - slice a list
+  - **args:**
+    - **iterator** `list`
+    - **start** `int` (optional)
+    - **stop** `int`
+    - **step** `int` (optional)
+  - **return:** `list`
+
+`any` - return true if any element is true
+  - **args:**
+    - **iterable** `list`
+  - **return:** `bool`
+
+`all` - return true if all elements are true
+  - **args:**
+    - **iterable** `list`
+  - **return:** `bool`
+
+`sum` - return the sum of elements in a list
+  - **args:**
+    - **iterable** `list`
+    - **start** `int|float` (default: 0)
+  - **return:** `int|float`
+
+`sorted` - return a sorted list
+  - **args:**
+    - **iterable** `list`
+  - **return:** `list`
+
 ## Control Flow
 
 ### Branch (if/elif/else)
