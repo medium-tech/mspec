@@ -265,6 +265,25 @@
     - **initial** `any` (optional)
   - **return:** `any`
 
+
+### Date and Time Functions
+`datetime.now` - return the current date and time
+  - **args:**
+    - *(none)*
+  - **return:** `datetime`
+
+`current.weekday` - return the current weekday as an integer (0=Monday, 6=Sunday)
+  - **args:**
+    - *(none)*
+  - **return:** `int`
+
+### Random Functions
+`random.randint` - return a random integer between `a` and `b` (inclusive)
+  - **args:**
+    - **a** `int`
+    - **b** `int`
+  - **return:** `int`
+
 ## Control Flow
 
 ### Branch (if/elif/else)
@@ -294,17 +313,11 @@
 
 ## UI Elements
 
-
-### Date and Time Functions
-`datetime.now` - return the current date and time
 ### Heading
 ```json
 {"heading": {"text": "Heading Text"}, "level": 1}
 ```
 - **level**: Integer from 1-6 (like HTML h1-h6)
-
-### Random Functions
-`random.randint` - return a random integer between `a` and `b` (inclusive)
 
 ### Text
 ```json
