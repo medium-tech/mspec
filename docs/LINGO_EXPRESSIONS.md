@@ -26,16 +26,21 @@
 ### Logic Functions
 - `bool`: Convert value to boolean
 - `not`: Logical NOT operation
-- `and`: Logical AND operation
-- `or`: Logical OR operation
+- `neg`: Arithmetic negation (-a)
+- `and`: Bitwise AND (a & b)
+- `or`: Bitwise OR (a | b)
 
 ### Math Functions
 - `add`: Addition (a + b)
 - `sub`: Subtraction (a - b)
 - `mul`: Multiplication (a * b)
 - `div`: Division (a / b)
-- `pow`: Exponentiation (a ^ b)
-- `neg`: Negation (-a)
+- `floordiv`: Floor division (a // b)
+- `mod`: Modulo (a % b)
+- `pow`: Exponentiation (a ** b)
+- `min`: Minimum of two values
+- `max`: Maximum of two values
+- `abs`: Absolute value
 
 ### Comparison Functions
 - `eq`: Equal (a == b)
@@ -44,6 +49,31 @@
 - `le`: Less than or equal (a <= b)
 - `gt`: Greater than (a > b)
 - `ge`: Greater than or equal (a >= b)
+
+### Integer/Float/String Functions
+- `int`: Convert to integer (from number or string, with optional base)
+- `float`: Convert to float
+- `round`: Round float to nearest integer or to given number of digits
+- `str`: Convert to string
+- `join`: Join list of items with separator
+
+### Sequence Functions
+- `len`: Length of string or list
+- `range`: Range of integers (start, stop, step)
+- `slice`: Slice a list (start, stop, step)
+- `any`: True if any element is true
+- `all`: True if all elements are true
+- `sum`: Sum of elements (with optional start)
+- `sorted`: Sorted list
+
+### Sequence Operations
+- `map`: Map a function over a list
+- `filter`: Filter a list by function
+- `dropwhile`: Drop elements while function is true
+- `takewhile`: Take elements while function is true
+- `reversed`: Reverse a list
+- `accumulate`: Accumulate results of a function over a list
+- `reduce`: Reduce a list to a single value using a function
 
 ### Date/Time Functions
 - `datetime.now`: Current date and time
