@@ -1,4 +1,3 @@
-
 # Lingo Expressions
 
 - [Data Types](#data-types)
@@ -60,14 +59,65 @@
     - **b** `int|float|str`
   - **return:** `bool`
   
-- `or` - bitwise OR
+### Bool Functions
+`bool` - convert value to boolean
+  - **args:**
+    - **object** `any`
+  - **return:** `bool`
+
+`not` - logical NOT operation
+  - **args:**
+    - **object** `any`
+  - **return:** `bool`
+
+`neg` - arithmetic negation
+  - **args:**
+    - **object** `any`
+  - **return:** `int|float`
+
+`and` - bitwise AND
   - **args:**
     - **a** `any`
     - **b** `any`
   - **return:** `any`
 
-  
+`or` - bitwise OR
+  - **args:**
+    - **a** `any`
+    - **b** `any`
+  - **return:** `any`
 
+### Int Functions
+`int` - convert to integer
+  - **args:**
+    - **number** `any` (optional)
+    - **string** `str` (optional)
+    - **base** `int` (default: 10)
+  - **return:** `int`
+
+### Float Functions
+`float` - convert to float
+  - **args:**
+    - **number** `any`
+  - **return:** `float`
+
+`round` - round a float to the nearest integer or to a given number of digits
+  - **args:**
+    - **number** `float`
+    - **ndigits** `int` (optional)
+  - **return:** `float`
+
+### Str Functions
+`str` - convert to string
+  - **args:**
+    - **object** `any`
+  - **return:** `str`
+  
+`join` - join a list of items with a separator
+  - **args:**
+    - **separator** `str`
+    - **items** `list`
+  - **return:** `str`
 
 ## Control Flow
 
