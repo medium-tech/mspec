@@ -172,6 +172,15 @@ name:
     - "Bob"
     - "Charlie"
 ```
+Use `enum` to restrict the value to a list of strings:
+```yaml
+color:
+  type: str
+  enum:
+    - "red"
+    - "green"
+    - "blue"
+```
 
 **datetime**: Date and time values (format `%Y-%m-%dT%H:%M:%S` per python datetime formatting)
 ```yaml
@@ -200,34 +209,6 @@ scores:
   examples:
     - [95, 87, 92]
     - [100]
-```
-
-### Enum Types
-
-String fields can be restricted to specific values using `enum`:
-
-```yaml
-status:
-  type: str
-  enum:
-    - active
-    - inactive
-    - pending
-  examples:
-    - active
-    - pending
-
-colors:
-  type: list
-  element_type: str
-  enum:
-    - red
-    - blue
-    - green
-    - yellow
-  examples:
-    - ["red", "blue"]
-    - ["green"]
 ```
 
 ### Custom Random Generators
