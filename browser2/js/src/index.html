@@ -78,13 +78,18 @@
     <div id="lingo-app" class="lingo-container">
         <p>Loading Browser 2.0...</p>
     </div>
+
+    <div id="lingo-app-params">
+        <h4>App Parameters</h4>
+    </div>
     
-    <div id="debug" class="debug" style="display: none;">
+    <div id="debug" class="debug" style="display: block;">
         <h4>Debug Information</h4>
         <div id="debug-content"></div>
     </div>
     
     <script src="markup.js"></script>
+    <script src="widgets.js"></script>
 
     <script>
 
@@ -100,6 +105,7 @@
         function showDebugInfo(app) {
             const debugContent = document.getElementById('debug-content');
             debugContent.innerHTML = `
+                <p><strong>Lingo:</strong> ${app.spec.lingo.version} </p>
                 <p><strong>State:</strong> ${JSON.stringify(app.state, null, 2)}</p>
                 <p><strong>Buffer length:</strong> ${app.buffer.length}</p>
                 <p><strong>Buffer:</strong></p>
@@ -115,6 +121,10 @@
         function runTestPage() {
             document.getElementById('spec-select').value = 'data/lingo/pages/test-page.json';
             fetchAndRunLingoSpec({ target: { value: 'data/lingo/pages/test-page.json' } });
+        }
+
+        function createParamsForm(spec) {
+            console.log('Creating params form for spec:', spec);
         }
 
         function fetchAndRunLingoSpec(event) {
@@ -136,10 +146,10 @@
                 })
                 .then(specData => {
                     try {
+                        createParamsForm(specData)
                         const updateDebugInfo = (app) => showDebugInfo(app);
                         currentApp = lingoApp(specData, {}, {afterRender: updateDebugInfo});
                         renderLingoApp(currentApp, document.getElementById('lingo-app'));
-                        showDebugInfo(currentApp);
                         console.log(`Spec file ${specPath} loaded successfully`);
                     } catch (error) {
                         console.error(`Error loading spec file ${specPath}:`, error);

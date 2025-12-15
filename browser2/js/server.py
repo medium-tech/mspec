@@ -35,14 +35,14 @@ class DevRequestHandler(http.server.SimpleHTTPRequestHandler):
                 
             return
         
-        if self.path == '/markup.js':
+        if self.path.endswith('.js'):
             self.send_response(200)
             self.send_header('Content-type', 'application/javascript; charset=utf-8')
             self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             self.end_headers()
             
-            markup_js_path = os.path.join(SRC_DIR, 'markup.js')
-            with open(markup_js_path, 'rb') as f:
+            js_path = os.path.join(SRC_DIR, self.path.lstrip('/'))
+            with open(js_path, 'rb') as f:
                 self.wfile.write(f.read())
             return
         
