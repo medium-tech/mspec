@@ -27,7 +27,8 @@
         * 🟢 ensure user a cannot delete/update items from user b
     * 🟢 max models tests
         * 🟢 add test case of max of 0 models
-* 🔴 lingo integration to mapp
+* 🟡 lingo integration to mapp
+    * 🟡 add tests for js broser2
     * 🔴 add new functions to javascript lingo interpreter
     * 🔴 built in lingo ui (lingo pages served in mapp by generating html templates with lingo pages)
         * 🔴 lingo index page
