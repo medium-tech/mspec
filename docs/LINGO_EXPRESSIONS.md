@@ -21,7 +21,7 @@
 
 - **list** - A list of elements, all elements must be the same type. All primitives are supported.
 
-## Built-in Functions
+## Functions
 
 ### Logic Functions
 - `bool`: Convert value to boolean
