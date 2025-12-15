@@ -1,0 +1,18 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+
+    "state": {},
+
+    "ops": {},
+
+    "output": [
+        {"heading": {"text": "Hello World"}, "level": 1},
+        {"block": [
+            {"text": "I am a sample page."}
+        ]}
+    ]
+
+}

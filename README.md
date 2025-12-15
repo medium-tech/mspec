@@ -1,21 +1,87 @@
 # mspec
 
-This project is two things: an [app generator](#app-generator) using code templating as an alternative to frameworks and [browser 2.0](#browser-20): a language independent browsing protocol designed to be a faster, safer more reliable web browsing experience. Read more about [the problem to be solved](#the-problem-this-project-solves)
+This project defines specs for:
+* creating applications
+* scripting
+* browsing
+
+All specs are written in either json or yaml. The structure is the same regardless of the serialization format.
+Yaml was chosen because it's simple syntax is both human readable and machine parsable.
+JSON was chosen because because of it's wide availability, many languages have a built in parser.
+Both of them generally serialize the same data and have simple serialization/deserialization apis so implementing both is trivial.
+
+### lingo script spec
+A scripting language embedded in either json or yaml that maps similarly to the builtin python library. Here's a simple math function in JSON:
+```json
+{
+    "call": "add",
+    "args": {
+        "a": {"int": 2},
+        "b": {"int": 4}
+    }
+}
+```
+
+Or the a and b variables can be parsed from user input, available in the scripting language with `params`:
+
+```json
+{
+    "call": "add",
+    "args": {
+        "a": {
+            "params": {"a": {}}
+        },
+        "b": {
+            "params": {"b": {}}
+        }
+    }
+}
+```
+
+See [bl-mspec-dev](https://github.com/medium-tech/bl-mspec-dev) for a node based editor to generate these spec files.
+
+
+### lingo page spec
+Building on the lingo scripting spec, the lingo page spec is a language independent browsing protocol (in json or yaml) designed to be a faster, safer more reliable web browsing experience. It allows a ui page including state, layout, styling, and scripting.
+
+### mapp spec
+The [mapp spec](./docs/MAPP_SPEC.md) is used to define an application in a json or yaml file an get:
+* db crud/list ops for data models
+* procedured defined in scripting language
+* server with:
+    * crud/list endpoints for all data models
+        * validates incoming data
+    * POST endoints for all ops
+        * validates incoming user params
+        * validates output response before sending
+* http client that calls the server
+    * functions for each endpoint (models and ops)
+* cli for everything
+    * run crud/list using local db or remote server
+    * run ops locally or via remote server
+* authentication and users
+
+Currently this is implemented in python, but eventually other languages like `go` as well. The template app in `templates/mapp-py` shows how to create a python app using this spec. The framework logic that runs it located in `src/mapp`. Eventually this framework app will be made into
+a template so that a user can autogenerate a static application for full control of the underlying code. It will use the `mtemplate` syntax to
+embed templating commands inside the working python files.
+
+## Table of Contents
 
 ⚠️ this project is currently in alpha and incomplete ⚠️
 
 * [about this project](#mspec)
+    * [mapp framework](#mapp-framework)
     * [app generator](#app-generator)
     * [browser 2.0](#browser-20)
     * [the problem this project aims to solve](#the-problem-this-project-solves)
 * documentation
     * mtemplate
-        * [app generator / spec](./docs/MTEMPLATE_SPEC.md)
+        * [app generator / spec](./docs/MAPP_SPEC.md)
         * [template extractor](./docs/MTEMPLATE_EXTRACTOR.md)
         * [template syntax](./docs/MTEMPLATE_SYNTAX.md)
         * [example repo](https://github.com/medium-tech/mspec-apps)
-    * browser2
-        * [write a browser2 page](./docs/BROWSER2.md)
+    * browser2 (lingo page spec)
+        * [write a browser2 page](./docs/LINGO_SPEC.md)
         * [python gui client](#pybrowser2)
 * [development](#development)
     * [code layout](#code-layout)
@@ -27,37 +93,12 @@ This project is two things: an [app generator](#app-generator) using code templa
 * [contributing](#contributing)
 * [deploying to pypi](#deploying-to-pypi)
 
+## mapp framework
+
+The `mapp` framework is the first python implementation of the `mapp` spec. The code is in `src/mapp` and an example using it is in `templates/mapp-py`. See this page for the [mapp spec documentation](./docs/MAPP_SPEC.md).
+
 ## app generator
-
-The `mtemplate` module in this repository can be used to [generate an app using code templating](#generate-apps-from-spec-files) based off a user supplied yaml file. The yaml file describes data models and the generated apps will have:
-
-* a web server that has:
-    * an api for CRUD ops using sqlite as a database (more db flexibility planned in the future)
-    * html/js based frontend for CRUD ops
-* a gui frontend
-* a http client for CRUD ops against server
-* a client that directly accessess the db for CRUD ops
-* a cli for CRUD ops
-
-The current proof of concept has a python backend/frontend and html/js frontend. Eventually other languages such as Go and Haskell will be supported [see TODO](./TODO.md).
-
-The generated python app is lightweight only requiring 3 stable dependencies, and the generated html frontend has no dependencies or build/packaging process. The generated html files are served staticly from the uwsgi server that also serves the python app.
-
-The goal of this project is to provide an alternative to frameworks. I've found over the years that frameworks have their pros and cons. **Pro:** don't have to recreate all the wheels **Con:** the abstraction hides the lower level code from the developer and dependency creep becomes a liability. If you rebuild the wheel you can adjust any level of the stack however it takes longer to see results. I think a middle ground is to generate the wheel instead of rebuild it. This means we don't have to waste time on wheels but also, devs never need to worry about this library changing versions because the generated code will always stand on its own without this library.
-
-However, the process of editing templates is not ideal. This library also attempts to make writing templates easier by providing template exctration from syntacticly valid code. The jinja templating syntax is incompatible with Python syntax meaning the template can't be run directly to test if it works. This library embeds templating syntax into the language's comments so that the template app itself is syntacticly valid in its language.
-
-Take the following python example:
-
-    # vars :: {"8080": "config.port"}
-
-    port = 8080
-
-The `#` begins a comment and then `vars` is a command to tell the `mtemplate` extractor to set template variables. The variables are supplied in json after the `::`. The template extractor will read the above source code file and dynamically create a jinja template by replacing each instance of the string `8080` with the jinja template variable `config.port`. It will generate a file that is a valid jinja template but not valid python syntax:
-
-    port = {{ config.port }}
-
-The template variables are replaced with values in the yaml spec file, used to render the new app and then discarded.
+This is currently being refactored. `templates/mapp-py` is an implementation of a mapp framework application. `go`, `browser1` and `py` and are all deprecated templates. The `mapp-py` template is used to bootstrap a mapp framework app, eventually templating syntax will be added to the mapp framework code so that it can be used to generate a low level static app if a user wants to customize the framework logic. Once this is complete in python, then the same framework style app will be built in go, and then add template extraction to it.
 
 ### how is this different than other code templating projects?
 I speculate that other approaches such as openapi and json schema haven't resulted in a robust templating culture because they are too complex. Instead of focusing on abstracting everything a developer could possibly need, this project will focus on the most common boiler plate code and a consistent developer exprience across multiple languages and front vs backend. If you generate an app with a Go backend an a python GUI and JS webpage the apps will all be laid out similarly reducing the learning curve. If the developer needs an additional types or logic not provided by this library then they'll have an easy way of extending the generated app, or they could just modify the generated code directly.
@@ -137,7 +178,7 @@ To list built in examples:
 
     python -m mspec specs
 
-For more examples and complete documentation on creating JSON pages, see **[here](./docs/BROWSER2.md)**.
+For more examples and complete documentation on creating JSON pages, see **[here](./docs/LINGO_SPEC.md)**.
 
 ⚠️ Be careful with untrusted input as this project is still in alpha phase. ⚠️
 
@@ -148,6 +189,7 @@ The `./src` folder contains two modules:
 
 * `mtemplate` - extracts templates from template apps and using them to generate apps based on yaml definition files in `./spec`
 * `mspec` - parse yaml spec files, browser2 and lingo
+* `mapp` - python framework for mapp spec applications
 
 The `./templates` folder contains template apps from which templates are extracted.
 
@@ -162,6 +204,9 @@ This environment will be used to develop the template apps, mspec and mtemplate 
     pip install -e templates/py
 
 ## edit and run template apps
+
+**WARNING** this section is outdated because the templating is being refactored
+
 As mentioned, the templates are extracted from working apps in `./templates`, this allows you to run the templates directly for fast development and testing. This section explains how to run the apps from which templates are extracted. If you want to change the features that generated apps have you need to edit the template apps as described in this section. If you want to learn how to generate template apps from a yaml spec go to [generate apps from spec files](#generate-apps-from-spec-files).
 
 ### python template app
@@ -203,6 +248,8 @@ Or for help:
 
 ## run and test generated apps
 
+**WARNING** this section is outdated because the templating is being refactored
+
 After following the above steps to render the python and browser1 files you can run the apps as follows. You need to be in the output directory that contains the `browser1` and `py` directories which using the default spec and output is `dist/test-gen`
 
     cd <output dir>/py
@@ -225,16 +272,6 @@ As with the template apps, 0 dependencies are required to deploy the app, howeve
     cd ../browser1
     npm install
     npm run test
-
-## test app generator
-
-These tests ensure the template extraction, caching and generation of apps is working. It will also install generated apps, run the server process and their tests. 
-
-    ./test.sh
-
-For development and iterative testing it is recommended to use the `--dev` option to skip exhaustive testing (run with `--help` for more details).
-
-    ./test.sh --dev
 
 
 ## Code Style Guidelines
@@ -412,7 +449,7 @@ The template syntax is [documented here](./docs/MTEMPLATE_SYNTAX.md).
 
 Browser2 implementations go in `./browser2/<language>`. For languages not yet implemented, a proof of concept app should be able to render the `src/mspec/data/lingo/pages/hello-world-page.json` hello world page. Full implementations should be able to render all `src/mspec/data/lingo/pages/*` and have unittests. See the [python implementation](#run-browser-20) for an example implementation of what the product should look like.
 
-For complete documentation on the Browser2.0 JSON page format, see **[here](./docs/BROWSER2.md)**.
+For complete documentation on the Browser2.0 JSON page format, see **[here](./docs/LINGO_SPEC.md)**.
 
 See [TODO.md](./TODO.md) for desired language implementation and current progress.
 

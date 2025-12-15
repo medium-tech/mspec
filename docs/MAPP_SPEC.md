@@ -1,11 +1,10 @@
-# mtemplate - YAML Specification
+# MAPP Spec
 
-The mtemplate system uses YAML specification files to define the structure and data for generating dynamic applications from template code. This document describes the format and requirements for these YAML spec files.
+The mtemplate system uses JSON or YAML specification files to define the structure and data for generating dynamic applications from template code. This document describes the format and requirements for these YAML spec files.
 
 ## Table of Contents
 
 - [Overview](#overview)
-- [CLI Usage](#cli-usage)
 - [Required Top-Level Fields](#required-top-level-fields)
   - [project](#project)
   - [server](#server)
@@ -24,34 +23,7 @@ The mtemplate system uses YAML specification files to define the structure and d
 
 ## Overview
 
-The YAML spec file defines the structure for generating applications using the mtemplate system. It specifies project metadata, server/client configuration, and most importantly, the data models that will be used to generate CRUD applications with various field types.
-
-The spec file drives the template extraction process, where template applications in `templates/py` and `templates/browser1` are processed to create dynamic applications based on the specified models and fields.
-
-## CLI Usage
-
-Once you have created a YAML spec file, you can use it with the mtemplate command to generate applications:
-
-```bash
-# Generate both Python and Browser1 applications
-python -m mtemplate render --spec my-spec.yaml
-
-# Generate only a Python application
-python -m mtemplate render --spec my-spec.yaml --app py
-
-# Generate only a Browser1 application  
-python -m mtemplate render --spec my-spec.yaml --app browser1
-
-# Specify custom output directory
-python -m mtemplate render --spec my-spec.yaml --output ./my-generated-app
-```
-
-You can also validate and inspect your spec file:
-
-```bash
-# View the parsed spec structure
-python -m mspec spec --spec my-spec.yaml
-```
+The YAML/JSON spec file defines the structure for generating applications using the mtemplate system. It specifies project metadata, server/client configuration, and most importantly, the data models that will be used to generate CRUD applications with various field types. 
 
 ## Required Top-Level Fields
 
