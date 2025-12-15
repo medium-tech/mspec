@@ -100,19 +100,22 @@ const lingoFunctionLookup = {
  * LingoApp class - equivalent to Python LingoApp dataclass
  */
 class LingoApp {
-    constructor(spec, params = {}, state = {}, buffer = []) {
+    constructor(spec, params = {}, state = {}, buffer = [], afterUpdate = null, afterRender = null) {
         this.spec = JSON.parse(JSON.stringify(spec)); // deep copy
         this.params = params;
         this.state = state;
         this.buffer = buffer;
+        this.afterUpdate = afterUpdate;
+        this.afterRender = afterRender;
     }
 }
 
 /**
  * Create a new LingoApp instance - equivalent to Python lingo_app()
  */
-function lingoApp(spec, params = {}) {
-    const instance = new LingoApp(JSON.parse(JSON.stringify(spec)), params, {}, []);
+function lingoApp(spec, params = {}, options = {}) {
+    const specCopy = JSON.parse(JSON.stringify(spec));
+    const instance = new LingoApp(specCopy, params, {}, [], options.afterUpdate, options.afterRender);
     
     // Validate params
     for (const argName in params) {
@@ -148,6 +151,11 @@ function lingoUpdateState(app, ctx = null) {
                 app.state[key] = value.default;
             }
         }
+    }
+
+    // Call afterUpdate callback if defined
+    if (app.afterUpdate) {
+        app.afterUpdate(app);
     }
     
     return app;
@@ -623,6 +631,11 @@ function renderLingoApp(app, container, preserveFocus = false) {
             newInput.focus();
             newInput.setSelectionRange(focusedElementState.selectionStart, focusedElementState.selectionEnd);
         }
+    }
+
+    // call afterRender callback if defined
+    if (app.afterRender) {
+        app.afterRender(app);
     }
 }
 

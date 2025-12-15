@@ -136,7 +136,8 @@
                 })
                 .then(specData => {
                     try {
-                        currentApp = lingoApp(specData);
+                        const updateDebugInfo = (app) => showDebugInfo(app);
+                        currentApp = lingoApp(specData, {}, {afterRender: updateDebugInfo});
                         renderLingoApp(currentApp, document.getElementById('lingo-app'));
                         showDebugInfo(currentApp);
                         console.log(`Spec file ${specPath} loaded successfully`);
