@@ -23,6 +23,7 @@ __all__ = [
 ]
 
 SAMPLE_DATA_DIR = Path(__file__).parent / 'data'
+BUILT_IN_SPEC_PATH = SAMPLE_DATA_DIR / 'builtin.yaml'
 SAMPLE_BROWSER2_SPEC_DIR = SAMPLE_DATA_DIR / 'lingo' / 'pages'
 SAMPLE_LINGO_SCRIPT_SPEC_DIR = SAMPLE_DATA_DIR / 'lingo' / 'scripts'
 SAMPLE_GENERATOR_SPEC_DIR = SAMPLE_DATA_DIR / 'generator'
@@ -45,6 +46,7 @@ def load_json_or_yaml(file_path:Path|str) -> dict:
 def builtin_spec_files() -> list[str]:
     script_files = os.listdir(SAMPLE_LINGO_SCRIPT_SPEC_DIR)
     return {
+        'builtin': BUILT_IN_SPEC_PATH.name,
         'browser2': os.listdir(SAMPLE_BROWSER2_SPEC_DIR),
         'generator': os.listdir(SAMPLE_GENERATOR_SPEC_DIR),
         'lingo_script': list(filter(lambda f: not f.endswith('_test_data.json'), script_files)),

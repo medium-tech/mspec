@@ -22,8 +22,9 @@
         
         .lingo-container {
             padding: 20px;
-            border: 1px solid #ccc;
+            border: 1px solid #000000;
             border-radius: 5px;
+            border-width: 5px;
             margin: 10px 0;
         }
         
@@ -63,6 +64,17 @@
     </style>
 </head>
 <body>
+
+    <div id="dev-controls">
+        <button onclick="runHelloWorld()">Load Hello World</button>
+        <button onclick="runTestPage()">Load Test Page</button>
+        <button onclick="toggleDebug()">Toggle Debug</button>
+        <strong>Load Spec File:</strong>
+        <select id="spec-select" onchange="fetchAndRunLingoSpec(event)">
+            <option value="none" disabled>Select a spec file...</option>
+        </select>
+    </div>
+
     <div id="lingo-app" class="lingo-container">
         <p>Loading Browser 2.0...</p>
     </div>
@@ -73,107 +85,12 @@
     </div>
     
     <script src="markup.js"></script>
+
     <script>
-        // Hello World Page JSON - embedded for this proof of concept
-        const helloWorldPage = {
-            "params": {},
-            "state": {},
-            "ops": {},
-            "output": [
-                {"heading": {"text": "Hello World"}, "level": 1},
-                {"block": [
-                    {"text": "I am a sample page."}
-                ]}
-            ]
-        };
-        
-        // Test Page JSON - more complex example
-        const testPage = {
-            "params": {
-                "first_visit": {"type": "bool", "default": false}
-            },
-            "state": {
-                "greeting": {
-                    "type": "str",
-                    "default": "",
-                    "calc": {
-                        "branch": [
-                            {"if": {"params": {"first_visit": {}}}, "then": "Welcome in, "},
-                            {"else": "Welcome back, "}
-                        ]
-                    }
-                },
-                "n": {
-                    "type": "int",
-                    "default": 0
-                },
-                "name": {
-                    "type": "str",
-                    "default": ""
-                }
-            },
-            "ops": {
-                "randomize_number": {
-                    "args": {"max": {"type": "int"}},
-                    "func": {
-                        "set": {"state": {"n": {}}},
-                        "to": {"call": "random.randint", "args": {"a": 0, "b": {"args": "max"}}}
-                    }
-                }
-            },
-            "output": [
-                {"heading": {"text": "Example document"}, "level": 1},
-                {"block": [
-                    {"text": "The current date and time is "},
-                    {"lingo": {"call": "datetime.now"}},
-                    {"text": "."},
-                    {"break": 1},
-                    
-                    {"text": "Please tell us your name: "},
-                    {"input": {"type": "text"}, "bind": {"state": {"name": {}}}},
-                    {"break": 1},
-                    
-                    {"text": "Here's a random number: "},
-                    {"lingo": {"state": {"n": {}}}},
-                    {"text": "."},
-                    {"break": 1},
-                    
-                    {"button": {"op": {"randomize_number": {"max": 100}}}, "text": "Randomize"},
-                    {"break": 1},
-                    
-                    {"lingo": {"state": {"greeting": {}}}},
-                    {"branch": [
-                        {"if": {"call": "ne", "args": {"a": {"state": {"name": {}}}, "b": ""}}, "then": {"lingo": {"state": {"name": {}}}}},
-                        {"else": {"text": "Unknown person"}}
-                    ]},
-                    {"text": "!"},
-                    {"break": 2},
-                    
-                    {"text": "Happy "},
-                    {"switch": {
-                        "expression": {"call": "current.weekday"},
-                        "cases": [
-                            {"case": 0, "then": {"text": "Monday"}},
-                            {"case": 1, "then": {"text": "Tuesday"}},
-                            {"case": 2, "then": {"text": "Wednesday"}},
-                            {"case": 3, "then": {"text": "Thursday"}},
-                            {"case": 4, "then": {"text": "Friday"}}
-                        ],
-                        "default": {"text": "Weekend"}
-                    }},
-                    {"text": "!"},
-                    {"break": 1},
-                    
-                    {"text": "This is the culmination of many late nights. "},
-                    {"link": "https://shop.coavacoffee.com/cdn/shop/files/RayosDelSol_Retail_drip_1_680x@2x.png?v=1718728683", "text": "coffee, yum, yum"},
-                    {"text": ", well anyway, enjoy! "},
-                    {"link": "https://miro.medium.com/v2/resize:fit:1152/format:webp/1*Cvj9qvbKh1LmLSGEwwwZCQ.jpeg"}
-                ]}
-            ]
-        };
-        
+
         // Initialize the app
         let currentApp = null;
+        let specLookup = {};
         
         function toggleDebug() {
             const debugDiv = document.getElementById('debug');
@@ -191,33 +108,101 @@
         }
         
         function runHelloWorld() {
-            try {
-                currentApp = lingoApp(helloWorldPage);
-                renderLingoApp(currentApp, document.getElementById('lingo-app'));
-                showDebugInfo(currentApp);
-                console.log('Hello World app loaded successfully');
-            } catch (error) {
-                console.error('Error loading Hello World app:', error);
-                document.getElementById('lingo-app').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
-            }
+            document.getElementById('spec-select').value = 'data/lingo/pages/hello-world-page.json';
+            fetchAndRunLingoSpec({ target: { value: 'data/lingo/pages/hello-world-page.json' } });
         }
         
         function runTestPage() {
-            try {
-                currentApp = lingoApp(testPage, {first_visit: true});
-                renderLingoApp(currentApp, document.getElementById('lingo-app'));
-                showDebugInfo(currentApp);
-                console.log('Test page app loaded successfully');
-            } catch (error) {
-                console.error('Error loading test page app:', error);
-                document.getElementById('lingo-app').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            document.getElementById('spec-select').value = 'data/lingo/pages/test-page.json';
+            fetchAndRunLingoSpec({ target: { value: 'data/lingo/pages/test-page.json' } });
+        }
+
+        function fetchAndRunLingoSpec(event) {
+            const specPath = event.target.value;
+
+            if (specPath === 'none') {
+                console.log('No spec file selected');
+                return;
             }
+
+            console.log(`Fetching and running spec file: ${specPath}`);
+
+            fetch(`/${specPath}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch spec file: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(specData => {
+                    try {
+                        currentApp = lingoApp(specData);
+                        renderLingoApp(currentApp, document.getElementById('lingo-app'));
+                        showDebugInfo(currentApp);
+                        console.log(`Spec file ${specPath} loaded successfully`);
+                    } catch (error) {
+                        console.error(`Error loading spec file ${specPath}:`, error);
+                        document.getElementById('lingo-app').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching spec file:', error);
+                    document.getElementById('lingo-app').innerHTML = `<p style="color: red;">Error fetching spec file: ${error.message}</p>`;
+                });
+        }
+
+        function populateSpecSelect() {
+            fetch('/api/lingo-specs')
+                .then(response => response.json())
+                .then(data => {
+                    specLookup = data;
+                    const specSelect = document.getElementById('spec-select');
+                    // populate two groups of options: pages and scripts
+                    // from specSelect.pages and specSelect.scripts
+                    const pagesOptGroup = document.createElement('optgroup');
+                    pagesOptGroup.label = 'Pages';
+                    data.pages.forEach(page => {
+                        
+                        if (page.includes('_test_data')) {
+                            return; // skip test data files
+                        }
+                        if (page.endsWith('.yaml') || page.endsWith('.yml')) {
+                            return; // skip yaml files
+                        }
+                        const option = document.createElement('option');
+                        option.value = page;
+                        option.textContent = page.split('/').pop();
+                        pagesOptGroup.appendChild(option);
+                    });
+                    specSelect.appendChild(pagesOptGroup);
+
+                    const scriptsOptGroup = document.createElement('optgroup');
+                    scriptsOptGroup.label = 'Scripts';
+                    data.scripts.forEach(script => {
+                        if (script.includes('_test_data')) {
+                            return; // skip test data files
+                        }
+                        if (script.endsWith('.yaml') || script.endsWith('.yml')) {
+                            return; // skip yaml files
+                        }
+                        const option = document.createElement('option');
+                        option.value = script;
+                        option.textContent = script.split('/').pop();
+                        scriptsOptGroup.appendChild(option);
+                    });
+                    specSelect.appendChild(scriptsOptGroup);
+                })
+                .catch(error => {
+                    console.error('Error fetching spec files:', error);
+                });
         }
         
         // Start with Hello World by default
         window.addEventListener('load', () => {
+            console.log('window load event');
             try {
                 runHelloWorld();
+                populateSpecSelect();
             } catch (error) {
                 console.error('Failed to initialize:', error);
                 document.getElementById('lingo-app').innerHTML = `
@@ -225,18 +210,6 @@
                     <p>Check the console for more details.</p>
                 `;
             }
-        });
-        
-        // Add controls
-        document.addEventListener('DOMContentLoaded', () => {
-            const controls = document.createElement('div');
-            controls.style.marginBottom = '20px';
-            controls.innerHTML = `
-                <button onclick="runHelloWorld()">Load Hello World</button>
-                <button onclick="runTestPage()">Load Test Page</button>
-                <button onclick="toggleDebug()">Toggle Debug</button>
-            `;
-            document.body.insertBefore(controls, document.body.firstChild);
         });
     </script>
 </body>

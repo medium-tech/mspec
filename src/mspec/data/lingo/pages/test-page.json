@@ -32,7 +32,7 @@
             "args": {"max": {"type": "int"}},
             "func":{
                 "set": {"state": {"n": {}}},
-                "to": {"call": "random.randint", "args": {"a": 0, "b": {"args": "max"}}}
+                "to": {"call": "random.randint", "args": {"a": 1, "b": {"args": "max"}}}
             }
         }
     },

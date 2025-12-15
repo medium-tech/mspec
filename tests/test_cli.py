@@ -9,7 +9,7 @@ from mspec.core import SAMPLE_LINGO_SCRIPT_SPEC_DIR, builtin_spec_files
 from .core import TESTS_TMP_DIR
 
 ALL_SPECS = [files for files in builtin_spec_files().values()]
-TOTAL_NUM_SPECS = sum(len(files) for files in ALL_SPECS)
+TOTAL_NUM_SPECS = sum(len(files) if isinstance(files, list) else 1 for files in ALL_SPECS)
 
 class TestCLI(unittest.TestCase):
 

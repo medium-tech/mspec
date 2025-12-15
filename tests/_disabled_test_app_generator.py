@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
 '''
+
+
+
+THESE ARE DISABLED BECAUSE THE TEMPLATES APPS ARE BEING REFACTORED
+
+* the py app is migrating to a framework based app in ./src/mapp
+    the ./templates/mapp-py is an implementation of the framework
+    eventually templating will be added to actual framework code in
+    ./src/mapp to generate an app template. Any spec will be able
+    to be run as a framework or generated as a standalone app.
+
 App Generator Tests
 
 This test module verifies that the mtemplate app generator works correctly
