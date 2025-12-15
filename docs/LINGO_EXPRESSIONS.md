@@ -25,6 +25,41 @@
 
 ### Comparison Functions
 `eq` - return true if `a` equals `b`
+  - **args:**
+    - **a** `int|float|str`
+    - **b** `int|float|str`
+  - **return:** `bool`
+
+`ne` - return true if `a` does not equal `b`
+  - **args:**
+    - **a** `int|float|str`
+    - **b** `int|float|str`
+  - **return:** `bool`
+
+`lt` - return true if `a` is less than `b`
+  - **args:**
+    - **a** `int|float|str`
+    - **b** `int|float|str`
+  - **return:** `bool`
+
+`le` - return true if `a` is less than or equal to `b`
+  - **args:**
+    - **a** `int|float|str`
+    - **b** `int|float|str`
+  - **return:** `bool`
+
+`gt` - return true if `a` is greater than `b`
+  - **args:**
+    - **a** `int|float|str`
+    - **b** `int|float|str`
+  - **return:** `bool`
+
+`ge` - return true if `a` is greater than or equal to `b`
+  - **args:**
+    - **a** `int|float|str`
+    - **b** `int|float|str`
+  - **return:** `bool`
+  
 - `or` - bitwise OR
   - **args:**
     - **a** `any`
