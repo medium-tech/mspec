@@ -221,6 +221,50 @@
     - **iterable** `list`
   - **return:** `list`
 
+### Sequence Ops Functions
+`map` - apply a function to each item in a list and return a new list
+  - **args:**
+    - **iterable** `list`
+    - **function** `expression`
+  - **return:** `list`
+
+`filter` - filter a list by a function, returning items where the function is true
+  - **args:**
+    - **iterable** `list`
+    - **function** `expression`
+  - **return:** `list`
+
+`dropwhile` - drop items from a list while the function is true, then return the rest
+  - **args:**
+    - **iterable** `list`
+    - **function** `expression`
+  - **return:** `list`
+
+`takewhile` - take items from a list while the function is true, then stop
+  - **args:**
+    - **iterable** `list`
+    - **function** `expression`
+  - **return:** `list`
+
+`reversed` - return a reversed copy of a list
+  - **args:**
+    - **sequence** `list`
+  - **return:** `list`
+
+`accumulate` - accumulate results of applying a function to items in a list (like running total)
+  - **args:**
+    - **iterable** `list`
+    - **function** `expression`
+    - **initial** `any` (optional)
+  - **return:** `list`
+
+`reduce` - reduce a list to a single value by applying a function
+  - **args:**
+    - **iterable** `list`
+    - **function** `expression`
+    - **initial** `any` (optional)
+  - **return:** `any`
+
 ## Control Flow
 
 ### Branch (if/elif/else)
