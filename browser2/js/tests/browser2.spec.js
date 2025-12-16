@@ -41,4 +41,8 @@ test('test - script spec', async ({ page }) => {
   await page.locator('#lingo-app-params-textarea').fill('{\n    "a": 1\n}');
   await page.getByRole('button', { name: 'Run' }).click();
   await expect(page.locator('#lingo-app')).toContainText('1');
+
+  // get test data
+  const response = await page.request.get('http://127.0.0.1:8000/data/lingo/scripts/hello_world_test_data.json');
+  const text = await response.text();
 });
