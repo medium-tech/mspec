@@ -1,5 +1,4 @@
 # Roadmap
-
 ## projects
 
 * [main prototype](#main-template-prototype)
@@ -43,6 +42,15 @@
                     * 🔴 run
         * 🔴 serve additional lingo pages
             * 🔴 update mspec to support defining other pages and their lingo (for apps running in users local browser)
+* 🔴 file upload
+    * 🔴 backend
+        * 🔴 upload
+        * 🔴 download
+    * 🔴 lingo / ui
+        * 🔴 upload
+        * 🔴 download
+        * 🔴 view image
+    * 🔴 add support for multipart upload/download
 * 🔴 export static site
 
 ## main template prototype

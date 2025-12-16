@@ -1,0 +1,16 @@
+{
+    "name": "browser2-js",
+    "version": "0.0.1",
+    "type": "module",
+    "scripts": {
+        "test": "npx playwright test",
+        "test-quick": "npx playwright test --project=chromium",
+        "test-ui": "npx playwright test --ui",
+        "test-report": "npx playwright show-report",
+        "test-gen": "npx playwright codegen http://localhost:8000"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.57.0",
+        "playwright": "^1.57.0"
+    }
+}
