@@ -6,50 +6,25 @@
 // Date/time formatting
 const datetimeFormatStr = '%Y-%m-%dT%H:%M:%S';
 
+// Helper function for lingo int conversion
+function lingoInt(number = null, string = null, base = 10) {
+    if (number !== null && number !== undefined) {
+        return Math.floor(Number(number));
+    } else if (string !== null && string !== undefined) {
+        return parseInt(string, base);
+    } else {
+        throw new Error('lingo int - must provide either number or string argument');
+    }
+}
+
+// Helper function for str join
+function strJoin(separator, items) {
+    return items.map(item => String(item)).join(separator);
+}
+
 // Built-in function lookup table
 const lingoFunctionLookup = {
-    'bool': {
-        func: (obj) => Boolean(obj),
-        args: {'object': {'type': 'any'}}
-    },
-    'not': {
-        func: (obj) => !obj,
-        args: {'object': {'type': 'any'}}
-    },
-    'neg': {
-        func: (obj) => -obj,
-        args: {'object': {'type': 'any'}}
-    },
-    
-    'and': {
-        func: (a, b) => a && b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
-    },
-    'or': {
-        func: (a, b) => a || b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
-    },
-    
-    'add': {
-        func: (a, b) => a + b,
-        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
-    },
-    'sub': {
-        func: (a, b) => a - b,
-        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
-    },
-    'mul': {
-        func: (a, b) => a * b,
-        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
-    },
-    'div': {
-        func: (a, b) => a / b,
-        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
-    },
-    'pow': {
-        func: (a, b) => Math.pow(a, b),
-        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
-    },
+    // comparison #
     
     'eq': {
         func: (a, b) => a === b,
@@ -76,22 +51,240 @@ const lingoFunctionLookup = {
         args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
     },
     
+    // bool #
+    
+    'bool': {
+        func: (obj) => Boolean(obj),
+        args: {'object': {'type': 'any'}}
+    },
+    'not': {
+        func: (obj) => !obj,
+        args: {'object': {'type': 'any'}}
+    },
+    'neg': {
+        func: (obj) => -obj,
+        args: {'object': {'type': 'any'}}
+    },
+    'and': {
+        func: (a, b) => a && b,
+        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+    },
+    'or': {
+        func: (a, b) => a || b,
+        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+    },
+    
+    // int #
+    
+    'int': {
+        func: lingoInt,
+        args: {
+            'number': {'type': 'any', 'default': null},
+            'string': {'type': 'str', 'default': null},
+            'base': {'type': 'int', 'default': 10}
+        }
+    },
+    
+    // float #
+    
+    'float': {
+        func: (number) => Number(number),
+        args: {'number': {'type': 'any'}}
+    },
+    'round': {
+        func: (number, ndigits = null) => {
+            if (ndigits === null) {
+                return Math.round(number);
+            }
+            const multiplier = Math.pow(10, ndigits);
+            return Math.round(number * multiplier) / multiplier;
+        },
+        args: {
+            'number': {'type': 'float'},
+            'ndigits': {'type': 'int', 'default': null}
+        }
+    },
+    
+    // str #
+    
+    'str': {
+        func: (obj) => String(obj),
+        args: {'object': {'type': 'any'}}
+    },
+    'join': {
+        func: strJoin,
+        args: {
+            'separator': {'type': 'str'},
+            'items': {'type': 'list'}
+        }
+    },
+    
+    // math #
+    
+    'add': {
+        func: (a, b) => a + b,
+        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
+    },
+    'sub': {
+        func: (a, b) => a - b,
+        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
+    },
+    'mul': {
+        func: (a, b) => a * b,
+        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
+    },
+    'div': {
+        func: (a, b) => a / b,
+        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
+    },
+    'floordiv': {
+        func: (a, b) => Math.floor(a / b),
+        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
+    },
+    'mod': {
+        func: (a, b) => a % b,
+        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
+    },
+    'pow': {
+        func: (a, b) => Math.pow(a, b),
+        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
+    },
+    'min': {
+        func: (a, b) => Math.min(a, b),
+        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
+    },
+    'max': {
+        func: (a, b) => Math.max(a, b),
+        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
+    },
+    'abs': {
+        func: (number) => Math.abs(number),
+        args: {'number': {'type': 'number'}}
+    },
+    
+    // sequence #
+    
+    'len': {
+        func: (obj) => obj.length,
+        args: {'object': {'type': 'any'}}
+    },
+    'range': {
+        func: (start = 0, stop, step = 1) => {
+            const result = [];
+            for (let i = start; i < stop; i += step) {
+                result.push(i);
+            }
+            return result;
+        },
+        args: {
+            'start': {'type': 'int', 'default': 0},
+            'stop': {'type': 'int'},
+            'step': {'type': 'int', 'default': 1}
+        }
+    },
+    'slice': {
+        func: (iterator, start = null, stop, step = null) => {
+            if (step !== null && step !== 1) {
+                const result = [];
+                const actualStart = start === null ? 0 : start;
+                for (let i = actualStart; i < stop; i += step) {
+                    if (i < iterator.length) {
+                        result.push(iterator[i]);
+                    }
+                }
+                return result;
+            }
+            const actualStart = start === null ? 0 : start;
+            return iterator.slice(actualStart, stop);
+        },
+        args: {
+            'iterator': {'type': 'list'},
+            'start': {'type': 'int', 'default': null},
+            'stop': {'type': 'int'},
+            'step': {'type': 'int', 'default': null}
+        }
+    },
+    'any': {
+        func: (iterable) => iterable.some(x => x),
+        args: {'iterable': {'type': 'list'}}
+    },
+    'all': {
+        func: (iterable) => iterable.every(x => x),
+        args: {'iterable': {'type': 'list'}}
+    },
+    'sum': {
+        func: (iterable, start = 0) => iterable.reduce((acc, val) => acc + val, start),
+        args: {
+            'iterable': {'type': 'list'},
+            'start': {'type': 'number', 'default': 0}
+        }
+    },
+    'sorted': {
+        func: (iterable) => [...iterable].sort((a, b) => a - b),
+        args: {'iterable': {'type': 'list'}}
+    },
+    
+    // sequence ops #
+    
+    'map': {
+        func: null, // handled specially in renderCall
+        createArgs: true
+    },
+    'filter': {
+        func: null, // handled specially in renderCall
+        createArgs: true
+    },
+    'dropwhile': {
+        func: null, // handled specially in renderCall
+        createArgs: true
+    },
+    'takewhile': {
+        func: null, // handled specially in renderCall
+        createArgs: true
+    },
+    'reversed': {
+        func: (sequence) => [...sequence].reverse(),
+        args: {'sequence': {'type': 'list'}}
+    },
+    'accumulate': {
+        func: null, // handled specially in renderCall
+        createArgs: true
+    },
+    'reduce': {
+        func: null, // handled specially in renderCall
+        createArgs: true
+    },
+    
+    // date and time #
+    
     'current': {
         'weekday': {
-            func: () => new Date().getDay(), // 0=Sunday, 1=Monday, etc.
-            args: {}
+            func: () => {
+                // Python weekday: 0=Monday, 6=Sunday
+                // JS getDay: 0=Sunday, 6=Saturday
+                // Convert JS to Python format
+                const day = new Date().getDay();
+                return day === 0 ? 6 : day - 1;
+            },
+            args: {},
+            sig: 'kwargs'
         }
     },
     'datetime': {
         'now': {
             func: () => new Date(),
-            args: {}
+            args: {},
+            sig: 'kwargs'
         }
     },
+    
+    // random #
+    
     'random': {
         'randint': {
             func: (a, b) => Math.floor(Math.random() * (b - a + 1)) + a,
-            args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
+            args: {'a': {'type': 'int'}, 'b': {'type': 'int'}},
+            sig: 'kwargs'
         }
     }
 };
@@ -135,10 +328,20 @@ function lingoUpdateState(app, ctx = null) {
         if ('calc' in value) {
             // This is a calculated value
             const newValue = lingoExecute(app, value.calc, ctx);
-            if (getTypeName(newValue) !== value.type) {
-                throw new Error(`state - ${key} - expression returned type: ${getTypeName(newValue)}`);
+            
+            // Extract actual value if wrapped
+            const actualValue = (typeof newValue === 'object' && newValue !== null && 'value' in newValue)
+                ? newValue.value
+                : newValue;
+            
+            const actualType = (typeof newValue === 'object' && newValue !== null && 'type' in newValue)
+                ? newValue.type
+                : getTypeName(actualValue);
+            
+            if (actualType !== value.type) {
+                throw new Error(`state - ${key} - expression returned type: ${actualType}, expected: ${value.type}`);
             }
-            app.state[key] = newValue;
+            app.state[key] = actualValue;
         } else {
             // Non-calculated value, set to default if not already set
             if (!(key in app.state)) {
@@ -171,6 +374,10 @@ function getTypeName(value) {
     }
     if (typeof value === 'boolean') return 'bool';
     if (value instanceof Date) return 'datetime';
+    if (Array.isArray(value)) return 'list';
+    if (typeof value === 'object' && value !== null && 'type' in value && 'value' in value) {
+        return value.type;
+    }
     return typeof value;
 }
 
@@ -214,6 +421,8 @@ function lingoExecute(app, expression, ctx = null) {
             return renderHeading(app, expression, ctx);
         } else if ('args' in expression) {
             return renderArgs(app, expression, ctx);
+        } else if ('self' in expression) {
+            return renderSelf(app, expression, ctx);
         } else {
             return expression;
         }
@@ -523,7 +732,7 @@ function renderOp(app, expression, ctx = null) {
  * Render function call - equivalent to Python render_call()
  */
 function renderCall(app, expression, ctx = null) {
-    const args = expression.args || {};
+    const _args = expression.args || {};
     
     const nameSplit = expression.call.split('.');
     const nameDepth = nameSplit.length;
@@ -532,44 +741,242 @@ function renderCall(app, expression, ctx = null) {
         throw new Error('call - invalid function name');
     }
     
-    // Get function and args definition
-    let func, argsDef;
+    // Get function definition
+    let definition;
     try {
         if (nameDepth === 1) {
-            func = lingoFunctionLookup[nameSplit[0]].func;
-            argsDef = lingoFunctionLookup[nameSplit[0]].args || {};
+            definition = lingoFunctionLookup[nameSplit[0]];
         } else {
-            func = lingoFunctionLookup[nameSplit[0]][nameSplit[1]].func;
-            argsDef = lingoFunctionLookup[nameSplit[0]][nameSplit[1]].args || {};
+            definition = lingoFunctionLookup[nameSplit[0]][nameSplit[1]];
         }
     } catch (error) {
         throw new Error(`call - undefined func: ${expression.call}`);
     }
     
+    const func = definition.func;
+    const argsDef = definition.args || {};
+    
+    // Handle special sequence ops functions with custom arg handling
+    if (definition.createArgs) {
+        return handleSequenceOp(app, expression, ctx);
+    }
+    
     // Validate and render args
     const renderedArgs = {};
-    for (const [argName, argExpression] of Object.entries(args)) {
+    for (const [argName, argExpression] of Object.entries(_args)) {
         if (!(argName in argsDef)) {
             throw new Error(`call - unknown arg: ${argName}`);
         }
         
         const value = lingoExecute(app, argExpression, ctx);
-        const argType = argsDef[argName].type;
         
-        if (argType !== 'any') {
-            if (argType === 'number' && typeof value !== 'number') {
-                throw new Error(`call - arg ${argName} - expected type number, got ${typeof value}`);
-            } else if (argType !== 'number' && argType !== 'any' && typeof value !== argType) {
-                throw new Error(`call - arg ${argName} - expected type ${argType}, got ${typeof value}`);
+        // Extract value if it's wrapped in a result object
+        const actualValue = (typeof value === 'object' && value !== null && 'value' in value) 
+            ? value.value 
+            : value;
+        
+        renderedArgs[argName] = actualValue;
+    }
+    
+    // Call function based on signature
+    let returnValue;
+    if (definition.sig === 'kwargs') {
+        returnValue = func(renderedArgs);
+    } else {
+        // Positional args - build args list with defaults
+        const argsList = [];
+        for (const argName of Object.keys(argsDef)) {
+            if (argName in renderedArgs) {
+                argsList.push(renderedArgs[argName]);
+            } else if ('default' in argsDef[argName]) {
+                argsList.push(argsDef[argName].default);
+            } else {
+                throw new Error(`call - missing required arg: ${argName}`);
+            }
+        }
+        returnValue = func(...argsList);
+    }
+    
+    // Format return value similar to Python
+    if (Array.isArray(returnValue)) {
+        // Check if all elements are of the same type
+        const elementTypes = new Set();
+        const elements = [];
+        for (const item of returnValue) {
+            const itemType = getTypeName(item);
+            elementTypes.add(itemType);
+            elements.push(item);
+        }
+        
+        // Return list with type info
+        if (elementTypes.size === 1) {
+            const elementType = Array.from(elementTypes)[0];
+            return {type: 'list', value: elements, element_type: elementType};
+        } else {
+            return {type: 'list', value: elements, element_type: 'any'};
+        }
+    } else if (typeof returnValue === 'object' && returnValue !== null && !Array.isArray(returnValue)) {
+        // Already formatted or object
+        return returnValue;
+    } else {
+        // Primitive value - wrap with type info
+        return {type: getTypeName(returnValue), value: returnValue};
+    }
+}
+
+/**
+ * Handle special sequence operations (map, filter, etc.)
+ */
+function handleSequenceOp(app, expression, ctx = null) {
+    const funcName = expression.call;
+    const args = expression.args || {};
+    
+    if (funcName === 'map') {
+        const iterable = lingoExecute(app, args.iterable, ctx);
+        const iterableValue = (typeof iterable === 'object' && 'value' in iterable) 
+            ? iterable.value 
+            : iterable;
+        
+        const mapFunc = (item) => {
+            const newCtx = ctx ? {...ctx} : {};
+            newCtx.self = {item: item};
+            const result = lingoExecute(app, args.function, newCtx);
+            return (typeof result === 'object' && 'value' in result) ? result.value : result;
+        };
+        
+        const resultArray = iterableValue.map(mapFunc);
+        return {type: 'list', value: resultArray};
+        
+    } else if (funcName === 'filter') {
+        const iterable = lingoExecute(app, args.iterable, ctx);
+        const iterableValue = (typeof iterable === 'object' && 'value' in iterable) 
+            ? iterable.value 
+            : iterable;
+        
+        const filterFunc = (item) => {
+            const newCtx = ctx ? {...ctx} : {};
+            newCtx.self = {item: item};
+            const result = lingoExecute(app, args.function, newCtx);
+            return (typeof result === 'object' && 'value' in result) ? result.value : result;
+        };
+        
+        const resultArray = iterableValue.filter(filterFunc);
+        return {type: 'list', value: resultArray};
+        
+    } else if (funcName === 'dropwhile') {
+        const iterable = lingoExecute(app, args.iterable, ctx);
+        const iterableValue = (typeof iterable === 'object' && 'value' in iterable) 
+            ? iterable.value 
+            : iterable;
+        
+        const dropwhileFunc = (item) => {
+            const newCtx = ctx ? {...ctx} : {};
+            newCtx.self = {item: item};
+            const result = lingoExecute(app, args.function, newCtx);
+            return (typeof result === 'object' && 'value' in result) ? result.value : result;
+        };
+        
+        const resultArray = [];
+        let dropping = true;
+        for (const item of iterableValue) {
+            if (dropping && !dropwhileFunc(item)) {
+                dropping = false;
+            }
+            if (!dropping) {
+                resultArray.push(item);
+            }
+        }
+        return {type: 'list', value: resultArray};
+        
+    } else if (funcName === 'takewhile') {
+        const iterable = lingoExecute(app, args.iterable, ctx);
+        const iterableValue = (typeof iterable === 'object' && 'value' in iterable) 
+            ? iterable.value 
+            : iterable;
+        
+        const takewhileFunc = (item) => {
+            const newCtx = ctx ? {...ctx} : {};
+            newCtx.self = {item: item};
+            const result = lingoExecute(app, args.function, newCtx);
+            return (typeof result === 'object' && 'value' in result) ? result.value : result;
+        };
+        
+        const resultArray = [];
+        for (const item of iterableValue) {
+            if (takewhileFunc(item)) {
+                resultArray.push(item);
+            } else {
+                break;
+            }
+        }
+        return {type: 'list', value: resultArray};
+        
+    } else if (funcName === 'accumulate') {
+        const iterable = lingoExecute(app, args.iterable, ctx);
+        const iterableValue = (typeof iterable === 'object' && 'value' in iterable) 
+            ? iterable.value 
+            : iterable;
+        
+        const accumulateFunc = (a, b) => {
+            const newCtx = ctx ? {...ctx} : {};
+            newCtx.self = {item: a, next_item: b};
+            const result = lingoExecute(app, args.function, newCtx);
+            return (typeof result === 'object' && 'value' in result) ? result.value : result;
+        };
+        
+        const initial = args.initial !== undefined ? lingoExecute(app, args.initial, ctx) : null;
+        const initialValue = (initial && typeof initial === 'object' && 'value' in initial) 
+            ? initial.value 
+            : initial;
+        
+        const resultArray = [];
+        let accumulator = initialValue !== null ? initialValue : iterableValue[0];
+        
+        if (initialValue !== null) {
+            resultArray.push(accumulator);
+            for (const item of iterableValue) {
+                accumulator = accumulateFunc(accumulator, item);
+                resultArray.push(accumulator);
+            }
+        } else {
+            resultArray.push(accumulator);
+            for (let i = 1; i < iterableValue.length; i++) {
+                accumulator = accumulateFunc(accumulator, iterableValue[i]);
+                resultArray.push(accumulator);
             }
         }
         
-        renderedArgs[argName] = value;
+        return {type: 'list', value: resultArray};
+        
+    } else if (funcName === 'reduce') {
+        const iterable = lingoExecute(app, args.iterable, ctx);
+        const iterableValue = (typeof iterable === 'object' && 'value' in iterable) 
+            ? iterable.value 
+            : iterable;
+        
+        const reduceFunc = (a, b) => {
+            const newCtx = ctx ? {...ctx} : {};
+            newCtx.self = {item: a, next_item: b};
+            const result = lingoExecute(app, args.function, newCtx);
+            return (typeof result === 'object' && 'value' in result) ? result.value : result;
+        };
+        
+        const initial = args.initial !== undefined ? lingoExecute(app, args.initial, ctx) : null;
+        const initialValue = (initial && typeof initial === 'object' && 'value' in initial) 
+            ? initial.value 
+            : null;
+        
+        let result;
+        if (initialValue !== null) {
+            result = iterableValue.reduce(reduceFunc, initialValue);
+        } else {
+            result = iterableValue.reduce(reduceFunc);
+        }
+        
+        return {type: getTypeName(result), value: result};
     }
     
-    // Call function with args in the correct order
-    const funcArgs = Object.keys(argsDef).map(argName => renderedArgs[argName]);
-    return func(...funcArgs);
+    throw new Error(`handleSequenceOp - unknown function: ${funcName}`);
 }
 
 /**
@@ -581,6 +988,17 @@ function renderArgs(app, expression, ctx = null) {
         throw new Error(`args - undefined arg: ${argName}`);
     }
     return ctx[argName];
+}
+
+/**
+ * Render self access - equivalent to Python render_self()
+ */
+function renderSelf(app, expression, ctx = null) {
+    try {
+        return ctx.self[expression.self];
+    } catch (error) {
+        throw new Error('self - missing self context');
+    }
 }
 
 /**

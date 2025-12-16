@@ -33,16 +33,117 @@ test('test - test page', async ({ page }) => {
   await expect(page.locator('#lingo-app')).toContainText('Here\'s a random number:');
 });
 
-test('test - script spec', async ({ page }) => {
+test('test - hello_world script', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
-  await page.locator('#spec-select').selectOption('data/lingo/scripts/hello_world.json');
-  await expect(page.locator('#lingo-app')).toContainText('0');
-  await page.locator('#lingo-app-params-textarea').click();
-  await page.locator('#lingo-app-params-textarea').fill('{\n    "a": 1\n}');
-  await page.getByRole('button', { name: 'Run' }).click();
-  await expect(page.locator('#lingo-app')).toContainText('1');
-
-  // get test data
+  
+  // Load test data
   const response = await page.request.get('http://127.0.0.1:8000/data/lingo/scripts/hello_world_test_data.json');
-  const text = await response.text();
+  const testData = await response.json();
+  
+  // Test with default params
+  await page.locator('#spec-select').selectOption('data/lingo/scripts/hello_world.json');
+  await expect(page.locator('#lingo-app')).toContainText(`"value": ${testData.results.default.value}`);
+  await expect(page.locator('#lingo-app')).toContainText(`"type": "${testData.results.default.type}"`);
+  
+  // Test each test case
+  for (const testCase of testData.results.test_cases) {
+    const paramsJson = JSON.stringify(testCase.params, null, 4);
+    await page.locator('#lingo-app-params-textarea').fill(paramsJson);
+    await page.getByRole('button', { name: 'Run' }).click();
+    
+    await expect(page.locator('#lingo-app')).toContainText(`"value": ${testCase.result.value}`);
+    await expect(page.locator('#lingo-app')).toContainText(`"type": "${testCase.result.type}"`);
+  }
+});
+
+test('test - basic_math script', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  
+  // Load test data
+  const response = await page.request.get('http://127.0.0.1:8000/data/lingo/scripts/basic_math_test_data.json');
+  const testData = await response.json();
+  
+  // Test with default params
+  await page.locator('#spec-select').selectOption('data/lingo/scripts/basic_math.json');
+  await expect(page.locator('#lingo-app')).toContainText(`"value": ${testData.results.default.value}`);
+  await expect(page.locator('#lingo-app')).toContainText(`"type": "${testData.results.default.type}"`);
+  
+  // Test each test case
+  for (const testCase of testData.results.test_cases) {
+    const paramsJson = JSON.stringify(testCase.params, null, 4);
+    await page.locator('#lingo-app-params-textarea').fill(paramsJson);
+    await page.getByRole('button', { name: 'Run' }).click();
+    
+    await expect(page.locator('#lingo-app')).toContainText(`"value": ${testCase.result.value}`);
+    await expect(page.locator('#lingo-app')).toContainText(`"type": "${testCase.result.type}"`);
+  }
+});
+
+test('test - all_param_types script', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  
+  // Load test data
+  const response = await page.request.get('http://127.0.0.1:8000/data/lingo/scripts/all_param_types_test_data.json');
+  const testData = await response.json();
+  
+  // Test with default params
+  await page.locator('#spec-select').selectOption('data/lingo/scripts/all_param_types.json');
+  await expect(page.locator('#lingo-app')).toContainText(`"value": ${testData.results.default.value}`);
+  await expect(page.locator('#lingo-app')).toContainText(`"type": "${testData.results.default.type}"`);
+  
+  // Test each test case
+  for (const testCase of testData.results.test_cases) {
+    const paramsJson = JSON.stringify(testCase.params, null, 4);
+    await page.locator('#lingo-app-params-textarea').fill(paramsJson);
+    await page.getByRole('button', { name: 'Run' }).click();
+    
+    await expect(page.locator('#lingo-app')).toContainText(`"value": ${testCase.result.value}`);
+    await expect(page.locator('#lingo-app')).toContainText(`"type": "${testCase.result.type}"`);
+  }
+});
+
+test('test - branch_example script', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  
+  // Load test data
+  const response = await page.request.get('http://127.0.0.1:8000/data/lingo/scripts/branch_example_test_data.json');
+  const testData = await response.json();
+  
+  // Test with default params
+  await page.locator('#spec-select').selectOption('data/lingo/scripts/branch_example.json');
+  await expect(page.locator('#lingo-app')).toContainText(`"value": "${testData.results.default.value}"`);
+  await expect(page.locator('#lingo-app')).toContainText(`"type": "${testData.results.default.type}"`);
+  
+  // Test each test case
+  for (const testCase of testData.results.test_cases) {
+    const paramsJson = JSON.stringify(testCase.params, null, 4);
+    await page.locator('#lingo-app-params-textarea').fill(paramsJson);
+    await page.getByRole('button', { name: 'Run' }).click();
+    
+    await expect(page.locator('#lingo-app')).toContainText(`"value": "${testCase.result.value}"`);
+    await expect(page.locator('#lingo-app')).toContainText(`"type": "${testCase.result.type}"`);
+  }
+});
+
+test('test - switch_example script', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  
+  // Load test data
+  const response = await page.request.get('http://127.0.0.1:8000/data/lingo/scripts/switch_example_test_data.json');
+  const testData = await response.json();
+  
+  // Test with default params
+  await page.locator('#spec-select').selectOption('data/lingo/scripts/switch_example.json');
+  await expect(page.locator('#lingo-app')).toContainText(`"value": "${testData.results.default.value}"`);
+  await expect(page.locator('#lingo-app')).toContainText(`"type": "${testData.results.default.type}"`);
+  
+  // Test each test case
+  for (const testCase of testData.results.test_cases) {
+    const paramsJson = JSON.stringify(testCase.params, null, 4);
+    await page.locator('#lingo-app-params-textarea').fill(paramsJson);
+    await page.getByRole('button', { name: 'Run' }).click();
+    
+    await expect(page.locator('#lingo-app')).toContainText(`"value": "${testCase.result.value}"`);
+    await expect(page.locator('#lingo-app')).toContainText(`"type": "${testCase.result.type}"`);
+  }
 });
