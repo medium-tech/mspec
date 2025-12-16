@@ -227,10 +227,12 @@ function lingoExecute(app, expression, ctx = null) {
  */
 function renderOutput(app, ctx = null) {
     app.buffer = [];
+    console.log('renderOutput()', typeof app.spec.output, app.spec.output.length);
     for (let n = 0; n < app.spec.output.length; n++) {
         const element = app.spec.output[n];
         try {
             const rendered = lingoExecute(app, element, ctx);
+            console.log('Rendered output element:', typeof rendered, rendered);
             if (typeof rendered === 'object' && rendered !== null && !Array.isArray(rendered)) {
                 app.buffer.push(rendered);
             } else if (Array.isArray(rendered)) {
@@ -607,20 +609,32 @@ function renderLingoApp(app, container, preserveFocus = false) {
             }
         }
     }
-    
-    // Update state and render output
-    lingoUpdateState(app);
-    const buffer = renderOutput(app);
-    
+
     // Clear container
     container.innerHTML = '';
     
-    // Render each element in the buffer
-    for (const element of buffer) {
-        const domElement = createDOMElement(app, element);
-        if (domElement) {
-            container.appendChild(domElement);
+    // Update state and render output
+    if(app.spec.lingo.version == 'page-beta-1') {
+        console.log('Rendering page-beta-1 spec');
+        lingoUpdateState(app);
+        const buffer = renderOutput(app);
+        console.log('Rendered buffer.length:', buffer.length);
+        
+        // Render each element in the buffer
+        for (const element of buffer) {
+            const domElement = createDOMElement(app, element);
+            if (domElement) {
+                container.appendChild(domElement);
+            }
         }
+    } else if(app.spec.lingo.version == 'script-beta-1') {
+        console.log('Rendering script-beta-1 spec', app.spec.output);
+        lingoUpdateState(app);
+        const result = lingoExecute(app, app.spec.output);
+        container.innerHTML = '<pre>' + JSON.stringify(result, null, 4) + '</pre>';
+
+    }else{
+        throw new Error(`Unsupported lingo version: ${app.spec.lingo.version}`);
     }
     
     // Restore focus if needed

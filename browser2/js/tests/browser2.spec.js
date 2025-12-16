@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('test - hello world', async ({ page }) => {
-  await page.goto('http://localhost:8000/');
+  await page.goto('http://127.0.0.1:8000/');
   await expect(page.locator('h1')).toContainText('Hello World');
   await expect(page.locator('span')).toContainText('I am a sample page.');
   await expect(page.locator('#debug-content')).toContainText('Lingo: page-beta-1');
@@ -9,7 +9,7 @@ test('test - hello world', async ({ page }) => {
 
 
 test('test - test page', async ({ page }) => {
-  await page.goto('http://localhost:8000/');
+  await page.goto('http://127.0.0.1:8000/');
   await page.locator('#spec-select').selectOption('data/lingo/pages/test-page.json');
 
   await expect(page.locator('h1')).toContainText('Example document');
@@ -31,4 +31,14 @@ test('test - test page', async ({ page }) => {
   // the random number will be 1 <= x <= 100, so just check that it's not the initial value of 0
   await expect(page.locator('#lingo-app')).not.toContainText('Here\'s a random number: 0. It\'s small.');
   await expect(page.locator('#lingo-app')).toContainText('Here\'s a random number:');
+});
+
+test('test - script spec', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/scripts/hello_world.json');
+  await expect(page.locator('#lingo-app')).toContainText('0');
+  await page.locator('#lingo-app-params-textarea').click();
+  await page.locator('#lingo-app-params-textarea').fill('{\n    "a": 1\n}');
+  await page.getByRole('button', { name: 'Run' }).click();
+  await expect(page.locator('#lingo-app')).toContainText('1');
 });
