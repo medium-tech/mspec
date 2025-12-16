@@ -123,19 +123,23 @@ const lingoFunctionLookup = {
     
     'add': {
         func: (a, b) => a + b,
-        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
+        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}},
+        returnFloat: (a, b) => !Number.isInteger(a) || !Number.isInteger(b)
     },
     'sub': {
         func: (a, b) => a - b,
-        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
+        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}},
+        returnFloat: (a, b) => !Number.isInteger(a) || !Number.isInteger(b)
     },
     'mul': {
         func: (a, b) => a * b,
-        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
+        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}},
+        returnFloat: (a, b) => !Number.isInteger(a) || !Number.isInteger(b)
     },
     'div': {
         func: (a, b) => a / b,
-        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
+        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}},
+        returnFloat: () => true  // Division always returns float
     },
     'floordiv': {
         func: (a, b) => Math.floor(a / b),
@@ -398,36 +402,52 @@ function formatDateTime(date) {
  * Main expression executor - equivalent to Python lingo_execute()
  */
 function lingoExecute(app, expression, ctx = null) {
+    // Calculate expression
+    let result;
+    
     if (typeof expression === 'object' && expression !== null && !Array.isArray(expression)) {
         if ('set' in expression) {
-            return renderSet(app, expression, ctx);
+            result = renderSet(app, expression, ctx);
         } else if ('state' in expression) {
-            return renderState(app, expression, ctx);
+            result = renderState(app, expression, ctx);
         } else if ('params' in expression) {
-            return renderParams(app, expression, ctx);
+            result = renderParams(app, expression, ctx);
         } else if ('op' in expression) {
-            return renderOp(app, expression, ctx);
+            result = renderOp(app, expression, ctx);
         } else if ('call' in expression) {
-            return renderCall(app, expression, ctx);
+            result = renderCall(app, expression, ctx);
         } else if ('block' in expression) {
-            return renderBlock(app, expression, ctx);
+            result = renderBlock(app, expression, ctx);
         } else if ('lingo' in expression) {
-            return renderLingo(app, expression, ctx);
+            result = renderLingo(app, expression, ctx);
         } else if ('branch' in expression) {
-            return renderBranch(app, expression, ctx);
+            result = renderBranch(app, expression, ctx);
         } else if ('switch' in expression) {
-            return renderSwitch(app, expression, ctx);
+            result = renderSwitch(app, expression, ctx);
         } else if ('heading' in expression) {
-            return renderHeading(app, expression, ctx);
+            result = renderHeading(app, expression, ctx);
         } else if ('args' in expression) {
-            return renderArgs(app, expression, ctx);
+            result = renderArgs(app, expression, ctx);
         } else if ('self' in expression) {
             return renderSelf(app, expression, ctx);
         } else {
-            return expression;
+            result = expression;
         }
     } else {
-        return expression;
+        result = expression;
+    }
+    
+    // Format return value - wrap primitives in type/value object
+    if (typeof result === 'object' && result !== null) {
+        // Already an object or array, return as is
+        return result;
+    } else if (typeof result === 'string' || typeof result === 'number' || 
+               typeof result === 'boolean' || result instanceof Date) {
+        // Primitive types - wrap with type info
+        return {type: getTypeName(result), value: result};
+    } else {
+        // Unknown type
+        throw new Error(`Unsupported return type: ${typeof result}`);
     }
 }
 
@@ -658,18 +678,30 @@ function renderState(app, expression, ctx = null) {
  */
 function renderLingo(app, element, ctx = null) {
     const result = lingoExecute(app, element.lingo, ctx);
-    const resultType = typeof result;
     
-    if (resultType === 'string') {
-        return {text: result};
-    } else if (resultType === 'number' || resultType === 'boolean') {
-        return {text: String(result)};
-    } else if (result instanceof Date) {
-        return {text: formatDateTime(result)};
-    } else if (typeof result === 'object' && result !== null) {
+    const convert = (x) => {
+        if (x instanceof Date) {
+            return formatDateTime(x);
+        }
+        return String(x);
+    };
+    
+    // Handle wrapped format {type: ..., value: ...}
+    if (typeof result === 'object' && result !== null && 'value' in result) {
+        if (['str', 'int', 'float', 'bool', 'datetime'].includes(result.type)) {
+            return {text: convert(result.value)};
+        } else if (result.type === 'list') {
+            return {text: result.value.map(item => convert(item)).join(', ')};
+        } else {
+            throw new Error(`lingo - unexpected result value type: ${result.type}`);
+        }
+    } else if (typeof result === 'object' && result !== null && 'text' in result) {
+        // Already a text element
         return result;
+    } else if (Array.isArray(result)) {
+        return {text: result.map(item => convert(item)).join(', ')};
     } else {
-        throw new Error(`lingo - invalid result type: ${resultType}`);
+        throw new Error(`lingo - invalid result type: ${typeof result}`);
     }
 }
 
@@ -691,6 +723,9 @@ function renderHeading(app, element, ctx = null) {
         
         if ('text' in heading) {
             headingText = heading.text;
+        } else if (typeof heading === 'object' && heading !== null && 'value' in heading) {
+            // Handle wrapped format {type: ..., value: ...}
+            headingText = String(heading.value);
         } else if (typeof heading === 'string') {
             headingText = heading;
         } else if (typeof heading === 'number' || typeof heading === 'boolean') {
@@ -763,6 +798,7 @@ function renderCall(app, expression, ctx = null) {
     
     // Validate and render args
     const renderedArgs = {};
+    const argTypes = {}; // Track original types for float detection
     for (const [argName, argExpression] of Object.entries(_args)) {
         if (!(argName in argsDef)) {
             throw new Error(`call - unknown arg: ${argName}`);
@@ -775,7 +811,13 @@ function renderCall(app, expression, ctx = null) {
             ? value.value 
             : value;
         
+        // Track type for float detection
+        const valueType = (typeof value === 'object' && value !== null && 'type' in value)
+            ? value.type
+            : getTypeName(actualValue);
+        
         renderedArgs[argName] = actualValue;
+        argTypes[argName] = valueType;
     }
     
     // Call function based on signature
@@ -820,7 +862,16 @@ function renderCall(app, expression, ctx = null) {
         return returnValue;
     } else {
         // Primitive value - wrap with type info
-        return {type: getTypeName(returnValue), value: returnValue};
+        // Check if this function returns float even for whole numbers
+        let resultType = getTypeName(returnValue);
+        if (definition.returnFloat && typeof returnValue === 'number') {
+            // Check if any arg was originally a float
+            const hasFloatArg = Object.values(argTypes).some(t => t === 'float');
+            if (hasFloatArg || definition.returnFloat()) {
+                resultType = 'float';
+            }
+        }
+        return {type: resultType, value: returnValue};
     }
 }
 
