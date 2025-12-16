@@ -81,6 +81,8 @@
 
     <div id="lingo-app-params">
         <h4>App Parameters</h4>
+        <div id="lingo-app-params-input"></div>
+        <button onclick="renderApp(true)">Run</button>
     </div>
     
     <div id="debug" class="debug" style="display: block;">
@@ -123,8 +125,42 @@
             fetchAndRunLingoSpec({ target: { value: 'data/lingo/pages/test-page.json' } });
         }
 
-        function createParamsForm(spec) {
+        function createParamsInput(spec) {
             console.log('Creating params form for spec:', spec);
+
+            // create default dict of params
+
+            const defaultParams = {};
+            if (spec.params) {
+                for (const [paramName, paramSpec] of Object.entries(spec.params)) {
+                    defaultParams[paramName] = paramSpec.default;
+                }
+            }else {
+                console.error('Spec has no params defined');
+                return;
+            }
+
+            const paramsDiv = document.getElementById('lingo-app-params-input');
+            paramsDiv.innerHTML = '';
+
+            // text area input with pretty printed JSON
+            
+            const textarea = document.createElement('textarea');
+            textarea.id = 'lingo-app-params-textarea';
+            textarea.rows = 10;
+            textarea.cols = 50;
+            textarea.value = JSON.stringify(defaultParams, null, 4);
+            paramsDiv.appendChild(textarea);
+        }
+
+        function renderApp(updateParams=false) {
+            // get params from textarea
+            if (updateParams) {
+                const textarea = document.getElementById('lingo-app-params-textarea');
+                currentApp.params = JSON.parse(textarea.value);
+            }
+            renderLingoApp(currentApp, document.getElementById('lingo-app'));
+            showDebugInfo(currentApp);
         }
 
         function fetchAndRunLingoSpec(event) {
@@ -146,10 +182,10 @@
                 })
                 .then(specData => {
                     try {
-                        createParamsForm(specData)
+                        createParamsInput(specData)
                         const updateDebugInfo = (app) => showDebugInfo(app);
                         currentApp = lingoApp(specData, {}, {afterRender: updateDebugInfo});
-                        renderLingoApp(currentApp, document.getElementById('lingo-app'));
+                        renderApp();
                         console.log(`Spec file ${specPath} loaded successfully`);
                     } catch (error) {
                         console.error(`Error loading spec file ${specPath}:`, error);
