@@ -134,7 +134,7 @@ test('test - switch_example script', async ({ page }) => {
   
   // Test with default params
   await page.locator('#spec-select').selectOption('data/lingo/scripts/switch_example.json');
-  await expect(page.locator('#lingo-app')).toContainText(`"value": "${testData.results.default.value}"`);
+  await expect(page.locator('#lingo-app')).toContainText(`"value": ${testData.results.default.value}`);
   await expect(page.locator('#lingo-app')).toContainText(`"type": "${testData.results.default.type}"`);
   
   // Test each test case
@@ -143,7 +143,7 @@ test('test - switch_example script', async ({ page }) => {
     await page.locator('#lingo-app-params-textarea').fill(paramsJson);
     await page.getByRole('button', { name: 'Run' }).click();
     
-    await expect(page.locator('#lingo-app')).toContainText(`"value": "${testCase.result.value}"`);
+    await expect(page.locator('#lingo-app')).toContainText(`"value": ${testCase.result.value}`);
     await expect(page.locator('#lingo-app')).toContainText(`"type": "${testCase.result.type}"`);
   }
 });

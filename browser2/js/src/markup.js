@@ -123,23 +123,19 @@ const lingoFunctionLookup = {
     
     'add': {
         func: (a, b) => a + b,
-        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}},
-        returnFloat: (a, b) => !Number.isInteger(a) || !Number.isInteger(b)
+        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
     },
     'sub': {
         func: (a, b) => a - b,
-        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}},
-        returnFloat: (a, b) => !Number.isInteger(a) || !Number.isInteger(b)
+        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
     },
     'mul': {
         func: (a, b) => a * b,
-        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}},
-        returnFloat: (a, b) => !Number.isInteger(a) || !Number.isInteger(b)
+        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
     },
     'div': {
         func: (a, b) => a / b,
-        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}},
-        returnFloat: () => true  // Division always returns float
+        args: {'a': {'type': 'number'}, 'b': {'type': 'number'}}
     },
     'floordiv': {
         func: (a, b) => Math.floor(a / b),
@@ -549,7 +545,12 @@ function renderBranch(app, element, ctx = null) {
         
         // Execute expression
         try {
-            const condition = lingoExecute(app, expr, ctx);
+            const conditionResult = lingoExecute(app, expr, ctx);
+            // Extract actual value if wrapped
+            const condition = (typeof conditionResult === 'object' && conditionResult !== null && 'value' in conditionResult)
+                ? conditionResult.value
+                : conditionResult;
+            
             if (condition) {
                 try {
                     return lingoExecute(app, then, ctx);
@@ -578,10 +579,24 @@ function renderSwitch(app, expression, ctx = null) {
             throw new Error('switch - must have at least one case');
         }
         
-        const value = lingoExecute(app, switchExpr, ctx);
+        const valueResult = lingoExecute(app, switchExpr, ctx);
+        // Extract actual value if wrapped
+        const value = (typeof valueResult === 'object' && valueResult !== null && 'value' in valueResult)
+            ? valueResult.value
+            : valueResult;
         
         for (const caseItem of cases) {
-            if (value === caseItem.case) {
+            // Also evaluate case expression if it's not a literal
+            let caseValue = caseItem.case;
+            if (typeof caseValue === 'object' && caseValue !== null && !('value' in caseValue)) {
+                // It's an expression, evaluate it
+                const caseResult = lingoExecute(app, caseValue, ctx);
+                caseValue = (typeof caseResult === 'object' && caseResult !== null && 'value' in caseResult)
+                    ? caseResult.value
+                    : caseResult;
+            }
+            
+            if (value === caseValue) {
                 return lingoExecute(app, caseItem.then, ctx);
             }
         }
@@ -862,15 +877,22 @@ function renderCall(app, expression, ctx = null) {
         return returnValue;
     } else {
         // Primitive value - wrap with type info
-        // Check if this function returns float even for whole numbers
         let resultType = getTypeName(returnValue);
-        if (definition.returnFloat && typeof returnValue === 'number') {
-            // Check if any arg was originally a float
-            const hasFloatArg = Object.values(argTypes).some(t => t === 'float');
-            if (hasFloatArg || definition.returnFloat()) {
+        
+        // For arithmetic operations, if any arg was a float, result is float
+        // Also, division always returns float
+        if (typeof returnValue === 'number' && expression.call) {
+            const arithmeticOps = ['add', 'sub', 'mul', 'mod', 'pow'];
+            if (expression.call === 'div') {
                 resultType = 'float';
+            } else if (arithmeticOps.includes(expression.call)) {
+                const hasFloatArg = Object.values(argTypes).some(t => t === 'float');
+                if (hasFloatArg) {
+                    resultType = 'float';
+                }
             }
         }
+        
         return {type: resultType, value: returnValue};
     }
 }
