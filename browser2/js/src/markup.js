@@ -283,8 +283,7 @@ const lingoFunctionLookup = {
     'random': {
         'randint': {
             func: (a, b) => Math.floor(Math.random() * (b - a + 1)) + a,
-            args: {'a': {'type': 'int'}, 'b': {'type': 'int'}},
-            sig: 'kwargs'
+            args: {'a': {'type': 'int'}, 'b': {'type': 'int'}}
         }
     }
 };
@@ -434,15 +433,19 @@ function lingoExecute(app, expression, ctx = null) {
     }
     
     // Format return value - wrap primitives in type/value object
-    if (typeof result === 'object' && result !== null) {
-        // Already an object or array, return as is
-        return result;
-    } else if (typeof result === 'string' || typeof result === 'number' || 
+    
+    if (typeof result === 'string' || typeof result === 'number' || 
                typeof result === 'boolean' || result instanceof Date) {
         // Primitive types - wrap with type info
+        console.log('lingo - wrapping primitive result', expression, result);
         return {type: getTypeName(result), value: result};
+    }else if (typeof result === 'object' && result !== null) {
+        // Already an object or array, return as is
+        console.log('lingo - returning object result', expression, result, result instanceof Date);
+        return result;
     } else {
         // Unknown type
+        console.error('lingo - unsupported return type', expression, typeof result, result);
         throw new Error(`Unsupported return type: ${typeof result}`);
     }
 }
@@ -662,10 +665,14 @@ function renderSet(app, expression, ctx = null) {
         const value = lingoExecute(app, valueExpr, ctx);
         
         if (getTypeName(value) !== fieldType) {
-            throw new Error(`set - value type mismatch: ${fieldType} != ${getTypeName(value)}`);
+            console.error(`set - value type mismatch: ${fieldType} != ${getTypeName(value)} - field: ${fieldName}`, value);
+            throw new Error(`set - value type mismatch: ${fieldType} != ${getTypeName(value)} - field: ${fieldName}`, value);
         }
         
         app.state[fieldName] = value;
+        
+        return app.state[fieldName];
+
     } catch (error) {
         throw new Error(`set - ${error.message}`);
     }
@@ -700,6 +707,8 @@ function renderLingo(app, element, ctx = null) {
         }
         return String(x);
     };
+
+    console.log('lingo - renderLingo result', element, result);
     
     // Handle wrapped format {type: ..., value: ...}
     if (typeof result === 'object' && result !== null && 'value' in result) {
@@ -716,7 +725,8 @@ function renderLingo(app, element, ctx = null) {
     } else if (Array.isArray(result)) {
         return {text: result.map(item => convert(item)).join(', ')};
     } else {
-        throw new Error(`lingo - invalid result type: ${typeof result}`);
+        console.error('lingo - invalid result type', element, result);
+        throw new Error(`lingo - invalid result type: ${typeof result}`, result);
     }
 }
 
@@ -839,6 +849,7 @@ function renderCall(app, expression, ctx = null) {
     let returnValue;
     if (definition.sig === 'kwargs') {
         returnValue = func(renderedArgs);
+        console.log('call - kwargs function return value', func, renderedArgs, typeof returnValue, returnValue);
     } else {
         // Positional args - build args list with defaults
         const argsList = [];
@@ -852,7 +863,10 @@ function renderCall(app, expression, ctx = null) {
             }
         }
         returnValue = func(...argsList);
+        console.log('call - positional function return value', func, argsList, typeof returnValue, returnValue);
     }
+
+    console.log('call - function return value', expression.call, typeof returnValue, returnValue);
     
     // Format return value similar to Python
     if (Array.isArray(returnValue)) {
@@ -1160,6 +1174,8 @@ function createDOMElement(app, element) {
         return createLinkElement(element);
     } else if ('text' in element) {
         return createTextElement(element);
+    } else if ('value' in element) {
+        return createValueElement(element);
     } else {
         console.warn('Unknown element type:', element);
         return null;
@@ -1182,6 +1198,14 @@ function createHeadingElement(element) {
 function createTextElement(element) {
     const span = document.createElement('span');
     span.textContent = element.text;
+    return span;
+}
+
+/** Create value element
+ */
+function createValueElement(element) {
+    const span = document.createElement('span');
+    span.textContent = JSON.stringify(element, null, 4);
     return span;
 }
 

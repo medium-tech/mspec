@@ -476,20 +476,22 @@ def render_heading(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> dict
     except KeyError:
         raise ValueError('heading - missing level key')
     
-    try:
-        heading = lingo_execute(app, element['heading'], ctx)
-    except Exception as e:
-        raise ValueError('heading - error processing heading expression') from e
+    if isinstance(element['heading'], str):
+        heading = element['heading']
+    else:
+        try:
+            heading = lingo_execute(app, element['heading'], ctx)
+        except Exception as e:
+            raise ValueError('heading - error processing heading expression') from e
     
-    try:
+    if isinstance(heading, dict) and 'text' in heading:
         heading_text = heading['text']
-    except KeyError:
-        if isinstance(heading, str):
-            heading_text = heading
-        elif isinstance(heading, (bool, int, float)):
-            heading_text = str(heading)
-        else:
-            raise ValueError(f'heading - invalid heading type: {heading.__class__.__name__} - expected str or dict with text key')
+    elif isinstance(heading, str):
+        heading_text = heading
+    elif isinstance(heading, (bool, int, float)):
+        heading_text = str(heading)
+    else:
+        raise ValueError(f'heading - invalid heading type: {heading.__class__.__name__} - expected str or dict with text key')
     
     try:
         return {'heading': heading_text, 'level': element['level']}
