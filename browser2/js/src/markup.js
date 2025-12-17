@@ -842,18 +842,39 @@ function renderCall(app, expression, ctx = null) {
         
         const value = lingoExecute(app, argExpression, ctx);
         
-        // Extract value if it's wrapped in a result object
-        const actualValue = (typeof value === 'object' && value !== null && 'value' in value) 
-            ? value.value 
-            : value;
-        
-        // Track type for float detection
-        const valueType = (typeof value === 'object' && value !== null && 'type' in value)
-            ? value.type
-            : getTypeName(actualValue);
-        
-        renderedArgs[argName] = actualValue;
-        argTypes[argName] = valueType;
+        // If value is a list, we need to evaluate any dict expressions in it
+        if (Array.isArray(value)) {
+            const evaluatedList = [];
+            for (const item of value) {
+                if (typeof item === 'object' && item !== null && !('value' in item && 'type' in item) && !Array.isArray(item)) {
+                    // It's an unevaluated expression - evaluate it with the current context
+                    const evalItem = lingoExecute(app, item, ctx);
+                    if (typeof evalItem === 'object' && evalItem !== null && 'value' in evalItem) {
+                        evaluatedList.push(evalItem.value);
+                    } else {
+                        evaluatedList.push(evalItem);
+                    }
+                } else {
+                    // It's a literal value
+                    evaluatedList.push(item);
+                }
+            }
+            renderedArgs[argName] = evaluatedList;
+            argTypes[argName] = 'list';
+        } else {
+            // Extract value if it's wrapped in a result object
+            const actualValue = (typeof value === 'object' && value !== null && 'value' in value) 
+                ? value.value 
+                : value;
+            
+            // Track type for float detection
+            const valueType = (typeof value === 'object' && value !== null && 'type' in value)
+                ? value.type
+                : getTypeName(actualValue);
+            
+            renderedArgs[argName] = actualValue;
+            argTypes[argName] = valueType;
+        }
     }
     
     // Call function based on signature
