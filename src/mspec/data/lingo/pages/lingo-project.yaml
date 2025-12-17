@@ -1,0 +1,49 @@
+lingo:
+    version: page-beta-1
+
+params: 
+    project_name:
+        name:
+            lower_case: "project name"
+        type: str
+        default: "My Lingo Project"
+        description: "Name of the Lingo project"
+
+    modules:
+        name:
+            lower_case: "modules"
+        type: list
+        default: ["placeholder-module"]
+        description: "List of modules in the Lingo project"
+        item_type: str
+
+state: 
+    header:
+        type: str
+        calc: 
+            call: "join"
+            args:
+                separator: ""
+                items:
+                    - ":: | "
+                    - {params: {project_name: {}}}
+
+ops: {}
+
+output:
+- heading: {state: {header: {}}}
+  level: 1
+- text: "Available Modules:"
+- break: 1
+- call: "map"
+  args:
+    iterable: {params: {modules: {}}}
+    function:
+        link:
+            call: "concat"
+            args:
+                items:
+                    - "/"
+                    - {self: item}
+        text: {self: item}
+

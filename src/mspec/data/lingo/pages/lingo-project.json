@@ -8,6 +8,7 @@
                 "lower_case": "project name"
             },
             "type": "str",
+            "default": "My Lingo Project",
             "description": "Name of the Lingo project"
         },
         "modules": {
@@ -15,6 +16,7 @@
                 "lower_case": "modules"
             },
             "type": "list",
+            "default": ["placeholder-module"],
             "description": "List of modules in the Lingo project",
             "item_type": "str"
         }

@@ -177,7 +177,8 @@ class TestCLI(unittest.TestCase):
 
             # recursevely count number of files copied
             all_files_copied = list(output_dir.rglob('*'))
-            num_files_copied = len([f for f in all_files_copied if f.is_file()])
+            copied_files = filter(lambda f: f.is_file() and not f.name.startswith('.'), all_files_copied)
+            num_files_copied = len(list(copied_files))
             self.assertEqual(num_files_copied, TOTAL_NUM_SPECS)
 
         finally:
@@ -201,7 +202,8 @@ class TestCLI(unittest.TestCase):
 
             # recursevely count number of files copied
             all_files_copied = list(output_dir.rglob('*'))
-            num_files_copied = len([f for f in all_files_copied if f.is_file()])
+            copied_files = filter(lambda f: f.is_file() and not f.name.startswith('.'), all_files_copied)
+            num_files_copied = len(list(copied_files))
             self.assertEqual(num_files_copied, TOTAL_NUM_SPECS)
 
         finally:
