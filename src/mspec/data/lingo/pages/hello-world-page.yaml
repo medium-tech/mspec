@@ -8,7 +8,8 @@ state: {}
 ops: {}
 
 output:
-- {heading: "Hello, World", level: 1}
+- heading: "Hello, World"
+  level: 1
 
 - block:
-    - text: I am a sample page.
+    - text: I am a sample page!
