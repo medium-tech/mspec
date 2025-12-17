@@ -16,7 +16,7 @@
                 "lower_case": "modules"
             },
             "type": "list",
-            "default": ["placeholder-module"],
+            "default": ["placeholder-module-a", "placeholder-module-b"],
             "description": "List of modules in the Lingo project",
             "item_type": "str"
         }
@@ -29,7 +29,7 @@
                 "args": {
                     "separator": "",
                     "items": [
-                        ":: | ",
+                        ":: ",
                         {
                             "params": {
                                 "project_name": {}
@@ -51,7 +51,8 @@
             "level": 1
         },
         {
-            "text": "Available Modules:"
+            "heading": ":: available modules",
+            "level": 2
         },
         {
             "break": 1

@@ -1251,9 +1251,32 @@ function createTextElement(element) {
 /** Create value element
  */
 function createValueElement(element) {
-    const span = document.createElement('span');
-    span.textContent = JSON.stringify(element, null, 4);
-    return span;
+
+    if(element.type == 'list') {
+
+        // element.display.format = 'bulleted' | 'numbered' for ul or ol
+
+        const elementType = element.display && element.display.format == 'numbers' ? 'ol' : 'ul';
+
+        const container = document.createElement(elementType);
+        for(const item of element.value) {
+            const itemElement = createDOMElement({spec: {lingo: {version: 'page-beta-1'}}}, item);
+            if(itemElement) {
+                const li = document.createElement('li');
+                li.appendChild(itemElement);
+                container.appendChild(li);
+            }else{
+                throw new Error('createValueElement - failed to create DOM element for list item');
+            }
+        }
+        return container;
+        
+
+    }else{
+        const span = document.createElement('span');
+        span.textContent = JSON.stringify(element, null, 4);
+        return span;
+    }
 }
 
 /**
@@ -1337,6 +1360,5 @@ function createLinkElement(element) {
     const link = document.createElement('a');
     link.href = element.link;
     link.textContent = element.text || element.link;
-    link.target = '_blank';
     return link;
 }
