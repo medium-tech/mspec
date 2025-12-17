@@ -21,15 +21,10 @@ state:
         calc: 
             call: "join"
             args:
-                seperator: ""
+                separator: ""
                 items:
                     - ":: | "
                     - {params: {project_name: {}}}
-    module_urls:
-        type: list
-        element_type: str
-        calc:
-            
 
 ops: {}
 
@@ -47,6 +42,6 @@ output:
             args:
                 items:
                     - "/"
-                    - {self: {item: {}}}
-        text: {self: {item: {}}}
+                    - {self: item}
+        text: {self: item}
 

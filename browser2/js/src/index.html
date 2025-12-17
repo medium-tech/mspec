@@ -213,9 +213,6 @@
                         if (page.includes('_test_data')) {
                             return; // skip test data files
                         }
-                        if (page.endsWith('.yaml') || page.endsWith('.yml')) {
-                            return; // skip yaml files
-                        }
                         const option = document.createElement('option');
                         option.value = page;
                         option.textContent = page.split('/').pop();
@@ -228,9 +225,6 @@
                     data.scripts.forEach(script => {
                         if (script.includes('_test_data')) {
                             return; // skip test data files
-                        }
-                        if (script.endsWith('.yaml') || script.endsWith('.yml')) {
-                            return; // skip yaml files
                         }
                         const option = document.createElement('option');
                         option.value = script;

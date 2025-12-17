@@ -32,10 +32,13 @@ def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) 
             if isinstance(result, dict):
                 evaluated_result = {}
                 for key, value in result.items():
-                    evaluated_result[key] = lingo_execute(app, value, new_ctx)
+                    # Recursively evaluate the value, which might contain nested expressions
+                    eval_value = lingo_execute(app, value, new_ctx)
                     # Extract value if it's wrapped
-                    if isinstance(evaluated_result[key], dict) and 'value' in evaluated_result[key]:
-                        evaluated_result[key] = evaluated_result[key]['value']
+                    if isinstance(eval_value, dict) and 'value' in eval_value:
+                        evaluated_result[key] = eval_value['value']
+                    else:
+                        evaluated_result[key] = eval_value
                 return evaluated_result
             return result
     
@@ -504,6 +507,8 @@ def render_heading(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> dict
     
     if isinstance(heading, dict) and 'text' in heading:
         heading_text = heading['text']
+    elif isinstance(heading, dict) and 'value' in heading:
+        heading_text = str(heading['value'])
     elif isinstance(heading, str):
         heading_text = heading
     elif isinstance(heading, (bool, int, float)):
@@ -579,10 +584,26 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
             
             value = lingo_execute(app, arg_expression, ctx)
 
-            try:
-                rendered_args[arg_name] = value['value']
-            except TypeError:
-                rendered_args[arg_name] = value
+            # If value is a list, we need to evaluate any dict expressions in it
+            if isinstance(value, list):
+                evaluated_list = []
+                for item in value:
+                    if isinstance(item, dict) and not ('value' in item and 'type' in item):
+                        # It's an unevaluated expression - evaluate it with the current context
+                        eval_item = lingo_execute(app, item, ctx)
+                        if isinstance(eval_item, dict) and 'value' in eval_item:
+                            evaluated_list.append(eval_item['value'])
+                        else:
+                            evaluated_list.append(eval_item)
+                    else:
+                        # It's a literal value
+                        evaluated_list.append(item)
+                rendered_args[arg_name] = evaluated_list
+            else:
+                try:
+                    rendered_args[arg_name] = value['value']
+                except TypeError:
+                    rendered_args[arg_name] = value
 
     # order args and call #
 

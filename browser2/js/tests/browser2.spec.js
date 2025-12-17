@@ -260,6 +260,10 @@ test('test - switch_example script', async ({ page }) => {
 
 test('test - lingo-project page', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
+  
+  // Wait for the select options to be loaded by checking for a known option
+  await page.waitForSelector('#spec-select option[value="data/lingo/pages/lingo-project.yaml"]', { timeout: 10000, state: 'attached' });
+  
   await page.locator('#spec-select').selectOption('data/lingo/pages/lingo-project.yaml');
   
   // Set params
