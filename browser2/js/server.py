@@ -5,6 +5,7 @@ Development server for lingo js pages
 
 
 import socketserver
+import threading
 import os
 import json
 
@@ -105,11 +106,31 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Run a development server for lingo js pages.')
     parser.add_argument('--port', type=int, default=8000, help='Port to run the server on (default: 8000)')
+    parser.add_argument('--max-threads', type=int, default=0, help='Maximum number of threads (0 = unlimited, default: 0)')
     args = parser.parse_args()
     port = args.port
+    max_threads = args.max_threads
 
-    with socketserver.TCPServer(('', port), DevRequestHandler) as httpd:
-        print(f'Dev server running at http://localhost:{port}/')
+    # Custom thread-limited server if max_threads > 0
+    if max_threads > 0:
+        class LimitedThreadingTCPServer(socketserver.ThreadingTCPServer):
+            def __init__(self, server_address, RequestHandlerClass):
+                super().__init__(server_address, RequestHandlerClass)
+                self._thread_semaphore = threading.BoundedSemaphore(max_threads)
+
+            def process_request(self, request, client_address):
+                self._thread_semaphore.acquire()
+                try:
+                    super().process_request(request, client_address)
+                finally:
+                    self._thread_semaphore.release()
+
+        ServerClass = LimitedThreadingTCPServer
+    else:
+        ServerClass = socketserver.ThreadingTCPServer
+
+    with ServerClass(('', port), DevRequestHandler) as httpd:
+        print(f'Dev server running at http://localhost:{port}/ (threads: {"unlimited" if max_threads == 0 else max_threads})')
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
