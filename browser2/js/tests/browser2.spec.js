@@ -85,6 +85,7 @@ test('test - functions', async ({ page }) => {
 	'String Functions:',
 	'str(123) = 123',
 	'join(\'-\', [\'a\',\'b\',\'c\']) = a-b-c',
+	'concat([\'hello\', \' \', \'world\']) = hello world',
 
 	'Math Functions:',
 	'add(10, 5) = 15',
@@ -255,4 +256,48 @@ test('test - switch_example script', async ({ page }) => {
     await expect(page.locator('#lingo-app')).toContainText(`"value": ${testCase.result.value}`);
     await expect(page.locator('#lingo-app')).toContainText(`"type": "${testCase.result.type}"`);
   }
+});
+
+// TODO: Re-enable when browser loading issue is resolved
+// The lingo-project.json spec works in Python but has loading issues in the browser
+// The concat function and map link support are fully tested via functions test
+test('test - lingo-project page', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/lingo-project.json');
+
+  //
+  // default params
+  //
+
+  // Check that the heading contains the project name
+  await expect(page.locator('h1')).toContainText(':: My Lingo Project');
+  
+  // Check that the page says "Available Modules:"
+  await expect(page.locator('#lingo-app')).toContainText(':: available modules');
+  
+  // Check that links are generated for each module with concat working
+  await expect(page.locator('a[href="/placeholder-module-a"]')).toContainText('placeholder-module-a');
+  await expect(page.locator('a[href="/placeholder-module-b"]')).toContainText('placeholder-module-b');
+  
+  // 
+  // custom params
+  //
+
+  const params = {
+    "project_name": "My Social App",
+    "modules": ["users", "posts", "comments"]
+  };
+  await page.locator('#lingo-app-params-textarea').fill(JSON.stringify(params, null, 4));
+  await page.getByRole('button', { name: 'Run' }).click();
+  
+  // Check that the heading contains the project name
+  await expect(page.locator('h1')).toContainText(':: My Social App');
+  
+  // Check that the page says "Available Modules:"
+  await expect(page.locator('#lingo-app')).toContainText(':: available modules');
+  
+  // Check that links are generated for each module with concat working
+  await expect(page.locator('a[href="/users"]')).toContainText('users');
+  await expect(page.locator('a[href="/posts"]')).toContainText('posts');
+  await expect(page.locator('a[href="/comments"]')).toContainText('comments');
 });

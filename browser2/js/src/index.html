@@ -75,6 +75,8 @@
         </select>
     </div>
 
+    <h2>Output</h2>
+
     <div id="lingo-app" class="lingo-container">
         <p>Loading Browser 2.0...</p>
     </div>
@@ -95,9 +97,12 @@
 
     <script>
 
-        // Initialize the app
         let currentApp = null;
         let specLookup = {};
+
+        //
+        // ops
+        //
         
         function toggleDebug() {
             const debugDiv = document.getElementById('debug');
@@ -152,17 +157,7 @@
             textarea.value = JSON.stringify(defaultParams, null, 4);
             paramsDiv.appendChild(textarea);
         }
-
-        function renderApp(updateParams=false) {
-            // get params from textarea
-            if (updateParams) {
-                const textarea = document.getElementById('lingo-app-params-textarea');
-                currentApp.params = JSON.parse(textarea.value);
-            }
-            renderLingoApp(currentApp, document.getElementById('lingo-app'));
-            showDebugInfo(currentApp);
-        }
-
+        
         function fetchAndRunLingoSpec(event) {
             const specPath = event.target.value;
 
@@ -197,6 +192,24 @@
                     document.getElementById('lingo-app').innerHTML = `<p style="color: red;">Error fetching spec file: ${error.message}</p>`;
                 });
         }
+
+        //
+        // app main
+        //
+
+        function renderApp(updateParams=false) {
+            // get params from textarea
+            if (updateParams) {
+                const textarea = document.getElementById('lingo-app-params-textarea');
+                currentApp.params = JSON.parse(textarea.value);
+            }
+            renderLingoApp(currentApp, document.getElementById('lingo-app'));
+            showDebugInfo(currentApp);
+        }
+
+        //
+        // init on load
+        //
 
         function populateSpecSelect() {
             fetch('/api/lingo-specs')
@@ -239,16 +252,17 @@
                     });
                     specSelect.appendChild(scriptsOptGroup);
                 })
+                .then(() => {
+                    runHelloWorld(); // load Hello World by default
+                })
                 .catch(error => {
                     console.error('Error fetching spec files:', error);
                 });
         }
         
-        // Start with Hello World by default
         window.addEventListener('load', () => {
             console.log('window load event');
             try {
-                runHelloWorld();
                 populateSpecSelect();
             } catch (error) {
                 console.error('Failed to initialize:', error);

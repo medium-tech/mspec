@@ -22,6 +22,11 @@ function strJoin(separator, items) {
     return items.map(item => String(item)).join(separator);
 }
 
+// Helper function for str concat
+function strConcat(items) {
+    return items.map(item => String(item)).join('');
+}
+
 // Built-in function lookup table
 const lingoFunctionLookup = {
     // comparison #
@@ -115,6 +120,12 @@ const lingoFunctionLookup = {
         func: strJoin,
         args: {
             'separator': {'type': 'str'},
+            'items': {'type': 'list'}
+        }
+    },
+    'concat': {
+        func: strConcat,
+        args: {
             'items': {'type': 'list'}
         }
     },
@@ -831,18 +842,39 @@ function renderCall(app, expression, ctx = null) {
         
         const value = lingoExecute(app, argExpression, ctx);
         
-        // Extract value if it's wrapped in a result object
-        const actualValue = (typeof value === 'object' && value !== null && 'value' in value) 
-            ? value.value 
-            : value;
-        
-        // Track type for float detection
-        const valueType = (typeof value === 'object' && value !== null && 'type' in value)
-            ? value.type
-            : getTypeName(actualValue);
-        
-        renderedArgs[argName] = actualValue;
-        argTypes[argName] = valueType;
+        // If value is a list, we need to evaluate any dict expressions in it
+        if (Array.isArray(value)) {
+            const evaluatedList = [];
+            for (const item of value) {
+                if (typeof item === 'object' && item !== null && !('value' in item && 'type' in item) && !Array.isArray(item)) {
+                    // It's an unevaluated expression - evaluate it with the current context
+                    const evalItem = lingoExecute(app, item, ctx);
+                    if (typeof evalItem === 'object' && evalItem !== null && 'value' in evalItem) {
+                        evaluatedList.push(evalItem.value);
+                    } else {
+                        evaluatedList.push(evalItem);
+                    }
+                } else {
+                    // It's a literal value
+                    evaluatedList.push(item);
+                }
+            }
+            renderedArgs[argName] = evaluatedList;
+            argTypes[argName] = 'list';
+        } else {
+            // Extract value if it's wrapped in a result object
+            const actualValue = (typeof value === 'object' && value !== null && 'value' in value) 
+                ? value.value 
+                : value;
+            
+            // Track type for float detection
+            const valueType = (typeof value === 'object' && value !== null && 'type' in value)
+                ? value.type
+                : getTypeName(actualValue);
+            
+            renderedArgs[argName] = actualValue;
+            argTypes[argName] = valueType;
+        }
     }
     
     // Call function based on signature
@@ -928,7 +960,22 @@ function handleSequenceOp(app, expression, ctx = null) {
             const newCtx = ctx ? {...ctx} : {};
             newCtx.self = {item: item};
             const result = lingoExecute(app, args.function, newCtx);
-            return (typeof result === 'object' && 'value' in result) ? result.value : result;
+            // If result has a 'value' key, extract it
+            if (typeof result === 'object' && result !== null && 'value' in result) {
+                return result.value;
+            } else if (typeof result === 'object' && result !== null && !Array.isArray(result)) {
+                // It's a dict without 'value' - need to recursively evaluate expressions
+                const evaluatedResult = {};
+                for (const [key, value] of Object.entries(result)) {
+                    const evaluated = lingoExecute(app, value, newCtx);
+                    // Extract value if wrapped
+                    evaluatedResult[key] = (typeof evaluated === 'object' && evaluated !== null && 'value' in evaluated) 
+                        ? evaluated.value 
+                        : evaluated;
+                }
+                return evaluatedResult;
+            }
+            return result;
         };
         
         const resultArray = iterableValue.map(mapFunc);
@@ -1204,9 +1251,32 @@ function createTextElement(element) {
 /** Create value element
  */
 function createValueElement(element) {
-    const span = document.createElement('span');
-    span.textContent = JSON.stringify(element, null, 4);
-    return span;
+
+    if(element.type == 'list') {
+
+        // element.display.format = 'bulleted' | 'numbered' for ul or ol
+
+        const elementType = element.display && element.display.format == 'numbers' ? 'ol' : 'ul';
+
+        const container = document.createElement(elementType);
+        for(const item of element.value) {
+            const itemElement = createDOMElement({spec: {lingo: {version: 'page-beta-1'}}}, item);
+            if(itemElement) {
+                const li = document.createElement('li');
+                li.appendChild(itemElement);
+                container.appendChild(li);
+            }else{
+                throw new Error('createValueElement - failed to create DOM element for list item');
+            }
+        }
+        return container;
+        
+
+    }else{
+        const span = document.createElement('span');
+        span.textContent = JSON.stringify(element, null, 4);
+        return span;
+    }
 }
 
 /**
@@ -1290,6 +1360,5 @@ function createLinkElement(element) {
     const link = document.createElement('a');
     link.href = element.link;
     link.textContent = element.text || element.link;
-    link.target = '_blank';
     return link;
 }

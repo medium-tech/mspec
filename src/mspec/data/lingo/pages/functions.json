@@ -116,6 +116,10 @@
             "type": "str",
             "calc": {"call": "join", "args": {"separator": "-", "items": ["a", "b", "c"]}}
         },
+        "test_concat": {
+            "type": "str",
+            "calc": {"call": "concat", "args": {"items": ["hello", " ", "world"]}}
+        },
         "test_add": {
             "type": "int",
             "calc": {"call": "add", "args": {"a": 10, "b": 5}}
@@ -322,7 +326,8 @@
             {"text": "String Functions:"},
             {"break": 1},
             {"text": "str(123) = "}, {"lingo": {"state": {"test_str": {}}}}, {"break": 1},
-            {"text": "join('-', ['a','b','c']) = "}, {"lingo": {"state": {"test_join": {}}}}, {"break": 2},
+            {"text": "join('-', ['a','b','c']) = "}, {"lingo": {"state": {"test_join": {}}}}, {"break": 1},
+            {"text": "concat(['hello', ' ', 'world']) = "}, {"lingo": {"state": {"test_concat": {}}}}, {"break": 2},
             
             {"text": "Math Functions:"},
             {"break": 1},

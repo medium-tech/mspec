@@ -23,7 +23,24 @@ def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) 
         new_ctx = ctx.copy() if ctx is not None else {}
         new_ctx['self'] = {'item': item}
         result = lingo_execute(app, expression['args']['function'], new_ctx)
-        return result['value']
+        # If result is a dict with 'value' key, extract the value
+        # Otherwise return the result as-is (e.g., for link/text dicts)
+        if isinstance(result, dict) and 'value' in result:
+            return result['value']
+        else:
+            # Need to recursively evaluate expressions in the dict
+            if isinstance(result, dict):
+                evaluated_result = {}
+                for key, value in result.items():
+                    # Recursively evaluate the value, which might contain nested expressions
+                    eval_value = lingo_execute(app, value, new_ctx)
+                    # Extract value if it's wrapped
+                    if isinstance(eval_value, dict) and 'value' in eval_value:
+                        evaluated_result[key] = eval_value['value']
+                    else:
+                        evaluated_result[key] = eval_value
+                return evaluated_result
+            return result
     
     iterable = lingo_execute(app, expression['args']['iterable'], ctx)
     return (map_func, iterable['value'] if isinstance(iterable, dict) else iterable), {}
@@ -61,6 +78,9 @@ def _reduce_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=Non
 
 def str_join(separator:str, items:list) -> str:
     return separator.join(str(item) for item in items)
+
+def str_concat(items:list) -> str:
+    return ''.join(str(item) for item in items)
 
 def lingo_int(number:Any=None, string:str=None, base:int=10) -> int:
     if number is not None:
@@ -104,6 +124,7 @@ lingo_function_lookup = {
 
     'str': {'func': str, 'args': {'object': {'type': 'any'}}},
     'join': {'func': str_join, 'args': {'separator': {'type': 'str'}, 'items': {'type': 'list'}}},
+    'concat': {'func': str_concat, 'args': {'items': {'type': 'list'}}},
 
     # math #
 
@@ -486,6 +507,8 @@ def render_heading(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> dict
     
     if isinstance(heading, dict) and 'text' in heading:
         heading_text = heading['text']
+    elif isinstance(heading, dict) and 'value' in heading:
+        heading_text = str(heading['value'])
     elif isinstance(heading, str):
         heading_text = heading
     elif isinstance(heading, (bool, int, float)):
@@ -561,10 +584,26 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
             
             value = lingo_execute(app, arg_expression, ctx)
 
-            try:
-                rendered_args[arg_name] = value['value']
-            except TypeError:
-                rendered_args[arg_name] = value
+            # If value is a list, we need to evaluate any dict expressions in it
+            if isinstance(value, list):
+                evaluated_list = []
+                for item in value:
+                    if isinstance(item, dict) and not ('value' in item and 'type' in item):
+                        # It's an unevaluated expression - evaluate it with the current context
+                        eval_item = lingo_execute(app, item, ctx)
+                        if isinstance(eval_item, dict) and 'value' in eval_item:
+                            evaluated_list.append(eval_item['value'])
+                        else:
+                            evaluated_list.append(eval_item)
+                    else:
+                        # It's a literal value
+                        evaluated_list.append(item)
+                rendered_args[arg_name] = evaluated_list
+            else:
+                try:
+                    rendered_args[arg_name] = value['value']
+                except TypeError:
+                    rendered_args[arg_name] = value
 
     # order args and call #
 

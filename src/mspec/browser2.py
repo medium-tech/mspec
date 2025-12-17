@@ -43,22 +43,10 @@ class LingoPage(tkinter.Frame):
         self.entries = {}
 
         for n, element in enumerate(doc):
-            if 'heading' in element:
-                self.render_heading(element)
-            elif 'link' in element:
-                self.render_link(element)
-            elif 'button' in element:
-                self.render_button(element)
-            elif 'break' in element:
-                self.render_break(element)
-            elif 'input' in element:
-                self.render_input(element)
-            elif 'text' in element:
-                self.render_text(element)
-            elif 'value' in element:
-                self.render_value(element)
-            else:
-                raise ValueError(f'Unknown element type: index: {n} - {list(element)}')
+            try:
+                self.render_element(element)
+            except Exception as e:
+                raise RuntimeError(f'Error rendering output #{n}: {element}') from e
             
             self._text_row += 1
         
@@ -71,6 +59,24 @@ class LingoPage(tkinter.Frame):
         self._text_buffer.tag_configure('heading-6', font=HEADING[6])
         self._text_buffer.config(state=tkinter.DISABLED)
 
+    def render_element(self, element:dict):
+        if 'heading' in element:
+            self.render_heading(element)
+        elif 'link' in element:
+            self.render_link(element)
+        elif 'button' in element:
+            self.render_button(element)
+        elif 'break' in element:
+            self.render_break(element)
+        elif 'input' in element:
+            self.render_input(element)
+        elif 'text' in element:
+            self.render_text(element)
+        elif 'value' in element:
+            self.render_value(element)
+        else:
+            raise ValueError(f'Unknown element type: {list(element)}')
+
     def render_heading(self, element:dict):
         self._text_buffer.insert(self._tk_row(), element['heading'], (f'heading-{element["level"]}'))
         self._text_buffer.insert(self._tk_row(), '\n')
@@ -79,7 +85,29 @@ class LingoPage(tkinter.Frame):
         self._text_buffer.insert(self._tk_row(), element['text'])
 
     def render_value(self, element:dict):
-        self._text_buffer.insert(self._tk_row(), json.dumps(element, indent=4, sort_keys=True))
+        if element['type'] == 'list':
+            
+            # init list formatting #
+            bullet_format = element.get('opt', {}).get('format', 'bullets')
+            match bullet_format:
+                case 'bullets':
+                    bullet_char = lambda _: '• '
+                case 'numbers':
+                    bullet_char = lambda n: f'{n}. '
+                case _:
+                    raise ValueError(f'Unknown list opt.format: {bullet_format}')
+
+            for n, item in enumerate(element['value'], start=1):
+                # insert bullet and item #
+                self._text_buffer.insert(self._tk_row(), bullet_char(n))
+                self.render_element(item)
+                self._text_row += 1
+
+                # line break after each item #
+                self._text_buffer.insert(self._tk_row(), '\n')
+                self._text_row += 1
+        else:
+            self._text_buffer.insert(self._tk_row(), json.dumps(element, indent=4, sort_keys=True))
 
     def render_break(self, element:dict):
         self._text_buffer.insert(self._tk_row(), '\n' * element['break'])
