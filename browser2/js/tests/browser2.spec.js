@@ -258,19 +258,12 @@ test('test - switch_example script', async ({ page }) => {
   }
 });
 
-// Note: lingo-project.yaml test is skipped for now due to test environment issues
-// The concat function and map link support are tested via the functions test
-// and confirmed working in the Python implementation
+// TODO: Re-enable when browser loading issue is resolved
+// The lingo-project.json spec works in Python but has loading issues in the browser
+// The concat function and map link support are fully tested via functions test
 test.skip('test - lingo-project page', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
-  
-  // Wait a bit for options to load
-  await page.waitForTimeout(2000);
-  
-  await page.locator('#spec-select').selectOption('data/lingo/pages/lingo-project.yaml');
-  
-  // Wait for the page to load (it will show an error initially because params are missing)
-  await page.waitForTimeout(1000);
+  await page.locator('#spec-select').selectOption('data/lingo/pages/lingo-project.json');
   
   // Set params
   const params = {
@@ -279,9 +272,6 @@ test.skip('test - lingo-project page', async ({ page }) => {
   };
   await page.locator('#lingo-app-params-textarea').fill(JSON.stringify(params, null, 4));
   await page.getByRole('button', { name: 'Run' }).click();
-  
-  // Wait for the rendering to complete
-  await page.waitForTimeout(500);
   
   // Check that the heading contains the project name
   await expect(page.locator('h1')).toContainText(':: | My Lingo Project');

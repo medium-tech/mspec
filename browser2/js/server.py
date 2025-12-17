@@ -8,7 +8,6 @@ import socketserver
 import threading
 import os
 import json
-import yaml
 
 import http.server
 
@@ -87,18 +86,6 @@ class DevRequestHandler(http.server.SimpleHTTPRequestHandler):
             
             if os.path.isdir(abs_path):
                 self.send_error(403, 'Directory listing not allowed')
-                return
-            
-            # Check if it's a YAML file and convert to JSON
-            if abs_path.endswith('.yaml') or abs_path.endswith('.yml'):
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-                self.end_headers()
-                
-                with open(abs_path, 'r') as f:
-                    yaml_data = yaml.safe_load(f)
-                    self.wfile.write(json.dumps(yaml_data).encode('utf-8'))
                 return
             
             self.send_response(200)
