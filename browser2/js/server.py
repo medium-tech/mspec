@@ -31,7 +31,10 @@ class DevRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             
             with open(INDEX_PATH, 'rb') as f:
-                self.wfile.write(f.read())
+                try:
+                    self.wfile.write(f.read())
+                except BrokenPipeError as e:
+                    print(f'Client disconnected before full response was sent: {e}')
                 
             return
         
