@@ -22,6 +22,11 @@ function strJoin(separator, items) {
     return items.map(item => String(item)).join(separator);
 }
 
+// Helper function for str concat
+function strConcat(items) {
+    return items.map(item => String(item)).join('');
+}
+
 // Built-in function lookup table
 const lingoFunctionLookup = {
     // comparison #
@@ -115,6 +120,12 @@ const lingoFunctionLookup = {
         func: strJoin,
         args: {
             'separator': {'type': 'str'},
+            'items': {'type': 'list'}
+        }
+    },
+    'concat': {
+        func: strConcat,
+        args: {
             'items': {'type': 'list'}
         }
     },
@@ -928,7 +939,22 @@ function handleSequenceOp(app, expression, ctx = null) {
             const newCtx = ctx ? {...ctx} : {};
             newCtx.self = {item: item};
             const result = lingoExecute(app, args.function, newCtx);
-            return (typeof result === 'object' && 'value' in result) ? result.value : result;
+            // If result has a 'value' key, extract it
+            if (typeof result === 'object' && result !== null && 'value' in result) {
+                return result.value;
+            } else if (typeof result === 'object' && result !== null && !Array.isArray(result)) {
+                // It's a dict without 'value' - need to recursively evaluate expressions
+                const evaluatedResult = {};
+                for (const [key, value] of Object.entries(result)) {
+                    const evaluated = lingoExecute(app, value, newCtx);
+                    // Extract value if wrapped
+                    evaluatedResult[key] = (typeof evaluated === 'object' && evaluated !== null && 'value' in evaluated) 
+                        ? evaluated.value 
+                        : evaluated;
+                }
+                return evaluatedResult;
+            }
+            return result;
         };
         
         const resultArray = iterableValue.map(mapFunc);

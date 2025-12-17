@@ -23,7 +23,21 @@ def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) 
         new_ctx = ctx.copy() if ctx is not None else {}
         new_ctx['self'] = {'item': item}
         result = lingo_execute(app, expression['args']['function'], new_ctx)
-        return result['value']
+        # If result is a dict with 'value' key, extract the value
+        # Otherwise return the result as-is (e.g., for link/text dicts)
+        if isinstance(result, dict) and 'value' in result:
+            return result['value']
+        else:
+            # Need to recursively evaluate expressions in the dict
+            if isinstance(result, dict):
+                evaluated_result = {}
+                for key, value in result.items():
+                    evaluated_result[key] = lingo_execute(app, value, new_ctx)
+                    # Extract value if it's wrapped
+                    if isinstance(evaluated_result[key], dict) and 'value' in evaluated_result[key]:
+                        evaluated_result[key] = evaluated_result[key]['value']
+                return evaluated_result
+            return result
     
     iterable = lingo_execute(app, expression['args']['iterable'], ctx)
     return (map_func, iterable['value'] if isinstance(iterable, dict) else iterable), {}
@@ -61,6 +75,9 @@ def _reduce_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=Non
 
 def str_join(separator:str, items:list) -> str:
     return separator.join(str(item) for item in items)
+
+def str_concat(items:list) -> str:
+    return ''.join(str(item) for item in items)
 
 def lingo_int(number:Any=None, string:str=None, base:int=10) -> int:
     if number is not None:
@@ -104,6 +121,7 @@ lingo_function_lookup = {
 
     'str': {'func': str, 'args': {'object': {'type': 'any'}}},
     'join': {'func': str_join, 'args': {'separator': {'type': 'str'}, 'items': {'type': 'list'}}},
+    'concat': {'func': str_concat, 'args': {'items': {'type': 'list'}}},
 
     # math #
 
