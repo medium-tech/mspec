@@ -9,12 +9,12 @@ params:
         default: "My Lingo Project"
         description: "Name of the Lingo project"
 
-    modules:
+    module_names:
         name:
-            lower_case: "modules"
+            lower_case: "module names"
         type: list
-        default: ["placeholder-module-a", "placeholder-module-b"]
-        description: "List of modules in the Lingo project"
+        default: ["my-module-a", "my-module-b"]
+        description: "List of module names in the Lingo project"
         item_type: str
 
 state: 
@@ -38,7 +38,7 @@ output:
 - break: 1
 - call: "map"
   args:
-    iterable: {params: {modules: {}}}
+    iterable: {params: {module_names: {}}}
     function:
         link:
             call: "concat"

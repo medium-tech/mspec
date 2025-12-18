@@ -11,13 +11,30 @@
             "default": "My Lingo Project",
             "description": "Name of the Lingo project"
         },
-        "module_names": {
+        "module_name": {
             "name": {
-                "lower_case": "module names"
+                "lower_case": "module name"
+            },
+            "type": "str",
+            "default": "my-module-a",
+            "description": "Name of the module"
+        },
+        "model_names": {
+            "name": {
+                "lower_case": "model names"
             },
             "type": "list",
-            "default": ["my-module-a", "my-module-b"],
-            "description": "List of module names in the Lingo project",
+            "default": ["my-model-a", "my-model-b"],
+            "description": "List of model names in this project's modules",
+            "item_type": "str"
+        },
+        "op_names": {
+            "name": {
+                "lower_case": "op names"
+            },
+            "type": "list",
+            "default": ["my-op-a", "my-op-b"],
+            "description": "List of operation names in this module",
             "item_type": "str"
         }
     },
@@ -33,6 +50,12 @@
                         {
                             "params": {
                                 "project_name": {}
+                            }
+                        },
+                        " :: ",
+                        {
+                            "params": {
+                                "module_name": {}
                             }
                         }
                     ]
@@ -51,7 +74,7 @@
             "level": 1
         },
         {
-            "heading": ":: available modules",
+            "heading": ":: available models",
             "level": 2
         },
         {
@@ -62,7 +85,40 @@
             "args": {
                 "iterable": {
                     "params": {
-                        "module_names": {}
+                        "model_names": {}
+                    }
+                },
+                "function": {
+                    "link": {
+                        "call": "concat",
+                        "args": {
+                            "items": [
+                                "/",
+                                {
+                                    "self": "item"
+                                }
+                            ]
+                        }
+                    },
+                    "text": {
+                        "self": "item"
+                    }
+                }
+            }
+        },
+        {
+            "heading": ":: available operations",
+            "level": 2
+        },
+        {
+            "break": 1
+        },
+        {
+            "call": "map",
+            "args": {
+                "iterable": {
+                    "params": {
+                        "op_names": {}
                     }
                 },
                 "function": {

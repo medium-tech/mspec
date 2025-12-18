@@ -258,9 +258,7 @@ test('test - switch_example script', async ({ page }) => {
   }
 });
 
-// TODO: Re-enable when browser loading issue is resolved
-// The lingo-project.json spec works in Python but has loading issues in the browser
-// The concat function and map link support are fully tested via functions test
+
 test('test - builtin mapp project page', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
   await page.locator('#spec-select').selectOption('data/lingo/pages/builtin-mapp-project.json');
@@ -276,8 +274,8 @@ test('test - builtin mapp project page', async ({ page }) => {
   await expect(page.locator('#lingo-app')).toContainText(':: available modules');
   
   // Check that links are generated for each module with concat working
-  await expect(page.locator('a[href="/placeholder-module-a"]')).toContainText('placeholder-module-a');
-  await expect(page.locator('a[href="/placeholder-module-b"]')).toContainText('placeholder-module-b');
+  await expect(page.locator('a[href="/my-module-a"]')).toContainText('my-module-a');
+  await expect(page.locator('a[href="/my-module-b"]')).toContainText('my-module-b');
   
   // 
   // custom params
@@ -285,7 +283,7 @@ test('test - builtin mapp project page', async ({ page }) => {
 
   const params = {
     "project_name": "My Social App",
-    "modules": ["users", "posts", "comments"]
+    "module_names": ["users", "posts", "comments"]
   };
   await page.locator('#lingo-app-params-textarea').fill(JSON.stringify(params, null, 4));
   await page.getByRole('button', { name: 'Run' }).click();
@@ -300,4 +298,62 @@ test('test - builtin mapp project page', async ({ page }) => {
   await expect(page.locator('a[href="/users"]')).toContainText('users');
   await expect(page.locator('a[href="/posts"]')).toContainText('posts');
   await expect(page.locator('a[href="/comments"]')).toContainText('comments');
+});
+
+test('test - builtin mapp module page', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/builtin-mapp-module.json');
+
+  //
+  // default params
+  //
+
+  // Check that the heading contains the project name
+  await expect(page.locator('h1')).toContainText(':: My Lingo Project :: my-module-a');
+  
+  // Check that the page says "Available Models:"
+  await expect(page.locator('#lingo-app')).toContainText(':: available models');
+  
+  // Check that links are generated for each model with concat working
+  await expect(page.locator('a[href="/my-model-a"]')).toContainText('my-model-a');
+  await expect(page.locator('a[href="/my-model-b"]')).toContainText('my-model-b');
+
+  // Check that the page says "Available Ops:"
+  await expect(page.locator('#lingo-app')).toContainText(':: available operations');
+  
+  // Check that links are generated for each op with concat working
+  await expect(page.locator('a[href="/my-op-a"]')).toContainText('my-op-a');
+  await expect(page.locator('a[href="/my-op-b"]')).toContainText('my-op-b');
+  
+  // 
+  // custom params
+  //
+
+  const params = {
+    "project_name": "My Social App",
+    "module_name": "users",
+    "model_names": ["user", "profile", "settings"],
+    "op_names": ["create_user", "delete_user", "update_profile"]
+  };
+  await page.locator('#lingo-app-params-textarea').fill(JSON.stringify(params, null, 4));
+  await page.getByRole('button', { name: 'Run' }).click();
+  
+  // Check that the heading contains the project name
+  await expect(page.locator('h1')).toContainText(':: My Social App :: users');
+  
+  // Check that the page says "Available Models:"
+  await expect(page.locator('#lingo-app')).toContainText(':: available models');
+  
+  // Check that links are generated for each model with concat working
+  await expect(page.locator('a[href="/user"]')).toContainText('user');
+  await expect(page.locator('a[href="/profile"]')).toContainText('profile');
+  await expect(page.locator('a[href="/settings"]')).toContainText('settings');
+
+  // Check that the page says "Available Ops:"
+  await expect(page.locator('#lingo-app')).toContainText(':: available operations');
+  
+  // Check that links are generated for each op with concat working
+  await expect(page.locator('a[href="/create_user"]')).toContainText('create_user');
+  await expect(page.locator('a[href="/delete_user"]')).toContainText('delete_user');
+  await expect(page.locator('a[href="/update_profile"]')).toContainText('update_profile');
 });
