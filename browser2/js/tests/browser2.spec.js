@@ -261,9 +261,9 @@ test('test - switch_example script', async ({ page }) => {
 // TODO: Re-enable when browser loading issue is resolved
 // The lingo-project.json spec works in Python but has loading issues in the browser
 // The concat function and map link support are fully tested via functions test
-test('test - lingo-project page', async ({ page }) => {
+test('test - builtin mapp project page', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
-  await page.locator('#spec-select').selectOption('data/lingo/pages/lingo-project.json');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/builtin-mapp-project.json');
 
   //
   // default params
