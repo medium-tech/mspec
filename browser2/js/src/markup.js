@@ -1221,7 +1221,7 @@ function createDOMElement(app, element) {
         return createLinkElement(element);
     } else if ('text' in element) {
         return createTextElement(element);
-    } else if ('value' in element || 'type' in element) {
+    } else if ('value' in element) {
         return createValueElement(element);
     } else {
         console.warn('Unknown element type:', element);
@@ -1285,7 +1285,7 @@ function createValueElement(element) {
         
         // Add data rows
         const tbody = document.createElement('tbody');
-        for(const [key, value] of Object.entries(element.fields)) {
+        for(const [key, value] of Object.entries(element.value)) {
             const row = document.createElement('tr');
             
             const keyCell = document.createElement('td');
@@ -1366,7 +1366,7 @@ function createValueElement(element) {
             const tbody = document.createElement('tbody');
             for(const item of element.value) {
                 // Validate that item is a struct
-                if(!item || item.type !== 'struct' || !item.fields) {
+                if(!item || item.type !== 'struct' || !item.value) {
                     throw new Error('createValueElement - table format list items must be structs');
                 }
                 
@@ -1378,7 +1378,7 @@ function createValueElement(element) {
                     td.style.padding = '5px';
                     
                     const fieldName = headerDef.field;
-                    const fieldValue = item.fields[fieldName];
+                    const fieldValue = item.value[fieldName];
                     
                     // Evaluate the value if it's an expression
                     let cellValue = fieldValue;
