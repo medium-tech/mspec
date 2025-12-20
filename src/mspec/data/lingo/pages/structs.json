@@ -1,0 +1,77 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+
+    "state": {},
+
+    "ops": {},
+
+    "output": [
+        {"heading": "Individual Structs", "level": 1},
+        {
+            "type": "struct",
+            "fields": {
+                "color": "red",
+                "amount": 10,
+                "in_stock": true
+            }
+        },
+        {
+            "type": "struct",
+            "fields": {
+                "color": {"type": "str", "value": "green"},
+                "amount": {"type": "int", "value": 20},
+                "in_stock": {"type": "bool", "value": true}
+            }
+        },
+        {
+            "type": "struct",
+            "fields": {
+                "color": {"call": "join", "args": {"separator": "", "items": ["blue"]}},
+                "amount": {"call": "add", "args": {"values": [5, 15]}},
+                "in_stock": {"call": "equals", "args": {"a": 1, "b": 1}}
+            }
+        },
+        {"heading": "List of Structs", "level": 1},
+        {
+            "type": "list",
+            "display": {
+                "format": "table",
+                "headers": [
+                    {"text": "Color", "field": "color"},
+                    {"text": "Amount", "field": "amount"},
+                    {"text": "In Stock", "field": "in_stock"}
+                ]
+            },
+            "value": [
+                {
+                    "type": "struct",
+                    "fields": {
+                        "color": "red",
+                        "amount": 10,
+                        "in_stock": true
+                    }
+                },
+                {
+                    "type": "struct",
+                    "fields": {
+                        "color": {"type": "str", "value": "green"},
+                        "amount": {"type": "int", "value": 20},
+                        "in_stock": {"type": "bool", "value": true}
+                    }
+                },
+                {
+                    "type": "struct",
+                    "fields": {
+                        "color": {"call": "join", "args": {"separator": "", "items": ["blue"]}},
+                        "amount": {"call": "add", "args": {"values": [5, 15]}},
+                        "in_stock": {"call": "equals", "args": {"a": 1, "b": 1}}
+                    }
+                }
+            ]
+        }
+    ]
+
+}

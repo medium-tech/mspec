@@ -1,0 +1,44 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+
+    "state": {},
+
+    "ops": {},
+
+    "output": [
+        {"heading": "Forms", "level": 1},
+        {
+            "form": {
+                "fields": {
+                    "color": {
+                        "name": {
+                            "lower_case": "color"
+                        },
+                        "type": "str",
+                        "default": "blue",
+                        "description": "The product color"
+                    },
+                    "amount": {
+                        "name": {
+                            "lower_case": "amount"
+                        },
+                        "type": "int",
+                        "default": 42,
+                        "description": "Number of items in stock"
+                    },
+                    "in_stock": {
+                        "name": {
+                            "lower_case": "in stock"
+                        },
+                        "type": "bool",
+                        "default": false,
+                        "description": "Whether the product is in stock"
+                    }
+                }
+            }
+        }
+    ]
+}
