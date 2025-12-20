@@ -342,20 +342,20 @@ class TestLingoPages(unittest.TestCase):
         
         # Verify first struct (literals)
         self.assertEqual(doc[1]['type'], 'struct')
-        self.assertEqual(doc[1]['fields']['color'], 'red')
-        self.assertEqual(doc[1]['fields']['amount'], 10)
-        self.assertEqual(doc[1]['fields']['in_stock'], True)
+        self.assertEqual(doc[1]['value']['color'], 'red')
+        self.assertEqual(doc[1]['value']['amount'], 10)
+        self.assertEqual(doc[1]['value']['in_stock'], True)
         
         # Verify second struct (typed values)
         self.assertEqual(doc[2]['type'], 'struct')
-        self.assertEqual(doc[2]['fields']['color']['value'], 'green')
-        self.assertEqual(doc[2]['fields']['amount']['value'], 20)
-        self.assertEqual(doc[2]['fields']['in_stock']['value'], True)
+        self.assertEqual(doc[2]['value']['color']['value'], 'green')
+        self.assertEqual(doc[2]['value']['amount']['value'], 20)
+        self.assertEqual(doc[2]['value']['in_stock']['value'], True)
         
         # Verify third struct (scripted values with display.headers = false)
         self.assertEqual(doc[3]['type'], 'struct')
         self.assertEqual(doc[3]['display']['headers'], False)
-        self.assertIn('call', doc[3]['fields']['color'])
+        self.assertIn('call', doc[3]['value']['color'])
         
         # Verify second heading
         self.assertEqual(doc[4]['heading'], 'List of Structs')
@@ -379,7 +379,7 @@ class TestLingoPages(unittest.TestCase):
         # Verify all items in the list are structs
         for item in doc[5]['value']:
             self.assertEqual(item['type'], 'struct')
-            self.assertIn('fields', item)
+            self.assertIn('value', item)
 
     
 built_in = builtin_spec_files()

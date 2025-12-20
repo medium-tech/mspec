@@ -118,7 +118,7 @@ class LingoPage(tkinter.Frame):
     
     def _render_struct(self, element:dict):
         """Render a struct as a table with key-value pairs"""
-        fields = element.get('fields', {})
+        fields = element.get('value', {})
         show_headers = element.get('display', {}).get('headers', True)
         
         # Build table data
@@ -165,7 +165,7 @@ class LingoPage(tkinter.Frame):
         
         # Build data rows
         for item in items:
-            fields = item.get('fields', {})
+            fields = item.get('value', {})
             row_text = ''
             for i, header_def in enumerate(headers):
                 field_name = header_def['field']

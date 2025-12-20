@@ -12,7 +12,7 @@
         {"heading": "Individual Structs", "level": 1},
         {
             "type": "struct",
-            "fields": {
+            "value": {
                 "color": "red",
                 "amount": 10,
                 "in_stock": true
@@ -20,7 +20,7 @@
         },
         {
             "type": "struct",
-            "fields": {
+            "value": {
                 "color": {"type": "str", "value": "green"},
                 "amount": {"type": "int", "value": 20},
                 "in_stock": {"type": "bool", "value": true}
@@ -31,7 +31,7 @@
             "display": {
                 "headers": false
             },
-            "fields": {
+            "value": {
                 "color": {"call": "join", "args": {"separator": "", "items": ["blue"]}},
                 "amount": {"call": "add", "args": {"a": 5, "b": 15}},
                 "in_stock": {"call": "eq", "args": {"a": 1, "b": 1}}
@@ -51,7 +51,7 @@
             "value": [
                 {
                     "type": "struct",
-                    "fields": {
+                    "value": {
                         "color": "red",
                         "amount": 10,
                         "in_stock": true
@@ -59,7 +59,7 @@
                 },
                 {
                     "type": "struct",
-                    "fields": {
+                    "value": {
                         "color": {"type": "str", "value": "green"},
                         "amount": {"type": "int", "value": 20},
                         "in_stock": {"type": "bool", "value": true}
@@ -67,7 +67,7 @@
                 },
                 {
                     "type": "struct",
-                    "fields": {
+                    "value": {
                         "color": {"call": "join", "args": {"separator": "", "items": ["blue"]}},
                         "amount": {"call": "add", "args": {"a": 5, "b": 15}},
                         "in_stock": {"call": "eq", "args": {"a": 1, "b": 1}}
