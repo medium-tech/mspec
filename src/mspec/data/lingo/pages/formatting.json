@@ -1,0 +1,133 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+
+    "state": {},
+
+    "ops": {},
+
+    "output": [
+        {"heading": "The World with a Pink Sky", "level": 1},
+        {"heading": "A Beautiful Adventure in Formatting", "level": 2},
+        {
+            "text": "Once upon a time, in a land "
+        },
+        {
+            "text": "far",
+            "style": {"bold": true}
+        },
+        {
+            "text": ", "
+        },
+        {
+            "text": "far",
+            "style": {"italic": true}   
+        },
+        {
+            "text": ", "
+        },
+        {
+            "text": "away",
+            "style": {"underline": true}   
+        },
+        {
+            "text": ", there was a sky that was not blue, but "
+        },
+        {
+            "text": "pink",
+            "style": {"color": "pink"}   
+        },
+        {
+            "text": ". And everyone lived "
+        },
+        {
+            "text": "happily.",
+            "style": {"bold": true, "italic": true, "underline": true, "color": "purple"}   
+        },
+        { "break": 1},
+        {
+            "text": "They would mix",
+            "style": {"bold": true, "underline": true}
+        },
+        {
+            "text": " and",
+            "style": {"underline": true}
+        },
+        {
+            "text": " match",
+            "style": {"italic": true, "underline": true}
+        },
+        {
+            "text": " styles every day to create beautiful outfits.",
+            "style": {"underline": true}
+        },
+        { "break": 1},
+        {
+            "text": "They would also "
+        },
+        {
+            "text": "cross things out.",
+            "style": {"strikethrough": true}
+        },
+        {
+            "text": " But they never crossed out kindness."
+        },
+        { "break": 1},
+        {
+            "text": "Instead they wrote in every color of the rainbow!"
+        },
+        {
+            "type": "list",
+            "value": [
+                {"text": "Red", "style": {"color": "red"}},
+                {"text": "Orange", "style": {"color": "orange"}},
+                {"text": "Yellow", "style": {"color": "yellow"}},
+                {"text": "Green", "style": {"color": "green"}},
+                {"text": "Blue", "style": {"color": "blue"}},
+                {"text": "Indigo", "style": {"color": "indigo"}},
+                {"text": "Violet", "style": {"color": "violet"}}
+            ]
+        },
+        {
+            "text": "And also the primary colors of print!"
+        },
+        {
+            "type": "list",
+            "value": [
+                {"text": "Cyan", "style": {"color": "cyan"}},
+                {"text": "Magenta", "style": {"color": "magenta"}},
+                {"text": "Yellow", "style": {"color": "yellow"}},
+                {"text": "Black", "style": {"color": "black"}}
+            ]
+        },
+        {
+            "text": "And last but not least, they loved to write in shades of gray."
+        },
+        {
+            "type": "list",
+            "value": [
+                {"text": "Black", "style": {"color": "black"}},
+                {"text": "Dark Gray", "style": {"color": "dark_gray"}},
+                {"text": "Gray", "style": {"color": "gray"}},
+                {"text": "Light Gray", "style": {"color": "light_gray"}},
+                {"text": "White", "style": {"color": "white"}}
+            ]
+        },
+        {
+            "text": "And then there's brown, which is just a delightful color all on its own!",
+            "style": {"color": "brown"}
+        },
+        {
+            "text": "And so, in this colorful world with a pink sky, everyone lived "
+        },
+        {
+            "text": "happily",
+            "style": {"bold": true, "italic": true, "underline": true, "color": "purple"}   
+        },
+        {
+            "text": "ever after. The End."
+        }
+    ]
+}
