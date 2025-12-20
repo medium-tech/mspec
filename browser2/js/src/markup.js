@@ -1333,9 +1333,10 @@ function createValueElement(element) {
         return table;
 
     } else if(element.type == 'list') {
+        const listFormat = (element.display && element.display.format) ? element.display.format : 'bullets';
 
         // Check if this is a table format list
-        if(element.display && element.display.format == 'table') {
+        if(listFormat == 'table') {
             // Render list of structs as a table
             if(!element.display.headers || !Array.isArray(element.display.headers)) {
                 throw new Error('createValueElement - table format requires display.headers array');
@@ -1411,25 +1412,33 @@ function createValueElement(element) {
             table.appendChild(tbody);
             
             return table;
-        }
+        }else if(listFormat == 'bullets' || listFormat == 'numbers') {
 
-        // element.display.format = 'bulleted' | 'numbered' for ul or ol
-
-        const elementType = element.display && element.display.format == 'numbers' ? 'ol' : 'ul';
-
-        const container = document.createElement(elementType);
-        for(const item of element.value) {
-            const itemElement = createDOMElement({spec: {lingo: {version: 'page-beta-1'}}}, item);
-            if(itemElement) {
-                const li = document.createElement('li');
-                li.appendChild(itemElement);
-                container.appendChild(li);
+            let elementType;
+            if(listFormat == 'bullets') {
+                elementType = 'ul';
+            } else if(listFormat == 'numbers') {
+                elementType = 'ol';
             }else{
-                throw new Error('createValueElement - failed to create DOM element for list item');
+                throw new Error('createValueElement - unsupported list display format: ' + listFormat);
             }
+
+            const container = document.createElement(elementType);
+            for(const item of element.value) {
+                const itemElement = createDOMElement({spec: {lingo: {version: 'page-beta-1'}}}, item);
+                if(itemElement) {
+                    const li = document.createElement('li');
+                    li.appendChild(itemElement);
+                    container.appendChild(li);
+                }else{
+                    throw new Error('createValueElement - failed to create DOM element for list item');
+                }
+            }
+            return container;
+
+        }else{
+            throw new Error('createValueElement - unsupported list display format: ' + listFormat);
         }
-        return container;
-        
 
     }else{
         const span = document.createElement('span');
