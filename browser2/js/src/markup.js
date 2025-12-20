@@ -432,6 +432,8 @@ function lingoExecute(app, expression, ctx = null) {
             result = renderSwitch(app, expression, ctx);
         } else if ('heading' in expression) {
             result = renderHeading(app, expression, ctx);
+        } else if ('form' in expression) {
+            result = renderForm(app, expression, ctx);
         } else if ('args' in expression) {
             result = renderArgs(app, expression, ctx);
         } else if ('self' in expression) {
@@ -774,6 +776,18 @@ function renderHeading(app, element, ctx = null) {
     } catch (error) {
         throw new Error(`heading - error processing heading expression: ${error.message}`);
     }
+}
+
+/**
+ * Render form - creates a form element with fields
+ */
+function renderForm(app, element, ctx = null) {
+    if (!('fields' in element.form)) {
+        throw new Error('form - missing fields key');
+    }
+    
+    const fields = element.form.fields;
+    return {form: fields};
 }
 
 /**
@@ -1223,6 +1237,8 @@ function createDOMElement(app, element) {
         return createTextElement(element);
     } else if ('value' in element) {
         return createValueElement(element);
+    } else if ('form' in element) {
+        return createFormElement(element);
     } else {
         console.warn('Unknown element type:', element);
         return null;
@@ -1361,4 +1377,109 @@ function createLinkElement(element) {
     link.href = element.link;
     link.textContent = element.text || element.link;
     return link;
+}
+
+/**
+ * Create form element with table layout
+ */
+function createFormElement(element) {
+    const formContainer = document.createElement('div');
+    const table = document.createElement('table');
+    table.style.borderCollapse = 'collapse';
+    
+    const fields = element.form;
+    const formData = {};
+    
+    // Create a row for each field
+    for (const [fieldKey, fieldSpec] of Object.entries(fields)) {
+        const row = document.createElement('tr');
+        
+        // Column 1: Field name
+        const nameCell = document.createElement('td');
+        nameCell.style.padding = '5px 10px';
+        nameCell.style.verticalAlign = 'middle';
+        const fieldName = fieldSpec.name?.lower_case || fieldKey;
+        nameCell.textContent = fieldName.charAt(0).toUpperCase() + fieldName.slice(1) + ':';
+        row.appendChild(nameCell);
+        
+        // Column 2: Input element
+        const inputCell = document.createElement('td');
+        inputCell.style.padding = '5px 10px';
+        
+        let inputElement;
+        const fieldType = fieldSpec.type;
+        const defaultValue = fieldSpec.default;
+        
+        // Initialize form data with default value
+        formData[fieldKey] = defaultValue;
+        
+        if (fieldType === 'bool') {
+            // Checkbox for boolean
+            inputElement = document.createElement('input');
+            inputElement.type = 'checkbox';
+            inputElement.checked = defaultValue;
+            inputElement.addEventListener('change', () => {
+                formData[fieldKey] = inputElement.checked;
+            });
+        } else if (fieldType === 'int') {
+            // Number input for integers
+            inputElement = document.createElement('input');
+            inputElement.type = 'number';
+            inputElement.step = '1';
+            inputElement.value = defaultValue;
+            inputElement.addEventListener('input', () => {
+                formData[fieldKey] = parseInt(inputElement.value, 10) || 0;
+            });
+        } else if (fieldType === 'float') {
+            // Number input for floats
+            inputElement = document.createElement('input');
+            inputElement.type = 'number';
+            inputElement.step = 'any';
+            inputElement.value = defaultValue;
+            inputElement.addEventListener('input', () => {
+                formData[fieldKey] = parseFloat(inputElement.value) || 0.0;
+            });
+        } else {
+            // Text input for strings and other types
+            inputElement = document.createElement('input');
+            inputElement.type = 'text';
+            inputElement.value = defaultValue;
+            inputElement.addEventListener('input', () => {
+                formData[fieldKey] = inputElement.value;
+            });
+        }
+        
+        inputCell.appendChild(inputElement);
+        row.appendChild(inputCell);
+        
+        // Column 3: Description
+        const descCell = document.createElement('td');
+        descCell.style.padding = '5px 10px';
+        descCell.style.verticalAlign = 'middle';
+        descCell.style.fontStyle = 'italic';
+        descCell.style.color = '#666';
+        descCell.textContent = fieldSpec.description || '';
+        row.appendChild(descCell);
+        
+        table.appendChild(row);
+    }
+    
+    // Add submit button row
+    const submitRow = document.createElement('tr');
+    const submitCell = document.createElement('td');
+    submitCell.colSpan = 3;
+    submitCell.style.padding = '10px';
+    
+    const submitButton = document.createElement('button');
+    submitButton.textContent = 'Submit';
+    submitButton.addEventListener('click', () => {
+        console.log('Form submitted:', formData);
+    });
+    
+    submitCell.appendChild(submitButton);
+    submitRow.appendChild(submitCell);
+    table.appendChild(submitRow);
+    
+    formContainer.appendChild(table);
+    return formContainer;
 }

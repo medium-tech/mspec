@@ -357,3 +357,45 @@ test('test - builtin mapp module page', async ({ page }) => {
   await expect(page.locator('a[href="/delete_user"]')).toContainText('delete_user');
   await expect(page.locator('a[href="/update_profile"]')).toContainText('update_profile');
 });
+
+test('test - forms page', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/forms.json');
+
+  // Check heading
+  await expect(page.locator('h1')).toContainText('Forms');
+
+  // Check that form fields are visible with correct types
+  await expect(page.locator('input[type="text"]')).toBeVisible(); // color field
+  await expect(page.locator('input[type="number"]').first()).toBeVisible(); // amount field
+  await expect(page.locator('input[type="checkbox"]')).toBeVisible(); // in_stock field
+  await expect(page.locator('input[type="number"]').nth(1)).toBeVisible(); // price field
+  
+  // Check default values
+  const colorInput = page.locator('input[type="text"]');
+  await expect(colorInput).toHaveValue('blue');
+  
+  const amountInput = page.locator('input[type="number"]').first();
+  await expect(amountInput).toHaveValue('42');
+  
+  const inStockCheckbox = page.locator('input[type="checkbox"]');
+  await expect(inStockCheckbox).not.toBeChecked();
+  
+  const priceInput = page.locator('input[type="number"]').nth(1);
+  await expect(priceInput).toHaveValue('19.99');
+  
+  // Check submit button
+  await expect(page.getByRole('button', { name: 'Submit' })).toBeVisible();
+  
+  // Test form interaction - change values
+  await colorInput.fill('red');
+  await amountInput.fill('100');
+  await inStockCheckbox.check();
+  await priceInput.fill('29.99');
+  
+  // Verify the checkbox is now checked
+  await expect(inStockCheckbox).toBeChecked();
+  
+  // Click submit button - this logs to console
+  await page.getByRole('button', { name: 'Submit' }).click();
+});
