@@ -327,6 +327,60 @@ class TestLingoPages(unittest.TestCase):
         
         self.assertTrue(random_found, "Should find random.randint() output")
 
+    def test_structs_page(self):
+        """Test struct rendering functionality"""
+        spec = load_browser2_spec('structs.json')
+        app = lingo_app(spec)
+        doc = render_output(lingo_update_state(app))
+        
+        # Verify we have the expected number of elements
+        self.assertEqual(len(doc), 6, "Should have 6 output elements")
+        
+        # Verify first heading
+        self.assertEqual(doc[0]['heading'], 'Individual Structs')
+        self.assertEqual(doc[0]['level'], 1)
+        
+        # Verify first struct (literals)
+        self.assertEqual(doc[1]['type'], 'struct')
+        self.assertEqual(doc[1]['fields']['color'], 'red')
+        self.assertEqual(doc[1]['fields']['amount'], 10)
+        self.assertEqual(doc[1]['fields']['in_stock'], True)
+        
+        # Verify second struct (typed values)
+        self.assertEqual(doc[2]['type'], 'struct')
+        self.assertEqual(doc[2]['fields']['color']['value'], 'green')
+        self.assertEqual(doc[2]['fields']['amount']['value'], 20)
+        self.assertEqual(doc[2]['fields']['in_stock']['value'], True)
+        
+        # Verify third struct (scripted values with display.headers = false)
+        self.assertEqual(doc[3]['type'], 'struct')
+        self.assertEqual(doc[3]['display']['headers'], False)
+        self.assertIn('call', doc[3]['fields']['color'])
+        
+        # Verify second heading
+        self.assertEqual(doc[4]['heading'], 'List of Structs')
+        self.assertEqual(doc[4]['level'], 1)
+        
+        # Verify list of structs with table format
+        self.assertEqual(doc[5]['type'], 'list')
+        self.assertEqual(doc[5]['display']['format'], 'table')
+        self.assertEqual(len(doc[5]['display']['headers']), 3)
+        self.assertEqual(len(doc[5]['value']), 3)
+        
+        # Verify table headers
+        headers = doc[5]['display']['headers']
+        self.assertEqual(headers[0]['text'], 'Color')
+        self.assertEqual(headers[0]['field'], 'color')
+        self.assertEqual(headers[1]['text'], 'Amount')
+        self.assertEqual(headers[1]['field'], 'amount')
+        self.assertEqual(headers[2]['text'], 'In Stock')
+        self.assertEqual(headers[2]['field'], 'in_stock')
+        
+        # Verify all items in the list are structs
+        for item in doc[5]['value']:
+            self.assertEqual(item['type'], 'struct')
+            self.assertIn('fields', item)
+
     
 built_in = builtin_spec_files()
 lingo_scripts = built_in['lingo_script']

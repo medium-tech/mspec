@@ -33,8 +33,8 @@
             },
             "fields": {
                 "color": {"call": "join", "args": {"separator": "", "items": ["blue"]}},
-                "amount": {"call": "add", "args": {"values": [5, 15]}},
-                "in_stock": {"call": "equals", "args": {"a": 1, "b": 1}}
+                "amount": {"call": "add", "args": {"a": 5, "b": 15}},
+                "in_stock": {"call": "eq", "args": {"a": 1, "b": 1}}
             }
         },
         {"heading": "List of Structs", "level": 1},
@@ -69,8 +69,8 @@
                     "type": "struct",
                     "fields": {
                         "color": {"call": "join", "args": {"separator": "", "items": ["blue"]}},
-                        "amount": {"call": "add", "args": {"values": [5, 15]}},
-                        "in_stock": {"call": "equals", "args": {"a": 1, "b": 1}}
+                        "amount": {"call": "add", "args": {"a": 5, "b": 15}},
+                        "in_stock": {"call": "eq", "args": {"a": 1, "b": 1}}
                     }
                 }
             ]

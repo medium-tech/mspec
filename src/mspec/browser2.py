@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import tkinter
 import webbrowser
 from tkinter import ttk
@@ -85,29 +86,118 @@ class LingoPage(tkinter.Frame):
         self._text_buffer.insert(self._tk_row(), element['text'])
 
     def render_value(self, element:dict):
-        if element['type'] == 'list':
+        if element['type'] == 'struct':
+            self._render_struct(element)
+        elif element['type'] == 'list':
             
             # init list formatting #
-            bullet_format = element.get('opt', {}).get('format', 'bullets')
-            match bullet_format:
-                case 'bullets':
-                    bullet_char = lambda _: '• '
-                case 'numbers':
-                    bullet_char = lambda n: f'{n}. '
-                case _:
-                    raise ValueError(f'Unknown list opt.format: {bullet_format}')
+            bullet_format = element.get('display', {}).get('format', 'bullets')
+            
+            if bullet_format == 'table':
+                self._render_table_list(element)
+            else:
+                match bullet_format:
+                    case 'bullets':
+                        bullet_char = lambda _: '• '
+                    case 'numbers':
+                        bullet_char = lambda n: f'{n}. '
+                    case _:
+                        raise ValueError(f'Unknown list display.format: {bullet_format}')
 
-            for n, item in enumerate(element['value'], start=1):
-                # insert bullet and item #
-                self._text_buffer.insert(self._tk_row(), bullet_char(n))
-                self.render_element(item)
-                self._text_row += 1
+                for n, item in enumerate(element['value'], start=1):
+                    # insert bullet and item #
+                    self._text_buffer.insert(self._tk_row(), bullet_char(n))
+                    self.render_element(item)
+                    self._text_row += 1
 
-                # line break after each item #
-                self._text_buffer.insert(self._tk_row(), '\n')
-                self._text_row += 1
+                    # line break after each item #
+                    self._text_buffer.insert(self._tk_row(), '\n')
+                    self._text_row += 1
         else:
             self._text_buffer.insert(self._tk_row(), json.dumps(element, indent=4, sort_keys=True))
+    
+    def _render_struct(self, element:dict):
+        """Render a struct as a table with key-value pairs"""
+        fields = element.get('fields', {})
+        show_headers = element.get('display', {}).get('headers', True)
+        
+        # Build table data
+        rows = []
+        for key, value in fields.items():
+            # Evaluate the value if it's a lingo expression
+            evaluated_value = self._evaluate_field_value(value)
+            rows.append((key, str(evaluated_value)))
+        
+        # Render as table
+        if show_headers:
+            header_row = 'key' + ' ' * 20 + 'value'
+            separator = '-' * 50
+            self._text_buffer.insert(self._tk_row(), header_row + '\n')
+            self._text_buffer.insert(self._tk_row(), separator + '\n')
+        
+        for key, value in rows:
+            # Format the row with padding
+            row_text = f'{key:<23} {value}'
+            self._text_buffer.insert(self._tk_row(), row_text + '\n')
+    
+    def _render_table_list(self, element:dict):
+        """Render a list of structs as a table"""
+        headers = element.get('display', {}).get('headers', [])
+        items = element.get('value', [])
+        
+        # Validate all items are structs
+        for item in items:
+            if not isinstance(item, dict) or item.get('type') != 'struct':
+                raise ValueError('All items in a table-formatted list must be structs')
+        
+        # Build header row
+        header_text = ''
+        for i, header_def in enumerate(headers):
+            header_text += header_def['text']
+            if i < len(headers) - 1:
+                header_text += ' ' * 10
+        
+        self._text_buffer.insert(self._tk_row(), header_text + '\n')
+        
+        # Build separator
+        separator = '-' * (len(header_text) + 20)
+        self._text_buffer.insert(self._tk_row(), separator + '\n')
+        
+        # Build data rows
+        for item in items:
+            fields = item.get('fields', {})
+            row_text = ''
+            for i, header_def in enumerate(headers):
+                field_name = header_def['field']
+                field_value = fields.get(field_name, '')
+                
+                # Evaluate the field value
+                evaluated_value = self._evaluate_field_value(field_value)
+                
+                # Add to row with padding
+                col_width = len(header_def['text']) + 10
+                row_text += f'{str(evaluated_value):<{col_width}}'
+            
+            self._text_buffer.insert(self._tk_row(), row_text.rstrip() + '\n')
+    
+    def _evaluate_field_value(self, value):
+        """Evaluate a field value, handling both literals and lingo expressions"""
+        if isinstance(value, dict):
+            # Check if it's a typed value (e.g., {"type": "str", "value": "green"})
+            if 'type' in value and 'value' in value:
+                return value['value']
+            # Check if it's a lingo expression (e.g., {"call": "add", "args": {...}})
+            elif 'call' in value or 'state' in value or 'params' in value or 'op' in value:
+                result = lingo_execute(self.app, value)
+                if isinstance(result, dict) and 'value' in result:
+                    return result['value']
+                return result
+            else:
+                # Unknown dict format, return as-is
+                return value
+        else:
+            # Literal value
+            return value
 
     def render_break(self, element:dict):
         self._text_buffer.insert(self._tk_row(), '\n' * element['break'])
