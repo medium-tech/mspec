@@ -28,6 +28,9 @@
         },
         {
             "type": "struct",
+            "display": {
+                "headers": false
+            },
             "fields": {
                 "color": {"call": "join", "args": {"separator": "", "items": ["blue"]}},
                 "amount": {"call": "add", "args": {"values": [5, 15]}},
