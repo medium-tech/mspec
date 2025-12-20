@@ -357,3 +357,66 @@ test('test - builtin mapp module page', async ({ page }) => {
   await expect(page.locator('a[href="/delete_user"]')).toContainText('delete_user');
   await expect(page.locator('a[href="/update_profile"]')).toContainText('update_profile');
 });
+
+test('test - structs page', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/structs.json');
+
+  // Check for Individual Structs heading
+  await expect(page.locator('h1').first()).toContainText('Individual Structs');
+
+  // Check for struct tables with headers
+  const tables = page.locator('table');
+  await expect(tables).toHaveCount(4); // 3 individual structs + 1 list table
+
+  // Check first struct table has headers and data
+  const firstTable = tables.nth(0);
+  await expect(firstTable.locator('th').nth(0)).toContainText('key');
+  await expect(firstTable.locator('th').nth(1)).toContainText('value');
+  await expect(firstTable.locator('td').filter({ hasText: 'color' })).toBeVisible();
+  await expect(firstTable.locator('td').filter({ hasText: 'red' })).toBeVisible();
+  await expect(firstTable.locator('td').filter({ hasText: 'amount' })).toBeVisible();
+  await expect(firstTable.locator('td').filter({ hasText: '10' })).toBeVisible();
+  await expect(firstTable.locator('td').filter({ hasText: 'in_stock' })).toBeVisible();
+  await expect(firstTable.locator('td').filter({ hasText: 'true' })).toBeVisible();
+
+  // Check second struct table (with typed values)
+  const secondTable = tables.nth(1);
+  await expect(secondTable.locator('td').filter({ hasText: 'green' })).toBeVisible();
+  await expect(secondTable.locator('td').filter({ hasText: '20' })).toBeVisible();
+
+  // Check third struct table (no headers, with scripted values)
+  const thirdTable = tables.nth(2);
+  // This table should NOT have header row
+  await expect(thirdTable.locator('th')).toHaveCount(0);
+  await expect(thirdTable.locator('td').filter({ hasText: 'blue' })).toBeVisible();
+  await expect(thirdTable.locator('td').filter({ hasText: '20' })).toBeVisible(); // 5 + 15 = 20
+
+  // Check for List of Structs heading
+  await expect(page.locator('h1').filter({ hasText: 'List of Structs' })).toBeVisible();
+
+  // Check the list table
+  const listTable = tables.nth(3);
+  await expect(listTable.locator('th').filter({ hasText: 'Color' })).toBeVisible();
+  await expect(listTable.locator('th').filter({ hasText: 'Amount' })).toBeVisible();
+  await expect(listTable.locator('th').filter({ hasText: 'In Stock' })).toBeVisible();
+
+  // Check rows in list table
+  const rows = listTable.locator('tbody tr');
+  await expect(rows).toHaveCount(3);
+  
+  // First row
+  await expect(rows.nth(0).locator('td').nth(0)).toContainText('red');
+  await expect(rows.nth(0).locator('td').nth(1)).toContainText('10');
+  await expect(rows.nth(0).locator('td').nth(2)).toContainText('true');
+  
+  // Second row
+  await expect(rows.nth(1).locator('td').nth(0)).toContainText('green');
+  await expect(rows.nth(1).locator('td').nth(1)).toContainText('20');
+  await expect(rows.nth(1).locator('td').nth(2)).toContainText('true');
+  
+  // Third row
+  await expect(rows.nth(2).locator('td').nth(0)).toContainText('blue');
+  await expect(rows.nth(2).locator('td').nth(1)).toContainText('20');
+  await expect(rows.nth(2).locator('td').nth(2)).toContainText('true');
+});

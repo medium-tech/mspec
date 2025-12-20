@@ -1221,7 +1221,7 @@ function createDOMElement(app, element) {
         return createLinkElement(element);
     } else if ('text' in element) {
         return createTextElement(element);
-    } else if ('value' in element) {
+    } else if ('value' in element || 'type' in element) {
         return createValueElement(element);
     } else {
         console.warn('Unknown element type:', element);
@@ -1252,25 +1252,193 @@ function createTextElement(element) {
  */
 function createValueElement(element) {
 
-    if(element.type == 'list') {
-
-        // element.display.format = 'bulleted' | 'numbered' for ul or ol
-
-        const elementType = element.display && element.display.format == 'numbers' ? 'ol' : 'ul';
-
-        const container = document.createElement(elementType);
-        for(const item of element.value) {
-            const itemElement = createDOMElement({spec: {lingo: {version: 'page-beta-1'}}}, item);
-            if(itemElement) {
-                const li = document.createElement('li');
-                li.appendChild(itemElement);
-                container.appendChild(li);
-            }else{
-                throw new Error('createValueElement - failed to create DOM element for list item');
-            }
-        }
-        return container;
+    if(element.type == 'struct') {
+        // Render individual struct as a table
+        const showHeaders = element.display && element.display.headers === false ? false : true;
         
+        const table = document.createElement('table');
+        table.style.border = '1px solid black';
+        table.style.borderCollapse = 'collapse';
+        
+        // Add header row if needed
+        if(showHeaders) {
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            
+            const keyHeader = document.createElement('th');
+            keyHeader.textContent = 'key';
+            keyHeader.style.border = '1px solid black';
+            keyHeader.style.padding = '5px';
+            keyHeader.style.textAlign = 'left';
+            headerRow.appendChild(keyHeader);
+            
+            const valueHeader = document.createElement('th');
+            valueHeader.textContent = 'value';
+            valueHeader.style.border = '1px solid black';
+            valueHeader.style.padding = '5px';
+            valueHeader.style.textAlign = 'left';
+            headerRow.appendChild(valueHeader);
+            
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+        }
+        
+        // Add data rows
+        const tbody = document.createElement('tbody');
+        for(const [key, value] of Object.entries(element.fields)) {
+            const row = document.createElement('tr');
+            
+            const keyCell = document.createElement('td');
+            keyCell.textContent = key;
+            keyCell.style.border = '1px solid black';
+            keyCell.style.padding = '5px';
+            row.appendChild(keyCell);
+            
+            const valueCell = document.createElement('td');
+            valueCell.style.border = '1px solid black';
+            valueCell.style.padding = '5px';
+            
+            // Evaluate the value if it's an expression
+            let cellValue = value;
+            if(typeof value === 'object' && value !== null) {
+                // It's either a typed value like {"type": "str", "value": "green"}
+                // or a scripted expression like {"call": "add", "args": {...}}
+                if('value' in value && 'type' in value) {
+                    // Typed value
+                    cellValue = value.value;
+                } else if('call' in value || 'lingo' in value) {
+                    // Scripted expression - need to evaluate it
+                    try {
+                        const dummyApp = {spec: {lingo: {version: 'page-beta-1'}}, state: {}, params: {}};
+                        const result = lingoExecute(dummyApp, value);
+                        if(typeof result === 'object' && result !== null && 'value' in result) {
+                            cellValue = result.value;
+                        } else {
+                            cellValue = result;
+                        }
+                    } catch(error) {
+                        console.error('Error evaluating struct field value:', error);
+                        cellValue = '[Error]';
+                    }
+                }
+            }
+            
+            valueCell.textContent = String(cellValue);
+            row.appendChild(valueCell);
+            
+            tbody.appendChild(row);
+        }
+        table.appendChild(tbody);
+        
+        return table;
+
+    } else if(element.type == 'list') {
+        const listFormat = (element.display && element.display.format) ? element.display.format : 'bullets';
+
+        // Check if this is a table format list
+        if(listFormat == 'table') {
+            // Render list of structs as a table
+            if(!element.display.headers || !Array.isArray(element.display.headers)) {
+                throw new Error('createValueElement - table format requires display.headers array');
+            }
+            
+            const table = document.createElement('table');
+            table.style.border = '1px solid black';
+            table.style.borderCollapse = 'collapse';
+            
+            // Add header row
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            
+            for(const headerDef of element.display.headers) {
+                const th = document.createElement('th');
+                th.textContent = headerDef.text;
+                th.style.border = '1px solid black';
+                th.style.padding = '5px';
+                th.style.textAlign = 'left';
+                headerRow.appendChild(th);
+            }
+            
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // Add data rows
+            const tbody = document.createElement('tbody');
+            for(const item of element.value) {
+                // Validate that item is a struct
+                if(!item || item.type !== 'struct' || !item.fields) {
+                    throw new Error('createValueElement - table format list items must be structs');
+                }
+                
+                const row = document.createElement('tr');
+                
+                for(const headerDef of element.display.headers) {
+                    const td = document.createElement('td');
+                    td.style.border = '1px solid black';
+                    td.style.padding = '5px';
+                    
+                    const fieldName = headerDef.field;
+                    const fieldValue = item.fields[fieldName];
+                    
+                    // Evaluate the value if it's an expression
+                    let cellValue = fieldValue;
+                    if(typeof fieldValue === 'object' && fieldValue !== null) {
+                        if('value' in fieldValue && 'type' in fieldValue) {
+                            // Typed value
+                            cellValue = fieldValue.value;
+                        } else if('call' in fieldValue || 'lingo' in fieldValue) {
+                            // Scripted expression - need to evaluate it
+                            try {
+                                const dummyApp = {spec: {lingo: {version: 'page-beta-1'}}, state: {}, params: {}};
+                                const result = lingoExecute(dummyApp, fieldValue);
+                                if(typeof result === 'object' && result !== null && 'value' in result) {
+                                    cellValue = result.value;
+                                } else {
+                                    cellValue = result;
+                                }
+                            } catch(error) {
+                                console.error('Error evaluating struct field value:', error);
+                                cellValue = '[Error]';
+                            }
+                        }
+                    }
+                    
+                    td.textContent = String(cellValue);
+                    row.appendChild(td);
+                }
+                
+                tbody.appendChild(row);
+            }
+            table.appendChild(tbody);
+            
+            return table;
+        }else if(listFormat == 'bullets' || listFormat == 'numbers') {
+
+            let elementType;
+            if(listFormat == 'bullets') {
+                elementType = 'ul';
+            } else if(listFormat == 'numbers') {
+                elementType = 'ol';
+            }else{
+                throw new Error('createValueElement - unsupported list display format: ' + listFormat);
+            }
+
+            const container = document.createElement(elementType);
+            for(const item of element.value) {
+                const itemElement = createDOMElement({spec: {lingo: {version: 'page-beta-1'}}}, item);
+                if(itemElement) {
+                    const li = document.createElement('li');
+                    li.appendChild(itemElement);
+                    container.appendChild(li);
+                }else{
+                    throw new Error('createValueElement - failed to create DOM element for list item');
+                }
+            }
+            return container;
+
+        }else{
+            throw new Error('createValueElement - unsupported list display format: ' + listFormat);
+        }
 
     }else{
         const span = document.createElement('span');
