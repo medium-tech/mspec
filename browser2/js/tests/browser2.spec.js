@@ -504,3 +504,56 @@ test('test - forms page', async ({ page }) => {
   // Click submit button - this logs to console
   await page.getByRole('button', { name: 'Submit' }).click();
 });
+
+test('test - formatting page', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/formatting.json');
+
+  // Check headings within the lingo app
+  const lingoApp = page.locator('#lingo-app');
+  await expect(lingoApp.locator('h1')).toContainText('The World with a Pink Sky');
+  await expect(lingoApp.locator('h2')).toContainText('A Beautiful Adventure in Formatting');
+
+  // Check that styled text elements are present with correct styles
+  
+  // Check for bold text
+  const boldText = lingoApp.locator('span').filter({ hasText: 'far' }).first();
+  await expect(boldText).toHaveCSS('font-weight', '700'); // bold = 700
+
+  // Check for italic text
+  const italicText = lingoApp.locator('span').filter({ hasText: 'far' }).nth(1);
+  await expect(italicText).toHaveCSS('font-style', 'italic');
+
+  // Check for underline text
+  const underlineText = lingoApp.locator('span').filter({ hasText: 'away' });
+  await expect(underlineText).toHaveCSS('text-decoration', /underline/);
+
+  // Check for strikethrough text
+  const strikethroughText = lingoApp.locator('span').filter({ hasText: 'cross things out.' });
+  await expect(strikethroughText).toHaveCSS('text-decoration', /line-through/);
+
+  // Check for colored text - pink
+  const pinkText = lingoApp.locator('span').filter({ hasText: 'pink' }).first();
+  await expect(pinkText).toHaveCSS('color', 'rgb(255, 192, 203)'); // pink in RGB
+
+  // Check for multiple styles combined (bold + italic + underline + color)
+  const multiStyleText = lingoApp.locator('span').filter({ hasText: 'happily.' }).first();
+  await expect(multiStyleText).toHaveCSS('font-weight', '700'); // bold
+  await expect(multiStyleText).toHaveCSS('font-style', 'italic');
+  await expect(multiStyleText).toHaveCSS('text-decoration', /underline/);
+  await expect(multiStyleText).toHaveCSS('color', 'rgb(128, 0, 128)'); // purple in RGB
+
+  // Check colored list items
+  const redListItem = lingoApp.locator('li').filter({ hasText: 'Red' }).locator('span');
+  await expect(redListItem).toHaveCSS('color', 'rgb(255, 0, 0)'); // red in RGB
+
+  const greenListItem = lingoApp.locator('li').filter({ hasText: 'Green' }).locator('span');
+  await expect(greenListItem).toHaveCSS('color', 'rgb(0, 128, 0)'); // green in RGB
+
+  // Check special color names (dark_gray, light_gray)
+  const darkGrayListItem = lingoApp.locator('li').filter({ hasText: 'Dark Gray' }).locator('span');
+  await expect(darkGrayListItem).toHaveCSS('color', 'rgb(169, 169, 169)'); // darkgray in RGB
+
+  const lightGrayListItem = lingoApp.locator('li').filter({ hasText: 'Light Gray' }).locator('span');
+  await expect(lightGrayListItem).toHaveCSS('color', 'rgb(211, 211, 211)'); // lightgray in RGB
+});
