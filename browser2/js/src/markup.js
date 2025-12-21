@@ -1369,7 +1369,14 @@ function createValueElement(element) {
                 }
             }
             
-            valueCell.textContent = String(cellValue);
+            // Format the cell value for display
+            if(Array.isArray(cellValue)) {
+                valueCell.textContent = cellValue.join(', ');
+            } else if(cellValue instanceof Date) {
+                valueCell.textContent = cellValue.toISOString().replace(/\.\d{3}Z$/, '');
+            } else {
+                valueCell.textContent = String(cellValue);
+            }
             row.appendChild(valueCell);
             
             tbody.appendChild(row);
@@ -1449,7 +1456,14 @@ function createValueElement(element) {
                         }
                     }
                     
-                    td.textContent = String(cellValue);
+                    // Format the cell value for display
+                    if(Array.isArray(cellValue)) {
+                        td.textContent = cellValue.join(', ');
+                    } else if(cellValue instanceof Date) {
+                        td.textContent = cellValue.toISOString().replace(/\.\d{3}Z$/, '');
+                    } else {
+                        td.textContent = String(cellValue);
+                    }
                     row.appendChild(td);
                 }
                 

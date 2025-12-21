@@ -10,67 +10,295 @@
 
     "output": [
         {"heading": "Individual Structs", "level": 1},
+        {"heading": "Primitive Types - Struct 1", "level": 2},
         {
             "type": "struct",
             "value": {
-                "color": "red",
-                "amount": 10,
-                "in_stock": true
+                "x_bool": false,
+                "x_int": 101,
+                "x_float": 21.99,
+                "x_str": "piano"
             }
         },
+        {"heading": "Primitive Types - Struct 2", "level": 2},
         {
             "type": "struct",
             "value": {
-                "color": {"type": "str", "value": "green"},
-                "amount": {"type": "int", "value": 20},
-                "in_stock": {"type": "bool", "value": true}
+                "x_bool": {"type": "bool", "value": true},
+                "x_int": {"type": "int", "value": 202},
+                "x_float": {"type": "float", "value": 0.99},
+                "x_str": {"type": "str", "value": "guitar"}
             }
         },
+        {"heading": "Primitive Types - Struct 3", "level": 2},
         {
             "type": "struct",
             "display": {
                 "headers": false
             },
             "value": {
-                "color": {"call": "join", "args": {"separator": "", "items": ["blue"]}},
-                "amount": {"call": "add", "args": {"a": 5, "b": 15}},
-                "in_stock": {"call": "eq", "args": {"a": 1, "b": 1}}
+                "x_bool": {"call": "eq", "args": {"a": 1, "b": 1}},
+                "x_int": {"call": "add", "args": {"a": 100, "b": 3}},
+                "x_float": {"call": "div", "args": {"a": 101, "b": 100}},
+                "x_str": {"call": "join", "args": {"separator": "", "items": ["drum"]}}
+            }
+        },
+        {"heading": "Datetime and Enum - Struct 1", "level": 2},
+        {
+            "type": "struct",
+            "value": {
+                "x_datetime": "2000-01-11T12:34:56",
+                "x_enum": "taco",
+                "x_int": 42,
+                "x_str": "sample"
+            }
+        },
+        {"heading": "Datetime and Enum - Struct 2", "level": 2},
+        {
+            "type": "struct",
+            "value": {
+                "x_datetime": {"type": "datetime", "value": "2020-10-02T15:30:00"},
+                "x_enum": {"type": "str", "value": "tlayuda"},
+                "x_int": {"type": "int", "value": 99},
+                "x_str": {"type": "str", "value": "example"}
+            }
+        },
+        {"heading": "Datetime and Enum - Struct 3", "level": 2},
+        {
+            "type": "struct",
+            "display": {
+                "headers": false
+            },
+            "value": {
+                "x_datetime": {"call": "datetime.now", "args": {}},
+                "x_enum": {"call": "join", "args": {"separator": "", "items": ["chilaquiles"]}},
+                "x_int": {"call": "mul", "args": {"a": 7, "b": 6}},
+                "x_str": {"call": "str", "args": {"object": 123}}
+            }
+        },
+        {"heading": "List Types - Struct 1", "level": 2},
+        {
+            "type": "struct",
+            "value": {
+                "x_list_bool": [true, false],
+                "x_list_int": [7, 11],
+                "x_list_float": [3.14, 2.718],
+                "x_list_str": ["banana"]
+            }
+        },
+        {"heading": "List Types - Struct 2", "level": 2},
+        {
+            "type": "struct",
+            "value": {
+                "x_list_bool": {"type": "list", "value": [false, true, true]},
+                "x_list_int": {"type": "list", "value": [42, 16, 109, 4]},
+                "x_list_float": {"type": "list", "value": [1.618, 0.577]},
+                "x_list_str": {"type": "list", "value": ["amplitude", "hello world"]}
+            }
+        },
+        {"heading": "List Types - Struct 3", "level": 2},
+        {
+            "type": "struct",
+            "display": {
+                "headers": false
+            },
+            "value": {
+                "x_list_bool": {"call": "map", "args": {"function": {"call": "not", "args": {"object": {"args": "item"}}}, "iterable": [true, false]}},
+                "x_list_int": {"call": "range", "args": {"start": 1, "stop": 5}},
+                "x_list_float": {"call": "sorted", "args": {"iterable": [2.718, 3.14]}},
+                "x_list_str": {"call": "map", "args": {"function": {"call": "str", "args": {"object": {"args": "item"}}}, "iterable": [1, 2, 3]}}
+            }
+        },
+        {"heading": "More List Types - Struct 1", "level": 2},
+        {
+            "type": "struct",
+            "value": {
+                "x_list_enum": ["chorizo", "al pastor"],
+                "x_list_datetime": ["2000-01-11T12:34:56"],
+                "x_bool": true,
+                "x_int": 5
+            }
+        },
+        {"heading": "More List Types - Struct 2", "level": 2},
+        {
+            "type": "struct",
+            "value": {
+                "x_list_enum": {"type": "list", "value": ["carne"]},
+                "x_list_datetime": {"type": "list", "value": ["2020-10-02T15:30:00", "2021-01-01T00:00:00"]},
+                "x_bool": {"type": "bool", "value": false},
+                "x_int": {"type": "int", "value": 10}
+            }
+        },
+        {"heading": "More List Types - Struct 3", "level": 2},
+        {
+            "type": "struct",
+            "display": {
+                "headers": false
+            },
+            "value": {
+                "x_list_enum": {"call": "map", "args": {"function": {"args": "item"}, "iterable": ["pollo"]}},
+                "x_list_datetime": {"call": "map", "args": {"function": {"args": "item"}, "iterable": ["2025-12-21T22:00:00"]}},
+                "x_bool": {"call": "not", "args": {"object": false}},
+                "x_int": {"call": "sub", "args": {"a": 20, "b": 10}}
             }
         },
         {"heading": "List of Structs", "level": 1},
+        {"heading": "Primitive Types Table", "level": 2},
         {
             "type": "list",
             "display": {
                 "format": "table",
                 "headers": [
-                    {"text": "Color", "field": "color"},
-                    {"text": "Amount", "field": "amount"},
-                    {"text": "In Stock", "field": "in_stock"}
+                    {"text": "Bool", "field": "x_bool"},
+                    {"text": "Int", "field": "x_int"},
+                    {"text": "Float", "field": "x_float"},
+                    {"text": "String", "field": "x_str"}
                 ]
             },
             "value": [
                 {
                     "type": "struct",
                     "value": {
-                        "color": "red",
-                        "amount": 10,
-                        "in_stock": true
+                        "x_bool": false,
+                        "x_int": 101,
+                        "x_float": 21.99,
+                        "x_str": "piano"
                     }
                 },
                 {
                     "type": "struct",
                     "value": {
-                        "color": {"type": "str", "value": "green"},
-                        "amount": {"type": "int", "value": 20},
-                        "in_stock": {"type": "bool", "value": true}
+                        "x_bool": {"type": "bool", "value": true},
+                        "x_int": {"type": "int", "value": 202},
+                        "x_float": {"type": "float", "value": 0.99},
+                        "x_str": {"type": "str", "value": "guitar"}
                     }
                 },
                 {
                     "type": "struct",
                     "value": {
-                        "color": {"call": "join", "args": {"separator": "", "items": ["blue"]}},
-                        "amount": {"call": "add", "args": {"a": 5, "b": 15}},
-                        "in_stock": {"call": "eq", "args": {"a": 1, "b": 1}}
+                        "x_bool": {"call": "eq", "args": {"a": 1, "b": 1}},
+                        "x_int": {"call": "add", "args": {"a": 100, "b": 3}},
+                        "x_float": {"call": "div", "args": {"a": 101, "b": 100}},
+                        "x_str": {"call": "join", "args": {"separator": "", "items": ["drum"]}}
+                    }
+                }
+            ]
+        },
+        {"heading": "Datetime and Enum Table", "level": 2},
+        {
+            "type": "list",
+            "display": {
+                "format": "table",
+                "headers": [
+                    {"text": "Datetime", "field": "x_datetime"},
+                    {"text": "Enum", "field": "x_enum"},
+                    {"text": "Int", "field": "x_int"}
+                ]
+            },
+            "value": [
+                {
+                    "type": "struct",
+                    "value": {
+                        "x_datetime": "2000-01-11T12:34:56",
+                        "x_enum": "taco",
+                        "x_int": 42
+                    }
+                },
+                {
+                    "type": "struct",
+                    "value": {
+                        "x_datetime": {"type": "datetime", "value": "2020-10-02T15:30:00"},
+                        "x_enum": {"type": "str", "value": "tlayuda"},
+                        "x_int": {"type": "int", "value": 99}
+                    }
+                },
+                {
+                    "type": "struct",
+                    "value": {
+                        "x_datetime": {"call": "datetime.now", "args": {}},
+                        "x_enum": {"call": "join", "args": {"separator": "", "items": ["chilaquiles"]}},
+                        "x_int": {"call": "mul", "args": {"a": 7, "b": 6}}
+                    }
+                }
+            ]
+        },
+        {"heading": "List Types Table", "level": 2},
+        {
+            "type": "list",
+            "display": {
+                "format": "table",
+                "headers": [
+                    {"text": "List Bool", "field": "x_list_bool"},
+                    {"text": "List Int", "field": "x_list_int"},
+                    {"text": "List Float", "field": "x_list_float"},
+                    {"text": "List Str", "field": "x_list_str"}
+                ]
+            },
+            "value": [
+                {
+                    "type": "struct",
+                    "value": {
+                        "x_list_bool": [true, false],
+                        "x_list_int": [7, 11],
+                        "x_list_float": [3.14, 2.718],
+                        "x_list_str": ["banana"]
+                    }
+                },
+                {
+                    "type": "struct",
+                    "value": {
+                        "x_list_bool": {"type": "list", "value": [false, true, true]},
+                        "x_list_int": {"type": "list", "value": [42, 16, 109, 4]},
+                        "x_list_float": {"type": "list", "value": [1.618, 0.577]},
+                        "x_list_str": {"type": "list", "value": ["amplitude", "hello world"]}
+                    }
+                },
+                {
+                    "type": "struct",
+                    "value": {
+                        "x_list_bool": {"call": "map", "args": {"function": {"call": "not", "args": {"object": {"args": "item"}}}, "iterable": [true, false]}},
+                        "x_list_int": {"call": "range", "args": {"start": 1, "stop": 5}},
+                        "x_list_float": {"call": "sorted", "args": {"iterable": [2.718, 3.14]}},
+                        "x_list_str": {"call": "map", "args": {"function": {"call": "str", "args": {"object": {"args": "item"}}}, "iterable": [1, 2, 3]}}
+                    }
+                }
+            ]
+        },
+        {"heading": "More List Types Table", "level": 2},
+        {
+            "type": "list",
+            "display": {
+                "format": "table",
+                "headers": [
+                    {"text": "List Enum", "field": "x_list_enum"},
+                    {"text": "List Datetime", "field": "x_list_datetime"},
+                    {"text": "Bool", "field": "x_bool"}
+                ]
+            },
+            "value": [
+                {
+                    "type": "struct",
+                    "value": {
+                        "x_list_enum": ["chorizo", "al pastor"],
+                        "x_list_datetime": ["2000-01-11T12:34:56"],
+                        "x_bool": true
+                    }
+                },
+                {
+                    "type": "struct",
+                    "value": {
+                        "x_list_enum": {"type": "list", "value": ["carne"]},
+                        "x_list_datetime": {"type": "list", "value": ["2020-10-02T15:30:00", "2021-01-01T00:00:00"]},
+                        "x_bool": {"type": "bool", "value": false}
+                    }
+                },
+                {
+                    "type": "struct",
+                    "value": {
+                        "x_list_enum": {"call": "map", "args": {"function": {"args": "item"}, "iterable": ["pollo"]}},
+                        "x_list_datetime": {"call": "map", "args": {"function": {"args": "item"}, "iterable": ["2025-12-21T22:00:00"]}},
+                        "x_bool": {"call": "not", "args": {"object": false}}
                     }
                 }
             ]

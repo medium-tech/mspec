@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import tkinter
 import webbrowser
+from datetime import datetime
 from tkinter import ttk
 from mspec.core import SAMPLE_DATA_DIR, load_browser2_spec
 from mspec.lingo import lingo_app, render_output, lingo_execute, lingo_update_state
@@ -72,6 +73,8 @@ class LingoPage(tkinter.Frame):
             self.render_input(element)
         elif 'text' in element:
             self.render_text(element)
+        elif 'type' in element:
+            self.render_value(element)
         elif 'value' in element:
             self.render_value(element)
         else:
@@ -85,29 +88,116 @@ class LingoPage(tkinter.Frame):
         self._text_buffer.insert(self._tk_row(), element['text'])
 
     def render_value(self, element:dict):
-        if element['type'] == 'list':
+        if element['type'] == 'struct':
+            # Render struct as a formatted table
+            show_headers = True
+            if 'display' in element and 'headers' in element['display']:
+                show_headers = element['display']['headers']
             
-            # init list formatting #
-            bullet_format = element.get('opt', {}).get('format', 'bullets')
-            match bullet_format:
-                case 'bullets':
-                    bullet_char = lambda _: '• '
-                case 'numbers':
-                    bullet_char = lambda n: f'{n}. '
-                case _:
-                    raise ValueError(f'Unknown list opt.format: {bullet_format}')
-
-            for n, item in enumerate(element['value'], start=1):
-                # insert bullet and item #
-                self._text_buffer.insert(self._tk_row(), bullet_char(n))
-                self.render_element(item)
+            # Create header
+            if show_headers:
+                self._text_buffer.insert(self._tk_row(), 'key\t\tvalue\n', 'struct-header')
                 self._text_row += 1
-
-                # line break after each item #
+            
+            # Render each field
+            for key, value in element['value'].items():
+                # Evaluate the value
+                cell_value = self._evaluate_struct_value(value)
+                
+                # Format the value for display
+                if isinstance(cell_value, list):
+                    formatted_value = ', '.join(str(v) for v in cell_value)
+                elif isinstance(cell_value, datetime):
+                    formatted_value = cell_value.strftime('%Y-%m-%dT%H:%M:%S')
+                else:
+                    formatted_value = str(cell_value)
+                
+                self._text_buffer.insert(self._tk_row(), f'{key}\t\t{formatted_value}\n')
+                self._text_row += 1
+            
+            self._text_buffer.insert(self._tk_row(), '\n')
+            
+        elif element['type'] == 'list':
+            
+            # Check if it's a table format (list of structs)
+            list_format = element.get('display', {}).get('format', 'bullets')
+            
+            if list_format == 'table':
+                # Render table of structs
+                headers = element.get('display', {}).get('headers', [])
+                
+                # Render header row
+                header_text = '\t'.join(h['text'] for h in headers) + '\n'
+                self._text_buffer.insert(self._tk_row(), header_text, 'table-header')
+                self._text_row += 1
+                
+                # Render data rows
+                for item in element['value']:
+                    if item.get('type') != 'struct':
+                        raise ValueError('Table format requires list of structs')
+                    
+                    row_values = []
+                    for header in headers:
+                        field_name = header['field']
+                        field_value = item['value'].get(field_name)
+                        cell_value = self._evaluate_struct_value(field_value)
+                        
+                        # Format the value
+                        if isinstance(cell_value, list):
+                            formatted = ', '.join(str(v) for v in cell_value)
+                        elif isinstance(cell_value, datetime):
+                            formatted = cell_value.strftime('%Y-%m-%dT%H:%M:%S')
+                        else:
+                            formatted = str(cell_value)
+                        
+                        row_values.append(formatted)
+                    
+                    row_text = '\t'.join(row_values) + '\n'
+                    self._text_buffer.insert(self._tk_row(), row_text)
+                    self._text_row += 1
+                
                 self._text_buffer.insert(self._tk_row(), '\n')
-                self._text_row += 1
+            else:
+                # init list formatting #
+                bullet_format = element.get('opt', {}).get('format', list_format)
+                match bullet_format:
+                    case 'bullets':
+                        bullet_char = lambda _: '• '
+                    case 'numbers':
+                        bullet_char = lambda n: f'{n}. '
+                    case _:
+                        raise ValueError(f'Unknown list opt.format: {bullet_format}')
+
+                for n, item in enumerate(element['value'], start=1):
+                    # insert bullet and item #
+                    self._text_buffer.insert(self._tk_row(), bullet_char(n))
+                    self.render_element(item)
+                    self._text_row += 1
+
+                    # line break after each item #
+                    self._text_buffer.insert(self._tk_row(), '\n')
+                    self._text_row += 1
         else:
             self._text_buffer.insert(self._tk_row(), json.dumps(element, indent=4, sort_keys=True))
+    
+    def _evaluate_struct_value(self, value):
+        """Evaluate a struct field value, handling typed values and expressions"""
+        if isinstance(value, dict):
+            if 'value' in value and 'type' in value:
+                # Typed value like {"type": "str", "value": "green"}
+                return value['value']
+            elif 'call' in value or 'lingo' in value:
+                # Expression that needs to be evaluated
+                result = lingo_execute(self.app, value)
+                if isinstance(result, dict) and 'value' in result:
+                    return result['value']
+                else:
+                    return result
+            else:
+                return value
+        else:
+            # Primitive value
+            return value
 
     def render_break(self, element:dict):
         self._text_buffer.insert(self._tk_row(), '\n' * element['break'])
