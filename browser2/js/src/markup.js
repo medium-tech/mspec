@@ -782,12 +782,11 @@ function renderHeading(app, element, ctx = null) {
  * Render form - creates a form element with fields
  */
 function renderForm(app, element, ctx = null) {
+    console.log('renderForm()', element);
     if (!('fields' in element.form)) {
         throw new Error('form - missing fields key');
     }
-    
-    const fields = element.form.fields;
-    return {form: fields};
+    return element;
 }
 
 /**
@@ -1387,7 +1386,7 @@ function createFormElement(element) {
     const table = document.createElement('table');
     table.style.borderCollapse = 'collapse';
     
-    const fields = element.form;
+    const fields = element.form.fields;
     const formData = {};
     
     // Create a row for each field
