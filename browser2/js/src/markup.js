@@ -1373,7 +1373,7 @@ function createValueElement(element) {
             if(Array.isArray(cellValue)) {
                 valueCell.textContent = cellValue.join(', ');
             } else if(cellValue instanceof Date) {
-                valueCell.textContent = cellValue.toISOString().replace(/\.\d{3}Z$/, '');
+                valueCell.textContent = formatDateTime(cellValue);
             } else {
                 valueCell.textContent = String(cellValue);
             }
@@ -1460,7 +1460,7 @@ function createValueElement(element) {
                     if(Array.isArray(cellValue)) {
                         td.textContent = cellValue.join(', ');
                     } else if(cellValue instanceof Date) {
-                        td.textContent = cellValue.toISOString().replace(/\.\d{3}Z$/, '');
+                        td.textContent = formatDateTime(cellValue);
                     } else {
                         td.textContent = String(cellValue);
                     }

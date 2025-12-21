@@ -410,8 +410,6 @@ test('test - structs page', async ({ page }) => {
   await expect(primitiveTable.locator('th').filter({ hasText: 'Float' })).toBeVisible();
   await expect(primitiveTable.locator('th').filter({ hasText: 'String' })).toBeVisible();
 });
-  await expect(rows.nth(2).locator('td').nth(2)).toContainText('true');
-});
 
 test('test - forms page', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
