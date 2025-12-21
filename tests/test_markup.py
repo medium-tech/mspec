@@ -327,6 +327,85 @@ class TestLingoPages(unittest.TestCase):
         
         self.assertTrue(random_found, "Should find random.randint() output")
 
+    def test_struct_rendering(self):
+        """Test struct rendering with all supported types"""
+        spec = load_browser2_spec('structs.json')
+        app = lingo_app(spec)
+        doc = render_output(app)
+        
+        # Verify we have output elements
+        self.assertGreater(len(doc), 0, "Should have rendered output")
+        
+        # Find struct elements
+        struct_count = 0
+        list_table_count = 0
+        
+        for element in doc:
+            if element.get('type') == 'struct':
+                struct_count += 1
+                # Verify struct has value
+                self.assertIn('value', element, "Struct should have value")
+                self.assertIsInstance(element['value'], dict, "Struct value should be a dict")
+                
+                # Check that we can access struct fields
+                for key, value in element['value'].items():
+                    # Value can be primitive, typed, or expression
+                    self.assertTrue(
+                        isinstance(value, (bool, int, float, str, list, dict)),
+                        f"Struct field {key} should have a valid value type"
+                    )
+            
+            elif element.get('type') == 'list' and element.get('display', {}).get('format') == 'table':
+                list_table_count += 1
+                # Verify list has value
+                self.assertIn('value', element, "List should have value")
+                self.assertIsInstance(element['value'], list, "List value should be a list")
+                
+                # Verify items are structs
+                for item in element['value']:
+                    self.assertEqual(item.get('type'), 'struct', "Table list items should be structs")
+        
+        # We should have multiple structs and list tables based on structs.json
+        self.assertGreater(struct_count, 0, "Should have rendered struct elements")
+        self.assertGreater(list_table_count, 0, "Should have rendered list table elements")
+
+    def test_struct_types(self):
+        """Test that structs can contain all supported types"""
+        spec = load_browser2_spec('structs.json')
+        app = lingo_app(spec)
+        doc = render_output(app)
+        
+        # Track which types we've seen in structs
+        types_seen = set()
+        
+        for element in doc:
+            if element.get('type') == 'struct':
+                for key, value in element['value'].items():
+                    # Track primitive types
+                    if isinstance(value, bool):
+                        types_seen.add('bool')
+                    elif isinstance(value, int):
+                        types_seen.add('int')
+                    elif isinstance(value, float):
+                        types_seen.add('float')
+                    elif isinstance(value, str):
+                        types_seen.add('str')
+                    elif isinstance(value, list):
+                        types_seen.add('list')
+                    elif isinstance(value, dict):
+                        # Could be typed value or expression
+                        if 'type' in value and 'value' in value:
+                            types_seen.add(f"typed_{value['type']}")
+                        elif 'call' in value:
+                            types_seen.add('call_expression')
+        
+        # Verify we've seen the basic types
+        self.assertIn('bool', types_seen, "Should have bool values in structs")
+        self.assertIn('int', types_seen, "Should have int values in structs")
+        self.assertIn('float', types_seen, "Should have float values in structs")
+        self.assertIn('str', types_seen, "Should have str values in structs")
+        self.assertIn('list', types_seen, "Should have list values in structs")
+
     
 built_in = builtin_spec_files()
 lingo_scripts = built_in['lingo_script']

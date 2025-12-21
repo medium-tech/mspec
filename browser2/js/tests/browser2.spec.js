@@ -367,57 +367,49 @@ test('test - structs page', async ({ page }) => {
 
   // Check for struct tables with headers
   const tables = page.locator('table');
-  await expect(tables).toHaveCount(4); // 3 individual structs + 1 list table
+  await expect(tables.first()).toBeVisible();
+  
+  // Count total tables (should have many more now with all types)
+  const tableCount = await tables.count();
+  expect(tableCount).toBeGreaterThan(10); // We have many struct examples now
 
-  // Check first struct table has headers and data
+  // Check first struct table (Primitive Types - Struct 1)
   const firstTable = tables.nth(0);
   await expect(firstTable.locator('th').nth(0)).toContainText('key');
   await expect(firstTable.locator('th').nth(1)).toContainText('value');
-  await expect(firstTable.locator('td').filter({ hasText: 'color' })).toBeVisible();
-  await expect(firstTable.locator('td').filter({ hasText: 'red' })).toBeVisible();
-  await expect(firstTable.locator('td').filter({ hasText: 'amount' })).toBeVisible();
-  await expect(firstTable.locator('td').filter({ hasText: '10' })).toBeVisible();
-  await expect(firstTable.locator('td').filter({ hasText: 'in_stock' })).toBeVisible();
-  await expect(firstTable.locator('td').filter({ hasText: 'true' })).toBeVisible();
+  await expect(firstTable.locator('td').filter({ hasText: 'x_bool' })).toBeVisible();
+  await expect(firstTable.locator('td').filter({ hasText: 'x_int' })).toBeVisible();
+  await expect(firstTable.locator('td').filter({ hasText: 'x_float' })).toBeVisible();
+  await expect(firstTable.locator('td').filter({ hasText: 'x_str' })).toBeVisible();
 
-  // Check second struct table (with typed values)
-  const secondTable = tables.nth(1);
-  await expect(secondTable.locator('td').filter({ hasText: 'green' })).toBeVisible();
-  await expect(secondTable.locator('td').filter({ hasText: '20' })).toBeVisible();
-
-  // Check third struct table (no headers, with scripted values)
-  const thirdTable = tables.nth(2);
-  // This table should NOT have header row
-  await expect(thirdTable.locator('th')).toHaveCount(0);
-  await expect(thirdTable.locator('td').filter({ hasText: 'blue' })).toBeVisible();
-  await expect(thirdTable.locator('td').filter({ hasText: '20' })).toBeVisible(); // 5 + 15 = 20
+  // Check that we have datetime fields
+  await expect(page.locator('td').filter({ hasText: 'x_datetime' })).toBeVisible();
+  
+  // Check that we have enum fields
+  await expect(page.locator('td').filter({ hasText: 'x_enum' })).toBeVisible();
+  
+  // Check that we have list fields
+  await expect(page.locator('td').filter({ hasText: 'x_list_bool' })).toBeVisible();
+  await expect(page.locator('td').filter({ hasText: 'x_list_int' })).toBeVisible();
+  await expect(page.locator('td').filter({ hasText: 'x_list_float' })).toBeVisible();
+  await expect(page.locator('td').filter({ hasText: 'x_list_str' })).toBeVisible();
+  await expect(page.locator('td').filter({ hasText: 'x_list_enum' })).toBeVisible();
+  await expect(page.locator('td').filter({ hasText: 'x_list_datetime' })).toBeVisible();
 
   // Check for List of Structs heading
   await expect(page.locator('h1').filter({ hasText: 'List of Structs' })).toBeVisible();
 
-  // Check the list table
-  const listTable = tables.nth(3);
-  await expect(listTable.locator('th').filter({ hasText: 'Color' })).toBeVisible();
-  await expect(listTable.locator('th').filter({ hasText: 'Amount' })).toBeVisible();
-  await expect(listTable.locator('th').filter({ hasText: 'In Stock' })).toBeVisible();
-
-  // Check rows in list table
-  const rows = listTable.locator('tbody tr');
-  await expect(rows).toHaveCount(3);
+  // Verify we have table format lists (should be multiple)
+  const h2Headings = page.locator('h2');
+  await expect(h2Headings.filter({ hasText: 'Table' })).toHaveCount(4); // 4 table sections
   
-  // First row
-  await expect(rows.nth(0).locator('td').nth(0)).toContainText('red');
-  await expect(rows.nth(0).locator('td').nth(1)).toContainText('10');
-  await expect(rows.nth(0).locator('td').nth(2)).toContainText('true');
-  
-  // Second row
-  await expect(rows.nth(1).locator('td').nth(0)).toContainText('green');
-  await expect(rows.nth(1).locator('td').nth(1)).toContainText('20');
-  await expect(rows.nth(1).locator('td').nth(2)).toContainText('true');
-  
-  // Third row
-  await expect(rows.nth(2).locator('td').nth(0)).toContainText('blue');
-  await expect(rows.nth(2).locator('td').nth(1)).toContainText('20');
+  // Check one of the list tables has proper structure
+  const primitiveTable = page.locator('h2').filter({ hasText: 'Primitive Types Table' }).locator('..').locator('table');
+  await expect(primitiveTable.locator('th').filter({ hasText: 'Bool' })).toBeVisible();
+  await expect(primitiveTable.locator('th').filter({ hasText: 'Int' })).toBeVisible();
+  await expect(primitiveTable.locator('th').filter({ hasText: 'Float' })).toBeVisible();
+  await expect(primitiveTable.locator('th').filter({ hasText: 'String' })).toBeVisible();
+});
   await expect(rows.nth(2).locator('td').nth(2)).toContainText('true');
 });
 
