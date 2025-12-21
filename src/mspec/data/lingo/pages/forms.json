@@ -44,6 +44,90 @@
                         "type": "float",
                         "default": 19.99,
                         "description": "The product price"
+                    },
+                    "category": {
+                        "name": {
+                            "lower_case": "category"
+                        },
+                        "type": "str",
+                        "enum": ["electronics", "clothing", "food", "books"],
+                        "default": "electronics",
+                        "description": "Product category"
+                    },
+                    "release_date": {
+                        "name": {
+                            "lower_case": "release date"
+                        },
+                        "type": "datetime",
+                        "default": "2024-01-15T10:30:00",
+                        "description": "Product release date and time"
+                    },
+                    "supplier_id": {
+                        "name": {
+                            "lower_case": "supplier id"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "table": "supplier",
+                            "field": "id"
+                        },
+                        "default": "1",
+                        "description": "ID of the supplier"
+                    },
+                    "tags": {
+                        "name": {
+                            "lower_case": "tags"
+                        },
+                        "type": "list",
+                        "element_type": "str",
+                        "default": [],
+                        "description": "Product tags"
+                    },
+                    "ratings": {
+                        "name": {
+                            "lower_case": "ratings"
+                        },
+                        "type": "list",
+                        "element_type": "int",
+                        "default": [],
+                        "description": "Customer ratings (1-5)"
+                    },
+                    "prices_history": {
+                        "name": {
+                            "lower_case": "prices history"
+                        },
+                        "type": "list",
+                        "element_type": "float",
+                        "default": [],
+                        "description": "Historical prices"
+                    },
+                    "features": {
+                        "name": {
+                            "lower_case": "features"
+                        },
+                        "type": "list",
+                        "element_type": "bool",
+                        "default": [],
+                        "description": "Feature availability flags"
+                    },
+                    "certifications": {
+                        "name": {
+                            "lower_case": "certifications"
+                        },
+                        "type": "list",
+                        "element_type": "str",
+                        "enum": ["ISO 9001", "CE", "UL", "FDA"],
+                        "default": [],
+                        "description": "Product certifications"
+                    },
+                    "inspection_dates": {
+                        "name": {
+                            "lower_case": "inspection dates"
+                        },
+                        "type": "list",
+                        "element_type": "datetime",
+                        "default": [],
+                        "description": "Quality inspection dates"
                     }
                 }
             }

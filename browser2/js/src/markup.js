@@ -1564,7 +1564,7 @@ function createFormElement(element) {
         // Column 1: Field name
         const nameCell = document.createElement('td');
         nameCell.style.padding = '5px 10px';
-        nameCell.style.verticalAlign = 'middle';
+        nameCell.style.verticalAlign = 'top';
         const fieldName = fieldSpec.name?.lower_case || fieldKey;
         nameCell.textContent = fieldName.charAt(0).toUpperCase() + fieldName.slice(1) + ':';
         row.appendChild(nameCell);
@@ -1572,6 +1572,7 @@ function createFormElement(element) {
         // Column 2: Input element
         const inputCell = document.createElement('td');
         inputCell.style.padding = '5px 10px';
+        inputCell.style.verticalAlign = 'top';
         
         let inputElement;
         const fieldType = fieldSpec.type;
@@ -1580,7 +1581,166 @@ function createFormElement(element) {
         // Initialize form data with default value
         formData[fieldKey] = defaultValue;
         
-        if (fieldType === 'bool') {
+        if (fieldType === 'list') {
+            // List type - create input with add/remove functionality
+            const listContainer = document.createElement('div');
+            const elementType = fieldSpec.element_type;
+            const hasEnum = fieldSpec.enum && Array.isArray(fieldSpec.enum);
+            
+            // Initialize list data
+            formData[fieldKey] = Array.isArray(defaultValue) ? [...defaultValue] : [];
+            
+            // Create list values display container (defined early so it can be referenced)
+            const listValuesContainer = document.createElement('div');
+            listValuesContainer.style.maxWidth = '300px';
+            
+            // Define update function first so it can be called from addToList
+            const updateListDisplay = () => {
+                listValuesContainer.innerHTML = '';
+                
+                if (formData[fieldKey].length === 0) {
+                    const emptyText = document.createElement('span');
+                    emptyText.textContent = '(no items)';
+                    emptyText.style.fontStyle = 'italic';
+                    emptyText.style.color = '#999';
+                    listValuesContainer.appendChild(emptyText);
+                } else {
+                    const valuesList = document.createElement('div');
+                    
+                    for (let i = 0; i < formData[fieldKey].length; i++) {
+                        const itemContainer = document.createElement('div');
+                        itemContainer.style.marginBottom = '3px';
+                        itemContainer.style.display = 'flex';
+                        itemContainer.style.alignItems = 'center';
+                        
+                        const itemText = document.createElement('span');
+                        itemText.textContent = String(formData[fieldKey][i]);
+                        itemText.style.marginRight = '5px';
+                        itemContainer.appendChild(itemText);
+                        
+                        const removeButton = document.createElement('button');
+                        removeButton.textContent = '×';
+                        removeButton.type = 'button';
+                        removeButton.style.padding = '0 5px';
+                        removeButton.style.fontSize = '16px';
+                        removeButton.style.cursor = 'pointer';
+                        removeButton.setAttribute('data-index', i);
+                        removeButton.addEventListener('click', () => {
+                            const index = parseInt(removeButton.getAttribute('data-index'));
+                            formData[fieldKey].splice(index, 1);
+                            updateListDisplay();
+                        });
+                        itemContainer.appendChild(removeButton);
+                        
+                        valuesList.appendChild(itemContainer);
+                    }
+                    
+                    listValuesContainer.appendChild(valuesList);
+                }
+            };
+            
+            // Create input based on element type
+            let listInput;
+            if (hasEnum) {
+                // Dropdown for enum
+                listInput = document.createElement('select');
+                for (const option of fieldSpec.enum) {
+                    const opt = document.createElement('option');
+                    opt.value = option;
+                    opt.textContent = option;
+                    listInput.appendChild(opt);
+                }
+            } else if (elementType === 'bool') {
+                // Checkbox for boolean
+                listInput = document.createElement('input');
+                listInput.type = 'checkbox';
+            } else if (elementType === 'int') {
+                // Number input for integers
+                listInput = document.createElement('input');
+                listInput.type = 'number';
+                listInput.step = '1';
+                listInput.placeholder = 'Enter integer';
+            } else if (elementType === 'float') {
+                // Number input for floats
+                listInput = document.createElement('input');
+                listInput.type = 'number';
+                listInput.step = 'any';
+                listInput.placeholder = 'Enter number';
+            } else if (elementType === 'datetime') {
+                // Datetime input
+                listInput = document.createElement('input');
+                listInput.type = 'datetime-local';
+            } else {
+                // Text input for strings
+                listInput = document.createElement('input');
+                listInput.type = 'text';
+                listInput.placeholder = 'Enter text';
+            }
+            
+            listInput.style.marginRight = '5px';
+            listContainer.appendChild(listInput);
+            
+            // Add button
+            const addButton = document.createElement('button');
+            addButton.textContent = 'Add';
+            addButton.type = 'button';
+            listContainer.appendChild(addButton);
+            
+            // Handle add functionality
+            const addToList = () => {
+                let value;
+                
+                if (hasEnum) {
+                    value = listInput.value;
+                } else if (elementType === 'bool') {
+                    value = listInput.checked;
+                } else if (elementType === 'int') {
+                    value = parseInt(listInput.value, 10);
+                    if (isNaN(value)) return;
+                } else if (elementType === 'float') {
+                    value = parseFloat(listInput.value);
+                    if (isNaN(value)) return;
+                } else if (elementType === 'datetime') {
+                    if (!listInput.value) return;
+                    // Convert from datetime-local format (YYYY-MM-DDTHH:mm) to ISO format with seconds
+                    value = listInput.value + ':00';
+                } else {
+                    value = listInput.value;
+                    if (!value) return;
+                }
+                
+                formData[fieldKey].push(value);
+                
+                // Reset input
+                if (elementType === 'bool') {
+                    listInput.checked = false;
+                } else if (!hasEnum) {
+                    listInput.value = '';
+                }
+                
+                // Update list display
+                updateListDisplay();
+            };
+            
+            addButton.addEventListener('click', addToList);
+            
+            // Add Enter key support for text inputs
+            if (listInput.tagName === 'INPUT' && (elementType === 'str' || elementType === 'int' || elementType === 'float')) {
+                listInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addToList();
+                    }
+                });
+            }
+            
+            inputCell.appendChild(listContainer);
+            inputElement = listContainer;
+            
+            // Store the display container for later use in third column
+            inputElement._listValuesContainer = listValuesContainer;
+            inputElement._updateListDisplay = updateListDisplay;
+        } else if (fieldType === 'bool') {
             // Checkbox for boolean
             inputElement = document.createElement('input');
             inputElement.type = 'checkbox';
@@ -1606,6 +1766,39 @@ function createFormElement(element) {
             inputElement.addEventListener('input', () => {
                 formData[fieldKey] = parseFloat(inputElement.value) || 0.0;
             });
+        } else if (fieldType === 'datetime') {
+            // Datetime-local input
+            inputElement = document.createElement('input');
+            inputElement.type = 'datetime-local';
+            // Convert from ISO format (YYYY-MM-DDTHH:mm:ss) to datetime-local format (YYYY-MM-DDTHH:mm)
+            const datetimeValue = defaultValue ? defaultValue.substring(0, 16) : '';
+            inputElement.value = datetimeValue;
+            inputElement.addEventListener('input', () => {
+                // Convert back to ISO format with seconds
+                formData[fieldKey] = inputElement.value ? inputElement.value + ':00' : '';
+            });
+        } else if (fieldType === 'foreign_key') {
+            // Text input for foreign key
+            inputElement = document.createElement('input');
+            inputElement.type = 'text';
+            inputElement.value = defaultValue;
+            inputElement.placeholder = 'Enter ID';
+            inputElement.addEventListener('input', () => {
+                formData[fieldKey] = inputElement.value;
+            });
+        } else if (fieldSpec.enum) {
+            // Dropdown for enum fields
+            inputElement = document.createElement('select');
+            for (const option of fieldSpec.enum) {
+                const opt = document.createElement('option');
+                opt.value = option;
+                opt.textContent = option;
+                opt.selected = option === defaultValue;
+                inputElement.appendChild(opt);
+            }
+            inputElement.addEventListener('change', () => {
+                formData[fieldKey] = inputElement.value;
+            });
         } else {
             // Text input for strings and other types
             inputElement = document.createElement('input');
@@ -1619,14 +1812,28 @@ function createFormElement(element) {
         inputCell.appendChild(inputElement);
         row.appendChild(inputCell);
         
-        // Column 3: Description
-        const descCell = document.createElement('td');
-        descCell.style.padding = '5px 10px';
-        descCell.style.verticalAlign = 'middle';
-        descCell.style.fontStyle = 'italic';
-        descCell.style.color = '#666';
-        descCell.textContent = fieldSpec.description || '';
-        row.appendChild(descCell);
+        // Column 3: List values display (for list types) or Description
+        const thirdCell = document.createElement('td');
+        thirdCell.style.padding = '5px 10px';
+        thirdCell.style.verticalAlign = 'top';
+        
+        if (fieldType === 'list') {
+            // Use the display container created earlier
+            const listValuesContainer = inputElement._listValuesContainer;
+            const updateListDisplay = inputElement._updateListDisplay;
+            
+            // Initialize display
+            updateListDisplay();
+            
+            thirdCell.appendChild(listValuesContainer);
+        } else {
+            // Description for non-list fields
+            thirdCell.style.fontStyle = 'italic';
+            thirdCell.style.color = '#666';
+            thirdCell.textContent = fieldSpec.description || '';
+        }
+        
+        row.appendChild(thirdCell);
         
         table.appendChild(row);
     }

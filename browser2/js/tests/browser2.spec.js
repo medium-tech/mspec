@@ -428,29 +428,46 @@ test('test - forms page', async ({ page }) => {
   // Check heading
   await expect(page.locator('h1')).toContainText('Forms');
 
-  // Check that form fields are visible with correct types
-  await expect(page.locator('input[type="text"]')).toBeVisible(); // color field
-  await expect(page.locator('input[type="number"]').first()).toBeVisible(); // amount field
-  await expect(page.locator('input[type="checkbox"]')).toBeVisible(); // in_stock field
-  await expect(page.locator('input[type="number"]').nth(1)).toBeVisible(); // price field
-  
-  // Check default values
-  const colorInput = page.locator('input[type="text"]');
+  // Check that basic form fields are visible with correct types
+  const colorInput = page.locator('input[type="text"]').first();
+  await expect(colorInput).toBeVisible();
   await expect(colorInput).toHaveValue('blue');
   
   const amountInput = page.locator('input[type="number"]').first();
+  await expect(amountInput).toBeVisible();
   await expect(amountInput).toHaveValue('42');
   
-  const inStockCheckbox = page.locator('input[type="checkbox"]');
+  const inStockCheckbox = page.locator('input[type="checkbox"]').first();
+  await expect(inStockCheckbox).toBeVisible();
   await expect(inStockCheckbox).not.toBeChecked();
   
   const priceInput = page.locator('input[type="number"]').nth(1);
+  await expect(priceInput).toBeVisible();
   await expect(priceInput).toHaveValue('19.99');
+  
+  // Check enum field (category dropdown)
+  const categorySelect = page.locator('table select').first();
+  await expect(categorySelect).toBeVisible();
+  await expect(categorySelect).toHaveValue('electronics');
+  
+  // Check datetime field (release date)
+  const releaseDateInput = page.locator('input[type="datetime-local"]').first();
+  await expect(releaseDateInput).toBeVisible();
+  await expect(releaseDateInput).toHaveValue('2024-01-15T10:30');
+  
+  // Check foreign key field (supplier_id)
+  const supplierIdInput = page.getByPlaceholder('Enter ID');
+  await expect(supplierIdInput).toBeVisible();
+  await expect(supplierIdInput).toHaveValue('1');
+  
+  // Check list field inputs are visible
+  await expect(page.getByPlaceholder('Enter text')).toBeVisible(); // tags list
+  await expect(page.getByPlaceholder('Enter integer')).toBeVisible(); // ratings list
   
   // Check submit button
   await expect(page.getByRole('button', { name: 'Submit' })).toBeVisible();
   
-  // Test form interaction - change values
+  // Test form interaction - change basic values
   await colorInput.fill('red');
   await amountInput.fill('100');
   await inStockCheckbox.check();
@@ -458,6 +475,31 @@ test('test - forms page', async ({ page }) => {
   
   // Verify the checkbox is now checked
   await expect(inStockCheckbox).toBeChecked();
+  
+  // Test adding items to a list
+  const tagsInput = page.getByPlaceholder('Enter text');
+  await tagsInput.fill('organic');
+  await page.getByRole('button', { name: 'Add' }).first().click();
+  
+  // Verify the tag was added and is displayed
+  await expect(page.locator('text=organic')).toBeVisible();
+  
+  // Verify the remove button is visible
+  await expect(page.getByRole('button', { name: '×' }).first()).toBeVisible();
+  
+  // Test adding another tag using Enter key
+  await tagsInput.fill('eco-friendly');
+  await tagsInput.press('Enter');
+  
+  // Verify both tags are displayed
+  await expect(page.locator('text=organic')).toBeVisible();
+  await expect(page.locator('text=eco-friendly')).toBeVisible();
+  
+  // Test removing a tag
+  await page.getByRole('button', { name: '×' }).first().click();
+  
+  // Verify one tag was removed (eco-friendly should still be there)
+  await expect(page.locator('text=eco-friendly')).toBeVisible();
   
   // Click submit button - this logs to console
   await page.getByRole('button', { name: 'Submit' }).click();
