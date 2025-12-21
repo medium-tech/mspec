@@ -33,11 +33,18 @@
             "style": {"underline": true}   
         },
         {
-            "text": ", there was a sky that was not blue, but "
+            "text": ", there was a sky that was not "
+        },
+        {
+            "text": "blue",
+            "style": {"color": "blue", "bold": true}
+        },
+        {
+            "text": ", but "
         },
         {
             "text": "pink",
-            "style": {"color": "pink"}   
+            "style": {"color": "pink", "bold": true}   
         },
         {
             "text": ". And everyone lived "
@@ -60,7 +67,7 @@
             "style": {"italic": true, "underline": true}
         },
         {
-            "text": " styles every day to create beautiful outfits.",
+            "text": " styles every day to create beautiful typography.",
             "style": {"underline": true}
         },
         { "break": 1},
@@ -119,6 +126,7 @@
             "text": "And then there's brown, which is just a delightful color all on its own!",
             "style": {"color": "brown"}
         },
+        { "break": 1},
         {
             "text": "And so, in this colorful world with a pink sky, everyone lived "
         },
@@ -127,7 +135,7 @@
             "style": {"bold": true, "italic": true, "underline": true, "color": "purple"}   
         },
         {
-            "text": "ever after. The End."
+            "text": " ever after. The End."
         }
     ]
 }
