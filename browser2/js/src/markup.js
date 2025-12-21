@@ -1260,6 +1260,37 @@ function createHeadingElement(element) {
 function createTextElement(element) {
     const span = document.createElement('span');
     span.textContent = element.text;
+    
+    // Apply styles if present
+    if (element.style) {
+        if (element.style.bold) {
+            span.style.fontWeight = 'bold';
+        }
+        if (element.style.italic) {
+            span.style.fontStyle = 'italic';
+        }
+        if (element.style.underline) {
+            span.style.textDecoration = span.style.textDecoration 
+                ? span.style.textDecoration + ' underline' 
+                : 'underline';
+        }
+        if (element.style.strikethrough) {
+            span.style.textDecoration = span.style.textDecoration 
+                ? span.style.textDecoration + ' line-through' 
+                : 'line-through';
+        }
+        if (element.style.color) {
+            // Handle special color names that need conversion
+            let color = element.style.color;
+            if (color === 'dark_gray') {
+                color = 'darkgray';
+            } else if (color === 'light_gray') {
+                color = 'lightgray';
+            }
+            span.style.color = color;
+        }
+    }
+    
     return span;
 }
 
