@@ -18,6 +18,7 @@ HEADING = {
 }
 
 TEXT = ('Verdana', 12)
+MONOSPACE = ('Courier New', 12)
 
     
 class LingoPage(tkinter.Frame):
@@ -58,6 +59,7 @@ class LingoPage(tkinter.Frame):
         self._text_buffer.tag_configure('heading-4', font=HEADING[4])
         self._text_buffer.tag_configure('heading-5', font=HEADING[5])
         self._text_buffer.tag_configure('heading-6', font=HEADING[6])
+        self._text_buffer.tag_configure('monospace', font=MONOSPACE)
         self._text_buffer.config(state=tkinter.DISABLED)
 
     def render_element(self, element:dict):
@@ -118,67 +120,109 @@ class LingoPage(tkinter.Frame):
     
     def _render_struct(self, element:dict):
         """Render a struct as a table with key-value pairs"""
-        fields = element.get('value', {})
+        fields = element['value']
         show_headers = element.get('display', {}).get('headers', True)
-        
+
         # Build table data
         rows = []
+        max_key_length = 0
         for key, value in fields.items():
             # Evaluate the value if it's a lingo expression
             evaluated_value = self._evaluate_field_value(value)
             rows.append((key, str(evaluated_value)))
+            max_key_length = max(max_key_length, len(key))
+
+        col_width = max_key_length + (max_key_length // 4)
+        separator = '-' * (col_width * 2)
         
         # Render as table
         if show_headers:
-            header_row = 'key' + ' ' * 20 + 'value'
-            separator = '-' * 50
-            self._text_buffer.insert(self._tk_row(), header_row + '\n')
-            self._text_buffer.insert(self._tk_row(), separator + '\n')
+            header_row = f'{"Key": <{col_width}} Value'
+            self._text_buffer.insert(self._tk_row(), separator + '\n', ('monospace',))
+            self._text_row += 1
+            self._text_buffer.insert(self._tk_row(), header_row + '\n', ('monospace',))
+            self._text_row += 1
+            self._text_buffer.insert(self._tk_row(), separator + '\n', ('monospace',))
+            self._text_row += 1
         
         for key, value in rows:
             # Format the row with padding
-            row_text = f'{key:<23} {value}'
-            self._text_buffer.insert(self._tk_row(), row_text + '\n')
+            key_display = f'{key}:'
+            row_text = f'{key_display: <{col_width}} {value}'
+            self._text_buffer.insert(self._tk_row(), row_text + '\n', ('monospace',))
+            self._text_row += 1
     
     def _render_table_list(self, element:dict):
         """Render a list of structs as a table"""
-        headers = element.get('display', {}).get('headers', [])
-        items = element.get('value', [])
+
+        try:
+            headers = element['display']['headers']
+        except KeyError:
+            field_names = element['value'][0]['value'].keys()
+            headers = [{'text': name, 'field': name} for name in field_names]
         
-        # Validate all items are structs
-        for item in items:
+        #
+        # evaluate table rows
+        #
+
+        rows_data = []
+        column_widths = {header_def['field']: len(header_def['text']) for header_def in headers}
+        for item in element['value']:
             if not isinstance(item, dict) or item.get('type') != 'struct':
                 raise ValueError('All items in a table-formatted list must be structs')
-        
-        # Build header row
-        header_text = ''
-        for i, header_def in enumerate(headers):
-            header_text += header_def['text']
-            if i < len(headers) - 1:
-                header_text += ' ' * 10
-        
-        self._text_buffer.insert(self._tk_row(), header_text + '\n')
-        
-        # Build separator
-        separator = '-' * (len(header_text) + 20)
-        self._text_buffer.insert(self._tk_row(), separator + '\n')
-        
-        # Build data rows
-        for item in items:
-            fields = item.get('value', {})
-            row_text = ''
+            
+            fields = item['value']
+            item_data = {}
             for i, header_def in enumerate(headers):
-                field_name = header_def['field']
-                field_value = fields.get(field_name, '')
+                try:
+                    field_name = header_def['field']
+                    field_value = fields[field_name]
+                except KeyError:
+                    raise ValueError(f'Field "{field_name}" not found in struct for table row')
                 
                 # Evaluate the field value
                 evaluated_value = self._evaluate_field_value(field_value)
-                
-                # Add to row with padding
-                col_width = len(header_def['text']) + 10
-                row_text += f'{str(evaluated_value):<{col_width}}'
+                value_len = len(str(evaluated_value))
+                column_widths[field_name] = max(column_widths[field_name], value_len)
+                item_data[field_name] = str(evaluated_value)
             
-            self._text_buffer.insert(self._tk_row(), row_text.rstrip() + '\n')
+            rows_data.append(item_data)
+
+
+        # padding to column widths #
+        column_widths = {field_name: int(width * 1.3) for field_name, width in column_widths.items()}
+
+        total_width = sum(column_widths.values())
+        separator = '-' * total_width
+
+        #
+        # render table
+        #
+
+        # headers #
+
+        header_text = ''
+        for i, header_def in enumerate(headers):
+            field_name = header_def['field']
+            col_width = column_widths[field_name]
+            header_text += f'{header_def["text"]: <{col_width}}'
+
+        self._text_buffer.insert(self._tk_row(), separator + '\n', ('monospace',))
+        self._text_row += 1
+        self._text_buffer.insert(self._tk_row(), header_text + '\n', ('monospace',))
+        self._text_row += 1
+        self._text_buffer.insert(self._tk_row(), separator + '\n', ('monospace',))
+        self._text_row += 1
+
+        # rows #
+        for item_data in rows_data:
+            row_text = ''
+            for i, header_def in enumerate(headers):
+                field_name = header_def['field']
+                col_width = column_widths[field_name]
+                row_text += f'{item_data[field_name]: <{col_width}}'
+            self._text_buffer.insert(self._tk_row(), row_text + '\n', ('monospace',))
+            self._text_row += 1
     
     def _evaluate_field_value(self, value):
         """Evaluate a field value, handling both literals and lingo expressions"""
