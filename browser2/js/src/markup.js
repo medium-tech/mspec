@@ -1786,7 +1786,7 @@ function createFormElement(element) {
             inputElement.addEventListener('input', () => {
                 formData[fieldKey] = inputElement.value;
             });
-        } else if (fieldSpec.enum && Array.isArray(fieldSpec.enum)) {
+        } else if (fieldSpec.enum) {
             // Dropdown for enum fields
             inputElement = document.createElement('select');
             for (const option of fieldSpec.enum) {
