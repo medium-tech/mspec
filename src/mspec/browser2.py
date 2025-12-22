@@ -36,6 +36,10 @@ class LingoPage(tkinter.Frame):
     def _tk_row(self):
         return f'{self._text_row}.end'
     
+    def _element_break(self):
+        self._text_buffer.insert(self._tk_row(), '\n')
+        self._text_row += 1
+    
     def render_output(self):
         doc = render_output(lingo_update_state(self.app))
 
@@ -81,6 +85,7 @@ class LingoPage(tkinter.Frame):
             raise ValueError(f'Unknown element type: {list(element)}')
 
     def render_heading(self, element:dict):
+        self._element_break()
         self._text_buffer.insert(self._tk_row(), element['heading'], (f'heading-{element["level"]}'))
         self._text_buffer.insert(self._tk_row(), '\n')
 
@@ -91,6 +96,8 @@ class LingoPage(tkinter.Frame):
         if element['type'] == 'struct':
             self._render_struct(element)
         elif element['type'] == 'list':
+
+            self._element_break()
             
             # init list formatting #
             bullet_format = element.get('display', {}).get('format', 'bullets')
@@ -135,8 +142,7 @@ class LingoPage(tkinter.Frame):
         col_width = max_key_length + (max_key_length // 4)
         separator = '-' * (col_width * 2)
 
-        self._text_buffer.insert(self._tk_row(), '\n', ('monospace',))
-        self._text_row += 1
+        self._element_break()
         
         # Render as table
         if show_headers:
@@ -209,7 +215,7 @@ class LingoPage(tkinter.Frame):
             col_width = column_widths[field_name]
             header_text += f'{header_def["text"]: <{col_width}}'
 
-        self._text_buffer.insert(self._tk_row(), '\n' + separator + '\n', ('monospace',))
+        self._text_buffer.insert(self._tk_row(), separator + '\n', ('monospace',))
         self._text_row += 1
         self._text_buffer.insert(self._tk_row(), header_text + '\n', ('monospace',))
         self._text_row += 1

@@ -334,41 +334,41 @@ class TestLingoPages(unittest.TestCase):
         doc = render_output(lingo_update_state(app))
         
         # Verify we have the expected number of elements
-        self.assertEqual(len(doc), 6, "Should have 6 output elements")
+        self.assertEqual(len(doc), 12, "Should have 12 output elements")
         
         # Verify first heading
         self.assertEqual(doc[0]['heading'], 'Individual Structs')
         self.assertEqual(doc[0]['level'], 1)
         
         # Verify first struct (literals)
-        self.assertEqual(doc[1]['type'], 'struct')
-        self.assertEqual(doc[1]['value']['color'], 'red')
-        self.assertEqual(doc[1]['value']['amount'], 10)
-        self.assertEqual(doc[1]['value']['in_stock'], True)
+        self.assertEqual(doc[2]['type'], 'struct')
+        self.assertEqual(doc[2]['value']['color'], 'red')
+        self.assertEqual(doc[2]['value']['amount'], 10)
+        self.assertEqual(doc[2]['value']['in_stock'], True)
         
         # Verify second struct (typed values)
-        self.assertEqual(doc[2]['type'], 'struct')
-        self.assertEqual(doc[2]['value']['color']['value'], 'green')
-        self.assertEqual(doc[2]['value']['amount']['value'], 20)
-        self.assertEqual(doc[2]['value']['in_stock']['value'], True)
+        self.assertEqual(doc[5]['type'], 'struct')
+        self.assertEqual(doc[5]['value']['color']['value'], 'green')
+        self.assertEqual(doc[5]['value']['amount']['value'], 20)
+        self.assertEqual(doc[5]['value']['in_stock']['value'], True)
         
         # Verify third struct (scripted values with display.headers = false)
-        self.assertEqual(doc[3]['type'], 'struct')
-        self.assertEqual(doc[3]['display']['headers'], False)
-        self.assertIn('call', doc[3]['value']['color'])
+        self.assertEqual(doc[8]['type'], 'struct')
+        self.assertEqual(doc[8]['display']['headers'], False)
+        self.assertIn('call', doc[8]['value']['color'])
         
         # Verify second heading
-        self.assertEqual(doc[4]['heading'], 'List of Structs')
-        self.assertEqual(doc[4]['level'], 1)
+        self.assertEqual(doc[9]['heading'], 'List of Structs')
+        self.assertEqual(doc[9]['level'], 1)
         
         # Verify list of structs with table format
-        self.assertEqual(doc[5]['type'], 'list')
-        self.assertEqual(doc[5]['display']['format'], 'table')
-        self.assertEqual(len(doc[5]['display']['headers']), 3)
-        self.assertEqual(len(doc[5]['value']), 3)
+        self.assertEqual(doc[11]['type'], 'list')
+        self.assertEqual(doc[11]['display']['format'], 'table')
+        self.assertEqual(len(doc[11]['display']['headers']), 3)
+        self.assertEqual(len(doc[11]['value']), 3)
         
         # Verify table headers
-        headers = doc[5]['display']['headers']
+        headers = doc[11]['display']['headers']
         self.assertEqual(headers[0]['text'], 'Color')
         self.assertEqual(headers[0]['field'], 'color')
         self.assertEqual(headers[1]['text'], 'Amount')
@@ -377,7 +377,7 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(headers[2]['field'], 'in_stock')
         
         # Verify all items in the list are structs
-        for item in doc[5]['value']:
+        for item in doc[11]['value']:
             self.assertEqual(item['type'], 'struct')
             self.assertIn('value', item)
 
