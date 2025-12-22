@@ -1384,8 +1384,8 @@ function createValueElement(element) {
         // Check if this is a table format list
         if(listFormat == 'table') {
             // Render list of structs as a table
-            if(!element.display.headers || !Array.isArray(element.display.headers)) {
-                throw new Error('createValueElement - table format requires display.headers array');
+            if(!element.display.headers) {
+                throw new Error('createValueElement - table format list requires headers definition');
             }
             
             const table = document.createElement('table');

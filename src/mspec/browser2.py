@@ -134,6 +134,9 @@ class LingoPage(tkinter.Frame):
 
         col_width = max_key_length + (max_key_length // 4)
         separator = '-' * (col_width * 2)
+
+        self._text_buffer.insert(self._tk_row(), '\n', ('monospace',))
+        self._text_row += 1
         
         # Render as table
         if show_headers:
@@ -158,8 +161,7 @@ class LingoPage(tkinter.Frame):
         try:
             headers = element['display']['headers']
         except KeyError:
-            field_names = element['value'][0]['value'].keys()
-            headers = [{'text': name, 'field': name} for name in field_names]
+            raise ValueError('Table format list requires display.headers definition')
         
         #
         # evaluate table rows
@@ -207,7 +209,7 @@ class LingoPage(tkinter.Frame):
             col_width = column_widths[field_name]
             header_text += f'{header_def["text"]: <{col_width}}'
 
-        self._text_buffer.insert(self._tk_row(), separator + '\n', ('monospace',))
+        self._text_buffer.insert(self._tk_row(), '\n' + separator + '\n', ('monospace',))
         self._text_row += 1
         self._text_buffer.insert(self._tk_row(), header_text + '\n', ('monospace',))
         self._text_row += 1

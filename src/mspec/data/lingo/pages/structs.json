@@ -10,6 +10,7 @@
 
     "output": [
         {"heading": "Individual Structs", "level": 1},
+        {"text": "Here is a struct with hardcoded values:"},
         {
             "type": "struct",
             "value": {
@@ -18,6 +19,8 @@
                 "in_stock": true
             }
         },
+        {"break": 1},
+        {"text": "Here is a struct with value elements:"},
         {
             "type": "struct",
             "value": {
@@ -26,6 +29,8 @@
                 "in_stock": {"type": "bool", "value": true}
             }
         },
+        {"break": 1},
+        {"text": "Here is a struct with operation calls as values:"},
         {
             "type": "struct",
             "display": {
@@ -38,6 +43,7 @@
             }
         },
         {"heading": "List of Structs", "level": 1},
+        {"text": "With list.display.format set to 'table', the structs are shown in a table format with headers specified in list.display.headers:"},
         {
             "type": "list",
             "display": {
