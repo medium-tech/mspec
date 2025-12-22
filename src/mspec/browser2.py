@@ -101,7 +101,6 @@ class LingoPage(tkinter.Frame):
             raise ValueError(f'Unknown element type: {list(element)}')
 
     def render_heading(self, element:dict):
-        self._element_break()
         self._insert(self._tk_row(), element['heading'], (f'heading-{element["level"]}'))
         self._insert(self._tk_row(), '\n')
 
@@ -111,9 +110,8 @@ class LingoPage(tkinter.Frame):
     def render_value(self, element:dict):
         if element['type'] == 'struct':
             self._render_struct(element)
-        elif element['type'] == 'list':
 
-            self._element_break()
+        elif element['type'] == 'list':
             
             # init list formatting #
             bullet_format = element.get('display', {}).get('format', 'bullets')
@@ -158,7 +156,8 @@ class LingoPage(tkinter.Frame):
         col_width = max_key_length + (max_key_length // 4)
         separator = '-' * (col_width * 2)
 
-        self._element_break()
+        self._insert(self._tk_row(), '\n')
+        self._new_line()
         
         # Render as table
         if show_headers:
@@ -197,7 +196,7 @@ class LingoPage(tkinter.Frame):
             
             fields = item['value']
             item_data = {}
-            for i, header_def in enumerate(headers):
+            for header_def in headers:
                 try:
                     field_name = header_def['field']
                     field_value = fields[field_name]
@@ -225,8 +224,11 @@ class LingoPage(tkinter.Frame):
 
         # headers #
 
+        self._insert(self._tk_row(), '\n')
+        self._new_line()
+
         header_text = ''
-        for i, header_def in enumerate(headers):
+        for header_def in headers:
             field_name = header_def['field']
             col_width = column_widths[field_name]
             header_text += f'{header_def["text"]: <{col_width}}'
@@ -241,7 +243,7 @@ class LingoPage(tkinter.Frame):
         # rows #
         for item_data in rows_data:
             row_text = ''
-            for i, header_def in enumerate(headers):
+            for header_def in headers:
                 field_name = header_def['field']
                 col_width = column_widths[field_name]
                 row_text += f'{item_data[field_name]: <{col_width}}'

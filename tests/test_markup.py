@@ -381,45 +381,6 @@ class TestLingoPages(unittest.TestCase):
             self.assertEqual(item['type'], 'struct')
             self.assertIn('value', item)
 
-    def test_element_break_tracking(self):
-        """Test _insert, _new_line, and _element_break behavior with text tracking"""
-        # We can't test LingoPage directly without tkinter, but we can verify the logic
-        # by checking that the implementation follows the expected pattern
-        import inspect
-        from mspec import browser2
-        
-        # Verify that LingoPage has the required new attributes and methods
-        self.assertTrue(hasattr(browser2.LingoPage, '_insert'), 
-                       'LingoPage should have _insert method')
-        self.assertTrue(hasattr(browser2.LingoPage, '_new_line'), 
-                       'LingoPage should have _new_line method')
-        
-        # Check method signatures
-        insert_sig = inspect.signature(browser2.LingoPage._insert)
-        self.assertIn('index', insert_sig.parameters, 
-                     '_insert should have index parameter')
-        self.assertIn('chars', insert_sig.parameters, 
-                     '_insert should have chars parameter')
-        
-        # Verify _element_break still exists
-        self.assertTrue(hasattr(browser2.LingoPage, '_element_break'), 
-                       'LingoPage should have _element_break method')
-        
-        # Check that the implementation includes text tracking
-        source = inspect.getsource(browser2.LingoPage._insert)
-        self.assertIn('_inserted_text_on_current_line', source,
-                     '_insert should update _inserted_text_on_current_line')
-        
-        source = inspect.getsource(browser2.LingoPage._new_line)
-        self.assertIn('_inserted_text_on_current_line', source,
-                     '_new_line should reset _inserted_text_on_current_line')
-        self.assertIn('_text_row', source,
-                     '_new_line should increment _text_row')
-        
-        source = inspect.getsource(browser2.LingoPage._element_break)
-        self.assertIn('_inserted_text_on_current_line', source,
-                     '_element_break should check _inserted_text_on_current_line')
-
     
 built_in = builtin_spec_files()
 lingo_scripts = built_in['lingo_script']
