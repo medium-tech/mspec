@@ -50,6 +50,17 @@ class DevRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(f.read())
             return
         
+        if self.path.endswith('.css'):
+            self.send_response(200)
+            self.send_header('Content-type', 'text/css; charset=utf-8')
+            self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            self.end_headers()
+            
+            css_path = os.path.join(SRC_DIR, self.path.lstrip('/'))
+            with open(css_path, 'rb') as f:
+                self.wfile.write(f.read())
+            return
+        
         if self.path.startswith('/api/lingo-specs'):
             self.send_response(200)
             self.send_header('Content-type', 'application/json; charset=utf-8')
