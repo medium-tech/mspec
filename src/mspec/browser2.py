@@ -30,6 +30,7 @@ class LingoPage(tkinter.Frame):
         self._text_row = 0
         self._inserted_text_on_current_line = False
         self.link_count = 0
+        self.style_count = 0
 
         self.app = lingo_app(spec)
         self.render_output()
@@ -62,6 +63,7 @@ class LingoPage(tkinter.Frame):
         self._text_row = 1
         self._inserted_text_on_current_line = False
         self.link_count = 0
+        self.style_count = 0
         self.entries = {}
 
         for n, element in enumerate(doc):
@@ -105,7 +107,47 @@ class LingoPage(tkinter.Frame):
         self._insert(self._tk_row(), '\n')
 
     def render_text(self, element:dict):
-        self._insert(self._tk_row(), element['text'])
+        text = element['text']
+        
+        # Check if styling is present
+        if 'style' in element:
+            style = element['style']
+            tag = f'style-{self.style_count}'
+            self._insert(self._tk_row(), text, (tag,))
+            
+            # Configure tag with styling
+            tag_config = {}
+            
+            # Font weight and slant
+            if style.get('bold') or style.get('italic'):
+                # Get base font info
+                font_family, font_size = TEXT
+                weight = 'bold' if style.get('bold') else 'normal'
+                slant = 'italic' if style.get('italic') else 'roman'
+                tag_config['font'] = (font_family, font_size, weight, slant)
+            
+            # Text decoration - can combine underline and strikethrough
+            decoration_parts = []
+            if style.get('underline'):
+                decoration_parts.append('underline')
+            if style.get('strikethrough'):
+                decoration_parts.append('overstrike')
+            
+            if decoration_parts:
+                for decoration in decoration_parts:
+                    tag_config[decoration] = 1
+            
+            # Color
+            if 'color' in style:
+                color = style['color']
+                # Convert underscore color names to tkinter format
+                color = color.replace('_', '')
+                tag_config['foreground'] = color
+            
+            self._text_buffer.tag_configure(tag, **tag_config)
+            self.style_count += 1
+        else:
+            self._insert(self._tk_row(), text)
 
     def render_value(self, element:dict):
         if element['type'] == 'struct':
