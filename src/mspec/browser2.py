@@ -108,28 +108,28 @@ class LingoPage(tkinter.Frame):
 
     def render_text(self, element:dict):
         text = element['text']
-        
+
         # Check if styling is present
         if 'style' in element:
             style = element['style']
             tag = f'style-{self.style_count}'
             self._insert(self._tk_row(), text, (tag,))
-            
+
             # Configure tag with styling
             tag_config = {}
-            
+
             # Font weight and slant - always set to ensure consistent baseline
             font_family, font_size = TEXT
             weight = 'bold' if style.get('bold') else 'normal'
             slant = 'italic' if style.get('italic') else 'roman'
             tag_config['font'] = (font_family, font_size, weight, slant)
-            
+
             # Text decoration - can combine underline and strikethrough
             if style.get('underline'):
                 tag_config['underline'] = 1
             if style.get('strikethrough'):
                 tag_config['overstrike'] = 1
-            
+
             # Color - handle special color name conversions
             if 'color' in style:
                 color = style['color']
@@ -139,7 +139,7 @@ class LingoPage(tkinter.Frame):
                 elif color == 'light_gray':
                     color = 'lightgray'
                 tag_config['foreground'] = color
-            
+
             self._text_buffer.tag_configure(tag, **tag_config)
             self.style_count += 1
         else:
