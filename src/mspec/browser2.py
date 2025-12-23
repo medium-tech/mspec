@@ -118,30 +118,26 @@ class LingoPage(tkinter.Frame):
             # Configure tag with styling
             tag_config = {}
             
-            # Font weight and slant
-            if style.get('bold') or style.get('italic'):
-                # Get base font info
-                font_family, font_size = TEXT
-                weight = 'bold' if style.get('bold') else 'normal'
-                slant = 'italic' if style.get('italic') else 'roman'
-                tag_config['font'] = (font_family, font_size, weight, slant)
+            # Font weight and slant - always set to ensure consistent baseline
+            font_family, font_size = TEXT
+            weight = 'bold' if style.get('bold') else 'normal'
+            slant = 'italic' if style.get('italic') else 'roman'
+            tag_config['font'] = (font_family, font_size, weight, slant)
             
             # Text decoration - can combine underline and strikethrough
-            decoration_parts = []
             if style.get('underline'):
-                decoration_parts.append('underline')
+                tag_config['underline'] = 1
             if style.get('strikethrough'):
-                decoration_parts.append('overstrike')
+                tag_config['overstrike'] = 1
             
-            if decoration_parts:
-                for decoration in decoration_parts:
-                    tag_config[decoration] = 1
-            
-            # Color
+            # Color - handle special color name conversions
             if 'color' in style:
                 color = style['color']
-                # Convert underscore color names to tkinter format
-                color = color.replace('_', '')
+                # Convert specific underscore color names to tkinter format
+                if color == 'dark_gray':
+                    color = 'darkgray'
+                elif color == 'light_gray':
+                    color = 'lightgray'
                 tag_config['foreground'] = color
             
             self._text_buffer.tag_configure(tag, **tag_config)
