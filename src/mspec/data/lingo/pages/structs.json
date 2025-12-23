@@ -10,7 +10,9 @@
 
     "output": [
         {"heading": "Individual Structs", "level": 1},
-        {"text": "Here is a struct with hardcoded values:"},
+        
+        {"heading": "Primitives: str, int, bool", "level": 2},
+        {"text": "Hardcoded values:"},
         {
             "type": "struct",
             "value": {
@@ -20,7 +22,7 @@
             }
         },
         {"break": 1},
-        {"text": "Here is a struct with value elements:"},
+        {"text": "Typed values:"},
         {
             "type": "struct",
             "value": {
@@ -30,7 +32,7 @@
             }
         },
         {"break": 1},
-        {"text": "Here is a struct with operation calls as values:"},
+        {"text": "Dynamic values (operation calls):"},
         {
             "type": "struct",
             "display": {
@@ -42,8 +44,112 @@
                 "in_stock": {"call": "eq", "args": {"a": 1, "b": 1}}
             }
         },
+
+        {"heading": "Primitives: float, datetime", "level": 2},
+        {"text": "Hardcoded values:"},
+        {
+            "type": "struct",
+            "value": {
+                "price": 19.99,
+                "weight": 2.5,
+                "created_at": "2024-01-15T10:30:00",
+                "updated_at": "2024-06-20T14:45:30"
+            }
+        },
+        {"break": 1},
+        {"text": "Typed values:"},
+        {
+            "type": "struct",
+            "value": {
+                "price": {"type": "float", "value": 29.99},
+                "weight": {"type": "float", "value": 3.75},
+                "created_at": {"type": "datetime", "value": "2023-12-01T08:00:00"},
+                "updated_at": {"type": "datetime", "value": "2024-03-15T16:20:10"}
+            }
+        },
+        {"break": 1},
+        {"text": "Dynamic values (operation calls):"},
+        {
+            "type": "struct",
+            "display": {
+                "headers": false
+            },
+            "value": {
+                "price": {"call": "add", "args": {"a": 10.5, "b": 9.49}},
+                "weight": {"call": "div", "args": {"a": 10.0, "b": 4.0}}
+            }
+        },
+
+        {"heading": "Lists of primitives", "level": 2},
+        {"text": "Hardcoded lists:"},
+        {
+            "type": "struct",
+            "value": {
+                "tags": ["urgent", "important", "review"],
+                "scores": [85, 92, 78, 95],
+                "measurements": [3.14, 2.718, 1.618]
+            }
+        },
+        {"break": 1},
+        {"text": "Typed lists:"},
+        {
+            "type": "struct",
+            "value": {
+                "tags": {"type": "list", "value": ["electronics", "gadgets", "tech"]},
+                "scores": {"type": "list", "value": [88, 91, 79]},
+                "flags": {"type": "list", "value": [true, false, true, true]},
+                "measurements": {"type": "list", "value": [2.5, 3.7, 1.2]}
+            }
+        },
+        {"break": 1},
+        {"text": "Dynamic lists (operation calls):"},
+        {
+            "type": "struct",
+            "display": {
+                "headers": false
+            },
+            "value": {
+                "tags": {"call": "map", "args": {"iterable": [1, 2, 3], "function": {"call": "str", "args": {"object": {"self": {"item": {}}}}}}},
+                "total_score": {"call": "sum", "args": {"iterable": [10, 20, 30], "start": 0}}
+            }
+        },
+
+        {"heading": "Lists with datetime elements", "level": 2},
+        {"text": "Hardcoded datetime lists:"},
+        {
+            "type": "struct",
+            "value": {
+                "event_dates": ["2024-01-01T00:00:00", "2024-07-04T12:00:00"],
+                "meeting_times": ["2024-03-15T09:00:00", "2024-03-15T14:30:00", "2024-03-16T10:00:00"]
+            }
+        },
+        {"break": 1},
+        {"text": "Typed datetime lists:"},
+        {
+            "type": "struct",
+            "value": {
+                "event_dates": {"type": "list", "value": ["2023-12-25T00:00:00", "2024-01-01T00:00:00"]},
+                "deadlines": {"type": "list", "value": ["2024-06-30T23:59:59", "2024-09-30T23:59:59"]}
+            }
+        },
+
+        {"heading": "Mixed struct with all types", "level": 2},
+        {"text": "A comprehensive struct with all supported types:"},
+        {
+            "type": "struct",
+            "value": {
+                "name": "Product A",
+                "quantity": 42,
+                "in_stock": true,
+                "price": 99.95,
+                "launch_date": "2024-01-15T10:00:00"
+            }
+        },
+
         {"heading": "List of Structs", "level": 1},
-        {"text": "With list.display.format set to 'table', the structs are shown in a table format with headers specified in list.display.headers:"},
+        
+        {"heading": "Basic types in table", "level": 2},
+        {"text": "Table with str, int, bool columns:"},
         {
             "type": "list",
             "display": {
@@ -68,7 +174,7 @@
                     "value": {
                         "color": {"type": "str", "value": "green"},
                         "amount": {"type": "int", "value": 20},
-                        "in_stock": {"type": "bool", "value": true}
+                        "in_stock": {"type": "bool", "value": false}
                     }
                 },
                 {
@@ -77,6 +183,92 @@
                         "color": {"call": "join", "args": {"separator": "", "items": ["blue"]}},
                         "amount": {"call": "add", "args": {"a": 5, "b": 15}},
                         "in_stock": {"call": "eq", "args": {"a": 1, "b": 1}}
+                    }
+                }
+            ]
+        },
+
+        {"heading": "Float and datetime in table", "level": 2},
+        {"text": "Table with float and datetime columns:"},
+        {
+            "type": "list",
+            "display": {
+                "format": "table",
+                "headers": [
+                    {"text": "Product", "field": "product"},
+                    {"text": "Price", "field": "price"},
+                    {"text": "Weight", "field": "weight"},
+                    {"text": "Date Added", "field": "date_added"}
+                ]
+            },
+            "value": [
+                {
+                    "type": "struct",
+                    "value": {
+                        "product": "Widget A",
+                        "price": 19.99,
+                        "weight": 1.5,
+                        "date_added": "2024-01-10T08:00:00"
+                    }
+                },
+                {
+                    "type": "struct",
+                    "value": {
+                        "product": {"type": "str", "value": "Widget B"},
+                        "price": {"type": "float", "value": 29.99},
+                        "weight": {"type": "float", "value": 2.75},
+                        "date_added": {"type": "datetime", "value": "2024-02-15T10:30:00"}
+                    }
+                },
+                {
+                    "type": "struct",
+                    "value": {
+                        "product": {"call": "join", "args": {"separator": " ", "items": ["Widget", "C"]}},
+                        "price": {"call": "add", "args": {"a": 20.0, "b": 19.99}},
+                        "weight": {"call": "div", "args": {"a": 10.0, "b": 4.0}}
+                    }
+                }
+            ]
+        },
+
+        {"heading": "Lists as field values in table", "level": 2},
+        {"text": "Table with list-type columns:"},
+        {
+            "type": "list",
+            "display": {
+                "format": "table",
+                "headers": [
+                    {"text": "Item", "field": "item"},
+                    {"text": "Tags", "field": "tags"},
+                    {"text": "Scores", "field": "scores"},
+                    {"text": "Flags", "field": "flags"}
+                ]
+            },
+            "value": [
+                {
+                    "type": "struct",
+                    "value": {
+                        "item": "Item 1",
+                        "tags": ["new", "featured"],
+                        "scores": [90, 85, 92],
+                        "flags": [true, false, true]
+                    }
+                },
+                {
+                    "type": "struct",
+                    "value": {
+                        "item": {"type": "str", "value": "Item 2"},
+                        "tags": {"type": "list", "value": ["sale", "limited"]},
+                        "scores": {"type": "list", "value": [88, 91, 87]},
+                        "flags": {"type": "list", "value": [false, true]}
+                    }
+                },
+                {
+                    "type": "struct",
+                    "value": {
+                        "item": {"call": "join", "args": {"separator": " ", "items": ["Item", "3"]}},
+                        "tags": {"call": "map", "args": {"iterable": [1, 2], "function": {"call": "str", "args": {"object": {"self": {"item": {}}}}}}},
+                        "scores": {"type": "list", "value": [75, 80, 85]}
                     }
                 }
             ]

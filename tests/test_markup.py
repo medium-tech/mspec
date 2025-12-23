@@ -328,58 +328,144 @@ class TestLingoPages(unittest.TestCase):
         self.assertTrue(random_found, "Should find random.randint() output")
 
     def test_structs_page(self):
-        """Test struct rendering functionality"""
+        """Test struct rendering functionality with all supported types"""
         spec = load_browser2_spec('structs.json')
         app = lingo_app(spec)
         doc = render_output(lingo_update_state(app))
         
         # Verify we have the expected number of elements
-        self.assertEqual(len(doc), 12, "Should have 12 output elements")
+        self.assertEqual(len(doc), 47, 'Should have 47 output elements')
         
-        # Verify first heading
+        # Verify main heading
         self.assertEqual(doc[0]['heading'], 'Individual Structs')
         self.assertEqual(doc[0]['level'], 1)
         
-        # Verify first struct (literals)
-        self.assertEqual(doc[2]['type'], 'struct')
-        self.assertEqual(doc[2]['value']['color'], 'red')
-        self.assertEqual(doc[2]['value']['amount'], 10)
-        self.assertEqual(doc[2]['value']['in_stock'], True)
+        # Test primitives: str, int, bool #
         
-        # Verify second struct (typed values)
-        self.assertEqual(doc[5]['type'], 'struct')
-        self.assertEqual(doc[5]['value']['color']['value'], 'green')
-        self.assertEqual(doc[5]['value']['amount']['value'], 20)
-        self.assertEqual(doc[5]['value']['in_stock']['value'], True)
+        # Hardcoded primitive struct
+        self.assertEqual(doc[3]['type'], 'struct')
+        self.assertEqual(doc[3]['value']['color'], 'red')
+        self.assertEqual(doc[3]['value']['amount'], 10)
+        self.assertEqual(doc[3]['value']['in_stock'], True)
         
-        # Verify third struct (scripted values with display.headers = false)
-        self.assertEqual(doc[8]['type'], 'struct')
-        self.assertEqual(doc[8]['display']['headers'], False)
-        self.assertIn('call', doc[8]['value']['color'])
+        # Typed primitive struct
+        self.assertEqual(doc[6]['type'], 'struct')
+        self.assertEqual(doc[6]['value']['color']['type'], 'str')
+        self.assertEqual(doc[6]['value']['color']['value'], 'green')
+        self.assertEqual(doc[6]['value']['amount']['type'], 'int')
+        self.assertEqual(doc[6]['value']['amount']['value'], 20)
+        self.assertEqual(doc[6]['value']['in_stock']['type'], 'bool')
+        self.assertEqual(doc[6]['value']['in_stock']['value'], True)
         
-        # Verify second heading
-        self.assertEqual(doc[9]['heading'], 'List of Structs')
-        self.assertEqual(doc[9]['level'], 1)
+        # Dynamic primitive struct
+        self.assertEqual(doc[9]['type'], 'struct')
+        self.assertEqual(doc[9]['display']['headers'], False)
+        self.assertIn('call', doc[9]['value']['color'])
+        self.assertIn('call', doc[9]['value']['amount'])
+        self.assertIn('call', doc[9]['value']['in_stock'])
         
-        # Verify list of structs with table format
-        self.assertEqual(doc[11]['type'], 'list')
-        self.assertEqual(doc[11]['display']['format'], 'table')
-        self.assertEqual(len(doc[11]['display']['headers']), 3)
-        self.assertEqual(len(doc[11]['value']), 3)
+        # Test primitives: float, datetime #
         
-        # Verify table headers
-        headers = doc[11]['display']['headers']
-        self.assertEqual(headers[0]['text'], 'Color')
-        self.assertEqual(headers[0]['field'], 'color')
-        self.assertEqual(headers[1]['text'], 'Amount')
-        self.assertEqual(headers[1]['field'], 'amount')
-        self.assertEqual(headers[2]['text'], 'In Stock')
-        self.assertEqual(headers[2]['field'], 'in_stock')
+        # Hardcoded float/datetime struct
+        self.assertEqual(doc[12]['type'], 'struct')
+        self.assertEqual(doc[12]['value']['price'], 19.99)
+        self.assertEqual(doc[12]['value']['weight'], 2.5)
+        self.assertEqual(doc[12]['value']['created_at'], '2024-01-15T10:30:00')
+        self.assertEqual(doc[12]['value']['updated_at'], '2024-06-20T14:45:30')
         
-        # Verify all items in the list are structs
-        for item in doc[11]['value']:
+        # Typed float/datetime struct
+        self.assertEqual(doc[15]['type'], 'struct')
+        self.assertEqual(doc[15]['value']['price']['type'], 'float')
+        self.assertEqual(doc[15]['value']['price']['value'], 29.99)
+        self.assertEqual(doc[15]['value']['weight']['type'], 'float')
+        self.assertEqual(doc[15]['value']['weight']['value'], 3.75)
+        self.assertEqual(doc[15]['value']['created_at']['type'], 'datetime')
+        self.assertEqual(doc[15]['value']['created_at']['value'], '2023-12-01T08:00:00')
+        
+        # Dynamic float struct
+        self.assertEqual(doc[18]['type'], 'struct')
+        self.assertIn('call', doc[18]['value']['price'])
+        self.assertIn('call', doc[18]['value']['weight'])
+        
+        # Test lists of primitives #
+        
+        # Hardcoded lists
+        self.assertEqual(doc[21]['type'], 'struct')
+        self.assertEqual(doc[21]['value']['tags'], ['urgent', 'important', 'review'])
+        self.assertEqual(doc[21]['value']['scores'], [85, 92, 78, 95])
+        self.assertAlmostEqual(doc[21]['value']['measurements'][0], 3.14, places=2)
+        
+        # Typed lists
+        self.assertEqual(doc[24]['type'], 'struct')
+        self.assertEqual(doc[24]['value']['tags']['type'], 'list')
+        self.assertEqual(doc[24]['value']['tags']['value'], ['electronics', 'gadgets', 'tech'])
+        self.assertEqual(doc[24]['value']['scores']['type'], 'list')
+        self.assertEqual(doc[24]['value']['scores']['value'], [88, 91, 79])
+        self.assertEqual(doc[24]['value']['flags']['type'], 'list')
+        self.assertEqual(doc[24]['value']['flags']['value'], [True, False, True, True])
+        
+        # Dynamic lists
+        self.assertEqual(doc[27]['type'], 'struct')
+        self.assertIn('call', doc[27]['value']['tags'])
+        self.assertIn('call', doc[27]['value']['total_score'])
+        
+        # Test datetime lists #
+        
+        # Hardcoded datetime lists
+        self.assertEqual(doc[30]['type'], 'struct')
+        self.assertIn('event_dates', doc[30]['value'])
+        self.assertIsInstance(doc[30]['value']['event_dates'], list)
+        
+        # Typed datetime lists
+        self.assertEqual(doc[33]['type'], 'struct')
+        self.assertEqual(doc[33]['value']['event_dates']['type'], 'list')
+        
+        # Test mixed struct with all types #
+        self.assertEqual(doc[36]['type'], 'struct')
+        self.assertEqual(doc[36]['value']['name'], 'Product A')
+        self.assertEqual(doc[36]['value']['quantity'], 42)
+        self.assertEqual(doc[36]['value']['in_stock'], True)
+        self.assertEqual(doc[36]['value']['price'], 99.95)
+        self.assertEqual(doc[36]['value']['launch_date'], '2024-01-15T10:00:00')
+        
+        # Verify list of structs heading
+        self.assertEqual(doc[37]['heading'], 'List of Structs')
+        self.assertEqual(doc[37]['level'], 1)
+        
+        # Test basic types table #
+        self.assertEqual(doc[40]['type'], 'list')
+        self.assertEqual(doc[40]['display']['format'], 'table')
+        self.assertEqual(len(doc[40]['display']['headers']), 3)
+        self.assertEqual(len(doc[40]['value']), 3)
+        
+        # Verify all items in basic table are structs
+        for item in doc[40]['value']:
             self.assertEqual(item['type'], 'struct')
             self.assertIn('value', item)
+        
+        # Test float and datetime table #
+        self.assertEqual(doc[43]['type'], 'list')
+        self.assertEqual(doc[43]['display']['format'], 'table')
+        headers = doc[43]['display']['headers']
+        self.assertEqual(headers[0]['field'], 'product')
+        self.assertEqual(headers[1]['field'], 'price')
+        self.assertEqual(headers[2]['field'], 'weight')
+        self.assertEqual(headers[3]['field'], 'date_added')
+        
+        # Test lists as field values table #
+        self.assertEqual(doc[46]['type'], 'list')
+        self.assertEqual(doc[46]['display']['format'], 'table')
+        headers = doc[46]['display']['headers']
+        self.assertEqual(headers[1]['field'], 'tags')
+        self.assertEqual(headers[2]['field'], 'scores')
+        self.assertEqual(headers[3]['field'], 'flags')
+        
+        # Verify struct with list fields has appropriate values
+        first_item = doc[46]['value'][0]
+        self.assertEqual(first_item['type'], 'struct')
+        self.assertIsInstance(first_item['value']['tags'], list)
+        self.assertIsInstance(first_item['value']['scores'], list)
+        self.assertIsInstance(first_item['value']['flags'], list)
 
     
 built_in = builtin_spec_files()
