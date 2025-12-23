@@ -1369,7 +1369,13 @@ function createValueElement(element) {
                 }
             }
             
-            valueCell.textContent = String(cellValue);
+            // Format the cell value for display
+            if(Array.isArray(cellValue)) {
+                // Format arrays as comma-separated values
+                valueCell.textContent = cellValue.join(', ');
+            } else {
+                valueCell.textContent = String(cellValue);
+            }
             row.appendChild(valueCell);
             
             tbody.appendChild(row);
@@ -1449,7 +1455,13 @@ function createValueElement(element) {
                         }
                     }
                     
-                    td.textContent = String(cellValue);
+                    // Format the cell value for display
+                    if(Array.isArray(cellValue)) {
+                        // Format arrays as comma-separated values
+                        td.textContent = cellValue.join(', ');
+                    } else {
+                        td.textContent = String(cellValue);
+                    }
                     row.appendChild(td);
                 }
                 
