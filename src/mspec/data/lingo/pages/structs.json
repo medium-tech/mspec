@@ -109,7 +109,7 @@
                 "headers": false
             },
             "value": {
-                "tags": {"call": "map", "args": {"iterable": [1, 2, 3], "function": {"call": "str", "args": {"object": {"self": {"item": {}}}}}}},
+                "tags": {"call": "map", "args": {"iterable": [1, 2, 3], "function": {"call": "str", "args": {"object": {"self": "item"}}}}},
                 "total_score": {"call": "sum", "args": {"iterable": [10, 20, 30], "start": 0}}
             }
         },
@@ -225,7 +225,8 @@
                     "value": {
                         "product": {"call": "join", "args": {"separator": " ", "items": ["Widget", "C"]}},
                         "price": {"call": "add", "args": {"a": 20.0, "b": 19.99}},
-                        "weight": {"call": "div", "args": {"a": 10.0, "b": 4.0}}
+                        "weight": {"call": "div", "args": {"a": 10.0, "b": 4.0}},
+                        "date_added": {"call": "datetime.now", "args": {}}
                     }
                 }
             ]
@@ -267,8 +268,9 @@
                     "type": "struct",
                     "value": {
                         "item": {"call": "join", "args": {"separator": " ", "items": ["Item", "3"]}},
-                        "tags": {"call": "map", "args": {"iterable": [1, 2], "function": {"call": "str", "args": {"object": {"self": {"item": {}}}}}}},
-                        "scores": {"type": "list", "value": [75, 80, 85]}
+                        "tags": {"call": "map", "args": {"iterable": [1, 2], "function": {"call": "str", "args": {"object": {"self": "item"}}}}},
+                        "scores": {"type": "list", "value": [75, 80, 85]},
+                        "flags": {"call": "map", "args": {"iterable": [0, 1], "function": {"call": "eq", "args": {"a": {"self": "item"}, "b": 1}}}}
                     }
                 }
             ]
