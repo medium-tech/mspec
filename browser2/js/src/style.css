@@ -1,0 +1,131 @@
+/**
+ * Browser 2.0 JavaScript Renderer Styles
+ */
+
+/* Base styles */
+body {
+    font-family: Verdana, sans-serif;
+    font-size: 12px;
+    margin: 20px;
+    background-color: white;
+    max-width: 1000px;
+}
+
+/* Heading styles */
+h1 { font-size: 35px; }
+h2 { font-size: 30px; }
+h3 { font-size: 25px; }
+h4 { font-size: 20px; }
+h5 { font-size: 18px; }
+h6 { font-size: 16px; }
+
+/* Container styles */
+.lingo-container {
+    padding: 20px;
+    border: 1px solid #000000;
+    border-radius: 5px;
+    border-width: 5px;
+    margin: 10px 0;
+}
+
+/* Form element styles */
+input[type="text"] {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    width: 200px;
+}
+
+button {
+    padding: 8px 16px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background-color: #f5f5f5;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #e5e5e5;
+}
+
+/* Link styles */
+a {
+    color: blue;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* Debug panel styles */
+.debug {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px 0;
+    font-family: monospace;
+    font-size: 11px;
+}
+
+/* Table styles */
+table {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+table th,
+table td {
+    border: 1px solid black;
+    padding: 5px;
+    text-align: left;
+}
+
+/* Form table styles */
+.form-table {
+    border: none;
+    border-collapse: collapse;
+}
+
+.form-table td {
+    border: none;
+    padding: 5px 10px;
+    vertical-align: top;
+}
+
+.form-description {
+    font-style: italic;
+    color: #666;
+}
+
+.form-submit-cell {
+    padding: 10px;
+}
+
+/* List container styles */
+.list-values-container {
+    max-width: 300px;
+}
+
+.list-item-container {
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+}
+
+.list-item-text {
+    margin-right: 5px;
+}
+
+.list-input {
+    margin-right: 5px;
+}
+
+.list-empty-text {
+    font-style: italic;
+    color: #999;
+}
+
+/* Remove button styles */
+.remove-button {
+    padding: 0 5px;
+    font-size: 16px;
+    cursor: pointer;
+}

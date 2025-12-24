@@ -1303,8 +1303,6 @@ function createValueElement(element) {
         const showHeaders = element.display && element.display.headers === false ? false : true;
         
         const table = document.createElement('table');
-        table.style.border = '1px solid black';
-        table.style.borderCollapse = 'collapse';
         
         // Add header row if needed
         if(showHeaders) {
@@ -1313,16 +1311,10 @@ function createValueElement(element) {
             
             const keyHeader = document.createElement('th');
             keyHeader.textContent = 'key';
-            keyHeader.style.border = '1px solid black';
-            keyHeader.style.padding = '5px';
-            keyHeader.style.textAlign = 'left';
             headerRow.appendChild(keyHeader);
             
             const valueHeader = document.createElement('th');
             valueHeader.textContent = 'value';
-            valueHeader.style.border = '1px solid black';
-            valueHeader.style.padding = '5px';
-            valueHeader.style.textAlign = 'left';
             headerRow.appendChild(valueHeader);
             
             thead.appendChild(headerRow);
@@ -1336,13 +1328,9 @@ function createValueElement(element) {
             
             const keyCell = document.createElement('td');
             keyCell.textContent = key;
-            keyCell.style.border = '1px solid black';
-            keyCell.style.padding = '5px';
             row.appendChild(keyCell);
             
             const valueCell = document.createElement('td');
-            valueCell.style.border = '1px solid black';
-            valueCell.style.padding = '5px';
             
             // Evaluate the value if it's an expression
             let cellValue = value;
@@ -1395,8 +1383,6 @@ function createValueElement(element) {
             }
             
             const table = document.createElement('table');
-            table.style.border = '1px solid black';
-            table.style.borderCollapse = 'collapse';
             
             // Add header row
             const thead = document.createElement('thead');
@@ -1405,9 +1391,6 @@ function createValueElement(element) {
             for(const headerDef of element.display.headers) {
                 const th = document.createElement('th');
                 th.textContent = headerDef.text;
-                th.style.border = '1px solid black';
-                th.style.padding = '5px';
-                th.style.textAlign = 'left';
                 headerRow.appendChild(th);
             }
             
@@ -1426,8 +1409,6 @@ function createValueElement(element) {
                 
                 for(const headerDef of element.display.headers) {
                     const td = document.createElement('td');
-                    td.style.border = '1px solid black';
-                    td.style.padding = '5px';
                     
                     const fieldName = headerDef.field;
                     const fieldValue = item.value[fieldName];
@@ -1595,7 +1576,7 @@ function createLinkElement(element) {
 function createFormElement(element) {
     const formContainer = document.createElement('div');
     const table = document.createElement('table');
-    table.style.borderCollapse = 'collapse';
+    table.className = 'form-table';
     
     const fields = element.form.fields;
     const formData = {};
@@ -1606,16 +1587,12 @@ function createFormElement(element) {
         
         // Column 1: Field name
         const nameCell = document.createElement('td');
-        nameCell.style.padding = '5px 10px';
-        nameCell.style.verticalAlign = 'top';
         const fieldName = fieldSpec.name?.lower_case || fieldKey;
         nameCell.textContent = fieldName.charAt(0).toUpperCase() + fieldName.slice(1) + ':';
         row.appendChild(nameCell);
         
         // Column 2: Input element
         const inputCell = document.createElement('td');
-        inputCell.style.padding = '5px 10px';
-        inputCell.style.verticalAlign = 'top';
         
         let inputElement;
         const fieldType = fieldSpec.type;
@@ -1635,7 +1612,7 @@ function createFormElement(element) {
             
             // Create list values display container (defined early so it can be referenced)
             const listValuesContainer = document.createElement('div');
-            listValuesContainer.style.maxWidth = '300px';
+            listValuesContainer.className = 'list-values-container';
             
             // Define update function first so it can be called from addToList
             const updateListDisplay = () => {
@@ -1644,29 +1621,24 @@ function createFormElement(element) {
                 if (formData[fieldKey].length === 0) {
                     const emptyText = document.createElement('span');
                     emptyText.textContent = '(no items)';
-                    emptyText.style.fontStyle = 'italic';
-                    emptyText.style.color = '#999';
+                    emptyText.className = 'list-empty-text';
                     listValuesContainer.appendChild(emptyText);
                 } else {
                     const valuesList = document.createElement('div');
                     
                     for (let i = 0; i < formData[fieldKey].length; i++) {
                         const itemContainer = document.createElement('div');
-                        itemContainer.style.marginBottom = '3px';
-                        itemContainer.style.display = 'flex';
-                        itemContainer.style.alignItems = 'center';
+                        itemContainer.className = 'list-item-container';
                         
                         const itemText = document.createElement('span');
                         itemText.textContent = String(formData[fieldKey][i]);
-                        itemText.style.marginRight = '5px';
+                        itemText.className = 'list-item-text';
                         itemContainer.appendChild(itemText);
                         
                         const removeButton = document.createElement('button');
                         removeButton.textContent = '×';
                         removeButton.type = 'button';
-                        removeButton.style.padding = '0 5px';
-                        removeButton.style.fontSize = '16px';
-                        removeButton.style.cursor = 'pointer';
+                        removeButton.className = 'remove-button';
                         removeButton.setAttribute('data-index', i);
                         removeButton.addEventListener('click', () => {
                             const index = parseInt(removeButton.getAttribute('data-index'));
@@ -1720,7 +1692,7 @@ function createFormElement(element) {
                 listInput.placeholder = 'Enter text';
             }
             
-            listInput.style.marginRight = '5px';
+            listInput.className = 'list-input';
             listContainer.appendChild(listInput);
             
             // Add button
@@ -1857,8 +1829,6 @@ function createFormElement(element) {
         
         // Column 3: List values display (for list types) or Description
         const thirdCell = document.createElement('td');
-        thirdCell.style.padding = '5px 10px';
-        thirdCell.style.verticalAlign = 'top';
         
         if (fieldType === 'list') {
             // Use the display container created earlier
@@ -1871,8 +1841,7 @@ function createFormElement(element) {
             thirdCell.appendChild(listValuesContainer);
         } else {
             // Description for non-list fields
-            thirdCell.style.fontStyle = 'italic';
-            thirdCell.style.color = '#666';
+            thirdCell.className = 'form-description';
             thirdCell.textContent = fieldSpec.description || '';
         }
         
@@ -1885,7 +1854,7 @@ function createFormElement(element) {
     const submitRow = document.createElement('tr');
     const submitCell = document.createElement('td');
     submitCell.colSpan = 3;
-    submitCell.style.padding = '10px';
+    submitCell.className = 'form-submit-cell';
     
     const submitButton = document.createElement('button');
     submitButton.textContent = 'Submit';
