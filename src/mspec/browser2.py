@@ -41,14 +41,11 @@ class LingoPage(tkinter.Frame):
     def _insert(self, index, chars, *args):
         """Wrapper around text_buffer.insert that tracks text insertion on current line"""
         self._text_buffer.insert(index, chars, *args)
-        # Only mark as having text if we're inserting non-empty content that's not just newlines
-        if chars and chars.strip():
-            self._inserted_text_on_current_line = True
+        self._inserted_text_on_current_line = True
     
     def _new_line(self):
         """Move to a new line and reset text tracking"""
         self._text_row += 1
-        self._inserted_text_on_current_line = False
     
     def _element_break(self):
         """Insert a line break only if the current line has text"""
@@ -127,7 +124,7 @@ class LingoPage(tkinter.Frame):
 
             if style.get('underline'):
                 tag_config['underline'] = 1
-                
+
             if style.get('strikethrough'):
                 tag_config['overstrike'] = 1
 
@@ -151,6 +148,9 @@ class LingoPage(tkinter.Frame):
             
         self._insert(self._tk_row(), element['text'], tags)
 
+        if element['text'].startswith('Instead they wrote'):
+            breakpoint()
+
     def render_value(self, element:dict):
         if element['type'] == 'struct':
             self._render_struct(element)
@@ -170,7 +170,13 @@ class LingoPage(tkinter.Frame):
                         bullet_char = lambda n: f'{n}. '
                     case _:
                         raise ValueError(f'Unknown list display.format: {bullet_format}')
+                    
 
+                if element['value'][0]['text'] == 'Red':
+                    breakpoint()
+                
+                self._element_break()
+            
                 for n, item in enumerate(element['value'], start=1):
                     # insert bullet and item #
                     self._insert(self._tk_row(), bullet_char(n))
