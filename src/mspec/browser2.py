@@ -27,9 +27,10 @@ class LingoPage(tkinter.Frame):
         super().__init__(parent)
 
         self._text_buffer:tkinter.Text = None
-        self._text_row = 0
-        self._inserted_text_on_current_line = False
+        self._text_row = 1
+        self._text_in_cur_element = False
         self.link_count = 0
+        self.style_count = 0
 
         self.app = lingo_app(spec)
         self.render_output()
@@ -40,18 +41,16 @@ class LingoPage(tkinter.Frame):
     def _insert(self, index, chars, *args):
         """Wrapper around text_buffer.insert that tracks text insertion on current line"""
         self._text_buffer.insert(index, chars, *args)
-        # Only mark as having text if we're inserting non-empty content that's not just newlines
-        if chars and chars.strip():
-            self._inserted_text_on_current_line = True
+        self._text_in_cur_element = True
     
     def _new_line(self):
-        """Move to a new line and reset text tracking"""
+        """Move to a new line, insert a line break, and reset text tracking"""
+        self._text_buffer.insert(self._tk_row(), '\n')
         self._text_row += 1
-        self._inserted_text_on_current_line = False
     
     def _element_break(self):
         """Insert a line break only if the current line has text"""
-        if self._inserted_text_on_current_line:
+        if self._text_in_cur_element:
             self._text_buffer.insert(self._tk_row(), '\n')
             self._new_line()
     
@@ -60,8 +59,9 @@ class LingoPage(tkinter.Frame):
 
         self._text_buffer = tkinter.Text(self, font=TEXT, wrap='word', height=50, width=100, highlightthickness=0, borderwidth=2, relief='solid')
         self._text_row = 1
-        self._inserted_text_on_current_line = False
+        self._text_in_cur_element = False
         self.link_count = 0
+        self.style_count = 0
         self.entries = {}
 
         for n, element in enumerate(doc):
@@ -70,7 +70,7 @@ class LingoPage(tkinter.Frame):
             except Exception as e:
                 raise RuntimeError(f'Error rendering output #{n}: {element}') from e
             
-            self._new_line()
+            # self._new_line()
         
         self._text_buffer.grid(row=0, column=0, padx=0)
         self._text_buffer.tag_configure('heading-1', font=HEADING[1])
@@ -102,20 +102,61 @@ class LingoPage(tkinter.Frame):
 
     def render_heading(self, element:dict):
         self._insert(self._tk_row(), element['heading'], (f'heading-{element["level"]}'))
-        self._insert(self._tk_row(), '\n')
+        self._new_line()
 
     def render_text(self, element:dict):
-        self._insert(self._tk_row(), element['text'])
+
+        if 'style' in element:
+
+            # create tkinter tag for style #
+
+            style = element['style']
+            tag = f'style-{self.style_count}'
+            tag_config = {}
+
+            # font weight and slant #
+
+            font_family, font_size = TEXT
+            weight = 'bold' if style.get('bold') else 'normal'
+            slant = 'italic' if style.get('italic') else 'roman'
+            tag_config['font'] = (font_family, font_size, weight, slant)
+
+            # text decoration #
+
+            if style.get('underline'):
+                tag_config['underline'] = 1
+
+            if style.get('strikethrough'):
+                tag_config['overstrike'] = 1
+
+            # text color #
+
+            if 'color' in style:
+                color = style['color']
+                # Convert specific underscore color names to tkinter format
+                if color == 'dark_gray':
+                    color = 'darkgray'
+                elif color == 'light_gray':
+                    color = 'lightgray'
+                tag_config['foreground'] = color
+
+            self._text_buffer.tag_configure(tag, **tag_config)
+            self.style_count += 1
+            tags = (tag,)
+
+        else:
+            tags = ()
+            
+        self._insert(self._tk_row(), element['text'], tags)
 
     def render_value(self, element:dict):
         if element['type'] == 'struct':
             self._render_struct(element)
 
         elif element['type'] == 'list':
-            
             # init list formatting #
             bullet_format = element.get('display', {}).get('format', 'bullets')
-            
+
             if bullet_format == 'table':
                 self._render_table_list(element)
             else:
@@ -127,14 +168,14 @@ class LingoPage(tkinter.Frame):
                     case _:
                         raise ValueError(f'Unknown list display.format: {bullet_format}')
 
+                self._element_break()
+
                 for n, item in enumerate(element['value'], start=1):
                     # insert bullet and item #
                     self._insert(self._tk_row(), bullet_char(n))
                     self.render_element(item)
-                    self._new_line()
 
                     # line break after each item #
-                    self._insert(self._tk_row(), '\n')
                     self._new_line()
         else:
             self._insert(self._tk_row(), json.dumps(element, indent=4, sort_keys=True))
@@ -156,24 +197,23 @@ class LingoPage(tkinter.Frame):
         col_width = max_key_length + (max_key_length // 4)
         separator = '-' * (col_width * 2)
 
-        self._insert(self._tk_row(), '\n')
         self._new_line()
-        
+
         # Render as table
         if show_headers:
             header_row = f'{"Key": <{col_width}} Value'
-            self._insert(self._tk_row(), separator + '\n', ('monospace',))
+            self._insert(self._tk_row(), separator, ('monospace',))
             self._new_line()
-            self._insert(self._tk_row(), header_row + '\n', ('monospace',))
+            self._insert(self._tk_row(), header_row, ('monospace',))
             self._new_line()
-            self._insert(self._tk_row(), separator + '\n', ('monospace',))
+            self._insert(self._tk_row(), separator, ('monospace',))
             self._new_line()
-        
+
         for key, value in rows:
             # Format the row with padding
             key_display = f'{key}:'
             row_text = f'{key_display: <{col_width}} {value}'
-            self._insert(self._tk_row(), row_text + '\n', ('monospace',))
+            self._insert(self._tk_row(), row_text, ('monospace',))
             self._new_line()
     
     def _render_table_list(self, element:dict):
@@ -183,7 +223,7 @@ class LingoPage(tkinter.Frame):
             headers = element['display']['headers']
         except KeyError:
             raise ValueError('Table format list requires display.headers definition')
-        
+
         #
         # evaluate table rows
         #
@@ -193,7 +233,7 @@ class LingoPage(tkinter.Frame):
         for item in element['value']:
             if not isinstance(item, dict) or item.get('type') != 'struct':
                 raise ValueError('All items in a table-formatted list must be structs')
-            
+
             fields = item['value']
             item_data = {}
             for header_def in headers:
@@ -202,13 +242,13 @@ class LingoPage(tkinter.Frame):
                     field_value = fields[field_name]
                 except KeyError:
                     raise ValueError(f'Field "{field_name}" not found in struct for table row')
-                
+
                 # Evaluate the field value
                 evaluated_value = self._evaluate_field_value(field_value)
                 value_len = len(str(evaluated_value))
                 column_widths[field_name] = max(column_widths[field_name], value_len)
                 item_data[field_name] = str(evaluated_value)
-            
+
             rows_data.append(item_data)
 
 
@@ -224,7 +264,6 @@ class LingoPage(tkinter.Frame):
 
         # headers #
 
-        self._insert(self._tk_row(), '\n')
         self._new_line()
 
         header_text = ''
@@ -233,11 +272,11 @@ class LingoPage(tkinter.Frame):
             col_width = column_widths[field_name]
             header_text += f'{header_def["text"]: <{col_width}}'
 
-        self._insert(self._tk_row(), separator + '\n', ('monospace',))
+        self._insert(self._tk_row(), separator, ('monospace',))
         self._new_line()
-        self._insert(self._tk_row(), header_text + '\n', ('monospace',))
+        self._insert(self._tk_row(), header_text, ('monospace',))
         self._new_line()
-        self._insert(self._tk_row(), separator + '\n', ('monospace',))
+        self._insert(self._tk_row(), separator, ('monospace',))
         self._new_line()
 
         # rows #
@@ -247,7 +286,7 @@ class LingoPage(tkinter.Frame):
                 field_name = header_def['field']
                 col_width = column_widths[field_name]
                 row_text += f'{item_data[field_name]: <{col_width}}'
-            self._insert(self._tk_row(), row_text + '\n', ('monospace',))
+            self._insert(self._tk_row(), row_text, ('monospace',))
             self._new_line()
     
     def _evaluate_field_value(self, value):
@@ -270,7 +309,8 @@ class LingoPage(tkinter.Frame):
             return value
 
     def render_break(self, element:dict):
-        self._insert(self._tk_row(), '\n' * element['break'])
+        for _ in range(element['break']):
+            self._new_line()
 
     def render_button(self, element:dict):
         def on_click():
