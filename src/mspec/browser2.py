@@ -27,8 +27,8 @@ class LingoPage(tkinter.Frame):
         super().__init__(parent)
 
         self._text_buffer:tkinter.Text = None
-        self._text_row = 0
-        self._inserted_text_on_current_line = False
+        self._text_row = 1
+        self._text_in_cur_element = False
         self.link_count = 0
         self.style_count = 0
 
@@ -41,7 +41,7 @@ class LingoPage(tkinter.Frame):
     def _insert(self, index, chars, *args):
         """Wrapper around text_buffer.insert that tracks text insertion on current line"""
         self._text_buffer.insert(index, chars, *args)
-        self._inserted_text_on_current_line = True
+        self._text_in_cur_element = True
     
     def _new_line(self):
         """Move to a new line and reset text tracking"""
@@ -49,7 +49,7 @@ class LingoPage(tkinter.Frame):
     
     def _element_break(self):
         """Insert a line break only if the current line has text"""
-        if self._inserted_text_on_current_line:
+        if self._text_in_cur_element:
             self._text_buffer.insert(self._tk_row(), '\n')
             self._new_line()
     
@@ -58,7 +58,7 @@ class LingoPage(tkinter.Frame):
 
         self._text_buffer = tkinter.Text(self, font=TEXT, wrap='word', height=50, width=100, highlightthickness=0, borderwidth=2, relief='solid')
         self._text_row = 1
-        self._inserted_text_on_current_line = False
+        self._text_in_cur_element = False
         self.link_count = 0
         self.style_count = 0
         self.entries = {}
@@ -148,9 +148,6 @@ class LingoPage(tkinter.Frame):
             
         self._insert(self._tk_row(), element['text'], tags)
 
-        if element['text'].startswith('Instead they wrote'):
-            breakpoint()
-
     def render_value(self, element:dict):
         if element['type'] == 'struct':
             self._render_struct(element)
@@ -170,10 +167,6 @@ class LingoPage(tkinter.Frame):
                         bullet_char = lambda n: f'{n}. '
                     case _:
                         raise ValueError(f'Unknown list display.format: {bullet_format}')
-                    
-
-                if element['value'][0]['text'] == 'Red':
-                    breakpoint()
                 
                 self._element_break()
             
@@ -181,7 +174,6 @@ class LingoPage(tkinter.Frame):
                     # insert bullet and item #
                     self._insert(self._tk_row(), bullet_char(n))
                     self.render_element(item)
-                    self._new_line()
 
                     # line break after each item #
                     self._insert(self._tk_row(), '\n')
