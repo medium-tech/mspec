@@ -131,11 +131,12 @@
             "text": "And so, in this colorful world with a pink sky, everyone lived "
         },
         {
-            "text": "happily",
+            "text": "happily ever after.",
             "style": {"bold": true, "italic": true, "underline": true, "color": "purple"}   
         },
+        { "break": 3},
         {
-            "text": " ever after. The End."
+            "text": "The End."
         }
     ]
 }
