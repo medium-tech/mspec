@@ -83,6 +83,7 @@
                     "items": [
                         "/api/",
                         {"params": {"module_name": {}}},
+                        "/",
                         {"params": {"model_name": {}}}
                     ]
                 }
@@ -109,36 +110,47 @@
     "ops": {},
     "output": [
         {"heading": {"state": {"header": {}}},  "level": 2},
-
-        {"switch": {"state": {"active_display": {}}},
+        {"switch": {
+            "expression": {"state": {"active_display": {}}},
             "cases": [
                 {
-                    "value": "model-list",
-                    "output": [
-                        {"heading": ":: list of models", "level": 3},
-                        {"button": {"op": {"set": {"state": {"active_display": {}}}, "to": "create-model"}}, "text": "Create New Model"},
-                        {"break": 1},
-                        {"model": {
-                            "display": "model-list",
-                            "http": {"state": {"base_url": {}}},
-                            "definition": {"params": {"model_name": {}}}
-                        }}
-                    ]
+                    "case": "model-list", 
+                    "then": {
+                        "block": [
+                            {"heading": ":: list of models", "level": 3},
+                            {"button": {"op": {"set": {"state": {"active_display": {}}}, "to": "model-create"}}, "text": "Create New Model"},
+                            {"break": 1},
+                            {"model": {
+                                "display": "model-list",
+                                "http": {"state": {"base_url": {}}},
+                                "definition": {"params": {"model_name": {}}}
+                            }}
+                        ]
+                    }
                 },
                 {
-                    "value": "create-model",
-                    "output": [
-                        {"heading": ":: create a new model", "level": 3},
-                        {"button": {"op": {"set": {"state": {"active_display": {}}}, "to": "model-list"}}, "text": "Back to Model List"},
-                        {"break": 1},
-                        {"model": {
-                            "display": "model-create",
-                            "http": {"state": {"base_url": {}}},
-                            "definition": {"params": {"model_name": {}}}
-                        }}
-                    ]
+                    "case": "model-create", 
+                    "then": {
+                        "block": [
+                            {"heading": ":: create a new model", "level": 3},
+                            {"button": {"op": {"set": {"state": {"active_display": {}}}, "to": "model-list"}}, "text": "Back to Model List"},
+                            {"break": 1},
+                            {"model": {
+                                "display": "model-create",
+                                "http": {"state": {"base_url": {}}},
+                                "definition": {"params": {"model_name": {}}}
+                            }}
+                        ]
+                    }
                 }
-            ]
-        }
+            ],
+            "default": {
+                "text": {
+                    "call": "concat", 
+                    "args": {"items": ["Unknown display: ", {"state": {"active_display": {}}}]}
+                },
+                "style": {"color": "red", "bold": true}
+            }
+        }}
     ]
 }
