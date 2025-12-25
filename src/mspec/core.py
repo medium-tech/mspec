@@ -53,7 +53,8 @@ def builtin_spec_files() -> list[str]:
         'browser2': os.listdir(SAMPLE_BROWSER2_SPEC_DIR),
         'generator': os.listdir(SAMPLE_GENERATOR_SPEC_DIR),
         'lingo_script': list(filter(lambda f: not f.endswith('_test_data.json'), script_files)),
-        'lingo_script_test_data': list(filter(lambda f: f.endswith('_test_data.json'), script_files))
+        'lingo_script_test_data': list(filter(lambda f: f.endswith('_test_data.json'), script_files)),
+        'mapp_ui': [f.name for f in get_mapp_ui_files()]
     }
 
 def load_browser2_spec(spec_file:str, display:bool=False) -> dict:
@@ -383,12 +384,13 @@ def get_mapp_ui_files() -> list[Path]:
     Returns:
         list[Path]: List of file paths in the mapp UI directory
     """
-    if not MAPP_UI_FILES.exists():
-        return []
     
     files = []
-    for file_path in MAPP_UI_FILES.iterdir():
-        if file_path.is_file() and not file_path.name.startswith('.'):
-            files.append(file_path)
+    try:
+        for file_path in MAPP_UI_FILES.iterdir():
+            if file_path.is_file() and not file_path.name.startswith('.'):
+                files.append(file_path)
+    except FileNotFoundError:
+        pass
     
     return files

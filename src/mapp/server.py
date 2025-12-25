@@ -3,6 +3,7 @@ import re
 import time
 
 from traceback import format_exc
+from typing import NamedTuple
 
 from mapp.auth import init_auth_module
 from mapp.context import get_context_from_env, MappContext, RequestContext, spec_from_env
@@ -141,6 +142,10 @@ if MAPP_SERVER_DEVELOPMENT_MODE is True:
 # load static ui files
 #
 
+class StaticFileData(NamedTuple):
+    content: bytes
+    content_type: str
+
 static_files = {}
 
 for file_path in get_mapp_ui_files():
@@ -157,26 +162,25 @@ for file_path in get_mapp_ui_files():
     else:
         content_type = 'application/octet-stream'
     
-    static_files[file_path.name] = {
-        'content': content,
-        'content_type': content_type
-    }
+    static_files[file_path.name] = StaticFileData(
+        content=content,
+        content_type=content_type
+    )
 
 def static_routes(server: MappContext, request: RequestContext):
     path = request.env['PATH_INFO']
     
     # serve index.html at root
     if path == '/' or path == '':
-        if 'index.html' in static_files:
-            file_data = static_files['index.html']
-            raise StaticFileResponse('200 OK', file_data['content'], file_data['content_type'])
+        file_data = static_files['index.html']
+        raise StaticFileResponse('200 OK', file_data.content, file_data.content_type)
     
     # serve static files
-    if path.startswith('/'):
-        filename = path[1:]  # remove leading slash
-        if filename in static_files:
-            file_data = static_files[filename]
-            raise StaticFileResponse('200 OK', file_data['content'], file_data['content_type'])
+    filename = path[1:]  # remove leading slash
+    try:
+        raise StaticFileResponse('200 OK', static_files[filename].content, static_files[filename].content_type)
+    except KeyError:
+        pass
 
 route_list.append(static_routes)
 
