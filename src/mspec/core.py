@@ -14,12 +14,14 @@ __all__ = [
     'SAMPLE_LINGO_SCRIPT_SPEC_DIR',
     'SAMPLE_GENERATOR_SPEC_DIR',
     'DIST_DIR',
+    'MAPP_UI_FILES',
     'builtin_spec_files',
     'load_json_or_yaml',
     'load_browser2_spec',
     'load_lingo_script_spec',
     'load_generator_spec',
     'init_generator_spec',
+    'get_mapp_ui_files',
 ]
 
 SAMPLE_DATA_DIR = Path(__file__).parent / 'data'
@@ -28,6 +30,7 @@ SAMPLE_BROWSER2_SPEC_DIR = SAMPLE_DATA_DIR / 'lingo' / 'pages'
 SAMPLE_LINGO_SCRIPT_SPEC_DIR = SAMPLE_DATA_DIR / 'lingo' / 'scripts'
 SAMPLE_GENERATOR_SPEC_DIR = SAMPLE_DATA_DIR / 'generator'
 DIST_DIR = Path(__file__).parent.parent.parent / 'dist'
+MAPP_UI_FILES = SAMPLE_DATA_DIR / 'mapp-ui' / 'src'
 
 def load_json_or_yaml(file_path:Path|str) -> dict:
     """
@@ -372,3 +375,20 @@ def init_generator_spec(spec:dict) -> dict:
             raise ValueError(f'{num_dupe_names} duplicate model and op names in module {module_snake}: {duplicate_names}')
 
     return spec
+
+def get_mapp_ui_files() -> list[Path]:
+    """
+    Returns a list of paths to mapp UI files, excluding hidden files.
+    
+    Returns:
+        list[Path]: List of file paths in the mapp UI directory
+    """
+    if not MAPP_UI_FILES.exists():
+        return []
+    
+    files = []
+    for file_path in MAPP_UI_FILES.iterdir():
+        if file_path.is_file() and not file_path.name.startswith('.'):
+            files.append(file_path)
+    
+    return files
