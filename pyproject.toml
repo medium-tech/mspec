@@ -33,10 +33,15 @@ include-package-data = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-"*" = ["*.yaml", "*.yml", "*.json", "*.jinja2"]
+"*" = ["*.yaml", "*.yml", "*.json", "*.jinja2", "*.html", "*.css", "*.js"]
 "mtemplate" = [
   ".cache/**", 
   ".cache/py/.env.example.jinja2", 
   ".cache/py/.gitignore.jinja2",
   ".cache/browser1/.gitignore.jinja2"
+]
+"mspec" = [
+  "data/mapp-ui/src/*.html",
+  "data/mapp-ui/src/*.css",
+  "data/mapp-ui/src/*.js"
 ]

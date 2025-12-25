@@ -11,18 +11,3 @@ uwsgi:
     lazy-apps: true
     py-autoreload: 1
 
-  # for :: {% for module in modules.values() %} :: {"template-module":"module.name.kebab_case"}
-      # for :: {% for model in module.models.values() %} :: {"single-model": "model.name.kebab_case", "single model": "model.name.lower_case"}
-
-  # single model
-    route: ^/template-module/single-model/create static:../browser1/srv/template-module/single-model/index.html
-    route: ^/template-module/single-model/index(.*) static:../browser1/srv/template-module/single-model/index$1
-    load-file-in-cache: ../browser1/srv/template-module/single-model/index.html
-    route: ^/template-module/single-model/(.*) static:../browser1/srv/template-module/single-model/instance.html
-    load-file-in-cache: ../browser1/srv/template-module/single-model/instance.html
-      # end for ::
-  # end for ::
-
-    static-map: /=../browser1/srv/
-    static-index: index.html
-    static-expires: /* 0

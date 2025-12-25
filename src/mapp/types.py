@@ -12,6 +12,7 @@ __all__ = [
     'Acknowledgment',
     'PlainTextResponse',
     'JSONResponse',
+    'StaticFileResponse',
 
     'User',
     'UserSession',
@@ -93,6 +94,13 @@ class JSONResponse(Exception):
         super().__init__('JSONResponse')
         self.status = status
         self.data = data
+
+class StaticFileResponse(Exception):
+    def __init__(self, status:str, content:bytes, content_type:str) -> None:
+        super().__init__('StaticFileResponse')
+        self.status = status
+        self.content = content
+        self.content_type = content_type
 
 #
 # auth

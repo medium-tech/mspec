@@ -3,14 +3,16 @@ import re
 import time
 
 from traceback import format_exc
+from typing import NamedTuple
 
 from mapp.auth import init_auth_module
 from mapp.context import get_context_from_env, MappContext, RequestContext, spec_from_env
 from mapp.errors import *
-from mapp.types import JSONResponse, PlainTextResponse, to_json
+from mapp.types import JSONResponse, PlainTextResponse, StaticFileResponse, to_json
 from mapp.module.model.db import db_model_create_table
 from mapp.module.model.server import create_model_routes
 from mapp.module.op.server import create_op_routes
+from mspec.core import get_mapp_ui_files
 
 import uwsgi
 
@@ -137,6 +139,52 @@ if MAPP_SERVER_DEVELOPMENT_MODE is True:
     route_list.append(debug_routes)
 
 #
+# load static ui files
+#
+
+class StaticFileData(NamedTuple):
+    content: bytes
+    content_type: str
+
+static_files = {}
+
+for file_path in get_mapp_ui_files():
+    with open(file_path, 'rb') as f:
+        content = f.read()
+    
+    # determine content type #
+    if file_path.suffix == '.html':
+        content_type = 'text/html'
+    elif file_path.suffix == '.css':
+        content_type = 'text/css'
+    elif file_path.suffix == '.js':
+        content_type = 'application/javascript'
+    else:
+        content_type = 'application/octet-stream'
+    
+    static_files[file_path.name] = StaticFileData(
+        content=content,
+        content_type=content_type
+    )
+
+def static_routes(server: MappContext, request: RequestContext):
+    path = request.env['PATH_INFO']
+    
+    # serve index.html at root
+    if path == '/' or path == '':
+        file_data = static_files['index.html']
+        raise StaticFileResponse('200 OK', file_data.content, file_data.content_type)
+    
+    # serve static files
+    filename = path[1:]  # remove leading slash
+    try:
+        raise StaticFileResponse('200 OK', static_files[filename].content, static_files[filename].content_type)
+    except KeyError:
+        pass
+
+route_list.append(static_routes)
+
+#
 # wsgi application
 #
 
@@ -206,6 +254,12 @@ def application(env, start_response):
 
         except JSONResponse as e:
             body = e.data
+            status_code = e.status
+            content_type = e.content_type
+            break
+
+        except StaticFileResponse as e:
+            body = e.content
             status_code = e.status
             content_type = e.content_type
             break
@@ -280,5 +334,7 @@ def application(env, start_response):
 
     if content_type == JSONResponse.content_type:
         return [to_json(body).encode('utf-8')]
+    elif isinstance(body, bytes):
+        return [body]
     else:
         return [body.encode('utf-8')]
