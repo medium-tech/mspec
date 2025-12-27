@@ -147,25 +147,25 @@ def generate_index_html(spec: dict) -> str:
     """
     Generate the index.html page with embedded Lingo JSON spec.
     """
+
+    # init spec #
     
-    # Load the builtin-mapp-project.json lingo spec
-    lingo_spec = load_browser2_spec('builtin-mapp-project.json')
+    lingo_index_page = load_browser2_spec('builtin-mapp-project.json')
     
-    # Extract params from the mapp spec
     project_name = spec['project']['name']['lower_case']
     module_names = list(spec['modules'].keys())
     
-    # Create the params dict for the lingo spec
     lingo_params = {
         'project_name': project_name,
         'module_names': module_names
     }
     
-    # Embed the lingo spec and params as JSON
-    lingo_spec_json = json.dumps(lingo_spec, indent=2)
-    lingo_params_json = json.dumps(lingo_params, indent=2)
+    # genereate html and embed spec #
+
+    lingo_spec_json = json.dumps(lingo_index_page, indent=4)
+    lingo_params_json = json.dumps(lingo_params, indent=4)
     
-    # Generate the HTML
+
     html = f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -243,7 +243,7 @@ for file_path in get_mapp_ui_files():
         content_type=content_type
     )
 
-# Add dynamically generated index.html
+# add generated index.html to static files #
 index_html_content = generate_index_html(mapp_spec)
 static_files['index.html'] = StaticFileData(
     content=index_html_content.encode('utf-8'),
@@ -251,6 +251,8 @@ static_files['index.html'] = StaticFileData(
 )
 
 def static_routes(server: MappContext, request: RequestContext):
+    """resolve static file routes"""
+    
     path = request.env['PATH_INFO']
     
     # serve index.html at root
