@@ -214,6 +214,160 @@ def generate_index_html(spec: dict) -> str:
     
     return html
 
+def generate_module_html(spec: dict, module_key: str) -> str:
+    """
+    Generate the module page with embedded Lingo JSON spec.
+    """
+
+    # init spec #
+    
+    lingo_module_page = load_browser2_spec('builtin-mapp-module.json')
+    
+    project_name = spec['project']['name']['lower_case']
+    module = spec['modules'][module_key]
+    module_name = module['name']['kebab_case']
+    
+    # get model names and op names for this module
+    model_names = [model['name']['kebab_case'] for model in module.get('models', {}).values() if not model.get('hidden', False)]
+    op_names = [op['name']['kebab_case'] for op in module.get('ops', {}).values() if not op.get('hidden', False)]
+    
+    lingo_params = {
+        'project_name': project_name,
+        'module_name': module_name,
+        'model_names': model_names,
+        'op_names': op_names
+    }
+    
+    # generate html and embed spec #
+
+    lingo_spec_json = json.dumps(lingo_module_page, indent=4)
+    lingo_params_json = json.dumps(lingo_params, indent=4)
+    
+
+    html = f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{project_name} - {module_name}</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div id="lingo-app" class="lingo-container">
+        <p>Loading...</p>
+    </div>
+    
+    <!-- Embedded Lingo spec -->
+    <script type="application/json" id="lingoSpec">
+{lingo_spec_json}
+    </script>
+    
+    <!-- Embedded Lingo params -->
+    <script type="application/json" id="lingoParams">
+{lingo_params_json}
+    </script>
+    
+    <script src="/markup.js"></script>
+    
+    <script>
+        // Retrieve and parse the embedded spec and params
+        const specText = document.getElementById('lingoSpec').textContent;
+        const paramsText = document.getElementById('lingoParams').textContent;
+        const lingoSpec = JSON.parse(specText);
+        const lingoParams = JSON.parse(paramsText);
+        
+        // Run the lingo app on load
+        window.addEventListener('load', () => {{
+            try {{
+                const app = lingoApp(lingoSpec, lingoParams, {{}});
+                renderLingoApp(app, document.getElementById('lingo-app'));
+            }} catch (error) {{
+                console.error('Failed to initialize Lingo app:', error);
+                document.getElementById('lingo-app').innerHTML = `<p style="color: red;">Error: ${{error.message}}</p>`;
+            }}
+        }});
+    </script>
+</body>
+</html>'''
+    
+    return html
+
+def generate_model_html(spec: dict, module_key: str, model_key: str) -> str:
+    """
+    Generate the model page with embedded Lingo JSON spec.
+    """
+
+    # init spec #
+    
+    lingo_model_page = load_browser2_spec('builtin-mapp-model.json')
+    
+    project_name = spec['project']['name']['lower_case']
+    module = spec['modules'][module_key]
+    module_name = module['name']['kebab_case']
+    model = module['models'][model_key]
+    model_name = model['name']['kebab_case']
+    
+    lingo_params = {
+        'project_name': project_name,
+        'module_name': module_name,
+        'model_name': model_name,
+        'model_definition': model
+    }
+    
+    # generate html and embed spec #
+
+    lingo_spec_json = json.dumps(lingo_model_page, indent=4)
+    lingo_params_json = json.dumps(lingo_params, indent=4)
+    
+
+    html = f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{project_name} - {module_name} - {model_name}</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div id="lingo-app" class="lingo-container">
+        <p>Loading...</p>
+    </div>
+    
+    <!-- Embedded Lingo spec -->
+    <script type="application/json" id="lingoSpec">
+{lingo_spec_json}
+    </script>
+    
+    <!-- Embedded Lingo params -->
+    <script type="application/json" id="lingoParams">
+{lingo_params_json}
+    </script>
+    
+    <script src="/markup.js"></script>
+    
+    <script>
+        // Retrieve and parse the embedded spec and params
+        const specText = document.getElementById('lingoSpec').textContent;
+        const paramsText = document.getElementById('lingoParams').textContent;
+        const lingoSpec = JSON.parse(specText);
+        const lingoParams = JSON.parse(paramsText);
+        
+        // Run the lingo app on load
+        window.addEventListener('load', () => {{
+            try {{
+                const app = lingoApp(lingoSpec, lingoParams, {{}});
+                renderLingoApp(app, document.getElementById('lingo-app'));
+            }} catch (error) {{
+                console.error('Failed to initialize Lingo app:', error);
+                document.getElementById('lingo-app').innerHTML = `<p style="color: red;">Error: ${{error.message}}</p>`;
+            }}
+        }});
+    </script>
+</body>
+</html>'''
+    
+    return html
+
 #
 # load static ui files
 #
@@ -250,6 +404,30 @@ static_files['index.html'] = StaticFileData(
     content_type='text/html'
 )
 
+# add generated module pages to static files #
+for module_key, module in mapp_spec['modules'].items():
+    if module.get('hidden', False) is True:
+        continue
+    
+    module_kebab = module['name']['kebab_case']
+    module_html_content = generate_module_html(mapp_spec, module_key)
+    static_files[f'{module_kebab}.html'] = StaticFileData(
+        content=module_html_content.encode('utf-8'),
+        content_type='text/html'
+    )
+    
+    # add generated model pages to static files #
+    for model_key, model in module.get('models', {}).items():
+        if model.get('hidden', False) is True:
+            continue
+        
+        model_kebab = model['name']['kebab_case']
+        model_html_content = generate_model_html(mapp_spec, module_key, model_key)
+        static_files[f'{module_kebab}_{model_kebab}.html'] = StaticFileData(
+            content=model_html_content.encode('utf-8'),
+            content_type='text/html'
+        )
+
 def static_routes(server: MappContext, request: RequestContext):
     """resolve static file routes"""
     
@@ -259,6 +437,27 @@ def static_routes(server: MappContext, request: RequestContext):
     if path == '/' or path == '':
         file_data = static_files['index.html']
         raise StaticFileResponse('200 OK', file_data.content, file_data.content_type)
+    
+    # serve module pages at /<module-kebab-case>
+    # serve model pages at /<module-kebab-case>/<model-kebab-case>
+    path_parts = path.strip('/').split('/')
+    
+    if len(path_parts) == 1 and path_parts[0]:
+        # could be a module page
+        module_kebab = path_parts[0]
+        filename = f'{module_kebab}.html'
+        if filename in static_files:
+            file_data = static_files[filename]
+            raise StaticFileResponse('200 OK', file_data.content, file_data.content_type)
+    
+    elif len(path_parts) == 2:
+        # could be a model page
+        module_kebab = path_parts[0]
+        model_kebab = path_parts[1]
+        filename = f'{module_kebab}_{model_kebab}.html'
+        if filename in static_files:
+            file_data = static_files[filename]
+            raise StaticFileResponse('200 OK', file_data.content, file_data.content_type)
     
     # serve static files
     filename = path[1:]  # remove leading slash
