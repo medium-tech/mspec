@@ -3,6 +3,7 @@ import json
 
 import yaml
 
+from typing import Optional
 from pathlib import Path
 
 from mspec.util import generate_names
@@ -377,17 +378,19 @@ def init_generator_spec(spec:dict) -> dict:
 
     return spec
 
-def get_mapp_ui_files() -> list[Path]:
+def get_mapp_ui_files(ui_file_source:Optional[str]=None) -> list[Path]:
     """
     Returns a list of paths to mapp UI files, excluding hidden files.
     
     Returns:
         list[Path]: List of file paths in the mapp UI directory
     """
+
+    src_dir = MAPP_UI_FILES if ui_file_source is None else Path(ui_file_source)
     
     files = []
     try:
-        for file_path in MAPP_UI_FILES.iterdir():
+        for file_path in src_dir.iterdir():
             if file_path.is_file() and not file_path.name.startswith('.'):
                 files.append(file_path)
     except FileNotFoundError:

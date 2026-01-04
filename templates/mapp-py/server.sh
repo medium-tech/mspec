@@ -24,6 +24,8 @@ usage() {
   echo "                          or supply via MAPP_ENV_FILE env var"
   echo "  --pid-file <path>     Path to PID file (default: app/server.pid)"
   echo "  --config <path>       Path to uwsgi config file (default: ./uwsgi.yaml)"
+  echo "  --ui-src <path>      Path to MAPP UI files source directory"
+  echo "                          if provided will be used to set MAPP_UI_FILE_SOURCE env var"
   echo "  -h, --help            Show this help message and exit\n"
   exit 0
 }
@@ -45,6 +47,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --config)
       CONFIG_FILE="$2"
+      shift 2
+      ;;
+    --ui-src)
+      export MAPP_UI_FILE_SOURCE="$2"
       shift 2
       ;;
     -h|--help)
@@ -74,6 +80,7 @@ printf "\n::\n:: init mapp environment\n::\n\n"
 printf "%-${COL_WIDTH}s %s\n" ":: env file"   "$ENVFILE"
 printf "%-${COL_WIDTH}s %s\n" ":: pid file"   "$PID_FILE"
 printf "%-${COL_WIDTH}s %s\n" ":: config file" "$CONFIG_FILE"
+printf "%-${COL_WIDTH}s %s\n" ":: ui src" "${MAPP_UI_FILE_SOURCE:- }"
 printf "%-${COL_WIDTH}s %s\n" ":: venv"       "${VIRTUAL_ENV:-}"
 printf "%-${COL_WIDTH}s %s\n" ":: port" "$PORT"
 printf "%-${COL_WIDTH}s %s\n" ":: local url"    "http://localhost:$PORT"

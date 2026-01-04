@@ -21,7 +21,7 @@ import uwsgi
 # debug
 #
 
-MAPP_SERVER_DEVELOPMENT_MODE = os.environ.get('MAPP_SERVER_DEVELOPMENT_MODE', 'false').lower() == 'true'
+MAPP_SERVER_DEVELOPMENT_MODE = os.environ.get('MAPP_SERVER_DEVELOPMENT_MODE', 'false').lower() in ['true', 't', '1', 'yes', 'y']
 
 def debug_page(server: MappContext, request: RequestContext):
     main_col = 36
@@ -378,7 +378,9 @@ class StaticFileData(NamedTuple):
 
 static_files = {}
 
-for file_path in get_mapp_ui_files():
+ui_src_dir = os.environ.get('MAPP_UI_FILE_SOURCE', None)
+
+for file_path in get_mapp_ui_files(ui_src_dir):
     with open(file_path, 'rb') as f:
         content = f.read()
     
