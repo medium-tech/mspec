@@ -85,6 +85,7 @@ embed templating commands inside the working python files.
         * [python gui client](#pybrowser2)
 * [development](#development)
     * [code layout](#code-layout)
+    * [developing mapp framework app]
     * [setup dev enviro](#setup-dev-environment)
     * [run and edit template apps](#edit-and-run-template-apps)
     * [generate apps using templates](#generate-apps-using-templates)
@@ -193,6 +194,22 @@ The `./src` folder contains two modules:
 
 The `./templates` folder contains template apps from which templates are extracted.
 
+## mapp framework app
+
+The `mapp` python framework code is in `src/mapp`. It uses the mapp spec to define an app.
+
+The example implementation of a `mapp` app is in `templates/mapp-py`, use this for testing the framework.
+
+The UI for a mapp app is defined by lingo page files in `src/mspec/data/lingo/pages`, specifically the files in this dir starting with `builtin-mapp`.
+
+The mapp application serves these wrapped in html for the browser. mapp does this when creating static file routes in `src/mapp/server.py`. These files are also dependent on the lingo script JS interpreter which is in `browser2/js`.
+
+To test develop and test the JS lingo interpreter use the dev lingo server `browser2/js/server.py` and navigate to it in your browser.
+
+Use `./build.sh` to sync the files in `browser2/js` to the python mapp app in `src/mspec/data/mapp-ui/src`. These are the lingo interpreter files that the template app `templates/mapp-py` will use for it's UI. For development testing you can run the `mapp-py` server like this to force it to use the development js interpreter without needing to use `build.sh` to sync your chages.
+
+    ./server.sh --ui-src ../../browser2/js/src/
+
 ## setup dev environment
 This environment will be used to develop the template apps, mspec and mtemplate modules and browser2 python implementation.
 
@@ -205,7 +222,7 @@ This environment will be used to develop the template apps, mspec and mtemplate 
 
 ## edit and run template apps
 
-**WARNING** this section is outdated because the templating is being refactored
+⚠️ ⚠️ **WARNING** this section is outdated because the templating is being refactored ⚠️ ⚠️
 
 As mentioned, the templates are extracted from working apps in `./templates`, this allows you to run the templates directly for fast development and testing. This section explains how to run the apps from which templates are extracted. If you want to change the features that generated apps have you need to edit the template apps as described in this section. If you want to learn how to generate template apps from a yaml spec go to [generate apps from spec files](#generate-apps-from-spec-files).
 
