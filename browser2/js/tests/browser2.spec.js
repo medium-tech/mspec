@@ -571,3 +571,38 @@ test('test - formatting page', async ({ page }) => {
   const lightGrayListItem = lingoApp.locator('li').filter({ hasText: 'Light Gray' }).locator('span');
   await expect(lightGrayListItem).toHaveCSS('color', 'rgb(211, 211, 211)'); // lightgray in RGB
 });
+
+test('test - builtin mapp model page', async ({ page }) => {
+  // Listen for console errors
+  const consoleErrors = [];
+  page.on('console', msg => {
+    if (msg.type() === 'error') {
+      consoleErrors.push(msg.text());
+    }
+  });
+
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/builtin-mapp-model.json');
+
+  // Wait a bit for rendering to complete
+  await page.waitForTimeout(1000);
+
+  // Check heading is present
+  const lingoApp = page.locator('#lingo-app');
+  await expect(lingoApp.locator('h2')).toContainText(':: My Lingo Project :: my-module-a :: my-model-a');
+  
+  // Check that model-list section exists
+  await expect(lingoApp.locator('h3')).toContainText(':: list of models');
+  
+  // Check that "Create New Model" button is visible
+  await expect(page.getByRole('button', { name: 'Create New Model' })).toBeVisible();
+  
+  // Check that model status is displayed
+  await expect(lingoApp.locator('.model-status, .model-list-status')).toBeVisible();
+  
+  // Verify no critical console errors occurred during rendering
+  const criticalErrors = consoleErrors.filter(err => 
+    err.includes('undefined') || err.includes('is not a function') || err.includes('Cannot read')
+  );
+  expect(criticalErrors).toHaveLength(0);
+});
