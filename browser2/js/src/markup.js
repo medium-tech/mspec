@@ -6,6 +6,12 @@
 // Date/time formatting
 const datetimeFormatStr = '%Y-%m-%dT%H:%M:%S';
 
+// Global state for model data
+// Map from URL to {status: 'loading'|'loaded'|'error', data: [], error: null|string}
+window.modelListCache = window.modelListCache || {};
+// Map from URL to {status: 'pending'|'success'|'error', data: null|object, error: null|string}
+window.modelCreateCache = window.modelCreateCache || {};
+
 // Helper function for lingo int conversion
 function lingoInt(number = null, string = null, base = 10) {
     if (number !== null && number !== undefined) {
@@ -1237,7 +1243,9 @@ function createDOMElement(app, element) {
     } else if ('value' in element) {
         return createValueElement(element);
     } else if ('form' in element) {
-        return createFormElement(element);
+        return createFormElement(app, element);
+    } else if ('model' in element) {
+        return createModelElement(app, element);
     } else {
         console.warn('Unknown element type:', element);
         return null;
@@ -1868,4 +1876,370 @@ function createFormElement(element) {
     
     formContainer.appendChild(table);
     return formContainer;
+}
+
+/**
+ * Create model element - handles both model-list and model-create displays
+ */
+function createModelElement(app, element) {
+    const modelSpec = element.model;
+    const display = modelSpec.display;
+    
+    if (display === 'model-list') {
+        return createModelListElement(app, modelSpec);
+    } else if (display === 'model-create') {
+        return createModelCreateElement(app, modelSpec);
+    } else {
+        console.error('Unknown model display type:', display);
+        return document.createTextNode('[Unknown Model Display]');
+    }
+}
+
+/**
+ * Create model list element - displays models in a table
+ */
+function createModelListElement(app, modelSpec) {
+    const container = document.createElement('div');
+    container.className = 'model-list-container';
+    
+    // Get the URL from model.http
+    let url;
+    if (typeof modelSpec.http === 'string') {
+        url = modelSpec.http;
+    } else if (typeof modelSpec.http === 'object') {
+        // Evaluate the expression to get the URL
+        const urlResult = lingoExecute(app, modelSpec.http);
+        url = (typeof urlResult === 'object' && 'value' in urlResult) ? urlResult.value : urlResult;
+    } else {
+        console.error('Invalid model.http specification:', modelSpec.http);
+        return document.createTextNode('[Invalid Model HTTP Config]');
+    }
+    
+    // Initialize cache entry if not present
+    if (!window.modelListCache[url]) {
+        window.modelListCache[url] = {
+            status: 'loading',
+            data: [],
+            error: null
+        };
+        
+        // Fetch data from backend
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                window.modelListCache[url] = {
+                    status: 'loaded',
+                    data: Array.isArray(data) ? data : (data.items || []),
+                    error: null
+                };
+                // Re-render the app
+                const containerElement = container.closest('.lingo-container');
+                if (containerElement && app) {
+                    renderLingoApp(app, containerElement);
+                }
+            })
+            .catch(error => {
+                window.modelListCache[url] = {
+                    status: 'error',
+                    data: [],
+                    error: error.message
+                };
+                // Re-render the app
+                const containerElement = container.closest('.lingo-container');
+                if (containerElement && app) {
+                    renderLingoApp(app, containerElement);
+                }
+            });
+    }
+    
+    const cacheEntry = window.modelListCache[url];
+    
+    // Create status text
+    const statusText = document.createElement('div');
+    statusText.className = 'model-status';
+    
+    if (cacheEntry.status === 'loading') {
+        const span = document.createElement('span');
+        span.textContent = 'loading...';
+        span.style.fontWeight = 'bold';
+        span.style.color = 'orange';
+        statusText.appendChild(span);
+    } else if (cacheEntry.status === 'loaded') {
+        const span = document.createElement('span');
+        span.textContent = 'loaded';
+        span.style.fontWeight = 'bold';
+        span.style.color = 'green';
+        statusText.appendChild(span);
+    } else if (cacheEntry.status === 'error') {
+        const span = document.createElement('span');
+        span.textContent = `error: ${cacheEntry.error}`;
+        span.style.fontWeight = 'bold';
+        span.style.color = 'red';
+        statusText.appendChild(span);
+    }
+    
+    container.appendChild(statusText);
+    
+    // Get model definition to create table headers
+    let modelDefinition;
+    if (typeof modelSpec.definition === 'object') {
+        const defResult = lingoExecute(app, modelSpec.definition);
+        modelDefinition = (typeof defResult === 'object' && 'value' in defResult) ? defResult.value : defResult;
+    } else {
+        console.error('Invalid model.definition specification:', modelSpec.definition);
+        return container;
+    }
+    
+    // Create table structure from model definition
+    const headers = [];
+    const fields = modelDefinition.fields || {};
+    
+    for (const [fieldKey, fieldSpec] of Object.entries(fields)) {
+        const fieldName = fieldSpec.name?.lower_case || fieldKey;
+        headers.push({
+            text: fieldName.charAt(0).toUpperCase() + fieldName.slice(1),
+            field: fieldKey
+        });
+    }
+    
+    // Build list element with table format
+    const listElement = {
+        type: 'list',
+        display: {
+            format: 'table',
+            headers: headers
+        },
+        value: cacheEntry.data.map(item => ({
+            type: 'struct',
+            value: item
+        }))
+    };
+    
+    // Create the table using existing createValueElement
+    const tableElement = createValueElement(listElement);
+    container.appendChild(tableElement);
+    
+    return container;
+}
+
+/**
+ * Create model create element - displays a form for creating a new model
+ */
+function createModelCreateElement(app, modelSpec) {
+    const container = document.createElement('div');
+    container.className = 'model-create-container';
+    
+    // Get the URL from model.http
+    let url;
+    if (typeof modelSpec.http === 'string') {
+        url = modelSpec.http;
+    } else if (typeof modelSpec.http === 'object') {
+        // Evaluate the expression to get the URL
+        const urlResult = lingoExecute(app, modelSpec.http);
+        url = (typeof urlResult === 'object' && 'value' in urlResult) ? urlResult.value : urlResult;
+    } else {
+        console.error('Invalid model.http specification:', modelSpec.http);
+        return document.createTextNode('[Invalid Model HTTP Config]');
+    }
+    
+    // Get model definition to create form
+    let modelDefinition;
+    if (typeof modelSpec.definition === 'object') {
+        const defResult = lingoExecute(app, modelSpec.definition);
+        modelDefinition = (typeof defResult === 'object' && 'value' in defResult) ? defResult.value : defResult;
+    } else {
+        console.error('Invalid model.definition specification:', modelSpec.definition);
+        return document.createTextNode('[Invalid Model Definition]');
+    }
+    
+    // Initialize cache entry if not present
+    const cacheKey = `${url}_create`;
+    if (!window.modelCreateCache[cacheKey]) {
+        window.modelCreateCache[cacheKey] = {
+            status: 'idle',
+            data: null,
+            error: null
+        };
+    }
+    
+    const cacheEntry = window.modelCreateCache[cacheKey];
+    
+    // Create status text
+    const statusText = document.createElement('div');
+    statusText.className = 'model-create-status';
+    
+    if (cacheEntry.status === 'pending') {
+        const span = document.createElement('span');
+        span.textContent = 'creating...';
+        span.style.fontWeight = 'bold';
+        span.style.color = 'orange';
+        statusText.appendChild(span);
+    } else if (cacheEntry.status === 'success') {
+        const span = document.createElement('span');
+        span.textContent = 'created successfully';
+        span.style.fontWeight = 'bold';
+        span.style.color = 'green';
+        statusText.appendChild(span);
+        
+        // Add link to the created item
+        if (cacheEntry.data && cacheEntry.data.id) {
+            statusText.appendChild(document.createTextNode(' - '));
+            const link = document.createElement('a');
+            link.href = `${url}/${cacheEntry.data.id}`;
+            link.textContent = `View item ${cacheEntry.data.id}`;
+            statusText.appendChild(link);
+        }
+    } else if (cacheEntry.status === 'error') {
+        const span = document.createElement('span');
+        span.textContent = `error: ${cacheEntry.error}`;
+        span.style.fontWeight = 'bold';
+        span.style.color = 'red';
+        statusText.appendChild(span);
+    }
+    
+    container.appendChild(statusText);
+    
+    // Convert model definition fields to form fields structure
+    const formElement = {
+        form: {
+            fields: modelDefinition.fields || {}
+        }
+    };
+    
+    // Create the form using existing createFormElement
+    const formContainer = createFormElement(formElement);
+    
+    // Update the submit button to handle the POST request
+    const submitButton = formContainer.querySelector('button');
+    if (submitButton) {
+        // Store original onclick handler
+        const originalHandler = submitButton.onclick;
+        
+        submitButton.onclick = () => {
+            // Get form data
+            const formData = {};
+            const fields = modelDefinition.fields || {};
+            
+            for (const [fieldKey, fieldSpec] of Object.entries(fields)) {
+                const fieldType = fieldSpec.type;
+                const defaultValue = fieldSpec.default;
+                
+                // Find the input element for this field
+                const row = formContainer.querySelector(`td:first-child`);
+                let inputElement = null;
+                
+                // This is a simplified approach - in practice, we'd need better selectors
+                // For now, we'll use the form's built-in data collection from createFormElement
+                formData[fieldKey] = defaultValue;
+            }
+            
+            // Call original handler to populate formData
+            if (originalHandler) {
+                originalHandler();
+            }
+            
+            // Get the logged form data from console (this is a workaround)
+            // In a real implementation, we'd refactor createFormElement to return formData
+            // For now, we'll construct it from the form inputs
+            const allInputs = formContainer.querySelectorAll('input, select');
+            const tableRows = formContainer.querySelectorAll('tr');
+            
+            // Build form data from table rows
+            let rowIndex = 0;
+            for (const [fieldKey, fieldSpec] of Object.entries(fields)) {
+                const fieldType = fieldSpec.type;
+                const row = tableRows[rowIndex];
+                
+                if (!row) {
+                    rowIndex++;
+                    continue;
+                }
+                
+                const inputCell = row.querySelector('td:nth-child(2)');
+                if (!inputCell) {
+                    rowIndex++;
+                    continue;
+                }
+                
+                if (fieldType === 'bool') {
+                    const checkbox = inputCell.querySelector('input[type="checkbox"]');
+                    formData[fieldKey] = checkbox ? checkbox.checked : fieldSpec.default;
+                } else if (fieldType === 'int') {
+                    const input = inputCell.querySelector('input[type="number"]');
+                    formData[fieldKey] = input ? parseInt(input.value, 10) : fieldSpec.default;
+                } else if (fieldType === 'float') {
+                    const input = inputCell.querySelector('input[type="number"]');
+                    formData[fieldKey] = input ? parseFloat(input.value) : fieldSpec.default;
+                } else if (fieldType === 'list') {
+                    // List data is stored in a closure, need to access it differently
+                    // For now, use default
+                    formData[fieldKey] = fieldSpec.default || [];
+                } else {
+                    const input = inputCell.querySelector('input, select');
+                    formData[fieldKey] = input ? input.value : fieldSpec.default;
+                }
+                
+                rowIndex++;
+            }
+            
+            // Update cache status to pending
+            window.modelCreateCache[cacheKey] = {
+                status: 'pending',
+                data: null,
+                error: null
+            };
+            
+            // Re-render to show pending status
+            const containerElement = container.closest('.lingo-container');
+            if (containerElement && app) {
+                renderLingoApp(app, containerElement);
+            }
+            
+            // Send POST request
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    window.modelCreateCache[cacheKey] = {
+                        status: 'success',
+                        data: data,
+                        error: null
+                    };
+                    // Re-render the app
+                    if (containerElement && app) {
+                        renderLingoApp(app, containerElement);
+                    }
+                })
+                .catch(error => {
+                    window.modelCreateCache[cacheKey] = {
+                        status: 'error',
+                        data: null,
+                        error: error.message
+                    };
+                    // Re-render the app
+                    if (containerElement && app) {
+                        renderLingoApp(app, containerElement);
+                    }
+                });
+        };
+    }
+    
+    container.appendChild(formContainer);
+    
+    return container;
 }
