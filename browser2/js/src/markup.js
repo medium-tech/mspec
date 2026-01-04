@@ -1239,8 +1239,7 @@ function createDOMElement(app, element) {
     } else if ('form' in element) {
         return createFormElement(element);
     } else {
-        console.warn('Unknown element type:', element);
-        return null;
+        throw new Error('createDOMElement - unknown element type: ' + JSON.stringify(element));
     }
 }
 
