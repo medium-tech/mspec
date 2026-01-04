@@ -315,15 +315,15 @@ test('test - builtin mapp module page', async ({ page }) => {
   await expect(page.locator('#lingo-app')).toContainText(':: available models');
   
   // Check that links are generated for each model with concat working
-  await expect(page.locator('a[href="/my-model-a"]')).toContainText('my-model-a');
-  await expect(page.locator('a[href="/my-model-b"]')).toContainText('my-model-b');
+  await expect(page.locator('a[href="/my-module-a/my-model-a"]')).toContainText('my-model-a');
+  await expect(page.locator('a[href="/my-module-a/my-model-b"]')).toContainText('my-model-b');
 
   // Check that the page says "Available Ops:"
   await expect(page.locator('#lingo-app')).toContainText(':: available operations');
   
   // Check that links are generated for each op with concat working
-  await expect(page.locator('a[href="/my-op-a"]')).toContainText('my-op-a');
-  await expect(page.locator('a[href="/my-op-b"]')).toContainText('my-op-b');
+  await expect(page.locator('a[href="/my-module-a/my-op-a"]')).toContainText('my-op-a');
+  await expect(page.locator('a[href="/my-module-a/my-op-b"]')).toContainText('my-op-b');
   
   // 
   // custom params
@@ -345,17 +345,17 @@ test('test - builtin mapp module page', async ({ page }) => {
   await expect(page.locator('#lingo-app')).toContainText(':: available models');
   
   // Check that links are generated for each model with concat working
-  await expect(page.locator('a[href="/user"]')).toContainText('user');
-  await expect(page.locator('a[href="/profile"]')).toContainText('profile');
-  await expect(page.locator('a[href="/settings"]')).toContainText('settings');
+  await expect(page.locator('a[href="/users/user"]')).toContainText('user');
+  await expect(page.locator('a[href="/users/profile"]')).toContainText('profile');
+  await expect(page.locator('a[href="/users/settings"]')).toContainText('settings');
 
   // Check that the page says "Available Ops:"
   await expect(page.locator('#lingo-app')).toContainText(':: available operations');
   
   // Check that links are generated for each op with concat working
-  await expect(page.locator('a[href="/create_user"]')).toContainText('create_user');
-  await expect(page.locator('a[href="/delete_user"]')).toContainText('delete_user');
-  await expect(page.locator('a[href="/update_profile"]')).toContainText('update_profile');
+  await expect(page.locator('a[href="/users/create_user"]')).toContainText('create_user');
+  await expect(page.locator('a[href="/users/delete_user"]')).toContainText('delete_user');
+  await expect(page.locator('a[href="/users/update_profile"]')).toContainText('update_profile');
 });
 
 test('test - structs page', async ({ page }) => {

@@ -94,9 +94,9 @@
                         "args": {
                             "items": [
                                 "/",
-                                {
-                                    "self": "item"
-                                }
+                                {"params": {"module_name": {}}},
+                                "/",
+                                {"self": "item"}
                             ]
                         }
                     },
@@ -127,9 +127,9 @@
                         "args": {
                             "items": [
                                 "/",
-                                {
-                                    "self": "item"
-                                }
+                                {"params": {"module_name": {}}},
+                                "/",
+                                {"self": "item"}
                             ]
                         }
                     },

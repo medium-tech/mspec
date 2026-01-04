@@ -153,7 +153,7 @@ def generate_index_html(spec: dict) -> str:
     lingo_index_page = load_browser2_spec('builtin-mapp-project.json')
     
     project_name = spec['project']['name']['lower_case']
-    module_names = list(spec['modules'].keys())
+    module_names = [module['name']['kebab_case'] for module in spec['modules'].values() if not module.get('hidden', False)]
     
     lingo_params = {
         'project_name': project_name,
@@ -411,7 +411,7 @@ for module_key, module in mapp_spec['modules'].items():
     
     module_kebab = module['name']['kebab_case']
     module_html_content = generate_module_html(mapp_spec, module_key)
-    static_files[f'{module_kebab}.html'] = StaticFileData(
+    static_files[module_kebab] = StaticFileData(
         content=module_html_content.encode('utf-8'),
         content_type='text/html'
     )
@@ -423,7 +423,7 @@ for module_key, module in mapp_spec['modules'].items():
         
         model_kebab = model['name']['kebab_case']
         model_html_content = generate_model_html(mapp_spec, module_key, model_key)
-        static_files[f'{module_kebab}_{model_kebab}.html'] = StaticFileData(
+        static_files[f'{module_kebab}/{model_kebab}'] = StaticFileData(
             content=model_html_content.encode('utf-8'),
             content_type='text/html'
         )
@@ -431,40 +431,15 @@ for module_key, module in mapp_spec['modules'].items():
 def static_routes(server: MappContext, request: RequestContext):
     """resolve static file routes"""
     
-    path = request.env['PATH_INFO']
+    path_stripped = request.env['PATH_INFO'].strip('/')
+    path = 'index.html' if path_stripped == '' else path_stripped
     
-    # serve index.html at root
-    if path == '/' or path == '':
-        file_data = static_files['index.html']
-        raise StaticFileResponse('200 OK', file_data.content, file_data.content_type)
-    
-    # serve module pages at /<module-kebab-case>
-    # serve model pages at /<module-kebab-case>/<model-kebab-case>
-    path_parts = path.strip('/').split('/')
-    
-    if len(path_parts) == 1 and path_parts[0]:
-        # could be a module page
-        module_kebab = path_parts[0]
-        filename = f'{module_kebab}.html'
-        if filename in static_files:
-            file_data = static_files[filename]
-            raise StaticFileResponse('200 OK', file_data.content, file_data.content_type)
-    
-    elif len(path_parts) == 2:
-        # could be a model page
-        module_kebab = path_parts[0]
-        model_kebab = path_parts[1]
-        filename = f'{module_kebab}_{model_kebab}.html'
-        if filename in static_files:
-            file_data = static_files[filename]
-            raise StaticFileResponse('200 OK', file_data.content, file_data.content_type)
-    
-    # serve static files
-    filename = path[1:]  # remove leading slash
     try:
-        raise StaticFileResponse('200 OK', static_files[filename].content, static_files[filename].content_type)
+        file_data = static_files[path]
     except KeyError:
         pass
+    else:
+        raise StaticFileResponse('200 OK', file_data.content, file_data.content_type)
 
 route_list.append(static_routes)
 
