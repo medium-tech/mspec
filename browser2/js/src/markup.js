@@ -27,9 +27,14 @@ function strConcat(items) {
     return items.map(item => String(item)).join('');
 }
 
-// Built-in function lookup table
+//
+// lingo functions
+//
+
+
 const lingoFunctionLookup = {
-    // comparison #
+
+    // comparison //
     
     'eq': {
         func: (a, b) => a === b,
@@ -56,7 +61,7 @@ const lingoFunctionLookup = {
         args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
     },
     
-    // bool #
+    // bool //
     
     'bool': {
         func: (obj) => Boolean(obj),
@@ -79,7 +84,7 @@ const lingoFunctionLookup = {
         args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
     },
     
-    // int #
+    // int //
     
     'int': {
         func: lingoInt,
@@ -90,7 +95,7 @@ const lingoFunctionLookup = {
         }
     },
     
-    // float #
+    // float //
     
     'float': {
         func: (number) => Number(number),
@@ -110,7 +115,7 @@ const lingoFunctionLookup = {
         }
     },
     
-    // str #
+    // str //
     
     'str': {
         func: (obj) => String(obj),
@@ -130,7 +135,7 @@ const lingoFunctionLookup = {
         }
     },
     
-    // math #
+    // math //
     
     'add': {
         func: (a, b) => a + b,
@@ -173,7 +178,7 @@ const lingoFunctionLookup = {
         args: {'number': {'type': 'number'}}
     },
     
-    // sequence #
+    // sequence //
     
     'len': {
         func: (obj) => obj.length,
@@ -235,7 +240,7 @@ const lingoFunctionLookup = {
         args: {'iterable': {'type': 'list'}}
     },
     
-    // sequence ops #
+    // sequence ops //
     
     'map': {
         func: null, // handled specially in renderCall
@@ -289,12 +294,21 @@ const lingoFunctionLookup = {
         }
     },
     
-    // random #
+    // random //
     
     'random': {
         'randint': {
             func: (a, b) => Math.floor(Math.random() * (b - a + 1)) + a,
             args: {'a': {'type': 'int'}, 'b': {'type': 'int'}}
+        }
+    },
+
+    // crud //
+
+    'crud': {
+        'create': {
+            func: null, // handled specially in renderCall
+            createArgs: true
         }
     }
 };
@@ -1128,6 +1142,67 @@ function handleSequenceOp(app, expression, ctx = null) {
         }
         
         return {type: getTypeName(result), value: result};
+    } else if (funcName === 'crud.create') {
+
+        //
+        // init params
+        //
+
+        const urlResult = lingoExecute(app, args.http, ctx);
+        const data = lingoExecute(app, args.data, ctx);
+
+        let url;
+        if (typeof urlResult === 'object' && urlResult !== null) {
+            if(!('type' in urlResult) || !('value' in urlResult)) {
+                throw new Error('handleSequenceOp - crud.create - invalid http url object');
+            }
+            if (urlResult.type !== 'str') {
+                throw new Error('handleSequenceOp - crud.create - http url must be of type str');
+            }
+            url = urlResult.value;
+        } else if (typeof urlResult === 'string') {
+            url = urlResult;
+        } else {
+            throw new Error('handleSequenceOp - crud.create - invalid http url type');
+        }
+
+        console.log('handleSequenceOp - crud.create - url:', url, 'data:', data);
+
+        //
+        // send request
+        //
+
+        async function sendCreateRequest(url, data) {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    console.error('handleSequenceOp - crud.create - HTTP error:', response.status, response.statusText);
+                    return {error: `HTTP error! status: ${response.status}`, code: `HTTP_${response.status}`};
+                }
+
+                const responseData = await response.json();
+                console.log('handleSequenceOp - crud.create - responseData:', responseData);
+                return [
+                    {text: 'Success', style: {color: 'green', bold: true}},
+                    {text: ', '},
+                    {link: `${url}/${responseData.id}`, text: 'view new item'},
+                    {text: '.'}
+                ];
+
+            } catch (error) {
+                console.error('handleSequenceOp - crud.create - network error:', error);
+                return {error: `Network error: ${error.message}`, code: 'NETWORK_ERROR'};
+            }
+        }
+
+        return sendCreateRequest(url, data);
     }
     
     throw new Error(`handleSequenceOp - unknown function: ${funcName}`);
@@ -1236,9 +1311,9 @@ function _renderModelCreate(app, element, ctx = null) {
         form: {
             fields: definition.fields,
             action: {
-                call: 'crud.http.create',
+                call: 'crud.create',
                 args: {
-                    url: element.model.http,
+                    http: element.model.http,
                     data: {self: "form_data"}
                 }
             }
@@ -1337,7 +1412,7 @@ function createDOMElement(app, element) {
     } else if ('value' in element) {
         return createValueElement(element);
     } else if ('form' in element) {
-        return createFormElement(element);
+        return createFormElement(app, element);
     } else {
         throw new Error('createDOMElement - unknown element type: ' + JSON.stringify(element));
     }
@@ -1672,7 +1747,7 @@ function createLinkElement(element) {
 /**
  * Create form element with table layout
  */
-function createFormElement(element) {
+function createFormElement(app, element) {
     const formContainer = document.createElement('div');
     const table = document.createElement('table');
     table.className = 'form-table';
@@ -1958,8 +2033,14 @@ function createFormElement(element) {
     const submitButton = document.createElement('button');
     submitButton.textContent = 'Submit';
     submitButton.addEventListener('click', () => {
-        console.log('Form data:', {self: {form_data: formData}});
-        console.log('Form action:', element.form.action);
+        // console.log('Form data:', {self: {form_data: formData}});
+        // console.log('Form action:', element.form.action);
+        const ctx = {self: {form_data: formData}};
+        const result = lingoExecute(app, element.form.action, ctx);
+        console.log('Form action result:', result);
+        result.then((data) => {
+            console.log('Form action completed', data);
+        });
     });
     
     submitCell.appendChild(submitButton);
