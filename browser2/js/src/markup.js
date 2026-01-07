@@ -388,6 +388,9 @@ function getTypeName(value) {
     if (typeof value === 'object' && value !== null && 'type' in value && 'value' in value) {
         return value.type;
     }
+    if (typeof value === 'object' && 'fields' in value && 'name' in value) {
+        return 'model';
+    }
     return typeof value;
 }
 
@@ -438,6 +441,8 @@ function lingoExecute(app, expression, ctx = null) {
             result = renderArgs(app, expression, ctx);
         } else if ('self' in expression) {
             return renderSelf(app, expression, ctx);
+        } else if ('model' in expression) {
+            return renderModel(app, expression, ctx);
         } else {
             result = expression;
         }
@@ -450,11 +455,11 @@ function lingoExecute(app, expression, ctx = null) {
     if (typeof result === 'string' || typeof result === 'number' || 
                typeof result === 'boolean' || result instanceof Date) {
         // Primitive types - wrap with type info
-        console.log('lingo - wrapping primitive result', expression, result);
+        // console.log('lingo - wrapping primitive result', expression, result);
         return {type: getTypeName(result), value: result};
     }else if (typeof result === 'object' && result !== null) {
         // Already an object or array, return as is
-        console.log('lingo - returning object result', expression, result, result instanceof Date);
+        // console.log('lingo - returning object result', expression, result, result instanceof Date);
         return result;
     } else {
         // Unknown type
@@ -468,12 +473,12 @@ function lingoExecute(app, expression, ctx = null) {
  */
 function renderOutput(app, ctx = null) {
     app.buffer = [];
-    console.log('renderOutput()', typeof app.spec.output, app.spec.output.length);
+    console.log('* * * renderOutput()', typeof app.spec.output, app.spec.output.length);
     for (let n = 0; n < app.spec.output.length; n++) {
         const element = app.spec.output[n];
         try {
             const rendered = lingoExecute(app, element, ctx);
-            console.log('Rendered output element:', typeof rendered, rendered);
+            // console.log('Rendered output element:', typeof rendered, rendered);
             if (typeof rendered === 'object' && rendered !== null && !Array.isArray(rendered)) {
                 app.buffer.push(rendered);
             } else if (Array.isArray(rendered)) {
@@ -481,6 +486,7 @@ function renderOutput(app, ctx = null) {
                     if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
                         app.buffer.push(item);
                     } else {
+                        console.error('Rendered output item is not an object:', typeof item, element, rendered, item);
                         throw new Error(`Rendered output item is not an object: ${typeof item} - output ${n}`);
                     }
                 }
@@ -499,6 +505,7 @@ function renderOutput(app, ctx = null) {
  */
 function renderBlock(app, element, ctx = null) {
     const elements = [];
+    console.log('renderBlock()', element);
     for (let n = 0; n < element.block.length; n++) {
         const childElement = element.block[n];
         try {
@@ -649,7 +656,7 @@ function renderParams(app, expression, ctx = null) {
     }
     
     if (getTypeName(value) !== paramDef.type) {
-        throw new Error(`params - value type mismatch: ${paramDef.type} != ${getTypeName(value)}`);
+        throw new Error(`params.${fieldName} - value type mismatch: ${paramDef.type} != ${getTypeName(value)}`);
     }
     
     return value;
@@ -721,7 +728,7 @@ function renderLingo(app, element, ctx = null) {
         return String(x);
     };
 
-    console.log('lingo - renderLingo result', element, result);
+    // console.log('lingo - renderLingo result', element, result);
     
     // Handle wrapped format {type: ..., value: ...}
     if (typeof result === 'object' && result !== null && 'value' in result) {
@@ -782,7 +789,7 @@ function renderHeading(app, element, ctx = null) {
  * Render form - creates a form element with fields
  */
 function renderForm(app, element, ctx = null) {
-    console.log('renderForm()', element);
+    // console.log('renderForm()', element);
     if (!('fields' in element.form)) {
         throw new Error('form - missing fields key');
     }
@@ -894,7 +901,7 @@ function renderCall(app, expression, ctx = null) {
     let returnValue;
     if (definition.sig === 'kwargs') {
         returnValue = func(renderedArgs);
-        console.log('call - kwargs function return value', func, renderedArgs, typeof returnValue, returnValue);
+        // console.log('call - kwargs function return value', func, renderedArgs, typeof returnValue, returnValue);
     } else {
         // Positional args - build args list with defaults
         const argsList = [];
@@ -908,10 +915,10 @@ function renderCall(app, expression, ctx = null) {
             }
         }
         returnValue = func(...argsList);
-        console.log('call - positional function return value', func, argsList, typeof returnValue, returnValue);
+        // console.log('call - positional function return value', func, argsList, typeof returnValue, returnValue);
     }
 
-    console.log('call - function return value', expression.call, typeof returnValue, returnValue);
+    // console.log('call - function return value', expression.call, typeof returnValue, returnValue);
     
     // Format return value similar to Python
     if (Array.isArray(returnValue)) {
@@ -1149,6 +1156,99 @@ function renderSelf(app, expression, ctx = null) {
 }
 
 /**
+ * Render model widget
+ */
+
+function renderModel(app, element, ctx = null) {
+    console.log('renderModel()', element);
+    switch (element.model.display) {
+        case 'create':
+            return _renderModelCreate(app, element, ctx);
+        case 'list':
+            return _renderModelList(app, element, ctx);
+        default:
+            throw new Error(`renderModel - unknown display type: ${element.model.display}`);
+    }
+}
+
+function _getModelURL(app, element, ctx = null) {
+    if (!element.model.hasOwnProperty('http')) {
+        throw new Error('renderModelList - missing http definition');
+    }
+
+    const urlResult = lingoExecute(app, element.model.http, ctx);
+
+    let url;
+    if (typeof urlResult === 'object' && urlResult !== null) {
+        if(!('type' in urlResult) || !('value' in urlResult)) {
+            throw new Error('renderModelList - invalid http url object');
+        }
+        if (urlResult.type !== 'str') {
+            throw new Error('renderModelList - http url must be of type str');
+        }
+        url = urlResult.value;
+    } else if (typeof urlResult === 'string') {
+        url = urlResult;
+    } else {
+        throw new Error('renderModelList - invalid http url type');
+    }
+    return url;
+}
+
+function _renderModelList(app, element, ctx = null) {
+    console.log('renderModelList()', element, element.model.definition);
+    const definition = lingoExecute(app, element.model.definition, ctx);
+    const url = _getModelURL(app, element, ctx);
+    console.log('renderModelList(2)', definition, url);
+
+    let elements = [];
+    elements.push({text: `status: default`})
+    elements.push({break: true});
+
+    // for each definition.fields, create table headers
+    let headers = [];
+    for (const [name, field] of Object.entries(definition.fields)) {
+        headers.push({text: field.name.lower_case, field: field.name.snake_case});
+    }
+
+    elements.push({
+        type: 'list',
+        display: {
+            format: 'table',
+            headers: headers
+        },
+        value: [] // Placeholder for data rows
+    });
+
+    return elements;
+}
+
+function _renderModelCreate(app, element, ctx = null) {
+    console.log('renderModelCreate()', element);
+    const definition = lingoExecute(app, element.model.definition, ctx);
+    const url = _getModelURL(app, element, ctx);
+    console.log('renderModelCreate(2)', definition, url);
+
+    let elements = [];
+    elements.push({text: `status: ready`});
+    elements.push({break: true});
+    elements.push({
+        form: {
+            fields: definition.fields,
+            action: {
+                call: 'crud.http.create',
+                args: {
+                    url: element.model.http,
+                    data: {self: "form_data"}
+                }
+            }
+        }
+    });
+
+    return elements;
+}
+
+/**
  * DOM Rendering Functions
  */
 
@@ -1183,7 +1283,7 @@ function renderLingoApp(app, container, preserveFocus = false) {
         console.log('Rendering page-beta-1 spec');
         lingoUpdateState(app);
         const buffer = renderOutput(app);
-        console.log('Rendered buffer.length:', buffer.length);
+        // console.log('Rendered buffer.length:', buffer.length);
         
         // Render each element in the buffer
         for (const element of buffer) {
@@ -1817,7 +1917,7 @@ function createFormElement(element) {
             // Text input for strings and other types
             inputElement = document.createElement('input');
             inputElement.type = 'text';
-            inputElement.value = defaultValue;
+            inputElement.value = defaultValue || '';
             inputElement.addEventListener('input', () => {
                 formData[fieldKey] = inputElement.value;
             });
@@ -1858,7 +1958,8 @@ function createFormElement(element) {
     const submitButton = document.createElement('button');
     submitButton.textContent = 'Submit';
     submitButton.addEventListener('click', () => {
-        console.log('Form submitted:', formData);
+        console.log('Form data:', {self: {form_data: formData}});
+        console.log('Form action:', element.form.action);
     });
     
     submitCell.appendChild(submitButton);
