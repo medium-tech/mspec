@@ -324,6 +324,7 @@ class LingoApp {
         this.buffer = buffer;
         this.afterUpdate = afterUpdate;
         this.afterRender = afterRender;
+        this.clientState = {forms: {}};
     }
 }
 
@@ -487,7 +488,7 @@ function lingoExecute(app, expression, ctx = null) {
  */
 function renderOutput(app, ctx = null) {
     app.buffer = [];
-    console.log('* * * renderOutput()', typeof app.spec.output, app.spec.output.length);
+    // console.log('* * * renderOutput()', typeof app.spec.output, app.spec.output.length);
     for (let n = 0; n < app.spec.output.length; n++) {
         const element = app.spec.output[n];
         try {
@@ -699,7 +700,6 @@ function renderSet(app, expression, ctx = null) {
         let value = lingoExecute(app, valueExpr, ctx);
 
         const setValue = () => {
-            console.log('SETTING VALUE', fieldName, value);
             
             if (getTypeName(value) !== fieldType) {
                 console.error(`set - value type mismatch: ${fieldType} != ${getTypeName(value)} - field: ${fieldName}`, value);
@@ -711,10 +711,8 @@ function renderSet(app, expression, ctx = null) {
 
         // if value is a promise, await it
         if (value instanceof Promise) {
-            console.log("*** PROMISE")
             value.then(result => {
                 value = result;
-                console.log('PROMISE RESOLVED', fieldName, value);
                 setValue();
 
                 // rerender output after state update
@@ -951,7 +949,7 @@ function renderCall(app, expression, ctx = null) {
         // console.log('call - positional function return value', func, argsList, typeof returnValue, returnValue);
     }
 
-    console.log('call - function return value', expression.call, typeof returnValue, returnValue);
+    // console.log('call - function return value', expression.call, typeof returnValue, returnValue);
     
     // Format return value similar to Python
     if (Array.isArray(returnValue)) {
@@ -1185,7 +1183,7 @@ function handleSequenceOp(app, expression, ctx = null) {
             throw new Error('handleSequenceOp - crud.create - invalid http url type');
         }
 
-        console.log('handleSequenceOp - crud.create - url:', url, 'data:', data);
+        // console.log('handleSequenceOp - crud.create - url:', url, 'data:', data);
 
         //
         // send request
@@ -1264,7 +1262,7 @@ function renderSelf(app, expression, ctx = null) {
  */
 
 function renderModel(app, element, ctx = null) {
-    console.log('renderModel()', element);
+    // console.log('renderModel()', element);
     switch (element.model.display) {
         case 'create':
             return _renderModelCreate(app, element, ctx);
@@ -1300,10 +1298,10 @@ function _getModelURL(app, element, ctx = null) {
 }
 
 function _renderModelList(app, element, ctx = null) {
-    console.log('renderModelList()', element, element.model.definition);
+    // console.log('renderModelList()', element, element.model.definition);
     const definition = lingoExecute(app, element.model.definition, ctx);
     const url = _getModelURL(app, element, ctx);
-    console.log('renderModelList(2)', definition, url);
+    // console.log('renderModelList(2)', definition, url);
 
     let elements = [];
     elements.push({text: `status: default`})
@@ -1328,18 +1326,20 @@ function _renderModelList(app, element, ctx = null) {
 }
 
 function _renderModelCreate(app, element, ctx = null) {
-    console.log('renderModelCreate()', app, element, ctx);
+    // console.log('renderModelCreate()', app, element, ctx);
     const definition = lingoExecute(app, element.model.definition, ctx);
-    const url = _getModelURL(app, element, ctx);
-    console.log('renderModelCreate(2)', definition, url);
 
-    // let status;
+    if (!definition.fields || typeof definition.fields !== 'object') {
+        throw new Error('renderModelCreate - invalid model definition fields');
+    }
 
-    // if (element.model.state && element.model.state.status) {
-    //     status = element.model.state.status;
-    // }else{
-    //     status = 'initial';
-    // }
+    if( !element.model.hasOwnProperty('bind')) {
+        throw new Error('renderModelCreate - missing model bind definition');
+        /* 
+        in this future bind will support binding the form data to a state field
+        but for now we use it as an id so we can track the form state between renders
+        */
+    }
 
     let elements = [];
     elements.push({
@@ -1349,6 +1349,7 @@ function _renderModelCreate(app, element, ctx = null) {
                 set: {state: {create_model_status: {}}},
                 to: {type: 'str', value: 'loading...'}
             },
+            bind: element.model.bind,
             action: {
                 set: {state: {create_model_status: {}}},
                 to: {
@@ -1365,15 +1366,6 @@ function _renderModelCreate(app, element, ctx = null) {
     return elements;
 }
 
-/**
-                    data: {self: "form_data"}
-                }
-            }
-        }
-    });
-
-    return elements;
-}
 
 /**
  * DOM Rendering Functions
@@ -1383,6 +1375,8 @@ function _renderModelCreate(app, element, ctx = null) {
  * Render the LingoApp to a DOM container
  */
 function renderLingoApp(app, container, preserveFocus = false) {
+    // console.log('renderLingoApp()', app, container);
+
     // Store focused element info before re-rendering
     let focusedElement = null;
     let focusedElementState = null;
@@ -1801,15 +1795,50 @@ function createLinkElement(element) {
  */
 function createFormElement(app, element) {
 
-    console.log('createFormElement()', element);
+    console.log('createFormElement()', app, element);
 
     // init //
     const formContainer = document.createElement('div');
     const table = document.createElement('table');
     table.className = 'form-table';
+
+    if (!element.form.hasOwnProperty('fields')) {
+        throw new Error('createFormElement - missing form fields definition');
+    }
+    if (!element.form.hasOwnProperty('bind')) {
+        throw new Error('createFormElement - missing form bind definition');
+        /* 
+        in this future bind will support binding the form data to a state field
+        but for now we use it as an id so we can track the form state between renders
+        */
+    }
     
     const fields = element.form.fields;
+    const bind = element.form.bind;
+
+    // form state //
+
     const formData = {};
+
+    if (!bind.hasOwnProperty('state')) {
+        throw new Error('createFormElement - bind must specify state field');
+    }
+    const stateKeys = Object.keys(bind.state);
+    if (stateKeys.length !== 1) {
+        throw new Error('createFormElement - bind.state must have exactly one field');
+    }
+    const formStateField = stateKeys[0];
+    let formState;
+
+    // load existing form data from app state if present
+    if (app.clientState.forms.hasOwnProperty(formStateField)) {
+        formState = app.clientState.forms[formStateField];
+        Object.assign(formData, formState.data);
+    }else{
+        formState = {data: formData, submitting: false};
+        app.clientState.forms[formStateField] = formState;
+    }
+
     
     // create a row for each field //
 
@@ -2089,24 +2118,27 @@ function createFormElement(app, element) {
     submitCell.className = 'form-submit-cell';
     
     const submitButton = document.createElement('button');
+    submitButton.disabled = formState.submitting;
     submitButton.textContent = 'Submit';
     submitButton.addEventListener('click', () => {
+
+        formState.submitting = true;
 
         // execute element.form.on_submit if defined //
 
         if (element.form.on_submit) {
             console.log('Executing form on_submit action');
             lingoExecute(app, element.form.on_submit, null);
-            renderLingoApp(app, submitButton.closest('.lingo-container'));
+            renderLingoApp(app, document.getElementById('lingo-app'));
         }
 
         // execute element.form.action //
 
         const ctx = {self: {form_data: formData}};
         const result = lingoExecute(app, element.form.action, ctx);
-
         console.log('Form submission result:', result);
-        renderLingoApp(app, submitButton.closest('.lingo-container'));
+        formState.submitting = false;
+        renderLingoApp(app, document.getElementById('lingo-app'));
     });
 
     // final assembly //

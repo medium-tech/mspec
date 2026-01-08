@@ -127,6 +127,7 @@
         {"lingo": {"state": {"create_model_status": {}}}},
         {"break": 1},
         {"model": {
+            "bind": {"state": {"model_to_create": {}}},
             "display": "create",
             "http": {"state": {"base_url": {}}},
             "definition": {"params": {"model_definition": {}}}
