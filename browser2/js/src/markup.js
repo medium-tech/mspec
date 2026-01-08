@@ -1818,8 +1818,6 @@ function createFormElement(app, element) {
 
     // form state //
 
-    const formData = {};
-
     if (!bind.hasOwnProperty('state')) {
         throw new Error('createFormElement - bind must specify state field');
     }
@@ -1828,75 +1826,78 @@ function createFormElement(app, element) {
         throw new Error('createFormElement - bind.state must have exactly one field');
     }
     const formStateField = stateKeys[0];
+    let formData;
     let formState;
 
-    // load existing form data from app state if present
+    // load or create form state //
     if (app.clientState.forms.hasOwnProperty(formStateField)) {
         formState = app.clientState.forms[formStateField];
-        Object.assign(formData, formState.data);
-    }else{
+        formData = formState.data;
+    } else {
+        formData = {};
         formState = {data: formData, submitting: false};
         app.clientState.forms[formStateField] = formState;
     }
-
     console.log('createFormElement - formState:', formState);
-
     
     // create a row for each field //
 
     for (const [fieldKey, fieldSpec] of Object.entries(fields)) {
         const row = document.createElement('tr');
-        
+
         // Column 1: Field name
         const nameCell = document.createElement('td');
         const fieldName = fieldSpec.name?.lower_case || fieldKey;
         nameCell.textContent = fieldName.charAt(0).toUpperCase() + fieldName.slice(1) + ':';
         row.appendChild(nameCell);
-        
+
         // Column 2: Input element
         const inputCell = document.createElement('td');
-        
         let inputElement;
         const fieldType = fieldSpec.type;
         const defaultValue = fieldSpec.default;
-        
-        // Initialize form data with default value
-        formData[fieldKey] = defaultValue;
-        
+
+        // Only initialize from default if not already set
+        if (typeof formData[fieldKey] === 'undefined') {
+            if (fieldType === 'list') {
+                formData[fieldKey] = Array.isArray(defaultValue) ? [...defaultValue] : [];
+            } else {
+                formData[fieldKey] = defaultValue;
+            }
+        }
+
         if (fieldType === 'list') {
+
             // List type - create input with add/remove functionality
             const listContainer = document.createElement('div');
             const elementType = fieldSpec.element_type;
             const hasEnum = fieldSpec.enum && Array.isArray(fieldSpec.enum);
-            
-            // Initialize list data
-            formData[fieldKey] = Array.isArray(defaultValue) ? [...defaultValue] : [];
-            
+
             // Create list values display container (defined early so it can be referenced)
             const listValuesContainer = document.createElement('div');
             listValuesContainer.className = 'list-values-container';
-            
+
             // Define update function first so it can be called from addToList
             const updateListDisplay = () => {
                 listValuesContainer.innerHTML = '';
-                
+
                 if (formData[fieldKey].length === 0) {
                     const emptyText = document.createElement('span');
                     emptyText.textContent = '(no items)';
                     emptyText.className = 'list-empty-text';
                     listValuesContainer.appendChild(emptyText);
+
                 } else {
                     const valuesList = document.createElement('div');
-                    
                     for (let i = 0; i < formData[fieldKey].length; i++) {
                         const itemContainer = document.createElement('div');
                         itemContainer.className = 'list-item-container';
-                        
+
                         const itemText = document.createElement('span');
                         itemText.textContent = String(formData[fieldKey][i]);
                         itemText.className = 'list-item-text';
                         itemContainer.appendChild(itemText);
-                        
+
                         const removeButton = document.createElement('button');
                         removeButton.textContent = '×';
                         removeButton.type = 'button';
@@ -1907,19 +1908,16 @@ function createFormElement(app, element) {
                             formData[fieldKey].splice(index, 1);
                             updateListDisplay();
                         });
+
                         itemContainer.appendChild(removeButton);
-                        
                         valuesList.appendChild(itemContainer);
                     }
-                    
                     listValuesContainer.appendChild(valuesList);
                 }
             };
-            
             // Create input based on element type
             let listInput;
             if (hasEnum) {
-                // Dropdown for enum
                 listInput = document.createElement('select');
                 for (const option of fieldSpec.enum) {
                     const opt = document.createElement('option');
@@ -1928,45 +1926,36 @@ function createFormElement(app, element) {
                     listInput.appendChild(opt);
                 }
             } else if (elementType === 'bool') {
-                // Checkbox for boolean
                 listInput = document.createElement('input');
                 listInput.type = 'checkbox';
             } else if (elementType === 'int') {
-                // Number input for integers
                 listInput = document.createElement('input');
                 listInput.type = 'number';
                 listInput.step = '1';
                 listInput.placeholder = 'Enter integer';
             } else if (elementType === 'float') {
-                // Number input for floats
                 listInput = document.createElement('input');
                 listInput.type = 'number';
                 listInput.step = 'any';
                 listInput.placeholder = 'Enter number';
             } else if (elementType === 'datetime') {
-                // Datetime input
                 listInput = document.createElement('input');
                 listInput.type = 'datetime-local';
             } else {
-                // Text input for strings
                 listInput = document.createElement('input');
                 listInput.type = 'text';
                 listInput.placeholder = 'Enter text';
             }
-            
             listInput.className = 'list-input';
             listContainer.appendChild(listInput);
-            
-            // Add button
+
             const addButton = document.createElement('button');
             addButton.textContent = 'Add';
             addButton.type = 'button';
             listContainer.appendChild(addButton);
-            
-            // Handle add functionality
+
             const addToList = () => {
                 let value;
-                
                 if (hasEnum) {
                     value = listInput.value;
                 } else if (elementType === 'bool') {
@@ -1979,29 +1968,20 @@ function createFormElement(app, element) {
                     if (isNaN(value)) return;
                 } else if (elementType === 'datetime') {
                     if (!listInput.value) return;
-                    // Convert from datetime-local format (YYYY-MM-DDTHH:mm) to ISO format with seconds
                     value = listInput.value + ':00';
                 } else {
                     value = listInput.value;
                     if (!value) return;
                 }
-                
                 formData[fieldKey].push(value);
-                
-                // Reset input
                 if (elementType === 'bool') {
                     listInput.checked = false;
                 } else if (!hasEnum) {
                     listInput.value = '';
                 }
-                
-                // Update list display
                 updateListDisplay();
             };
-            
             addButton.addEventListener('click', addToList);
-            
-            // Add Enter key support for text inputs
             if (listInput.tagName === 'INPUT' && (elementType === 'str' || elementType === 'int' || elementType === 'float')) {
                 listInput.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') {
@@ -2010,82 +1990,76 @@ function createFormElement(app, element) {
                     }
                 });
             }
-            
             inputCell.appendChild(listContainer);
             inputElement = listContainer;
-            
-            // Store the display container for later use in third column
             inputElement._listValuesContainer = listValuesContainer;
             inputElement._updateListDisplay = updateListDisplay;
+
         } else if (fieldType === 'bool') {
-            // Checkbox for boolean
             inputElement = document.createElement('input');
             inputElement.type = 'checkbox';
-            inputElement.checked = defaultValue;
+            inputElement.checked = !!formData[fieldKey];
             inputElement.addEventListener('change', () => {
                 formData[fieldKey] = inputElement.checked;
             });
+
         } else if (fieldType === 'int') {
-            // Number input for integers
             inputElement = document.createElement('input');
             inputElement.type = 'number';
             inputElement.step = '1';
-            inputElement.value = defaultValue;
+            inputElement.value = typeof formData[fieldKey] !== 'undefined' ? formData[fieldKey] : '';
             inputElement.addEventListener('input', () => {
                 formData[fieldKey] = parseInt(inputElement.value, 10) || 0;
             });
+
         } else if (fieldType === 'float') {
-            // Number input for floats
             inputElement = document.createElement('input');
             inputElement.type = 'number';
             inputElement.step = 'any';
-            inputElement.value = defaultValue;
+            inputElement.value = typeof formData[fieldKey] !== 'undefined' ? formData[fieldKey] : '';
             inputElement.addEventListener('input', () => {
                 formData[fieldKey] = parseFloat(inputElement.value) || 0.0;
             });
+
         } else if (fieldType === 'datetime') {
-            // Datetime-local input
             inputElement = document.createElement('input');
             inputElement.type = 'datetime-local';
-            // Convert from ISO format (YYYY-MM-DDTHH:mm:ss) to datetime-local format (YYYY-MM-DDTHH:mm)
-            const datetimeValue = defaultValue ? defaultValue.substring(0, 16) : '';
+            const datetimeValue = formData[fieldKey] ? String(formData[fieldKey]).substring(0, 16) : '';
             inputElement.value = datetimeValue;
             inputElement.addEventListener('input', () => {
-                // Convert back to ISO format with seconds
                 formData[fieldKey] = inputElement.value ? inputElement.value + ':00' : '';
             });
+
         } else if (fieldType === 'foreign_key') {
-            // Text input for foreign key
             inputElement = document.createElement('input');
             inputElement.type = 'text';
-            inputElement.value = defaultValue;
+            inputElement.value = typeof formData[fieldKey] !== 'undefined' ? formData[fieldKey] : '';
             inputElement.placeholder = 'Enter ID';
             inputElement.addEventListener('input', () => {
                 formData[fieldKey] = inputElement.value;
             });
+
         } else if (fieldSpec.enum) {
-            // Dropdown for enum fields
             inputElement = document.createElement('select');
             for (const option of fieldSpec.enum) {
                 const opt = document.createElement('option');
                 opt.value = option;
                 opt.textContent = option;
-                opt.selected = option === defaultValue;
+                opt.selected = option === formData[fieldKey];
                 inputElement.appendChild(opt);
             }
             inputElement.addEventListener('change', () => {
                 formData[fieldKey] = inputElement.value;
             });
+
         } else {
-            // Text input for strings and other types
             inputElement = document.createElement('input');
             inputElement.type = 'text';
-            inputElement.value = defaultValue || '';
+            inputElement.value = typeof formData[fieldKey] !== 'undefined' ? formData[fieldKey] : '';
             inputElement.addEventListener('input', () => {
                 formData[fieldKey] = inputElement.value;
             });
         }
-        
         inputCell.appendChild(inputElement);
         row.appendChild(inputCell);
         
@@ -2108,7 +2082,6 @@ function createFormElement(app, element) {
         }
         
         row.appendChild(thirdCell);
-        
         table.appendChild(row);
     }
     
