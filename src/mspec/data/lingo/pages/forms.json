@@ -12,6 +12,7 @@
         {"heading": "Forms", "level": 1},
         {
             "form": {
+                "bind": {"state": {"my_test_form": {}}},
                 "fields": {
                     "color": {
                         "name": {

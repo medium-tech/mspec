@@ -364,17 +364,17 @@ function lingoUpdateState(app, ctx = null) {
                 : getTypeName(actualValue);
             
             if (actualType !== value.type) {
-                throw new Error(`state - ${key} - expression returned type: ${actualType}, expected: ${value.type}`);
+                throw new Error(`state.${key} - expression returned type: ${actualType}, expected: ${value.type}`);
             }
             app.state[key] = actualValue;
         } else {
             // Non-calculated value, set to default if not already set
             if (!(key in app.state)) {
                 if (!('default' in value)) {
-                    throw new Error(`state - ${key} - missing default value`);
+                    throw new Error(`state.${key} - missing default value`);
                 }
                 if (getTypeName(value.default) !== value.type) {
-                    throw new Error(`state - ${key} - default value type mismatch`);
+                    throw new Error(`state.${key} - default value type mismatch`);
                 }
                 app.state[key] = value.default;
             }
@@ -759,7 +759,7 @@ function renderLingo(app, element, ctx = null) {
         return String(x);
     };
 
-    // console.log('lingo - renderLingo result', element, result);
+    console.log('lingo - renderLingo result', element, result);
     
     // Handle wrapped format {type: ..., value: ...}
     if (typeof result === 'object' && result !== null && 'value' in result) {
@@ -1201,7 +1201,6 @@ function handleSequenceOp(app, expression, ctx = null) {
 
                 if (!response.ok) {
                     console.error('handleSequenceOp - crud.create - HTTP error:', response.status, response.statusText); 
-                    return 'error 1';
                     return [
                         {text: 'Error: ', style: {color: 'red', bold: true}},
                         {text: `${response.status} ${response.statusText}`}
@@ -1209,8 +1208,7 @@ function handleSequenceOp(app, expression, ctx = null) {
                 }
 
                 const responseData = await response.json();
-                console.log('handleSequenceOp - crud.create - responseData:', responseData);
-                return 'success';
+                // console.log('handleSequenceOp - crud.create - responseData:', responseData);
                 return [
                     {text: 'Success', style: {color: 'green', bold: true}},
                     {text: ', '},
@@ -1220,7 +1218,6 @@ function handleSequenceOp(app, expression, ctx = null) {
 
             } catch (error) {
                 console.error('handleSequenceOp - crud.create - network error:', error);
-                return 'error 2';
                 return [
                     {text: 'Network error: ', style: {color: 'red', bold: true}},
                     {text: `${error.message}`}
@@ -1347,7 +1344,7 @@ function _renderModelCreate(app, element, ctx = null) {
             fields: definition.fields,
             on_submit: {
                 set: {state: {create_model_status: {}}},
-                to: {type: 'str', value: 'loading...'}
+                to: [{text: 'loading...', style: {italic: true}}]
             },
             bind: element.model.bind,
             action: {
@@ -1795,7 +1792,7 @@ function createLinkElement(element) {
  */
 function createFormElement(app, element) {
 
-    console.log('createFormElement()', app, element);
+    // console.log('createFormElement()', app, element);
 
     // init //
     const formContainer = document.createElement('div');
@@ -1838,7 +1835,7 @@ function createFormElement(app, element) {
         formState = {data: formData, submitting: false};
         app.clientState.forms[formStateField] = formState;
     }
-    console.log('createFormElement - formState:', formState);
+    // console.log('createFormElement - formState:', formState);
     
     // create a row for each field //
 
@@ -2102,7 +2099,7 @@ function createFormElement(app, element) {
         // execute element.form.on_submit if defined //
 
         if (element.form.on_submit) {
-            console.log('Executing form on_submit action');
+            // console.log('Executing form on_submit action');
             lingoExecute(app, element.form.on_submit, null);
             renderLingoApp(app, document.getElementById('lingo-app'));
         }
@@ -2111,7 +2108,7 @@ function createFormElement(app, element) {
 
         const ctx = {self: {form_data: formData}};
         const result = lingoExecute(app, element.form.action, ctx);
-        console.log('Form submission result:', result);
+        // console.log('Form submission result:', result);
         renderLingoApp(app, document.getElementById('lingo-app'));
         formState.submitting = false;
     });
