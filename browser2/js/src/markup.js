@@ -2112,8 +2112,8 @@ function createFormElement(app, element) {
         const ctx = {self: {form_data: formData}};
         const result = lingoExecute(app, element.form.action, ctx);
         console.log('Form submission result:', result);
-        formState.submitting = false;
         renderLingoApp(app, document.getElementById('lingo-app'));
+        formState.submitting = false;
     });
 
     // final assembly //
