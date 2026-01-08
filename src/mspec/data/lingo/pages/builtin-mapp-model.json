@@ -75,6 +75,10 @@
             "type": "str",
             "default": "model-list"
         },
+        "create_model_status": {
+            "type": "str",
+            "default": "ready"
+        },
         "base_url": {
             "type": "str",
             "calc": {
@@ -119,6 +123,8 @@
         }},
 
         {"heading": ":: create a new model", "level": 3},
+        {"text": "status: ", "style": {"bold": true}},
+        {"lingo": {"state": {"create_model_status": {}}}},
         {"break": 1},
         {"model": {
             "display": "create",

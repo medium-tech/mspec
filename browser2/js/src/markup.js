@@ -1183,12 +1183,17 @@ function handleSequenceOp(app, expression, ctx = null) {
                 });
 
                 if (!response.ok) {
-                    console.error('handleSequenceOp - crud.create - HTTP error:', response.status, response.statusText);
-                    return {error: `HTTP error! status: ${response.status}`, code: `HTTP_${response.status}`};
+                    console.error('handleSequenceOp - crud.create - HTTP error:', response.status, response.statusText); 
+                    return 'error 1';
+                    return [
+                        {text: 'Error: ', style: {color: 'red', bold: true}},
+                        {text: `${response.status} ${response.statusText}`}
+                    ]
                 }
 
                 const responseData = await response.json();
                 console.log('handleSequenceOp - crud.create - responseData:', responseData);
+                return 'success';
                 return [
                     {text: 'Success', style: {color: 'green', bold: true}},
                     {text: ', '},
@@ -1198,14 +1203,23 @@ function handleSequenceOp(app, expression, ctx = null) {
 
             } catch (error) {
                 console.error('handleSequenceOp - crud.create - network error:', error);
-                return {error: `Network error: ${error.message}`, code: 'NETWORK_ERROR'};
+                return 'error 2';
+                return [
+                    {text: 'Network error: ', style: {color: 'red', bold: true}},
+                    {text: `${error.message}`}
+                ];
             }
         }
+        
+        sendCreateRequest(url, data)
+            .then(result => {
+                console.log('handleSequenceOp - crud.create - request result:', result);
+                return result;
+            });
 
-        return sendCreateRequest(url, data);
+    }else{
+        throw new Error(`handleSequenceOp - unknown function: ${funcName}`);
     }
-    
-    throw new Error(`handleSequenceOp - unknown function: ${funcName}`);
 }
 
 /**
@@ -1299,21 +1313,44 @@ function _renderModelList(app, element, ctx = null) {
 }
 
 function _renderModelCreate(app, element, ctx = null) {
-    console.log('renderModelCreate()', element);
+    console.log('renderModelCreate()', app, element, ctx);
     const definition = lingoExecute(app, element.model.definition, ctx);
     const url = _getModelURL(app, element, ctx);
     console.log('renderModelCreate(2)', definition, url);
 
+    // let status;
+
+    // if (element.model.state && element.model.state.status) {
+    //     status = element.model.state.status;
+    // }else{
+    //     status = 'initial';
+    // }
+
     let elements = [];
-    elements.push({text: `status: ready`});
-    elements.push({break: true});
     elements.push({
         form: {
             fields: definition.fields,
+            on_submit: {
+                set: {state: {create_model_status: {}}},
+                to: {type: 'str', value: 'loading'}
+            },
             action: {
-                call: 'crud.create',
-                args: {
-                    http: element.model.http,
+                set: {state: {create_model_status: {}}},
+                to: {
+                    call: 'crud.create',
+                    args: {
+                        http: element.model.http,
+                        data: {self: "form_data"}
+                    }
+                }
+            }
+        }
+    });
+
+    return elements;
+}
+
+/**
                     data: {self: "form_data"}
                 }
             }
@@ -1748,6 +1785,10 @@ function createLinkElement(element) {
  * Create form element with table layout
  */
 function createFormElement(app, element) {
+
+    console.log('createFormElement()', element);
+
+    // init //
     const formContainer = document.createElement('div');
     const table = document.createElement('table');
     table.className = 'form-table';
@@ -1755,7 +1796,8 @@ function createFormElement(app, element) {
     const fields = element.form.fields;
     const formData = {};
     
-    // Create a row for each field
+    // create a row for each field //
+
     for (const [fieldKey, fieldSpec] of Object.entries(fields)) {
         const row = document.createElement('tr');
         
@@ -2024,7 +2066,8 @@ function createFormElement(app, element) {
         table.appendChild(row);
     }
     
-    // Add submit button row
+    // add submit button //
+
     const submitRow = document.createElement('tr');
     const submitCell = document.createElement('td');
     submitCell.colSpan = 3;
@@ -2033,15 +2076,24 @@ function createFormElement(app, element) {
     const submitButton = document.createElement('button');
     submitButton.textContent = 'Submit';
     submitButton.addEventListener('click', () => {
-        // console.log('Form data:', {self: {form_data: formData}});
-        // console.log('Form action:', element.form.action);
+
+        // execute element.form.on_submit if defined //
+
+        if (element.form.on_submit) {
+            console.log('Executing form on_submit action');
+            lingoExecute(app, element.form.on_submit, null);
+        }
+
+        // execute element.form.action //
+
         const ctx = {self: {form_data: formData}};
         const result = lingoExecute(app, element.form.action, ctx);
-        console.log('Form action result:', result);
-        result.then((data) => {
-            console.log('Form action completed', data);
-        });
+
+        console.log('Form submission result:', result);
+        renderLingoApp(app, submitButton.closest('.lingo-container'));
     });
+
+    // final assembly //
     
     submitCell.appendChild(submitButton);
     submitRow.appendChild(submitCell);
