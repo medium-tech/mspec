@@ -1839,6 +1839,8 @@ function createFormElement(app, element) {
         app.clientState.forms[formStateField] = formState;
     }
 
+    console.log('createFormElement - formState:', formState);
+
     
     // create a row for each field //
 
