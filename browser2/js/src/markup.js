@@ -1332,7 +1332,7 @@ function _renderModelCreate(app, element, ctx = null) {
             fields: definition.fields,
             on_submit: {
                 set: {state: {create_model_status: {}}},
-                to: {type: 'str', value: 'loading'}
+                to: {type: 'str', value: 'loading...'}
             },
             action: {
                 set: {state: {create_model_status: {}}},
@@ -2082,6 +2082,7 @@ function createFormElement(app, element) {
         if (element.form.on_submit) {
             console.log('Executing form on_submit action');
             lingoExecute(app, element.form.on_submit, null);
+            renderLingoApp(app, submitButton.closest('.lingo-container'));
         }
 
         // execute element.form.action //
