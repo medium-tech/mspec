@@ -696,16 +696,35 @@ function renderSet(app, expression, ctx = null) {
         
         const fieldType = app.spec.state[fieldName].type;
         
-        const value = lingoExecute(app, valueExpr, ctx);
-        
-        if (getTypeName(value) !== fieldType) {
-            console.error(`set - value type mismatch: ${fieldType} != ${getTypeName(value)} - field: ${fieldName}`, value);
-            throw new Error(`set - value type mismatch: ${fieldType} != ${getTypeName(value)} - field: ${fieldName}`, value);
+        let value = lingoExecute(app, valueExpr, ctx);
+
+        const setValue = () => {
+            console.log('SETTING VALUE', fieldName, value);
+            
+            if (getTypeName(value) !== fieldType) {
+                console.error(`set - value type mismatch: ${fieldType} != ${getTypeName(value)} - field: ${fieldName}`, value);
+                throw new Error(`set - value type mismatch: ${fieldType} != ${getTypeName(value)} - field: ${fieldName}`, value);
+            }
+            
+            app.state[fieldName] = value;
         }
-        
-        app.state[fieldName] = value;
-        
-        return app.state[fieldName];
+
+        // if value is a promise, await it
+        if (value instanceof Promise) {
+            console.log("*** PROMISE")
+            value.then(result => {
+                value = result;
+                console.log('PROMISE RESOLVED', fieldName, value);
+                setValue();
+
+                // rerender output after state update
+                renderLingoApp(app, document.getElementById('lingo-app'), ctx);
+            });
+            return value;
+        }else{
+            setValue();
+            return value;
+        }
 
     } catch (error) {
         throw new Error(`set - ${error.message}`);
@@ -932,7 +951,7 @@ function renderCall(app, expression, ctx = null) {
         // console.log('call - positional function return value', func, argsList, typeof returnValue, returnValue);
     }
 
-    // console.log('call - function return value', expression.call, typeof returnValue, returnValue);
+    console.log('call - function return value', expression.call, typeof returnValue, returnValue);
     
     // Format return value similar to Python
     if (Array.isArray(returnValue)) {
@@ -1211,11 +1230,7 @@ function handleSequenceOp(app, expression, ctx = null) {
             }
         }
         
-        sendCreateRequest(url, data)
-            .then(result => {
-                console.log('handleSequenceOp - crud.create - request result:', result);
-                return result;
-            });
+        return sendCreateRequest(url, data)
 
     }else{
         throw new Error(`handleSequenceOp - unknown function: ${funcName}`);
