@@ -309,6 +309,10 @@ const lingoFunctionLookup = {
         'create': {
             func: null, // handled specially in renderCall
             createArgs: true
+        },
+        'list': {
+            func: null, // handled specially in renderCall
+            createArgs: true
         }
     }
 };
@@ -373,8 +377,9 @@ function lingoUpdateState(app, ctx = null) {
                 if (!('default' in value)) {
                     throw new Error(`state.${key} - missing default value`);
                 }
-                if (getTypeName(value.default) !== value.type) {
-                    throw new Error(`state.${key} - default value type mismatch`);
+                const typeName = getTypeName(value.default);
+                if (typeName !== value.type) {
+                    throw new Error(`state.${key} - default value type mismatch : ${typeName} != ${value.type}`);
                 }
                 app.state[key] = value.default;
             }
@@ -406,7 +411,16 @@ function getTypeName(value) {
     if (typeof value === 'object' && 'fields' in value && 'name' in value) {
         return 'model';
     }
+    if (typeof value === 'object') return 'struct';
     return typeof value;
+}
+
+function unwrapValue(data) {
+    if (typeof data === 'object' && data !== null && 'value' in data && 'type' in data) {
+        return data.value;
+    }else{
+        return data;
+    }
 }
 
 /**
@@ -681,32 +695,133 @@ function renderParams(app, expression, ctx = null) {
  * Render state setter - equivalent to Python render_set()
  */
 function renderSet(app, expression, ctx = null) {
+    console.log('renderSet()', app, expression);
     try {
+
+        // init
+
         const target = expression.set.state;
         const valueExpr = expression.to;
         
+        // get state field
+
         const fieldNames = Object.keys(target);
         if (fieldNames.length !== 1) {
             throw new Error('set - must have exactly one state field');
         }
         const fieldName = fieldNames[0];
-        
-        if (fieldNames.length === 0) {
-            throw new Error('set - missing state field');
+
+        if(!app.spec.state.hasOwnProperty(fieldName)){
+            throw new Error(`set - state field not found: ${fieldName}`);
         }
+
+        // if is a struct, get struct field name
         
         const fieldType = app.spec.state[fieldName].type;
-        
+        // let structFieldName = null;
+        // let origStructValue = null;
+        // if (fieldType === 'struct') {
+        //     structFieldName = target[fieldName];
+            
+        //     if (!(structFieldName in app.state[fieldName])) {
+        //         throw new Error(`set - struct field not found: ${structFieldName}`);
+        //     }
+
+        //     origStructValue = app.state[fieldName][structFieldName];
+        // }
+
         let value = lingoExecute(app, valueExpr, ctx);
 
         const setValue = () => {
-            
-            if (getTypeName(value) !== fieldType) {
-                console.error(`set - value type mismatch: ${fieldType} != ${getTypeName(value)} - field: ${fieldName}`, value);
-                throw new Error(`set - value type mismatch: ${fieldType} != ${getTypeName(value)} - field: ${fieldName}`, value);
+
+            const newType = getTypeName(value);
+            const outValue = unwrapValue(value);
+
+            if(fieldType === 'struct'){
+                console.log('set - setting struct fields:', fieldName, outValue);
+
+                /*
+                there are 2 ways to set a struct field:
+                    1. single values
+                        set: {state: {my_struct_variable: {struct_field: {}}}}
+                        to: 5
+
+                        in set, you specify the state variable and struct field
+                        and in to you provide a primitive value
+
+                    2. multiple fields at once
+                        set: {state: {my_struct_variable: {}}}
+                        to: {struct_field1: 5, struct_field2: "hello"}
+
+                        in set, you specify only the state variable
+                        and in to you provide an object with field names and values,
+                        the fields that are provided will be updated and other fields
+                        will remain unchanged
+                */
+
+                const numStructKeys = Object.keys(target[fieldName]).length;
+                let structSetType;
+                if (numStructKeys == 0) {
+                    structSetType = 'multiple';
+                }else if (numStructKeys == 1) {
+                    structSetType = 'single';
+                }else{
+                    throw new Error('set - struct set must have either zero fields to use multi set or one field to use single set');
+                }
+
+                if(structSetType === 'single'){
+                    // struct field name is the only key in target[fieldName]
+                    const structFieldName = Object.keys(target[fieldName])[0];
+
+                    if (!(structFieldName in app.state[fieldName])) {
+                        throw new Error(`set - struct field not found: ${fieldName}.${structFieldName}`);
+                    }
+
+                    const origStructValue = app.state[fieldName][structFieldName];
+
+                    // verify type of outValue matches type of origStructValue
+                    const newStructType = getTypeName(origStructValue);
+                    const outValueType = getTypeName(outValue);
+                    if (outValueType !== newStructType) {
+                        throw new Error(`set - type mismatch: ${newStructType} != ${outValueType} - field: ${fieldName}.${structFieldName}`);
+                    }
+
+                    app.state[fieldName][structFieldName] = outValue;
+
+                    console.log(`set - setting struct field: ${fieldName}.${structFieldName} =`, outValue);
+                }else{
+
+                    // for each field in outValue, set the corresponding struct field and ensure type matches
+
+                    for(const [structFieldName, structFieldValue] of Object.entries(outValue)){
+
+                        if (!(structFieldName in app.state[fieldName])) {
+                            throw new Error(`set - struct field not found: ${fieldName}.${structFieldName}`);
+                        }
+
+                        const origStructValue = app.state[fieldName][structFieldName];
+
+                        // verify type of `structFieldValue` matches type of `origStructValue`
+                        const newStructType = getTypeName(origStructValue);
+                        const structFieldValueType = getTypeName(structFieldValue);
+                        if (structFieldValueType !== newStructType) {
+                            throw new Error(`set - type mismatch: ${newStructType} != ${structFieldValueType} - field: ${fieldName}.${structFieldName}`);
+                        }
+
+                        app.state[fieldName][structFieldName] = structFieldValue;
+
+                        console.log(`set - setting struct field: ${fieldName}.${structFieldName} =`, structFieldValue);
+                    }
+                }
+
+            }else{
+                if (newType !== fieldType) {
+                    console.error(`set - type mismatch: ${fieldType} != ${newType} - field: ${fieldName}`, outValue);
+                    throw new Error(`set - type mismatch: ${fieldType} != ${newType} - field: ${fieldName}`, outValue);
+                }
+                app.state[fieldName] = outValue;
+                console.log(`set - setting state field: ${fieldName} =`, outValue);
             }
-            
-            app.state[fieldName] = value;
         }
 
         // if value is a promise, await it
@@ -872,8 +987,14 @@ function renderCall(app, expression, ctx = null) {
             definition = lingoFunctionLookup[nameSplit[0]][nameSplit[1]];
         }
     } catch (error) {
-        throw new Error(`call - undefined func: ${expression.call}`);
+        throw new Error(`call - undefined function: ${expression.call}`);
     }
+
+    if (typeof definition === 'undefined' || definition === null) {
+        throw new Error(`call - undefined function: ${expression.call}`);
+    }
+
+    // console.log('call - function definition', expression, definition);
     
     const func = definition.func;
     const argsDef = definition.args || {};
@@ -1165,25 +1286,8 @@ function handleSequenceOp(app, expression, ctx = null) {
         // init params
         //
 
-        const urlResult = lingoExecute(app, args.http, ctx);
+        const url = unwrapValue(lingoExecute(app, args.http, ctx));
         const data = lingoExecute(app, args.data, ctx);
-
-        let url;
-        if (typeof urlResult === 'object' && urlResult !== null) {
-            if(!('type' in urlResult) || !('value' in urlResult)) {
-                throw new Error('handleSequenceOp - crud.create - invalid http url object');
-            }
-            if (urlResult.type !== 'str') {
-                throw new Error('handleSequenceOp - crud.create - http url must be of type str');
-            }
-            url = urlResult.value;
-        } else if (typeof urlResult === 'string') {
-            url = urlResult;
-        } else {
-            throw new Error('handleSequenceOp - crud.create - invalid http url type');
-        }
-
-        // console.log('handleSequenceOp - crud.create - url:', url, 'data:', data);
 
         //
         // send request
@@ -1226,6 +1330,58 @@ function handleSequenceOp(app, expression, ctx = null) {
         }
         
         return sendCreateRequest(url, data)
+
+    }else if(funcName === 'crud.list'){
+
+        //
+        // init params
+        //
+
+        const urlBase = unwrapValue(lingoExecute(app, args.http, ctx));
+        const offset = unwrapValue(lingoExecute(app, args.offset, ctx));
+        const size = unwrapValue(lingoExecute(app, args.size, ctx));
+        const url = `${urlBase}?offset=${offset}&size=${size}`;
+
+        async function sendListRequest(url) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    console.error('handleSequenceOp - crud.list - HTTP error:', response.status, response.statusText); 
+                    return {
+                        state: 'error',
+                        error: `Response error: ${response.status} ${response.statusText}`
+                    };
+                }
+
+                const responseData = await response.json();
+                console.log('handleSequenceOp - crud.list - responseData:', responseData);
+
+                // for each item, wrap it in a struct {type: 'struct', value: item}
+
+
+
+                return {
+                    state: 'loaded',
+                    total: responseData.total,
+                    items: responseData.items.map(item => ({type: 'struct', value: item}))
+                };
+
+            } catch (error) {
+                console.error('handleSequenceOp - crud.list - network error:', error);
+                return {
+                    state: 'error',
+                    error: `Network error: ${error.message}`
+                };
+            }
+        }
+
+        return sendListRequest(url);
 
     }else{
         throw new Error(`handleSequenceOp - unknown function: ${funcName}`);
@@ -1295,20 +1451,120 @@ function _getModelURL(app, element, ctx = null) {
 }
 
 function _renderModelList(app, element, ctx = null) {
+
+    if( !element.model.hasOwnProperty('bind')) {
+        throw new Error('renderModelList - missing model bind definition');
+    }
+
+    if( !element.model.bind.hasOwnProperty('state')) {
+        throw new Error('renderModelList - model bind definition must bind to state');
+    }
+
+    // get first (and only) field in bind.state
+    const stateKeys = Object.keys(element.model.bind.state);
+    if( stateKeys.length !== 1 ) {
+        throw new Error('renderModelList - model bind.state must have exactly one field');
+    }
+
+    const stateField = stateKeys[0];
+
+    let state = app.state[stateField];
+    // console.log('renderModelList() - state before:', stateField, app, app.state);
+
+    /* assume state is an object and ensure defaults are set */
+    if (!state.hasOwnProperty('items')) state.items = [];
+    if (!state.hasOwnProperty('total')) state.total = 0;
+    if (!state.hasOwnProperty('offset')) state.offset = 0;
+    if (!state.hasOwnProperty('size')) state.size = 5;
+    if (!state.hasOwnProperty('state')) state.state = "initial";
+    if (!state.hasOwnProperty('error')) state.error = "";
+
     // console.log('renderModelList()', element, element.model.definition);
     const definition = lingoExecute(app, element.model.definition, ctx);
     const url = _getModelURL(app, element, ctx);
     // console.log('renderModelList(2)', definition, url);
 
     let elements = [];
-    elements.push({text: `status: default`})
-    elements.push({break: true});
 
-    // for each definition.fields, create table headers
+    //
+    // pagination buttons
+    //
+
+    elements.push({
+        text: 'prev',
+        button: {
+            set: {state: {[stateField]: {offset: {}}}},
+            to: {
+                call: 'max',
+                args: {
+                    a: 0,
+                    b: {
+                        call: 'sub',
+                        args: {
+                            a: state.offset,
+                            b: state.size
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    elements.push({
+        text: 'load',
+        button: {
+            set: {state: {[stateField]: {}}},
+            to: {
+                call: 'crud.list', 
+                args: {
+                    http: element.model.http,
+                    offset: state.offset,
+                    size: state.size
+                }
+            }
+        }
+    });
+
+    elements.push({
+        text: 'next',
+        button: {
+            set: {state: {[stateField]: {offset: {}}}},
+            to: {
+                call: 'add',
+                args: {
+                    a: state.offset,
+                    b: state.size
+                }
+            }
+        }
+    });
+
+    // 
+    // status display
+    //
+
+    elements.push(...[
+        {break: 1},
+        {text: ' total: ', style: {bold: true}},
+        {text: String(state.total)},
+        {text: ' offset: ', style: {bold: true}},
+        {text: String(state.offset)},
+        {text: ' size: ', style: {bold: true}},
+        {text: String(state.size)},
+        {text: ' status: ', style: {bold: true}},
+        {text: state.state},
+    ]);
+
+    //
+    // table display
+    //
+
     let headers = [];
     for (const [name, field] of Object.entries(definition.fields)) {
         headers.push({text: field.name.lower_case, field: field.name.snake_case});
     }
+
+    console.log('renderModelList() - table headers:', headers, app.state[stateField].items);
 
     elements.push({
         type: 'list',
@@ -1316,7 +1572,7 @@ function _renderModelList(app, element, ctx = null) {
             format: 'table',
             headers: headers
         },
-        value: [] // Placeholder for data rows
+        value: app.state[stateField].items
     });
 
     return elements;

@@ -66,10 +66,13 @@ The main prototype are the python + browser 1 browser template apps.
     * 🟢 count
     * 🟢 drop while
     * 🟢 take while
-* 🔴 models
+* 🟡 models
     * 🔴 read
-    * 🔴 list / paginate
-    * 🔴 ui forms for create/update/delete
+    * 🟡 list
+    * 🟡 ui forms
+        * 🟢 create
+        * 🔴 update
+        * 🔴 delete
 * 🟡 refactor internal api
     * 🟢 rename mspec/markup.py to lingo.py
     * 🔴 rename `render_output` to `lingo_render`
@@ -83,6 +86,9 @@ The main prototype are the python + browser 1 browser template apps.
     * 🔴 startup
     * 🔴 after_first_render
     * 🔴 shutdown
+* 🔴 language changes
+    * 🔴 remove `call` function
+    * 🔴 remove `lingo` function
  
 ### template app phase 1
 * 🟡 python full featured template app

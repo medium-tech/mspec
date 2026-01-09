@@ -77,9 +77,21 @@
         },
         "create_model_status": {
             "type": "list",
+            "element_type": "struct",
             "default": [
                 {"text": "ready."}
             ]
+        },
+        "model_list": {
+            "type": "struct",
+            "default": {
+                "items": [],
+                "total": 0,
+                "offset": 0,
+                "size": 5,
+                "state": "initial",
+                "error": ""
+            }
         },
         "base_url": {
             "type": "str",
@@ -119,6 +131,7 @@
         {"heading": ":: list of models", "level": 3},
         {"break": 1},
         {"model": {
+            "bind": {"state": {"model_list": {}}},
             "display": "list",
             "http": {"state": {"base_url": {}}},
             "definition": {"params": {"model_definition": {}}}
