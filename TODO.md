@@ -68,7 +68,7 @@ The main prototype are the python + browser 1 browser template apps.
     * 🟢 take while
 * 🟡 models
     * 🔴 read
-    * 🟡 list
+    * 🟢 list
     * 🟡 ui forms
         * 🟢 create
         * 🔴 update

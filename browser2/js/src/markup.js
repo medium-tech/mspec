@@ -695,7 +695,7 @@ function renderParams(app, expression, ctx = null) {
  * Render state setter - equivalent to Python render_set()
  */
 function renderSet(app, expression, ctx = null) {
-    console.log('renderSet()', app, expression);
+    // console.log('renderSet()', app, expression);
     try {
 
         // init
@@ -718,17 +718,6 @@ function renderSet(app, expression, ctx = null) {
         // if is a struct, get struct field name
         
         const fieldType = app.spec.state[fieldName].type;
-        // let structFieldName = null;
-        // let origStructValue = null;
-        // if (fieldType === 'struct') {
-        //     structFieldName = target[fieldName];
-            
-        //     if (!(structFieldName in app.state[fieldName])) {
-        //         throw new Error(`set - struct field not found: ${structFieldName}`);
-        //     }
-
-        //     origStructValue = app.state[fieldName][structFieldName];
-        // }
 
         let value = lingoExecute(app, valueExpr, ctx);
 
@@ -738,7 +727,7 @@ function renderSet(app, expression, ctx = null) {
             const outValue = unwrapValue(value);
 
             if(fieldType === 'struct'){
-                console.log('set - setting struct fields:', fieldName, outValue);
+                // console.log('set - setting struct fields:', fieldName, outValue);
 
                 /*
                 there are 2 ways to set a struct field:
@@ -788,7 +777,7 @@ function renderSet(app, expression, ctx = null) {
 
                     app.state[fieldName][structFieldName] = outValue;
 
-                    console.log(`set - setting struct field: ${fieldName}.${structFieldName} =`, outValue);
+                    // console.log(`set - setting struct field: ${fieldName}.${structFieldName} =`, outValue);
                 }else{
 
                     // for each field in outValue, set the corresponding struct field and ensure type matches
@@ -810,7 +799,7 @@ function renderSet(app, expression, ctx = null) {
 
                         app.state[fieldName][structFieldName] = structFieldValue;
 
-                        console.log(`set - setting struct field: ${fieldName}.${structFieldName} =`, structFieldValue);
+                        // console.log(`set - setting struct field: ${fieldName}.${structFieldName} =`, structFieldValue);
                     }
                 }
 
@@ -820,7 +809,7 @@ function renderSet(app, expression, ctx = null) {
                     throw new Error(`set - type mismatch: ${fieldType} != ${newType} - field: ${fieldName}`, outValue);
                 }
                 app.state[fieldName] = outValue;
-                console.log(`set - setting state field: ${fieldName} =`, outValue);
+                // console.log(`set - setting state field: ${fieldName} =`, outValue);
             }
         }
 
@@ -1342,6 +1331,18 @@ function handleSequenceOp(app, expression, ctx = null) {
         const size = unwrapValue(lingoExecute(app, args.size, ctx));
         const url = `${urlBase}?offset=${offset}&size=${size}`;
 
+        // console.log(`crud.list - bind`, expression.args.bind);
+
+        // update state to loading if bind is provided
+        let stateField = null;
+        if (expression.args.bind && expression.args.bind.state) {
+            const stateKeys = Object.keys(expression.args.bind.state);
+            if (stateKeys.length === 1) {
+                stateField = stateKeys[0];
+                app.state[stateField].state = 'loading...';
+            }
+        }
+
         async function sendListRequest(url) {
             try {
                 const response = await fetch(url, {
@@ -1360,11 +1361,7 @@ function handleSequenceOp(app, expression, ctx = null) {
                 }
 
                 const responseData = await response.json();
-                console.log('handleSequenceOp - crud.list - responseData:', responseData);
-
-                // for each item, wrap it in a struct {type: 'struct', value: item}
-
-
+                // console.log('handleSequenceOp - crud.list - responseData:', responseData);
 
                 return {
                     state: 'loaded',
@@ -1501,26 +1498,31 @@ function _renderModelList(app, element, ctx = null) {
                 call: 'crud.list', 
                 args: {
                     http: element.model.http,
-                    offset: Math.max(0, state.offset - state.size),
-                    size: state.size
+                    offset: state.offset - state.size,
+                    size: state.size,
+                    bind: element.model.bind
                 }
             }
-        }
+        },
+        disabled: state.offset === 0
     });
+
+    const loadScript = {
+        set: {state: {[stateField]: {}}},
+        to: {
+            call: 'crud.list', 
+            args: {
+                http: element.model.http,
+                offset: state.offset,
+                size: state.size,
+                bind: element.model.bind
+            }
+        }
+    };
 
     elements.push({
         text: 'load',
-        button: {
-            set: {state: {[stateField]: {}}},
-            to: {
-                call: 'crud.list', 
-                args: {
-                    http: element.model.http,
-                    offset: state.offset,
-                    size: state.size
-                }
-            }
-        }
+        button: loadScript
     });
 
     elements.push({
@@ -1532,8 +1534,16 @@ function _renderModelList(app, element, ctx = null) {
                 args: {
                     http: element.model.http,
                     offset: state.offset + state.size,
-                    size: state.size
+                    size: state.size,
+                    bind: element.model.bind
                 }
+            }
+        },
+        disabled: {
+            call: 'ge',
+            args: {
+                a: state.offset + state.size,
+                b: state.total
             }
         }
     });
@@ -1565,7 +1575,7 @@ function _renderModelList(app, element, ctx = null) {
         headers.push({text: field.name.lower_case, field: field.name.snake_case});
     }
 
-    console.log('renderModelList() - table headers:', headers, app.state[stateField].items);
+    // console.log('renderModelList() - table headers:', headers, app.state[stateField].items);
 
     elements.push({
         type: 'list',
@@ -1575,6 +1585,12 @@ function _renderModelList(app, element, ctx = null) {
         },
         value: app.state[stateField].items
     });
+
+    if (state.state === 'pending') {
+        // trigger initial load
+        // console.log('renderModelList() - initial load trigger');
+        lingoExecute(app, loadScript);
+    }
 
     return elements;
 }
@@ -1977,6 +1993,13 @@ function createBreakElement(element) {
 function createButtonElement(app, element) {
     const button = document.createElement('button');
     button.textContent = element.text;
+
+
+    if (element.hasOwnProperty('disabled')) {
+        const disabled = unwrapValue(lingoExecute(app, element.disabled));
+        button.disabled = disabled;
+    }
+    
     button.onclick = () => {
         try {
             lingoExecute(app, element.button);
