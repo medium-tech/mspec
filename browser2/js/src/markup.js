@@ -1369,7 +1369,10 @@ function handleSequenceOp(app, expression, ctx = null) {
                 return {
                     state: 'loaded',
                     total: responseData.total,
-                    items: responseData.items.map(item => ({type: 'struct', value: item}))
+                    items: responseData.items.map(item => ({type: 'struct', value: item})),
+                    showing: responseData.items.length,
+                    offset: offset,
+                    size: size
                 };
 
             } catch (error) {
@@ -1493,18 +1496,13 @@ function _renderModelList(app, element, ctx = null) {
     elements.push({
         text: 'prev',
         button: {
-            set: {state: {[stateField]: {offset: {}}}},
+            set: {state: {[stateField]: {}}},
             to: {
-                call: 'max',
+                call: 'crud.list', 
                 args: {
-                    a: 0,
-                    b: {
-                        call: 'sub',
-                        args: {
-                            a: state.offset,
-                            b: state.size
-                        }
-                    }
+                    http: element.model.http,
+                    offset: Math.max(0, state.offset - state.size),
+                    size: state.size
                 }
             }
         }
@@ -1528,12 +1526,13 @@ function _renderModelList(app, element, ctx = null) {
     elements.push({
         text: 'next',
         button: {
-            set: {state: {[stateField]: {offset: {}}}},
+            set: {state: {[stateField]: {}}},
             to: {
-                call: 'add',
+                call: 'crud.list', 
                 args: {
-                    a: state.offset,
-                    b: state.size
+                    http: element.model.http,
+                    offset: state.offset + state.size,
+                    size: state.size
                 }
             }
         }
@@ -1545,7 +1544,9 @@ function _renderModelList(app, element, ctx = null) {
 
     elements.push(...[
         {break: 1},
-        {text: ' total: ', style: {bold: true}},
+        {text: 'showing: ', style: {bold: true}},
+        {text: String(state.showing)},
+        {text: ' of: ', style: {bold: true}},
         {text: String(state.total)},
         {text: ' offset: ', style: {bold: true}},
         {text: String(state.offset)},

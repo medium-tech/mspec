@@ -87,6 +87,7 @@
             "default": {
                 "items": [],
                 "total": 0,
+                "showing": 0,
                 "offset": 0,
                 "size": 5,
                 "state": "initial",
