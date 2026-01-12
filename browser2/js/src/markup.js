@@ -1319,6 +1319,16 @@ function handleSequenceOp(app, expression, ctx = null) {
         }
         
         return sendCreateRequest(url, data)
+    
+    }else if(funcName === 'crud.read'){
+
+        //
+        // init params
+        //
+
+        const urlBase = unwrapValue(lingoExecute(app, args.http, ctx));
+        const itemId = unwrapValue(lingoExecute(app, args.id, ctx));
+        const url = `${urlBase}/${itemId}`;
 
     }else if(funcName === 'crud.list'){
 
@@ -1419,6 +1429,8 @@ function renderModel(app, element, ctx = null) {
     switch (element.model.display) {
         case 'create':
             return _renderModelCreate(app, element, ctx);
+        case 'read':
+            return _renderModelRead(app, element, ctx);
         case 'list':
             return _renderModelList(app, element, ctx);
         default:
@@ -1448,6 +1460,91 @@ function _getModelURL(app, element, ctx = null) {
         throw new Error('renderModelList - invalid http url type');
     }
     return url;
+}
+
+function _renderModelRead(app, element, ctx = null) {
+
+    //
+    // init
+    //
+
+    if(!element.model.hasOwnProperty('bind')){
+        throw new Error('renderModelRead - missing model bind definition');
+    }
+    if(!element.model.bind.hasOwnProperty('state')){
+        throw new Error('renderModelRead - model bind definition must bind to state');
+    }
+
+    // get first (and only) field in bind.state
+    const stateKeys = Object.keys(element.model.bind.state);
+    if( stateKeys.length !== 1 ){
+        throw new Error('renderModelRead - model bind.state must have exactly one field');
+    }
+
+    if(!element.model.hasOwnProperty('definition')){
+        throw new Error('renderModelRead - missing model definition');
+    }
+    const definition = lingoExecute(app, element.model.definition, ctx);
+
+    const stateField = stateKeys[0];
+
+    let state = app.state[stateField];
+
+    /* assume state is an object and ensure defaults are set */
+    if (!state.hasOwnProperty('item')) state.item = null;
+    if (!state.hasOwnProperty('state')) state.state = 'pending';
+    if (!state.hasOwnProperty('error')) state.error = '';
+
+    //
+    // display
+    //
+
+    const loadScript = {
+        set: {state: {[stateField]: {}}},
+        to: {
+            call: 'crud.read', 
+            args: {
+                http: element.model.http,
+                model_id: element.model.model_id,
+                bind: element.model.bind
+            }
+        }
+    };
+
+    let elements = [];
+
+    elements.push({
+        text: 'load',
+        button: loadScript
+    });
+
+    elements.push(...[
+        {break: 1},
+        {text: 'status: ', style: {bold: true}},
+        {text: state.state},
+    ]);
+
+    if (state.item === null) {
+        // create placeholder data while loading
+        const placeholder = {};
+
+        // iterate over model definition fields to create placeholders
+        for (const field of Object.keys(definition.fields)) {
+            placeholder[field] = '...';
+        }
+
+        elements.push({
+            type: 'struct',
+            value: placeholder,
+        });
+    }else{
+        elements.push({
+            type: 'struct',
+            value: state.item,
+        });
+    }
+
+    return elements;
 }
 
 function _renderModelList(app, element, ctx = null) {

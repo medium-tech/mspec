@@ -1,0 +1,137 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {
+        "project_name": {
+            "name": {
+                "lower_case": "project name"
+            },
+            "type": "str",
+            "default": "My Lingo Project",
+            "description": "Name of the Lingo project"
+        },
+        "module_name": {
+            "name": {
+                "lower_case": "module name"
+            },
+            "type": "str",
+            "default": "my-module-a",
+            "description": "Name of the module"
+        },
+        "model_id": {
+            "name": {
+                "lower_case": "model id"
+            },
+            "type": "str",
+            "description": "ID of the model instance"
+        },
+        "model_name": {
+            "name": {
+                "lower_case": "model name"
+            },
+            "type": "str",
+            "default": "my-model-a",
+            "description": "Name of the model"
+        },
+        "model_definition": {
+            "name": {
+                "lower_case": "model definition"
+            },
+            "type": "model",
+            "value": {
+                "name": {
+                    "lower_case": "my model a"
+                },
+                "fields": {
+                    "my_bool_field_a": {
+                        "name": {
+                            "lower_case": "my bool field a"
+                        },
+                        "type": "bool",
+                        "description": "A sample field"
+                    },
+                    "my_int_field_b": {
+                        "name": {
+                            "lower_case": "my int field b"
+                        },
+                        "type": "int",
+                        "description": "Another sample field"
+                    },
+                    "my_float_field_c": {
+                        "name": {
+                            "lower_case": "my float field c"
+                        },
+                        "type": "float",
+                        "description": "Yet another sample field"
+                    },
+                    "my_str_field_d": {
+                        "name": {
+                            "lower_case": "my str field d"
+                        },
+                        "type": "str",
+                        "description": "A string sample field"
+                    }
+                }
+            },
+            "description": "Definition of the model"
+        }
+    },
+    "state": {
+        "base_url": {
+            "type": "str",
+            "calc": {
+                "call": "concat",
+                "args": {
+                    "items": [
+                        "/api/",
+                        {"params": {"module_name": {}}},
+                        "/",
+                        {"params": {"model_name": {}}},
+                        "/",
+                        {"params": {"model_id": {}}}
+                    ]
+                }
+            }
+        },
+        "model_instance": {
+            "type": "struct",
+            "default": {
+                "state": "pending",
+                "error": "",
+                "item": null
+            }
+        },
+        "header": {
+            "type": "str",
+            "calc": {
+                "call": "join",
+                "args": {
+                    "separator": "",
+                    "items": [
+                        ":: ",
+                        {"params": {"project_name": {}}},
+                        " :: ",
+                        {"params": {"module_name": {}}},
+                        " :: ",
+                        {"params": {"model_name": {}}},
+                        " :: ",
+                        {"params": {"model_id": {}}}
+                    ]
+                }
+            }
+        }
+    },
+    "ops": {},
+    "output": [
+        {"heading": {"state": {"header": {}}},  "level": 2},
+        {"break": 1},
+        {"model": {
+            "bind": {"state": {"model_instance": {}}},
+            "display": "read",
+            "http": {"state": {"base_url": {}}},
+            "model_id": {"params": {"model_id": {}}},
+            "definition": {"params": {"model_definition": {}}}
+        }}
+    ]
+}

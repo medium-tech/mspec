@@ -368,6 +368,87 @@ def generate_model_html(spec: dict, module_key: str, model_key: str) -> str:
     
     return html
 
+def generate_model_instance_html(spec: dict, module_key: str, model_key: str, url: str) -> str:
+    """
+    Generate the model instance page with embedded Lingo JSON spec.
+    """
+
+    # init spec #
+    
+    lingo_model_instance_page = load_browser2_spec('builtin-mapp-model-instance.json')
+    
+    project_name = spec['project']['name']['lower_case']
+    module = spec['modules'][module_key]
+    module_name = module['name']['kebab_case']
+    model = module['models'][model_key]
+    model_name = model['name']['kebab_case']
+
+    url_split = url.strip('/').split('/')
+    model_id = url_split[-1]
+    
+    lingo_params = {
+        'project_name': project_name,
+        'module_name': module_name,
+        'model_name': model_name,
+        'model_definition': model,
+        'model_id': model_id
+    }
+    
+    # generate html and embed spec #
+
+    lingo_spec_json = json.dumps(lingo_model_instance_page, indent=4)
+    lingo_params_json = json.dumps(lingo_params, indent=4)
+    
+
+    html = f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{project_name} - Model - {model_id}</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div id="lingo-app" class="lingo-container">
+        <p>Loading...</p>
+    </div>
+    
+    <!-- Embedded Lingo spec -->
+    <script type="application/json" id="lingoSpec">
+{lingo_spec_json}
+    </script>
+    
+    <!-- Embedded Lingo params -->
+    <script type="application/json" id="lingoParams">
+{lingo_params_json}
+    </script>
+    
+    <script src="/markup.js"></script>
+    
+    <script>
+        // Retrieve and parse the embedded spec and params
+        const specText = document.getElementById('lingoSpec').textContent;
+        const paramsText = document.getElementById('lingoParams').textContent;
+        const lingoSpec = JSON.parse(specText);
+        const lingoParams = JSON.parse(paramsText);
+        
+        // Run the lingo app on load
+        window.addEventListener('load', () => {{
+            try {{
+                const app = lingoApp(lingoSpec, lingoParams, {{}});
+                renderLingoApp(app, document.getElementById('lingo-app'));
+            }} catch (error) {{
+                console.error('Failed to initialize Lingo app:', error);
+                document.getElementById('lingo-app').innerHTML = `<p style="color: red;">Error: ${{error.message}}</p>`;
+            }}
+        }});
+    </script>
+</body>
+</html>'''
+    
+    return html
+
+
 #
 # load static ui files
 #
@@ -377,6 +458,7 @@ class StaticFileData(NamedTuple):
     content_type: str
 
 static_files = {}
+dynamic_files = []
 
 ui_src_dir = os.environ.get('MAPP_UI_FILE_SOURCE', None)
 
@@ -430,6 +512,16 @@ for module_key, module in mapp_spec['modules'].items():
             content_type='text/html'
         )
 
+        pattern = f'/{module_kebab}/{model_kebab}/[0-9a-zA-Z]+$'
+
+        dynamic_files.append((
+            re.compile(pattern),
+            generate_model_instance_html,
+            mapp_spec,
+            module_key,
+            model_key
+        ))
+
 def static_routes(server: MappContext, request: RequestContext):
     """resolve static file routes"""
     
@@ -442,8 +534,23 @@ def static_routes(server: MappContext, request: RequestContext):
         pass
     else:
         raise StaticFileResponse('200 OK', file_data.content, file_data.content_type)
+    
+def dynamic_file_routes(server: MappContext, request: RequestContext):
+    """resolve dynamic file routes"""
+
+    for pattern, generator_func, *gen_args in dynamic_files:
+        if pattern.match(request.env['PATH_INFO']):
+            mapp_spec, module_key, model_key = gen_args
+    
+            html_content = generator_func(mapp_spec, module_key, model_key, request.env['PATH_INFO'])
+            raise StaticFileResponse(
+                '200 OK',
+                content=html_content.encode('utf-8'),
+                content_type='text/html'
+            )
 
 route_list.append(static_routes)
+route_list.append(dynamic_file_routes)
 
 #
 # wsgi application
