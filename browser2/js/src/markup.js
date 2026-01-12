@@ -310,6 +310,10 @@ const lingoFunctionLookup = {
             func: null, // handled specially in renderCall
             createArgs: true
         },
+        'read': {
+            func: null, // handled specially in renderCall
+            createArgs: true
+        },
         'list': {
             func: null, // handled specially in renderCall
             createArgs: true
@@ -1292,22 +1296,24 @@ function handleSequenceOp(app, expression, ctx = null) {
                     body: JSON.stringify(data)
                 });
 
-                if (!response.ok) {
+                if (response.ok) {
+
+                    const responseData = await response.json();
+                    // console.log('handleSequenceOp - crud.create - responseData:', responseData);
+                    return [
+                        {text: 'Success', style: {color: 'green', bold: true}},
+                        {text: ', '},
+                        {link: `${url}/${responseData.id}`, text: 'view new item'},
+                        {text: '.'}
+                    ];
+                    
+                }else{
                     console.error('handleSequenceOp - crud.create - HTTP error:', response.status, response.statusText); 
                     return [
                         {text: 'Error: ', style: {color: 'red', bold: true}},
                         {text: `${response.status} ${response.statusText}`}
                     ]
                 }
-
-                const responseData = await response.json();
-                // console.log('handleSequenceOp - crud.create - responseData:', responseData);
-                return [
-                    {text: 'Success', style: {color: 'green', bold: true}},
-                    {text: ', '},
-                    {link: `${url}/${responseData.id}`, text: 'view new item'},
-                    {text: '.'}
-                ];
 
             } catch (error) {
                 console.error('handleSequenceOp - crud.create - network error:', error);
@@ -1326,9 +1332,64 @@ function handleSequenceOp(app, expression, ctx = null) {
         // init params
         //
 
-        const urlBase = unwrapValue(lingoExecute(app, args.http, ctx));
-        const itemId = unwrapValue(lingoExecute(app, args.id, ctx));
-        const url = `${urlBase}/${itemId}`;
+        const url = unwrapValue(lingoExecute(app, args.http, ctx));
+        
+        // update state to loading if bind is provided
+        let stateField = null;
+        if (expression.args.bind && expression.args.bind.state) {
+            const stateKeys = Object.keys(expression.args.bind.state);
+            if (stateKeys.length === 1) {
+                stateField = stateKeys[0];
+                if(!(app.state.hasOwnProperty(stateField))){
+                    throw new Error(`handleSequenceOp - crud.read - state field not found: ${stateField}`);
+                }
+                app.state[stateField].state = 'loading...';
+            }
+        }
+        
+        //
+        // send request
+        //
+        
+        async function sendReadRequest(url) {
+
+            console.log('handleSequenceOp - crud.read - url:', url);
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const responseData = await response.json();
+                    console.log('handleSequenceOp - crud.read - responseData:', responseData);
+
+                    return {
+                        state: 'loaded',
+                        item: responseData
+                    };
+                    
+                }else{
+                    console.error('handleSequenceOp - crud.read - HTTP error:', response.status, response.statusText); 
+                    return {
+                        state: 'error',
+                        error: `Response error: ${response.status} ${response.statusText}`
+                    };
+                }
+
+            } catch (error) {
+                console.error('handleSequenceOp - crud.read - network error:', error);
+                return {
+                    state: 'error',
+                    error: `Network error: ${error.message}`
+                };
+            }
+        }
+
+        return sendReadRequest(url);
 
     }else if(funcName === 'crud.list'){
 
@@ -1341,14 +1402,15 @@ function handleSequenceOp(app, expression, ctx = null) {
         const size = unwrapValue(lingoExecute(app, args.size, ctx));
         const url = `${urlBase}?offset=${offset}&size=${size}`;
 
-        // console.log(`crud.list - bind`, expression.args.bind);
-
         // update state to loading if bind is provided
         let stateField = null;
         if (expression.args.bind && expression.args.bind.state) {
             const stateKeys = Object.keys(expression.args.bind.state);
             if (stateKeys.length === 1) {
                 stateField = stateKeys[0];
+                if(!(app.state.hasOwnProperty(stateField))){
+                    throw new Error(`handleSequenceOp - crud.list - state field not found: ${stateField}`);
+                }
                 app.state[stateField].state = 'loading...';
             }
         }
@@ -1362,25 +1424,27 @@ function handleSequenceOp(app, expression, ctx = null) {
                     }
                 });
 
-                if (!response.ok) {
+                if (response.ok) {
+
+                    const responseData = await response.json();
+                    // console.log('handleSequenceOp - crud.list - responseData:', responseData);
+
+                    return {
+                        state: 'loaded',
+                        total: responseData.total,
+                        items: responseData.items.map(item => ({type: 'struct', value: item})),
+                        showing: responseData.items.length,
+                        offset: offset,
+                        size: size
+                    };
+                    
+                }else{
                     console.error('handleSequenceOp - crud.list - HTTP error:', response.status, response.statusText); 
                     return {
                         state: 'error',
                         error: `Response error: ${response.status} ${response.statusText}`
                     };
                 }
-
-                const responseData = await response.json();
-                // console.log('handleSequenceOp - crud.list - responseData:', responseData);
-
-                return {
-                    state: 'loaded',
-                    total: responseData.total,
-                    items: responseData.items.map(item => ({type: 'struct', value: item})),
-                    showing: responseData.items.length,
-                    offset: offset,
-                    size: size
-                };
 
             } catch (error) {
                 console.error('handleSequenceOp - crud.list - network error:', error);
@@ -1524,7 +1588,7 @@ function _renderModelRead(app, element, ctx = null) {
         {text: state.state},
     ]);
 
-    if (state.item === null) {
+    if (state.state == 'pending') {
         // create placeholder data while loading
         const placeholder = {};
 
@@ -1542,6 +1606,11 @@ function _renderModelRead(app, element, ctx = null) {
             type: 'struct',
             value: state.item,
         });
+    }
+
+    if (state.state === 'pending') {
+        // trigger initial load
+        lingoExecute(app, loadScript);
     }
 
     return elements;
@@ -1566,7 +1635,6 @@ function _renderModelList(app, element, ctx = null) {
     const stateField = stateKeys[0];
 
     let state = app.state[stateField];
-    // console.log('renderModelList() - state before:', stateField, app, app.state);
 
     /* assume state is an object and ensure defaults are set */
     if (!state.hasOwnProperty('items')) state.items = [];
@@ -1576,10 +1644,8 @@ function _renderModelList(app, element, ctx = null) {
     if (!state.hasOwnProperty('state')) state.state = "initial";
     if (!state.hasOwnProperty('error')) state.error = "";
 
-    // console.log('renderModelList()', element, element.model.definition);
     const definition = lingoExecute(app, element.model.definition, ctx);
     const url = _getModelURL(app, element, ctx);
-    // console.log('renderModelList(2)', definition, url);
 
     let elements = [];
 
@@ -1667,12 +1733,30 @@ function _renderModelList(app, element, ctx = null) {
     // table display
     //
 
-    let headers = [];
+    let headers = [{text: 'id', field: 'id'}];
     for (const [name, field] of Object.entries(definition.fields)) {
         headers.push({text: field.name.lower_case, field: field.name.snake_case});
     }
 
-    // console.log('renderModelList() - table headers:', headers, app.state[stateField].items);
+    
+    // iterate over app.state[stateField].items and convert id to link
+
+    let itemsForTable = [];
+    
+    if(element.model.hasOwnProperty('instance_url')) {
+        const instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
+        console.log('instanceUrl:', element.model.instance_url, instanceUrl);
+        for (let item of app.state[stateField].items) {
+            let newItem = item
+            item.value.id = {
+                link: `${instanceUrl}${item.value.id}`,
+                text: String(item.value.id)
+            };
+            itemsForTable.push(newItem);
+        }
+    }else{
+        itemsForTable = app.state[stateField].items;
+    }
 
     elements.push({
         type: 'list',
@@ -1680,12 +1764,11 @@ function _renderModelList(app, element, ctx = null) {
             format: 'table',
             headers: headers
         },
-        value: app.state[stateField].items
+        value: itemsForTable
     });
 
     if (state.state === 'pending') {
         // trigger initial load
-        // console.log('renderModelList() - initial load trigger');
         lingoExecute(app, loadScript);
     }
 
@@ -1732,7 +1815,6 @@ function _renderModelCreate(app, element, ctx = null) {
 
     return elements;
 }
-
 
 /**
  * DOM Rendering Functions
@@ -1885,6 +1967,8 @@ function createTextElement(element) {
  */
 function createValueElement(element) {
 
+    // console.log('createValueElement()', element);
+
     if(element.type == 'struct') {
         // Render individual struct as a table
         const showHeaders = element.display && element.display.headers === false ? false : true;
@@ -1999,6 +2083,8 @@ function createValueElement(element) {
                     
                     const fieldName = headerDef.field;
                     const fieldValue = item.value[fieldName];
+
+                    // console.log('createValueElement - ', fieldName, fieldValue, typeof fieldValue);
                     
                     // Evaluate the value if it's an expression
                     let cellValue = fieldValue;
@@ -2020,6 +2106,8 @@ function createValueElement(element) {
                                 console.error('Error evaluating struct field value:', error);
                                 cellValue = '[Error]';
                             }
+                        }else if('link' in fieldValue){
+                            cellValue = createLinkElement(fieldValue);
                         }
                     }
                     
@@ -2027,6 +2115,8 @@ function createValueElement(element) {
                     if(Array.isArray(cellValue)) {
                         // Format arrays as comma-separated values
                         td.textContent = cellValue.join(', ');
+                    } else if(cellValue instanceof HTMLElement) {
+                        td.appendChild(cellValue);
                     } else {
                         td.textContent = String(cellValue);
                     }

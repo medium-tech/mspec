@@ -99,7 +99,7 @@
             "default": {
                 "state": "pending",
                 "error": "",
-                "item": null
+                "item": {}
             }
         },
         "header": {

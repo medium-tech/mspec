@@ -94,7 +94,7 @@
                 "error": ""
             }
         },
-        "base_url": {
+        "model_url": {
             "type": "str",
             "calc": {
                 "call": "concat",
@@ -104,6 +104,21 @@
                         {"params": {"module_name": {}}},
                         "/",
                         {"params": {"model_name": {}}}
+                    ]
+                }
+            }
+        },
+        "model_instance_url_base": {
+            "type": "str",
+            "calc": {
+                "call": "concat",
+                "args": {
+                    "items": [
+                        "/",
+                        {"params": {"module_name": {}}},
+                        "/",
+                        {"params": {"model_name": {}}},
+                        "/"
                     ]
                 }
             }
@@ -134,8 +149,9 @@
         {"model": {
             "bind": {"state": {"model_list": {}}},
             "display": "list",
-            "http": {"state": {"base_url": {}}},
-            "definition": {"params": {"model_definition": {}}}
+            "http": {"state": {"model_url": {}}},
+            "definition": {"params": {"model_definition": {}}},
+            "instance_url": {"state": {"model_instance_url_base": {}}}
         }},
 
         {"heading": ":: create a new model", "level": 3},
@@ -145,7 +161,7 @@
         {"model": {
             "bind": {"state": {"model_to_create": {}}},
             "display": "create",
-            "http": {"state": {"base_url": {}}},
+            "http": {"state": {"model_url": {}}},
             "definition": {"params": {"model_definition": {}}}
         }}
 
