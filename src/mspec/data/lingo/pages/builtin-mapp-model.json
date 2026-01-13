@@ -94,7 +94,7 @@
                 "error": ""
             }
         },
-        "model_url": {
+        "model_item_api_url": {
             "type": "str",
             "calc": {
                 "call": "concat",
@@ -108,7 +108,7 @@
                 }
             }
         },
-        "model_instance_url_base": {
+        "model_item_url": {
             "type": "str",
             "calc": {
                 "call": "concat",
@@ -129,39 +129,37 @@
                 "call": "join",
                 "args": {
                     "separator": "",
-                    "items": [
-                        ":: ",
-                        {"params": {"project_name": {}}},
-                        " :: ",
-                        {"params": {"module_name": {}}},
-                        " :: ",
-                        {"params": {"model_name": {}}}
-                    ]
+                    "items": [":: ",{"params": {"model_name": {}}}]
                 }
             }
         }
     },
     "ops": {},
     "output": [
-        {"heading": {"state": {"header": {}}},  "level": 2},
-        {"heading": ":: list of models", "level": 3},
+        {"heading": {"state": {"header": {}}},  "level": 1},
+        {"breadcrumbs": [
+            {"params": {"project_name": {}}},
+            {"params": {"module_name": {}}},
+            {"params": {"model_name": {}}}
+        ]},
+        {"heading": ":: list of models", "level": 2},
         {"break": 1},
         {"model": {
             "bind": {"state": {"model_list": {}}},
             "display": "list",
-            "http": {"state": {"model_url": {}}},
+            "http": {"state": {"model_item_api_url": {}}},
             "definition": {"params": {"model_definition": {}}},
-            "instance_url": {"state": {"model_instance_url_base": {}}}
+            "instance_url": {"state": {"model_item_url": {}}}
         }},
 
-        {"heading": ":: create a new model", "level": 3},
+        {"heading": ":: create a new model", "level": 2},
         {"text": "status: ", "style": {"bold": true}},
         {"state": {"create_model_status": {}}},
         {"break": 1},
         {"model": {
             "bind": {"state": {"model_to_create": {}}},
             "display": "create",
-            "http": {"state": {"model_url": {}}},
+            "http": {"state": {"model_item_api_url": {}}},
             "definition": {"params": {"model_definition": {}}}
         }}
 

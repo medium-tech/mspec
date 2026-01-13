@@ -28,14 +28,7 @@
                 "call": "join",
                 "args": {
                     "separator": "",
-                    "items": [
-                        ":: ",
-                        {
-                            "params": {
-                                "project_name": {}
-                            }
-                        }
-                    ]
+                    "items": [":: ", {"params": {"project_name": {}}}]
                 }
             }
         }
@@ -50,6 +43,9 @@
             },
             "level": 1
         },
+        {"breadcrumbs": [
+            {"params": {"project_name": {}}}
+        ]},
         {
             "heading": ":: available modules",
             "level": 2

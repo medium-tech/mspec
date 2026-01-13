@@ -19,13 +19,6 @@
             "default": "my-module-a",
             "description": "Name of the module"
         },
-        "model_id": {
-            "name": {
-                "lower_case": "model id"
-            },
-            "type": "str",
-            "description": "ID of the model instance"
-        },
         "model_name": {
             "name": {
                 "lower_case": "model name"
@@ -33,6 +26,13 @@
             "type": "str",
             "default": "my-model-a",
             "description": "Name of the model"
+        },
+        "model_id": {
+            "name": {
+                "lower_case": "model id"
+            },
+            "type": "str",
+            "description": "ID of the model instance"
         },
         "model_definition": {
             "name": {
@@ -116,23 +116,20 @@
                 "call": "join",
                 "args": {
                     "separator": "",
-                    "items": [
-                        ":: ",
-                        {"params": {"project_name": {}}},
-                        " :: ",
-                        {"params": {"module_name": {}}},
-                        " :: ",
-                        {"params": {"model_name": {}}},
-                        " :: ",
-                        {"params": {"model_id": {}}}
-                    ]
+                    "items": [":: ", {"params": {"model_name": {}}}, " :: ", {"params": {"model_id": {}}}]
                 }
             }
         }
     },
     "ops": {},
     "output": [
-        {"heading": {"state": {"header": {}}},  "level": 2},
+        {"heading": {"state": {"header": {}}},  "level": 1},
+        {"breadcrumbs": [
+            {"params": {"project_name": {}}},
+            {"params": {"module_name": {}}},
+            {"params": {"model_name": {}}},
+            {"params": {"model_id": {}}}
+        ]},
         {"break": 1},
         {"model": {
             "bind": {"state": {"model_instance": {}}},

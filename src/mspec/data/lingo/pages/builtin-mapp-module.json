@@ -45,20 +45,7 @@
                 "call": "join",
                 "args": {
                     "separator": "",
-                    "items": [
-                        ":: ",
-                        {
-                            "params": {
-                                "project_name": {}
-                            }
-                        },
-                        " :: ",
-                        {
-                            "params": {
-                                "module_name": {}
-                            }
-                        }
-                    ]
+                    "items": [":: ", {"params": {"module_name": {}}}]
                 }
             }
         }
@@ -73,6 +60,10 @@
             },
             "level": 1
         },
+        {"breadcrumbs": [
+            {"params": {"project_name": {}}},
+            {"params": {"module_name": {}}}
+        ]},
         {
             "heading": ":: available models",
             "level": 2

@@ -476,6 +476,8 @@ function lingoExecute(app, expression, ctx = null) {
             return renderSelf(app, expression, ctx);
         } else if ('model' in expression) {
             return renderModel(app, expression, ctx);
+        } else if ('breadcrumbs' in expression) {
+            return renderBreadcrumbs(app, expression, ctx);
         } else {
             result = expression;
         }
@@ -1814,6 +1816,34 @@ function _renderModelCreate(app, element, ctx = null) {
     });
 
     return elements;
+}
+
+function renderBreadcrumbs(app, element, ctx = null) {
+
+    const crumbs = element.breadcrumbs;
+    if (!Array.isArray(crumbs)) {
+        throw new Error('breadcrumbs - breadcrumbs must be a list');
+    }
+    if (crumbs.length === 0 || crumbs.length > 4) {
+        throw new Error('breadcrumbs - breadcrumbs list must have 1 to 4 items');
+    }
+
+    const elements = [{text: ':: '}];
+    let url = '/';
+    for (let i = 0; i < crumbs.length; i++) {
+        const crumb = unwrapValue(lingoExecute(app, crumbs[i], ctx));
+        if (i > 0) url += crumb;
+        elements.push({link: url, text: crumb});
+        if (i < crumbs.length - 1) {
+            elements.push({text: ' :: '});
+        }
+        if (i > 0) url += '/';
+    }
+
+    console.log('renderBreadcrumbs()', elements);
+
+    return elements;
+
 }
 
 /**
