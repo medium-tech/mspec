@@ -314,6 +314,14 @@ const lingoFunctionLookup = {
             func: null, // handled specially in renderCall
             createArgs: true
         },
+        'update': {
+            func: null, // handled specially in renderCall
+            createArgs: true
+        },
+        'delete': {
+            func: null, // handled specially in renderCall
+            createArgs: true
+        },
         'list': {
             func: null, // handled specially in renderCall
             createArgs: true
@@ -1392,6 +1400,52 @@ function handleSequenceOp(app, expression, ctx = null) {
         }
 
         return sendReadRequest(url);
+    
+    }else if(funcName === 'crud.delete'){
+        
+        //
+        // init params
+        //
+
+        const url = unwrapValue(lingoExecute(app, args.http, ctx));
+
+        //
+        // send request
+        //
+
+        async function sendDeleteRequest(url) {
+            try {
+                const response = await fetch(url, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+
+                    return [
+                        {text: 'Item deleted successfully.', style: {color: 'green', bold: true}}
+                    ];
+                    
+                }else{
+                    console.error('handleSequenceOp - crud.delete - HTTP error:', response.status, response.statusText); 
+                    return [
+                        {text: 'Error: ', style: {color: 'red', bold: true}},
+                        {text: `${response.status} ${response.statusText}`}
+                    ]
+                }
+
+            } catch (error) {
+                console.error('handleSequenceOp - crud.delete - network error:', error);
+                return [
+                    {text: 'Network error: ', style: {color: 'red', bold: true}},
+                    {text: `${error.message}`}
+                ];
+            }
+        }
+
+        return sendDeleteRequest(url);
 
     }else if(funcName === 'crud.list'){
 
@@ -1497,6 +1551,8 @@ function renderModel(app, element, ctx = null) {
             return _renderModelCreate(app, element, ctx);
         case 'read':
             return _renderModelRead(app, element, ctx);
+        case 'delete':
+            return _renderModelDelete(app, element, ctx);
         case 'list':
             return _renderModelList(app, element, ctx);
         default:
@@ -1614,6 +1670,84 @@ function _renderModelRead(app, element, ctx = null) {
         // trigger initial load
         lingoExecute(app, loadScript);
     }
+
+    return elements;
+}
+
+function _renderModelDelete(app, element, ctx = null) {
+    // console.log('renderModelDelete()', app, element, ctx);
+    if(!element.model.hasOwnProperty('bind')){
+        throw new Error('renderModelDelete - missing model bind definition');
+    }
+    if(!element.model.bind.hasOwnProperty('state')){
+        throw new Error('renderModelDelete - model bind definition must bind to state');
+    }
+
+    // get first (and only) field in bind.state
+    const stateKeys = Object.keys(element.model.bind.state);
+    if( stateKeys.length !== 1 ){
+        throw new Error('renderModelDelete - model bind.state must have exactly one field');
+    }
+
+    const stateField = stateKeys[0];
+
+    // ensure confirming_delete state exists
+    if (!app.state.hasOwnProperty(stateField)) {
+        throw new Error(`renderModelDelete - state field not found: ${stateField}`);
+    }
+
+    let state = app.state[stateField];
+
+    if (!state.hasOwnProperty('state')) state.state = 'initial';
+    if (!state.hasOwnProperty('error')) state.error = '';
+
+    let elements = [];
+    elements.push({
+        "branch": [
+            {
+                "if": {
+                    "call": "eq",
+                    "args": {
+                        "a": {"state": {[stateField]: {"state": {}}}},
+                        "b": "confirming"
+                    }
+                },
+                "then": {
+                    "block": [
+                        {"text": " Are you sure you want to delete this model instance? This action cannot be undone."},  
+                        {"break": 1},
+                        {
+                            "button": {
+                                "call": "crud.delete",
+                                "args": {
+                                    "http": {"state": {"base_url": {}}},
+                                    "model_id": {"params": {"model_id": {}}}
+                                }
+                            },
+                            "text": "confirm delete"
+                        },
+                        {"text": " "},
+                        {
+                            "button": {
+                                "set": {"state": {[stateField]: {"state": {}}}}, 
+                                "to": "initial"
+                            },
+                            "text": "cancel"
+                        }
+                    ]
+                }
+            },
+            {
+                "else": {
+                    "button": {
+                        "set": {"state": {[stateField]: {"state": {}}}}, 
+                        "to": "confirming"
+                    },
+                    "text": "delete"
+                }
+            }
+        ]
+    });
 
     return elements;
 }
