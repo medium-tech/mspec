@@ -2537,6 +2537,10 @@ function createFormElement(app, element) {
         throw new Error('createFormElement - bind.state must have exactly one field');
     }
     const formStateField = stateKeys[0];
+
+    if( !app.state.hasOwnProperty(formStateField) ) {
+        throw new Error(`createFormElement - state field not found: ${formStateField}`);
+    }
     const currentState = app.state[formStateField];
     const formData = currentState.data || {};
     // console.log('createFormElement - formState:', formState);

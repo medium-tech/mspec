@@ -4,7 +4,12 @@
     },
     "params": {},
 
-    "state": {},
+    "state": {
+        "my_test_form": {
+            "type": "struct",
+            "default": {}
+        }
+    },
 
     "ops": {},
 
