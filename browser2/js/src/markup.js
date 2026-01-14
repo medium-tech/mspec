@@ -1479,7 +1479,7 @@ function handleSequenceOp(app, expression, ctx = null) {
                 if(!(app.state.hasOwnProperty(stateField))){
                     throw new Error(`handleSequenceOp - crud.list - state field not found: ${stateField}`);
                 }
-                app.state[stateField].state = 'loading...';
+                app.state[stateField].state = 'loading';
             }
         }
 
@@ -1570,30 +1570,6 @@ function renderModel(app, element, ctx = null) {
         default:
             throw new Error(`renderModel - unknown display type: ${element.model.display}`);
     }
-}
-
-function _getModelURL(app, element, ctx = null) {
-    if (!element.model.hasOwnProperty('http')) {
-        throw new Error('renderModelList - missing http definition');
-    }
-
-    const urlResult = lingoExecute(app, element.model.http, ctx);
-
-    let url;
-    if (typeof urlResult === 'object' && urlResult !== null) {
-        if(!('type' in urlResult) || !('value' in urlResult)) {
-            throw new Error('renderModelList - invalid http url object');
-        }
-        if (urlResult.type !== 'str') {
-            throw new Error('renderModelList - http url must be of type str');
-        }
-        url = urlResult.value;
-    } else if (typeof urlResult === 'string') {
-        url = urlResult;
-    } else {
-        throw new Error('renderModelList - invalid http url type');
-    }
-    return url;
 }
 
 function _renderModelRead(app, element, ctx = null) {
@@ -1805,7 +1781,6 @@ function _renderModelList(app, element, ctx = null) {
     if (!state.hasOwnProperty('error')) state.error = "";
 
     const definition = lingoExecute(app, element.model.definition, ctx);
-    const url = _getModelURL(app, element, ctx);
 
     let elements = [];
 
@@ -1904,17 +1879,21 @@ function _renderModelList(app, element, ctx = null) {
     let itemsForTable = [];
     
     if(element.model.hasOwnProperty('instance_url')) {
+        console.log('* rendering item WITH instance_url links');
         const instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
         console.log('instanceUrl:', element.model.instance_url, instanceUrl);
+        console.log('app.state[stateField].items:', app.state[stateField].items);
         for (let item of app.state[stateField].items) {
-            let newItem = item
-            item.value.id = {
+
+            let copyOfItem = JSON.parse(JSON.stringify(item));
+            copyOfItem.value.id = {
                 link: `${instanceUrl}${item.value.id}`,
                 text: String(item.value.id)
             };
-            itemsForTable.push(newItem);
+            itemsForTable.push(copyOfItem);
         }
     }else{
+        console.log('* rendering item WITHOUT instance_url links');
         itemsForTable = app.state[stateField].items;
     }
 
