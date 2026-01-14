@@ -340,7 +340,6 @@ class LingoApp {
         this.buffer = buffer;
         this.afterUpdate = afterUpdate;
         this.afterRender = afterRender;
-        this.clientState = {forms: {}};
     }
 }
 
