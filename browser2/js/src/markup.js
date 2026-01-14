@@ -1292,6 +1292,19 @@ function handleSequenceOp(app, expression, ctx = null) {
         const url = unwrapValue(lingoExecute(app, args.http, ctx));
         const data = lingoExecute(app, args.data, ctx);
 
+        // update state to loading if bind is provided
+        let stateField = null;
+        if (expression.args.bind && expression.args.bind.state) {
+            const stateKeys = Object.keys(expression.args.bind.state);
+            if (stateKeys.length === 1) {
+                stateField = stateKeys[0];
+                if(!(app.state.hasOwnProperty(stateField))){
+                    throw new Error(`handleSequenceOp - crud.create - state field not found: ${stateField}`);
+                }
+                app.state[stateField].state = 'loading';
+            }
+        }
+
         //
         // send request
         //
@@ -1310,27 +1323,16 @@ function handleSequenceOp(app, expression, ctx = null) {
 
                     const responseData = await response.json();
                     // console.log('handleSequenceOp - crud.create - responseData:', responseData);
-                    return [
-                        {text: 'Success', style: {color: 'green', bold: true}},
-                        {text: ', '},
-                        {link: `${url}/${responseData.id}`, text: 'view new item'},
-                        {text: '.'}
-                    ];
+                    return {state: 'success', item_id: responseData.id};
                     
                 }else{
                     console.error('handleSequenceOp - crud.create - HTTP error:', response.status, response.statusText); 
-                    return [
-                        {text: 'Error: ', style: {color: 'red', bold: true}},
-                        {text: `${response.status} ${response.statusText}`}
-                    ]
+                    return {state: 'error', error: `Response error: ${response.status} ${response.statusText}`};
                 }
 
             } catch (error) {
                 console.error('handleSequenceOp - crud.create - network error:', error);
-                return [
-                    {text: 'Network error: ', style: {color: 'red', bold: true}},
-                    {text: `${error.message}`}
-                ];
+                return {state: 'error', error: `Network error: ${error.message}`};
             }
         }
         
@@ -1935,7 +1937,15 @@ function _renderModelList(app, element, ctx = null) {
 }
 
 function _renderModelCreate(app, element, ctx = null) {
-    // console.log('renderModelCreate()', app, element, ctx);
+    
+    //
+    // init
+    //
+
+    if (!element.model.hasOwnProperty('definition')) {
+        throw new Error('renderModelCreate - missing model definition');
+    }
+
     const definition = lingoExecute(app, element.model.definition, ctx);
 
     if (!definition.fields || typeof definition.fields !== 'object') {
@@ -1944,34 +1954,85 @@ function _renderModelCreate(app, element, ctx = null) {
 
     if( !element.model.hasOwnProperty('bind')) {
         throw new Error('renderModelCreate - missing model bind definition');
-        /* 
-        in this future bind will support binding the form data to a state field
-        but for now we use it as an id so we can track the form state between renders
-        */
     }
 
-    let elements = [];
-    elements.push({
+    if( !element.model.bind.hasOwnProperty('state')) {
+        throw new Error('renderModelCreate - model bind definition must bind to state');
+    }
+
+    if (!element.model.hasOwnProperty('instance_url')) {
+        throw new Error('renderModelCreate - missing instance_url definition');
+    }
+
+    const instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
+
+    const stateKeys = Object.keys(element.model.bind.state);
+    if( stateKeys.length !== 1 ) {
+        throw new Error('renderModelCreate - model bind.state must have exactly one field');
+    }
+
+    const stateField = stateKeys[0];
+
+    if (!app.state.hasOwnProperty(stateField)) {
+        throw new Error(`renderModelCreate - state field not found: ${stateField}`);
+    }
+
+    const formElement = {
         form: {
             fields: definition.fields,
-            on_submit: {
-                set: {state: {create_model_status: {}}},
-                to: [{text: 'loading...', style: {italic: true}}]
-            },
             bind: element.model.bind,
             action: {
-                set: {state: {create_model_status: {}}},
+                set: {state: {[stateField]: {}}},
                 to: {
                     call: 'crud.create',
                     args: {
                         http: element.model.http,
-                        data: {self: "form_data"}
+                        bind: element.model.bind,
+                        data: app.state[stateField].data
                     }
                 }
             }
         }
-    });
+    };
 
+    const stateSwitch = {
+        switch: {
+            expression: { type: 'str', value: app.state[stateField].state },
+            cases: [
+                {
+                    case: 'success',
+                    then: {
+                        block: [
+                            { text: 'Success, ', style: { color: 'green', bold: true } },
+                            { link: instanceUrl + app.state[stateField].item_id, text: 'view item' }
+                        ]
+                    }
+                },
+                {
+                    case: 'error',
+                    then: {
+                        block: [
+                            { text: 'Error: ', style: { color: 'red', bold: true } },
+                            { text: app.state[stateField].error }
+                        ]
+                    }
+                },
+                {
+                    case: 'loading',
+                    then: [
+                        { text: 'Creating...', style: { italic: true } }
+                    ]
+                }
+            ],
+            default: {
+                block: [{ text: 'ready', style: { italic: true } }]
+            }
+        }
+    }
+
+    let elements = [];
+    elements.push(formElement);
+    elements.push(...renderSwitch(app, stateSwitch, ctx));
     return elements;
 }
 
@@ -2477,18 +2538,8 @@ function createFormElement(app, element) {
         throw new Error('createFormElement - bind.state must have exactly one field');
     }
     const formStateField = stateKeys[0];
-    let formData;
-    let formState;
-
-    // load or create form state //
-    if (app.clientState.forms.hasOwnProperty(formStateField)) {
-        formState = app.clientState.forms[formStateField];
-        formData = formState.data;
-    } else {
-        formData = {};
-        formState = {data: formData, submitting: false};
-        app.clientState.forms[formStateField] = formState;
-    }
+    const currentState = app.state[formStateField];
+    const formData = currentState.data || {};
     // console.log('createFormElement - formState:', formState);
     
     // create a row for each field //
@@ -2744,27 +2795,12 @@ function createFormElement(app, element) {
     submitCell.className = 'form-submit-cell';
     
     const submitButton = document.createElement('button');
-    submitButton.disabled = formState.submitting;
+    submitButton.disabled = currentState.state === 'submitting';
     submitButton.textContent = 'Submit';
     submitButton.addEventListener('click', () => {
-
-        formState.submitting = true;
-
-        // execute element.form.on_submit if defined //
-
-        if (element.form.on_submit) {
-            // console.log('Executing form on_submit action');
-            lingoExecute(app, element.form.on_submit, null);
-            renderLingoApp(app, document.getElementById('lingo-app'));
-        }
-
-        // execute element.form.action //
-
-        const ctx = {self: {form_data: formData}};
-        const result = lingoExecute(app, element.form.action, ctx);
-        // console.log('Form submission result:', result);
+        const result = lingoExecute(app, element.form.action, {});
+        console.log('Form submission result:', result);
         renderLingoApp(app, document.getElementById('lingo-app'));
-        formState.submitting = false;
     });
 
     // final assembly //

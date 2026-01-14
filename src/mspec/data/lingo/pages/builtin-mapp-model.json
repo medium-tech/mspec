@@ -75,12 +75,14 @@
             "type": "str",
             "default": "model-list"
         },
-        "create_model_status": {
-            "type": "list",
-            "element_type": "struct",
-            "default": [
-                {"text": "ready."}
-            ]
+        "create_model_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "item_id": "",
+                "data": {}
+            }
         },
         "model_list": {
             "type": "struct",
@@ -153,13 +155,11 @@
         }},
 
         {"heading": ":: create a new model", "level": 2},
-        {"text": "status: ", "style": {"bold": true}},
-        {"state": {"create_model_status": {}}},
-        {"break": 1},
         {"model": {
-            "bind": {"state": {"model_to_create": {}}},
+            "bind": {"state": {"create_model_state": {}}},
             "display": "create",
             "http": {"state": {"model_item_api_url": {}}},
+            "instance_url": {"state": {"model_item_url": {}}},
             "definition": {"params": {"model_definition": {}}}
         }}
 

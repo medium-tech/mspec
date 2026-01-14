@@ -67,12 +67,12 @@ The main prototype are the python + browser 1 browser template apps.
     * 🟢 drop while
     * 🟢 take while
 * 🟡 models
-    * 🔴 read
+    * 🟢 read
     * 🟢 list
     * 🟡 ui forms
         * 🟢 create
         * 🔴 update
-        * 🔴 delete
+        * 🟢 delete
 * 🟡 refactor internal api
     * 🟢 rename mspec/markup.py to lingo.py
     * 🔴 rename `render_output` to `lingo_render`
@@ -89,6 +89,9 @@ The main prototype are the python + browser 1 browser template apps.
 * 🔴 language changes
     * 🔴 remove `call` function
     * 🔴 remove `lingo` function
+    * 🔴 update `model` functions
+        * 🔴 remove urls from args, instead supply `module_name` and `model_name`, then infer urls from that
+        * 🔴 remove definition from args? lingo app would need access to backend spec then get def from module/model name
  
 ### template app phase 1
 * 🟡 python full featured template app
