@@ -523,7 +523,7 @@ function renderOutput(app, ctx = null) {
             const rendered = lingoExecute(app, element, ctx);
             // console.log('Rendered output element:', typeof rendered, rendered);
             if (typeof rendered === 'object' && rendered !== null && !Array.isArray(rendered)) {
-                app.buffer.push(rendered);
+                app.buffer.push(rendered)
             } else if (Array.isArray(rendered)) {
                 for (const item of rendered) {
                     if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
@@ -709,7 +709,7 @@ function renderParams(app, expression, ctx = null) {
  * Render state setter - equivalent to Python render_set()
  */
 function renderSet(app, expression, ctx = null) {
-    // console.log('renderSet()', app, expression);
+    console.log('renderSet()', app, expression);
     try {
 
         // init
@@ -1363,7 +1363,7 @@ function handleSequenceOp(app, expression, ctx = null) {
         
         async function sendReadRequest(url) {
 
-            console.log('handleSequenceOp - crud.read - url:', url);
+            // console.log('handleSequenceOp - crud.read - url:', url);
 
             try {
                 const response = await fetch(url, {
@@ -1375,7 +1375,7 @@ function handleSequenceOp(app, expression, ctx = null) {
 
                 if (response.ok) {
                     const responseData = await response.json();
-                    console.log('handleSequenceOp - crud.read - responseData:', responseData);
+                    // console.log('handleSequenceOp - crud.read - responseData:', responseData);
 
                     return {
                         state: 'loaded',
@@ -1409,6 +1409,19 @@ function handleSequenceOp(app, expression, ctx = null) {
 
         const url = unwrapValue(lingoExecute(app, args.http, ctx));
 
+        // update state to loading if bind is provided
+        let stateField = null;
+        if (expression.args.bind && expression.args.bind.state) {
+            const stateKeys = Object.keys(expression.args.bind.state);
+            if (stateKeys.length === 1) {
+                stateField = stateKeys[0];
+                if(!(app.state.hasOwnProperty(stateField))){
+                    throw new Error(`handleSequenceOp - crud.delete - state field not found: ${stateField}`);
+                }
+                app.state[stateField].state = 'loading';
+            }
+        }
+
         //
         // send request
         //
@@ -1423,25 +1436,23 @@ function handleSequenceOp(app, expression, ctx = null) {
                 });
 
                 if (response.ok) {
-
-                    return [
-                        {text: 'Item deleted successfully.', style: {color: 'green', bold: true}}
-                    ];
+                    console.log('handleSequenceOp - crud.delete - item deleted successfully');
+                    return {state: 'deleted'};
                     
                 }else{
                     console.error('handleSequenceOp - crud.delete - HTTP error:', response.status, response.statusText); 
-                    return [
-                        {text: 'Error: ', style: {color: 'red', bold: true}},
-                        {text: `${response.status} ${response.statusText}`}
-                    ]
+                    return {
+                        state: 'error', 
+                        error: `Response error: ${response.status} ${response.statusText}`
+                    };
                 }
 
             } catch (error) {
                 console.error('handleSequenceOp - crud.delete - network error:', error);
-                return [
-                    {text: 'Network error: ', style: {color: 'red', bold: true}},
-                    {text: `${error.message}`}
-                ];
+                return {
+                    state: 'error',
+                    error: `Network error: ${error.message}`
+                }
             }
         }
 
@@ -1698,58 +1709,70 @@ function _renderModelDelete(app, element, ctx = null) {
 
     let state = app.state[stateField];
 
+    console.log('renderModelDelete - state:', state);
+
     if (!state.hasOwnProperty('state')) state.state = 'initial';
     if (!state.hasOwnProperty('error')) state.error = '';
 
-    let elements = [];
-    elements.push({
-        "branch": [
-            {
-                "if": {
-                    "call": "eq",
-                    "args": {
-                        "a": {"state": {[stateField]: {"state": {}}}},
-                        "b": "confirming"
+    const switchElement = {
+        switch: {
+            expression: { type: 'str', value: state.state },
+            cases: [
+                {
+                    case: 'confirming',
+                    then: {
+                        block: [
+                            { text: ' Are you sure you want to delete this model instance? This action cannot be undone.' },
+                            { break: 1 },
+                            {
+                                button: {
+                                    set: {state: {[stateField]: {}}},
+                                    to: {
+                                        call: 'crud.delete',
+                                        args: {
+                                            http: { state: { base_url: {} } },
+                                            model_id: { params: { model_id: {} } }
+                                        }
+                                    }
+                                },
+                                text: 'confirm delete'
+                            },
+                            { text: ' ' },
+                            {
+                                button: {
+                                    set: {state: {[stateField]: {state: {}}}},
+                                    to: 'initial'
+                                },
+                                text: 'cancel'
+                            }
+                        ]
                     }
                 },
-                "then": {
-                    "block": [
-                        {"text": " Are you sure you want to delete this model instance? This action cannot be undone."},  
-                        {"break": 1},
-                        {
-                            "button": {
-                                "call": "crud.delete",
-                                "args": {
-                                    "http": {"state": {"base_url": {}}},
-                                    "model_id": {"params": {"model_id": {}}}
-                                }
-                            },
-                            "text": "confirm delete"
-                        },
-                        {"text": " "},
-                        {
-                            "button": {
-                                "set": {"state": {[stateField]: {"state": {}}}}, 
-                                "to": "initial"
-                            },
-                            "text": "cancel"
-                        }
+                {
+                    case: 'deleted',
+                    then: [
+                        {text: 'item deleted successfully.', style: {color: 'green', bold: true}},
+                    ]
+                },
+                {
+                    case: 'error',
+                    then: [
+                        {text: 'error deleting item: ', style: {color: 'red', bold: true}},
+                        {text: state.error}
                     ]
                 }
-            },
-            {
-                "else": {
-                    "button": {
-                        "set": {"state": {[stateField]: {"state": {}}}}, 
-                        "to": "confirming"
-                    },
-                    "text": "delete"
-                }
+            ],
+            default: {
+                button: {
+                    set: { state: { [stateField]: { state: {} } } },
+                    to: 'confirming'
+                },
+                text: 'delete'
             }
-        ]
-    });
+        }
+    }
 
-    return elements;
+    return renderSwitch(app, switchElement, ctx);
 }
 
 function _renderModelList(app, element, ctx = null) {
@@ -1974,7 +1997,7 @@ function renderBreadcrumbs(app, element, ctx = null) {
         if (i > 0) url += '/';
     }
 
-    console.log('renderBreadcrumbs()', elements);
+    // console.log('renderBreadcrumbs()', elements);
 
     return elements;
 

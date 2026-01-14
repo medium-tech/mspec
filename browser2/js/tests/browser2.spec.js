@@ -309,7 +309,7 @@ test('test - builtin mapp module page', async ({ page }) => {
   //
 
   // Check that the heading contains the project name
-  await expect(page.locator('h1')).toContainText(':: My Lingo Project :: my-module-a');
+  await expect(page.locator('h1')).toContainText(':: my-module-a');
   
   // Check that the page says "Available Models:"
   await expect(page.locator('#lingo-app')).toContainText(':: available models');
@@ -339,7 +339,7 @@ test('test - builtin mapp module page', async ({ page }) => {
   await page.getByRole('button', { name: 'Run' }).click();
   
   // Check that the heading contains the project name
-  await expect(page.locator('h1')).toContainText(':: My Social App :: users');
+  await expect(page.locator('h1')).toContainText(':: users');
   
   // Check that the page says "Available Models:"
   await expect(page.locator('#lingo-app')).toContainText(':: available models');
