@@ -412,14 +412,18 @@ def render_params(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> An
         raise ValueError(f'params - undefined field: {field_name}')
     
     # validate value #
-    
+
     try:
-        value = app.params[field_name]
-    except KeyError:
+        if isinstance(app.params, dict):
+            value = app.params[field_name]
+        else:
+            value = getattr(app.params, field_name)
+    except (KeyError, AttributeError):
         try:
             value = param_def['default']
         except KeyError:
             raise ValueError(f'params - missing value for field: {field_name}')
+
         
     if value.__class__.__name__ != param_def['type']:
         raise ValueError(f'params - value type mismatch: {param_def["type"]} != {value.__class__.__name__}')

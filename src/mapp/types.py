@@ -463,8 +463,6 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
     errors = {}
     total_errors = 0
 
-    # breakpoint()
-
     for field in data_spec.values():
 
         # field definition #
@@ -494,7 +492,6 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
             python_type = _get_python_type_for_field(field_type)
 
             if not isinstance(value, python_type):
-                breakpoint()
                 errors[field_name] = f'Field "{field_name}" is not of type "{field_type}".'
                 total_errors += 1
 

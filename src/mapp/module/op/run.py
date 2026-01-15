@@ -85,9 +85,11 @@ def op_create_callable(param_class:type, output_class:type) -> object:
 		lingo_func = param_class._op_spec['func']
 
 		def op_callable(ctx: MappContext, params:object) -> object:
+			spec = {'params': param_class._op_spec['params']}
+			validate_op_params(param_class, params)
 			lingo_app = LingoApp(
-				dict(),
-				validate_op_params(param_class, params),
+				spec,
+				params,
 				dict(),
 				list()
 			)

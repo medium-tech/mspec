@@ -33,8 +33,7 @@ modules:
           args:
             items:
               - 'Hello, '
-              # - params: 
-              #   name: {}
+              - params: {name: {}}
               - '!'
         params:
           name:
