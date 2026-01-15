@@ -208,6 +208,11 @@ class TestMTemplateApp(unittest.TestCase):
         crud_env['MAPP_CLIENT_HOST'] = f'http://localhost:{crud_port}'
         crud_env['MAPP_DB_URL'] = str(cls.crud_db_file.resolve())
 
+        try:
+            del crud_env['DEBUG_DELAY']
+        except KeyError:
+            pass
+
         with open(cls.crud_envfile, 'w') as f:
             f.write(env_to_string(crud_env))
 
@@ -222,6 +227,11 @@ class TestMTemplateApp(unittest.TestCase):
         pagination_env['MAPP_SERVER_PORT'] = str(pagination_port)
         pagination_env['MAPP_CLIENT_HOST'] = f'http://localhost:{pagination_port}'
         pagination_env['MAPP_DB_URL'] = str(cls.pagination_db_file.resolve())
+
+        try:
+            del pagination_env['DEBUG_DELAY']
+        except KeyError:
+            pass
 
         with open(cls.pagination_envfile, 'w') as f:
             f.write(env_to_string(pagination_env))
@@ -1006,7 +1016,6 @@ class TestMTemplateApp(unittest.TestCase):
                     else:
                         self.assertEqual(created_status, 200, f'Create {model_name} did not return status 200 OK, {n=} response: {created_model}')
                         created_model_id = created_model.pop('id')  # remove id for comparison
-                        print(f'created_model_id: {created_model_id}')
                         if require_login:
                             example_to_create['user_id'] = alice_user['id']
 

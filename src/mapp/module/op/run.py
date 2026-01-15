@@ -38,6 +38,14 @@ def op_create_callable(param_class:type, output_class:type) -> object:
 
 	# create op logic callable #
 
+	python_call = 'python' in param_class._op_spec
+	lingo_call = 'func' in param_class._op_spec
+
+	if python_call and lingo_call:
+		raise MappError('INVALID_OP_SPEC', f'Op {op_snake_case} cannot have both python.call and func defined')
+	elif not python_call and not lingo_call:
+		raise MappError('INVALID_OP_SPEC', f'Op {op_snake_case} must have either python.call or func defined')
+
 	try:
 		py_definition = param_class._op_spec['python']
 		py_call = py_definition['call']

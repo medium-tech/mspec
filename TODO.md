@@ -69,10 +69,20 @@ The main prototype are the python + browser 1 browser template apps.
 * 🟡 models
     * 🟢 read
     * 🟢 list
-    * 🟡 ui forms
+    * 🟢 ui forms
         * 🟢 create
-        * 🔴 update
+        * 🟢 update
         * 🟢 delete
+    * 🔴 tests
+* 🔴 ops
+    * 🔴 auth
+        * 🔴 form + call backend and show resonse
+        * 🔴 login
+        * 🔴 logout
+        * 🔴 user view
+        * 🔴 user edit
+        * 🔴 attach session to all op/model calls
+    * 🔴 tests
 * 🟡 refactor internal api
     * 🟢 rename mspec/markup.py to lingo.py
     * 🔴 rename `render_output` to `lingo_render`

@@ -74,8 +74,8 @@ if [ $MARKUP_TEST -eq 1 ]; then
   TESTS="tests.test_markup"
 fi
 
-# echo "Running tests with settings - QUICK_TEST: $QUICK_TEST, TEMPLATE_TEST: $TEMPLATE_TEST, DEV_TEST: $DEV_TEST, CLI_TEST: $CLI_TEST, MARKUP_TEST: $MARKUP_TEST"
-# echo "Running tests in: $TESTS"
+echo "Running tests with settings - QUICK_TEST: $QUICK_TEST, TEMPLATE_TEST: $TEMPLATE_TEST, DEV_TEST: $DEV_TEST, CLI_TEST: $CLI_TEST, MARKUP_TEST: $MARKUP_TEST"
+echo "Running tests in: $TESTS"
 
 # Test runner for mspec app generator tests
 QUICK_TEST=$QUICK_TEST DEV_TEST=$DEV_TEST TEMPLATE_TEST=$TEMPLATE_TEST python -m unittest "$TESTS"
