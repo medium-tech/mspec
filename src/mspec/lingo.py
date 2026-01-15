@@ -92,6 +92,15 @@ def lingo_int(number:Any=None, string:str=None, base:int=10) -> int:
     else:
         raise ValueError('lingo int - must provide either number or string argument')
 
+def unwrap_primitive(value:Any) -> Any:
+    if isinstance(value, dict) and 'type' in value:
+        try:
+            return value['value']
+        except KeyError:
+            raise ValueError('Invalid value element - missing value key')
+    else:
+        return value
+
 lingo_function_lookup = {
 
     # comparison #

@@ -1,7 +1,8 @@
 from mapp import auth
 from mapp.context import MappContext
 from mapp.errors import MappError
-from mapp.types import new_op_params, validate_op_params, validate_op_output
+from mapp.types import validate_op_params, validate_op_output, OpResult
+from mspec.lingo import LingoApp, lingo_execute, unwrap_primitive
 
 __all__ = [
 	'op_create_callable'
@@ -36,37 +37,64 @@ def op_create_callable(param_class:type, output_class:type) -> object:
 
 	op_snake_case = param_class._op_spec['name']['snake_case']
 
-	# create op logic callable #
+	#
+	# init
+	#
 
-	python_call = 'python' in param_class._op_spec
-	lingo_call = 'func' in param_class._op_spec
+	deprecated_python_call = 'python' in param_class._op_spec
+	lingo_func = 'func' in param_class._op_spec
 
-	if python_call and lingo_call:
+	if deprecated_python_call and lingo_func:
 		raise MappError('INVALID_OP_SPEC', f'Op {op_snake_case} cannot have both python.call and func defined')
-	elif not python_call and not lingo_call:
-		raise MappError('INVALID_OP_SPEC', f'Op {op_snake_case} must have either python.call or func defined')
-
-	try:
-		py_definition = param_class._op_spec['python']
-		py_call = py_definition['call']
-	except KeyError:
-		raise MappError('INVALID_OP_SPEC', f'Missing python.call for op {op_snake_case}')
 	
-	match py_call:
-		case 'auth.create_user':
-			op_callable = auth.create_user
-		case 'auth.login_user':
-			op_callable = auth.login_user
-		case 'auth.current_user':
-			op_callable = auth.current_user
-		case 'auth.logout_user':
-			op_callable = auth.logout_user
-		case 'auth.delete_user':
-			op_callable = auth.delete_user
-		case 'auth.drop_sessions':
-			op_callable = auth.drop_sessions
-		case _:
-			raise MappError('UNKNOWN_OP_CALL', f'Unknown op python.call: {py_call}')
+	elif not deprecated_python_call and not lingo_func:
+		raise MappError('INVALID_OP_SPEC', f'Op {op_snake_case} must have either python.call or func defined')
+	
+	#
+	# legacy python call
+	#
+
+	if deprecated_python_call:
+		try:
+			py_definition = param_class._op_spec['python']
+			py_call = py_definition['call']
+		except KeyError:
+			raise MappError('INVALID_OP_SPEC', f'Missing python.call for op {op_snake_case}')
+		
+		match py_call:
+			case 'auth.create_user':
+				op_callable = auth.create_user
+			case 'auth.login_user':
+				op_callable = auth.login_user
+			case 'auth.current_user':
+				op_callable = auth.current_user
+			case 'auth.logout_user':
+				op_callable = auth.logout_user
+			case 'auth.delete_user':
+				op_callable = auth.delete_user
+			case 'auth.drop_sessions':
+				op_callable = auth.drop_sessions
+			case _:
+				raise MappError('UNKNOWN_OP_CALL', f'Unknown op python.call: {py_call}')
+		
+	#
+	# user defined lingo function
+	#
+
+	else:
+		lingo_func = param_class._op_spec['func']
+
+		def op_callable(ctx: MappContext, params:object) -> object:
+			lingo_app = LingoApp(
+				dict(),
+				validate_op_params(param_class, params),
+				dict(),
+				list()
+			)
+
+			op_output = lingo_execute(lingo_app, lingo_func, ctx)
+
+			return validate_op_output(output_class, OpResult(unwrap_primitive(op_output)))
 		
 	# create application wrapper #
 

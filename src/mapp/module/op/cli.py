@@ -31,8 +31,11 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
             param_fields_str += f"\n            :: enum choices:"
             for choice in p['enum']:
                 param_fields_str += f"\n              - {choice}"
+    try:
+        outputs = [op['result']]
+    except KeyError:
+        outputs = op['output'].values()
 
-    outputs = op['output'].values()
     output_fields_str = ''
     for o in outputs:
         output_fields_str += f"\n        :: {o['name']['snake_case']} - {o['type']}"
@@ -145,7 +148,12 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
             if args.show:
                 output = raw_output
             else:
-                output = redact_secure_fields(output_class._op_spec['output'], raw_output)
+                try:
+                    _out_spec = output_class._op_spec['output']
+                except KeyError:
+                    _out_spec = {'result': output_class._op_spec['result']}
+
+                output = redact_secure_fields(_out_spec, raw_output)
 
             print(to_json(output, sort_keys=True, indent=4))
 

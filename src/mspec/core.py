@@ -319,24 +319,24 @@ def init_generator_spec(spec:dict) -> dict:
 
         for op in module.get('ops', {}).values():
 
+            # name #
+
             for key, value in generate_names(op['name']['lower_case']).items():
                 if key not in op['name']:
                     op['name'][key] = value
 
                 module_op_names.append(op['name'][key])
 
+            op_snake_case = op['name']['snake_case']
             op_path = f'{module_snake}.{op["name"]["snake_case"]}'
+
+            # params #
 
             try:
                 op_params = op['params']
             except KeyError:
                 raise ValueError(f'No params defined in op {op["name"]["lower_case"]} in module {module_snake}')
             
-            try:
-                op_output = op['output']
-            except KeyError:
-                raise ValueError(f'No output defined in op {op["name"]["lower_case"]} in module {module_snake}')
-
             for param_name, param in op_params.items():
                 for key, value in generate_names(param['name']['lower_case']).items():
                     if key not in param['name']:
@@ -355,6 +355,30 @@ def init_generator_spec(spec:dict) -> dict:
                 except KeyError:
                     param['secure_input'] = False
             
+            # output #
+
+            deprecated_python_call = 'python' in op
+            lingo_func = 'func' in op
+
+            if deprecated_python_call and lingo_func:
+                raise ValueError('INVALID_OP_SPEC', f'Op {op_snake_case} cannot have both python.call and func defined')
+            
+            elif not deprecated_python_call and not lingo_func:
+                raise ValueError('INVALID_OP_SPEC', f'Op {op_snake_case} must have either python.call or func defined')
+
+            if deprecated_python_call:
+                try:
+                    op_output = op['output']
+                except KeyError:
+                    raise ValueError(f'No output defined in op {op["name"]["lower_case"]} in module {module_snake}')
+                
+            else:
+                op['result']['name'] = {'lower_case': 'result'}
+                try:
+                    op_output = {'result': op['result']}
+                except KeyError:
+                    raise ValueError(f'No result defined in op {op["name"]["lower_case"]} in module {module_snake}')
+                
             for out_name, out_field in op_output.items():
                 for key, value in generate_names(out_field['name']['lower_case']).items():
                     if key not in out_field['name']:

@@ -228,7 +228,12 @@ def new_op_classes(op_spec:dict, module_spec:Optional[dict]=None) -> tuple[type,
     output_fields = []
 
     try:
-        output_fields += [field['name']['snake_case'] for field in op_spec['output'].values()]
+        outputs = [op_spec['result']]
+    except KeyError:
+        outputs = op_spec['output'].values()
+
+    try:
+        output_fields += [field['name']['snake_case'] for field in outputs]
     except KeyError as e:
         raise ValueError(f'Missing required model specification key: {e}')
     
@@ -275,6 +280,9 @@ def new_op_output(op_class:type, data:dict):
         return op_class(**data)
     except TypeError as e:
         raise ValueError(f'Error creating op output instance: {e}')
+
+class OpResult(NamedTuple):
+    result: Any
 
 # conversion #
 
@@ -455,6 +463,8 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
     errors = {}
     total_errors = 0
 
+    # breakpoint()
+
     for field in data_spec.values():
 
         # field definition #
@@ -469,7 +479,7 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
             value = getattr(obj_instance, field_name)
         except AttributeError:
             if required:
-                errors[field_name] = f'Field "{field_name}" is missing from the model instance.'
+                errors[field_name] = f"Field '{field_name}' is missing from the model instance."
                 total_errors += 1
             continue
 
@@ -484,6 +494,7 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
             python_type = _get_python_type_for_field(field_type)
 
             if not isinstance(value, python_type):
+                breakpoint()
                 errors[field_name] = f'Field "{field_name}" is not of type "{field_type}".'
                 total_errors += 1
 
@@ -533,8 +544,13 @@ def validate_op_params(op_class:type, op_params_instance:object) -> object:
     )
 
 def validate_op_output(op_class:type, op_output_instance:object) -> object:
+    try:
+        definition = {'result': op_class._op_spec['result']}
+    except KeyError:
+        definition = op_class._op_spec['output']
+
     return _validate_obj(
-        op_class._op_spec['output'], 
+        definition, 
         op_output_instance,
         f'Op {op_class._op_spec["name"]["pascal_case"]} returned an invalid output'
     )

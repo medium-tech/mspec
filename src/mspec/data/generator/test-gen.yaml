@@ -23,31 +23,29 @@ modules:
     name:
       lower_case: 'generated module a'
 
-    # ops:
-    #   say_hello:
-    #     name:
-    #       lower_case: 'say hello'
-    #     description: 'Return a greeting message'
-    #     func:
-    #       call: concat
-    #       args:
-    #         items:
-    #           - 'Hello, '
-    #           - params: 
-    #             name: {}
-    #           - '!'
-    #     params:
-    #       name:
-    #         name:
-    #           lower_case: 'name'
-    #         type: str
-    #         description: 'Name of the person to greet'
-    #     output:
-    #       message:
-    #         name:
-    #           lower_case: 'message'
-    #         type: str
-    #         description: 'Greeting message'
+    ops:
+      say_hello:
+        name:
+          lower_case: 'say hello'
+        description: 'Return a greeting message'
+        func:
+          call: concat
+          args:
+            items:
+              - 'Hello, '
+              # - params: 
+              #   name: {}
+              - '!'
+        params:
+          name:
+            name:
+              lower_case: 'name'
+            type: str
+            description: 'Name of the person to greet'
+        
+        result:
+          type: str
+          description: 'Greeting message'
 
     models:
       singular_model:
