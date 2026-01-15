@@ -84,12 +84,14 @@ The main prototype are the python + browser 1 browser template apps.
     * 🔴 scheduled (cron style)
 * 🔴 add hook functions
     * 🔴 startup
-    * 🔴 after_first_render
     * 🔴 shutdown
 * 🔴 language changes
     * 🔴 remove `call` function
     * 🔴 remove `lingo` function
     * 🔴 update `model` functions
+        * 🔴 merge model.display `delete` mode into `read` mode, rename `read` to `item`
+            * 🔴 add options to init model in delete/read/edit mode
+            * 🔴 add options to limit model to only view delete/read and/or edit modes
         * 🔴 remove urls from args, instead supply `module_name` and `model_name`, then infer urls from that
         * 🔴 remove definition from args? lingo app would need access to backend spec then get def from module/model name
  

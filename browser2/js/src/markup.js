@@ -1282,6 +1282,7 @@ function handleSequenceOp(app, expression, ctx = null) {
         }
         
         return {type: getTypeName(result), value: result};
+
     } else if (funcName === 'crud.create') {
 
         //
@@ -1336,6 +1337,61 @@ function handleSequenceOp(app, expression, ctx = null) {
         }
         
         return sendCreateRequest(url, data)
+
+    }else if(funcName === 'crud.update'){
+
+        //
+        // init params
+        //
+
+        const url = unwrapValue(lingoExecute(app, args.http, ctx));
+        const data = lingoExecute(app, args.data, ctx);
+
+        // update state to loading if bind is provided
+        let stateField = null;
+        if (expression.args.bind && expression.args.bind.state) {
+            const stateKeys = Object.keys(expression.args.bind.state);
+            if (stateKeys.length === 1) {
+                stateField = stateKeys[0];
+                if(!(app.state.hasOwnProperty(stateField))){
+                    throw new Error(`handleSequenceOp - crud.update - state field not found: ${stateField}`);
+                }
+                app.state[stateField].state = 'loading';
+            }
+        }
+
+        //
+        // send request
+        //
+
+        async function sendUpdateRequest(url, data) {
+            try {
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+
+                    const responseData = await response.json();
+                    // console.log('handleSequenceOp - crud.update - responseData:', responseData);
+                    return {state: 'edited', data: responseData};
+                    
+                }else{
+                    console.error('handleSequenceOp - crud.update - HTTP error:', response.status, response.statusText); 
+                    return {state: 'error', error: `Response error: ${response.status} ${response.statusText}`};
+                }
+
+            } catch (error) {
+                console.error('handleSequenceOp - crud.update - network error:', error);
+                return {state: 'error', error: `Network error: ${error.message}`};
+            }
+        }
+
+        return sendUpdateRequest(url, data);
     
     }else if(funcName === 'crud.read'){
 
@@ -1380,7 +1436,7 @@ function handleSequenceOp(app, expression, ctx = null) {
 
                     return {
                         state: 'loaded',
-                        item: responseData
+                        data: responseData
                     };
                     
                 }else{
@@ -1601,13 +1657,17 @@ function _renderModelRead(app, element, ctx = null) {
     let state = app.state[stateField];
 
     /* assume state is an object and ensure defaults are set */
-    if (!state.hasOwnProperty('item')) state.item = null;
+    if (!state.hasOwnProperty('data')) state.data = null;
     if (!state.hasOwnProperty('state')) state.state = 'pending';
     if (!state.hasOwnProperty('error')) state.error = '';
 
     //
-    // display
+    // buttons
     //
+
+    let elements = [];
+
+    // load //
 
     const loadScript = {
         set: {state: {[stateField]: {}}},
@@ -1621,12 +1681,39 @@ function _renderModelRead(app, element, ctx = null) {
         }
     };
 
-    let elements = [];
+    elements.push({
+        button: loadScript,
+        text: 'load',
+        disabled: state.state === 'editing' || state.state === 'loading'
+    });
+
+    // edit //
+
+    const editScript = {
+        set: {state: {[stateField]: {state: {}}}},
+        to: 'editing'
+    };
 
     elements.push({
-        text: 'load',
-        button: loadScript
+        button: editScript,
+        text: 'edit',
+        disabled: state.state !== 'loaded' && state.state !== 'edited'
     });
+
+    // cancel //
+
+    const cancelScript = {
+        set: {state: {[stateField]: {state: {}}}},
+        to: 'loaded'
+    };
+
+    elements.push({
+        button: cancelScript,
+        text: 'cancel',
+        disabled: state.state !== 'editing'
+    });
+
+    // status //
 
     elements.push(...[
         {break: 1},
@@ -1634,11 +1721,36 @@ function _renderModelRead(app, element, ctx = null) {
         {text: state.state},
     ]);
 
-    if (state.state == 'pending') {
-        // create placeholder data while loading
+    //
+    // view item
+    //
+
+    if (state.state === 'editing') {
+        // view editable form
+        console.log('renderModelRead - editing mode - definition:', definition);
+        elements.push({
+            form: {
+                fields: definition.fields,
+                bind: element.model.bind,
+                action: {
+                    set: {state: {[stateField]: {}}},
+                    to: {
+                        call: 'crud.update',
+                        args: {
+                            http: element.model.http,
+                            bind: element.model.bind,
+                            data: app.state[stateField].data
+                        }
+                    }
+                }
+            }
+        });
+
+    }else if(state.state === 'pending'){
+        console.log('renderModelRead - pending load - definition:', definition);
+        // view loading placeholder
         const placeholder = {};
 
-        // iterate over model definition fields to create placeholders
         for (const field of Object.keys(definition.fields)) {
             placeholder[field] = '...';
         }
@@ -1647,15 +1759,19 @@ function _renderModelRead(app, element, ctx = null) {
             type: 'struct',
             value: placeholder,
         });
+        
     }else{
+        console.log('renderModelRead - loaded mode - definition:', definition);
+        // view loaded data as struct key/value table
         elements.push({
             type: 'struct',
-            value: state.item,
+            value: state.data,
         });
     }
 
+    // trigger initial load //
+
     if (state.state === 'pending') {
-        // trigger initial load
         lingoExecute(app, loadScript);
     }
 
@@ -1873,16 +1989,13 @@ function _renderModelList(app, element, ctx = null) {
         headers.push({text: field.name.lower_case, field: field.name.snake_case});
     }
 
-    
     // iterate over app.state[stateField].items and convert id to link
 
     let itemsForTable = [];
     
     if(element.model.hasOwnProperty('instance_url')) {
-        console.log('* rendering item WITH instance_url links');
         const instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
-        console.log('instanceUrl:', element.model.instance_url, instanceUrl);
-        console.log('app.state[stateField].items:', app.state[stateField].items);
+
         for (let item of app.state[stateField].items) {
 
             let copyOfItem = JSON.parse(JSON.stringify(item));
@@ -1893,7 +2006,6 @@ function _renderModelList(app, element, ctx = null) {
             itemsForTable.push(copyOfItem);
         }
     }else{
-        console.log('* rendering item WITHOUT instance_url links');
         itemsForTable = app.state[stateField].items;
     }
 
@@ -2522,7 +2634,7 @@ function createFormElement(app, element) {
     }
     const currentState = app.state[formStateField];
     const formData = currentState.data || {};
-    // console.log('createFormElement - formState:', formState);
+    console.log('createFormElement - formData before:', formData);
     
     // create a row for each field //
 

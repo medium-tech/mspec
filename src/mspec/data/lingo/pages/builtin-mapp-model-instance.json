@@ -106,7 +106,7 @@
             "default": {
                 "state": "pending",
                 "error": "",
-                "item": {}
+                "data": {}
             }
         },
         "header": {
