@@ -30,16 +30,26 @@
     * 🟢 add tests for js browser2
     * 🟢 add new functions to javascript lingo interpreter
     * 🔴 built in lingo ui (lingo pages served in mapp by generating html templates with lingo pages)
-        * 🔴 lingo index page
-            * 🔴 lingo module page
-                * 🔴 lingo model page (create lingo widgets/functions for each of the below)
-                    * 🔴 create
-                    * 🔴 read
-                    * 🔴 update
-                    * 🔴 delete
-                    * 🔴 list
-                * 🔴 lingo op page (this will run the op on the backend server and return the result)
-                    * 🔴 run
+        * 🟡 lingo index page
+            * 🟡 lingo module page
+                * 🟡 lingo model page (create lingo widgets/functions for each of the below)
+                    * 🟢 create
+                    * 🟢 read
+                    * 🟢 update
+                    * 🟢 delete
+                    * 🟢 list
+                    * 🔴 tests
+                * 🟡 lingo op page (this will run the op on the backend server and return the result)
+                    * 🟡 run
+                    * 🔴 tests
+            * 🔴 auth
+                * 🔴 form + call backend and show resonse
+                * 🔴 login
+                * 🔴 logout
+                * 🔴 user view
+                * 🔴 user edit
+                * 🔴 attach session to all op/model calls
+                * 🔴 tests
         * 🔴 serve additional lingo pages
             * 🔴 update mspec to support defining other pages and their lingo (for apps running in users local browser)
 * 🔴 file upload
@@ -66,23 +76,6 @@ The main prototype are the python + browser 1 browser template apps.
     * 🟢 count
     * 🟢 drop while
     * 🟢 take while
-* 🟡 models
-    * 🟢 read
-    * 🟢 list
-    * 🟢 ui forms
-        * 🟢 create
-        * 🟢 update
-        * 🟢 delete
-    * 🔴 tests
-* 🔴 ops
-    * 🔴 auth
-        * 🔴 form + call backend and show resonse
-        * 🔴 login
-        * 🔴 logout
-        * 🔴 user view
-        * 🔴 user edit
-        * 🔴 attach session to all op/model calls
-    * 🔴 tests
 * 🟡 refactor internal api
     * 🟢 rename mspec/markup.py to lingo.py
     * 🔴 rename `render_output` to `lingo_render`

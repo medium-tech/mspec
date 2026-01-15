@@ -1383,6 +1383,17 @@ class TestMTemplateApp(unittest.TestCase):
 
                     self.assertEqual(page_count, expected_pages, f'Pagination for {model_name} returned {page_count} pages, expected {expected_pages}')
       
+    # op tests #
+
+    def test_cli_op_run(self):
+        raise NotImplementedError()
+    
+    def test_cli_op_http(self):
+        raise NotImplementedError()
+    
+    def test_server_op(self):
+        raise NotImplementedError()
+
     # validation tests #
 
     def _test_cli_validation_error(self, module_name_kebab:str, model:dict, command_type:str, user_index:int):
