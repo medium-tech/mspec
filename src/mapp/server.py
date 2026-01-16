@@ -368,6 +368,82 @@ def generate_model_html(spec: dict, module_key: str, model_key: str) -> str:
     
     return html
 
+def generate_op_html(spec: dict, module_key: str, op_key: str) -> str:
+    """
+    Generate the op page with embedded Lingo JSON spec.
+    """
+
+    # init spec #
+    
+    lingo_op_page = load_browser2_spec('builtin-mapp-op.json')
+    
+    project_name = spec['project']['name']['lower_case']
+    module = spec['modules'][module_key]
+    module_name = module['name']['kebab_case']
+    op = module['ops'][op_key]
+    op_name = op['name']['kebab_case']
+    
+    lingo_params = {
+        'project_name': project_name,
+        'module_name': module_name,
+        'op_name': op_name,
+        'op_definition': op
+    }
+    
+    # generate html and embed spec #
+
+    lingo_spec_json = json.dumps(lingo_op_page, indent=4)
+    lingo_params_json = json.dumps(lingo_params, indent=4)
+    
+
+    html = f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{project_name} - {module_name} - {op_name}</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div id="lingo-app" class="lingo-container">
+        <p>Loading...</p>
+    </div>
+
+    <!-- Embedded Lingo spec -->
+    <script type="application/json" id="lingoSpec">
+{lingo_spec_json}
+    </script>
+    
+    <!-- Embedded Lingo params -->
+    <script type="application/json" id="lingoParams">
+{lingo_params_json}
+    </script>
+    
+    <script src="/markup.js"></script>
+    
+    <script>
+        // Retrieve and parse the embedded spec and params
+        const specText = document.getElementById('lingoSpec').textContent;
+        const paramsText = document.getElementById('lingoParams').textContent;
+        const lingoSpec = JSON.parse(specText);
+        const lingoParams = JSON.parse(paramsText);
+        
+        // Run the lingo app on load
+        window.addEventListener('load', () => {{
+            try {{
+                const app = lingoApp(lingoSpec, lingoParams, {{}});
+                renderLingoApp(app, document.getElementById('lingo-app'));
+            }} catch (error) {{
+                console.error('Failed to initialize Lingo app:', error);
+                document.getElementById('lingo-app').innerHTML = `<p style="color: red;">Error: ${{error.message}}</p>`;
+            }}
+        }});
+    </script>
+</body>
+</html>'''
+    
+    return html
+
 def generate_model_instance_html(spec: dict, module_key: str, model_key: str, url: str) -> str:
     """
     Generate the model instance page with embedded Lingo JSON spec.
@@ -500,7 +576,7 @@ for module_key, module in mapp_spec['modules'].items():
         content_type='text/html'
     )
     
-    # add generated model pages to static files #
+    # add dynamic and static model pages #
     for model_key, model in module.get('models', {}).items():
         if model.get('hidden', False) is True:
             continue
@@ -521,6 +597,19 @@ for module_key, module in mapp_spec['modules'].items():
             module_key,
             model_key
         ))
+
+    # add static op pages #
+    for op_key, op in module.get('ops', {}).items():
+
+        if op.get('hidden', False) is True:
+            continue
+
+        op_kebab = op['name']['kebab_case']
+        op_html_content = generate_op_html(mapp_spec, module_key, op_key)
+        static_files[f'{module_kebab}/{op_kebab}'] = StaticFileData(
+            content=op_html_content.encode('utf-8'),
+            content_type='text/html'
+        )
 
 def static_routes(server: MappContext, request: RequestContext):
     """resolve static file routes"""

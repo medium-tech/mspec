@@ -1,0 +1,135 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {
+        "project_name": {
+            "name": {
+                "lower_case": "project name"
+            },
+            "type": "str",
+            "default": "My Lingo Project",
+            "description": "Name of the Lingo project"
+        },
+        "module_name": {
+            "name": {
+                "lower_case": "module name"
+            },
+            "type": "str",
+            "default": "my-module-a",
+            "description": "Name of the module"
+        },
+        "op_name": {
+            "name": {
+                "lower_case": "op name"
+            },
+            "type": "str",
+            "default": "my-op-a",
+            "description": "Name of the model"
+        },
+        "op_definition": {
+            "name": {
+                "lower_case": "op definition"
+            },
+            "type": "op",
+            "value": {
+                "name": {
+                    "lower_case": "say_hello"
+                },
+                "description": "Return a greeting message",
+                "func": {
+                    "call": "concat",
+                    "args": {
+                        "items": [
+                            "Hello, ",
+                            {"params": {"name": {}}}
+                        ]
+                    }
+                },
+                "params": {
+                    "name": {
+                        "name": {
+                            "lower_case": "name"
+                        },
+                        "type": "str",
+                        "description": "Name of the person to greet"
+                    }
+                },
+                "result": {
+                    "type": "str",
+                    "description": "Greeting message"
+                },
+                "tests": {
+                    "test_cases": [
+                        {
+                            "name": "Test with Alice",
+                            "params": {
+                                "name": "Alice"
+                            },
+                            "expected_result": "Hello, Alice"
+                        },
+                        {
+                            "name": "Test with Bob",
+                            "params": {
+                                "name": "Bob"
+                            },
+                            "expected_result": "Hello, Bob"
+                        }
+                    ]
+                }
+                
+            },
+            "description": "Definition of the op"
+        }
+    },
+    "state": {
+        "op_view_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": ""
+            }
+        },
+        "op_api_url": {
+            "type": "str",
+            "calc": {
+                "call": "concat",
+                "args": {
+                    "items": [
+                        "/api/",
+                        {"params": {"module_name": {}}},
+                        "/",
+                        {"params": {"op_name": {}}}
+                    ]
+                }
+            }
+        },
+        "header": {
+            "type": "str",
+            "calc": {
+                "call": "join",
+                "args": {
+                    "separator": "",
+                    "items": [":: ",{"params": {"op_name": {}}}]
+                }
+            }
+        }
+    },
+    "ops": {},
+    "output": [
+        {"heading": {"state": {"header": {}}},  "level": 1},
+        {"breadcrumbs": [
+            {"params": {"project_name": {}}},
+            {"params": {"module_name": {}}},
+            {"params": {"op_name": {}}}
+        ]},
+        {"op": {
+            "bind": {"state": {"op_view_state": {}}},
+            "interactive": true,
+            "http": {"state": {"op_api_url": {}}},
+            "definition": {"params": {"op_definition": {}}}
+        }}
+    ]
+}

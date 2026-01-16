@@ -326,6 +326,12 @@ const lingoFunctionLookup = {
             func: null, // handled specially in renderCall
             createArgs: true
         }
+    },
+    'op': {
+        'http': {
+            func: null, // handled specially in renderCall
+            createArgs: true
+        }
     }
 };
 
@@ -409,6 +415,7 @@ function lingoUpdateState(app, ctx = null) {
  * Get JavaScript type name in Python-compatible format
  */
 function getTypeName(value) {
+    // console.log('getTypeName()', typeof value, value);
     if (typeof value === 'string') return 'str';
     if (typeof value === 'number') {
         return Number.isInteger(value) ? 'int' : 'float';
@@ -421,6 +428,9 @@ function getTypeName(value) {
     }
     if (typeof value === 'object' && 'fields' in value && 'name' in value) {
         return 'model';
+    }
+    if (typeof value === 'object' && 'params' in value && 'result' in value && 'func' in value) {
+        return 'op';
     }
     if (typeof value === 'object') return 'struct';
     return typeof value;
@@ -547,7 +557,7 @@ function renderOutput(app, ctx = null) {
  */
 function renderBlock(app, element, ctx = null) {
     const elements = [];
-    console.log('renderBlock()', element);
+    // console.log('renderBlock()', element);
     for (let n = 0; n < element.block.length; n++) {
         const childElement = element.block[n];
         try {
@@ -793,6 +803,8 @@ function renderSet(app, expression, ctx = null) {
                     // console.log(`set - setting struct field: ${fieldName}.${structFieldName} =`, outValue);
                 }else{
 
+                    // console.log('set - setting multiple struct fields for', fieldName, outValue);
+
                     // for each field in outValue, set the corresponding struct field and ensure type matches
 
                     for(const [structFieldName, structFieldValue] of Object.entries(outValue)){
@@ -948,23 +960,180 @@ function renderForm(app, element, ctx = null) {
  * Render operation call - equivalent to Python render_op()
  */
 function renderOp(app, expression, ctx = null) {
-    const keys = Object.keys(expression.op);
-    if (keys.length !== 1) {
-        throw new Error('op - must have exactly one op field');
+
+    /*
+
+    There are two ways to use an op, interactively with 
+    a form and a call button, or non-interactively and
+    return the result directly.
+
+    Interactive op example:
+
+        {"op": {
+            "bind": {"state": {"op_view_state": {}}},
+            "interactive": true,
+            "http": {"state": {"op_api_url": {}}},
+            "definition": {"params": {"op_definition": {}}}
+        }}
+
+    Non-interactive op example:
+
+        {"op": {"randomize_number": {"max": 100}}}
+
+        NOTE: do not supply interactive=false, to use
+        this syntax there must be only one key which is
+        the op name which contains the args.
+
+    */
+
+    let isInteractive = false;
+    if ('interactive' in expression.op) {
+        if(expression.op.interactive !== true){
+            throw new Error('op - interactive field must be true if present');
+        }
+        isInteractive = true;
+    }else{
+        isInteractive = false;
     }
-    const opName = keys[0];
-    const opArgs = expression.op[opName];
-    
-    if (!(opName in app.spec.ops)) {
-        throw new Error(`op - undefined op: ${opName}`);
+
+    if(isInteractive){
+
+        // interactive op //
+
+        const op = expression.op;
+        // console.log('renderOp() - interactive op', op);
+
+        if(!op.hasOwnProperty('definition')){
+            throw new Error('op - missing definition for interactive op');
+        }
+
+        const definition = lingoExecute(app, op.definition, ctx);
+        if(!definition.hasOwnProperty('params')){
+            throw new Error('op - missing params in definition for interactive op');
+        }
+
+        if(!definition.hasOwnProperty('result')){
+            throw new Error('op - missing result in definition for interactive op');
+        }
+
+        if(!op.hasOwnProperty('bind')){
+            throw new Error('op - missing bind for interactive op');
+        }
+
+        if(!op.bind.hasOwnProperty('state')){
+            throw new Error('op - bind must bind to state for interactive op');
+        }
+
+        if(!op.hasOwnProperty('http')){
+            throw new Error('op - missing http for interactive op');
+        }
+
+        // bind state //
+
+        const stateKeys = Object.keys(op.bind.state);
+        if(stateKeys.length !== 1){
+            throw new Error('op - bind state must have exactly one field for interactive op');
+        }
+
+        const stateField = stateKeys[0];
+
+        if(!app.spec.state.hasOwnProperty(stateField)){
+            throw new Error(`op - bind state field not found: ${stateField}`);
+        }
+
+        // create form element //
+
+        const url = unwrapValue(lingoExecute(app, op.http, ctx));
+
+        const formElement = {
+            form: {
+                fields: definition.params,
+                bind: op.bind,
+                action: {
+                    set: {state: {[stateField]: {}}},
+                    to: {
+                        call: 'op.http',
+                        args: {
+                            url: url,
+                            data: app.state[stateField].data,
+                            bind: op.bind
+                        }
+                    }
+                }
+            }
+        };
+
+        const stateSwitch = {
+            switch: {
+                expression: { type: 'str', value: app.state[stateField].state },
+                cases: [
+                    {
+                        case: 'result',
+                        then: {
+                            block: [
+                                {text: 'result: ', style: {color: 'green', bold: true}},
+                                {text: unwrapValue(app.state[stateField].result)}
+                            ]
+                        }
+                    },
+                    {
+                        case: 'error',
+                        then: {
+                            block: [
+                                {text: 'error: ', style: {color: 'red', bold: true}},
+                                {text: app.state[stateField].error}
+                            ]
+                        }
+                    },
+                    {
+                        case: 'loading',
+                        then: {
+                            text: 'Loading...', style: {italic: true}
+                        }
+                    }
+                ],
+                default: {
+                    text: 'Please fill out the form and submit.', style: {italic: true}
+                }
+            }
+        };
+
+        let elements = [];
+        elements.push(formElement);
+        const renderedSwitch = renderSwitch(app, stateSwitch, ctx);
+        if(Array.isArray(renderedSwitch)){
+            elements.push(...renderedSwitch);
+        }else{
+            elements.push(renderedSwitch);
+        }
+        return elements;
+
+    }else{
+
+        // non-interactive op //
+
+        // init
+
+        const keys = Object.keys(expression.op);
+        if (keys.length !== 1) {
+            throw new Error('op - must have exactly one op field');
+        }
+        const opName = keys[0];
+        const opArgs = expression.op[opName];
+        
+        if (!(opName in app.spec.ops)) {
+            throw new Error(`op - undefined op: ${opName}`);
+        }
+        
+        const opDef = app.spec.ops[opName];
+        if (!('func' in opDef)) {
+            throw new Error(`op - missing func for op: ${opName}`);
+        }
+
+        // run op function
+        
+        return lingoExecute(app, opDef.func, opArgs);
     }
-    
-    const opDef = app.spec.ops[opName];
-    if (!('func' in opDef)) {
-        throw new Error(`op - missing func for op: ${opName}`);
-    }
-    
-    return lingoExecute(app, opDef.func, opArgs);
 }
 
 /**
@@ -1580,6 +1749,66 @@ function handleSequenceOp(app, expression, ctx = null) {
         }
 
         return sendListRequest(url);
+    }else if(funcName === 'op.http'){
+
+        //
+        // init params
+        //
+
+        const url = unwrapValue(lingoExecute(app, args.url, ctx));
+        const params = lingoExecute(app, args.data, ctx);
+
+        // update state to loading if bind is provided
+        let stateField = null;
+        if (expression.args.bind && expression.args.bind.state) {
+            const stateKeys = Object.keys(expression.args.bind.state);
+            if (stateKeys.length === 1) {
+                stateField = stateKeys[0];
+                if(!(app.state.hasOwnProperty(stateField))){
+                    throw new Error(`handleSequenceOp - op.http - state field not found: ${stateField}`);
+                }
+                app.state[stateField].state = 'loading';
+            }
+        }
+
+        //
+        // send request
+        //
+
+        // console.log('handleSequenceOp - op.http - url:', url, 'params:', params);
+
+        async function sendOpHttpRequest(url, params) {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(params)
+                });
+
+                if (response.ok) {
+
+                    const responseData = await response.json();
+                    // console.log('handleSequenceOp - op.http - responseData:', responseData);
+                    if(responseData.hasOwnProperty('result')){
+                        return {state: 'result', result: responseData.result};
+                    }else{
+                        return {state: 'error', error: 'Response missing result field'};
+                    }
+                    
+                }else{
+                    console.error('handleSequenceOp - op.http - HTTP error:', response.status, response.statusText); 
+                    return {state: 'error', error: `Response error: ${response.status} ${response.statusText}`};
+                }
+
+            } catch (error) {
+                console.error('handleSequenceOp - op.http - network error:', error);
+                return {state: 'error', error: `Network error: ${error.message}`};
+            }
+        }
+        
+        return sendOpHttpRequest(url, params);
 
     }else{
         throw new Error(`handleSequenceOp - unknown function: ${funcName}`);
@@ -2634,7 +2863,7 @@ function createFormElement(app, element) {
     }
     const currentState = app.state[formStateField];
     const formData = currentState.data || {};
-    console.log('createFormElement - formData before:', formData);
+    // console.log('createFormElement - formData before:', formData);
     
     // create a row for each field //
 
@@ -2893,7 +3122,7 @@ function createFormElement(app, element) {
     submitButton.textContent = 'Submit';
     submitButton.addEventListener('click', () => {
         const result = lingoExecute(app, element.form.action, {});
-        console.log('Form submission result:', result);
+        // console.log('Form submission result:', result);
         renderLingoApp(app, document.getElementById('lingo-app'));
     });
 

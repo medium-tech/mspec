@@ -51,9 +51,11 @@ modules:
             - params:
                 name: 'Alice'
               expected_result: 'Hello, Alice!'
+              name: 'Test with Alice'
             - params:
                 name: 'Bob'
               expected_result: 'Hello, Bob!'
+              name: 'Test with Bob'
 
     models:
       singular_model:

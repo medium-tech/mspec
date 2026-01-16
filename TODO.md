@@ -29,7 +29,7 @@
 * 🟡 lingo integration to mapp
     * 🟢 add tests for js browser2
     * 🟢 add new functions to javascript lingo interpreter
-    * 🔴 built in lingo ui (lingo pages served in mapp by generating html templates with lingo pages)
+    * 🟡 built in lingo ui (lingo pages served in mapp by generating html templates with lingo pages)
         * 🟡 lingo index page
             * 🟡 lingo module page
                 * 🟡 lingo model page (create lingo widgets/functions for each of the below)
@@ -40,7 +40,8 @@
                     * 🟢 list
                     * 🔴 tests
                 * 🟡 lingo op page (this will run the op on the backend server and return the result)
-                    * 🟡 run
+                    * 🟢 http
+                    * 🔴 run
                     * 🔴 tests
             * 🔴 auth
                 * 🔴 form + call backend and show resonse
