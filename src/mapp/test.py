@@ -1409,10 +1409,41 @@ class TestMTemplateApp(unittest.TestCase):
         self._test_op_cli('run')
     
     def test_op_cli_http(self):
-        raise NotImplementedError()
+        self._test_op_cli('http')
     
     def test_op_server_op(self):
-        raise NotImplementedError()
+
+        self._check_servers_running()
+
+        base_ctx = {
+            'headers': {
+                'Content-Type': 'application/json',
+            }
+        }
+
+        base_ctx.update(self.crud_ctx)
+
+        for module in self.spec['modules'].values():
+            module_name_kebab = module['name']['kebab_case']
+
+            for op in module.get('ops', {}).values():
+                op_name_kebab = op['name']['kebab_case']
+                test_cases = op.get('tests', {}).get('test_cases', [])
+
+                for n, test_case in enumerate(test_cases):
+                    json_data = json.dumps(test_case['params']).encode()
+                    hidden = op['hidden']
+                    op_url = f'/api/{module_name_kebab}/{op_name_kebab}'
+
+                    status, response = request(base_ctx, 'POST', op_url, json_data)
+                    
+                    if hidden:
+                        self.assertEqual(status, 404, f'OP {module_name_kebab}.{op_name_kebab} hidden did not return 404 Not Found, response: {response}')
+                    else:
+                        self.assertEqual(status, 200, f'OP {module_name_kebab}.{op_name_kebab} did not return status 200 OK, response: {response}')
+                        result = response['result']
+                        expected_result = test_case['expected_result']
+                        self.assertEqual(result, expected_result, f'OP {module_name_kebab}.{op_name_kebab} output does not match expected result for index: {n}')
 
     # validation tests #
 

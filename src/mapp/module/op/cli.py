@@ -108,7 +108,12 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
             if args.show:
                 output = raw_output
             else:
-                output = redact_secure_fields(output_class._op_spec['output'], raw_output)
+                try:
+                    _out_spec = output_class._op_spec['output']
+                except KeyError:
+                    _out_spec = {'result': output_class._op_spec['result']}
+                    
+                output = redact_secure_fields(_out_spec, raw_output)
 
             print(to_json(output, sort_keys=True, indent=4))
 
