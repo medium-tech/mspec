@@ -1385,13 +1385,33 @@ class TestMTemplateApp(unittest.TestCase):
       
     # op tests #
 
-    def test_cli_op_run(self):
+    def _test_op_cli(self, command_type:str):
+        for module in self.spec['modules'].values():
+            module_name_kebab = module['name']['kebab_case']
+
+            for op in module.get('ops', {}).values():
+                op_name_kebab = op['name']['kebab_case']
+
+                test_cases = op.get('tests', {}).get('test_cases', [])
+                for n, test_case in enumerate(test_cases):
+                    json_data = json.dumps(test_case['params'])
+                    hidden = op['hidden']
+                    args = self.cmd + [module_name_kebab, op_name_kebab, command_type, json_data]
+                    if hidden:
+                        self._run_cmd(args, env=self.crud_ctx, expected_code=2)
+                    else:
+                        result = self._run_cmd(args, env=self.crud_ctx)
+                        result = json.loads(result.stdout)['result']
+                        expected_result = test_case['expected_result']
+                        self.assertEqual(result, expected_result, f'OP {module_name_kebab}.{op_name_kebab} output does not match expected result for index: {n}')
+
+    def test_op_cli_run(self):
+        self._test_op_cli('run')
+    
+    def test_op_cli_http(self):
         raise NotImplementedError()
     
-    def test_cli_op_http(self):
-        raise NotImplementedError()
-    
-    def test_server_op(self):
+    def test_op_server_op(self):
         raise NotImplementedError()
 
     # validation tests #

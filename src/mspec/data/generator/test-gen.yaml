@@ -46,6 +46,15 @@ modules:
           type: str
           description: 'Greeting message'
 
+        tests:
+          test_cases:
+            - params:
+                name: 'Alice'
+              expected_result: 'Hello, Alice!'
+            - params:
+                name: 'Bob'
+              expected_result: 'Hello, Bob!'
+
     models:
       singular_model:
         name:

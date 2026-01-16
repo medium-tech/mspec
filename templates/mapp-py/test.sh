@@ -9,7 +9,7 @@ if [[ "$1" == "--help" || "$1" == "-h" ]]; then
 	echo "Usage: $0 [--test-filter <pattern>] [--use-cache]"
 	echo
 	echo "Options:"
-	echo "  --test-filter <pattern>, -f <pattern>  Only run tests matching the pattern (e.g. test_cli_help_menus)"
+	echo "  --test-filter <pattern>, -f <pattern>  Only run tests matching the pattern (ex: 'test_op*')"
 	echo "  --use-cache                            Use cached test resources if available"
 	echo "  --help, -h                             Show this help menu"
 	echo "  --verbose, -v                          Show detailed test output"

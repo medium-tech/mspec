@@ -330,6 +330,9 @@ def init_generator_spec(spec:dict) -> dict:
             op_snake_case = op['name']['snake_case']
             op_path = f'{module_snake}.{op["name"]["snake_case"]}'
 
+            if 'hidden' not in op:
+                op['hidden'] = False
+
             # params #
 
             try:

@@ -27,6 +27,11 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
     param_fields_str = ''
     for p in params:
         param_fields_str += f"\n        :: {p['name']['snake_case']} - {p['type']}"
+        try:
+            param_fields_str += f' - (default: {p["default"]})'
+        except KeyError:
+            pass
+        
         if 'enum' in p:
             param_fields_str += f"\n            :: enum choices:"
             for choice in p['enum']:
