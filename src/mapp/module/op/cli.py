@@ -151,7 +151,13 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
             raw_output = op_function(ctx, params)
             if args.module == 'auth':
                 if args.model == 'login-user' and not args.no_session:
-                    cli_write_session(ctx, raw_output.access_token)
+                    # Handle both old and new output formats
+                    if hasattr(raw_output, 'access_token'):
+                        # Old format: NamedTuple with access_token field
+                        cli_write_session(ctx, raw_output.access_token)
+                    elif hasattr(raw_output, 'result') and isinstance(raw_output.result, dict):
+                        # New format: OpResult with result dict
+                        cli_write_session(ctx, raw_output.result['access_token'])
                 elif args.model == 'logout-user':
                     cli_delete_session()
 
