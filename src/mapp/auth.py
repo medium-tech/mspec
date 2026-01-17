@@ -14,9 +14,7 @@ from mapp.types import (
     Acknowledgment,
     User,
     UserSession,
-    PasswordHash,
-    LoginUserOutput,
-    CurrentUserOutput
+    PasswordHash
 )
 
 MAPP_AUTH_SECRET_KEY = os.environ.get('MAPP_AUTH_SECRET_KEY')   # openssl rand -hex 32
@@ -25,64 +23,13 @@ MAPP_AUTH_LOGIN_EXPIRATION_MINUTES = os.environ.get('MAPP_AUTH_LOGIN_EXPIRATION_
 __all__ = [
     'User',
     'PasswordHash',
-    'init_auth_module',
     'create_user',
     'login_user',
     'current_user',
     'logout_user',
-    'delete_user'
+    'delete_user',
+    'drop_sessions'
 ]
-
-
-def init_auth_module(spec: dict) -> bool:
-    """
-    If spec.project.use_builtin_modules is True:
-        Initialize the auth module User and PasswordHash model classes.
-
-    This is needed because builtin models are defined by the same yaml spec
-    that the app is based on. For db functions to work, the model classes need to
-    have their _model_spec and _module_spec attributes set from the spec loaded
-    from the environment.
-
-    return :: bool
-        True if auth module initialized, else False
-    """
-
-    if spec['project']['use_builtin_modules'] is False:
-        return False
-    
-    try:
-        auth_module = spec['modules']['auth']
-        user = auth_module['models']['user']
-        user_session = auth_module['models']['user_session']
-        password_hash = auth_module['models']['password_hash']
-        create_user_output = auth_module['ops']['create_user']['result']
-        login_user_output = auth_module['ops']['login_user']['output']
-        current_user_output = auth_module['ops']['current_user']['output']
-    except KeyError as e:
-        raise MappError('INVALID_SPEC', f'Builtin auth module is missing key: {e}')
-    
-    global User
-    User._model_spec = user
-    User._module_spec = auth_module
-
-    global UserSession
-    UserSession._model_spec = user_session
-    UserSession._module_spec = auth_module
-
-    global PasswordHash
-    PasswordHash._model_spec = password_hash
-    PasswordHash._module_spec = auth_module
-
-    global LoginUserOutput
-    LoginUserOutput._op_spec = login_user_output
-    LoginUserOutput._module_spec = auth_module
-
-    global CurrentUserOutput
-    CurrentUserOutput._op_spec = current_user_output
-    CurrentUserOutput._module_spec = auth_module
-
-    return True
 
 #
 # internal
@@ -323,12 +270,12 @@ def create_user(ctx: MappContext, name: str, email: str, password: str, password
         }
     }
 
-def login_user(ctx: MappContext, params:object) -> LoginUserOutput:
+def login_user(ctx: MappContext, email: str, password: str) -> dict:
     """
     Log in a user in the auth module.
     """
-    email = params.email.strip().lower()
-    password = params.password
+    email = email.strip().lower()
+    password = password
     user_id = _check_user_credentials(ctx, email, password)
     token, token_type, jti = _create_access_token(user_id)
     # Create session record
@@ -337,22 +284,26 @@ def login_user(ctx: MappContext, params:object) -> LoginUserOutput:
         (jti, user_id, datetime.now(timezone.utc))
     )
     ctx.db.commit()
-    return LoginUserOutput(
-        access_token=token,
-        token_type=token_type
-    )
+    return {
+        'type': 'struct',
+        'value': {
+            'access_token': token,
+            'token_type': token_type
+        }
+    }
 
-def current_user(ctx: MappContext, params:Optional[object]=None) -> CurrentUserOutput:
+def current_user(ctx: MappContext) -> dict:
     """
     Get the current logged-in user in the auth module.
     ctx: MappContext - The application context.
-    params: object - No params needed for current user.
 
-    return: CurrentUserOutput
-        id: str - The ID of the current user.
-        name: str - The name of the current user.
-        email: str - The email of the current user.
-        number_of_sessions: int - The number of active sessions for the current user.
+    return: dict
+        type: struct
+        value: dict with keys:
+            id: str - The ID of the current user.
+            name: str - The name of the current user.
+            email: str - The email of the current user.
+            number_of_sessions: int - The number of active sessions for the current user.
     """
     access_token = ctx.current_access_token()
     
@@ -365,22 +316,27 @@ def current_user(ctx: MappContext, params:Optional[object]=None) -> CurrentUserO
         'SELECT COUNT(*) FROM user_session WHERE user_id = ?', (user.id,)
     ).fetchone()[0]
 
-    return CurrentUserOutput(
-        id=user.id,
-        name=user.name,
-        email=user.email,
-        number_of_sessions=number_of_sessions
-    )
+    return {
+        'type': 'struct',
+        'value': {
+            'id': user.id,
+            'name': user.name,
+            'email': user.email,
+            'number_of_sessions': number_of_sessions
+        }
+    }
 
-def logout_user(ctx: MappContext, params:object) -> Acknowledgment:
+def logout_user(ctx: MappContext, mode: str) -> dict:
     """
     Log out a user in the auth module.
     ctx: MappContext - The application context.
-    params: object - No params needed for logout.
+    mode: str - Logout mode ('current', 'others', or 'all')
 
-    return: Acknowledgment
-        acknowledged: bool - Whether the logout was successful.
-        message: str - Confirmation message of logout.
+    return: dict
+        type: struct
+        value: dict with keys:
+            acknowledged: bool - Whether the logout was successful.
+            message: str - Confirmation message of logout.
     """
 
     # get current user #
@@ -390,7 +346,7 @@ def logout_user(ctx: MappContext, params:object) -> Acknowledgment:
 
     user, jti = _parse_access_token(ctx, access_token)
 
-    match params.mode:
+    match mode:
         case 'current':
             sql = 'DELETE FROM user_session WHERE id = ? AND user_id = ?'
             values = (jti, user.id)
@@ -408,22 +364,28 @@ def logout_user(ctx: MappContext, params:object) -> Acknowledgment:
         
         case _:
             # shouldn't get here due to param validation
-            raise MappError('INVALID_LOGOUT_MODE', f'Unknown logout mode: {params.mode}')
+            raise MappError('INVALID_LOGOUT_MODE', f'Unknown logout mode: {mode}')
         
     ctx.db.cursor.execute(sql, values)
     ctx.db.commit()
-    return Acknowledgment(msg)
+    return {
+        'type': 'struct',
+        'value': {
+            'acknowledged': True,
+            'message': msg
+        }
+    }
         
-def delete_user(ctx: MappContext, params:object) -> Acknowledgment:
+def delete_user(ctx: MappContext) -> dict:
     """
     Delete a user in the auth module.
     ctx: MappContext - The application context.
-    params: object - Parameters for deleting a user.
-        user_id: str - The ID of the user to delete.
 
-    return: Acknowledgment
-        acknowledged: bool - Whether the deletion was successful.
-        message: str - Confirmation message of deletion.
+    return: dict
+        type: struct
+        value: dict with keys:
+            acknowledged: bool - Whether the deletion was successful.
+            message: str - Confirmation message of deletion.
     """
 
     # get current user #
@@ -446,22 +408,37 @@ def delete_user(ctx: MappContext, params:object) -> Acknowledgment:
         'DELETE FROM user WHERE id = ?', (user.id,)
     )
     ctx.db.commit()
-    return Acknowledgment('User deleted successfully')
+    return {
+        'type': 'struct',
+        'value': {
+            'acknowledged': True,
+            'message': 'User deleted successfully'
+        }
+    }
 
-def drop_sessions(ctx: MappContext, params:object) -> Acknowledgment:
+def drop_sessions(ctx: MappContext, root_password: str) -> dict:
     """
     Drop all user sessions for all users
     ctx: MappContext - The application context.
-    params: object - No params needed for dropping sessions.
-    return: Acknowledgment
-        acknowledged: bool - Whether the operation was successful.
-        message: str - Confirmation message of operation.
+    root_password: str - Root password to authorize the operation
+    
+    return: dict
+        type: struct
+        value: dict with keys:
+            acknowledged: bool - Whether the operation was successful.
+            message: str - Confirmation message of operation.
     """
 
-    assert _verify_root_password(params.root_password) is True
+    assert _verify_root_password(root_password) is True
 
     ctx.db.cursor.execute(
         'DELETE FROM user_session'
     )
     ctx.db.commit()
-    return Acknowledgment('All sessions dropped successfully')
+    return {
+        'type': 'struct',
+        'value': {
+            'acknowledged': True,
+            'message': 'All sessions dropped successfully'
+        }
+    }

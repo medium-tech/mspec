@@ -1,7 +1,6 @@
 import argparse
 import json
 
-from mapp.auth import init_auth_module
 from mapp.context import MappContext, spec_from_env, get_context_from_env, get_cli_access_token, cli_load_session
 from mapp.errors import MappError
 from mapp.db import create_tables
@@ -90,7 +89,6 @@ if __name__ == "__main__":
         else:
             raise
     else:
-        auth_enabled = init_auth_module(mapp_spec)
         cli_ctx = get_context_from_env()
 
         cli_ctx.current_access_token = lambda: get_cli_access_token(cli_ctx)
