@@ -12,8 +12,17 @@ modules:
                 name:
                     lower_case: "create user"
                 description: "Create a new user with name and email"
-                python:
+                func:
                     call: "auth.create_user"
+                    args:
+                        name:
+                            params: {name: {}}
+                        email:
+                            params: {email: {}}
+                        password:
+                            params: {password: {}}
+                        password_confirm:
+                            params: {password_confirm: {}}
                 params:
                     name:
                         name:
@@ -37,22 +46,24 @@ modules:
                         type: str
                         secure_input: true
                         description: "Password confirmation"
-                output:
-                    id:
+                result:
+                    type: struct
+                    fields:
+                        id:
+                            name:
+                                lower_case: "id"
+                            type: str
+                            description: "ID of the created user"
                         name:
-                            lower_case: "id"
-                        type: str
-                        description: "ID of the created user"
-                    name:
-                        name:
-                            lower_case: "name"
-                        type: str
-                        description: "Name of the created user"
-                    email:
-                        name:
-                            lower_case: "email"
-                        type: str
-                        description: "Email of the created user"
+                            name:
+                                lower_case: "name"
+                            type: str
+                            description: "Name of the created user"
+                        email:
+                            name:
+                                lower_case: "email"
+                            type: str
+                            description: "Email of the created user"
 
             login_user:
                 name:

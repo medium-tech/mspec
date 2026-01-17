@@ -15,7 +15,6 @@ from mapp.types import (
     User,
     UserSession,
     PasswordHash,
-    CreateUserOutput,
     LoginUserOutput,
     CurrentUserOutput
 )
@@ -57,7 +56,7 @@ def init_auth_module(spec: dict) -> bool:
         user = auth_module['models']['user']
         user_session = auth_module['models']['user_session']
         password_hash = auth_module['models']['password_hash']
-        create_user_output = auth_module['ops']['create_user']['output']
+        create_user_output = auth_module['ops']['create_user']['result']
         login_user_output = auth_module['ops']['login_user']['output']
         current_user_output = auth_module['ops']['current_user']['output']
     except KeyError as e:
@@ -74,10 +73,6 @@ def init_auth_module(spec: dict) -> bool:
     global PasswordHash
     PasswordHash._model_spec = password_hash
     PasswordHash._module_spec = auth_module
-
-    global CreateUserOutput
-    CreateUserOutput._op_spec = create_user_output
-    CreateUserOutput._module_spec = auth_module
 
     global LoginUserOutput
     LoginUserOutput._op_spec = login_user_output
@@ -243,16 +238,16 @@ def _parse_access_token(ctx:dict, token:str) -> tuple[User, str]:
 
 EMAIL_REGEX = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
-def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
+def create_user(ctx: MappContext, name: str, email: str, password: str, password_confirm: str) -> dict:
     err_msg = 'Could not create user'
 
     """
     Create a new user in the auth module.
     """
-    name = params.name.strip()
-    email = params.email.strip().lower()
-    password = params.password
-    password_confirm = params.password_confirm
+    name = name.strip()
+    email = email.strip().lower()
+    password = password
+    password_confirm = password_confirm
 
     # validate input #
 
@@ -318,11 +313,15 @@ def create_user(ctx: MappContext, params:object) -> CreateUserOutput:
         (pw_hash_id, user_id, pw_hash)
     )
     ctx.db.commit()
-    return CreateUserOutput(
-        id=str(user_id),
-        name=name,
-        email=email,
-    )
+
+    return {
+        'type': 'struct',
+        'value': {
+            'id': str(user_id),
+            'name': name,
+            'email': email
+        }
+    }
 
 def login_user(ctx: MappContext, params:object) -> LoginUserOutput:
     """

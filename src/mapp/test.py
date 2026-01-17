@@ -40,7 +40,7 @@ def seed_pagination_item(unique_id, base_cmd, seed_cmd, env, require_auth, model
         if result.returncode != 0:
             raise RuntimeError(f'Error creating user for pagination seeding:\n{result.stdout + result.stderr}')
         
-        user_id = json.loads(result.stdout)['id']
+        user_id = json.loads(result.stdout)['result']['id']
         model_data['user_id'] = user_id
         
         # login user #
@@ -304,7 +304,7 @@ class TestMTemplateApp(unittest.TestCase):
                 if result.returncode != 0:
                     raise RuntimeError(f'Error creating crud user {user_name}:\n{result.stdout + result.stderr}')
                 
-                user_id = json.loads(result.stdout)['id']
+                user_id = json.loads(result.stdout)['result']['id']
                 user_data['id'] = user_id
                 
                 # login #
@@ -412,7 +412,7 @@ class TestMTemplateApp(unittest.TestCase):
                 if create_result.returncode != 0:
                     raise RuntimeError(f'Error creating pagination test user: {create_result.stdout + create_result.stderr}')
                 
-                user_id = json.loads(create_result.stdout)['id']
+                user_id = json.loads(create_result.stdout)['result']['id']
                 user_data['id'] = user_id
                 
                 login_params = {'email': user_data['email'], 'password': 'testpass123'}
@@ -700,7 +700,8 @@ class TestMTemplateApp(unittest.TestCase):
             }).encode()
         )
         self.assertEqual(create_status, 200)
-        self.assertIn('id', create_resp)
+        self.assertIn('result', create_resp)
+        self.assertIn('id', create_resp['result'])
 
         # 4. login-user
         login_status, login_resp = request(

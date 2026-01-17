@@ -17,7 +17,6 @@ __all__ = [
     'User',
     'UserSession',
     'PasswordHash',
-    'CreateUserOutput',
     'LoginUserOutput',
     'CurrentUserOutput',
     'CurrentUserFuncReturn',
@@ -120,11 +119,6 @@ class PasswordHash(NamedTuple):
     id: str
     user_id: str
     hash: str
-
-class CreateUserOutput(NamedTuple):
-    id: str
-    name: str
-    email: str
 
 class LoginUserOutput(NamedTuple):
     access_token: str
@@ -439,6 +433,8 @@ def _get_python_type_for_field(field_type:str) -> type:
             return datetime
         case 'foreign_key':
             return str
+        case 'struct':
+            return dict
         case _:
             raise ValueError(f'Unsupported field type: {field_type}')
 

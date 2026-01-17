@@ -44,7 +44,6 @@
                     * 🔴 run
                     * 🔴 tests
             * 🔴 auth
-                * 🔴 form + call backend and show resonse
                 * 🔴 login
                 * 🔴 logout
                 * 🔴 user view

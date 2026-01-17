@@ -8,6 +8,8 @@ from typing import Any, Optional
 from itertools import dropwhile, takewhile, islice, accumulate
 from functools import reduce
 
+from mapp.auth import create_user
+
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
 
 @dataclass
@@ -17,7 +19,7 @@ class LingoApp:
     state: dict[str, Any]
     buffer: list[dict]
 
-def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[list, dict]:
+def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     
     def map_func(item):
         new_ctx = ctx.copy() if ctx is not None else {}
@@ -45,7 +47,7 @@ def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) 
     iterable = lingo_execute(app, expression['args']['iterable'], ctx)
     return (map_func, iterable['value'] if isinstance(iterable, dict) else iterable), {}
 
-def _accumulate_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[list, dict]:
+def _accumulate_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     
     def accumulate_func(a, b):
         new_ctx = ctx.copy() if ctx is not None else {}
@@ -59,7 +61,7 @@ def _accumulate_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]
     initial = expression['args'].get('initial', None)
     return (items, accumulate_func), {'initial': initial}
 
-def _reduce_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[list, dict]:
+def _reduce_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     
     def reduce_func(a, b):
         new_ctx = ctx.copy() if ctx is not None else {}
@@ -75,6 +77,22 @@ def _reduce_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=Non
         return (reduce_func, items, initial), {}
     else:
         return (reduce_func, items), {}
+    
+def _create_user_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        name_expr = expression['args']['name']
+        email_expr = expression['args']['email']
+        password_expr = expression['args']['password']
+        password_confirm_expr = expression['args']['password_confirm']
+    except KeyError as e:
+        raise ValueError(f'create_user - missing arg: {e}')
+
+    name = unwrap_primitive(lingo_execute(app, name_expr, ctx))
+    email = unwrap_primitive(lingo_execute(app, email_expr, ctx))
+    password = unwrap_primitive(lingo_execute(app, password_expr, ctx))
+    password_confirm = unwrap_primitive(lingo_execute(app, password_confirm_expr, ctx))
+
+    return (ctx, name, email, password, password_confirm), {}
 
 def str_join(separator:str, items:list) -> str:
     return separator.join(str(item) for item in items)
@@ -182,6 +200,12 @@ lingo_function_lookup = {
 
     'random': {
         'randint': {'func': randint, 'args': {'a': {'type': 'int'}, 'b': {'type': 'int'}}, 'sig': 'kwargs'}
+    },
+
+    # auth #
+
+    'auth': {
+        'create_user': {'func': create_user, 'create_args': _create_user_function_args}
     }
 }
 
@@ -647,7 +671,7 @@ def render_call(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
     
     # format return value #
 
-    if hasattr(return_value, '__iter__') and not isinstance(return_value, str):
+    if hasattr(return_value, '__iter__') and not isinstance(return_value, (str, dict)):
         element_types = []
         elements = []
         for item in return_value:
