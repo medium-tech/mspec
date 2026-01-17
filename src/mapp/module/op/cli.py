@@ -6,24 +6,8 @@ from mapp.module.op.http import http_run_op
 from mapp.context import cli_op_user_input, cli_load_session, cli_write_session, cli_delete_session
 
 __all__ = [
-	'add_op_subparser',
-	'extract_access_token'
+	'add_op_subparser'
 ]
-
-def extract_access_token(op_result) -> str:
-	"""
-	Extract access_token from op result, handling both old and new formats.
-	Old format: NamedTuple with access_token field
-	New format: OpResult with result dict containing access_token
-	"""
-	if hasattr(op_result, 'access_token'):
-		# Old format: NamedTuple with access_token field
-		return op_result.access_token
-	elif hasattr(op_result, 'result') and isinstance(op_result.result, dict):
-		# New format: OpResult with result dict
-		return op_result.result['access_token']
-	else:
-		raise ValueError('Could not extract access_token from result')
 
 def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
 
@@ -167,7 +151,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
             raw_output = op_function(ctx, params)
             if args.module == 'auth':
                 if args.model == 'login-user' and not args.no_session:
-                    cli_write_session(ctx, extract_access_token(raw_output))
+                    cli_write_session(ctx, raw_output.access_token)
                 elif args.model == 'logout-user':
                     cli_delete_session()
 

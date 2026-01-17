@@ -17,8 +17,6 @@ __all__ = [
     'User',
     'UserSession',
     'PasswordHash',
-    'LoginUserOutput',
-    'CurrentUserOutput',
     'CurrentUserFuncReturn',
     'CurrentUserFunc',
     'CurrentAccessTokenFunc',
@@ -119,16 +117,6 @@ class PasswordHash(NamedTuple):
     id: str
     user_id: str
     hash: str
-
-class LoginUserOutput(NamedTuple):
-    access_token: str
-    token_type: str
-
-class CurrentUserOutput(NamedTuple):
-    id: str
-    name: str
-    email: str
-    number_of_sessions: int
 
 
 CurrentUserFuncReturn = tuple[Optional[User], str]              # deprecated

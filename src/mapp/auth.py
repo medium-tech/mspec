@@ -14,9 +14,7 @@ from mapp.types import (
     Acknowledgment,
     User,
     UserSession,
-    PasswordHash,
-    LoginUserOutput,
-    CurrentUserOutput
+    PasswordHash
 )
 
 MAPP_AUTH_SECRET_KEY = os.environ.get('MAPP_AUTH_SECRET_KEY')   # openssl rand -hex 32
@@ -272,22 +270,12 @@ def create_user(ctx: MappContext, name: str, email: str, password: str, password
         }
     }
 
-def login_user(ctx: MappContext, email_or_params, password: str = None):
+def login_user(ctx: MappContext, email: str, password: str) -> dict:
     """
     Log in a user in the auth module.
-    Supports both old-style (params object) and new-style (explicit args) calling conventions.
     """
-    # Handle both old and new calling conventions
-    if hasattr(email_or_params, 'email'):
-        # Old style: params object
-        email = email_or_params.email.strip().lower()
-        password = email_or_params.password
-        use_old_format = True
-    else:
-        # New style: explicit args
-        email = email_or_params.strip().lower()
-        use_old_format = False
-    
+    email = email.strip().lower()
+    password = password
     user_id = _check_user_credentials(ctx, email, password)
     token, token_type, jti = _create_access_token(user_id)
     # Create session record
@@ -296,39 +284,27 @@ def login_user(ctx: MappContext, email_or_params, password: str = None):
         (jti, user_id, datetime.now(timezone.utc))
     )
     ctx.db.commit()
-    
-    if use_old_format:
-        return LoginUserOutput(
-            access_token=token,
-            token_type=token_type
-        )
-    else:
-        return {
-            'type': 'struct',
-            'value': {
-                'access_token': token,
-                'token_type': token_type
-            }
+    return {
+        'type': 'struct',
+        'value': {
+            'access_token': token,
+            'token_type': token_type
         }
+    }
 
-def current_user(ctx: MappContext, *args):
+def current_user(ctx: MappContext) -> dict:
     """
     Get the current logged-in user in the auth module.
-    Supports both old-style (params object) and new-style (no second param) calling conventions.
-    
     ctx: MappContext - The application context.
-    args: For old-style calls, contains (params,). For new-style, empty.
 
-    return: CurrentUserOutput (old style) or dict (new style)
-        id: str - The ID of the current user.
-        name: str - The name of the current user.
-        email: str - The email of the current user.
-        number_of_sessions: int - The number of active sessions for the current user.
+    return: dict
+        type: struct
+        value: dict with keys:
+            id: str - The ID of the current user.
+            name: str - The name of the current user.
+            email: str - The email of the current user.
+            number_of_sessions: int - The number of active sessions for the current user.
     """
-    # When called from the old deprecated path: current_user(ctx, params) or current_user(ctx, None)
-    # When called from lingo: current_user(ctx)
-    use_old_format = len(args) > 0
-    
     access_token = ctx.current_access_token()
     
     if access_token is None or access_token == '':
@@ -340,46 +316,28 @@ def current_user(ctx: MappContext, *args):
         'SELECT COUNT(*) FROM user_session WHERE user_id = ?', (user.id,)
     ).fetchone()[0]
 
-    if use_old_format:
-        return CurrentUserOutput(
-            id=user.id,
-            name=user.name,
-            email=user.email,
-            number_of_sessions=number_of_sessions
-        )
-    else:
-        return {
-            'type': 'struct',
-            'value': {
-                'id': user.id,
-                'name': user.name,
-                'email': user.email,
-                'number_of_sessions': number_of_sessions
-            }
+    return {
+        'type': 'struct',
+        'value': {
+            'id': user.id,
+            'name': user.name,
+            'email': user.email,
+            'number_of_sessions': number_of_sessions
         }
+    }
 
-def logout_user(ctx: MappContext, mode_or_params, *args):
+def logout_user(ctx: MappContext, mode: str) -> dict:
     """
     Log out a user in the auth module.
-    Supports both old-style (params object) and new-style (explicit args) calling conventions.
-    
     ctx: MappContext - The application context.
-    mode_or_params: str or object - Mode for new-style calls, or params object for old-style
-    args: Empty for both styles
+    mode: str - Logout mode ('current', 'others', or 'all')
 
-    return: Acknowledgment (old style) or dict (new style)
-        acknowledged: bool - Whether the logout was successful.
-        message: str - Confirmation message of logout.
+    return: dict
+        type: struct
+        value: dict with keys:
+            acknowledged: bool - Whether the logout was successful.
+            message: str - Confirmation message of logout.
     """
-    # Handle both old and new calling conventions
-    if hasattr(mode_or_params, 'mode'):
-        # Old style: params object
-        mode = mode_or_params.mode
-        use_old_format = True
-    else:
-        # New style: explicit args
-        mode = mode_or_params
-        use_old_format = False
 
     # get current user #
 
@@ -410,33 +368,25 @@ def logout_user(ctx: MappContext, mode_or_params, *args):
         
     ctx.db.cursor.execute(sql, values)
     ctx.db.commit()
-    
-    if use_old_format:
-        return Acknowledgment(msg)
-    else:
-        return {
-            'type': 'struct',
-            'value': {
-                'acknowledged': True,
-                'message': msg
-            }
+    return {
+        'type': 'struct',
+        'value': {
+            'acknowledged': True,
+            'message': msg
         }
+    }
         
-def delete_user(ctx: MappContext, *args):
+def delete_user(ctx: MappContext) -> dict:
     """
     Delete a user in the auth module.
-    Supports both old-style (params object) and new-style (no second param) calling conventions.
-    
     ctx: MappContext - The application context.
-    args: For old-style calls, contains (params,). For new-style, empty.
 
-    return: Acknowledgment (old style) or dict (new style)
-        acknowledged: bool - Whether the deletion was successful.
-        message: str - Confirmation message of deletion.
+    return: dict
+        type: struct
+        value: dict with keys:
+            acknowledged: bool - Whether the deletion was successful.
+            message: str - Confirmation message of deletion.
     """
-    # When called from the old deprecated path: delete_user(ctx, params) or delete_user(ctx, None)
-    # When called from lingo: delete_user(ctx)
-    use_old_format = len(args) > 0
 
     # get current user #
 
@@ -458,40 +408,26 @@ def delete_user(ctx: MappContext, *args):
         'DELETE FROM user WHERE id = ?', (user.id,)
     )
     ctx.db.commit()
-    
-    if use_old_format:
-        return Acknowledgment('User deleted successfully')
-    else:
-        return {
-            'type': 'struct',
-            'value': {
-                'acknowledged': True,
-                'message': 'User deleted successfully'
-            }
+    return {
+        'type': 'struct',
+        'value': {
+            'acknowledged': True,
+            'message': 'User deleted successfully'
         }
+    }
 
-def drop_sessions(ctx: MappContext, root_password_or_params, *args):
+def drop_sessions(ctx: MappContext, root_password: str) -> dict:
     """
-    Drop all user sessions for all users.
-    Supports both old-style (params object) and new-style (explicit args) calling conventions.
-    
+    Drop all user sessions for all users
     ctx: MappContext - The application context.
-    root_password_or_params: str or object - Root password for new-style, or params object for old-style
-    args: Empty for both styles
+    root_password: str - Root password to authorize the operation
     
-    return: Acknowledgment (old style) or dict (new style)
-        acknowledged: bool - Whether the operation was successful.
-        message: str - Confirmation message of operation.
+    return: dict
+        type: struct
+        value: dict with keys:
+            acknowledged: bool - Whether the operation was successful.
+            message: str - Confirmation message of operation.
     """
-    # Handle both old and new calling conventions
-    if hasattr(root_password_or_params, 'root_password'):
-        # Old style: params object
-        root_password = root_password_or_params.root_password
-        use_old_format = True
-    else:
-        # New style: explicit args
-        root_password = root_password_or_params
-        use_old_format = False
 
     assert _verify_root_password(root_password) is True
 
@@ -499,14 +435,10 @@ def drop_sessions(ctx: MappContext, root_password_or_params, *args):
         'DELETE FROM user_session'
     )
     ctx.db.commit()
-    
-    if use_old_format:
-        return Acknowledgment('All sessions dropped successfully')
-    else:
-        return {
-            'type': 'struct',
-            'value': {
-                'acknowledged': True,
-                'message': 'All sessions dropped successfully'
-            }
+    return {
+        'type': 'struct',
+        'value': {
+            'acknowledged': True,
+            'message': 'All sessions dropped successfully'
         }
+    }

@@ -17,16 +17,8 @@ from urllib.error import HTTPError
 from collections import defaultdict
 
 from mspec.core import load_generator_spec
-from mapp.module.op.cli import extract_access_token
 
 from dotenv import dotenv_values
-
-def _extract_access_token_from_json(result_json: dict) -> str:
-	"""Helper to extract access_token from login result JSON, handling both formats"""
-	if 'result' in result_json:
-		return result_json['result']['access_token']
-	else:
-		return result_json['access_token']
 
 def seed_pagination_item(unique_id, base_cmd, seed_cmd, env, require_auth, model_data):
     if require_auth:
@@ -62,7 +54,7 @@ def seed_pagination_item(unique_id, base_cmd, seed_cmd, env, require_auth, model
         if result.returncode != 0:
             raise RuntimeError(f'Error logging in user for pagination seeding:\n{result.stdout + result.stderr}')
         
-        access_token = _extract_access_token_from_json(json.loads(result.stdout))
+        access_token = json.loads(result.stdout)['access_token']
 
         env['MAPP_CLI_ACCESS_TOKEN'] = access_token
         
@@ -326,7 +318,7 @@ class TestMTemplateApp(unittest.TestCase):
                 if result.returncode != 0:
                     raise RuntimeError(f'Error logging in crud user {user_name}:\n{result.stdout + result.stderr}')
                 else:
-                    access_token = _extract_access_token_from_json(json.loads(result.stdout))
+                    access_token = json.loads(result.stdout)['access_token']
                     user_env = cls.crud_ctx.copy()
                     user_env['MAPP_CLI_ACCESS_TOKEN'] = access_token
                     user_env['Authorization'] = f'Bearer {access_token}'
@@ -429,7 +421,7 @@ class TestMTemplateApp(unittest.TestCase):
                 if login_result.returncode != 0:
                     raise RuntimeError(f'Error logging in pagination test user: {login_result.stdout + login_result.stderr}')
                 
-                access_token = _extract_access_token_from_json(json.loads(login_result.stdout))
+                access_token = json.loads(login_result.stdout)['access_token']
                 user_env = cls.pagination_ctx.copy()
                 user_env['MAPP_CLI_ACCESS_TOKEN'] = access_token
                 user_env['Authorization'] = f'Bearer {access_token}'

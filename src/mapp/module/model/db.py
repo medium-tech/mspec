@@ -3,7 +3,7 @@ from datetime import datetime
 from mapp.auth import current_user
 from mapp.context import MappContext
 from mapp.errors import AuthenticationError, NotFoundError, MappError, MappUserError
-from mapp.types import DATETIME_FORMAT_STR, ModelListResult, validate_model, Acknowledgment, User
+from mapp.types import DATETIME_FORMAT_STR, ModelListResult, validate_model, Acknowledgment
 
 
 __all__ = [
@@ -14,15 +14,6 @@ __all__ = [
     'db_model_delete',
     'db_model_list'
 ]
-
-
-def _user_from_current_user_result(result: dict) -> User:
-    """Helper to convert current_user result dict to User object"""
-    return User(
-        id=result['value']['id'],
-        name=result['value']['name'],
-        email=result['value']['email']
-    )
 
 
 def db_model_create_table(ctx:MappContext, model_class: type) -> Acknowledgment:
@@ -108,8 +99,7 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
 
     if model_class._model_spec['auth']['require_login'] is True:
         # will raise AuthenticationError if not logged in
-        user_result = current_user(ctx)
-        user = _user_from_current_user_result(user_result)
+        user = current_user(ctx, None)
 
         if 'user_id' in model_spec['fields']:
             obj = obj._replace(user_id=user.id)
@@ -187,7 +177,7 @@ def db_model_read(ctx:MappContext, model_class: type, model_id: str):
 
     if model_class._model_spec['auth']['require_login'] is True:
         # will raise AuthenticationError if not logged in
-        current_user(ctx)
+        current_user(ctx, None)
 
 
     # read non list fields #
@@ -255,8 +245,7 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
 
     if model_class._model_spec['auth']['require_login'] is True:
         # will raise AuthenticationError if not logged in
-        user_result = current_user(ctx)
-        user = _user_from_current_user_result(user_result)
+        user = current_user(ctx, None)
 
         try:
             if obj.user_id != user.id:
@@ -335,8 +324,7 @@ def db_model_delete(ctx:MappContext, model_class: type, model_id: str) -> Acknow
 
     if model_class._model_spec['auth']['require_login'] is True:
 
-        user_result = current_user(ctx)
-        user = _user_from_current_user_result(user_result)
+        user = current_user(ctx, None)
 
         # check user id of model owner #
 
@@ -375,7 +363,7 @@ def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int
 
     if model_class._model_spec['auth']['require_login'] is True:
         # will raise AuthenticationError if not logged in
-        current_user(ctx)
+        current_user(ctx, None)
 
     # query #
 
