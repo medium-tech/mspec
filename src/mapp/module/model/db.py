@@ -16,6 +16,15 @@ __all__ = [
 ]
 
 
+def _user_from_current_user_result(result: dict) -> User:
+    """Helper to convert current_user result dict to User object"""
+    return User(
+        id=result['value']['id'],
+        name=result['value']['name'],
+        email=result['value']['email']
+    )
+
+
 def db_model_create_table(ctx:MappContext, model_class: type) -> Acknowledgment:
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']
@@ -100,7 +109,7 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
     if model_class._model_spec['auth']['require_login'] is True:
         # will raise AuthenticationError if not logged in
         user_result = current_user(ctx)
-        user = User(id=user_result['value']['id'], name=user_result['value']['name'], email=user_result['value']['email'])
+        user = _user_from_current_user_result(user_result)
 
         if 'user_id' in model_spec['fields']:
             obj = obj._replace(user_id=user.id)
@@ -247,7 +256,7 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
     if model_class._model_spec['auth']['require_login'] is True:
         # will raise AuthenticationError if not logged in
         user_result = current_user(ctx)
-        user = User(id=user_result['value']['id'], name=user_result['value']['name'], email=user_result['value']['email'])
+        user = _user_from_current_user_result(user_result)
 
         try:
             if obj.user_id != user.id:
@@ -327,7 +336,7 @@ def db_model_delete(ctx:MappContext, model_class: type, model_id: str) -> Acknow
     if model_class._model_spec['auth']['require_login'] is True:
 
         user_result = current_user(ctx)
-        user = User(id=user_result['value']['id'], name=user_result['value']['name'], email=user_result['value']['email'])
+        user = _user_from_current_user_result(user_result)
 
         # check user id of model owner #
 
