@@ -92,6 +92,10 @@ The main prototype are the python + browser 1 browser template apps.
     * 🔴 startup
     * 🔴 shutdown
 * 🔴 language changes
+    * in page lingo specs, rename `ops` to `funcs` to disambiguate ops the user interface from calling an op.
+        to call a pages func you would do `{call: 'funcs.my_func', args: {...}`, then `{op: 'func.my_func', ...}` would create
+        a ui widget to call the function and display the response, `{op: 'my_module.my_backend_op', http: '...'}` to call a backend op via ui
+        or `{call: 'my_module.my_backend_op', http: '...', args: ...}` to call it programmatically
     * 🔴 remove `call` function
     * 🔴 remove `lingo` function
     * 🔴 update `model` functions

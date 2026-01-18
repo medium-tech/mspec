@@ -54,7 +54,7 @@ def seed_pagination_item(unique_id, base_cmd, seed_cmd, env, require_auth, model
         if result.returncode != 0:
             raise RuntimeError(f'Error logging in user for pagination seeding:\n{result.stdout + result.stderr}')
         
-        access_token = json.loads(result.stdout)['access_token']
+        access_token = json.loads(result.stdout)['result']['access_token']
 
         env['MAPP_CLI_ACCESS_TOKEN'] = access_token
         
@@ -318,7 +318,7 @@ class TestMTemplateApp(unittest.TestCase):
                 if result.returncode != 0:
                     raise RuntimeError(f'Error logging in crud user {user_name}:\n{result.stdout + result.stderr}')
                 else:
-                    access_token = json.loads(result.stdout)['access_token']
+                    access_token = json.loads(result.stdout)['result']['access_token']
                     user_env = cls.crud_ctx.copy()
                     user_env['MAPP_CLI_ACCESS_TOKEN'] = access_token
                     user_env['Authorization'] = f'Bearer {access_token}'
@@ -421,7 +421,7 @@ class TestMTemplateApp(unittest.TestCase):
                 if login_result.returncode != 0:
                     raise RuntimeError(f'Error logging in pagination test user: {login_result.stdout + login_result.stderr}')
                 
-                access_token = json.loads(login_result.stdout)['access_token']
+                access_token = json.loads(login_result.stdout)['result']['access_token']
                 user_env = cls.pagination_ctx.copy()
                 user_env['MAPP_CLI_ACCESS_TOKEN'] = access_token
                 user_env['Authorization'] = f'Bearer {access_token}'
@@ -714,10 +714,11 @@ class TestMTemplateApp(unittest.TestCase):
             }).encode()
         )
         self.assertEqual(login_status, 200)
-        self.assertIn('access_token', login_resp)
+        self.assertIn('result', login_resp)
+        self.assertIn('access_token', login_resp['result'])
 
         logged_in_ctx = base_ctx.copy()
-        access_token = login_resp['access_token']
+        access_token = login_resp['result']['access_token']
         logged_in_ctx['headers']['Authorization'] = f'Bearer {access_token}'
 
         # 5. current-user
@@ -727,8 +728,8 @@ class TestMTemplateApp(unittest.TestCase):
             '/api/auth/current-user'
         )
         self.assertEqual(current_status, 200)
-        self.assertIn('email', current_resp)
-        self.assertEqual(current_resp['email'], 'alice-server@example.com')
+        self.assertIn('email', current_resp['result'])
+        self.assertEqual(current_resp['result']['email'], 'alice-server@example.com')
 
         # 6. logout-user (current)
         logout_status, logout_resp = request(
@@ -738,7 +739,7 @@ class TestMTemplateApp(unittest.TestCase):
             request_body=json.dumps({'mode': 'current'}).encode()
         )
         self.assertEqual(logout_status, 200)
-        self.assertIn('logged out', logout_resp['message'].lower())
+        self.assertIn('logged out', logout_resp['result']['message'].lower())
 
         # 7. current-user (should error)
         logged_out_current_status, logged_out_current_resp = request(base_ctx, 'GET', '/api/auth/current-user')
@@ -756,10 +757,10 @@ class TestMTemplateApp(unittest.TestCase):
             }).encode()
         )
         self.assertEqual(login_status, 200)
-        self.assertIn('access_token', login_resp)
+        self.assertIn('access_token', login_resp['result'])
 
         logged_in_ctx = base_ctx.copy()
-        access_token = login_resp['access_token']
+        access_token = login_resp['result']['access_token']
         logged_in_ctx['headers']['Authorization'] = f'Bearer {access_token}'
 
         # 9. delete-user
@@ -769,7 +770,7 @@ class TestMTemplateApp(unittest.TestCase):
             '/api/auth/delete-user'
         )
         self.assertEqual(delete_status, 200)
-        self.assertIn('deleted', delete_resp['message'].lower())
+        self.assertIn('deleted', delete_resp['result']['message'].lower())
 
         # 10. current-user (should error)
         logged_out_current_status, logged_out_current_resp = request(base_ctx, 'GET', '/api/auth/current-user')

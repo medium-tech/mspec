@@ -8,7 +8,7 @@ from typing import Any, Optional
 from itertools import dropwhile, takewhile, islice, accumulate
 from functools import reduce
 
-from mapp.auth import create_user
+from mapp.auth import create_user, login_user, current_user, logout_user, delete_user, drop_sessions
 
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
 
@@ -93,6 +93,46 @@ def _create_user_function_args(app:LingoApp, expression: dict, ctx:Optional[dict
     password_confirm = unwrap_primitive(lingo_execute(app, password_confirm_expr, ctx))
 
     return (ctx, name, email, password, password_confirm), {}
+
+def _login_user_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        email_expr = expression['args']['email']
+        password_expr = expression['args']['password']
+    except KeyError as e:
+        raise ValueError(f'login_user - missing arg: {e}')
+
+    email = unwrap_primitive(lingo_execute(app, email_expr, ctx))
+    password = unwrap_primitive(lingo_execute(app, password_expr, ctx))
+
+    return (ctx, email, password), {}
+
+def _current_user_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    # current_user takes no params, only ctx
+    return (ctx,), {}
+
+def _logout_user_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        mode_expr = expression['args']['mode']
+    except KeyError as e:
+        raise ValueError(f'logout_user - missing arg: {e}')
+
+    mode = unwrap_primitive(lingo_execute(app, mode_expr, ctx))
+
+    return (ctx, mode), {}
+
+def _delete_user_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    # delete_user takes no params, only ctx
+    return (ctx,), {}
+
+def _drop_sessions_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        root_password_expr = expression['args']['root_password']
+    except KeyError as e:
+        raise ValueError(f'drop_sessions - missing arg: {e}')
+
+    root_password = unwrap_primitive(lingo_execute(app, root_password_expr, ctx))
+
+    return (ctx, root_password), {}
 
 def str_join(separator:str, items:list) -> str:
     return separator.join(str(item) for item in items)
@@ -205,7 +245,12 @@ lingo_function_lookup = {
     # auth #
 
     'auth': {
-        'create_user': {'func': create_user, 'create_args': _create_user_function_args}
+        'create_user': {'func': create_user, 'create_args': _create_user_function_args},
+        'login_user': {'func': login_user, 'create_args': _login_user_function_args},
+        'current_user': {'func': current_user, 'create_args': _current_user_function_args},
+        'logout_user': {'func': logout_user, 'create_args': _logout_user_function_args},
+        'delete_user': {'func': delete_user, 'create_args': _delete_user_function_args},
+        'drop_sessions': {'func': drop_sessions, 'create_args': _drop_sessions_function_args}
     }
 }
 

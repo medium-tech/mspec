@@ -69,8 +69,13 @@ modules:
                 name:
                     lower_case: "login user"
                 description: "Login a user with email and password"
-                python:
+                func:
                     call: "auth.login_user"
+                    args:
+                        email:
+                            params: {email: {}}
+                        password:
+                            params: {password: {}}
                 params:
                     email:
                         name:
@@ -83,54 +88,62 @@ modules:
                         type: str
                         description: "Password for the user"
                         secure_input: true
-                output:
-                    access_token:
-                        name:
-                            lower_case: "access token"
-                        type: str
-                        secure: true
-                        description: "Access token for the logged in user"
-                    token_type:
-                        name:
-                            lower_case: "token type"
-                        type: str
-                        description: "Type of the token"
+                result:
+                    type: struct
+                    fields:
+                        access_token:
+                            name:
+                                lower_case: "access token"
+                            type: str
+                            secure: true
+                            description: "Access token for the logged in user"
+                        token_type:
+                            name:
+                                lower_case: "token type"
+                            type: str
+                            description: "Type of the token"
 
             current_user:
                 name:
                     lower_case: "current user"
                 description: "Get the current logged in user"
-                python:
+                func:
                     call: "auth.current_user"
+                    args: {}
                 params: {}
-                output:
-                    id:
+                result:
+                    type: struct
+                    fields:
+                        id:
+                            name:
+                                lower_case: "id"
+                            type: str
+                            description: "ID of the current user"
                         name:
-                            lower_case: "id"
-                        type: str
-                        description: "ID of the current user"
-                    name:
-                        name:
-                            lower_case: "name"
-                        type: str
-                        description: "Name of the current user"
-                    email:
-                        name:
-                            lower_case: "email"
-                        type: str
-                        description: "Email of the current user"
-                    number_of_sessions:
-                        name:
-                            lower_case: "number of sessions"
-                        type: int
-                        description: "Number of active sessions for the current user"
+                            name:
+                                lower_case: "name"
+                            type: str
+                            description: "Name of the current user"
+                        email:
+                            name:
+                                lower_case: "email"
+                            type: str
+                            description: "Email of the current user"
+                        number_of_sessions:
+                            name:
+                                lower_case: "number of sessions"
+                            type: int
+                            description: "Number of active sessions for the current user"
 
             logout_user:
                 name:
                     lower_case: "logout user"
                 description: "Logout the current user"
-                python:
+                func:
                     call: "auth.logout_user"
+                    args:
+                        mode:
+                            params: {mode: {}}
                 params:
                     mode:
                         name:
@@ -141,43 +154,51 @@ modules:
                             - "current"
                             - "others"
                         description: "Logout mode, use all to logout from all sessions, current to logout from current session, others to logout all sessions except this one"
-                output:
-                    acknowledged:
-                        name:
-                            lower_case: "acknowledged"
-                        type: bool
-                        description: "Whether the logout was successful"
-                    message:
-                        name:
-                            lower_case: "message"
-                        type: str
-                        description: "Acknowledgement message"
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: "acknowledged"
+                            type: bool
+                            description: "Whether the logout was successful"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message"
 
             delete_user:
                 name:
                     lower_case: "delete user"
                 description: "Delete currently logged in user"
-                python:
+                func:
                     call: "auth.delete_user"
+                    args: {}
                 params: {}
-                output:
-                    acknowledged:
-                        name:
-                            lower_case: "acknowledged"
-                        type: bool
-                        description: "Whether the deletion was successful"
-                    message:
-                        name:
-                            lower_case: "message"
-                        type: str
-                        description: "Acknowledgement message"
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: "acknowledged"
+                            type: bool
+                            description: "Whether the deletion was successful"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message"
 
             drop_sessions:
                 name:
                     lower_case: "drop sessions"
                 description: "Drop all sessions"
-                python:
+                func:
                     call: "auth.drop_sessions"
+                    args:
+                        root_password:
+                            params: {root_password: {}}
                 params:
                     root_password:
                         name:
@@ -185,17 +206,19 @@ modules:
                         type: str
                         secure_input: true
                         description: "Root password to authorize dropping all sessions"
-                output:
-                    acknowledged:
-                        name:
-                            lower_case: "acknowledged"
-                        type: bool
-                        description: "Always true, indicates the operation was successful"
-                    message:
-                        name:
-                            lower_case: "message"
-                        type: str
-                        description: "Acknowledgement message"
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: "acknowledged"
+                            type: bool
+                            description: "Always true, indicates the operation was successful"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message"
 
         models:
 

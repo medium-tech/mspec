@@ -6,7 +6,6 @@ import json
 from traceback import format_exc
 from typing import NamedTuple
 
-from mapp.auth import init_auth_module
 from mapp.context import get_context_from_env, MappContext, RequestContext, spec_from_env
 from mapp.errors import *
 from mapp.types import JSONResponse, PlainTextResponse, StaticFileResponse, to_json
@@ -111,7 +110,6 @@ main_ctx.log = uwsgi.log
 route_list = []
 
 mapp_spec = spec_from_env()
-auth_enabled = init_auth_module(mapp_spec)
 
 try:
     spec_modules = mapp_spec['modules']
