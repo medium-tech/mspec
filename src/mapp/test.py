@@ -8,6 +8,7 @@ import re
 import multiprocessing
 import time
 import shutil
+import jwt
 
 from pathlib import Path
 from copy import deepcopy
@@ -138,7 +139,13 @@ def login_cached_user(cmd:list[str], ctx:dict, user_name:str, email:str, passwor
     
     login_response = json.loads(result.stdout)['result']
     access_token = login_response['access_token']
-    user_id = login_response['user']['id']
+    
+    # decode JWT token to get user_id (without verification since we just need the payload)
+    try:
+        token_payload = jwt.decode(access_token, options={'verify_signature': False})
+        user_id = token_payload['sub']
+    except Exception as e:
+        raise RuntimeError(f'Error decoding access token for cached user {user_name}: {e}')
     
     user_data = {
         'id': user_id,

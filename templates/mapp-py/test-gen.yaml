@@ -1,0 +1,352 @@
+lingo:
+  version: 'generator-beta-1'
+  
+project:
+  
+  name:
+    lower_case: 'test gen'
+
+  description: 'A test project for mspec-alpha python app generator'
+
+  author:
+    name: 'B rad C'
+    email: 'sample@email.com'
+
+server:
+  port: 6006
+
+client:
+  default_host: 'http://localhost:6006'
+
+modules:
+  generated_module_a:
+    name:
+      lower_case: 'generated module a'
+
+    ops:
+      say_hello:
+        name:
+          lower_case: 'say hello'
+        description: 'Return a greeting message'
+        func:
+          call: concat
+          args:
+            items:
+              - 'Hello, '
+              - params: {name: {}}
+              - '!'
+        params:
+          name:
+            name:
+              lower_case: 'name'
+            type: str
+            description: 'Name of the person to greet'
+        
+        result:
+          type: str
+          description: 'Greeting message'
+
+        tests:
+          test_cases:
+            - params:
+                name: 'Alice'
+              expected_result: 'Hello, Alice!'
+              name: 'Test with Alice'
+            - params:
+                name: 'Bob'
+              expected_result: 'Hello, Bob!'
+              name: 'Test with Bob'
+
+    models:
+      singular_model:
+        name:
+          lower_case: 'singular model'
+
+        fields:
+
+          x_bool:
+            name:
+              lower_case: 'x bool'
+            type: bool
+            examples:
+              - false
+              - true
+
+          x_int:
+            name:
+              lower_case: 'x int'
+            type: int
+            examples:
+              - 101
+              - 202
+              - 3
+
+          x_float:
+            name:
+              lower_case: 'x float'
+            type: float
+            examples:
+              - 21.99
+              - 0.99
+              - 1.01
+
+          x_string:
+            name:
+              lower_case: 'x string'
+            type: str
+            examples:
+              - "piano"
+              - "guitar"
+              - "drum"
+              - "saxophone"
+
+          x_enum:
+            name:
+              lower_case: 'x enum'
+            type: str
+            enum:
+              - taco
+              - tlayuda
+              - chilaquiles
+              - tamales
+
+            examples:
+              - tlayuda
+              - taco
+
+          x_datetime:
+            name:
+              lower_case: 'x datetime'
+            type: datetime
+            examples:
+              - "2000-01-11T12:34:56"
+              - "2020-10-02T15:30:00"
+
+      plural_model:
+        name:
+          lower_case: 'plural model'
+
+        fields:
+
+          x_list_bool:
+            name:
+              lower_case: 'x list bool'
+            type: list
+            element_type: bool
+            examples:
+              - [true, false]
+              - [false, true, true]
+
+          x_list_int:
+            name:
+              lower_case: 'x list int'
+            type: list
+            element_type: int
+            examples:
+              - [7, 11]
+              - [42, 16, 109, 4]
+
+          x_list_float:
+            name:
+              lower_case: 'x list float'
+            type: list
+            element_type: float
+            examples:
+              - [3.14, 2.718]
+              - [1.618, 0.577]
+
+          x_list_string:
+            name:
+              lower_case: 'x list string'
+            type: list
+            element_type: str
+            examples:
+              - ["banana"]
+              - ["extravagantly long string"]
+              - ["amplitude", "hello world"]
+
+          x_list_enum:
+            name:
+              lower_case: 'x list enum'
+            type: list
+            element_type: str
+            enum:
+              - chorizo
+              - carne
+              - al pastor
+              - pollo
+
+            examples:
+              - ["chorizo", "al pastor"]
+              - ["carne"]
+
+          x_list_datetime:
+            name:
+              lower_case: 'x list datetime'
+            type: list
+            element_type: datetime
+            examples:
+              - ["2000-01-11T12:34:56"]
+              - ["2020-10-02T15:30:00", "2021-01-01T00:00:00"]
+
+  generated_module_b:
+    name:
+      lower_case: 'generated module b'
+
+    models:
+      custom_random_model:
+        name:
+          lower_case: 'custom random model'
+
+        auth:
+          require_login: true
+
+        fields:
+
+          user_id:
+            name:
+              lower_case: 'user id'
+            type: foreign_key
+            references:
+              table: 'user'
+              field: 'id'
+            examples:
+              - "1"
+              - "2"
+              - "3"
+
+          name:
+            name:
+              lower_case: 'name'
+            type: str
+            examples:
+              - "Alice"
+              - "Bob"
+              - "Charlie"
+            random: random_person_name
+          
+          user_name:
+            name:
+              lower_case: 'user name'
+            type: str
+            examples:
+              - "alice123"
+              - "bob_the_builder"
+              - "charlie_brown"
+            random: random_user_name
+          
+          favorite_thing:
+            name:
+              lower_case: 'favorite thing'
+            type: str
+            examples:
+              - "pizza"
+              - "sushi"
+              - "tacos"
+            random: random_thing_name
+          
+          email:
+            name:
+              lower_case: 'email'
+            type: str
+            examples:
+              - "my@email.com"
+              - "my-other@email.com"
+            random: random_email
+          
+          phone_number:
+            name:
+              lower_case: 'phone number'
+            type: str
+            examples:
+              - "+1 (123) 456-7890"
+              - "+1 (987) 654-3210"
+            random: random_phone_number
+
+      custom_limit_model_a:
+        name:
+          lower_case: 'custom limit model a'
+
+        auth:
+          require_login: true
+          max_models_per_user: 0
+
+        fields:
+          user_id:
+            name:
+              lower_case: 'user id'
+            type: foreign_key
+            references:
+              table: 'user'
+              field: 'id'
+            examples:
+              - "1"
+              - "2"
+              - "3"
+          my_field:
+            name:
+              lower_case: 'my field'
+            type: str
+            examples:
+              - "example1"
+              - "example2"
+
+      custom_limit_model_b:
+        name:
+          lower_case: 'custom limit model b'
+
+        auth:
+          require_login: true
+          max_models_per_user: 1
+
+        fields:
+
+          user_id:
+            name:
+              lower_case: 'user id'
+            type: foreign_key
+            references:
+              table: 'user'
+              field: 'id'
+            examples:
+              - "1"
+              - "2"
+              - "3"
+              
+          my_field:
+            name:
+              lower_case: 'my field'
+            type: str
+            examples:
+              - "example1"
+              - "example2"
+
+      custom_limit_model_c:
+        name:
+          lower_case: 'custom limit model c'
+
+        auth:
+          require_login: true
+          max_models_per_user: 5
+
+        fields:
+
+          user_id:
+            name:
+              lower_case: 'user id'
+            type: foreign_key
+            references:
+              table: 'user'
+              field: 'id'
+            examples:
+              - "1"
+              - "2"
+              - "3"
+              
+          my_field:
+            name:
+              lower_case: 'my field'
+            type: str
+            examples:
+              - "example1"
+              - "example2"
