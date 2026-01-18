@@ -140,11 +140,15 @@ def login_cached_user(cmd:list[str], ctx:dict, user_name:str, email:str, passwor
     login_response = json.loads(result.stdout)['result']
     access_token = login_response['access_token']
     
-    # decode JWT token to get user_id (without verification since we just need the payload)
+    # Decode JWT token to get user_id (without verification since we generated it locally)
+    # Signature verification is disabled because:
+    # 1. This is for test purposes only with locally generated tokens
+    # 2. We just need to extract the user_id from the payload
+    # 3. The token was just created by our own auth system
     try:
         token_payload = jwt.decode(access_token, options={'verify_signature': False})
         user_id = token_payload['sub']
-    except Exception as e:
+    except (jwt.DecodeError, jwt.InvalidTokenError, KeyError) as e:
         raise RuntimeError(f'Error decoding access token for cached user {user_name}: {e}')
     
     user_data = {
