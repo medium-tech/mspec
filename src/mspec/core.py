@@ -360,28 +360,17 @@ def init_generator_spec(spec:dict) -> dict:
             
             # output #
 
-            deprecated_python_call = 'python' in op
-            lingo_func = 'func' in op
-
-            if deprecated_python_call and lingo_func:
-                raise ValueError('INVALID_OP_SPEC', f'Op {op_snake_case} cannot have both python.call and func defined')
+            if 'python' in op:
+                raise ValueError('INVALID_OP_SPEC', f'Op {op_snake_case} cannot have deprecated python call defined in op spec.')
             
-            elif not deprecated_python_call and not lingo_func:
-                raise ValueError('INVALID_OP_SPEC', f'Op {op_snake_case} must have either python.call or func defined')
-
-            if deprecated_python_call:
-                try:
-                    op_output = op['output']
-                except KeyError:
-                    raise ValueError(f'No output defined in {op_snake_case}.{module_snake} op')
-                
-            else:
-                
-                try:
-                    op['result']['name'] = {'lower_case': 'result'}
-                    op_output = {'result': op['result']}
-                except KeyError as e:
-                    raise ValueError(f'{e} not defined in {op_snake_case}.{module_snake} op')
+            if not 'func' in op:
+                raise ValueError('INVALID_OP_SPEC', f'Op {op_snake_case} must have func defined in op spec.')
+            
+            try:
+                op['result']['name'] = {'lower_case': 'result'}
+                op_output = {'result': op['result']}
+            except KeyError as e:
+                raise ValueError(f'{e} not defined in {op_snake_case}.{module_snake} op')
                 
             for out_name, out_field in op_output.items():
                 for key, value in generate_names(out_field['name']['lower_case']).items():

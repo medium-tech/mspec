@@ -41,62 +41,27 @@ def op_create_callable(param_class:type, output_class:type) -> object:
 	# init
 	#
 
-	deprecated_python_call = 'python' in param_class._op_spec
-	lingo_func = 'func' in param_class._op_spec
-
-	if deprecated_python_call and lingo_func:
-		raise MappError('INVALID_OP_SPEC', f'Op {op_snake_case} cannot have both python.call and func defined')
+	if 'python' in param_class._op_spec:
+		raise MappError('DEPRECATED_OP_SPEC', f'Op {op_snake_case} uses deprecated python op spec. Please update to use func.')
 	
-	elif not deprecated_python_call and not lingo_func:
-		raise MappError('INVALID_OP_SPEC', f'Op {op_snake_case} must have either python.call or func defined')
-	
-	#
-	# legacy python call
-	#
-
-	if deprecated_python_call:
-		try:
-			py_definition = param_class._op_spec['python']
-			py_call = py_definition['call']
-		except KeyError:
-			raise MappError('INVALID_OP_SPEC', f'Missing python.call for op {op_snake_case}')
-		
-		match py_call:
-			case 'auth.create_user':
-				op_callable = auth.create_user
-			case 'auth.login_user':
-				op_callable = auth.login_user
-			case 'auth.current_user':
-				op_callable = auth.current_user
-			case 'auth.logout_user':
-				op_callable = auth.logout_user
-			case 'auth.delete_user':
-				op_callable = auth.delete_user
-			case 'auth.drop_sessions':
-				op_callable = auth.drop_sessions
-			case _:
-				raise MappError('UNKNOWN_OP_CALL', f'Unknown op python.call: {py_call}')
-		
-	#
-	# user defined lingo function
-	#
-
-	else:
+	try:
 		lingo_func = param_class._op_spec['func']
+	except KeyError:
+		raise MappError('INVALID_OP_SPEC', f'Op {op_snake_case} missing lingo func in op spec.')
 
-		def op_callable(ctx: MappContext, params:object) -> object:
-			spec = {'params': param_class._op_spec['params']}
-			validate_op_params(param_class, params)
-			lingo_app = LingoApp(
-				spec,
-				params,
-				dict(),
-				list()
-			)
+	def op_callable(ctx: MappContext, params:object) -> object:
+		spec = {'params': param_class._op_spec['params']}
+		validate_op_params(param_class, params)
+		lingo_app = LingoApp(
+			spec,
+			params,
+			dict(),
+			list()
+		)
 
-			op_output = lingo_execute(lingo_app, lingo_func, ctx)
+		op_output = lingo_execute(lingo_app, lingo_func, ctx)
 
-			return validate_op_output(output_class, OpResult(unwrap_primitive(op_output)))
+		return validate_op_output(output_class, OpResult(unwrap_primitive(op_output)))
 		
 	# create application wrapper #
 
