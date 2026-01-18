@@ -226,7 +226,11 @@ class TestMTemplateApp(unittest.TestCase):
 
         os.makedirs(cls.test_dir, exist_ok=True)
 
-        crud_db_exists = cls.crud_db_file.exists()
+        # Always delete crud DB to avoid max models exceeded errors with cached data
+        # Only cache the expensive pagination DB
+        if cls.crud_db_file.exists():
+            cls.crud_db_file.unlink()
+        
         pagination_db_exists = cls.pagination_db_file.exists()
         
         #
@@ -320,65 +324,46 @@ class TestMTemplateApp(unittest.TestCase):
         except AssertionError as e:
             raise RuntimeError(f'AssertionError {e} while creating table for crud db {module_name_kebab}.{model_name_kebab}: {crud_result.stdout + crud_result.stderr}')
         
-        # create or login crud users #
+        # create crud users (always fresh since crud DB is recreated each time) #
 
         if cls.spec['project']['use_builtin_modules']:
             crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn']
-            
-            if cls.use_cache and crud_db_exists:
-                # login to existing cached users #
-                print('  :: Logging in to cached crud users ::')
-                for user_name in crud_users:
-                    email = f'{user_name}@example.com'
-                    try:
-                        user_data = login_cached_user(cls.cmd, cls.crud_ctx, user_name, email)
-                        cls.crud_users.append(user_data)
-                    except RuntimeError as e:
-                        # if login fails, user may not exist in cache, so create them
-                        print(f'  :: Could not login to cached user {user_name}, will create new users ::')
-                        cls.crud_users = []
-                        cls.use_cache = False  # disable cache for crud users
-                        break
-            
-            if not cls.use_cache or not crud_db_exists or len(cls.crud_users) == 0:
-                # create new users #
-                print('  :: Creating new crud users ::')
-                cls.crud_users = []  # clear in case we had partial login failures
-                for user_name in crud_users:
+            print('  :: Creating crud users ::')
+            for user_name in crud_users:
 
-                    # create #
+                # create #
 
-                    user_data = {
-                        'name': user_name,
-                        'email': f'{user_name}@example.com',
-                        'password': 'testpass123',
-                        'password_confirm': 'testpass123'
-                    }
+                user_data = {
+                    'name': user_name,
+                    'email': f'{user_name}@example.com',
+                    'password': 'testpass123',
+                    'password_confirm': 'testpass123'
+                }
 
-                    create_cmd = cls.cmd + ['auth', 'create-user', 'run', json.dumps(user_data)]
-                    result = subprocess.run(create_cmd, capture_output=True, text=True, env=cls.crud_ctx)
-                    if result.returncode != 0:
-                        raise RuntimeError(f'Error creating crud user {user_name}:\n{result.stdout + result.stderr}')
-                    
-                    user_id = json.loads(result.stdout)['result']['id']
-                    user_data['id'] = user_id
-                    
-                    # login #
+                create_cmd = cls.cmd + ['auth', 'create-user', 'run', json.dumps(user_data)]
+                result = subprocess.run(create_cmd, capture_output=True, text=True, env=cls.crud_ctx)
+                if result.returncode != 0:
+                    raise RuntimeError(f'Error creating crud user {user_name}:\n{result.stdout + result.stderr}')
+                
+                user_id = json.loads(result.stdout)['result']['id']
+                user_data['id'] = user_id
+                
+                # login #
 
-                    login_params = {'email': user_data['email'], 'password': 'testpass123'}
-                    login_cmd = cls.cmd + ['auth', 'login-user', 'run', json.dumps(login_params), '--show', '--no-session']
-                    result = subprocess.run(login_cmd, capture_output=True, text=True, env=cls.crud_ctx)
+                login_params = {'email': user_data['email'], 'password': 'testpass123'}
+                login_cmd = cls.cmd + ['auth', 'login-user', 'run', json.dumps(login_params), '--show', '--no-session']
+                result = subprocess.run(login_cmd, capture_output=True, text=True, env=cls.crud_ctx)
 
-                    # confirm and store #
+                # confirm and store #
 
-                    if result.returncode != 0:
-                        raise RuntimeError(f'Error logging in crud user {user_name}:\n{result.stdout + result.stderr}')
-                    else:
-                        access_token = json.loads(result.stdout)['result']['access_token']
-                        user_env = cls.crud_ctx.copy()
-                        user_env['MAPP_CLI_ACCESS_TOKEN'] = access_token
-                        user_env['Authorization'] = f'Bearer {access_token}'
-                        cls.crud_users.append({'user': user_data, 'env': user_env})
+                if result.returncode != 0:
+                    raise RuntimeError(f'Error logging in crud user {user_name}:\n{result.stdout + result.stderr}')
+                else:
+                    access_token = json.loads(result.stdout)['result']['access_token']
+                    user_env = cls.crud_ctx.copy()
+                    user_env['MAPP_CLI_ACCESS_TOKEN'] = access_token
+                    user_env['Authorization'] = f'Bearer {access_token}'
+                    cls.crud_users.append({'user': user_data, 'env': user_env})
 
         # setup tables in test dbs #
 
