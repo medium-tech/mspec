@@ -127,6 +127,33 @@ def env_to_string(env:dict) -> str:
             out += f'{key}={value}\n'
     return out
 
+def login_cached_user(cmd:list[str], ctx:dict, user_name:str, email:str, password:str='testpass123') -> dict:
+    """Login to a cached user and return user data with env context"""
+    login_params = {'email': email, 'password': password}
+    login_cmd = cmd + ['auth', 'login-user', 'run', json.dumps(login_params), '--show', '--no-session']
+    result = subprocess.run(login_cmd, capture_output=True, text=True, env=ctx, timeout=10)
+    
+    if result.returncode != 0:
+        raise RuntimeError(f'Error logging in cached user {user_name}:\n{result.stdout + result.stderr}')
+    
+    login_response = json.loads(result.stdout)['result']
+    access_token = login_response['access_token']
+    user_id = login_response['user']['id']
+    
+    user_data = {
+        'id': user_id,
+        'name': user_name,
+        'email': email,
+        'password': password,
+        'password_confirm': password
+    }
+    
+    user_env = ctx.copy()
+    user_env['MAPP_CLI_ACCESS_TOKEN'] = access_token
+    user_env['Authorization'] = f'Bearer {access_token}'
+    
+    return {'user': user_data, 'env': user_env}
+
 
 class TestMTemplateApp(unittest.TestCase):
     
@@ -188,6 +215,7 @@ class TestMTemplateApp(unittest.TestCase):
 
         os.makedirs(cls.test_dir, exist_ok=True)
 
+        crud_db_exists = cls.crud_db_file.exists()
         pagination_db_exists = cls.pagination_db_file.exists()
         
         #
@@ -281,48 +309,65 @@ class TestMTemplateApp(unittest.TestCase):
         except AssertionError as e:
             raise RuntimeError(f'AssertionError {e} while creating table for crud db {module_name_kebab}.{model_name_kebab}: {crud_result.stdout + crud_result.stderr}')
         
-        # create 2 crud users #
+        # create or login crud users #
 
-        if cls.use_cache:
-            raise RuntimeError('Need to fix cache with new auth system')
-
-        if not cls.use_cache and cls.spec['project']['use_builtin_modules']:
+        if cls.spec['project']['use_builtin_modules']:
             crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn']
-            for user_name in crud_users:
+            
+            if cls.use_cache and crud_db_exists:
+                # login to existing cached users #
+                print('  :: Logging in to cached crud users ::')
+                for user_name in crud_users:
+                    email = f'{user_name}@example.com'
+                    try:
+                        user_data = login_cached_user(cls.cmd, cls.crud_ctx, user_name, email)
+                        cls.crud_users.append(user_data)
+                    except RuntimeError as e:
+                        # if login fails, user may not exist in cache, so create them
+                        print(f'  :: Could not login to cached user {user_name}, will create new users ::')
+                        cls.crud_users = []
+                        cls.use_cache = False  # disable cache for crud users
+                        break
+            
+            if not cls.use_cache or not crud_db_exists or len(cls.crud_users) == 0:
+                # create new users #
+                print('  :: Creating new crud users ::')
+                cls.crud_users = []  # clear in case we had partial login failures
+                for user_name in crud_users:
 
-                # create #
+                    # create #
 
-                user_data = {
-                    'name': user_name,
-                    'email': f'{user_name}@example.com',
-                    'password': 'testpass123',
-                    'password_confirm': 'testpass123'
-                }
+                    user_data = {
+                        'name': user_name,
+                        'email': f'{user_name}@example.com',
+                        'password': 'testpass123',
+                        'password_confirm': 'testpass123'
+                    }
 
-                create_cmd = cls.cmd + ['auth', 'create-user', 'run', json.dumps(user_data)]
-                result = subprocess.run(create_cmd, capture_output=True, text=True, env=cls.crud_ctx)
-                if result.returncode != 0:
-                    raise RuntimeError(f'Error creating crud user {user_name}:\n{result.stdout + result.stderr}')
-                
-                user_id = json.loads(result.stdout)['result']['id']
-                user_data['id'] = user_id
-                
-                # login #
+                    create_cmd = cls.cmd + ['auth', 'create-user', 'run', json.dumps(user_data)]
+                    result = subprocess.run(create_cmd, capture_output=True, text=True, env=cls.crud_ctx)
+                    if result.returncode != 0:
+                        raise RuntimeError(f'Error creating crud user {user_name}:\n{result.stdout + result.stderr}')
+                    
+                    user_id = json.loads(result.stdout)['result']['id']
+                    user_data['id'] = user_id
+                    
+                    # login #
 
-                login_params = {'email': user_data['email'], 'password': 'testpass123'}
-                login_cmd = cls.cmd + ['auth', 'login-user', 'run', json.dumps(login_params), '--show', '--no-session']
-                result = subprocess.run(login_cmd, capture_output=True, text=True, env=cls.crud_ctx)
+                    login_params = {'email': user_data['email'], 'password': 'testpass123'}
+                    login_cmd = cls.cmd + ['auth', 'login-user', 'run', json.dumps(login_params), '--show', '--no-session']
+                    result = subprocess.run(login_cmd, capture_output=True, text=True, env=cls.crud_ctx)
 
-                # confirm and store #
+                    # confirm and store #
 
-                if result.returncode != 0:
-                    raise RuntimeError(f'Error logging in crud user {user_name}:\n{result.stdout + result.stderr}')
-                else:
-                    access_token = json.loads(result.stdout)['result']['access_token']
-                    user_env = cls.crud_ctx.copy()
-                    user_env['MAPP_CLI_ACCESS_TOKEN'] = access_token
-                    user_env['Authorization'] = f'Bearer {access_token}'
-                    cls.crud_users.append({'user': user_data, 'env': user_env})
+                    if result.returncode != 0:
+                        raise RuntimeError(f'Error logging in crud user {user_name}:\n{result.stdout + result.stderr}')
+                    else:
+                        access_token = json.loads(result.stdout)['result']['access_token']
+                        user_env = cls.crud_ctx.copy()
+                        user_env['MAPP_CLI_ACCESS_TOKEN'] = access_token
+                        user_env['Authorization'] = f'Bearer {access_token}'
+                        cls.crud_users.append({'user': user_data, 'env': user_env})
 
         # setup tables in test dbs #
 
@@ -364,7 +409,24 @@ class TestMTemplateApp(unittest.TestCase):
 
         if cls.use_cache and pagination_db_exists:
             print('  :: Using cached pagination db ::')
-        else:
+            
+            # login to cached pagination user #
+            
+            if cls.spec['project']['use_builtin_modules']:
+                print('  :: Logging in to cached pagination user ::')
+                try:
+                    cls.pagination_user = login_cached_user(
+                        cls.cmd, 
+                        cls.pagination_ctx, 
+                        'pagination_tester', 
+                        'pagination_tester@example.com'
+                    )
+                except RuntimeError as e:
+                    print(f'  :: Could not login to cached pagination user, will recreate: {e} ::')
+                    # fall through to else block to recreate pagination db
+                    cls.use_cache = False  # disable cache for pagination db
+        
+        if not cls.use_cache or not pagination_db_exists:
             print(f'  :: Seeding pagination db ::')
             seed_jobs = []
             for module in cls.spec['modules'].values():
