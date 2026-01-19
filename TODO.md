@@ -43,12 +43,12 @@
                     * 🟢 http
                     * 🔴 run
                     * 🔴 tests
-            * 🔴 auth
-                * 🔴 login
-                * 🔴 logout
-                * 🔴 user view
+            * 🟡 auth
+                * 🟢 login
+                * 🟢 logout
+                * 🟢 user view
                 * 🔴 user edit
-                * 🔴 attach session to all op/model calls
+                * 🟢 attach session to all op/model calls
                 * 🔴 tests
         * 🔴 serve additional lingo pages
             * 🔴 update mspec to support defining other pages and their lingo (for apps running in users local browser)
