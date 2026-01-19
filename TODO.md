@@ -96,6 +96,7 @@ The main prototype are the python + browser 1 browser template apps.
         or `{call: 'my_module.my_backend_op', http: '...', args: ...}` to call it programmatically
     * 🔴 remove `call` function
     * 🔴 remove `lingo` function
+    * 🔴 add `error` as function/widget/value/type?
     * 🔴 update `model` functions
         * 🔴 merge model.display `delete` mode into `read` mode, rename `read` to `item`
             * 🔴 add options to init model in delete/read/edit mode

@@ -27,6 +27,18 @@ function strConcat(items) {
     return items.map(item => String(item)).join('');
 }
 
+function getRequestHeaders() {
+    // check localStorage for access_token
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    const accessToken = localStorage.getItem('access_token');
+    if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+    return headers;
+}
+
 //
 // lingo functions
 //
@@ -412,7 +424,7 @@ function lingoUpdateState(app, ctx = null) {
 }
 
 /**
- * Get JavaScript type name in Python-compatible format
+ * type helpers
  */
 function getTypeName(value) {
     // console.log('getTypeName()', typeof value, value);
@@ -1509,9 +1521,7 @@ function handleSequenceOp(app, expression, ctx = null) {
             try {
                 const response = await fetch(url, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: getRequestHeaders(),
                     body: JSON.stringify(data)
                 });
 
@@ -1564,9 +1574,7 @@ function handleSequenceOp(app, expression, ctx = null) {
             try {
                 const response = await fetch(url, {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: getRequestHeaders(),
                     body: JSON.stringify(data)
                 });
 
@@ -1621,9 +1629,7 @@ function handleSequenceOp(app, expression, ctx = null) {
             try {
                 const response = await fetch(url, {
                     method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
+                    headers: getRequestHeaders()
                 });
 
                 if (response.ok) {
@@ -1683,9 +1689,7 @@ function handleSequenceOp(app, expression, ctx = null) {
             try {
                 const response = await fetch(url, {
                     method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
+                    headers: getRequestHeaders()
                 });
 
                 if (response.ok) {
@@ -1739,9 +1743,7 @@ function handleSequenceOp(app, expression, ctx = null) {
             try {
                 const response = await fetch(url, {
                     method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
+                    headers: getRequestHeaders()
                 });
 
                 if (response.ok) {
@@ -1802,15 +1804,13 @@ function handleSequenceOp(app, expression, ctx = null) {
         // send request
         //
 
-        // console.log('handleSequenceOp - op.http - url:', url, 'params:', params);
+        console.log('handleSequenceOp - op.http - url:', expression, url, 'params:', params);
 
         async function sendOpHttpRequest(url, params) {
             try {
                 const response = await fetch(url, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: getRequestHeaders(),
                     body: JSON.stringify(params)
                 });
 
@@ -1821,6 +1821,16 @@ function handleSequenceOp(app, expression, ctx = null) {
                     if(responseData.hasOwnProperty('result')){
                         const wrappedResult = wrapValue(responseData.result);
                         console.log('handleSequenceOp - op.http - wrappedResult:', wrappedResult);
+                        if(url === '/api/auth/login-user'){
+                            const accessToken = responseData.result.access_token;
+                            if(accessToken){
+                                localStorage.setItem('access_token', accessToken);
+                                console.log('handleSequenceOp - op.http - stored access_token in localStorage');
+                            }
+                        }else if(url === '/api/auth/logout-user' && params.mode !== 'others'){
+                            localStorage.removeItem('access_token');
+                            console.log('handleSequenceOp - op.http - removed access_token from localStorage');
+                        }
                         return {state: 'result', result: wrappedResult};
                     }else{
                         return {state: 'error', error: 'Response missing result field'};
