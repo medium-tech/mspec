@@ -80,11 +80,9 @@ The main prototype are the python + browser 1 browser template apps.
     * 🟢 rename mspec/markup.py to lingo.py
     * 🔴 rename `render_output` to `lingo_render`
     * 🔴 rename remaining `render_*` functions to `execute_*`
-    * 🟡 separate pages and scripts, currenlty both use `output` to define their result, but execute should use `main` and render should use `output`
     * 🔴 migrate `mtemplate/__init__.py` logic to `mtemplate/core.py`
-    * 🔴 migrate builtin auth ops
-        * 🔴 add `auth.*` functions to `lingo.py` lingo execute
-        * 🔴 migrate `builtin.yaml` ops to `func` style logic
+    * 🟢 migrate builtin auth ops
+        * 🟢 migrate `builtin.yaml` ops to `func` style logic
 * 🔴 add background tasks 
     * 🔴 timers similar to blender's app timers
     * 🔴 scheduled (cron style)
@@ -92,8 +90,8 @@ The main prototype are the python + browser 1 browser template apps.
     * 🔴 startup
     * 🔴 shutdown
 * 🔴 language changes
-    * in page lingo specs, rename `ops` to `funcs` to disambiguate ops the user interface from calling an op.
-        to call a pages func you would do `{call: 'funcs.my_func', args: {...}`, then `{op: 'func.my_func', ...}` would create
+    * in page lingo specs, rename `ops` to `funcs` to disambiguate calling an op from displaying an op's ui
+        to call a page's func you would do `{call: 'funcs.my_func', args: {...}`, and then `{op: 'func.my_func', ...}` would create
         a ui widget to call the function and display the response, `{op: 'my_module.my_backend_op', http: '...'}` to call a backend op via ui
         or `{call: 'my_module.my_backend_op', http: '...', args: ...}` to call it programmatically
     * 🔴 remove `call` function

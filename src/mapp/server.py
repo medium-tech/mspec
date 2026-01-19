@@ -9,7 +9,7 @@ from typing import NamedTuple
 from mapp.context import get_context_from_env, MappContext, RequestContext, spec_from_env
 from mapp.errors import *
 from mapp.types import JSONResponse, PlainTextResponse, StaticFileResponse, to_json
-from mapp.module.model.db import db_model_create_table
+from mapp.db import create_tables
 from mapp.module.model.server import create_model_routes
 from mapp.module.op.server import create_op_routes
 from mspec.core import get_mapp_ui_files, load_browser2_spec
@@ -111,28 +111,25 @@ route_list = []
 
 mapp_spec = spec_from_env()
 
+create_tables(main_ctx, mapp_spec)
+
 try:
     spec_modules = mapp_spec['modules']
 except KeyError:
     raise MappError('NO_MODULES_DEFINED', 'No modules defined in the spec file.')
 
 for module in spec_modules.values():
-    if module.get('hidden', False) is True:
-        continue
 
     for model in module.get('models', {}).values():
-        if model.get('hidden', False) is True:
-            continue
 
-        route_resolver, model_class = create_model_routes(module, model)
-        route_list.append(route_resolver)
-        db_model_create_table(main_ctx, model_class)
-
+        if model.get('hidden', False) is False:
+            route_resolver, model_class = create_model_routes(module, model)
+            route_list.append(route_resolver)
+        
     for op in module.get('ops', {}).values():
-        if op.get('hidden', False) is True:
-            continue
-        route_resolver = create_op_routes(module, op)
-        route_list.append(route_resolver)
+        if op.get('hidden', False) is False:
+            route_resolver = create_op_routes(module, op)
+            route_list.append(route_resolver)
 
 if MAPP_SERVER_DEVELOPMENT_MODE is True:
     route_list.append(debug_routes)

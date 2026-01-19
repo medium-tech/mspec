@@ -384,8 +384,8 @@ function lingoUpdateState(app, ctx = null) {
                 ? newValue.type
                 : getTypeName(actualValue);
             
-            if (actualType !== value.type) {
-                throw new Error(`state.${key} - expression returned type: ${actualType}, expected: ${value.type}`);
+            if (!typesMatch(actualType, value.type)) {
+                throw new Error(`state.${key} - expression returned type mismatch: ${actualType}, expected: ${value.type}`);
             }
             app.state[key] = actualValue;
         } else {
@@ -395,7 +395,7 @@ function lingoUpdateState(app, ctx = null) {
                     throw new Error(`state.${key} - missing default value`);
                 }
                 const typeName = getTypeName(value.default);
-                if (typeName !== value.type) {
+                if (!typesMatch(typeName, value.type)) {
                     throw new Error(`state.${key} - default value type mismatch : ${typeName} != ${value.type}`);
                 }
                 app.state[key] = value.default;
@@ -436,11 +436,38 @@ function getTypeName(value) {
     return typeof value;
 }
 
+function typesMatch(a, b, allowAny = true) {
+    /*
+    Check if two type names match, with option to allow 'any' type
+    */
+    if(a === b){
+        return true;
+    }else if (allowAny && (a === 'any' || b === 'any')) {
+        return true;
+    }else{
+        return false;
+    }
+}
+
 function unwrapValue(data) {
     if (typeof data === 'object' && data !== null && 'value' in data && 'type' in data) {
         return data.value;
     }else{
         return data;
+    }
+}
+
+function wrapValue(value) {
+    /*
+    Wrap a primitive value in a type/value object,
+    or return an already wrapped object as is
+    */
+
+    if (typeof value === 'object' && value !== null && 'value' in value && 'type' in value) {
+        return value;
+    }else{
+        const typeName = getTypeName(value);
+        return {type: typeName, value: value};
     }
 }
 
@@ -794,7 +821,7 @@ function renderSet(app, expression, ctx = null) {
                     // verify type of outValue matches type of origStructValue
                     const newStructType = getTypeName(origStructValue);
                     const outValueType = getTypeName(outValue);
-                    if (outValueType !== newStructType) {
+                    if (!typesMatch(outValueType, newStructType)) {
                         throw new Error(`set - type mismatch: ${newStructType} != ${outValueType} - field: ${fieldName}.${structFieldName}`);
                     }
 
@@ -818,7 +845,7 @@ function renderSet(app, expression, ctx = null) {
                         // verify type of `structFieldValue` matches type of `origStructValue`
                         const newStructType = getTypeName(origStructValue);
                         const structFieldValueType = getTypeName(structFieldValue);
-                        if (structFieldValueType !== newStructType) {
+                        if (!typesMatch(structFieldValueType, newStructType)) {
                             throw new Error(`set - type mismatch: ${newStructType} != ${structFieldValueType} - field: ${fieldName}.${structFieldName}`);
                         }
 
@@ -829,8 +856,8 @@ function renderSet(app, expression, ctx = null) {
                 }
 
             }else{
-                if (newType !== fieldType) {
-                    console.error(`set - type mismatch: ${fieldType} != ${newType} - field: ${fieldName}`, outValue);
+                if (!typesMatch(newType, fieldType)) {
+                    // console.error(`set - type mismatch: ${fieldType} != ${newType} - field: ${fieldName}`, outValue);
                     throw new Error(`set - type mismatch: ${fieldType} != ${newType} - field: ${fieldName}`, outValue);
                 }
                 app.state[fieldName] = outValue;
@@ -1071,8 +1098,8 @@ function renderOp(app, expression, ctx = null) {
                         case: 'result',
                         then: {
                             block: [
-                                {text: 'result: ', style: {color: 'green', bold: true}},
-                                {text: unwrapValue(app.state[stateField].result)}
+                                {text: 'success: ', style: {color: 'green', bold: true}},
+                                app.state[stateField].result
                             ]
                         }
                     },
@@ -1790,16 +1817,39 @@ function handleSequenceOp(app, expression, ctx = null) {
                 if (response.ok) {
 
                     const responseData = await response.json();
-                    // console.log('handleSequenceOp - op.http - responseData:', responseData);
+                    console.log('handleSequenceOp - op.http - responseData:', responseData);
                     if(responseData.hasOwnProperty('result')){
-                        return {state: 'result', result: responseData.result};
+                        const wrappedResult = wrapValue(responseData.result);
+                        console.log('handleSequenceOp - op.http - wrappedResult:', wrappedResult);
+                        return {state: 'result', result: wrappedResult};
                     }else{
                         return {state: 'error', error: 'Response missing result field'};
                     }
                     
                 }else{
+                    const errorData = await response.json();
+
+                    /*
+                    expect:
+                        {
+                            "error": {
+                                "code": "...",
+                                "message": "..."
+                            }
+                        }
+                    with ${response.status} ${response.statusText} as a fallback
+                    */
+
+                    let errorMessage = `${response.status} ${response.statusText}`;
+                    if(errorData.hasOwnProperty('error')){
+                        if(errorData.error.hasOwnProperty('message')){
+                            errorMessage = errorData.error.message;
+                        }
+                    }
+
+
                     console.error('handleSequenceOp - op.http - HTTP error:', response.status, response.statusText); 
-                    return {state: 'error', error: `Response error: ${response.status} ${response.statusText}`};
+                    return {state: 'error', error: errorMessage};
                 }
 
             } catch (error) {
@@ -2723,6 +2773,10 @@ function createValueElement(element) {
             throw new Error('createValueElement - unsupported list display format: ' + listFormat);
         }
 
+    }else if(element.type == 'str' || element.type == 'int' || element.type == 'float' || element.type == 'bool') {
+        const span = document.createElement('span');
+        span.textContent = String(element.value);
+        return span;
     }else{
         const span = document.createElement('span');
         span.textContent = JSON.stringify(element, null, 4);
@@ -3079,7 +3133,11 @@ function createFormElement(app, element) {
 
         } else {
             inputElement = document.createElement('input');
-            inputElement.type = 'text';
+            if(fieldSpec.secure || fieldSpec.secure_input) {
+                inputElement.type = 'password';
+            }else{
+                inputElement.type = 'text';
+            }
             inputElement.value = typeof formData[fieldKey] !== 'undefined' ? formData[fieldKey] : '';
             inputElement.addEventListener('input', () => {
                 formData[fieldKey] = inputElement.value;

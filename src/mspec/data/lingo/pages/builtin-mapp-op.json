@@ -89,7 +89,7 @@
                 "state": "initial",
                 "error": "",
                 "data": {},
-                "result": ""
+                "result": {"type": "any", "value": null}
             }
         },
         "op_api_url": {
