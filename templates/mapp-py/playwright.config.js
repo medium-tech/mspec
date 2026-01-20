@@ -1,10 +1,4 @@
 import { defineConfig, devices } from '@playwright/test';
-import { config } from 'dotenv';
-import { resolve } from 'path';
-
-// Load environment files for crud and pagination environments
-const crudEnvPath = resolve(process.cwd(), 'mapp-tests/crud.env');
-const paginationEnvPath = resolve(process.cwd(), 'mapp-tests/pagination.env');
 
 export default defineConfig({
   testDir: './tests',
