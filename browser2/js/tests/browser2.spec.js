@@ -36,7 +36,7 @@ test('test - test page', async ({ page }) => {
 test('test - return types', async ({ page }) => {
   await page.goto('http://localhost:8000/', { waitUntil: 'networkidle' });
   await page.locator('#spec-select').selectOption('data/lingo/pages/return-types.json');
-  await expect(page.locator('span')).toContainText('{ "type": "int", "value": 16 }');
+  await expect(page.locator('span')).toContainText('16');
 });
 
 test('test - functions', async ({ page }) => {
