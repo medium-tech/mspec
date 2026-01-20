@@ -1,0 +1,14 @@
+{
+    "name": "mapp-py-ui-tests",
+    "version": "0.0.1",
+    "type": "module",
+    "scripts": {
+        "test": "npx playwright test",
+        "test-ui": "npx playwright test --ui",
+        "test-report": "npx playwright show-report"
+    },
+    "devDependencies": {
+        "@playwright/test": "1.52.0",
+        "dotenv": "^16.4.7"
+    }
+}
