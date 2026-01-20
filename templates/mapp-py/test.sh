@@ -63,13 +63,8 @@ fi
 
 if [ "$SERVERS_ONLY" = true ]; then
 	# Start servers only mode - setup and start servers for UI testing
-	echo "Starting servers only (for UI testing)..."
-	echo "Servers will run until you press Ctrl+C"
-	echo ""
-	
-	# Run the test setup which creates env files and starts servers
-	# Use a filter that doesn't match any tests to skip test execution
-	python -m mapp.test dev-app.yaml --cmd ./run.sh --env-file .env --test-filter "__no_tests_match_this__" $USE_CACHE --app-type python
+	echo "Starting servers for UI testing..."
+	python start_test_servers.py $USE_CACHE
 else
 	# Normal test execution
 	python -m mapp.test dev-app.yaml --cmd ./run.sh --env-file .env $TF_ARGS $USE_CACHE --app-type python $VERBOSE

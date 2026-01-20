@@ -1,0 +1,13 @@
+# vars :: {"3003": "server.port"}
+uwsgi:
+    http: :2004
+    wsgi-file: server.py
+    master: true
+    safe-pidfile: mapp-tests/uwsgi_pagination.pid
+    stats: mapp-tests/stats_pagination.socket
+    log-master: true
+    logto: mapp-tests/server_pagination.log
+    processes: 4
+    lazy-apps: true
+    py-autoreload: 1
+

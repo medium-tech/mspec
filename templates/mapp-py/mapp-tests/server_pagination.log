@@ -1,0 +1,18 @@
+*** Starting uWSGI 2.0.31 (64bit) on [Tue Jan 20 04:49:34 2026] ***
+compiled with version: 13.3.0 on 20 January 2026 04:46:16
+os: Linux-6.11.0-1018-azure #18~24.04.1-Ubuntu SMP Sat Jun 28 04:46:03 UTC 2025
+nodename: runnervmmtnos
+machine: x86_64
+clock source: unix
+pcre jit disabled
+detected number of CPU cores: 4
+current working directory: /home/runner/work/mspec/mspec/templates/mapp-py
+detected binary path: /home/runner/work/mspec/mspec/.venv/bin/uwsgi
+your processes number limit is 63952
+your memory page size is 4096 bytes
+detected max file descriptor number: 65536
+building mime-types dictionary from file /etc/mime.types...1560 entry found
+lock engine: pthread robust mutexes
+thunder lock: disabled (you can enable it with --thunder-lock)
+probably another instance of uWSGI is running on the same address (:2004).
+bind(): Address already in use [core/socket.c line 769]
