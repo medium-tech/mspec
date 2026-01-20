@@ -558,6 +558,10 @@ static_files['index.html'] = StaticFileData(
     content=index_html_content.encode('utf-8'),
     content_type='text/html'
 )
+static_files['api/spec'] = StaticFileData(
+    content=mapp_spec,                  # FUTURE OPTIMIZE: serialize only once at startup
+    content_type='application/json'
+)
 
 # add generated module pages to static files #
 for module_key, module in mapp_spec['modules'].items():
@@ -615,7 +619,7 @@ def static_routes(server: MappContext, request: RequestContext):
     try:
         file_data = static_files[path]
     except KeyError:
-        pass
+        server.log(f'Static file not found: {path}')
     else:
         raise StaticFileResponse('200 OK', file_data.content, file_data.content_type)
     
