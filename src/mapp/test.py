@@ -1871,6 +1871,24 @@ def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:st
 
     return result.wasSuccessful()
 
+def test_servers(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:str|None, use_cache:bool=False, app_type:str='', verbose:bool=False) -> bool:
+    if cli_args is None:
+        raise ValueError('args must be provided as a list of strings')
+
+    TestMTemplateApp.spec = load_generator_spec(spec_path)
+    TestMTemplateApp.cmd = cli_args
+    TestMTemplateApp.host = host
+    TestMTemplateApp.env_file = env_file
+    TestMTemplateApp.use_cache = use_cache
+    TestMTemplateApp.app_type = app_type
+
+    TestMTemplateApp.setUpClass()
+    print('***** SETUP COMPLETE, SERVERS RUNNING *****')
+    print('Press Enter to stop servers and exit...')
+    input()
+    TestMTemplateApp.tearDownClass()
+    print('***DONE, SERVERS STOPPED***')
+
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Test mapp spec app', prog='mapp.test')
@@ -1882,13 +1900,18 @@ if __name__ == '__main__':
     parser.add_argument('--use-cache', action='store_true', help='Use cached test resources if available')
     parser.add_argument('--app-type', type=str, default='', help='Supply "python" to run setup for python apps')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose output')
+    parser.add_argument('--servers-only', action='store_true', help='Only start and stop servers without running tests')
 
     args = parser.parse_args()
 
-    if args.test_filter:
-        # Attach filter patterns to test_spec function for access
-        test_spec._test_filters = args.test_filter
-    else:
-        test_spec._test_filters = None
+    if args.servers_only:
+        test_servers(args.spec, args.cmd, args.host, args.env_file, args.use_cache, args.app_type, args.verbose)
 
-    test_spec(args.spec, args.cmd, args.host, args.env_file, args.use_cache, args.app_type, args.verbose)
+    else:
+        if args.test_filter:
+            # Attach filter patterns to test_spec function for access
+            test_spec._test_filters = args.test_filter
+        else:
+            test_spec._test_filters = None
+
+        test_spec(args.spec, args.cmd, args.host, args.env_file, args.use_cache, args.app_type, args.verbose)

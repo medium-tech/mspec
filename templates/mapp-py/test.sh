@@ -12,6 +12,7 @@ if [[ "$1" == "--help" || "$1" == "-h" ]]; then
 	echo "  --test-filter <pattern>, -f <pattern>  Only run tests matching the pattern (ex: 'test_op*')"
 	echo "  --use-cache                            Use cached test resources if available"
 	echo "  --help, -h                             Show this help menu"
+	echo "  --servers-only                        Start test servers only, without running tests (for ui tests)"
 	echo "  --verbose, -v                          Show detailed test output"
 	echo
 	echo "Example:"
@@ -23,6 +24,7 @@ fi
 TEST_FILTERS=()
 USE_CACHE=""
 VERBOSE=""
+SERVERS_ONLY=""
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
@@ -41,6 +43,10 @@ while [[ $# -gt 0 ]]; do
 			USE_CACHE="--use-cache"
 			shift
 			;;
+		--servers-only)
+			SERVERS_ONLY="--servers-only"
+			shift
+			;;
 		*)
 			echo "Unknown argument: $1"
 			echo "Run with --help for usage."
@@ -54,4 +60,4 @@ if [[ ${#TEST_FILTERS[@]} -gt 0 ]]; then
 	TF_ARGS="--test-filter ${TEST_FILTERS[@]}"
 fi
 
-python -m mapp.test dev-app.yaml --cmd ./run.sh --env-file .env $TF_ARGS $USE_CACHE --app-type python $VERBOSE
+python -m mapp.test dev-app.yaml --cmd ./run.sh --env-file .env $TF_ARGS $USE_CACHE --app-type python $VERBOSE $SERVERS_ONLY
