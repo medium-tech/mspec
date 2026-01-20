@@ -1532,8 +1532,15 @@ function handleSequenceOp(app, expression, ctx = null) {
                     return {state: 'success', item_id: responseData.id};
                     
                 }else{
+                    const errorData = await response.json();
+                    let errorMessage = `${response.status} ${response.statusText}`;
+                    if(errorData.hasOwnProperty('error')){
+                        if(errorData.error.hasOwnProperty('message')){
+                            errorMessage = errorData.error.message;
+                        }
+                    }
                     console.error('handleSequenceOp - crud.create - HTTP error:', response.status, response.statusText); 
-                    return {state: 'error', error: `Response error: ${response.status} ${response.statusText}`};
+                    return {state: 'error', error: errorMessage};
                 }
 
             } catch (error) {
@@ -1585,8 +1592,15 @@ function handleSequenceOp(app, expression, ctx = null) {
                     return {state: 'edited', data: responseData};
                     
                 }else{
+                    const errorData = await response.json();
+                    let errorMessage = `${response.status} ${response.statusText}`;
+                    if(errorData.hasOwnProperty('error')){
+                        if(errorData.error.hasOwnProperty('message')){
+                            errorMessage = errorData.error.message;
+                        }
+                    }
                     console.error('handleSequenceOp - crud.update - HTTP error:', response.status, response.statusText); 
-                    return {state: 'error', error: `Response error: ${response.status} ${response.statusText}`};
+                    return {state: 'error', error: errorMessage};
                 }
 
             } catch (error) {
@@ -1642,10 +1656,17 @@ function handleSequenceOp(app, expression, ctx = null) {
                     };
                     
                 }else{
+                    const errorData = await response.json();
+                    let errorMessage = `${response.status} ${response.statusText}`;
+                    if(errorData.hasOwnProperty('error')){
+                        if(errorData.error.hasOwnProperty('message')){
+                            errorMessage = errorData.error.message;
+                        }
+                    }
                     console.error('handleSequenceOp - crud.read - HTTP error:', response.status, response.statusText); 
                     return {
                         state: 'error',
-                        error: `Response error: ${response.status} ${response.statusText}`
+                        error: errorMessage
                     };
                 }
 
@@ -1697,10 +1718,17 @@ function handleSequenceOp(app, expression, ctx = null) {
                     return {state: 'deleted'};
                     
                 }else{
+                    const errorData = await response.json();
+                    let errorMessage = `${response.status} ${response.statusText}`;
+                    if(errorData.hasOwnProperty('error')){
+                        if(errorData.error.hasOwnProperty('message')){
+                            errorMessage = errorData.error.message;
+                        }
+                    }
                     console.error('handleSequenceOp - crud.delete - HTTP error:', response.status, response.statusText); 
                     return {
                         state: 'error', 
-                        error: `Response error: ${response.status} ${response.statusText}`
+                        error: errorMessage
                     };
                 }
 
@@ -1761,10 +1789,17 @@ function handleSequenceOp(app, expression, ctx = null) {
                     };
                     
                 }else{
+                    const errorData = await response.json();
+                    let errorMessage = `${response.status} ${response.statusText}`;
+                    if(errorData.hasOwnProperty('error')){
+                        if(errorData.error.hasOwnProperty('message')){
+                            errorMessage = errorData.error.message;
+                        }
+                    }
                     console.error('handleSequenceOp - crud.list - HTTP error:', response.status, response.statusText); 
                     return {
                         state: 'error',
-                        error: `Response error: ${response.status} ${response.statusText}`
+                        error: errorMessage
                     };
                 }
 
@@ -2007,8 +2042,47 @@ function _renderModelRead(app, element, ctx = null) {
     elements.push(...[
         {break: 1},
         {text: 'status: ', style: {bold: true}},
-        {text: state.state},
     ]);
+
+    const stateSwitch = {
+        switch: {
+            expression: { type: 'str', value: state.state },
+            cases: [
+                {
+                    case: 'loaded',
+                    then: { 
+                        block: [
+                            { text: 'loaded', style: {color: 'green', bold: true} },
+                        ]
+                     }
+                },
+                {
+                    case: 'edited',
+                    then: { 
+                        block: [
+                            { text: 'edited', style: {color: 'green', bold: true} },
+                        ]
+                     }
+                },
+                {
+                    case: 'error',
+                    then: { 
+                        block: [
+                            { text: 'error ', style: {color: 'red', bold: true} },
+                            { text: state.error, style: {color: 'red'} }
+                        ]
+                     }
+                }
+            ],
+            default: {
+                block: [
+                    { text: state.state, style: {italic: true} }
+                ]
+            }
+        }
+    };
+
+    elements.push(...renderSwitch(app, stateSwitch, ctx));
 
     //
     // view item
@@ -2266,8 +2340,41 @@ function _renderModelList(app, element, ctx = null) {
         {text: ' size: ', style: {bold: true}},
         {text: String(state.size)},
         {text: ' status: ', style: {bold: true}},
-        {text: state.state},
     ]);
+
+    const stateSwitch = {
+        switch: {
+            expression: { type: 'str', value: state.state },
+            cases: [
+                {
+                    case: 'loading',
+                    then: [
+                        { text: 'Loading...', style: { italic: true } }
+                    ]
+                },
+                {
+                    case: 'error',
+                    then: {
+                        block: [
+                            { text: 'Error: ', style: { color: 'red', bold: true } },
+                            { text: state.error, style: { color: 'red', bold: false } }
+                        ]
+                    }
+                },
+                {
+                    case: 'loaded',
+                    then: [
+                        { text: 'Loaded', style: { color: 'green', bold: true } }
+                    ]
+                }
+            ],
+            default: [
+                { text: state.state, style: { italic: true } }
+            ]
+        }
+    };
+
+    elements.push(...renderSwitch(app, stateSwitch, ctx));
 
     //
     // table display
@@ -2392,7 +2499,7 @@ function _renderModelCreate(app, element, ctx = null) {
                     then: {
                         block: [
                             { text: 'Error: ', style: { color: 'red', bold: true } },
-                            { text: app.state[stateField].error }
+                            { text: app.state[stateField].error, style: { color: 'red', bold: true } }
                         ]
                     }
                 },
