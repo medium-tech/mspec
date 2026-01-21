@@ -49,8 +49,9 @@ test('test pagination UI navigation', async ({ browser, paginationEnv, paginatio
       await expect(page.locator('h1')).toContainText(`:: ${modelKebab}`);
 
       // Ensure there are 5 items displayed in list
-      const listSection = page.locator('text=:: list of models').locator('..');
-      const rows = listSection.locator('tbody tr');
+      // Wait for the table to be visible
+      await page.locator('tbody').first().waitFor({ state: 'visible' });
+      const rows = page.locator('tbody tr');
       const initialRowCount = await rows.count();
       expect(initialRowCount).toBe(pageSize);
 
@@ -63,8 +64,8 @@ test('test pagination UI navigation', async ({ browser, paginationEnv, paginatio
         await expect(nextButton).toBeVisible();
         await nextButton.click();
         
-        // Wait for the page to update
-        await page.waitForTimeout(500);
+        // Wait for the data to load by waiting for network idle or table update
+        await page.waitForLoadState('networkidle');
         
         // Count items on this page
         const pageRows = await rows.count();
@@ -84,8 +85,8 @@ test('test pagination UI navigation', async ({ browser, paginationEnv, paginatio
         await expect(prevButton).toBeVisible();
         await prevButton.click();
         
-        // Wait for the page to update
-        await page.waitForTimeout(500);
+        // Wait for the data to load
+        await page.waitForLoadState('networkidle');
       }
 
       // Verify we're back at the first page by checking we have 5 items again
