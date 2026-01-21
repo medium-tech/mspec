@@ -4,4 +4,3 @@ test-results/
 playwright-report/
 package-lock.json
 .env
-dev-app.yaml

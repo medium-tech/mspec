@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { config } from 'dotenv';
 import { resolve } from 'path';
 import { readFileSync } from 'fs';
 
