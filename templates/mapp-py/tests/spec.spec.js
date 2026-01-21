@@ -104,6 +104,9 @@ test.describe('MAPP Spec Loading', () => {
 
 test('test user auth flow', async ({ page }) => {
 
+  const uniqueId = Date.now();
+  const uniqueEmail = `test-auth-flow-${uniqueId}@email.com`;
+
   // init //
 
   await page.goto(crudHost);
@@ -118,7 +121,7 @@ test('test user auth flow', async ({ page }) => {
   await page.getByRole('row', { name: 'Name: Name of the user' }).getByRole('textbox').click();
   await page.getByRole('row', { name: 'Name: Name of the user' }).getByRole('textbox').fill('Test User');
   await page.getByRole('row', { name: 'Email: Email of the user' }).getByRole('textbox').click();
-  await page.getByRole('row', { name: 'Email: Email of the user' }).getByRole('textbox').fill('test@email.com');
+  await page.getByRole('row', { name: 'Email: Email of the user' }).getByRole('textbox').fill(uniqueEmail);
   await page.getByRole('row', { name: 'Password: Password for the' }).getByRole('textbox').click();
   await page.getByRole('row', { name: 'Password: Password for the' }).getByRole('textbox').fill('123');
   await page.getByRole('row', { name: 'Password confirm: Password' }).getByRole('textbox').click();
@@ -131,7 +134,7 @@ test('test user auth flow', async ({ page }) => {
   await page.getByRole('link', { name: 'auth' }).click();
   await page.getByRole('link', { name: 'login-user' }).click();
   await page.locator('input[type="text"]').click();
-  await page.locator('input[type="text"]').fill('test@email.com');
+  await page.locator('input[type="text"]').fill(uniqueEmail);
   await page.locator('input[type="password"]').click();
   await page.locator('input[type="password"]').fill('123');
   await page.getByRole('button', { name: 'Submit' }).click();
@@ -142,7 +145,7 @@ test('test user auth flow', async ({ page }) => {
   await page.getByRole('link', { name: 'auth' }).click();
   await page.getByRole('link', { name: 'current-user' }).click();
   await page.getByRole('button', { name: 'Submit' }).click();
-  await expect(page.locator('tbody')).toContainText('test@email.com');
+  await expect(page.locator('tbody')).toContainText(uniqueEmail);
 
   // logout current session //
 
@@ -165,7 +168,7 @@ test('test user auth flow', async ({ page }) => {
   await page.getByRole('link', { name: 'auth' }).click();
   await page.getByRole('link', { name: 'login-user' }).click();
   await page.locator('input[type="text"]').click();
-  await page.locator('input[type="text"]').fill('test@email.com');
+  await page.locator('input[type="text"]').fill(uniqueEmail);
   await page.locator('input[type="password"]').click();
   await page.locator('input[type="password"]').fill('123');
   await page.getByRole('button', { name: 'Submit' }).click();
