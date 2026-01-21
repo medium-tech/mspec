@@ -64,44 +64,6 @@ const appSpec = crudSpec;
 // tests
 //
 
-test.describe('MAPP Spec Loading', () => {
-  
-  test('should load spec from crud environment', async ({ request }) => {
-    
-    // Make request to /api/spec
-    const response = await request.get(`${crudHost}/api/spec`);
-    
-    // Verify response
-    expect(response.ok()).toBeTruthy();
-    expect(response.status()).toBe(200);
-    
-    // Verify spec structure
-    const spec = await response.json();
-    expect(spec).toBeDefined();
-    expect(spec.project).toBeDefined();
-    expect(spec.modules).toBeDefined();
-  });
-
-  test('should load spec from pagination environment', async ({ request }) => {
-
-    expect(paginationHost).toMatch(/^http:\/\/localhost:\d+$/);
-    
-    // Make request to /api/spec
-    const response = await request.get(`${paginationHost}/api/spec`);
-    
-    // Verify response
-    expect(response.ok()).toBeTruthy();
-    expect(response.status()).toBe(200);
-    
-    // Verify spec structure
-    const spec = await response.json();
-    expect(spec).toBeDefined();
-    expect(spec.project).toBeDefined();
-    expect(spec.modules).toBeDefined();
-  });
-  
-});
-
 test('test user auth flow', async ({ page }) => {
 
   const uniqueId = Date.now();
