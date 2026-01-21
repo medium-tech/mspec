@@ -51,7 +51,7 @@ test('test pagination UI navigation', async ({ browser, paginationEnv, paginatio
       // Ensure there are 5 items displayed in list
       // Wait for the table to be visible
       await page.locator('tbody').first().waitFor({ state: 'visible' });
-      const rows = page.locator('tbody tr');
+      let rows = page.locator('tbody tr');
       const initialRowCount = await rows.count();
       expect(initialRowCount).toBe(pageSize);
 
@@ -67,7 +67,8 @@ test('test pagination UI navigation', async ({ browser, paginationEnv, paginatio
         // Wait for the data to load by waiting for network idle or table update
         await page.waitForLoadState('networkidle');
         
-        // Count items on this page
+        // Re-query rows after navigation to get fresh count
+        rows = page.locator('tbody tr');
         const pageRows = await rows.count();
         totalItemsVisited += pageRows;
         
@@ -90,6 +91,7 @@ test('test pagination UI navigation', async ({ browser, paginationEnv, paginatio
       }
 
       // Verify we're back at the first page by checking we have 5 items again
+      rows = page.locator('tbody tr');
       const finalRows = await rows.count();
       expect(finalRows).toBe(pageSize);
 
