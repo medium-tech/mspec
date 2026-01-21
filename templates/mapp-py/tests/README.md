@@ -43,12 +43,6 @@ If you have the servers running from `./test.sh --servers-only`, you can run the
 npm test
 ```
 
-## Test Structure
-
-- `tests/spec.spec.js` - Tests for loading the MAPP spec from different environments
-  - Loads spec from crud environment (port 2003)
-  - Loads spec from pagination environment (port 2004)
-
 ## Environment Files
 
 The test servers automatically create environment files in `mapp-tests/`:
