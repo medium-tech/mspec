@@ -2,7 +2,10 @@ import { test, expect } from '@playwright/test';
 import { resolve } from 'path';
 import { readFileSync } from 'fs';
 
-// Helper function to parse env file
+//
+// env helpers
+//
+
 function parseEnvFile(filePath) {
   try {
     const envContent = readFileSync(filePath, 'utf-8');
@@ -25,46 +28,41 @@ function parseEnvFile(filePath) {
   }
 }
 
-// Load crud environment variables
-const crudEnvPath = resolve(process.cwd(), 'mapp-tests/crud.env');
-const crudEnv = parseEnvFile(crudEnvPath);
-const crudHost = crudEnv.MAPP_CLIENT_HOST;
-expect(crudHost).toBeDefined();
-expect(crudHost).toMatch(/^http:\/\/localhost:\d+$/);
+async function getEnvSpec(envFileName) {
 
-// Make request to /api/spec with fetch api
-const crudResp = await fetch(`${crudHost}/api/spec`);
-expect(crudResp.ok).toBeTruthy();
-expect(crudResp.status).toBe(200);
+  // Load crud environment variables
+  const path = resolve(process.cwd(), envFileName);
+  const env = parseEnvFile(path);
+  const host = env.MAPP_CLIENT_HOST;
+  expect(host).toBeDefined();
+  expect(host).toMatch(/^http:\/\/localhost:\d+$/);
 
-// Verify spec structure
-const crudSpec = await crudResp.json();
-expect(crudSpec).toBeDefined();
-expect(crudSpec.project).toBeDefined();
-expect(crudSpec.modules).toBeDefined();
+  // Make request to /api/spec with fetch api
+  const response = await fetch(`${host}/api/spec`);
+  expect(response.ok).toBeTruthy();
+  expect(response.status).toBe(200);
 
-// Load pagination environment variables
-const paginationEnvPath = resolve(process.cwd(), 'mapp-tests/pagination.env');
-const paginationEnv = parseEnvFile(paginationEnvPath);
-const paginationHost = paginationEnv.MAPP_CLIENT_HOST;
-expect(paginationHost).toBeDefined();
-expect(paginationHost).toMatch(/^http:\/\/localhost:\d+$/);
+  // Verify spec structure
+  const spec = await response.json();
+  expect(spec).toBeDefined();
+  expect(spec.project).toBeDefined();
+  expect(spec.modules).toBeDefined();
 
-// Make request to /api/spec with fetch api
-const paginationResp = await fetch(`${paginationHost}/api/spec`);
-expect(paginationResp.ok).toBeTruthy();
-expect(paginationResp.status).toBe(200);
+  return { host: host, spec: spec };
+}
 
-// Verify spec structure
-const paginationSpec = await paginationResp.json();
-expect(paginationSpec).toBeDefined();
-expect(paginationSpec.project).toBeDefined();
-expect(paginationSpec.modules).toBeDefined();
+//
+// initialize test env
+//
 
-// veridy crudSpec and paginationSpec are equal
+const { host: crudHost, spec: crudSpec } = await getEnvSpec('mapp-tests/crud.env');
+const { host: paginationHost, spec: paginationSpec } = await getEnvSpec('mapp-tests/pagination.env');
 expect(crudSpec).toEqual(paginationSpec);
-
 const appSpec = crudSpec;
+
+//
+// tests
+//
 
 test.describe('MAPP Spec Loading', () => {
   
