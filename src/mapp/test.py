@@ -1106,15 +1106,12 @@ class TestMTemplateApp(unittest.TestCase):
                     self.assertEqual(read_status, 401, f'Read {model_name} without login did not return 401 Unauthorized, response: {data}')
 
                 # send request #
-                try:
-                    read_status, read_model = request(
-                        ctx,
-                        'GET',
-                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
-                        None
-                    )
-                except UnboundLocalError as e:
-                    breakpoint()
+                read_status, read_model = request(
+                    ctx,
+                    'GET',
+                    f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
+                    None
+                )
 
                 # confirm response #
 
@@ -1122,10 +1119,7 @@ class TestMTemplateApp(unittest.TestCase):
                     self.assertEqual(read_status, 404, f'Read hidden {model_name} id: {created_model_id} did not return 404 Not Found, response: {read_model}')
 
                 else:
-                    try:
-                        self.assertEqual(read_status, 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}')
-                    except AssertionError as e:
-                        breakpoint()
+                    self.assertEqual(read_status, 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}')
                     read_model_id = read_model.pop('id')
                     self.assertEqual(read_model, example_to_create, f'Read {model_name} id: {read_model_id} does not match example data')
                     self.assertEqual(read_model_id, created_model_id, f'Read {model_name} id: {read_model_id} does not match created id: {created_model_id}')
