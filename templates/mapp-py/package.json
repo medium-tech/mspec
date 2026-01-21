@@ -5,7 +5,8 @@
     "scripts": {
         "test": "npx playwright test",
         "test-ui": "npx playwright test --ui",
-        "test-report": "npx playwright show-report"
+        "test-report": "npx playwright show-report",
+         "test-gen": "npx playwright codegen http://localhost:3003"
     },
     "devDependencies": {
         "@playwright/test": "^1.52.0"

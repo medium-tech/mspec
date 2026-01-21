@@ -4,12 +4,18 @@ This directory contains Playwright tests for the MAPP UI framework.
 
 ## Setup
 
+1. From the root of this repo:
+   ```bash
+   build.sh
+   ```
+
 1. Install dependencies:
    ```bash
+   cd templates/mapp-ui
    npm install
    ```
 
-2. Install Playwright browsers (first time only):
+1. Install Playwright browsers (first time only):
    ```bash
    npx playwright install
    ```
