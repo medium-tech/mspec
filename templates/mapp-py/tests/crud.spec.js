@@ -35,11 +35,28 @@ async function fillFormField(page, fieldName, field, value) {
 
   // Handle list types
   if (fieldType === 'list') {
-    // For list fields, we need to fill them as comma-separated values in a textarea
-    const valueStr = Array.isArray(value) ? value.join(', ') : String(value);
-    await page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') })
-      .locator('textarea')
-      .fill(valueStr);
+    // For list fields, we need to add each value individually using the Add button
+    const values = Array.isArray(value) ? value : [value];
+    const row = page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') });
+    
+    for (const val of values) {
+      // Fill the list input based on element type
+      if (elementType === 'bool') {
+        const checkbox = row.locator('input.list-input[type="checkbox"]');
+        if (val) {
+          await checkbox.check();
+        } else {
+          await checkbox.uncheck();
+        }
+      } else if (field.enum) {
+        await row.locator('select.list-input').selectOption(String(val));
+      } else {
+        await row.locator('input.list-input').fill(String(val));
+      }
+      
+      // Click the Add button to add this value to the list
+      await row.getByRole('button', { name: 'Add' }).click();
+    }
   } else if (fieldType === 'bool') {
     // For boolean fields, use checkbox
     const checkbox = page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') })
@@ -112,28 +129,17 @@ test('test crud operations on all models', async ({ browser, crudEnv, crudSessio
       await page.getByRole('button', { name: 'Submit' }).click();
       
       // Ensure success message
-      await expect(page.locator('#lingo-app')).toContainText('success:');
-
-      // Extract the created item ID from the success message
-      // The success message typically contains the id
-      const successText = await page.locator('#lingo-app').textContent();
-      const idMatch = successText.match(/id['":\s]+(\d+)/i);
-      
-      if (!idMatch) {
-        throw new Error(`Could not extract ID from success message: ${successText}`);
-      }
-      
-      const createdId = idMatch[1];
+      await expect(page.locator('#lingo-app')).toContainText('Success');
 
       // Follow link to new item (read operation)
-      await page.getByRole('link', { name: createdId }).click();
+      await page.getByRole('link', { name: 'view item' }).click();
       
       // Confirm it loads successfully
       await expect(page.locator('h1')).toContainText(`:: ${modelKebab}`);
       await expect(page.locator('#lingo-app')).toContainText('id');
 
       // Click edit button to update model
-      await page.getByRole('button', { name: 'Edit' }).click();
+      await page.getByRole('button', { name: 'edit' }).click();
       
       // Get example data for update (index 1)
       let updateExample;
@@ -153,10 +159,10 @@ test('test crud operations on all models', async ({ browser, crudEnv, crudSessio
       await page.getByRole('button', { name: 'Submit' }).click();
       
       // Wait for update to complete
-      await expect(page.locator('#lingo-app')).toContainText('success:');
+      await expect(page.locator('#lingo-app')).toContainText('edited');
 
       // Click load to re-load data from server
-      await page.getByRole('button', { name: 'Load' }).click();
+      await page.getByRole('button', { name: 'load' }).click();
       
       // Confirm data was edited - check that we can see the updated values
       for (const [fieldName, value] of Object.entries(updateExample)) {
@@ -167,13 +173,13 @@ test('test crud operations on all models', async ({ browser, crudEnv, crudSessio
       }
 
       // Click delete button
-      await page.getByRole('button', { name: 'Delete' }).click();
+      await page.getByRole('button', { name: 'delete' }).click();
       
       // Click confirm delete button
-      await page.getByRole('button', { name: 'Confirm Delete' }).click();
+      await page.getByRole('button', { name: 'confirm delete' }).click();
       
       // Confirm success message
-      await expect(page.locator('#lingo-app')).toContainText('success:');
+      await expect(page.locator('#lingo-app')).toContainText('item deleted successfully');
 
       // Reload page, ensure error (item should no longer exist)
       await page.reload();
