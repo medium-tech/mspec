@@ -59,7 +59,7 @@ test('test pagination UI navigation', async ({ browser, paginationEnv, paginatio
       
       for (let i = 0; i < expectedPages - 1; i++) {
         // Click the next button
-        const nextButton = page.getByRole('button', { name: 'Next' });
+        const nextButton = page.getByRole('button', { name: 'next' });
         await expect(nextButton).toBeVisible();
         await nextButton.click();
         
@@ -80,7 +80,7 @@ test('test pagination UI navigation', async ({ browser, paginationEnv, paginatio
 
       // Click prev button until at first page
       for (let i = 0; i < expectedPages - 1; i++) {
-        const prevButton = page.getByRole('button', { name: 'Prev' });
+        const prevButton = page.getByRole('button', { name: 'prev' });
         await expect(prevButton).toBeVisible();
         await prevButton.click();
         
