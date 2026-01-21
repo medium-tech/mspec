@@ -1,71 +1,13 @@
-import { test, expect } from '@playwright/test';
-import { resolve } from 'path';
-import { readFileSync } from 'fs';
-
-//
-// env helpers
-//
-
-function parseEnvFile(filePath) {
-  try {
-    const envContent = readFileSync(filePath, 'utf-8');
-    const env = {};
-    envContent.split('\n').forEach(line => {
-      const trimmed = line.trim();
-      if (trimmed && !trimmed.startsWith('#')) {
-        const [key, ...valueParts] = trimmed.split('=');
-        if (key && valueParts.length > 0) {
-          let value = valueParts.join('=');
-          // Remove quotes if present
-          value = value.replace(/^["']|["']$/g, '');
-          env[key] = value;
-        }
-      }
-    });
-    return env;
-  } catch (error) {
-    throw new Error(`Failed to read env file ${filePath}: ${error.message}`);
-  }
-}
-
-async function getEnvSpec(envFileName) {
-
-  // Load crud environment variables
-  const path = resolve(process.cwd(), envFileName);
-  const env = parseEnvFile(path);
-  const host = env.MAPP_CLIENT_HOST;
-  expect(host).toBeDefined();
-  expect(host).toMatch(/^http:\/\/localhost:\d+$/);
-
-  // Make request to /api/spec with fetch api
-  const response = await fetch(`${host}/api/spec`);
-  expect(response.ok).toBeTruthy();
-  expect(response.status).toBe(200);
-
-  // Verify spec structure
-  const spec = await response.json();
-  expect(spec).toBeDefined();
-  expect(spec.project).toBeDefined();
-  expect(spec.modules).toBeDefined();
-
-  return { host: host, spec: spec };
-}
-
-//
-// initialize test env
-//
-
-const { host: crudHost, spec: crudSpec } = await getEnvSpec('mapp-tests/crud.env');
-const { host: paginationHost, spec: paginationSpec } = await getEnvSpec('mapp-tests/pagination.env');
-expect(crudSpec).toEqual(paginationSpec);
-const appSpec = crudSpec;
+import { test } from './fixtures.js';
+import { expect } from '@playwright/test';
 
 //
 // tests
 //
 
-test('test user auth flow', async ({ page }) => {
+test('test user auth flow', async ({ page, crudEnv }) => {
 
+  const { host: crudHost } = crudEnv;
   const uniqueId = Date.now();
   const uniqueEmail = `test-auth-flow-${uniqueId}@email.com`;
 
