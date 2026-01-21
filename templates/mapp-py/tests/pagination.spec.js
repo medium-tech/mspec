@@ -23,7 +23,7 @@ test('test pagination UI navigation', async ({ browser, paginationEnv, paginatio
   const expectedPages = totalItems / pageSize; // 5 pages
 
   // Iterate over each module
-  for (const [moduleName, module] of Object.entries(spec.modules)) {
+  for (const module of Object.values(spec.modules)) {
     const moduleKebab = module.name.kebab_case;
     
     // Click link with module name (kebab case)
@@ -31,7 +31,7 @@ test('test pagination UI navigation', async ({ browser, paginationEnv, paginatio
     await expect(page.locator('h1')).toContainText(`:: ${moduleKebab}`);
 
     // Iterate over each model in module
-    for (const [modelName, model] of Object.entries(module.models)) {
+    for (const model of Object.values(module.models)) {
       // Skip if hidden
       if (model.hidden) {
         continue;
@@ -50,8 +50,9 @@ test('test pagination UI navigation', async ({ browser, paginationEnv, paginatio
 
       // Ensure there are 5 items displayed in list
       // Wait for the table to be visible
-      await page.locator('tbody').first().waitFor({ state: 'visible' });
-      let rows = page.locator('tbody tr');
+      const firstTbody = page.locator('tbody').first();
+      await firstTbody.waitFor({ state: 'visible' });
+      let rows = firstTbody.locator('tr');
       const initialRowCount = await rows.count();
       expect(initialRowCount).toBe(pageSize);
 
@@ -68,7 +69,7 @@ test('test pagination UI navigation', async ({ browser, paginationEnv, paginatio
         await page.waitForLoadState('networkidle');
         
         // Re-query rows after navigation to get fresh count
-        rows = page.locator('tbody tr');
+        rows = firstTbody.locator('tr');
         const pageRows = await rows.count();
         totalItemsVisited += pageRows;
         
@@ -91,7 +92,7 @@ test('test pagination UI navigation', async ({ browser, paginationEnv, paginatio
       }
 
       // Verify we're back at the first page by checking we have 5 items again
-      rows = page.locator('tbody tr');
+      rows = firstTbody.locator('tr');
       const finalRows = await rows.count();
       expect(finalRows).toBe(pageSize);
 
