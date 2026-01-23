@@ -14,10 +14,16 @@ test('crud root returns 200', async ({ browser, crudEnv, crudSession }) => {
 //
 
 function getExampleFromModel(model, index = 0) {
+
+  if(!model.hasOwnProperty('fields')) {
+    throw new Error(`Model "${model.name.pascal_case}" has no fields defined`);
+  }
+
   const data = {};
-  for (const [fieldName, field] of Object.entries(model.fields || {})) {
-    if (!field.examples || !field.examples[index]) {
-      throw new Error(`No example for field "${model.name.pascal_case}.${fieldName}" at index ${index}`);
+  
+  for (const [fieldName, field] of Object.entries(model.fields)) {
+    if (!field.hasOwnProperty('examples')) {
+      throw new Error(`Field "${fieldName}" in model "${model.name.pascal_case}" has no examples defined`);
     }
     data[fieldName] = field.examples[index];
   }
@@ -50,6 +56,8 @@ async function fillFormField(page, fieldName, field, value) {
         }
       } else if (field.enum) {
         await row.locator('select.list-input').selectOption(String(val));
+      }else if (elementType === 'datetime') {
+        await row.locator('input.list-input[type="datetime-local"]').fill(String(val));
       } else {
         await row.locator('input.list-input').fill(String(val));
       }
@@ -71,10 +79,30 @@ async function fillFormField(page, fieldName, field, value) {
     await page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') })
       .locator('select')
       .selectOption(String(value));
-  } else {
-    // For other fields (str, int, float, datetime), use textbox
+  } else if (fieldType === 'int') {
+    // For int fields, use input[type="number"]
     await page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') })
-      .getByRole('textbox')
+      .locator('input[type="number"]')
+      .fill(String(value));
+  } else if (fieldType === 'float') {
+    // For float fields, use input[type="number"]
+    await page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') })
+      .locator('input[type="number"]')
+      .fill(String(value));
+  } else if (fieldType === 'datetime') {
+    // For datetime fields, use input[type="datetime-local"]
+    await page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') })
+      .locator('input[type="datetime-local"]')
+      .fill(String(value).substring(0, 16));
+  } else if (fieldType === 'foreign_key') {
+    // For foreign_key fields, use input[type="text"]
+    await page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') })
+      .locator('input[type="text"]')
+      .fill(String(value));
+  } else {
+    // For str and fallback, use input[type="text"]
+    await page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') })
+      .locator('input[type="text"]')
       .fill(String(value));
   }
 }
