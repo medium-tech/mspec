@@ -3132,7 +3132,7 @@ function createFormElement(app, element) {
                         itemContainer.appendChild(itemText);
 
                         const removeButton = document.createElement('button');
-                        removeButton.textContent = '×';
+                        removeButton.textContent = 'X';
                         removeButton.type = 'button';
                         removeButton.className = 'remove-button';
                         removeButton.setAttribute('data-index', i);

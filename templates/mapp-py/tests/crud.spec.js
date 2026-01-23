@@ -13,6 +13,29 @@ test('crud root returns 200', async ({ browser, crudEnv, crudSession }) => {
 // helper functions
 //
 
+async function clearAllListFields(page, model) {
+  console.log(`Clearing all list fields for model ${model.name.pascal_case}`);
+  for (const [fieldName, field] of Object.entries(model.fields)) {
+    if (field.type === 'list') {
+      // Find the row for this field
+      const row = page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') });
+      console.log(`Clearing list field: ${fieldName}`, typeof row);
+      // Find all X/remove buttons in this row (one per list item)
+      // The remove buttons are assumed to have role 'button' and name 'X'
+      let removeButtons = await row.locator('button.remove-button').all();
+      console.log(`Found ${removeButtons.length} items to remove in field ${fieldName}`, typeof removeButtons);
+      // Keep removing until there are no more
+      while (removeButtons.length > 0) {
+        await removeButtons[0].click();
+        console.log(`Removed one item from field ${fieldName}`);
+        // Re-query after each removal, as the DOM updates
+        removeButtons = await row.locator('button.remove-button').all();
+        console.log(`Remaining items to remove in field ${fieldName}: ${removeButtons.length}`);
+      }
+    }
+  }
+}
+
 function getExampleFromModel(model, index = 0) {
 
   if(!model.hasOwnProperty('fields')) {
@@ -168,6 +191,8 @@ test('test crud operations on all models', async ({ browser, crudEnv, crudSessio
 
       // Click edit button to update model
       await page.getByRole('button', { name: 'edit' }).click();
+
+      await clearAllListFields(page, model);
       
       // Get example data for update (index 1)
       let updateExample;
@@ -196,7 +221,14 @@ test('test crud operations on all models', async ({ browser, crudEnv, crudSessio
       for (const [fieldName, value] of Object.entries(updateExample)) {
         if (fieldName !== 'user_id') {
           // The page should contain the updated value somewhere
-          await expect(page.locator('#lingo-app')).toContainText(String(value));
+
+          // if value is a list expect it to be joined on ", "
+          if(Array.isArray(value)) {
+            await expect(page.locator('#lingo-app')).toContainText(value.join(', '));
+            continue;
+          }else{
+            await expect(page.locator('#lingo-app')).toContainText(String(value));
+          }
         }
       }
 
@@ -219,7 +251,7 @@ test('test crud operations on all models', async ({ browser, crudEnv, crudSessio
     }
 
     // Click breadcrumb back to index
-    await page.getByRole('link', { name: crudEnv.spec.project.name.kebab_case }).click();
+    await page.getByRole('link', { name: crudEnv.spec.project.name.lower_case }).click();
     await expect(page.locator('h1')).toContainText('::');
   }
 });
