@@ -57,7 +57,7 @@ async function fillFormField(page, fieldName, field, value) {
       } else if (field.enum) {
         await row.locator('select.list-input').selectOption(String(val));
       }else if (elementType === 'datetime') {
-        await row.locator('input.list-input[type="datetime-local"]').fill(String(val));
+        await row.locator('input.list-input[type="datetime-local"]').fill(String(val).substring(0, 16));
       } else {
         await row.locator('input.list-input').fill(String(val));
       }
