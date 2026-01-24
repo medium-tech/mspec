@@ -62,11 +62,13 @@ async function fillFormField(page, fieldName, field, value) {
     return;
   }
 
+  const pattern = new RegExp('^' + field.name.lower_case + '', 'i')
+
   // Handle list types
   if (fieldType === 'list') {
     // For list fields, we need to add each value individually using the Add button
     const values = Array.isArray(value) ? value : [value];
-    const row = page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') });
+    const row = page.getByRole('row', { name: pattern });
     
     for (const val of values) {
       // Fill the list input based on element type
@@ -90,7 +92,7 @@ async function fillFormField(page, fieldName, field, value) {
     }
   } else if (fieldType === 'bool') {
     // For boolean fields, use checkbox
-    const checkbox = page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') })
+    const checkbox = page.getByRole('row', { name: pattern })
       .locator('input[type="checkbox"]');
     if (value) {
       await checkbox.check();
@@ -99,32 +101,32 @@ async function fillFormField(page, fieldName, field, value) {
     }
   } else if (field.enum) {
     // For enum fields, use select dropdown
-    await page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') })
+    await page.getByRole('row', { name: pattern })
       .locator('select')
       .selectOption(String(value));
   } else if (fieldType === 'int') {
     // For int fields, use input[type="number"]
-    await page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') })
+    await page.getByRole('row', { name: pattern })
       .locator('input[type="number"]')
       .fill(String(value));
   } else if (fieldType === 'float') {
     // For float fields, use input[type="number"]
-    await page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') })
+    await page.getByRole('row', { name: pattern })
       .locator('input[type="number"]')
       .fill(String(value));
   } else if (fieldType === 'datetime') {
     // For datetime fields, use input[type="datetime-local"]
-    await page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') })
+    await page.getByRole('row', { name: pattern })
       .locator('input[type="datetime-local"]')
       .fill(String(value).substring(0, 16));
   } else if (fieldType === 'foreign_key') {
     // For foreign_key fields, use input[type="text"]
-    await page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') })
+    await page.getByRole('row', { name: pattern })
       .locator('input[type="text"]')
       .fill(String(value));
   } else {
     // For str and fallback, use input[type="text"]
-    await page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') })
+    await page.getByRole('row', { name: pattern })
       .locator('input[type="text"]')
       .fill(String(value));
   }

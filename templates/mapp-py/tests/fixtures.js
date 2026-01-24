@@ -54,10 +54,10 @@ async function createAndLoginUser(host, browser, envName) {
   await page.goto(host);
   await page.getByRole('link', { name: 'auth' }).click();
   await page.getByRole('link', { name: 'create-user' }).click();
-  await page.getByRole('row', { name: /Name:/ }).getByRole('textbox').fill('Test User');
-  await page.getByRole('row', { name: /Email:/ }).getByRole('textbox').fill(email);
-  await page.getByRole('row', { name: /Password:/ }).getByRole('textbox').fill(password);
-  await page.getByRole('row', { name: /Password confirm:/ }).getByRole('textbox').fill(password);
+  await page.getByRole('row', { name: /name:/ }).getByRole('textbox').fill('Test User');
+  await page.getByRole('row', { name: /email:/ }).getByRole('textbox').fill(email);
+  await page.getByRole('row', { name: /password:/ }).getByRole('textbox').fill(password);
+  await page.getByRole('row', { name: /password confirm:/ }).getByRole('textbox').fill(password);
   await page.getByRole('button', { name: 'Submit' }).click();
   await page.waitForSelector('#lingo-app');
 

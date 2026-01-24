@@ -3057,8 +3057,8 @@ function createFormElement(app, element) {
 
         // Column 1: Field name
         const nameCell = document.createElement('td');
-        const fieldName = fieldSpec.name?.lower_case || fieldKey;
-        nameCell.textContent = fieldName.charAt(0).toUpperCase() + fieldName.slice(1) + ':';
+        const fieldName = fieldSpec.name.lower_case;
+        nameCell.textContent = fieldName + ':';
         row.appendChild(nameCell);
 
         // Column 2: Input element
@@ -3275,6 +3275,7 @@ function createFormElement(app, element) {
 
         } else if (fieldSpec.enum) {
             inputElement = document.createElement('select');
+            inputElement.name = fieldKey;
             for (const option of fieldSpec.enum) {
                 const opt = document.createElement('option');
                 opt.value = option;
