@@ -31,25 +31,24 @@
     * 🟢 add new functions to javascript lingo interpreter
     * 🟡 built in lingo ui (lingo pages served in mapp by generating html templates with lingo pages)
         * 🟡 lingo index page
-            * 🟡 lingo module page
-                * 🟡 lingo model page (create lingo widgets/functions for each of the below)
+            * 🟢 lingo module page
+                * 🟢 lingo model page (create lingo widgets/functions for each of the below)
                     * 🟢 create
                     * 🟢 read
                     * 🟢 update
                     * 🟢 delete
                     * 🟢 list
-                    * 🔴 tests
-                * 🟡 lingo op page (this will run the op on the backend server and return the result)
+                    * 🟢 tests
+                * 🟢 lingo op page (this will run the op on the backend server and return the result)
                     * 🟢 http
-                    * 🔴 run
-                    * 🔴 tests
+                    * 🟡 tests
             * 🟡 auth
                 * 🟢 login
                 * 🟢 logout
                 * 🟢 user view
                 * 🔴 user edit
                 * 🟢 attach session to all op/model calls
-                * 🔴 tests
+                * 🟢 tests
         * 🔴 serve additional lingo pages
             * 🔴 update mspec to support defining other pages and their lingo (for apps running in users local browser)
 * 🔴 file upload
