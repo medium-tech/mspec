@@ -123,7 +123,7 @@ async function fillFormField(page, fieldName, field, value) {
 // crud test
 //
 
-test('test crud operations on all models', async ({ browser, crudEnv, crudSession }) => {
+test('test crud and list for all models', async ({ browser, crudEnv, crudSession }) => {
   const context = await browser.newContext({ storageState: crudSession.storageState });
   const page = await context.newPage();
   

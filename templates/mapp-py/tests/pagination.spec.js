@@ -2,7 +2,7 @@ import { test } from './fixtures.js';
 import { expect } from '@playwright/test';
 
 
-test('test pagination UI navigation', async ({ browser, paginationEnv, paginationSession }) => {
+test('test pagination for all models', async ({ browser, paginationEnv, paginationSession }) => {
   const context = await browser.newContext({ storageState: paginationSession.storageState });
   const page = await context.newPage();
   const { host, spec } = paginationEnv;
