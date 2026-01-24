@@ -9,7 +9,7 @@ async function fillOpParamField(page, paramName, param, value) {
   const paramType = param.type;
   const elementType = param.element_type;
   
-  const pattern = new RegExp('^' + param.name.lower_case + '', 'i');
+  const pattern = new RegExp('^' + param.name.lower_case, 'i');
 
   // Handle list types
   if (paramType === 'list') {
