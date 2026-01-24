@@ -6,6 +6,20 @@
 // Date/time formatting
 const datetimeFormatStr = '%Y-%m-%dT%H:%M:%S';
 
+function initDateTimeFromInput(value) {
+    // 
+    // value from date time input will be in format "YYYY-MM-DDTHH:MM" if chosen by a user,
+    // but in 2000-01-11T12:34:56 format if set programmatically
+    // so we need to handle both cases
+
+    if (value.length === 16) {
+        // Add seconds if missing
+        return value + ':00';
+    }else{
+        return value;
+    }
+}
+
 // Helper function for lingo int conversion
 function lingoInt(number = null, string = null, base = 10) {
     if (number !== null && number !== undefined) {
@@ -2068,7 +2082,7 @@ function _renderModelRead(app, element, ctx = null) {
                     case: 'error',
                     then: { 
                         block: [
-                            { text: 'error ', style: {color: 'red', bold: true} },
+                            { text: 'error: ', style: {color: 'red', bold: true} },
                             { text: state.error, style: {color: 'red'} }
                         ]
                      }
@@ -3034,7 +3048,7 @@ function createFormElement(app, element) {
     }
     const currentState = app.state[formStateField];
     const formData = currentState.data || {};
-    // console.log('createFormElement - formData before:', formData);
+    console.log('createFormElement - formData before:', formData);
     
     // create a row for each field //
 
@@ -3043,8 +3057,8 @@ function createFormElement(app, element) {
 
         // Column 1: Field name
         const nameCell = document.createElement('td');
-        const fieldName = fieldSpec.name?.lower_case || fieldKey;
-        nameCell.textContent = fieldName.charAt(0).toUpperCase() + fieldName.slice(1) + ':';
+        const fieldName = fieldSpec.name.lower_case;
+        nameCell.textContent = fieldName + ':';
         row.appendChild(nameCell);
 
         // Column 2: Input element
@@ -3058,7 +3072,30 @@ function createFormElement(app, element) {
             if (fieldType === 'list') {
                 formData[fieldKey] = Array.isArray(defaultValue) ? [...defaultValue] : [];
             } else {
-                formData[fieldKey] = defaultValue;
+                if (typeof defaultValue === 'undefined') {
+                    // switch fieldtype to set sensible defaults
+                    switch (fieldType) {
+                        case 'bool':
+                            formData[fieldKey] = false;
+                            break;
+                        case 'int':
+                            formData[fieldKey] = 0;
+                            break;
+                        case 'float':
+                            formData[fieldKey] = 0.0;
+                            break;
+                        case 'str':
+                            formData[fieldKey] = '';
+                            break;
+                        case 'datetime':
+                            formData[fieldKey] = new Date().toISOString();
+                            break;
+                        default:
+                            formData[fieldKey] = null;
+                    }
+                }else{
+                    formData[fieldKey] = defaultValue;
+                }
             }
         }
 
@@ -3095,7 +3132,7 @@ function createFormElement(app, element) {
                         itemContainer.appendChild(itemText);
 
                         const removeButton = document.createElement('button');
-                        removeButton.textContent = '×';
+                        removeButton.textContent = 'X';
                         removeButton.type = 'button';
                         removeButton.className = 'remove-button';
                         removeButton.setAttribute('data-index', i);
@@ -3164,7 +3201,7 @@ function createFormElement(app, element) {
                     if (isNaN(value)) return;
                 } else if (elementType === 'datetime') {
                     if (!listInput.value) return;
-                    value = listInput.value + ':00';
+                    value = listInput.value ? initDateTimeFromInput(listInput.value) : '';
                 } else {
                     value = listInput.value;
                     if (!value) return;
@@ -3175,6 +3212,7 @@ function createFormElement(app, element) {
                 } else if (!hasEnum) {
                     listInput.value = '';
                 }
+                console.log(`Add to list for field ${fieldKey}`, value, 'Current list:', formData[fieldKey]);
                 updateListDisplay();
             };
             addButton.addEventListener('click', addToList);
@@ -3223,7 +3261,7 @@ function createFormElement(app, element) {
             const datetimeValue = formData[fieldKey] ? String(formData[fieldKey]).substring(0, 16) : '';
             inputElement.value = datetimeValue;
             inputElement.addEventListener('input', () => {
-                formData[fieldKey] = inputElement.value ? inputElement.value + ':00' : '';
+                formData[fieldKey] = inputElement.value ? initDateTimeFromInput(inputElement.value) : '';
             });
 
         } else if (fieldType === 'foreign_key') {
@@ -3237,6 +3275,7 @@ function createFormElement(app, element) {
 
         } else if (fieldSpec.enum) {
             inputElement = document.createElement('select');
+            inputElement.name = fieldKey;
             for (const option of fieldSpec.enum) {
                 const opt = document.createElement('option');
                 opt.value = option;
@@ -3308,5 +3347,7 @@ function createFormElement(app, element) {
     table.appendChild(submitRow);
     
     formContainer.appendChild(table);
+
+    console.log('createFormElement - formData after:', formData);
     return formContainer;
 }

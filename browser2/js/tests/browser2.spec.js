@@ -498,7 +498,7 @@ test('test - forms page', async ({ page }) => {
   await expect(page.locator('text=organic')).toBeVisible();
   
   // Verify the remove button is visible
-  await expect(page.getByRole('button', { name: '×' }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'X' }).first()).toBeVisible();
   
   // Test adding another tag using Enter key
   await tagsInput.fill('eco-friendly');
@@ -509,7 +509,7 @@ test('test - forms page', async ({ page }) => {
   await expect(page.locator('text=eco-friendly')).toBeVisible();
   
   // Test removing a tag
-  await page.getByRole('button', { name: '×' }).first().click();
+  await page.getByRole('button', { name: 'X' }).first().click();
   
   // Verify one tag was removed (eco-friendly should still be there)
   await expect(page.locator('text=eco-friendly')).toBeVisible();
