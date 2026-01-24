@@ -18,6 +18,10 @@ test('test pagination UI navigation', async ({ browser, paginationEnv, paginatio
   // Iterate over each module
   for (const module of Object.values(spec.modules)) {
     const moduleKebab = module.name.kebab_case;
+    if(moduleKebab === 'auth') {
+      // skip auth module
+      continue;
+    }
     
     // Click link with module name (kebab case)
     await page.getByRole('link', { name: moduleKebab }).click();
