@@ -3047,7 +3047,7 @@ function createFormElement(app, element) {
         throw new Error(`createFormElement - state field not found: ${formStateField}`);
     }
     const currentState = app.state[formStateField];
-    const formData = currentState.data;
+    const formData = currentState.data || {};
     console.log('createFormElement - formData before:', formData);
     
     // create a row for each field //

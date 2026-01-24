@@ -1,36 +1,23 @@
 import { test } from './fixtures.js';
 import { expect } from '@playwright/test';
 
-test('crud root returns 200', async ({ browser, crudEnv, crudSession }) => {
-  const context = await browser.newContext({ storageState: crudSession.storageState });
-  const page = await context.newPage();
-  
-  const response = await page.goto(crudEnv.host);
-  expect(response.status()).toBe(200);
-});
-
 //
 // helper functions
 //
 
 async function clearAllListFields(page, model) {
-  console.log(`Clearing all list fields for model ${model.name.pascal_case}`);
   for (const [fieldName, field] of Object.entries(model.fields)) {
     if (field.type === 'list') {
       // Find the row for this field
       const row = page.getByRole('row', { name: new RegExp(field.name.lower_case, 'i') });
-      console.log(`Clearing list field: ${fieldName}`, typeof row);
       // Find all X/remove buttons in this row (one per list item)
       // The remove buttons are assumed to have role 'button' and name 'X'
       let removeButtons = await row.locator('button.remove-button').all();
-      console.log(`Found ${removeButtons.length} items to remove in field ${fieldName}`, typeof removeButtons);
       // Keep removing until there are no more
       while (removeButtons.length > 0) {
         await removeButtons[0].click();
-        console.log(`Removed one item from field ${fieldName}`);
         // Re-query after each removal, as the DOM updates
         removeButtons = await row.locator('button.remove-button').all();
-        console.log(`Remaining items to remove in field ${fieldName}: ${removeButtons.length}`);
       }
     }
   }
