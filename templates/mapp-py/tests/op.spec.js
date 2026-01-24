@@ -9,7 +9,7 @@ async function fillOpParamField(page, paramName, param, value) {
   const paramType = param.type;
   const elementType = param.element_type;
   
-  const pattern = new RegExp('^' + param.name.lower_case, 'i');
+  const pattern = new RegExp('^' + param.name.lower_case + '', 'i');
 
   // Handle list types
   if (paramType === 'list') {
@@ -28,7 +28,7 @@ async function fillOpParamField(page, paramName, param, value) {
         }
       } else if (param.enum) {
         await row.locator('select.list-input').selectOption(String(val));
-      } else if (elementType === 'datetime') {
+      }else if (elementType === 'datetime') {
         await row.locator('input.list-input[type="datetime-local"]').fill(String(val).substring(0, 16));
       } else {
         await row.locator('input.list-input').fill(String(val));
