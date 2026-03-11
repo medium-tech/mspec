@@ -9,7 +9,7 @@ from PIL import Image
 
 def extract_text_via_ocr(image) -> str:
 	"""pass in a pillow image and return the extracted text"""
-	return pytesseract.image_to_string(image)
+	return pytesseract.image_to_string(image).lower().strip()
 
 def detect_colors(image) -> dict:
     """Detects if the image contains green, yellow, or red (with shade tolerance)."""
