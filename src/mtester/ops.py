@@ -1,20 +1,40 @@
 import os
 
+import pytesseract
+from PIL import Image
+
 #
 # funcs
 #
 
-def extract_text_via_ocr(source: str) -> str:
-	# placeholder implementation #
-	return 'placeholder text extracted from OCR'
+def extract_text_via_ocr(image) -> str:
+	"""pass in a pillow image and return the extracted text"""
+	return pytesseract.image_to_string(image)
 
-def detect_colors(source: str) -> dict:
-	# placeholder implementation #
-	return {
-		'green': True,
-		'yellow': False,
-		'red': False
-	}
+def detect_colors(image) -> dict:
+    """Detects if the image contains green, yellow, or red (with shade tolerance)."""
+    # Downsample for speed
+    small_img = image.convert('RGB').resize((64, 64))
+    pixels = list(small_img.getdata())
+
+    found = {'red': False, 'green': False, 'yellow': False}
+
+    for r, g, b in pixels:
+        # Red: high R, low G/B
+        if r > 150 and g < 100 and b < 100:
+            found['red'] = True
+        # Green: high G, low R/B
+        elif g > 150 and r < 100 and b < 100:
+            found['green'] = True
+        # Yellow: high R and G, low B
+        elif r > 150 and g > 150 and b < 100:
+            found['yellow'] = True
+
+        # Early exit if all found
+        if all(found.values()):
+            break
+
+    return found
 
 #
 # ops
@@ -24,14 +44,11 @@ def identify(source: str) -> dict:
 
 	# default results #
 
-	file_exists = os.path.exists(source)
-	file_extension = os.path.splitext(source)[1][1:].lower()
-
 	result = {
 		'file': {
 			'source': source,
-			'exists': file_exists,
-			'extension': file_extension
+			'exists': False,
+			'extension': ''
 		},
 		'text': '',
 		'colors': {
@@ -44,27 +61,41 @@ def identify(source: str) -> dict:
 	}
 
 	# file details #
+	try:
+		result['file']['exists'] = os.path.exists(source)
+	except Exception as e:
+		result['problems'].append(f'Error stating file: {e.__class__.__name__}: {e}')
+		return result
 
-	if not file_exists:
+	if not result['file']['exists']:
 		result['problems'].append(f'File not found: {source}')
 		return result
+	
+	file_extension = os.path.splitext(source)[1][1:].lower()
+	result['file']['extension'] = file_extension
 	
 	if not file_extension in ['png', 'jpg', 'jpeg', 'bmp', 'gif']:
 		result['problems'].append(f'Unsupported file type: {file_extension}')
 		return result
-
-	# file identification #
-
+	
+	# load image #
 	try:
-		result['text'] = extract_text_via_ocr(source)
+		image = Image.open(source)
 	except Exception as e:
-		result['problems'].append(f'OCR extraction failed: {str(e)}')
+		result['problems'].append(f'Failed to load image: {e.__class__.__name__}: {e}')
+		return result
+
+	# text extraction #
+	try:
+		result['text'] = extract_text_via_ocr(image)
+	except Exception as e:
+		result['problems'].append(f'OCR extraction failed: {e.__class__.__name__}: {e}')
 		
 	# color detection #
 	try:
-		result['colors'] = detect_colors(source)
+		result['colors'] = detect_colors(image)
 	except Exception as e:
-		result['problems'].append(f'Color detection failed: {str(e)}')
+		result['problems'].append(f'Color detection failed: {e.__class__.__name__}: {e}')
 
 
 	# analyze results #
