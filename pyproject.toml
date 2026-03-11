@@ -33,7 +33,7 @@ include-package-data = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-"*" = ["*.yaml", "*.yml", "*.json", "*.jinja2", "*.html", "*.css", "*.js"]
+"*" = ["*.yaml", "*.yml", "*.json", "*.jinja2", "*.html", "*.css", "*.js", ".md"]
 "mtemplate" = [
   ".cache/**", 
   ".cache/py/.env.example.jinja2", 

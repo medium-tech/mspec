@@ -1,14 +1,8 @@
 # Roadmap
 ## projects
 
-* [main prototype](#main-template-prototype)
-* [python template app](#python-template-app)
-* [browser1 template app](#browser-1-template-app)
-* [go template app](#go-template-app)
-* [c template app](#c-template-app)
-* [haskell template app](#haskell-template-app)
-* [browser 2.0 clients](#browser-20-clients)
-* [low code node based gui](#low-code-node-based-gui)
+* [mapp framework](#mapp-framework)
+* [lingo](#lingo)
 
 ### status colors
 |not started|in progress|finished|
@@ -57,36 +51,63 @@
     * 🔴 lingo / ui
         * 🔴 upload
         * 🔴 download
-        * 🔴 view image
     * 🔴 add support for multipart upload/download
-* 🔴 export static site
+* 🔴 media files
+    * 🔴 media data models  - w/ mediainfo + id of file + master file + alternate versions (ids to other audio/imgs/etc)
+        * 🔴 audio
+        * 🔴 image
+        * 🔴 video
+        * 🔴 text (plain or lingo)
+    * 🔴 lingo ui
+        * 🔴 image viewer
+        * 🔴 player
+            * 🔴 audio
+            * 🔴 video
+        * 🔴 text
+            * 🔴 display as plain txt
+            * 🔴 tail (for following logs)
+            * 🔴 render as lingo
 
-## main template prototype
-The main prototype are the python + browser 1 browser template apps.
+* 🟡 refactor internal py api
 
-### lingo
-* 🟢 move sample apps from bl-mspec-dev
-    * 🟢 add tests to ensure correct outputs are generated
-* 🟢 add lists
-    * 🟢 map
-    * 🟢 slice
-    * 🟢 filter
-    * 🟢 count
-    * 🟢 drop while
-    * 🟢 take while
-* 🟡 refactor internal api
+    * 🔴 parity with JS API
+
     * 🟢 rename mspec/markup.py to lingo.py
     * 🔴 rename `render_output` to `lingo_render`
     * 🔴 rename remaining `render_*` functions to `execute_*`
     * 🔴 migrate `mtemplate/__init__.py` logic to `mtemplate/core.py`
     * 🟢 migrate builtin auth ops
         * 🟢 migrate `builtin.yaml` ops to `func` style logic
+
+## lingo
 * 🔴 add background tasks 
     * 🔴 timers similar to blender's app timers
     * 🔴 scheduled (cron style)
 * 🔴 add hook functions
     * 🔴 startup
     * 🔴 shutdown
+* 🔴 add meta to models
+    * 🔴 users can add key/value "tags" to models
+        * 🔴 namespace allows different tagging domains ie. public/admin/user
+* 🔴 static site
+    * 🔴 generate module/model index and pages
+    * 🔴 server redraw process
+        * 🔴 manual
+        * 🔴 daemon
+            * 🔴 interval of N seconds
+            * 🔴 allow crud/file ops to tag site for redraw
+* 🔴 device
+    * 🔴 gps location
+        * 🔴 read location; store on model and display to user
+        * 🔴 visualize w OSM
+    * 🔴 camera
+        * 🔴 display camera in real time (ie. mirror)
+        * 🔴 take photo & create file+image models
+        * 🔴 take audio & create file+audio models
+        * 🔴 take video & create file+video models
+* 🔴 storage - local vs. remote
+    * 🔴 crud lingo method - in page app be able to specify local or remote db
+    * 🔴 file lingo method - in page app be able to specify local or remote access
 * 🔴 language changes
     * in page lingo specs, rename `ops` to `funcs` to disambiguate calling an op from displaying an op's ui
         to call a page's func you would do `{call: 'funcs.my_func', args: {...}`, and then `{op: 'func.my_func', ...}` would create
@@ -101,424 +122,205 @@ The main prototype are the python + browser 1 browser template apps.
             * 🔴 add options to limit model to only view delete/read and/or edit modes
         * 🔴 remove urls from args, instead supply `module_name` and `model_name`, then infer urls from that
         * 🔴 remove definition from args? lingo app would need access to backend spec then get def from module/model name
- 
-### template app phase 1
-* 🟡 python full featured template app
-    * 🟡 auth for models
-        * 🟡 require login to create a model
-        * 🟡 limit number of models created by user in spec file (ie. user can only create 1 profile)
-        * 🔴 model read op can be public or private
-            * 🔴 hardcoded in spec file
-            * 🔴 user can choose if model is public or private
-            * 🔴 user can create acl for read ops
-        * 🔴 revist python password implementation
-            * `bcrypt` 5.0 broke implementation, migrate stdlib alternatives (https://docs.python.org/3/library/hashlib.html#hashlib.scrypt) as described in description: https://pypi.org/project/bcrypt/
-        * 🔴 implement oauth
-
-    * 🔴 add foreign key id as model field type
-    * 🔴 add meta to models
-    * 🔴 add file ingest/upload
-        * 🔴 file sql table
-        * 🔴 add model field type: file
-        * 🔴 ingest
-            * 🔴 py client
-            * 🔴 py server/http client
-            * 🔴 browser 1
-        * 🔴 read
-            * 🔴 py client
-            * 🔴 py server/http client
-            * 🔴 browser 1
-        * 🔴 add multipart uploads
-    * 🔴 implement cids
-        * 🔴 template apps
-            * 🔴 add cid sql table
-                * 🔴 row contains foreign key to file
-                * 🔴 row can contain foreign key to model table
-        * 🔴 browser2
-            * 🔴 page to page links
-            * 🔴 retrieving/viewing files
-            * 🔴 retrieving/viewing model data
-    * 🔴 more types
+* 🔴 implement cids - a separate cid table stores the cid for models or files
+* 🔴 implement versioning - of cids and models
+* 🔴 purchasing
+    * 🔴 subscription
+    * 🔴 single transaction
+* 🔴 more types
+        * 🔴 if default, it is NOT required
+        * 🔴 validate fields w/ lingo script inline in the generator script
         * 🔴 multi-dimensional arrays
         * 🔴 date and time
             * 🔴 date
             * 🔴 time
             * 🔴 any of datetime, date or time
-* 🟢 browser 1 app
-    * 🟢 gui
-        * 🟢 crud/list
-        * 🟢 auth
 
-* 🔴 go app
-    * 🔴 sqlite interface
+## prepare to scale codebase
+* 🔴 testing
+    * 🔴 add test_data to pages to verify rendered buffer
+    * 🔴 refactor tests into individual files for each function group (comparison, bool, str, sequence, etc)
+        * 🔴 pages
+        * 🔴 scripts
+    * 🔴 create a hello world test that only uses functions from the str function group
+        * 🔴 page
+        * 🔴 script
+* 🔴 mspec documentation
+    * 🔴 lingo language
+        * 🔴 core language - what is shared between all script types
+        * 🔴 script types (page, script, generator)
+            * description of what is does
+            * features available on in this language
+            * python examples for rendering/running scripts
+            * test data
+    * 🔴 python
+        * 🔴 mapp
+            * 🔴 code
+            * 🔴 running
+            * 🔴 testing
+        * 🔴 lingo execute
+        * 🔴 rendering page
+        * 🔴 testing
+    * 🔴 legacy browser
+        * 🔴 lingo execute
+        * 🔴 rendering page
+        * 🔴 testing
+    * 🔴 templating (document as mostly deprecated)
+    * 🔴 app io
+        * server
+            - static ui files
+            - http request/response/error codes
+        * cli commands/args/stdout/stderr
+        * sqlite commands
+* 🔴 project mgmt - create tracking for
+    * 🔴 clients
+        * 🔴 lingo - tracking for each function group, green when implemented and tested
+    * 🔴 for products below create tracking for
+        * hello world
+        * features
+
+# Alpha 1
+
+## products
+
+### open source code
+* 🔴 lingo_exe
+    * 🔴 python
+    * 🔴 legacy_browser
+
+* 🔴 lingo_gui
+    * requires: lingo_exe.*
+    * render a page script
+    * allows creating an app with a lingo script
+        * a browser2 app is a light wrapper around this with other browser related features
+    * 🔴 legacy_browser
+    * 🔴 python_tk
+    * 🔴 blender_app
+        * 🔴 extension
+            * 🔴 panel
+            * 🔴 menu
+        * 🔴 app_template
+
+### browser2
+    * 🔴 legagy_browser
+    * 🔴 python_tk
+
+### blender_app
+* 🔴 cms
+    * 🔴 backup and sync
+    * 🔴 files w/ cid
+        * 🔴 backup policy
+    * 🔴 forms for taking metadata (ie. audio/image/video)
+    * 🔴 integrate with
+        * 🔴 video timeline
+        * 🔴 image editor
+        * 🔴 3d viewspace
+* 🔴 mspec dev app
+    * 🔴 lingo nodes
+    * 🔴 spreadsheet 
+    * 🔴 create + render lingo page
+    * 🔴 sever mgnt
+* 🔴 image editing
+    * 🔴 selections
+    * 🔴 filters
+    * 🔴 layers
+* 🔴 midi
+    * 🔴 create
+    * 🔴 render
+* 🔴 daw
+    * 🔴 record
+    * 🔴 mix
+    * 🔴 filter
+* 🔴 browser2
+    * framework: lingo_gui.blender_app.app_template
+    * 🔴 merge in music player
+    * 🔴 add streaming
+    * 🔴 add video support
+    * 🔴 add image gallery
+    * 🔴 kiosk mode
+
+### other apps
+
+* 🔴 chat
+    * 🔴 text
+    * 🔴 a/v
+        * 🔴 call
+        * 🔴 messages
+
+* 🔴 media_platform
+    * 🔴 music
+    * 🔴 still artwork
+    * 🔴 audio (non-musical ie. spoken word/speech/podcast)
+    * 🔴 video - 
+
+* 🔴 classifieds
+
+* 🔴 maps
+    * 🔴 search for locations
+    * 🔴 directions
+
+* 🔴 gig
+    * 🔴 storage/warehousing
+    * 🔴 delivery
+    * 🔴 taxi
+
+* 🔴 admin ops
+    * 🔴 
+
+
+## IT Docs
+* 🔴 hardware
+    * 🔴 purchasing
+    * 🔴 building machine
+    * 🔴 troubleshooting
+    * 🔴 maintenance
+* 🔴 softare
+    * 🔴 installation
+    * 🔴 troubleshooting
+    * 🔴 maintenance
+* 🔴 cloud
+    * 🔴 setting up server
+* 🔴 user guide
+    * 🔴 personal computer
+        * 🔴 purchasing
+            * 🔴 ready to go
+            * 🔴 build your own
+        * 🔴 backup
+            * 🔴 locally (ie. ext. harddrive)
+            * 🔴 personal server
+            * 🔴 find backup service
     * 🔴 server
-        * 🔴 db wrapper
-        * 🔴 auth
-        * 🔴 serve browser1 html
+        * 🔴 ...
+    * 🔴 studio
+        * 🔴 ...
+    * 🔴 media server
+        * 🔴 ...
 
-### phase 2
-* 🟡 python app
-    * 🟡 refactor python vs. templating logic
-        * 🟢 enable nested loops and if branching
-        * 🟢 add macro by type function for calling a macro dynamically
-        * 🟡 migrate macros written in python to template syntax
-            * 🟡 py app
-            * 🟡 browser1 app
-        * 🔴 revist python template app, re: single_model vs. multi_model, templates and macros
-        * 🟡 create system to sync template changes to macro only templates (ex: copy changes from `./single_model/db.py` to `./mutlti_model/db.py`)
-            * load files `./single_model/db.py` and `./mutlti_model/db.py` (if exists)
-            * the parent template is used to render a child based on a yaml model
-                * render everything except for undefined macros (existing macros in `./mutlti_model/db.py` should be undefined at this point)
+## Studio Integration
+* 🔴 ...
 
-### phase 3
+## Cloud Hosting
+* 🔴 backup
+* 🔴 scale
 
-* 🔴 haskell template app
-* 🔴 c template app
+## content
+* 🔴 ...
 
+## Network
+* 🔴 ...
 
+# Future Plans
+## Alpha V2
+* support for go
+* support for c
+* blender custom build
+    * primitives
+        * camera/mic/midi recording
+        * player w sync from audio file or stream (ie. mic)
+        * mixer / streaming
+            * mix audio/video signals
+            * compositor nodes for controlling output
+            * script / show flow control
 
-### misc
-* 🟡 performance testing
-* 🔴 clean up whitespace in generated apps
-
-## python template app
-* 🟢 sqlite3 client
-    * 🟢 core   (`templates/py/src/core/db.py`)
-        * 🟢 create tables
-        * 🟢 user crud ops
-        * 🟢 profile crud ops
-    * 🟢 model (`templates/py/src/test_module/test_model/db.py`)
-        * 🟢 list
-        * 🟢 instance
-            * 🟢 create
-            * 🟢 read
-            * 🟢 update
-            * 🟢 delete
-    * 🟢 tests
-
-* 🟢 cli
-    * 🟢 core (`templates/py/src/core/__main__.py`)
-        * 🟢 setup tables
-    * 🟢 model (`templates/py/src/test_module/test_model/__main__.py`)
-        * 🟢 db client crud/list ops
-        * 🟢 http client crud/list ops
-    * 🔴 tests
-
-* 🟢 server
-    * 🟢 core (`templates/py/src/core/server.py`)
-        * 🟢 auth
-        * 🟢 user 
-        * 🟢 profile  
-    * 🟢 model (`templates/py/src/test_module/test_model/server.py`)
-        * 🟢 list
-        * 🟢 instance
-            * 🟢 create
-            * 🟢 read
-            * 🟢 update
-            * 🟢 delete
-    * 🟢 tests
-    * 🔴 improve auth
-        * 🔴 add salt to pw
-        * 🔴 reset password by email code
-        * 🔴 add login sessions/logout
-        * 🔴 add acls to endpoints/models
-    * 🟢 get rid of `__post_init__` and use type conversion explicitly where needed
-
-* 🟢 http client
-    * 🟢 core (`templates/py/src/core/client.py`)
-        * 🟢 auth
-        * 🟢 user 
-        * 🟢 profile  
-    * 🟢 model (`templates/py/src/test_module/test_model/client.py`)
-        * 🟢 list
-        * 🟢 instance
-            * 🟢 create
-            * 🟢 read
-            * 🟢 update
-            * 🟢 delete
-    * 🟢 tests
-
-* 🟡 gui (tkinter)
-    * 🟡 index (`templates/py/src/core/gui.py`)
-        * 🟢 list modules
-        * 🔴 create user/profile
-        * 🔴 login
-        * 🔴 user/profile page
-            * 🔴 read
-            * 🔴 edit
-    * 🟢 module index (`templates/py/src/test_module/gui.py`)
-    * 🟢 model  (`templates/py/src/test_module/test_model/gui.py`)
-        * 🟢 list
-        * 🟡 instance
-            * 🟡 create
-            * 🟢 read
-            * 🟡 update
-            * 🟡 delete
-    * 🟡 template extraction 
-    * 🔴 tests
-    * 🔴 make network requests async
-
-## browser 1 template app
-* 🟢 html/js
-    * 🟢 index (`templates/browser 1/srv/index.html`)
-        * 🟢 list modules
-        * 🟡 create user
-            * 🟢 login
-            * 🔴 reset password
-        * 🟢 user page (w logout button)
-            * 🟢 view user
-            * 🔴 edit profile
-            * 🔴 edit profile of logged in user
-        * 🔴 profiles
-            * 🔴 list profiles
-            * 🔴 view profile
-    * 🟢 module index (`templates/browser 1/srv/test-module/index.html`)
-    * 🟢 model
-        * 🟢 list (`templates/browser 1/srv/test-module/test-model/index.html`)
-        * 🟢 create (`templates/browser 1/srv/test-module/test-model/index.html`)
-        * 🟢 instance
-            * 🟢 instance (`templates/browser 1/srv/test-module/test-model/instance.html`)
-                * 🟢 read
-                * 🟢 update
-                * 🟢 delete
-    * 🟢 template extraction 
-    * 🟢 unittests (`templates/browser 1/tests/test-module/testModel.spec.js`)
-
-## go template app
-* 🔴 sqlite3 client
-    * 🔴 core
-        * 🔴 create tables
-        * 🔴 user crud ops
-        * 🔴 profile crud ops
-    * 🔴 model
-        * 🔴 list
-        * 🔴 instance
-            * 🔴 create
-            * 🔴 read
-            * 🔴 update
-            * 🔴 delete
-    * 🔴 tests
-
-* 🔴 cli
-    * 🔴 core
-        * 🔴 setup tables
-    * 🔴 model
-        * 🔴 db client crud/list ops
-        * 🔴 http client crud/list ops
-    * 🔴 tests
-
-* 🔴 server
-    * 🔴 core
-        * 🔴 auth
-        * 🔴 user 
-        * 🔴 profile  
-    * 🔴 model
-        * 🔴 list
-        * 🔴 instance
-            * 🔴 create
-            * 🔴 read
-            * 🔴 update
-            * 🔴 delete
-    * 🔴 tests
-
-* 🔴 http client
-    * 🔴 core
-        * 🔴 auth
-        * 🔴 user 
-        * 🔴 profile  
-    * 🔴 model
-        * 🔴 list
-        * 🔴 instance
-            * 🔴 create
-            * 🔴 read
-            * 🔴 update
-            * 🔴 delete
-    * 🔴 tests
-
-* 🔴 gui
-    * 🔴 index
-        * 🔴 list modules
-        * 🔴 create user/profile
-        * 🔴 login
-        * 🔴 user/profile page
-            * 🔴 read
-            * 🔴 edit
-    * 🔴 module index
-    * 🔴 model
-        * 🔴 list
-        * 🔴 instance
-            * 🔴 instance
-                * 🔴 create
-                * 🔴 read
-                * 🔴 update
-                * 🔴 delete
-    * 🔴 template extraction 
-    * 🔴 tests
-
-
-## c template app
-* 🔴 sqlite3 client
-    * 🔴 core
-        * 🔴 create tables
-        * 🔴 user crud ops
-        * 🔴 profile crud ops
-    * 🔴 model
-        * 🔴 list
-        * 🔴 instance
-            * 🔴 create
-            * 🔴 read
-            * 🔴 update
-            * 🔴 delete
-    * 🔴 tests
-
-* 🔴 cli
-    * 🔴 core
-        * 🔴 setup tables
-    * 🔴 model
-        * 🔴 db client crud/list ops
-        * 🔴 http client crud/list ops
-    * 🔴 tests
-
-* 🔴 http client
-    * 🔴 core
-        * 🔴 auth
-        * 🔴 user 
-        * 🔴 profile  
-    * 🔴 model
-        * 🔴 list
-        * 🔴 instance
-            * 🔴 create
-            * 🔴 read
-            * 🔴 update
-            * 🔴 delete
-    * 🔴 tests
-
-* 🔴 gui
-    * 🔴 index
-        * 🔴 list modules
-        * 🔴 create user/profile
-        * 🔴 login
-        * 🔴 user/profile page
-            * 🔴 read
-            * 🔴 edit
-    * 🔴 module index
-    * 🔴 model
-        * 🔴 list
-        * 🔴 instance
-            * 🔴 instance
-                * 🔴 create
-                * 🔴 read
-                * 🔴 update
-                * 🔴 delete
-    * 🔴 template extraction 
-    * 🔴 tests
-
-## haskell template app
-* 🔴 sqlite3 client
-    * 🔴 core
-        * 🔴 create tables
-        * 🔴 user crud ops
-        * 🔴 profile crud ops
-    * 🔴 model
-        * 🔴 list
-        * 🔴 instance
-            * 🔴 create
-            * 🔴 read
-            * 🔴 update
-            * 🔴 delete
-    * 🔴 tests
-
-* 🔴 cli
-    * 🔴 core
-        * 🔴 setup tables
-    * 🔴 model
-        * 🔴 db client crud/list ops
-        * 🔴 http client crud/list ops
-    * 🔴 tests
-
-* 🔴 server
-    * 🔴 core
-        * 🔴 auth
-        * 🔴 user 
-        * 🔴 profile  
-    * 🔴 model
-        * 🔴 list
-        * 🔴 instance
-            * 🔴 create
-            * 🔴 read
-            * 🔴 update
-            * 🔴 delete
-    * 🔴 tests
-
-* 🔴 http client
-    * 🔴 core
-        * 🔴 auth
-        * 🔴 user 
-        * 🔴 profile  
-    * 🔴 model
-        * 🔴 list
-        * 🔴 instance
-            * 🔴 create
-            * 🔴 read
-            * 🔴 update
-            * 🔴 delete
-    * 🔴 tests
-
-* 🔴 gui
-    * 🔴 index
-        * 🔴 list modules
-        * 🔴 create user/profile
-        * 🔴 login
-        * 🔴 user/profile page
-            * 🔴 read
-            * 🔴 edit
-    * 🔴 module index
-    * 🔴 model
-        * 🔴 list
-        * 🔴 instance
-            * 🔴 instance
-                * 🔴 create
-                * 🔴 read
-                * 🔴 update
-                * 🔴 delete
-    * 🔴 template extraction 
-    * 🔴 tests
-
-## browser 2.0 clients
-* 🟡 python tkinter
-    * 🟢 render hello-world-page.json
-    * 🟢 render example_spec
-    * 🔴 model widgets
-        * 🔴 create
-        * 🔴 read
-        * 🔴 update
-        * 🔴 delete
-        * 🔴 list
-* 🔴 browser 1
-    * 🔴 render hello-world-page.json
-    * 🔴 render example spec
-    * 🔴 model widgets
-* 🔴 Go
-    * 🔴 render hello-world-page.json
-    * 🔴 render example spec
-    * 🔴 model widgets
-* 🟡 blender extension / app template
-    * 🟢 render hello-world-page.json
-    * 🟡 render example spec
-    * 🔴 model widgets
-* 🔴 C
-    * 🔴 render hello-world-page.json
-    * 🔴 render example spec
-    * 🔴 model widgets
-* 🔴 haskell
-    * 🔴 render hello-world-page.json
-    * 🔴 render example spec
-    * 🔴 model widgets
-
-## low code node based gui
-A node based gui for low code generation of browser2.0 JSONs.
-
-* 🔴 blender extension / app template
-    * 🔴 generate hello-world-page.json
-    * 🔴 generate example spec
-    * 🔴 genereate widgets
+## Beta
+* support for haskell
