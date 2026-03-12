@@ -11,7 +11,16 @@ from .core import TESTS_TMP_DIR
 ALL_SPECS = [files for files in builtin_spec_files().values()]
 TOTAL_NUM_SPECS = sum(len(files) if isinstance(files, list) else 1 for files in ALL_SPECS)
 
-class TestCLI(unittest.TestCase):
+class TestMspecCLI(unittest.TestCase):
+    """
+    Unittests for mspec python module CLI.
+    Tests the following commands:
+    - specs: lists all builtin specs
+    - example: copies example spec to current directory
+    - examples: copies all example specs to specified directory
+    - run: runs a lingo script spec and outputs results
+    - execute: executes a lingo script spec with optional params and outputs results
+    """
 
     def _run_cli(self, args, cwd=None):
         """Helper method to run the CLI with given arguments"""

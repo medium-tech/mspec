@@ -2,7 +2,10 @@ import json
 import unittest
 import subprocess
 
-class TestMTesterImport(unittest.TestCase):
+class TestMTester(unittest.TestCase):
+	"""
+	unittests for mtester python module cli.
+	"""
 
 	def _cli(self, args, exit_code=0, decode_json=True):
 		result = subprocess.run(['python', '-m', 'mtester'] + args, capture_output=True, text=True)

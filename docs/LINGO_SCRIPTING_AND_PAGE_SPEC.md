@@ -25,7 +25,7 @@ Both page types consists of four main sections:
 - **ops**: Reusable operations with a JSON-based scripting language
 - **output**: The output of the program, different depending on type of spec
 
-As explained below, these specs can contain lingo expressions, those are defined in [this document](./LINGO_EXPRESSIONS.md).
+As explained below, these specs can contain lingo expressions, those are defined in [this document](./LINGO_FUNCTIONS.md).
 
 ## Getting Started
 

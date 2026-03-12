@@ -81,7 +81,7 @@ examples_parser.add_argument(
 
 run_parser = subparsers.add_parser(
     'run',
-    help='Execute a browser2 spec and print the result'
+    help='Execute a browser2 page spec and print the resulting document'
 )
 run_parser.add_argument(
     'spec',

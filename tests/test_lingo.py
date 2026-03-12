@@ -8,6 +8,11 @@ from mspec.lingo import *
 
 
 class TestLingoPages(unittest.TestCase):
+    """
+    Testing for browser2 page spec
+    - test-page.json - tests that the calculated buffer is as expected for various inputs, etc
+    - functions.json - tests that all functions in lingo_function_lookup are working as expected and that all are covered by tests
+    """
         
     @classmethod
     def setUpClass(cls):
@@ -475,6 +480,9 @@ lingo_scripts = built_in['lingo_script']
 lingo_script_test_data = built_in['lingo_script_test_data']
 
 class TestLingoScripts(unittest.TestCase):
+    """
+    Tests all lingo scripts against their test data/cases
+    """
 
     def test_lingo_scripts(self):
         for name in lingo_scripts:

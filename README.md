@@ -5,6 +5,8 @@ This project defines specs for:
 * scripting
 * browsing
 
+...in a cross language/device way.
+
 All specs are written in either json or yaml. The structure is the same regardless of the serialization format.
 Yaml was chosen because it's simple syntax is both human readable and machine parsable.
 JSON was chosen because because of it's wide availability, many languages have a built in parser.

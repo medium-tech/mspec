@@ -128,13 +128,13 @@
     * 🔴 subscription
     * 🔴 single transaction
 * 🔴 more types
-        * 🔴 if default, it is NOT required
-        * 🔴 validate fields w/ lingo script inline in the generator script
-        * 🔴 multi-dimensional arrays
-        * 🔴 date and time
-            * 🔴 date
-            * 🔴 time
-            * 🔴 any of datetime, date or time
+    * 🔴 if default, it is NOT required
+    * 🔴 validate fields w/ lingo script inline in the generator script
+    * 🔴 multi-dimensional arrays
+    * 🔴 date and time
+        * 🔴 date
+        * 🔴 time
+        * 🔴 any of datetime, date or time
 
 ## prepare to scale codebase
 * 🔴 testing
@@ -145,7 +145,7 @@
     * 🔴 create a hello world test that only uses functions from the str function group
         * 🔴 page
         * 🔴 script
-* 🔴 mspec documentation
+* 🔴 mspec documentation (this is the ToC for the README.md)
     * 🔴 lingo language
         * 🔴 core language - what is shared between all script types
         * 🔴 script types (page, script, generator)
@@ -153,7 +153,7 @@
             * features available on in this language
             * python examples for rendering/running scripts
             * test data
-    * 🔴 python
+    * 🔴 python implementation
         * 🔴 mapp
             * 🔴 code
             * 🔴 running
@@ -161,7 +161,7 @@
         * 🔴 lingo execute
         * 🔴 rendering page
         * 🔴 testing
-    * 🔴 legacy browser
+    * 🔴 legacy browser implementation
         * 🔴 lingo execute
         * 🔴 rendering page
         * 🔴 testing
