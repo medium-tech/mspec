@@ -26,16 +26,11 @@ To accomplish this there and three script specs:
 	* pybrowser2
 	* legacy browser
 	* mapp framework
+* philosophy
 * development
 	* setup dev environment
 	* code layout
 	* deploying to pypi
-* testing
-	* python repo tests
-	* mapp
-	* browser2
-		* legacy
-		* pybrowser
 * other
 	* mtester
 	* mtemplate
@@ -191,6 +186,11 @@ Tests will run their own servers, with own sqlite file, on different ports that 
 	* in another terminal run test
 		* headless: `npm run test`
 		* interactively: `npm run test-ui`
+
+# Philosophy
+* lightweight
+* pythonic
+* it just works, quickly
 
 # Development
 
