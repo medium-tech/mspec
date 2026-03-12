@@ -202,7 +202,7 @@
         * 🔴 app_template
 
 ### browser2
-    * 🔴 legagy_browser
+    * 🔴 legacy_browser
     * 🔴 python_tk
 
 ### blender_app
@@ -263,9 +263,6 @@
     * 🔴 storage/warehousing
     * 🔴 delivery
     * 🔴 taxi
-
-* 🔴 admin ops
-    * 🔴 
 
 
 ## IT Docs
