@@ -238,10 +238,16 @@ def init_generator_spec(spec:dict) -> dict:
                         field['name'][key] = value
 
                 try:
-                    if not isinstance(field['required'], bool):
-                        raise ValueError(f'field {field_name} in model {model_path} has invalid required value, must be bool')
+                    field['default']
+                    field['required'] = False
                 except KeyError:
                     field['required'] = True
+
+                # try:
+                #     if not isinstance(field['required'], bool):
+                #         raise ValueError(f'field {field_name} in model {model_path} has invalid required value, must be bool')
+                # except KeyError:
+                #     field['required'] = True
 
                 try:
                     field['examples'][0]

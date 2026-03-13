@@ -197,8 +197,17 @@ def new_model(model_class:type, data:dict):
         object: An instance of the model class.
     """
 
+    # set defaults #
+
     if 'id' not in data:
         data['id'] = None
+
+    for field in model_class._model_spec['fields'].values():
+        if field['name']['snake_case'] not in data:
+            try:
+                data[field['name']['snake_case']] = field['default']
+            except KeyError:
+                pass
 
     try:
         return model_class(**data)
@@ -264,6 +273,16 @@ def new_op_params(op_class:type, data:dict):
     Returns:
         object: An instance of the op param class.
     """
+
+    
+    # set defaults #
+
+    for field in op_class._op_spec['params'].values():
+        if field['name']['snake_case'] not in data:
+            try:
+                data[field['name']['snake_case']] = field['default']
+            except KeyError:
+                pass
 
     try:
         return op_class(**data)

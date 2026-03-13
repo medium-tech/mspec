@@ -9,6 +9,7 @@ from itertools import dropwhile, takewhile, islice, accumulate
 from functools import reduce
 
 from mapp.auth import create_user, login_user, current_user, logout_user, delete_user, drop_sessions
+from mapp.file_system import ingest_start
 
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
 
@@ -78,6 +79,10 @@ def _reduce_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=Non
     else:
         return (reduce_func, items), {}
     
+#
+# auth
+#
+
 def _create_user_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     try:
         name_expr = expression['args']['name']
@@ -133,6 +138,32 @@ def _drop_sessions_function_args(app:LingoApp, expression: dict, ctx:Optional[di
     root_password = unwrap_primitive(lingo_execute(app, root_password_expr, ctx))
 
     return (ctx, root_password), {}
+
+#
+# file system
+#
+
+def _ingest_start_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        name_expr = expression['args']['name']
+        size_expr = expression['args']['size']
+        parts_expr = expression['args']['parts']
+        content_type_expr = expression['args'].get('content_type', '')
+        finish_expr = expression['args'].get('finish', False)
+    except KeyError as e:
+        raise ValueError(f'ingest_start - missing arg: {e}')
+
+    name = unwrap_primitive(lingo_execute(app, name_expr, ctx))
+    size = unwrap_primitive(lingo_execute(app, size_expr, ctx))
+    parts = unwrap_primitive(lingo_execute(app, parts_expr, ctx))
+    content_type = unwrap_primitive(lingo_execute(app, content_type_expr, ctx))
+    finish = unwrap_primitive(lingo_execute(app, finish_expr, ctx))
+
+    return (ctx, name, size, parts, content_type, finish), {}
+
+#
+# other
+#
 
 def str_join(separator:str, items:list) -> str:
     return separator.join(str(item) for item in items)
@@ -251,6 +282,12 @@ lingo_function_lookup = {
         'logout_user': {'func': logout_user, 'create_args': _logout_user_function_args},
         'delete_user': {'func': delete_user, 'create_args': _delete_user_function_args},
         'drop_sessions': {'func': drop_sessions, 'create_args': _drop_sessions_function_args}
+    },
+
+    # file system #
+
+    'file_system': {
+        'ingest_start': {'func': ingest_start, 'create_args': _ingest_start_function_args}
     }
 }
 

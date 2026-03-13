@@ -835,6 +835,11 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertEqual(logged_out_current_status, 401)
         self.assertIn('error', logged_out_current_resp)
 
+    # builtin - file system tests #
+
+    def test_cli_run_file_system_ingest_flow(self):
+        pass
+
     # crud tests #
 
     def _test_cli_crud_commands(self, command_type:str, user_index:int):
