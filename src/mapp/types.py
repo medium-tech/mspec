@@ -56,6 +56,7 @@ __all__ = [
 
 DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
 
+
 class Acknowledgment:
     def __init__(self, message: str = 'No additional information') -> None:
         self.message = message
@@ -122,7 +123,26 @@ class PasswordHash(NamedTuple):
 # file
 #
 
+class File(NamedTuple):
+    name: str
+    status: str
+    message: str
+    extension: str
+    size: int
+    parts: int
+    content_type: str
+    user_id: str
+    created_at: datetime
+    updated_at: datetime
+    sha3_256: str
 
+class FilePart(NamedTuple):
+    file_id: str
+    size: int
+    part_number: int
+    sha3_256: str
+    user_id: str
+    uploaded_at: datetime
 
 
 CurrentUserFuncReturn = tuple[Optional[User], str]              # deprecated

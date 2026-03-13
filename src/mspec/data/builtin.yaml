@@ -302,9 +302,9 @@ modules:
                             type: str
                             description: "Acknowledgement message"
 
-    files:
+    file_system:
         name:
-            lower_case: "files"
+            lower_case: "file system"
         
         models:
 
@@ -513,6 +513,18 @@ modules:
                             lower_case: "parts"
                         type: int
                         description: "Total number of parts the file is divided into for upload"
+                    content_type:
+                        name:
+                            lower_case: "content type"
+                        type: str
+                        description: "MIME content type of the file such as 'text/plain' or 'image/png', if not provided it will be inferred from the file extension"
+                        default: ""
+                    finish:
+                        name:
+                            lower_case: "finish"
+                        type: bool
+                        description: "If true and parts is 1 and the file content was provided in the ingest_start call, the file will be marked as finished without needing to call ingest_part or ingest_finish separately. This is useful for small files that can be ingested in a single request. Otherwise, this should be false and ingest_part should be called for each part followed by ingest_finish to mark the ingest as complete."
+                        default: false
                 
                 result:
                     type: struct
@@ -692,12 +704,15 @@ modules:
                             lower_case: "offset"
                         type: int
                         description: "Number of files to skip for pagination"
+                        default: 0
 
                     size:
                         name:
                             lower_case: "size"
                         type: int
                         description: "Number of files to return per page"
+                        default: 50
+
                     user_id:
                         name:
                             lower_case: "user id"
@@ -707,6 +722,7 @@ modules:
                             table: "user"
                             field: "id"
                         description: "ID of the user whose files to list, if not provided lists files for all users"
+                    
                 result:
                     type: struct
                     fields:
@@ -722,6 +738,66 @@ modules:
                             type: int
                             description: "Total number of files available for pagination"
 
+            list_parts:
+                name:
+                    lower_case: "list file parts"
+                description: "List file parts for a file with pagination"
+                func:
+                    call: "files.list_parts"
+                    args:
+                        file_id:
+                            params: {file_id: {}}
+                        offset:
+                            params: {offset: {}}
+                        size:
+                            params: {size: {}}
+                params:
 
+                    offset:
+                        name:
+                            lower_case: "offset"
+                        type: int
+                        default: 0
+                        description: "Number of file parts to skip for pagination"
 
+                    size:
+                        name:
+                            lower_case: "size"
+                        type: int
+                        default: 50
+                        description: "Number of file parts to return per page"
 
+                    file_id:
+                        name:
+                            lower_case: "file id"
+                        type: foreign_key
+                        default: "-1"
+                        references:
+                            table: "file"
+                            field: "id"
+                        description: "ID of the file whose parts are being listed"
+
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        default: "-1"
+                        references:
+                            table: "user"
+                            field: "id"
+                        description: "ID of the user whose file parts to list, if not provided lists file parts for all users"
+
+                result:
+                    type: struct
+                    fields:
+                        items:
+                            name:
+                                lower_case: "items"
+                            type: list
+                            description: "List of file parts for the current page"
+                        
+                        total:
+                            name:
+                                lower_case: "total"
+                            type: int
+                            description: "Total number of file parts available for pagination"
