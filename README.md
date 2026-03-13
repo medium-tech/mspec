@@ -4,9 +4,7 @@ This project creates a single scripting and markup rendering language that is ab
 * server/client apps w/ crud db operations
 * interactive user interfaces
 
-It is designed to be **lightweight, cross-os and cross-language** w/ interpreters and renderers in `python` and `js` currently, eventually also supporting c, go and haskell. `JS` and `YAML` have been chosen as the serialization format. Unlike the modern browser where your state is spread between 3 languages (html/js/css) a single `JS` or `YAML` file defines all of it. A simple syntax is able to define models with fields and their types and then a framework app creates server endpoints, cli commands and db operations for the models. There is another syntax for rendering visual elements such as buttons, text and inputs and their layouts. Both share an extension set of functions for scripting.
-
-It will have the batteries included philosophy of python with the strictness of static typing and is inspired by the functional nature of haskell.
+It is designed to be **lightweight, cross-os and cross-language** w/ interpreters and renderers in `python` and `js` currently, eventually also supporting c, go and haskell. `JS` and `YAML` have been chosen as the serialization format. Unlike the modern browser where your state is spread between 3 languages (html/js/css) a single `JS` or `YAML` file defines everything. Layout, style, scripting, even the data model for CRUD operations. A simple syntax is able to define models with fields and their types and then a framework app creates server endpoints, cli commands and db operations for the models. There is another syntax for rendering visual elements such as buttons, text and inputs and their layouts. Both share an extension set of functions for scripting.
 
 To accomplish this there and three script specs:
 * **scripting** - for running a result and returning a machine readable response (cli)
@@ -26,11 +24,11 @@ To accomplish this there and three script specs:
 	* pybrowser2
 	* legacy browser
 	* mapp framework
-* philosophy
 * development
 	* setup dev environment
 	* code layout
 	* deploying to pypi
+* philosophy
 * other
 	* mtester
 	* mtemplate
@@ -140,6 +138,23 @@ You can open any spec json file with this:
 ...placeholder...
 
 ## mapp framework
+The mapp framework is used to run an application defined in the [application spec](#application). Its features include:
+* db crud/list ops for data models
+* procedured defined in scripting language
+* server with:
+    * crud/list endpoints for all data models
+        * validates incoming data
+    * POST endoints for all ops
+        * validates incoming user params
+        * validates output response before sending
+* http client that calls the server
+    * functions for each endpoint (models and ops)
+* cli for everything
+    * run crud/list using local db or remote server
+    * run ops locally or via remote server
+* authentication and users
+
+### code
 
 The `mapp` python framework code is in `src/mapp`. It uses the mapp spec to define an app.
 
@@ -186,11 +201,6 @@ Tests will run their own servers, with own sqlite file, on different ports that 
 	* in another terminal run test
 		* headless: `npm run test`
 		* interactively: `npm run test-ui`
-
-# Philosophy
-* lightweight
-* pythonic
-* it just works, quickly
 
 # Development
 
@@ -254,6 +264,17 @@ template apps from which templates are extracted.
 1. upload to pypi (will prompt for api key, no other config needed)
 
         twine upload dist/*
+
+
+# Philosophy
+* lightweight
+* pythonic
+* it just works, quickly
+
+All specs are written in either json or yaml. The structure is the same regardless of the serialization format.
+Yaml was chosen because it's simple syntax is both human readable and machine parsable.
+JSON was chosen because because of it's wide availability, many languages have a built in parser.
+Both of them generally serialize the same data and have simple serialization/deserialization apis so implementing both is trivial.
 
 
 # Other
