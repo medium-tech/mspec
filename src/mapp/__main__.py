@@ -1,5 +1,6 @@
 import argparse
 import json
+import sys
 
 from mapp.context import MappContext, spec_from_env, get_context_from_env, get_cli_access_token
 from mapp.errors import MappError
@@ -24,6 +25,7 @@ def main(ctx: MappContext, spec:dict):
         formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument('--log', action='store_true', help='Enable logging output to console')
+    parser.add_argument('--file-input', '-f', type=str, help='Path to file input for ops that support file input, or - for stdin', default=None)
     subparsers = parser.add_subparsers(dest='module', help='Available modules', required=False)
 
     help_parser = subparsers.add_parser('help', help='Show top-level help', aliases=['-h', '--help'])
@@ -62,6 +64,14 @@ def main(ctx: MappContext, spec:dict):
 
     if args.log is True:
         ctx.log = cli_logging
+    
+    if args.file_input is not None:
+        if args.file_input == '-':
+            ctx.log(':: reading file input from stdin')
+            ctx.self = {'file_input': sys.stdin.buffer.read()}
+        else:
+            with open(args.file_input, 'rb') as f:
+                ctx.self = {'file_input': f.read()}
 
     if hasattr(args, 'func'):
         try:

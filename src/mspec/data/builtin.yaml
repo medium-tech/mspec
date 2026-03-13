@@ -6,6 +6,88 @@ modules:
         name:
             lower_case: "auth"
 
+        models:
+
+            user:
+                hidden: true
+                name:
+                    lower_case: "user"
+
+                fields:
+                    name:
+                        name:
+                            lower_case: "name"
+                        type: str
+                        examples:
+                            - "alice"
+                            - "bob"
+
+                    email:
+                        name:
+                            lower_case: "email"
+                        type: str
+                        examples:
+                            - "alice@example.com"
+                            - "bob@example.com"
+
+            user_session:
+                hidden: true
+                name:
+                    lower_case: "user session"
+
+                fields:
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        references:
+                            table: "user"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    session_token:
+                        name:
+                            lower_case: "session token"
+                        type: str
+                        examples:
+                            - "token_abc123"
+                            - "token_def456"
+
+                    created_at:
+                        name:
+                            lower_case: "created at"
+                        type: datetime
+                        examples:
+                            - "2023-01-01T12:00:00Z"
+                            - "2023-01-02T15:30:00Z"
+
+            password_hash:
+                hidden: true
+                name:
+                    lower_case: "password hash"
+
+                fields:
+                    hash:
+                        name:
+                            lower_case: "hash"
+                        type: str
+                        examples:
+                            - "hashed_password_1"
+                            - "hashed_password_2"
+
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        references:
+                            table: "user"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
         ops:
 
             create_user:
@@ -220,88 +302,6 @@ modules:
                             type: str
                             description: "Acknowledgement message"
 
-        models:
-
-            user:
-                hidden: true
-                name:
-                    lower_case: "user"
-
-                fields:
-                    name:
-                        name:
-                            lower_case: "name"
-                        type: str
-                        examples:
-                            - "alice"
-                            - "bob"
-
-                    email:
-                        name:
-                            lower_case: "email"
-                        type: str
-                        examples:
-                            - "alice@example.com"
-                            - "bob@example.com"
-
-            user_session:
-                hidden: true
-                name:
-                    lower_case: "user session"
-
-                fields:
-                    user_id:
-                        name:
-                            lower_case: "user id"
-                        type: foreign_key
-                        references:
-                            table: "user"
-                            field: "id"
-                        examples:
-                            - "1"
-                            - "2"
-
-                    session_token:
-                        name:
-                            lower_case: "session token"
-                        type: str
-                        examples:
-                            - "token_abc123"
-                            - "token_def456"
-
-                    created_at:
-                        name:
-                            lower_case: "created at"
-                        type: datetime
-                        examples:
-                            - "2023-01-01T12:00:00Z"
-                            - "2023-01-02T15:30:00Z"
-
-            password_hash:
-                hidden: true
-                name:
-                    lower_case: "password hash"
-
-                fields:
-                    hash:
-                        name:
-                            lower_case: "hash"
-                        type: str
-                        examples:
-                            - "hashed_password_1"
-                            - "hashed_password_2"
-
-                    user_id:
-                        name:
-                            lower_case: "user id"
-                        type: foreign_key
-                        references:
-                            table: "user"
-                            field: "id"
-                        examples:
-                            - "1"
-                            - "2"
-
     files:
         name:
             lower_case: "files"
@@ -337,6 +337,7 @@ modules:
                             - "uploading"
                             - "completed"
                             - "failed"
+
                     message:
                         name:
                             lower_case: "message"
@@ -404,6 +405,15 @@ modules:
                         examples:
                             - "2000-01-11T12:34:56"
                             - "2020-10-02T15:30:00"
+                    
+                    sha3_256:
+                        name:
+                            lower_case: "sha3 256"
+                        type: str
+                        default: ""
+                        examples:
+                            - "3338be694f50c5f338814986cdf0686453a888b84f424d792af4b9202398f392"
+                            - "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
             
             file_part:
                 hidden: true
@@ -424,6 +434,14 @@ modules:
                         examples:
                             - "1"
                             - "2"
+
+                    size:
+                        name:
+                            lower_case: "size"
+                        type: int
+                        examples:
+                            - 512
+                            - 1024
 
                     part_number:
                         name:
@@ -466,6 +484,44 @@ modules:
                 name:
                     lower_case: "ingest start"
                 description: "Start ingesting a file with name, size, parts, content type and extension"
+
+                func:
+                    call: "files.ingest_start"
+                    args:
+                        name:
+                            params: {name: {}}
+                        size:
+                            params: {size: {}}
+                        parts:
+                            params: {parts: {}}
+                        content:
+                            self: {file_input: {}}
+                
+                params:
+                    name:
+                        name:
+                            lower_case: "name"
+                        type: str
+                        description: "Name of the file being uploaded"
+                    size:
+                        name:
+                            lower_case: "size"
+                        type: int
+                        description: "Total size of the file being uploaded in bytes"
+                    parts:
+                        name:
+                            lower_case: "parts"
+                        type: int
+                        description: "Total number of parts the file is divided into for upload"
+                
+                result:
+                    type: struct
+                    fields:
+                        file_id:
+                            name:
+                                lower_case: "file id"
+                            type: str
+                            description: "ID of the file being uploaded, used for ingesting parts and finishing the upload"
                 
             ingest_part:
                 name:
@@ -576,3 +632,83 @@ modules:
                 name:
                     lower_case: "delete file"
                 description: "Delete a file with file id"
+                func:
+                    call: "files.delete_file"
+                    args:
+                        file_id:
+                            params: {file_id: {}}
+                params:
+                    file_id:
+                        name:
+                            lower_case: "file id"
+                        type: foreign_key
+                        references:
+                            table: "file"
+                            field: "id"
+                        description: "ID of the file being deleted"
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: "acknowledged"
+                            type: bool
+                            description: "Whether the file deletion was successful"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message for the file deletion"
+
+            list_files:
+                name:
+                    lower_case: "list files"
+                description: "List files with pagination"
+                func: 
+                    call: "files.list_files"
+                    args:
+                        offset:
+                            params: {offset: {}}
+                        size:
+                            params: {size: {}}
+                        user_id:
+                            params: {user_id: {}}
+                params:
+                    offset:
+                        name:
+                            lower_case: "offset"
+                        type: int
+                        description: "Number of files to skip for pagination"
+
+                    size:
+                        name:
+                            lower_case: "size"
+                        type: int
+                        description: "Number of files to return per page"
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        default: "-1"
+                        references:
+                            table: "user"
+                            field: "id"
+                        description: "ID of the user whose files to list, if not provided lists files for all users"
+                result:
+                    type: struct
+                    fields:
+                        items:
+                            name:
+                                lower_case: "items"
+                            type: list
+                            description: "List of files for the current page"
+                        
+                        total:
+                            name:
+                                lower_case: "total"
+                            type: int
+                            description: "Total number of files available for pagination"
+
+
+
+

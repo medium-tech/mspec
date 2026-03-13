@@ -9,6 +9,22 @@
 |--|--|--|
 |🔴|🟡|🟢|
 
+## priorities
+* file upload
+    * backend + cli
+    * browser1
+* media
+    * backend
+    * browser1 gallery/player
+* mega app for testing (merge modules from multiple files)
+* split functions.json apart
+* mspec dev blender extension
+    * update nodes for new functions
+    * spec creators
+    * cms extension
+        * file backup
+        * metadata logging
+
 ## mapp framework
 * 🟢 create tests for auth via cli
 * 🟢 all unittests passing
