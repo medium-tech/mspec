@@ -1,14 +1,14 @@
 import os
 import json
+import base64
 import atexit
 import sqlite3
 import getpass
 
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, Callable
 from cryptography.fernet import Fernet
-import base64
 
 from mapp.errors import MappError
 from mapp.types import convert_dict_to_op_params, convert_dict_to_model, CurrentAccessTokenFunc
@@ -80,7 +80,7 @@ class MappContext:
     db:DBContext
     log:Callable[[str], None]
     current_access_token:Optional[CurrentAccessTokenFunc]=None
-    self: Optional[dict] = None
+    self: dict = field(default_factory=dict)
 
 def get_context_from_env():
 

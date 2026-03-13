@@ -330,11 +330,11 @@ modules:
                             lower_case: "status"
                         type: str
                         enum:
-                            - "uploading"
+                            - "ingesting"
                             - "completed"
                             - "failed"
                         examples:
-                            - "uploading"
+                            - "ingesting"
                             - "completed"
                             - "failed"
 
@@ -486,7 +486,7 @@ modules:
                 description: "Start ingesting a file with name, size, parts, content type and extension"
 
                 func:
-                    call: "files.ingest_start"
+                    call: "file_system.ingest_start"
                     args:
                         name:
                             params: {name: {}}
@@ -494,8 +494,10 @@ modules:
                             params: {size: {}}
                         parts:
                             params: {parts: {}}
-                        content:
-                            self: {file_input: {}}
+                        content_type:
+                            params: {content_type: {}}
+                        finish:
+                            params: {finish: {}}
                 
                 params:
                     name:
@@ -534,13 +536,18 @@ modules:
                                 lower_case: "file id"
                             type: str
                             description: "ID of the file being uploaded, used for ingesting parts and finishing the upload"
-                
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message for starting the file upload"
+                            
             ingest_part:
                 name:
                     lower_case: "ingest file part"
                 description: "Ingest a part of a file with file id, part number and content"
                 func:
-                    call: "files.ingest_file_part"
+                    call: "file_system.ingest_file_part"
                     args:
                         file_id:
                             params: {file_id: {}}
@@ -581,7 +588,7 @@ modules:
                     lower_case: "ingest finish"
                 description: "Finish ingesting a file with file id"
                 func:
-                    call: "files.ingest_finish"
+                    call: "file_system.ingest_finish"
                     args:
                         file_id:
                             params: {file_id: {}}
@@ -658,7 +665,7 @@ modules:
                     lower_case: "delete file"
                 description: "Delete a file with file id"
                 func:
-                    call: "files.delete_file"
+                    call: "file_system.delete_file"
                     args:
                         file_id:
                             params: {file_id: {}}
@@ -690,7 +697,7 @@ modules:
                     lower_case: "list files"
                 description: "List files with pagination"
                 func: 
-                    call: "files.list_files"
+                    call: "file_system.list_files"
                     args:
                         offset:
                             params: {offset: {}}
@@ -743,7 +750,7 @@ modules:
                     lower_case: "list file parts"
                 description: "List file parts for a file with pagination"
                 func:
-                    call: "files.list_parts"
+                    call: "file_system.list_parts"
                     args:
                         file_id:
                             params: {file_id: {}}

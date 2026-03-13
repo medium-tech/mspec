@@ -56,6 +56,18 @@ __all__ = [
 
 DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
 
+def datetime_now_utc() -> datetime:
+    return datetime.now(datetime.timezone.utc)
+
+def datetime_from_str(date_str:str) -> datetime:
+    return datetime.strptime(date_str, DATETIME_FORMAT_STR)
+
+def datetime_to_str(dt:datetime) -> str:
+    return dt.strftime(DATETIME_FORMAT_STR)
+
+def datetime_for_db(dt:datetime) -> str:
+    return dt.isoformat()
+
 
 class Acknowledgment:
     def __init__(self, message: str = 'No additional information') -> None:
@@ -124,6 +136,7 @@ class PasswordHash(NamedTuple):
 #
 
 class File(NamedTuple):
+    id: str
     name: str
     status: str
     message: str
@@ -137,6 +150,7 @@ class File(NamedTuple):
     sha3_256: str
 
 class FilePart(NamedTuple):
+    id: str
     file_id: str
     size: int
     part_number: int
@@ -203,9 +217,10 @@ def new_model(model_class:type, data:dict):
         data['id'] = None
 
     for field in model_class._model_spec['fields'].values():
-        if field['name']['snake_case'] not in data:
+        field_name = field['name']['snake_case']
+        if field_name not in data:
             try:
-                data[field['name']['snake_case']] = field['default']
+                data[field_name] = field['default']
             except KeyError:
                 pass
 
@@ -278,9 +293,10 @@ def new_op_params(op_class:type, data:dict):
     # set defaults #
 
     for field in op_class._op_spec['params'].values():
-        if field['name']['snake_case'] not in data:
+        field_name = field['name']['snake_case']
+        if field_name not in data:
             try:
-                data[field['name']['snake_case']] = field['default']
+                data[field_name] = field['default']
             except KeyError:
                 pass
 
