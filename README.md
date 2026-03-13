@@ -13,25 +13,26 @@ To accomplish this there and three script specs:
 
 ⚠️ currently in alpha phase - incomplete, api will change ⚠️ 
 
+
 ## Table of Contents
 
-* language specs
-	* scripting
-	* pages
-	* application
-* clients
-	* python cli
-	* pybrowser2
-	* legacy browser
-	* mapp framework
-* development
-	* setup dev environment
-	* code layout
-	* deploying to pypi
-* philosophy
-* other
-	* mtester
-	* mtemplate
+- [Language Specs](#language-specs)
+  - [Scripting](#scripting)
+  - [Pages](#pages)
+  - [Application](#application)
+- [Clients and Frameworks](#clients-and-frameworks)
+  - [Python CLI](#python-cli)
+  - [pybrowser2](#pybrowser2)
+  - [Legacy Browser2 Dev Server](#legacy-browser2-dev-server)
+  - [mapp Framework](#mapp-framework)
+- [Development](#development)
+  - [Setup Dev Environment](#setup-dev-environment)
+  - [Code Layout](#code-layout)
+  - [Deploying to PyPI](#deploying-to-pypi)
+- [Philosophy](#philosophy)
+- [Other](#other)
+  - [mtester](#mtester)
+  - [mtemplate](#mtemplate)
 
 # language specs
 
@@ -40,6 +41,8 @@ See here for [full language](./docs/LINGO_FUNCTIONS.md) function documentation.
 ## scripting
 
 This scripting spec enables executing a script and returning an output in a machine readable format. Ideally suited for cli and automation.
+
+**spec name:** `script-beta-1`
 
 [creating a script spec](./docs/LINGO_SCRIPTING_AND_PAGE_SPEC.md)
 
@@ -57,6 +60,8 @@ This scripting spec enables executing a script and returning an output in a mach
 
 This scripting spec allows rendering an interactive page including layout, style, scripting and state.
 
+**spec name:** `page-beta-1`
+
 [creating a page spec](./docs/LINGO_SCRIPTING_AND_PAGE_SPEC.md)
 
 **sample files:** `src/mspec/data/lingo/pages`
@@ -73,6 +78,8 @@ This scripting spec allows rendering an interactive page including layout, style
 * [browser - gui](#legacy-browser2-dev-server)
 
 ## application
+
+**spec name:** `generator-beta-1`
 
 A spec for defining an application. Define data models with fields and their types and drive a framework with db crud ops and http api server, cli and gui interfaces wrapping them. Define an operation with input param types and return types and get a server, cli and gui interface to wrap it.
 
@@ -93,7 +100,35 @@ A spec for defining an application. Define data models with fields and their typ
 
 ## python cli
 
-...placeholder...
+The python cli can output built in example files, execute scripts and return the output or render and print the document buffer of a page spec.
+
+****
+```python
+# Print names of all built in specs:
+python -m mspec specs
+
+# Copy builtin spec to cwd:
+python -m mspec example basic_math.json
+
+# Execute script and print output:
+python -m mspec execute basic_math.json          
+{
+    "type": "float",
+    "value": 20.0
+}
+
+# Render a page spec's document buffer and print to screen:
+python -m mspec run hello-world-page.yaml
+[
+    {
+        "heading": "Hello, World",
+        "level": 1
+    },
+    {
+        "text": "I am a sample page!"
+    }
+]
+```
 
 ### testing
 Covers:
@@ -132,10 +167,23 @@ You can open any spec json file with this:
 ⚠️ No tests yet.
 
 ## legacy browser2 dev server
-...placeholder...
+The javascript *(legacy browser)* browser2 implementation is available in `browser2/js`.
+
+**setup**
+
+	cd browser2/js 
+	npm install
+
+**run dev server**
+
+	./server.py
+
+Check output for localhost address (ex: `http://localhost:8000`)
 
 ### testing
-...placeholder...
+With dev server running, in another terminal run:
+
+	npm run test
 
 ## mapp framework
 The mapp framework is used to run an application defined in the [application spec](#application). Its features include:
@@ -298,6 +346,5 @@ Templates in `./templates`:
 * `browser1` - deprecated
 
 see docs:
-* [extractor](./docs/MTEMPLATE_EXTRACTOR.md)
 * [syntax](./docs/MTEMPLATE_SYNTAX.md)
 * [legacy](./docs/MTEMPLATE_SYNTAX.md)
