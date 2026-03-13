@@ -118,6 +118,12 @@ class PasswordHash(NamedTuple):
     user_id: str
     hash: str
 
+#
+# file
+#
+
+
+
 
 CurrentUserFuncReturn = tuple[Optional[User], str]              # deprecated
 CurrentUserFunc = Callable[[], Optional[CurrentUserFuncReturn]] # deprecated

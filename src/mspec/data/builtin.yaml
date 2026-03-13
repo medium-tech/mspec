@@ -621,12 +621,25 @@ modules:
                             name:
                                 lower_case: "verified"
                             type: bool
-                            description: "Whether the file upload was verified successfully"
+                            description: "True if all file parts exist and are the correct size and hash; false otherwise"
+
                         message:
                             name:
                                 lower_case: "message"
                             type: str
-                            description: "Acknowledgement message for the file verification"
+                            description: "Additional information about the verification result; such as error message if verification failed"
+
+                        size:
+                            name:
+                                lower_case: "size"
+                            type: int
+                            description: "Size of the uploaded file in bytes for integrity verification; -1 if the file was not found"
+                        
+                        parts:
+                            name:
+                                lower_case: "parts"
+                            type: int
+                            description: "Number of parts the file was uploaded in for integrity verification; 0 or greater"
             
             delete_file:
                 name:

@@ -11,9 +11,7 @@ import jwt
 from mapp.context import MappContext, MAPP_APP_PATH
 from mapp.errors import AuthenticationError, MappError, MappValidationError
 from mapp.types import (
-    Acknowledgment,
     User,
-    UserSession,
     PasswordHash
 )
 
