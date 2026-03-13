@@ -2,7 +2,6 @@ import re
 from urllib.parse import parse_qs
 
 from mapp.context import MappContext, OpRouteContext, RequestContext
-from mapp.errors import RequestError
 from mapp.types import JSONResponse, new_op_classes, json_to_op_params_w_convert, convert_dict_to_op_params
 from mapp.module.op.run import op_create_callable
 
@@ -37,12 +36,13 @@ def op_route(route: OpRouteContext, server: MappContext, request: RequestContext
             
             op_params = convert_dict_to_op_params(route.params_class, query_params)
             op_output = route.run_op(server, op_params)
-            server.log(f'POST {route.module_kebab_case}.{route.op_kebab_case}')
+            server.log(f'GET {route.module_kebab_case}.{route.op_kebab_case}')
             raise JSONResponse('200 OK', op_output)
         
         elif req_method == 'POST':
             req_body = request.raw_req_body.decode('utf-8')
             op_params = json_to_op_params_w_convert(req_body, route.params_class)
+            server.self = {'file_input': request.raw_req_body}
             op_output = route.run_op(server, op_params)
             server.log(f'POST {route.module_kebab_case}.{route.op_kebab_case}')
             raise JSONResponse('200 OK', op_output)

@@ -3,7 +3,7 @@ import argparse
 from mapp.types import *
 from mapp.module.op.run import op_create_callable
 from mapp.module.op.http import http_run_op
-from mapp.context import cli_op_user_input, cli_load_session, cli_write_session, cli_delete_session
+from mapp.context import MappContext, cli_op_user_input, cli_write_session, cli_delete_session
 
 __all__ = [
 	'add_op_subparser'
@@ -135,7 +135,7 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
     run_parser.add_argument('--interactive', '-i', action='store_true', help='Prompt for secure inputs')
     run_parser.add_argument('--show', '-s', action='store_true', help='Show secure fields in output')
     run_parser.add_argument('--no-session', action='store_true', help='Do not save session after running auth ops')
-    def cli_op_run(ctx, args):
+    def cli_op_run(ctx: MappContext, args):
         if args.json == 'help':
             run_parser.print_help()
 

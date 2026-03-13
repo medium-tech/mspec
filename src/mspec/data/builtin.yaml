@@ -301,3 +301,278 @@ modules:
                         examples:
                             - "1"
                             - "2"
+
+    files:
+        name:
+            lower_case: "files"
+        
+        models:
+
+            file:
+                hidden: true
+                name:
+                    lower_case: "file"
+
+                auth:
+                    require_login: true
+
+                fields:
+                    name:
+                        name:
+                            lower_case: "name"
+                        type: str
+                        examples:
+                            - "document.txt"
+                            - "image.png"
+
+                    status:
+                        name:
+                            lower_case: "status"
+                        type: str
+                        enum:
+                            - "uploading"
+                            - "completed"
+                            - "failed"
+                        examples:
+                            - "uploading"
+                            - "completed"
+                            - "failed"
+                    message:
+                        name:
+                            lower_case: "message"
+                        type: str
+                        examples:
+                            - "File is being uploaded"
+                            - "File upload completed successfully"
+                            - "File upload failed due to network error"
+
+                    extension:
+                        name:
+                            lower_case: "extension"
+                        type: str
+                        examples:
+                            - "txt"
+                            - "png"
+
+                    size:
+                        name:
+                            lower_case: "size"
+                        type: int
+                        examples:
+                            - 1024
+                            - 2048
+
+                    parts:
+                        name:
+                            lower_case: "parts"
+                        type: int
+                        examples:
+                            - 1
+                            - 2
+                    
+                    content_type:
+                        name:
+                            lower_case: "content type"
+                        type: str
+                        examples:
+                            - "text/plain"
+                            - "image/png"
+
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        references:
+                            table: "user"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    created_at:
+                        name:
+                            lower_case: "created at"
+                        type: datetime
+                        examples:
+                            - "2000-01-11T12:34:56"
+                            - "2020-10-02T15:30:00"
+
+                    updated_at:
+                        name:
+                            lower_case: "updated at"
+                        type: datetime
+                        examples:
+                            - "2000-01-11T12:34:56"
+                            - "2020-10-02T15:30:00"
+            
+            file_part:
+                hidden: true
+                name:
+                    lower_case: "file part"
+
+                auth:
+                    require_login: true
+
+                fields:
+                    file_id:
+                        name:
+                            lower_case: "file id"
+                        type: foreign_key
+                        references:
+                            table: "file"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    part_number:
+                        name:
+                            lower_case: "part number"
+                        type: int
+                        examples:
+                            - 1
+                            - 2
+
+                    sha3_256:
+                        name:
+                            lower_case: "sha3 256"
+                        type: str
+                        examples:
+                            - "3338be694f50c5f338814986cdf0686453a888b84f424d792af4b9202398f392"
+                            - "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        references:
+                            table: "user"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    uploaded_at:
+                        name:
+                            lower_case: "uploaded at"
+                        type: datetime
+                        examples:
+                            - "2000-01-11T12:34:56"
+                            - "2020-10-02T15:30:00"
+        
+        ops:
+
+            ingest_start:
+                name:
+                    lower_case: "ingest start"
+                description: "Start ingesting a file with name, size, parts, content type and extension"
+                
+            ingest_part:
+                name:
+                    lower_case: "ingest file part"
+                description: "Ingest a part of a file with file id, part number and content"
+                func:
+                    call: "files.ingest_file_part"
+                    args:
+                        file_id:
+                            params: {file_id: {}}
+                        part_number:
+                            params: {part_number: {}}
+                        content:
+                            self: {file_input: {}}
+                params:
+                    file_id:
+                        name:
+                            lower_case: "file id"
+                        type: foreign_key
+                        references:
+                            table: "file"
+                            field: "id"
+                        description: "ID of the file being uploaded"
+                    part_number:
+                        name:
+                            lower_case: "part number"
+                        type: int
+                        description: "Part number of the file being uploaded"
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: "acknowledged"
+                            type: bool
+                            description: "Whether the file part upload was successful"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message for the file part upload" 
+
+            ingest_finish:
+                name:
+                    lower_case: "ingest finish"
+                description: "Finish ingesting a file with file id"
+                func:
+                    call: "files.ingest_finish"
+                    args:
+                        file_id:
+                            params: {file_id: {}}
+                params:
+                    file_id:
+                        name:
+                            lower_case: "file id"
+                        type: foreign_key
+                        references:
+                            table: "file"
+                            field: "id"
+                        description: "ID of the file being uploaded"
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: "acknowledged"
+                            type: bool
+                            description: "Whether the file upload was marked as finished successfully"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message for finishing the file upload"
+
+            verify_file:
+                name:
+                    lower_case: "verify file"
+                description: "Verify a file upload with file id"
+                func:
+                    call: "files.verify_file"
+                    args:
+                        file_id:
+                            params: {file_id: {}}
+                params:
+                    file_id:
+                        name:
+                            lower_case: "file id"
+                        type: foreign_key
+                        references:
+                            table: "file"
+                            field: "id"
+                        description: "ID of the file being verified"
+                result:
+                    type: struct
+                    fields:
+                        verified:
+                            name:
+                                lower_case: "verified"
+                            type: bool
+                            description: "Whether the file upload was verified successfully"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message for the file verification"
+            
+            delete_file:
+                name:
+                    lower_case: "delete file"
+                description: "Delete a file with file id"

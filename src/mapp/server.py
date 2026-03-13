@@ -672,6 +672,7 @@ def application(env, start_response):
     )
 
     assert server_ctx.current_access_token is None
+    assert server_ctx.self is None
     
     server_ctx.current_access_token = access_token_from_request
 

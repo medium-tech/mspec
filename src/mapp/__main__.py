@@ -1,7 +1,7 @@
 import argparse
 import json
 
-from mapp.context import MappContext, spec_from_env, get_context_from_env, get_cli_access_token, cli_load_session
+from mapp.context import MappContext, spec_from_env, get_context_from_env, get_cli_access_token
 from mapp.errors import MappError
 from mapp.db import create_tables
 from mapp.module import cli as module_cli

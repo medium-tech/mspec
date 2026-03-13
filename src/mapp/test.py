@@ -1045,7 +1045,7 @@ class TestMTemplateApp(unittest.TestCase):
                     json.dumps(example_to_create).encode()
                 ]
 
-                if require_login:
+                if require_login and not hidden:
                     created_status, data = request(
                         logged_out_ctx,
                         *create_args
@@ -1096,7 +1096,7 @@ class TestMTemplateApp(unittest.TestCase):
                 # read
                 #
 
-                if require_login:
+                if require_login and not hidden:
                     read_status, data = request(
                         logged_out_ctx,
                         'GET',
@@ -1133,7 +1133,7 @@ class TestMTemplateApp(unittest.TestCase):
                 except ValueError as e:
                     raise ValueError(f'Need at least 2 examples for update testing: {e}')
                 
-                if require_login:
+                if require_login and not hidden:
                     updated_example['user_id'] = alice_user['id']
 
                     # logged out cannot update #
@@ -1193,7 +1193,7 @@ class TestMTemplateApp(unittest.TestCase):
                 # delete
                 #
 
-                if require_login:
+                if require_login and not hidden:
 
                     # logged out cannot delete #
 
@@ -1303,14 +1303,15 @@ class TestMTemplateApp(unittest.TestCase):
 
                 model_name_kebab = model['name']['kebab_case']
                 model_list_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'list']
+                hidden = model['hidden']
     
-                if model['auth']['require_login']:
+                if model['auth']['require_login'] and not hidden:
                     self._run_cmd(model_list_command + ['--size=10', '--offset=0'], expected_code=1, env=logged_out_ctx)
                     ctx = self.pagination_user['env']
                 else:
                     ctx = self.pagination_ctx
 
-                if model['hidden'] is True:
+                if hidden is True:
                     self._run_cmd(model_list_command + ['--size=10', '--offset=0'], expected_code=2, env=self.pagination_ctx)
                     continue
 
@@ -1385,7 +1386,7 @@ class TestMTemplateApp(unittest.TestCase):
                 hidden = model['hidden']
                 model_name_kebab = model['name']['kebab_case']
 
-                if model['auth']['require_login']:
+                if model['auth']['require_login'] and not hidden:
                     status, response = request(
                         logged_out_ctx,
                         'GET',

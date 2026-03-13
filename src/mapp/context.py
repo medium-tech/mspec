@@ -80,6 +80,7 @@ class MappContext:
     db:DBContext
     log:Callable[[str], None]
     current_access_token:Optional[CurrentAccessTokenFunc]=None
+    self: Optional[dict] = None
 
 def get_context_from_env():
 
