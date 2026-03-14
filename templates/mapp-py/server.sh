@@ -23,6 +23,7 @@ usage() {
   echo "Commands:"
   echo "  start                 Start the uwsgi server"
   echo "  stop                  Stop the uwsgi server"
+  echo "  log                   Tail the uwsgi log file"
   echo ""
   echo "Options:"
   echo "  --env-file <path>     Path to .env file (default: .env) "
@@ -118,6 +119,10 @@ case "$COMMAND" in
     uwsgi --stop "$PID_FILE"
     printf ":: uwsgi stopped\n\n"
     exit $?
+    ;;
+  log)
+    printf "\n::\n:: tailing uwsgi log\n::\n\n"
+    tail -f "$LOG_FILE"
     ;;
   *)
     usage "Invalid command: $COMMAND."
