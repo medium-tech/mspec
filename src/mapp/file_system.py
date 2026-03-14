@@ -5,8 +5,8 @@ from mimetypes import guess_type
 
 from mapp.auth import current_user
 from mapp.context import MappContext
-from mapp.errors import  MappValidationError, MappUserError, NotFoundError
-from mapp.types import ModelListResult, File, FilePart, datetime_now_utc, datetime_for_db, datetime_from_db
+from mapp.errors import  MappValidationError, MappUserError, NotFoundError, MappError
+from mapp.types import File, FilePart, datetime_now_utc, datetime_for_db, datetime_from_db
 
 __all__ = [
 	'ingest_start',
@@ -22,6 +22,8 @@ __all__ = [
 ]
 
 MAPP_APP_PATH = os.getenv('MAPP_APP_PATH', '')
+
+FILE_SIZE_LIMIT = 50 * 1024 * 1024
 
 """
 
@@ -65,6 +67,9 @@ def _ingest_part(ctx: MappContext, part_number:int, file_input: bytes, file_reco
 	
 	part_size = len(file_input)
 	part_sha3_256 = sha3_256(file_input).hexdigest()
+
+	if part_size > FILE_SIZE_LIMIT:
+		raise MappUserError('FILE_PART_TOO_LARGE', f'File part size {part_size} exceeds limit of {FILE_SIZE_LIMIT} bytes')
 
 	ctx.log(f'_ingest_part - begin - {file_record.id=} {part_number=} {part_size=} {part_sha3_256=}')
 
@@ -207,6 +212,8 @@ def ingest_start(ctx: MappContext, name: str, size: int, parts: int, content_typ
 	
 	if parts < 0:
 		field_errors['parts'] = 'Parts must be a non-negative integer'
+	elif parts > 1:
+		field_errors['parts'] = 'Ingest of multipart files is not supported yet'
 
 	if field_errors:
 		raise MappValidationError('Error starting file ingest', field_errors)
@@ -274,6 +281,8 @@ def ingest_start(ctx: MappContext, name: str, size: int, parts: int, content_typ
 
 def ingest_part(ctx: MappContext, file_id: str, part_number: int) -> dict:
 
+	return {'acknowledged': False, 'message': 'ingest_part is not implemented yet'}
+
 	file_input = ctx.self.get('file_input', None)
 	user = current_user(ctx)['value']
 
@@ -307,8 +316,7 @@ def ingest_part(ctx: MappContext, file_id: str, part_number: int) -> dict:
 	return {'acknowledged': True, 'message': 'File part uploaded'}
 
 def ingest_finish(ctx: MappContext, file_id: str) -> dict:
-	"""Placeholder for ingest_finish operation."""
-	return {'acknowledged': True, 'message': 'File upload finished'}
+	return {'acknowledged': False, 'message': 'ingest_finish is not implemented yet'}
 
 def get_part_content(ctx: MappContext, file_id: str, part_number: int) -> dict:
 
@@ -450,14 +458,77 @@ def list_parts(ctx: MappContext, file_id: str = '-1', offset: int = 0, size: int
 	}
 
 def process_file(ctx: MappContext, file_id: str) -> dict:
-	"""Placeholder for process_file operation."""
+	"""
+	Assemble file from parts, compute sha3_256, update file_record, handle errors.
+	"""
 
 	user = current_user(ctx)['value']
-
 	files = list_files(ctx, 0, 1, user.id, file_id)
 	try:
-		file_record = files['items'][0]
+		file_record_dict = files['items'][0]
 	except IndexError:
 		raise NotFoundError('FILE_NOT_FOUND', f'File not found for id: {file_id}')
+
+	file_record = File(**file_record_dict)
+	file_path = _file_path(file_id)
+	parts = _list_parts(ctx, file_id)
+	checksum = sha3_256()
+
+	try:
+		os.makedirs(os.path.dirname(file_path), exist_ok=True)
+		with open(file_path, 'wb') as full_file_handle:
+			for part in parts:
+				part_path = _file_part_path(file_id, part.part_number)
+				with open(part_path, 'rb') as part_handle:
+					while True:
+						chunk = part_handle.read(8192)
+						if not chunk:
+							break
+						full_file_handle.write(chunk)
+						checksum.update(chunk)
+
+		file_record = file_record._replace(
+			status='good',
+			sha3_256=checksum.hexdigest(),
+			updated_at=datetime_for_db(datetime_now_utc()),
+			message='File processed successfully'
+		)
+		ctx.db.cursor.execute(
+			"""
+			UPDATE file
+			SET status = ?, sha3_256 = ?, message = ?, updated_at = ?
+			WHERE id = ?
+			""",
+			(
+				file_record.status,
+				file_record.sha3_256,
+				file_record.message,
+				file_record.updated_at,
+				file_record.id
+			)
+		)
+		ctx.db.commit()
+		return {'acknowledged': True, 'message': f'File processed successfully for file_id: {file_id} w/ sha3_256: {file_record.sha3_256}'}
 	
-	return {'acknowledged': True, 'message': f'File processing started for file_id: {file_id}'}
+	except Exception as e:
+		err_msg = f'Error processing file: {str(e)}'
+		file_record = file_record._replace(
+			status='error',
+			message=err_msg,
+			updated_at=datetime_for_db(datetime_now_utc())
+		)
+		ctx.db.cursor.execute(
+			"""
+			UPDATE file
+			SET status = ?, message = ?, updated_at = ?
+			WHERE id = ?
+			""",
+			(
+				file_record.status,
+				file_record.message,
+				file_record.updated_at,
+				file_record.id
+			)
+		)
+		ctx.db.commit()
+		return {'acknowledged': False, 'message': err_msg}

@@ -10,20 +10,31 @@
 |🔴|🟡|🟢|
 
 ## priorities
-* file upload
-    * backend + cli
-    * browser1
-* media
-    * backend
-    * browser1 gallery/player
-* mega app for testing (merge modules from multiple files)
-* split functions.json apart
-* mspec dev blender extension
-    * update nodes for new functions
-    * spec creators
-    * cms extension
-        * file backup
-        * metadata logging
+* 🟡 file upload
+    * 🟡 backend + cli
+        * 🔴 tests
+    * 🔴 browser1
+        * 🔴 model create
+        * 🔴 model view
+        * 🔴 tests
+* 🔴 media
+    * 🔴 backend
+        * 🔴 create image
+        * 🔴 model view image
+    * 🔴 browser1
+        * 🔴 create image
+        * 🔴 view image
+* 🔴 mega app for testing (merge modules from multiple files)
+* 🔴 update testing
+    * 🔴 split functions.json apart
+        * 🔴 create matching specs for script spec
+    * 🔴 implement testing data for page spec
+* 🔴 mspec dev blender extension
+    * 🔴 update nodes for new functions
+    * 🔴 spec creators
+    * 🔴 cms extension
+        * 🔴 file backup
+        * 🔴 metadata logging
 
 ## mapp framework
 * 🟢 create tests for auth via cli
