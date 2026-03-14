@@ -128,20 +128,20 @@ def _ingest_finish(ctx: MappContext, file_record: File) -> File:
 		part_numbers_seen.add(part.part_number)
 
 	if counted_parts != file_record.parts:
-		new_staus = 'failed'
+		new_status = 'error'
 		new_message = f'File ingest failed: expected {file_record.parts} parts but found {counted_parts} parts'
 	elif calculated_size != file_record.size:
-		new_staus = 'failed'
+		new_status = 'error'
 		new_message = f'File ingest failed: expected file size {file_record.size} bytes but calculated file size is {calculated_size} bytes'
 	elif part_numbers_seen != set(range(1, file_record.parts + 1)):
-		new_staus = 'failed'
+		new_status = 'error'
 		new_message = f'File ingest failed: invalid part number sequence'
 	else:
-		new_staus = 'completed'
-		new_message = 'File ingest completed successfully'
+		new_status = 'processing_queue'
+		new_message = f'Ingested file {file_record.name} with {counted_parts} parts and total size {calculated_size} bytes'
 
 	file_record = file_record._replace(
-		status=new_staus,
+		status=new_status,
 		message=new_message,
 		updated_at=datetime_for_db(datetime_now_utc())
 	)
@@ -340,19 +340,21 @@ def delete_file(ctx: MappContext, file_id: str) -> dict:
 	"""Placeholder for delete_file operation."""
 	return {'acknowledged': True, 'message': 'File deleted'}
 
-def list_files(ctx: MappContext, offset: int = 0, size: int = 50, user_id: str = '-1', file_id: str = '-1') -> dict:
+def list_files(ctx: MappContext, offset: int = 0, size: int = 50, user_id: str = '-1', file_id: str = '-1', status: str = 'all') -> dict:
 	
 	# fetch files #
+
+	ctx.log(f'list_files - {user_id=} {file_id=} {status=} {offset=} {size=}')
 
 	ctx.db.cursor.execute(
 		"""
 		SELECT id, name, status, message, extension, size, parts, content_type, user_id, created_at, updated_at, sha3_256
 		FROM file
-		WHERE (? = '-1' OR user_id = ?) AND (? = '-1' OR id = ?)
-		ORDER BY created_at DESC
+		WHERE (? = '-1' OR user_id = ?) AND (? = '-1' OR id = ?) AND (? = 'all' OR status = ?)
+		ORDER BY updated_at ASC
 		LIMIT ? OFFSET ?
 		""",
-		(user_id, user_id, file_id, file_id, size, offset)
+		(user_id, user_id, file_id, file_id, status, status, size, offset)
 	)
 
 	rows = ctx.db.cursor.fetchall()
@@ -377,8 +379,8 @@ def list_files(ctx: MappContext, offset: int = 0, size: int = 50, user_id: str =
 	# fetch total count #
 
 	ctx.db.cursor.execute(
-		"SELECT COUNT(*) FROM file WHERE (? = '-1' OR user_id = ?) AND (? = '-1' OR id = ?)",
-		(user_id, user_id, file_id, file_id)
+		"SELECT COUNT(*) FROM file WHERE (? = '-1' OR user_id = ?) AND (? = '-1' OR id = ?) AND (? = 'all' OR status = ?)",
+		(user_id, user_id, file_id, file_id, status, status)
 	)
 	total = ctx.db.cursor.fetchone()[0]
 

@@ -331,12 +331,16 @@ modules:
                         type: str
                         enum:
                             - "ingesting"
-                            - "completed"
-                            - "failed"
+                            - "processing_queue"
+                            - "processing"
+                            - "verify_queue"
+                            - "verifying"
+                            - "good"
+                            - "error"
                         examples:
                             - "ingesting"
-                            - "completed"
-                            - "failed"
+                            - "good"
+                            - "error"
 
                     message:
                         name:
@@ -776,6 +780,8 @@ modules:
                             params: {user_id: {}}
                         file_id:
                             params: {file_id: {}}
+                        status:
+                            params: {status: {}}
                 params:
                     offset:
                         name:
@@ -811,6 +817,21 @@ modules:
                             field: "id"
                         description: "ID of the file to list, if provided lists only the file with this ID if it exists and the user has access to it"
 
+                    status: 
+                        name:
+                            lower_case: "status"
+                        type: str
+                        enum:
+                            - "all"
+                            - "ingesting"
+                            - "processing_queue"
+                            - "processing"
+                            - "verify_queue"
+                            - "verifying"
+                            - "good"
+                            - "error"
+                        default: "all"
+                        description: "Filter files by status, if provided lists only files with this status"
                 result:
                     type: struct
                     fields:
@@ -891,3 +912,35 @@ modules:
                                 lower_case: "total"
                             type: int
                             description: "Total number of file parts available for pagination"
+
+            process_file:
+                name:
+                    lower_case: "process file"
+                description: "Assemble file parts to create final file"
+                func:
+                    call: "file_system.process_file"
+                    args:
+                        file_id:
+                            params: {file_id: {}}
+                params:
+                    file_id:
+                        name:
+                            lower_case: "file id"
+                        type: foreign_key
+                        references:
+                            table: "file"
+                            field: "id"
+                        description: "ID of the file being processed"
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: "acknowledged"
+                            type: bool
+                            description: "Whether the file processing was started successfully"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message for starting the file processing"

@@ -167,14 +167,18 @@ def _file_system_list_files_function_args(app:LingoApp, expression: dict, ctx:Op
         offset_expr = expression['args']['offset']
         size_expr = expression['args']['size']
         user_id_expr = expression['args']['user_id']
+        file_id_expr = expression['args']['file_id']
+        status_expr = expression['args']['status']
     except KeyError as e:
         raise ValueError(f'list_files - missing arg: {e}')
 
     offset = unwrap_primitive(lingo_execute(app, offset_expr, ctx))
     size = unwrap_primitive(lingo_execute(app, size_expr, ctx))
     user_id = unwrap_primitive(lingo_execute(app, user_id_expr, ctx))
+    file_id = unwrap_primitive(lingo_execute(app, file_id_expr, ctx))
+    status = unwrap_primitive(lingo_execute(app, status_expr, ctx))
 
-    return (ctx, offset, size, user_id), {}
+    return (ctx, offset, size, user_id, file_id, status), {}
 
 def _file_system_get_part_content_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     try:
