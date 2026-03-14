@@ -439,4 +439,13 @@ def list_parts(ctx: MappContext, file_id: str = '-1', offset: int = 0, size: int
 
 def process_file(ctx: MappContext, file_id: str) -> dict:
 	"""Placeholder for process_file operation."""
+
+	user = current_user(ctx)['value']
+
+	files = list_files(ctx, 0, 1, user.id, file_id)
+	try:
+		file_record = files['items'][0]
+	except IndexError:
+		raise NotFoundError('FILE_NOT_FOUND', f'File not found for id: {file_id}')
+	
 	return {'acknowledged': True, 'message': f'File processing started for file_id: {file_id}'}
