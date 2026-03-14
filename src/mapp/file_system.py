@@ -37,12 +37,24 @@ MAPP_APP_PATH = os.getenv('MAPP_APP_PATH', '')
 
 """
 
+def _file_dir(file_id: str) -> str:
+	"""get the directory where full file content is stored"""
+	if MAPP_APP_PATH == '':
+		raise ValueError('MAPP_APP_PATH environment variable not set')
+	return os.path.join(MAPP_APP_PATH, 'file_system/files', file_id)
+
+def _file_path(file_id: str) -> str:
+	"""get the path where full file content for file_id is stored"""
+	return os.path.join(_file_dir(file_id), 'content')
+
 def _file_part_dir(file_id: str) -> str:
+	"""get the directory where file parts are stored"""
 	if MAPP_APP_PATH == '':
 		raise ValueError('MAPP_APP_PATH environment variable not set')
 	return os.path.join(MAPP_APP_PATH, 'file_system/file_parts', file_id)
 
 def _file_part_path(file_id: str, part_number: int) -> str:
+	"""get the path where a file part should be stored"""
 	return os.path.join(_file_part_dir(file_id), f'{part_number:08}.part')
 
 #
