@@ -24,6 +24,7 @@ usage() {
   echo "  start                 Start the uwsgi server"
   echo "  stop                  Stop the uwsgi server"
   echo "  log                   Tail the uwsgi log file"
+  echo "  status                Check uwsgi server status"
   echo ""
   echo "Options:"
   echo "  --env-file <path>     Path to .env file (default: .env) "
@@ -108,6 +109,20 @@ printf "%-${COL_WIDTH}s %s\n" ":: pip "    "$(which pip)"
 
 
 case "$COMMAND" in
+    status)
+      printf "\n::\n:: uwsgi status\n::\n\n"
+      if [ -f "$PID_FILE" ]; then
+        PID=$(cat "$PID_FILE")
+        if ps -p "$PID" > /dev/null; then
+          echo -e ":: RUNNING - uwsgi is running (pid: $PID)\n"
+        else
+          echo -e ":: STOPPED - uwsgi pid file exists, but process is not running\n"
+        fi
+      else
+        echo -e ":: STOPPED - uwsgi pid file does not exist\n"
+      fi
+      exit 0
+      ;;
   start)
     printf "\n::\n:: starting uwsgi\n::\n\n"
     uwsgi --yaml "$CONFIG_FILE" --daemonize "$LOG_FILE"
