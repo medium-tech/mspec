@@ -15,7 +15,10 @@ __all__ = [
 	'verify_file',
 	'delete_file',
 	'list_files',
-	'list_parts'
+	'list_parts',
+	'get_part_content',
+	'get_file_content',
+	'process_file'
 ]
 
 MAPP_APP_PATH = os.getenv('MAPP_APP_PATH', '')
@@ -23,6 +26,8 @@ MAPP_APP_PATH = os.getenv('MAPP_APP_PATH', '')
 """
 
 ./run.sh --log -fi ./app/file_system/splash.png file-system ingest-start run '{"name": "splash.png", "size": 4007485, "parts": 1, "finish": true}'
+
+./run.sh --log file-system process-file run '{"file_id": "1"}'
 
 ./run.sh file-system list-files run
 
@@ -431,3 +436,7 @@ def list_parts(ctx: MappContext, file_id: str = '-1', offset: int = 0, size: int
 		'items': items,
 		'total': total
 	}
+
+def process_file(ctx: MappContext, file_id: str) -> dict:
+	"""Placeholder for process_file operation."""
+	return {'acknowledged': True, 'message': f'File processing started for file_id: {file_id}'}

@@ -10,7 +10,7 @@ from functools import reduce
 
 from mapp.auth import create_user, login_user, current_user, logout_user, delete_user, drop_sessions
 from mapp.types import get_python_type_for_field
-from mapp.file_system import ingest_start, list_files, get_part_content, list_parts
+from mapp.file_system import ingest_start, list_files, get_part_content, list_parts, process_file
 
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
 
@@ -208,6 +208,16 @@ def _file_system_list_parts_function_args(app:LingoApp, expression: dict, ctx:Op
 
     return (ctx, file_id, offset, size, user_id), {}
 
+def _file_system_process_file_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        file_id_expr = expression['args']['file_id']
+    except KeyError as e:
+        raise ValueError(f'process_file - missing arg: {e}')
+
+    file_id = unwrap_primitive(lingo_execute(app, file_id_expr, ctx))
+
+    return (ctx, file_id), {}
+
 #
 # other
 #
@@ -337,7 +347,8 @@ lingo_function_lookup = {
         'ingest_start': {'func': ingest_start, 'create_args': _ingest_start_function_args},
         'list_files': {'func': list_files, 'create_args': _file_system_list_files_function_args},
         'list_parts': {'func': list_parts, 'create_args': _file_system_list_parts_function_args},
-        'get_part_content': {'func': get_part_content, 'create_args': _file_system_get_part_content_function_args}
+        'get_part_content': {'func': get_part_content, 'create_args': _file_system_get_part_content_function_args},
+        'process_file': {'func': process_file, 'create_args': _file_system_process_file_function_args}
     }
 }
 
