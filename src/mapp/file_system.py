@@ -5,7 +5,7 @@ from mimetypes import guess_type
 
 from mapp.auth import current_user
 from mapp.context import MappContext
-from mapp.errors import  MappValidationError, MappUserError
+from mapp.errors import  MappValidationError, MappUserError, NotFoundError
 from mapp.types import ModelListResult, File, FilePart, datetime_now_utc, datetime_for_db, datetime_from_db
 
 __all__ = [
@@ -44,7 +44,7 @@ def _file_part_path(file_id: str, part_number: int) -> str:
 # low level ops
 #
 
-def _ingest_part(ctx: MappContext, part_number:int, file_input: bytes, file_record: File, user: dict):
+def _ingest_part(ctx: MappContext, part_number:int, file_input: bytes, file_record: File, user: dict) -> FilePart:
 	
 	part_size = len(file_input)
 	part_sha3_256 = sha3_256(file_input).hexdigest()
@@ -54,7 +54,10 @@ def _ingest_part(ctx: MappContext, part_number:int, file_input: bytes, file_reco
 	part_path = _file_part_path(str(file_record.id), part_number)
 	os.makedirs(os.path.dirname(part_path), exist_ok=True)
 
-	with open(part_path, 'wb') as f:
+	if os.path.exists(part_path):
+		raise MappUserError('FILE_PART_ALREADY_EXISTS', f'File part exists for file_id: {file_record.id} part_number: {part_number}')
+
+	with open(part_path, 'wb+') as f:
 		f.write(file_input)
 
 	file_part = FilePart(
@@ -85,6 +88,8 @@ def _ingest_part(ctx: MappContext, part_number:int, file_input: bytes, file_reco
 	ctx.db.commit()
 
 	ctx.log(f'_ingest_part - complete - {file_record.id=}')
+
+	return file_part._replace(id=ctx.db.cursor.lastrowid)
 
 def _list_parts(ctx: MappContext, file_id:str) -> list[FilePart]:
 	ctx.db.cursor.execute(
@@ -251,7 +256,37 @@ def ingest_start(ctx: MappContext, name: str, size: int, parts: int, content_typ
 	return {'file_id': file_record.id, 'message': msg}
 
 def ingest_part(ctx: MappContext, file_id: str, part_number: int) -> dict:
-	"""Placeholder for ingest_part operation."""
+
+	file_input = ctx.self.get('file_input', None)
+	user = current_user(ctx)['value']
+
+	files = list_files(ctx, 0, 1, user.id, file_id)
+	try:
+		file_record = files['items'][0]
+	except IndexError:
+		raise NotFoundError('FILE_NOT_FOUND', f'File not found for id: {file_id}')
+
+	#
+	# validate input
+	#
+
+	field_errors = {}
+
+	if file_input is None:
+		raise MappUserError('NO_FILE_INPUT', 'User must supply a file_input for ingest_part')
+	
+	if not 0 < part_number <= file_record['parts']:
+		field_errors['part_number'] = f'Part number must be between 1 and {file_record["parts"]} for file_id {file_id}'
+
+	if field_errors:
+		raise MappValidationError('Error uploading file part', field_errors)
+	
+	#
+	# write part
+	#
+
+	_ingest_part(ctx, part_number, file_input, File(**file_record), user)
+
 	return {'acknowledged': True, 'message': 'File part uploaded'}
 
 def ingest_finish(ctx: MappContext, file_id: str) -> dict:

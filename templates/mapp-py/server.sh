@@ -9,6 +9,7 @@ set -e
 # Defaults
 ENVFILE=".env"
 PID_FILE="app/server.pid"
+LOG_FILE="app/server.log"
 CONFIG_FILE="./uwsgi.yaml"
 STOP=false
 
@@ -80,6 +81,7 @@ printf "\n::\n:: init mapp environment\n::\n\n"
 printf "%-${COL_WIDTH}s %s\n" ":: env file"   "$ENVFILE"
 printf "%-${COL_WIDTH}s %s\n" ":: pid file"   "$PID_FILE"
 printf "%-${COL_WIDTH}s %s\n" ":: config file" "$CONFIG_FILE"
+printf "%-${COL_WIDTH}s %s\n" ":: log file"    "$LOG_FILE"
 printf "%-${COL_WIDTH}s %s\n" ":: ui src" "${MAPP_UI_FILE_SOURCE:- }"
 printf "%-${COL_WIDTH}s %s\n" ":: venv"       "${VIRTUAL_ENV:-}"
 printf "%-${COL_WIDTH}s %s\n" ":: port" "$PORT"
@@ -92,9 +94,11 @@ printf "%-${COL_WIDTH}s %s\n" ":: pip "    "$(which pip)"
 if [[ "$STOP" == true ]]; then
   printf "\n::\n:: stopping uwsgi\n::\n\n"
   uwsgi --stop "$PID_FILE"
+  printf ":: uwsgi stopped\n\n"
   exit $?
 else
   printf "\n::\n:: starting uwsgi\n::\n\n"
-  uwsgi --yaml "$CONFIG_FILE"
+  uwsgi --yaml "$CONFIG_FILE" --daemonize "$LOG_FILE"
+  printf "\n\n:: uwsgi started\n\n"
   exit $?
 fi

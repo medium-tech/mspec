@@ -6,8 +6,6 @@ uwsgi:
     safe-pidfile: app/server.pid
     stats: app/stats.socket
     log-master: true
-    logto: app/server.log
-    processes: 4
+    processes: 1
     lazy-apps: true
     py-autoreload: 1
-
