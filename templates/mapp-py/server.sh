@@ -33,7 +33,7 @@ usage() {
   echo "  --config <path>       Path to uwsgi config file (default: ./uwsgi.yaml)"
   echo "  --ui-src <path>      Path to MAPP UI files source directory"
   echo "                          if provided will be used to set MAPP_UI_FILE_SOURCE env var"
-  echo "  -h, --help            Show this help message and exit\n"
+  echo -e "  -h, --help            Show this help message and exit\n"
 
   local error_msg="$1"
 
@@ -53,6 +53,11 @@ fi
 
 COMMAND="$1"
 shift
+
+# if COMMAND is -h or --help, show usage
+if [[ "$COMMAND" == "-h" || "$COMMAND" == "--help" || "$COMMAND" == "help" ]]; then
+  usage
+fi
 
 while [[ $# -gt 0 ]]; do
   case $1 in
