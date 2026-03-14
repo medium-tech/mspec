@@ -2,7 +2,7 @@ import json
 
 from collections import namedtuple
 from typing import Any, Optional, NamedTuple, Callable
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass, asdict
 
 from mapp.errors import MappValidationError, MappError
@@ -57,7 +57,7 @@ __all__ = [
 DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
 
 def datetime_now_utc() -> datetime:
-    return datetime.now(datetime.timezone.utc)
+    return datetime.now(timezone.utc)
 
 def datetime_from_str(date_str:str) -> datetime:
     return datetime.strptime(date_str, DATETIME_FORMAT_STR)
@@ -67,6 +67,9 @@ def datetime_to_str(dt:datetime) -> str:
 
 def datetime_for_db(dt:datetime) -> str:
     return dt.isoformat()
+
+def datetime_from_db(date_str:str) -> datetime:
+    return datetime.fromisoformat(date_str)
 
 
 class Acknowledgment:
@@ -455,7 +458,7 @@ def convert_dict_to_op_params(op_class:type, data:dict):
 
 # validation #
 
-def _get_python_type_for_field(field_type:str) -> type:
+def get_python_type_for_field(field_type:str) -> type:
     """
     Maps a field type string to the corresponding Python type.
 
@@ -534,7 +537,7 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
 
             # confirm value type #
 
-            python_type = _get_python_type_for_field(field_type)
+            python_type = get_python_type_for_field(field_type)
 
             if not isinstance(value, python_type):
                 errors[field_name] = f'Field "{field_name}" is not of type "{field_type}".'
@@ -556,7 +559,7 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
             except KeyError:
                 raise ValueError(f'Field "{field_name}" of type "list" is missing required "element_type".')
             
-            python_type = _get_python_type_for_field(element_type)
+            python_type = get_python_type_for_field(element_type)
 
             # confirm type of elements #
 

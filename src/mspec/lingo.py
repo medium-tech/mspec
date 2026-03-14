@@ -9,7 +9,8 @@ from itertools import dropwhile, takewhile, islice, accumulate
 from functools import reduce
 
 from mapp.auth import create_user, login_user, current_user, logout_user, delete_user, drop_sessions
-from mapp.file_system import ingest_start
+from mapp.types import get_python_type_for_field
+from mapp.file_system import ingest_start, list_files
 
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
 
@@ -161,6 +162,20 @@ def _ingest_start_function_args(app:LingoApp, expression: dict, ctx:Optional[dic
 
     return (ctx, name, size, parts, content_type, finish), {}
 
+def _file_system_list_files_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        offset_expr = expression['args']['offset']
+        size_expr = expression['args']['size']
+        user_id_expr = expression['args']['user_id']
+    except KeyError as e:
+        raise ValueError(f'list_files - missing arg: {e}')
+
+    offset = unwrap_primitive(lingo_execute(app, offset_expr, ctx))
+    size = unwrap_primitive(lingo_execute(app, size_expr, ctx))
+    user_id = unwrap_primitive(lingo_execute(app, user_id_expr, ctx))
+
+    return (ctx, offset, size, user_id), {}
+
 #
 # other
 #
@@ -287,7 +302,8 @@ lingo_function_lookup = {
     # file system #
 
     'file_system': {
-        'ingest_start': {'func': ingest_start, 'create_args': _ingest_start_function_args}
+        'ingest_start': {'func': ingest_start, 'create_args': _ingest_start_function_args},
+        'list_files': {'func': list_files, 'create_args': _file_system_list_files_function_args}
     }
 }
 
@@ -529,10 +545,10 @@ def render_params(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> An
             value = param_def['default']
         except KeyError:
             raise ValueError(f'params - missing value for field: {field_name}')
-
-        
-    if value.__class__.__name__ != param_def['type']:
-        raise ValueError(f'params - value type mismatch: {param_def["type"]} != {value.__class__.__name__}')
+    actual_py_type = type(value)
+    expected_py_type = get_python_type_for_field(param_def['type'])
+    if actual_py_type != expected_py_type:
+        raise ValueError(f'params - expected {expected_py_type} for {field_name} got: {actual_py_type}')
     
     # return value #
     

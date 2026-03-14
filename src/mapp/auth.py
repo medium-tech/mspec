@@ -3,17 +3,20 @@ import re
 import time
 import hashlib
 import secrets
+
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 import jwt
 
 from mapp.context import MappContext, MAPP_APP_PATH
 from mapp.errors import AuthenticationError, MappError, MappValidationError
-from mapp.types import (
-    User,
-    PasswordHash
-)
+from mapp.types import User, PasswordHash
+
+"""
+./run.sh auth create-user run '{"name": "Brad", "email": "brad@example.com", "password": "123", "password_confirm": "123"}'
+./run.sh auth login-user run '{"email": "brad@example.com", "password": "123"}'
+./run.sh auth current-user run
+"""
 
 MAPP_AUTH_SECRET_KEY = os.environ.get('MAPP_AUTH_SECRET_KEY')   # openssl rand -hex 32
 MAPP_AUTH_LOGIN_EXPIRATION_MINUTES = os.environ.get('MAPP_AUTH_LOGIN_EXPIRATION_MINUTES', 60 * 24 * 7)

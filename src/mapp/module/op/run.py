@@ -60,14 +60,12 @@ def op_create_callable(param_class:type, output_class:type) -> object:
 		)
 
 		op_output = lingo_execute(lingo_app, lingo_func, ctx)
-
 		return validate_op_output(output_class, OpResult(unwrap_primitive(op_output)))
 		
 	# create application wrapper #
 
 	def run_op(ctx: MappContext, params:object) -> object:
 		validate_op_params(param_class, params)
-
 		op_output = op_callable(ctx, params)
 	
 		return validate_op_output(output_class, op_output)
