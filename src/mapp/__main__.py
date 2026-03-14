@@ -1,6 +1,7 @@
 import argparse
 import json
 import sys
+import atexit
 
 from mapp.context import MappContext, spec_from_env, get_context_from_env, get_cli_access_token
 from mapp.errors import MappError
@@ -25,7 +26,8 @@ def main(ctx: MappContext, spec:dict):
         formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument('--log', action='store_true', help='Enable logging output to console')
-    parser.add_argument('--file-input', '-f', type=str, help='Path to file input for ops that support file input, or - for stdin', default=None)
+    parser.add_argument('--file-input', '-fi', type=str, help='Path to file input for ops that support file input, or - for stdin', default=None)
+    parser.add_argument('--file-output', '-fo', type=str, help='Path to write file output for ops that support file output, or - for stdout', default=None)
     subparsers = parser.add_subparsers(dest='module', help='Available modules', required=False)
 
     help_parser = subparsers.add_parser('help', help='Show top-level help', aliases=['-h', '--help'])
@@ -72,6 +74,13 @@ def main(ctx: MappContext, spec:dict):
         else:
             with open(args.file_input, 'rb') as f:
                 ctx.self = {'file_input': f.read()}
+
+    if args.file_output is not None:
+        if args.file_output == '-':
+            ctx.self['file_output'] = sys.stdout.buffer
+        else:
+            ctx.self['file_output'] = open(args.file_output, 'wb+')
+            atexit.register(lambda: ctx.self['file_output'].close())
 
     if hasattr(args, 'func'):
         try:

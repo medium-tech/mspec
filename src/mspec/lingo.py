@@ -10,7 +10,7 @@ from functools import reduce
 
 from mapp.auth import create_user, login_user, current_user, logout_user, delete_user, drop_sessions
 from mapp.types import get_python_type_for_field
-from mapp.file_system import ingest_start, list_files
+from mapp.file_system import ingest_start, list_files, get_part_content, list_parts
 
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
 
@@ -176,6 +176,34 @@ def _file_system_list_files_function_args(app:LingoApp, expression: dict, ctx:Op
 
     return (ctx, offset, size, user_id), {}
 
+def _file_system_get_part_content_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        file_id_expr = expression['args']['file_id']
+        part_number_expr = expression['args']['part_number']
+    except KeyError as e:
+        raise ValueError(f'get_part_content - missing arg: {e}')
+
+    file_id = unwrap_primitive(lingo_execute(app, file_id_expr, ctx))
+    part_number = unwrap_primitive(lingo_execute(app, part_number_expr, ctx))
+
+    return (ctx, file_id, part_number), {}
+
+def _file_system_list_parts_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        file_id_expr = expression['args']['file_id']
+        offset_expr = expression['args']['offset']
+        size_expr = expression['args']['size']
+        user_id_expr = expression['args']['user_id']
+    except KeyError as e:
+        raise ValueError(f'list_parts - missing arg: {e}')
+
+    file_id = unwrap_primitive(lingo_execute(app, file_id_expr, ctx))
+    offset = unwrap_primitive(lingo_execute(app, offset_expr, ctx))
+    size = unwrap_primitive(lingo_execute(app, size_expr, ctx))
+    user_id = unwrap_primitive(lingo_execute(app, user_id_expr, ctx))
+
+    return (ctx, file_id, offset, size, user_id), {}
+
 #
 # other
 #
@@ -303,7 +331,9 @@ lingo_function_lookup = {
 
     'file_system': {
         'ingest_start': {'func': ingest_start, 'create_args': _ingest_start_function_args},
-        'list_files': {'func': list_files, 'create_args': _file_system_list_files_function_args}
+        'list_files': {'func': list_files, 'create_args': _file_system_list_files_function_args},
+        'list_parts': {'func': list_parts, 'create_args': _file_system_list_parts_function_args},
+        'get_part_content': {'func': get_part_content, 'create_args': _file_system_get_part_content_function_args}
     }
 }
 

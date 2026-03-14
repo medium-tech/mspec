@@ -553,8 +553,6 @@ modules:
                             params: {file_id: {}}
                         part_number:
                             params: {part_number: {}}
-                        content:
-                            self: {file_input: {}}
                 params:
                     file_id:
                         name:
@@ -614,6 +612,77 @@ modules:
                                 lower_case: "message"
                             type: str
                             description: "Acknowledgement message for finishing the file upload"
+
+            get_part_content:
+                name:
+                    lower_case: "get part content"
+                description: "Get the content of a file part with file id and part number, it's output depends on self.file_output being defined in the context"
+                func:
+                    call: "file_system.get_part_content"
+                    args:
+                        file_id:
+                            params: {file_id: {}}
+                        part_number:
+                            params: {part_number: {}}
+                params:
+                    file_id:
+                        name:
+                            lower_case: "file id"
+                        type: foreign_key
+                        references:
+                            table: "file"
+                            field: "id"
+                        description: "ID of the file being accessed"
+                    part_number:
+                        name:
+                            lower_case: "part number"
+                        type: int
+                        description: "Part number of the file being accessed"
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: "acknowledged"
+                            type: bool
+                            description: "Whether the file part content retrieval was successful"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message for the file part content retrieval"
+
+            get_file_content:
+                name:
+                    lower_case: "get file content"
+                description: "Get the content of a file with file id, it's output depends on self.file_output being defined in the context"
+                func:
+                    call: "file_system.get_file_content"
+                    args:
+                        file_id:
+                            params: {file_id: {}}
+                params:
+                    file_id:
+                        name:
+                            lower_case: "file id"
+                        type: foreign_key
+                        references:
+                            table: "file"
+                            field: "id"
+                        description: "ID of the file being accessed"
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: "acknowledged"
+                            type: bool
+                            description: "Whether the file content retrieval was successful"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message for the file content retrieval"
 
             verify_file:
                 name:
@@ -705,6 +774,8 @@ modules:
                             params: {size: {}}
                         user_id:
                             params: {user_id: {}}
+                        file_id:
+                            params: {file_id: {}}
                 params:
                     offset:
                         name:
@@ -730,6 +801,16 @@ modules:
                             field: "id"
                         description: "ID of the user whose files to list, if not provided lists files for all users"
                     
+                    file_id:
+                        name:
+                            lower_case: "file id"
+                        type: foreign_key
+                        default: "-1"
+                        references:
+                            table: "file"
+                            field: "id"
+                        description: "ID of the file to list, if provided lists only the file with this ID if it exists and the user has access to it"
+
                 result:
                     type: struct
                     fields:
@@ -747,7 +828,7 @@ modules:
 
             list_parts:
                 name:
-                    lower_case: "list file parts"
+                    lower_case: "list parts"
                 description: "List file parts for a file with pagination"
                 func:
                     call: "file_system.list_parts"
@@ -758,6 +839,8 @@ modules:
                             params: {offset: {}}
                         size:
                             params: {size: {}}
+                        user_id:
+                            params: {user_id: {}}
                 params:
 
                     offset:
