@@ -497,6 +497,7 @@ class TestMTemplateApp(unittest.TestCase):
 
         crud_server_cmd = cls.cmd + ['server']
         pagination_server_cmd = cls.cmd + ['server']
+        cls.server_status_commands = []
 
         if cls.app_type == 'python':
             with open('uwsgi.yaml', 'r') as f:
@@ -516,8 +517,12 @@ class TestMTemplateApp(unittest.TestCase):
             cls.pagination_uwsgi_config = f'{cls.test_dir}/uwsgi_pagination.yaml'
             cls.pagination_stats_socket = f'{cls.test_dir}/stats_pagination.socket'
             cls.pagination_log_file = f'{cls.test_dir}/server_pagination.log'
-            crud_server_cmd = ['./server.sh', '--pid-file', cls.crud_pidfile, '--config', cls.crud_uwsgi_config]
-            pagination_server_cmd = ['./server.sh', '--pid-file', cls.pagination_pidfile, '--config', cls.pagination_uwsgi_config]
+
+            crud_server_cmd = ['./server.sh', 'start', '--pid-file', cls.crud_pidfile, '--config', cls.crud_uwsgi_config]
+            pagination_server_cmd = ['./server.sh', 'start', '--pid-file', cls.pagination_pidfile, '--config', cls.pagination_uwsgi_config]
+
+            cls.server_status_commands.append(['./server.sh', 'status', '--pid-file', cls.crud_pidfile, '--config', cls.crud_uwsgi_config])
+            cls.server_status_commands.append(['./server.sh', 'status', '--pid-file', cls.pagination_pidfile, '--config', cls.pagination_uwsgi_config])
 
             with open(cls.crud_uwsgi_config, 'w') as f:
                 crud_uwsgi_config = re.sub(port_pattern, f'http: :{crud_port}', uwsgi_config)
@@ -537,16 +542,16 @@ class TestMTemplateApp(unittest.TestCase):
 
         print('  :: Starting server processes ::')
 
-        cls.server_processes:list[subprocess.Popen] = []
-
-        process = subprocess.Popen(crud_server_cmd, env=cls.crud_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        cls.server_processes.append(process)
         print('    :: ', ' '.join(crud_server_cmd))
+        crud_result = subprocess.run(crud_server_cmd, env=cls.crud_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+        if crud_result.returncode != 0:
+            raise RuntimeError(f'Error starting CRUD server: {crud_result.stdout + crud_result.stderr}')
 
-        process = subprocess.Popen(pagination_server_cmd, env=cls.pagination_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        cls.server_processes.append(process)
         print('    :: ', ' '.join(pagination_server_cmd))
-        time.sleep(1)
+        pagination_result = subprocess.run(pagination_server_cmd, env=cls.pagination_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+        if pagination_result.returncode != 0:
+            raise RuntimeError(f'Error starting pagination server: {pagination_result.stdout + pagination_result.stderr}')
+
         print('  :: Setup complete ::')
 
         print(':: test progress :: ', end='', flush=True)
@@ -572,31 +577,6 @@ class TestMTemplateApp(unittest.TestCase):
                 print('    :: Timeout expired while stopping servers ::')
             except subprocess.CalledProcessError as e:
                 print(f'    :: Error stopping servers: {e} :: {e.output} :: {e.stderr} ::')
-
-        # stop servers and capture logs #
-
-        for process in cls.server_processes:
-            print(f'  :: Stopping server process {process.pid} ::')
-            process.terminate()
-            try:
-                stdout, stderr = process.communicate(timeout=10)
-                with open(f'{cls.test_dir}/test_server_{process.pid}_stdout.log', 'w') as f:
-                    f.write(stdout)
-                with open(f'{cls.test_dir}/test_server_{process.pid}_stderr.log', 'w') as f:
-                    f.write(stderr)
-            except subprocess.TimeoutExpired:
-                print('    :: Server process did not terminate in time, killing process ::')
-                process.kill()
-                stdout, stderr = process.communicate()
-                with open(f'{cls.test_dir}/test_server_{process.pid}_stdout.log', 'w') as f:
-                    f.write(stdout)
-                with open(f'{cls.test_dir}/test_server_{process.pid}_stderr.log', 'w') as f:
-                    f.write(stderr)
-            except Exception as e:
-                print(f'Error capturing server process {process.pid} output: {e}')
-
-            if process.returncode is not None and process.returncode > 0:
-                print(f'    :: Server process {process.pid} exited with code {process.returncode} ::')
         
         print(':: Teardown complete ::')
 
@@ -607,13 +587,15 @@ class TestMTemplateApp(unittest.TestCase):
         return result
     
     def _check_servers_running(self):
-        error = False
-        for process in self.server_processes:
-            retcode = process.poll()
-            if retcode is not None:
-                error = True
+        error = 0
+        for cmd in self.server_status_commands:
+            # call via subprocess and check stdout for text RUNNING
+            result = subprocess.run(cmd, capture_output=True, text=True, env=os.environ.copy(), timeout=10)
+            if result.returncode != 0 or 'RUNNING' not in result.stdout:
+                print(f':: ERROR: Server process not running for command {" ".join(cmd)} :: Output: {result.stdout + result.stderr}')
+                error += 1
 
-        self.assertFalse(error, 'One or more server processes have exited unexpectedly')
+        self.assertEqual(error, 0, f'{error} server processes not running')
 
     # builtin - auth tests #
 
