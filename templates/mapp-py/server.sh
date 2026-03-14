@@ -19,7 +19,11 @@ if [ -n "$MAPP_ENV_FILE" ]; then
 fi
 
 usage() {
-  echo -e "\nUsage: $0 [options]\n"
+  echo -e "\nUsage: $0 <command> [options]\n"
+  echo "Commands:"
+  echo "  start                 Start the uwsgi server"
+  echo "  stop                  Stop the uwsgi server"
+  echo ""
   echo "Options:"
   echo "  --env-file <path>     Path to .env file (default: .env) "
   echo "                          or supply via MAPP_ENV_FILE env var"
@@ -28,16 +32,28 @@ usage() {
   echo "  --ui-src <path>      Path to MAPP UI files source directory"
   echo "                          if provided will be used to set MAPP_UI_FILE_SOURCE env var"
   echo "  -h, --help            Show this help message and exit\n"
+
+  local error_msg="$1"
+
+  if [ -n "$error_msg" ]; then
+    echo -e "\n  Error: $error_msg\n" >&2
+  fi
+
   exit 0
 }
 
 # Parse arguments
+
+# Require a command (start or stop)
+if [[ $# -lt 1 ]]; then
+  usage "Missing command"
+fi
+
+COMMAND="$1"
+shift
+
 while [[ $# -gt 0 ]]; do
   case $1 in
-    stop)
-      STOP=true
-      shift
-      ;;
     --env-file)
       ENVFILE="$2"
       shift 2
@@ -58,8 +74,7 @@ while [[ $# -gt 0 ]]; do
       usage
       ;;
     *)
-      echo "Unknown option: $1" >&2
-      usage
+      usage "Unknown option: $1"
       ;;
   esac
 done
@@ -90,15 +105,21 @@ printf "%-${COL_WIDTH}s %s\n" ":: uwsgi"      "$(which uwsgi)"
 printf "%-${COL_WIDTH}s %s\n" ":: python" "$(which python)"
 printf "%-${COL_WIDTH}s %s\n" ":: pip "    "$(which pip)"
 
-# If first argument is 'stop', stop uwsgi using the pid file
-if [[ "$STOP" == true ]]; then
-  printf "\n::\n:: stopping uwsgi\n::\n\n"
-  uwsgi --stop "$PID_FILE"
-  printf ":: uwsgi stopped\n\n"
-  exit $?
-else
-  printf "\n::\n:: starting uwsgi\n::\n\n"
-  uwsgi --yaml "$CONFIG_FILE" --daemonize "$LOG_FILE"
-  printf "\n\n:: uwsgi started\n\n"
-  exit $?
-fi
+
+case "$COMMAND" in
+  start)
+    printf "\n::\n:: starting uwsgi\n::\n\n"
+    uwsgi --yaml "$CONFIG_FILE" --daemonize "$LOG_FILE"
+    printf "\n\n:: uwsgi started\n\n"
+    exit $?
+    ;;
+  stop)
+    printf "\n::\n:: stopping uwsgi\n::\n\n"
+    uwsgi --stop "$PID_FILE"
+    printf ":: uwsgi stopped\n\n"
+    exit $?
+    ;;
+  *)
+    usage "Invalid command: $COMMAND."
+    ;;
+esac
