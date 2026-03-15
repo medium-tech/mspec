@@ -273,6 +273,13 @@ def _process_file(ctx: MappContext, file_record: File) -> File:
 
 	return file_record
 
+def _get_file_record(ctx: MappContext, file_id: str) -> File:
+	files = list_files(ctx, 0, 1, user_id='-1', file_id=file_id)
+	try:
+		file_record_dict = files['items'][0]
+		return File(**file_record_dict)
+	except IndexError:
+		raise NotFoundError('FILE_NOT_FOUND', f'File not found for id: {file_id}')
 
 #
 # commands
@@ -294,9 +301,9 @@ def ingest_start(ctx: MappContext, name: str, size: int, parts: int, content_typ
 
 	"""
 
-	file_input = ctx.self.get('file_input', None)
-
 	user = current_user(ctx)['value']
+
+	file_input = ctx.self.get('file_input', None)
 
 	#
 	# validate input
@@ -547,7 +554,6 @@ def list_files(ctx: MappContext, offset: int = 0, size: int = 50, user_id: str =
 		(user_id, user_id, file_id, file_id, status, status, size, offset)
 	)
 
-	rows = ctx.db.cursor.fetchall()
 	items = [
 		{
 			'id': str(row[0]),
@@ -563,7 +569,7 @@ def list_files(ctx: MappContext, offset: int = 0, size: int = 50, user_id: str =
 			'updated_at': datetime_from_db(row[10]).isoformat(),
 			'sha3_256': row[11]
 		} 
-		for row in rows
+		for row in ctx.db.cursor.fetchall()
 	]
 
 	# fetch total count #

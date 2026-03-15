@@ -19,9 +19,9 @@
         * 🔴 model create
         * 🔴 model view
         * 🔴 tests
-* 🔴 media
-    * 🔴 backend
-        * 🔴 create image
+* 🟡 media
+    * 🟡 backend
+        * 🟡 create image
         * 🔴 model view image
     * 🔴 browser1
         * 🔴 create image
@@ -38,6 +38,18 @@
     * 🔴 cms extension
         * 🔴 file backup
         * 🔴 metadata logging
+* 🔴 refactor
+    * 🔴 js parity to py for lingo function arg mapping
+    * 🔴 internal naming conventions
+        * 🔴 py - in lingo.py; rename `render_*` functions --> `execute_<name>`
+        * 🔴 js - same as above for python
+    * 🔴 remove plain objects (parity w/ future go implementation)
+        * 🔴 create context types (remove plain objects)
+            * 🔴 py
+            * 🔴 js
+        * 🔴 create value type, no passing around primitives
+            * 🔴 py
+            * 🔴 js
 
 ## mapp framework
 * 🟢 create tests for auth via cli

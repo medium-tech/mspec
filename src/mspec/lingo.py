@@ -9,8 +9,9 @@ from itertools import dropwhile, takewhile, islice, accumulate
 from functools import reduce
 
 from mapp.auth import create_user, login_user, current_user, logout_user, delete_user, drop_sessions
-from mapp.types import get_python_type_for_field
 from mapp.file_system import get_file_content, ingest_start, list_files, get_part_content, list_parts, process_file
+from mapp.media import create_image, get_image, get_image_file_content, list_images
+from mapp.types import get_python_type_for_field
 
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
 
@@ -20,6 +21,13 @@ class LingoApp:
     params: dict[str, Any]
     state: dict[str, Any]
     buffer: list[dict]
+
+
+# # # #
+#
+# argument mappers | mapping python and lingo function signatures
+#
+# # # #
 
 def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     
@@ -229,6 +237,60 @@ def _file_system_process_file_function_args(app:LingoApp, expression: dict, ctx:
     return (ctx, file_id), {}
 
 #
+# media
+#
+
+def _media_create_image_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        name_expr = expression['args']['name']
+        content_type_expr = expression['args']['content_type']
+    except KeyError as e:
+        raise ValueError(f'create_image - missing arg: {e}')
+
+    name = unwrap_primitive(lingo_execute(app, name_expr, ctx))
+    content_type = unwrap_primitive(lingo_execute(app, content_type_expr, ctx))
+
+    return (ctx, name, content_type), {}
+
+def _media_get_image_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        image_id_expr = expression['args']['image_id']
+    except KeyError as e:
+        raise ValueError(f'get_image - missing arg: {e}')
+
+    image_id = unwrap_primitive(lingo_execute(app, image_id_expr, ctx))
+
+    return (ctx, image_id), {}
+
+def _media_get_image_file_content_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        image_id_expr = expression['args']['image_id']
+    except KeyError as e:
+        raise ValueError(f'get_image_file_content - missing arg: {e}')
+
+    image_id = unwrap_primitive(lingo_execute(app, image_id_expr, ctx))
+
+    return (ctx, image_id), {}
+
+def _media_list_images_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        offset_expr = expression['args']['offset']
+        size_expr = expression['args']['size']
+        image_id_expr = expression['args']['image_id']
+        file_id_expr = expression['args']['file_id']
+        user_id_expr = expression['args']['user_id']
+    except KeyError as e:
+        raise ValueError(f'list_images - missing arg: {e}')
+
+    offset = unwrap_primitive(lingo_execute(app, offset_expr, ctx))
+    size = unwrap_primitive(lingo_execute(app, size_expr, ctx))
+    image_id = unwrap_primitive(lingo_execute(app, image_id_expr, ctx))
+    file_id = unwrap_primitive(lingo_execute(app, file_id_expr, ctx))
+    user_id = unwrap_primitive(lingo_execute(app, user_id_expr, ctx))
+
+    return (ctx, offset, size, image_id, file_id, user_id), {}
+
+#
 # other
 #
 
@@ -256,6 +318,7 @@ def unwrap_primitive(value:Any) -> Any:
             raise ValueError('Invalid value element - missing value key')
     else:
         return value
+
 
 lingo_function_lookup = {
 
@@ -360,9 +423,23 @@ lingo_function_lookup = {
         'get_part_content': {'func': get_part_content, 'create_args': _file_system_get_part_content_function_args},
         'get_file_content': {'func': get_file_content, 'create_args': _file_system_get_file_content_function_args},
         'process_file': {'func': process_file, 'create_args': _file_system_process_file_function_args}
+    },
+
+    # media #
+
+    'media': {
+        'create_image': {'func': create_image, 'create_args': _media_create_image_function_args},
+        'get_image': {'func': get_image, 'create_args': _media_get_image_function_args},
+        'get_image_file_content': {'func': get_image_file_content, 'create_args': _media_get_image_file_content_function_args},
+        'list_images': {'func': list_images, 'create_args': _media_list_images_function_args}
     }
 }
 
+# # # #
+#
+# lingo interpreter
+#
+# # # #
 
 def lingo_app(spec: dict, **params) -> LingoApp:
     instance = LingoApp(spec=deepcopy(spec), params=params, state={}, buffer=[])
@@ -449,7 +526,9 @@ def lingo_execute(app:LingoApp, expression:Any, ctx:Optional[dict]=None) -> Any:
         
         return {'value': result, 'type': result.__class__.__name__}
 
-# high level render #
+#
+# high level render
+#
 
 def render_output(app:LingoApp, ctx:Optional[dict]=None) -> list[dict]:
     app.buffer = []
@@ -481,7 +560,9 @@ def render_block(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
             raise ValueError(f'block error, element {n}: {e}')
     return elements
 
-# control flow #
+#
+# control flow
+#
 
 def render_branch(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
     branches = element['branch']
@@ -565,8 +646,10 @@ def render_switch(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
             raise ValueError(f'switch - error processing case') from e
     
     return lingo_execute(app, default, ctx)
-    
-# state and input #
+
+#
+# state and input
+#
 
 def render_self(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
     try:
@@ -657,7 +740,9 @@ def render_state(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
     except KeyError:
         raise ValueError(f'state - field not found: {field_name}')
 
-# expressions #
+#
+# expressions
+#
 
 def render_lingo(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
     result = lingo_execute(app, element['lingo'], ctx)

@@ -161,6 +161,25 @@ class FilePart(NamedTuple):
     user_id: str
     uploaded_at: datetime
 
+#
+# media
+#
+
+class Image(NamedTuple):
+    id: str
+    file_id: str
+    user_id: str
+    format: str
+    width: int
+    height: int
+    aspect_ratio: float
+    file_size: int
+    compression_mode: str
+    bit_depth: int
+    color_space: str
+    chroma_subsampling: str
+    created_at: datetime
+
 
 CurrentUserFuncReturn = tuple[Optional[User], str]              # deprecated
 CurrentUserFunc = Callable[[], Optional[CurrentUserFuncReturn]] # deprecated

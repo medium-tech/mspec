@@ -487,7 +487,7 @@ modules:
             ingest_start:
                 name:
                     lower_case: "ingest start"
-                description: "Start ingesting a file with name, size, parts, content type and extension"
+                description: "Start ingesting a file with name, size, parts, content type and extension. If content is supplied via self.file_input it will be uploaded as part 1. If finish is true and parts is 1 and part 1 is uploaded, the file will be marked as finished without needing to call ingest_part or ingest_finish separately."
 
                 func:
                     call: "file_system.ingest_start"
@@ -944,3 +944,380 @@ modules:
                                 lower_case: "message"
                             type: str
                             description: "Acknowledgement message for starting the file processing"
+
+    media:
+        name:
+            lower_case: "media"
+        description: "Media management for files, such as generating thumbnails and previews, and extracting metadata"
+        models:
+
+            image:
+                hidden: true
+                name:
+                    lower_case: "image"
+                auth:
+                    require_login: true
+                fields:
+
+                    file_id:
+                        name:
+                            lower_case: "file id"
+                        type: foreign_key
+                        references:
+                            table: "file"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        references:
+                            table: "user"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    format:
+                        name:
+                            lower_case: "format"
+                        type: str
+                        examples:
+                            - "jpeg"
+                            - "png"
+                    
+                    width:
+                        name:
+                            lower_case: "width"
+                        type: int
+                        examples:
+                            - 800
+                            - 600
+                    
+                    height:
+                        name:
+                            lower_case: "height"
+                        type: int
+                        examples:
+                            - 800
+                            - 600
+                    
+                    aspect_ratio:
+                        name:
+                            lower_case: "aspect ratio"
+                        description: "Aspect ratio of the image calculated as width divided by height"
+                        type: float
+                        examples:
+                            - 1.0
+                            - 1.33
+
+                    file_size:
+                        name:
+                            lower_case: "file size"
+                        description: "Size of the file in bytes"
+                        type: int
+                        examples:
+                            - 102400
+                            - 204800
+
+                    compression_mode:
+                        name:
+                            lower_case: "compression mode"
+                        type: str
+                        enum:
+                            - "lossless"
+                            - "lossy"
+                        examples:
+                            - "lossless"
+                            - "lossy"
+                    
+                    bit_depth:
+                        name:
+                            lower_case: "bit depth"
+                        type: int
+                        examples:
+                            - 8
+                            - 16
+                    
+                    color_space:
+                        name:
+                            lower_case: "color space"
+                        type: str
+                        examples:
+                            - "sRGB"
+                            - "Adobe RGB"
+
+                    chroma_subsampling:
+                        name:
+                            lower_case: "chroma subsampling"
+                        type: str
+                        examples:
+                            - "4:4:4"
+                            - "4:2:0"
+
+                    created_at:
+                        name:
+                            lower_case: "created at"
+                        type: datetime
+                        examples:
+                            - "2000-01-11T12:34:56"
+                            - "2020-10-02T15:30:00"
+
+        ops:
+            create_image:
+                name:
+                    lower_case: "create image"
+                description: "Ingest a file and create an image record for it with metadata such as format, dimensions, color space and compression mode. Returns an error if the file is not a valid image."
+                
+                func:
+                    call: "media.create_image"
+                    args: 
+                        name:
+                            params: {name: {}}
+                        content_type:
+                            params: {content_type: {}}
+                
+                params: 
+                    name:
+                        name:
+                            lower_case: "name"
+                        type: str
+                        description: "Name of the image being created, typically the same as the file name"
+
+                    content_type:
+                        name:
+                            lower_case: "content type"
+                        type: str
+                        description: "MIME content type of the file such as 'image/png', if not provided it will be inferred from the file extension"
+                        default: ""
+                        
+                result:
+                    type: struct
+                    fields:
+                        image_id:
+                            name:
+                                lower_case: "image id"
+                            type: str
+                            description: "ID of the created image record"
+                        file_id:
+                            name:
+                                lower_case: "file id"
+                            type: str
+                            description: "ID of the file record associated with the image record"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message for creating the image record"
+
+            get_image:
+                name:
+                    lower_case: "get image"
+                description: "Get an image record by ID"
+                func:
+                    call: "media.get_image"
+                    args:
+                        image_id:
+                            params: {image_id: {}}
+                params:
+                    image_id:
+                        name:
+                            lower_case: "image id"
+                        type: foreign_key
+                        references:
+                            table: "image"
+                            field: "id"
+                        description: "ID of the image to retrieve"
+                result:
+                    type: struct
+                    fields:
+                        id:
+                            name:
+                                lower_case: "id"
+                            type: str
+                            description: "ID of the image record"
+
+                        file_id:
+                            name:
+                                lower_case: "file id"
+                            type: str
+                            description: "ID of the file record associated with the image record"
+                        user_id:
+                            name:
+                                lower_case: "user id"
+                            type: str
+                            description: "ID of the user who owns the image record"
+
+                        format:
+                            name:
+                                lower_case: "format"
+                            type: str
+                            description: "Format of the image such as 'jpeg' or 'png'"
+                        
+                        width:
+                            name:
+                                lower_case: "width"
+                            type: int
+                            description: "Width of the image in pixels"
+
+                        height:
+                            name:
+                                lower_case: "height"
+                            type: int
+                            description: "Height of the image in pixels"
+
+                        aspect_ratio:
+                            name:
+                                lower_case: "aspect ratio"
+                            description: "Aspect ratio of the image calculated as width divided by height"
+                            type: float
+
+                        file_size:
+                            name:
+                                lower_case: "file size"
+                            description: "Size of the file in bytes"
+                            type: int
+
+                        compression_mode:
+                            name:
+                                lower_case: "compression mode"
+                            type: str
+                            enum:
+                                - "lossless"
+                                - "lossy"
+                            description: "Compression mode of the image such as 'lossless' or 'lossy'"
+                        
+                        bit_depth:
+                            name:
+                                lower_case: "bit depth"
+                            type: int
+                            description: "Bit depth of the image such as 8 or 16"
+
+                        color_space:
+                            name:
+                                lower_case: "color space"
+                            type: str
+                            description: "Color space of the image such as 'sRGB' or 'Adobe RGB'"
+
+                        chroma_subsampling:
+                            name:
+                                lower_case: "chroma subsampling"
+                            type: str
+                            description: "Chroma subsampling of the image such as '4:4:4' or '4:2:0'"
+                        
+                        created_at:
+                            name:
+                                lower_case: "created at"
+                            type: datetime
+                            description: "Timestamp of when the image record was created"
+            
+            get_image_file_content:
+                name:
+                    lower_case: "get image file content"
+                description: "Get the file content of an image by image ID, it's output depends on self.file_output being defined in the context"
+                func:
+                    call: "media.get_image_file_content"
+                    args:
+                        image_id:
+                            params: {image_id: {}}
+                params:
+                    image_id:
+                        name:
+                            lower_case: "image id"
+                        type: foreign_key
+                        references:
+                            table: "image"
+                            field: "id"
+                        description: "ID of the image whose file content is being retrieved"
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: "acknowledged"
+                            type: bool
+                            description: "Whether the image file content retrieval was successful"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message for the image file content retrieval"
+
+            list_images:
+                name:
+                    lower_case: "list images"
+                description: "List image records with pagination and filtering by file id"
+                func:
+                    call: "media.list_images"
+                    args:
+                        offset:
+                            params: {offset: {}}
+                        size:
+                            params: {size: {}}
+                        image_id:
+                            params: {image_id: {}}
+                        file_id:
+                            params: {file_id: {}}
+                        user_id:
+                            params: {user_id: {}}
+                params:
+                    offset:
+                        name:
+                            lower_case: "offset"
+                        type: int
+                        description: "Number of images to skip for pagination"
+                        default: 0
+
+                    size:
+                        name:
+                            lower_case: "size"
+                        type: int
+                        description: "Number of images to return per page"
+                        default: 50
+
+                    image_id:
+                        name:
+                            lower_case: "image id"
+                        type: foreign_key
+                        default: "-1"
+                        references:
+                            table: "image"
+                            field: "id"
+                        description: "ID of the image to list, if provided lists only the image with this ID if it exists and the user has access to it"
+
+                    file_id:
+                        name:
+                            lower_case: "file id"
+                        type: foreign_key
+                        default: "-1"
+                        references:
+                            table: "file"
+                            field: "id"
+                        description: "ID of the file to filter images by, if provided lists only images associated with this file ID if they exist and the user has access to them"
+                    
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        default: "-1"
+                        references:
+                            table: "user"
+                            field: "id"
+                        description: "ID of the user to filter images by, if provided lists only images associated with files owned by this user ID if they exist and the user has access to them"
+                result:
+                    type: struct
+                    fields:
+                        items:
+                            name:
+                                lower_case: "items"
+                            type: list
+                            description: "List of images for the current page"
+                        
+                        total:
+                            name:
+                                lower_case: "total"
+                            type: int
+                            description: "Total number of images available for pagination"
