@@ -1214,12 +1214,12 @@ modules:
                             type: datetime
                             description: "Timestamp of when the image record was created"
             
-            get_image_file_content:
+            get_media_file_content:
                 name:
-                    lower_case: "get image file content"
-                description: "Get the file content of an image by image ID, it's output depends on self.file_output being defined in the context"
+                    lower_case: "get media file content"
+                description: "Get the file content of a media file by  ID, currently only supports images"
                 func:
-                    call: "media.get_image_file_content"
+                    call: "media.get_media_file_content"
                     args:
                         image_id:
                             params: {image_id: {}}

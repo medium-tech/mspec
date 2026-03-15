@@ -847,7 +847,7 @@ class TestMTemplateApp(unittest.TestCase):
         user = self.crud_users[0]['user']
         user_env = self.crud_users[0]['env']
 
-        sample_path = 'tests/samples/splash.png'
+        sample_path = 'tests/samples/splash-orig.png'
         sample_size = 4007485
         sample_checksum = 'bf3bc28ca617270e3537761e2b9c935f2ea54b6d4debe926a06e765c2bab414e'
 
@@ -855,8 +855,9 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertEqual(os.path.getsize(sample_path), sample_size, 'Sample file size does not match expected size')
 
         # test create #
+
         json_params = json.dumps({
-            'name': 'splash.png',
+            'name': 'splash-orig.png',
             'size': sample_size,
             'parts': 1,
             'finish': True
@@ -886,7 +887,7 @@ class TestMTemplateApp(unittest.TestCase):
 
         file_record = list_files['items'][0]
         self.assertEqual(file_record['id'], create_result['file_id'], 'File ID in list files result does not match created file_id')
-        self.assertEqual(file_record['name'], 'splash.png', 'File name in list files result does not match expected name')
+        self.assertEqual(file_record['name'], 'splash-orig.png', 'File name in list files result does not match expected name')
         self.assertEqual(file_record['size'], sample_size, 'File size in list files result does not match expected size')
         self.assertEqual(file_record['parts'], 1, 'File parts in list files result does not match expected parts')
         self.assertEqual(file_record['status'], 'good', 'File status in list files result does not indicate good status')
@@ -936,6 +937,107 @@ class TestMTemplateApp(unittest.TestCase):
 
     def test_cli_run_file_system_ingest_flow(self):
         self._test_file_system_ingest_flow(self.crud_ctx, 'run')
+
+    # builtin - media tests #
+
+    def _test_media_create_image_flow(self, ctx:dict, io_type:str):
+        """
+        ./run.sh --log -fi ./tests/samples/splash-orig.png media create-image run '{"name": "splash.png"}'
+        ./run.sh --log -fi ./tests/samples/splash-low.jpg media create-image run '{"name": "splash-low.jpg"}'
+
+        ./run.sh media list-images run
+
+        ./run.sh media get-image run '{"image_id": "1"}'
+
+        ./run.sh -fo splash-media-id-1.png media get-image-file-content run '{"image_id": "1"}'
+
+        """
+
+        #
+        # init
+        #
+
+        logged_out_ctx = self.crud_ctx.copy()
+        user = self.crud_users[0]['user']
+        user_env = self.crud_users[0]['env']
+
+        sample_path = 'tests/samples/splash-orig.png'
+        sample_size = 4007485
+        sample_checksum = 'bf3bc28ca617270e3537761e2b9c935f2ea54b6d4debe926a06e765c2bab414e'
+
+        self.assertTrue(os.path.exists(sample_path), 'Sample file for ingest test does not exist')
+        self.assertEqual(os.path.getsize(sample_path), sample_size, 'Sample file size does not match expected size')
+
+        # test create image #
+
+        json_params = json.dumps({
+            'name': 'splash-orig.png'
+        })
+
+        cmd = self.cmd + ['-fi', sample_path, 'media', 'create-image', io_type, json_params]
+
+        # ensure logged out user cannot create image #
+
+        self._run_cmd(cmd, env=logged_out_ctx, expected_code=1)
+
+        # create image with logged in user #
+
+        create_cmd_result = self._run_cmd(cmd, env=user_env)
+        create_result = json.loads(create_cmd_result.stdout)['result']
+        self.assertIn('image_id', create_result, 'Create image result does not contain image_id')
+        self.assertIn('file_id', create_result, 'Create image result does not contain file_id')
+        self.assertIn('message', create_result, 'Create image result does not contain message')
+
+        self.assertTrue(isinstance(create_result['image_id'], str), 'Create image result image_id is not a string')
+        self.assertTrue(isinstance(create_result['file_id'], str), 'Create image result file_id is not a string')
+
+        # get image #
+
+        get_image_cmd = self.cmd + ['media', 'get-image', io_type, json.dumps({'image_id': create_result['image_id']})]
+        get_image_result = self._run_cmd(get_image_cmd, env=user_env)
+        get_image = json.loads(get_image_result.stdout)['result']
+        self.assertEqual(get_image['id'], create_result['image_id'], 'Get image result id does not match created image_id')
+        self.assertEqual(get_image['file_id'], create_result['file_id'], 'Get image result file_id does not match created file_id')
+        self.assertEqual(get_image['file_size'], sample_size, 'Get image result size does not match expected size')
+        self.assertEqual(get_image['user_id'], user['id'], 'Get image result user_id does not match expected user_id')
+
+        # list images #
+
+        list_images_cmd_1 = self.cmd + ['media', 'list-images', io_type, json.dumps({'image_id': create_result['image_id']})]
+        list_images_cmd_2 = self.cmd + ['media', 'list-images', io_type, json.dumps({'file_id': create_result['file_id']})]
+        list_images_cmd_3 = self.cmd + ['media', 'list-images', io_type, json.dumps({'user_id': user['id']})]
+
+        list_cmds = [list_images_cmd_1, list_images_cmd_2, list_images_cmd_3]
+
+        for cmd in list_cmds:
+
+            list_images_result = self._run_cmd(cmd, env=user_env)
+            list_images = json.loads(list_images_result.stdout)['result']
+            self.assertEqual(len(list_images['items']), 1, 'Should be exactly 1 image in list images result')
+            self.assertEqual(list_images['total'], 1, 'Total in list images result should be 1')
+
+            image_record = list_images['items'][0]
+            self.assertEqual(image_record['id'], create_result['image_id'], 'Image ID in list images result does not match created image_id')
+            self.assertEqual(image_record['file_id'], create_result['file_id'], 'Image file_id in list images result does not match created file_id')
+            self.assertEqual(image_record['file_size'], sample_size, 'Image size in list images result does not match expected size')
+            self.assertEqual(image_record['user_id'], user['id'], 'Image user_id in list images result does not match expected user_id')
+
+        # get file content (download image) #
+
+        local_image_dest = os.path.join(self.test_dir, f'splash-media-media-content-{io_type}.png')
+        get_image_file_cmd = self.cmd + ['-fo', local_image_dest, 'media', 'get-media-file-content', io_type, json.dumps({'image_id': create_result['image_id']})]
+        get_image_file_output = self._run_cmd(get_image_file_cmd, env=user_env)
+        get_image_file_result = json.loads(get_image_file_output.stdout)['result']
+        self.assertTrue(get_image_file_result['acknowledged'], 'Get media file content result not acknowledged')
+        self.assertTrue(os.path.exists(local_image_dest), 'Local file for media content does not exist after get-media-file-content command')
+        self.assertEqual(os.path.getsize(local_image_dest), sample_size, 'Local file size for media content does not match expected size')
+        with open(local_image_dest, 'rb') as f:
+            local_checksum = hashlib.sha3_256(f.read()).hexdigest()
+        self.assertEqual(local_checksum, sample_checksum, 'Local file checksum for media content does not match expected checksum')
+
+
+    def test_cli_run_media_create_image_flow(self):
+        self._test_media_create_image_flow(self.crud_ctx, 'run')
         
     # crud tests #
 

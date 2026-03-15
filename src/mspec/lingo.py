@@ -10,7 +10,7 @@ from functools import reduce
 
 from mapp.auth import create_user, login_user, current_user, logout_user, delete_user, drop_sessions
 from mapp.file_system import get_file_content, ingest_start, list_files, get_part_content, list_parts, process_file
-from mapp.media import create_image, get_image, get_image_file_content, list_images
+from mapp.media import create_image, get_image, get_media_file_content, list_images
 from mapp.types import get_python_type_for_field
 
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
@@ -262,11 +262,11 @@ def _media_get_image_function_args(app:LingoApp, expression: dict, ctx:Optional[
 
     return (ctx, image_id), {}
 
-def _media_get_image_file_content_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+def _media_get_media_file_content_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     try:
         image_id_expr = expression['args']['image_id']
     except KeyError as e:
-        raise ValueError(f'get_image_file_content - missing arg: {e}')
+        raise ValueError(f'get_media_file_content - missing arg: {e}')
 
     image_id = unwrap_primitive(lingo_execute(app, image_id_expr, ctx))
 
@@ -430,7 +430,7 @@ lingo_function_lookup = {
     'media': {
         'create_image': {'func': create_image, 'create_args': _media_create_image_function_args},
         'get_image': {'func': get_image, 'create_args': _media_get_image_function_args},
-        'get_image_file_content': {'func': get_image_file_content, 'create_args': _media_get_image_file_content_function_args},
+        'get_media_file_content': {'func': get_media_file_content, 'create_args': _media_get_media_file_content_function_args},
         'list_images': {'func': list_images, 'create_args': _media_list_images_function_args}
     }
 }

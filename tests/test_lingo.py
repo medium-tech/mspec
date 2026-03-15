@@ -110,7 +110,7 @@ class TestLingoPages(unittest.TestCase):
                 expected_functions.add(key)
             elif isinstance(value, dict):
                 # Nested functions like current.weekday, datetime.now, random.randint
-                if key in ['auth', 'file_system']:
+                if key in ['auth', 'file_system', 'media']:
                     continue  # Skip built-in functions which have coverage elsewhere
                 for subkey in value.keys():
                     expected_functions.add(f"{key}.{subkey}")

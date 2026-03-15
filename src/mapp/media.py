@@ -11,7 +11,7 @@ from mapp.types import Image, datetime_from_db, datetime_now_utc
 __all__ = [
 	'create_image',
 	'get_image',
-	'get_image_file_content',
+	'get_media_file_content',
 	'list_images'
 ]
 
@@ -26,7 +26,7 @@ MAPP_MEDIA_INFO_PATH = os.getenv('MAPP_MEDIA_INFO_PATH', 'mediainfo')
 
 ./run.sh media get-image run '{"image_id": "1"}'
 
-./run.sh -fo splash-media-id-1.png media get-image-file-content run '{"image_id": "1"}'
+./run.sh -fo splash-media-id-1.png media get-media-file-content run '{"image_id": "1"}'
 
 """
 
@@ -240,7 +240,7 @@ def get_image(ctx: MappContext, image_id: str) -> dict:
 		'created_at': image_record.created_at.isoformat()
 	}
 
-def get_image_file_content(ctx: MappContext, image_id: str) -> bytes:
+def get_media_file_content(ctx: MappContext, image_id: str) -> bytes:
 	
 	# check to see if we're logged in, any user can ready any file
 	current_user(ctx)['value']
@@ -306,6 +306,6 @@ def list_images(ctx: MappContext, offset: int = 0, size: int = 50, image_id: str
 	# return result #
 
 	return {
-		'images': items,
+		'items': items,
 		'total': total
 	}

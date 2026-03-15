@@ -21,11 +21,13 @@
         * 🔴 tests
 * 🟡 media
     * 🟡 backend
-        * 🟡 create image
-        * 🔴 model view image
+        * 🟢 cli
+        * 🟡 server
+        * 🟡 tests
     * 🔴 browser1
         * 🔴 create image
         * 🔴 view image
+        * 🔴 tests
 * 🔴 mega app for testing (merge modules from multiple files)
 * 🔴 update testing
     * 🔴 split functions.json apart
