@@ -8,7 +8,7 @@ from typing import NamedTuple
 
 from mapp.context import get_context_from_env, MappContext, RequestContext, spec_from_env
 from mapp.errors import *
-from mapp.types import JSONResponse, PlainTextResponse, StaticFileResponse, to_json
+from mapp.types import JSONResponse, PlainTextResponse, StaticFileResponse, DownloadFileResponse, to_json
 from mapp.db import create_tables
 from mapp.module.model.server import create_model_routes
 from mapp.module.op.server import create_op_routes
@@ -699,6 +699,8 @@ def application(env, start_response):
         pass
 
     for route in route_list:
+        additional_headers = []
+
         try:
             route(server_ctx, request)
 
@@ -720,6 +722,13 @@ def application(env, start_response):
             body = e.content
             status_code = e.status
             content_type = e.content_type
+            break
+
+        except DownloadFileResponse as e:
+            body = e.content
+            status_code = '200 OK'
+            content_type = e.content_type
+            additional_headers.append(('Content-Disposition', f'attachment; filename="{e.filename}"'))
             break
 
         # error responses #

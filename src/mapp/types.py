@@ -103,10 +103,11 @@ class PlainTextResponse(Exception):
 
 class JSONResponse(Exception):
     content_type = 'application/json'
-    def __init__(self, status:str, data:dict|None=None) -> None:
+    def __init__(self, status:str, data:dict|None=None, response_file:bytes|None=None) -> None:
         super().__init__('JSONResponse')
         self.status = status
         self.data = data
+        self.response_file = response_file
 
 class StaticFileResponse(Exception):
     def __init__(self, status:str, content:bytes, content_type:str) -> None:
@@ -114,6 +115,13 @@ class StaticFileResponse(Exception):
         self.status = status
         self.content = content
         self.content_type = content_type
+
+class DownloadFileResponse(Exception):
+    def __init__(self, content:bytes, content_type:str, filename:str) -> None:
+        super().__init__('DownloadFileResponse')
+        self.content = content
+        self.content_type = content_type
+        self.filename = filename
 
 #
 # auth

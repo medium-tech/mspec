@@ -497,15 +497,17 @@ def get_file_content(ctx: MappContext, file_id: str) -> dict:
 	if file_record_dict['parts'] > 1:
 		raise MappUserError('MULTIPART_FILE', 'get_file_content does not support multipart files yet')
 	
-	full_file_path = _file_path(File(**file_record_dict))
+	file_record = File(**file_record_dict)
+	full_file_path = _file_path(file_record)
 
 	#
 	# copy contents to file_output
 	#
 
+	ctx.self['file_output_name'] = file_record.name
+
 	try:
 		with open(full_file_path, 'rb') as f:
-			
 			while True:
 				chunk = f.read(OS_HANDLE_BUFFER_SIZE)
 				if not chunk:
