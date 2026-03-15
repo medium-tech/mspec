@@ -27,6 +27,7 @@ usage() {
   echo "  status                Check uwsgi server status"
   echo ""
   echo "Options:"
+  echo "  --log-file <path>      Path to uwsgi log file (default: app/server.log)"
   echo "  --env-file <path>     Path to .env file (default: .env) "
   echo "                          or supply via MAPP_ENV_FILE env var"
   echo "  --pid-file <path>     Path to PID file (default: app/server.pid)"
@@ -61,6 +62,10 @@ fi
 
 while [[ $# -gt 0 ]]; do
   case $1 in
+    --log-file)
+      LOG_FILE="$2"
+      shift 2
+      ;;
     --env-file)
       ENVFILE="$2"
       shift 2

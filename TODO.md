@@ -11,8 +11,10 @@
 
 ## priorities
 * 🟡 file upload
-    * 🟡 backend + cli
-        * 🔴 tests
+    * 🟡 backend
+        * 🟢 cli
+        * 🟡 server
+        * 🟡 tests
     * 🔴 browser1
         * 🔴 model create
         * 🔴 model view
@@ -29,6 +31,7 @@
     * 🔴 split functions.json apart
         * 🔴 create matching specs for script spec
     * 🔴 implement testing data for page spec
+* 🔴 create features table for different clients
 * 🔴 mspec dev blender extension
     * 🔴 update nodes for new functions
     * 🔴 spec creators

@@ -6,7 +6,7 @@ import subprocess
 import glob
 import re
 import multiprocessing
-import time
+import hashlib
 import shutil
 import jwt
 
@@ -250,6 +250,7 @@ class TestMTemplateApp(unittest.TestCase):
         crud_env['MAPP_SERVER_PORT'] = str(crud_port)
         crud_env['MAPP_CLIENT_HOST'] = f'http://localhost:{crud_port}'
         crud_env['MAPP_DB_URL'] = str(cls.crud_db_file.resolve())
+        crud_env['MAPP_FILE_SYSTEM_REPO'] = str((Path(cls.test_dir) / 'crud_file_system').resolve())
 
         try:
             del crud_env['DEBUG_DELAY']
@@ -270,7 +271,7 @@ class TestMTemplateApp(unittest.TestCase):
         pagination_env['MAPP_SERVER_PORT'] = str(pagination_port)
         pagination_env['MAPP_CLIENT_HOST'] = f'http://localhost:{pagination_port}'
         pagination_env['MAPP_DB_URL'] = str(cls.pagination_db_file.resolve())
-
+        pagination_env['MAPP_FILE_SYSTEM_REPO'] = str((Path(cls.test_dir) / 'pagination_file_system').resolve())
         try:
             del pagination_env['DEBUG_DELAY']
         except KeyError:
@@ -495,8 +496,8 @@ class TestMTemplateApp(unittest.TestCase):
 
         # create server configs #
 
-        crud_server_cmd = cls.cmd + ['server']
-        pagination_server_cmd = cls.cmd + ['server']
+        crud_server_start_cmd = cls.cmd + ['server']
+        pagination_server_start_cmd = cls.cmd + ['server']
         cls.server_status_commands = []
 
         if cls.app_type == 'python':
@@ -518,8 +519,11 @@ class TestMTemplateApp(unittest.TestCase):
             cls.pagination_stats_socket = f'{cls.test_dir}/stats_pagination.socket'
             cls.pagination_log_file = f'{cls.test_dir}/server_pagination.log'
 
-            crud_server_cmd = ['./server.sh', 'start', '--pid-file', cls.crud_pidfile, '--config', cls.crud_uwsgi_config]
-            pagination_server_cmd = ['./server.sh', 'start', '--pid-file', cls.pagination_pidfile, '--config', cls.pagination_uwsgi_config]
+            crud_server_start_cmd = ['./server.sh', 'start', '--pid-file', cls.crud_pidfile, '--config', cls.crud_uwsgi_config, '--log-file', cls.crud_log_file]
+            pagination_server_start_cmd = ['./server.sh', 'start', '--pid-file', cls.pagination_pidfile, '--config', cls.pagination_uwsgi_config, '--log-file', cls.pagination_log_file]
+
+            cls.crud_server_stop_cmd = ['./server.sh', 'stop', '--pid-file', cls.crud_pidfile, '--config', cls.crud_uwsgi_config]
+            cls.pagination_server_stop_cmd = ['./server.sh', 'stop', '--pid-file', cls.pagination_pidfile, '--config', cls.pagination_uwsgi_config]
 
             cls.server_status_commands.append(['./server.sh', 'status', '--pid-file', cls.crud_pidfile, '--config', cls.crud_uwsgi_config])
             cls.server_status_commands.append(['./server.sh', 'status', '--pid-file', cls.pagination_pidfile, '--config', cls.pagination_uwsgi_config])
@@ -528,7 +532,6 @@ class TestMTemplateApp(unittest.TestCase):
                 crud_uwsgi_config = re.sub(port_pattern, f'http: :{crud_port}', uwsgi_config)
                 crud_uwsgi_config = re.sub(pid_file_pattern, f'safe-pidfile: {cls.crud_pidfile}', crud_uwsgi_config)
                 crud_uwsgi_config = re.sub(stats_pattern, f'stats: {cls.crud_stats_socket}', crud_uwsgi_config)
-                crud_uwsgi_config = re.sub(logto_pattern, f'logto: {cls.crud_log_file}', crud_uwsgi_config)
                 f.write(crud_uwsgi_config)
             
             with open(cls.pagination_uwsgi_config, 'w') as f:
@@ -537,18 +540,24 @@ class TestMTemplateApp(unittest.TestCase):
                 pagination_uwsgi_config = re.sub(stats_pattern, f'stats: {cls.pagination_stats_socket}', pagination_uwsgi_config)
                 pagination_uwsgi_config = re.sub(logto_pattern, f'logto: {cls.pagination_log_file}', pagination_uwsgi_config)
                 f.write(pagination_uwsgi_config)
+
+        # confirm servers are stopped from previous tests #
+
+        print('  :: Confirming no server processes are running ::')
+        crud_result = subprocess.run(cls.crud_server_stop_cmd, env=cls.crud_ctx, capture_output=True, text=True, timeout=10)
+        pagination_result = subprocess.run(cls.pagination_server_stop_cmd, env=cls.pagination_ctx, capture_output=True, text=True, timeout=10)
         
         # start servers #
 
         print('  :: Starting server processes ::')
 
-        print('    :: ', ' '.join(crud_server_cmd))
-        crud_result = subprocess.run(crud_server_cmd, env=cls.crud_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+        print('    :: ', ' '.join(crud_server_start_cmd))
+        crud_result = subprocess.run(crud_server_start_cmd, env=cls.crud_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
         if crud_result.returncode != 0:
             raise RuntimeError(f'Error starting CRUD server: {crud_result.stdout + crud_result.stderr}')
 
-        print('    :: ', ' '.join(pagination_server_cmd))
-        pagination_result = subprocess.run(pagination_server_cmd, env=cls.pagination_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+        print('    :: ', ' '.join(pagination_server_start_cmd))
+        pagination_result = subprocess.run(pagination_server_start_cmd, env=cls.pagination_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
         if pagination_result.returncode != 0:
             raise RuntimeError(f'Error starting pagination server: {pagination_result.stdout + pagination_result.stderr}')
 
@@ -571,8 +580,8 @@ class TestMTemplateApp(unittest.TestCase):
         
         if cls.app_type == 'python':
             try:
-                subprocess.run(['./server.sh', 'stop', '--pid-file', cls.crud_pidfile], env=cls.crud_ctx, check=True, capture_output=True, timeout=15)
-                subprocess.run(['./server.sh', 'stop', '--pid-file', cls.pagination_pidfile], env=cls.pagination_ctx, check=True, capture_output=True, timeout=15)
+                subprocess.run(cls.crud_server_stop_cmd, env=cls.crud_ctx, check=True, capture_output=True, timeout=15)
+                subprocess.run(cls.pagination_server_stop_cmd, env=cls.pagination_ctx, check=True, capture_output=True, timeout=15)
             except subprocess.TimeoutExpired:
                 print('    :: Timeout expired while stopping servers ::')
             except subprocess.CalledProcessError as e:
@@ -819,9 +828,115 @@ class TestMTemplateApp(unittest.TestCase):
 
     # builtin - file system tests #
 
-    def test_cli_run_file_system_ingest_flow(self):
-        pass
+    def _test_file_system_ingest_flow(self, ctx:dict, io_type:str):
+        """
+        ./run.sh --log -fi ./tests/samples/splash.png file-system ingest-start run '{"name": "splash.png", "size": 4007485, "parts": 1, "finish": true}'
 
+        ./run.sh file-system list-files run
+
+        ./run.sh file-system list-parts run '{"file_id": ""}'
+
+        ./run.sh -fo splash_copy.png file-system get-part-content run '{"file_id": "5", "part_number": 1}'
+        """
+
+        #
+        # init
+        #
+
+        logged_out_ctx = self.crud_ctx.copy()
+        user = self.crud_users[0]['user']
+        user_env = self.crud_users[0]['env']
+
+        sample_path = 'tests/samples/splash.png'
+        sample_size = 4007485
+        sample_checksum = 'bf3bc28ca617270e3537761e2b9c935f2ea54b6d4debe926a06e765c2bab414e'
+
+        self.assertTrue(os.path.exists(sample_path), 'Sample file for ingest test does not exist')
+        self.assertEqual(os.path.getsize(sample_path), sample_size, 'Sample file size does not match expected size')
+
+        # test create #
+        json_params = json.dumps({
+            'name': 'splash.png',
+            'size': sample_size,
+            'parts': 1,
+            'finish': True
+        })
+
+        cmd = self.cmd + ['-fi', sample_path, 'file-system', 'ingest-start', io_type, json_params]
+
+        # ensure logged out user cannot ingest #
+
+        self._run_cmd(cmd, env=logged_out_ctx, expected_code=1)
+
+        # ingest with logged in user #
+
+        create_cmd_result = self._run_cmd(cmd, env=user_env)
+        create_result = json.loads(create_cmd_result.stdout)['result']
+        self.assertIn('file_id', create_result, 'Ingest start result does not contain file_id')
+        self.assertIn('status: good', create_result['message'], 'Ingest start result message does not indicate success')
+
+        # confirm can list file #
+
+        list_files_cmd = self.cmd + ['file-system', 'list-files', io_type, json.dumps({'file_id': create_result['file_id']})]
+        list_files_result = self._run_cmd(list_files_cmd, env=user_env)
+        list_files = json.loads(list_files_result.stdout)['result']
+
+        self.assertEqual(len(list_files['items']), 1, 'Should be exactly 1 file in list files result')
+        self.assertEqual(list_files['total'], 1, 'Total in list files result should be 1')
+
+        file_record = list_files['items'][0]
+        self.assertEqual(file_record['id'], create_result['file_id'], 'File ID in list files result does not match created file_id')
+        self.assertEqual(file_record['name'], 'splash.png', 'File name in list files result does not match expected name')
+        self.assertEqual(file_record['size'], sample_size, 'File size in list files result does not match expected size')
+        self.assertEqual(file_record['parts'], 1, 'File parts in list files result does not match expected parts')
+        self.assertEqual(file_record['status'], 'good', 'File status in list files result does not indicate good status')
+        self.assertEqual(file_record['user_id'], user['id'], 'File user_id in list files result does not match expected user_id')
+        self.assertEqual(file_record['sha3_256'], sample_checksum, 'File sha3_256 in list files result does not match expected hash')
+
+        # confirm can list parts #
+
+        list_parts_cmd = self.cmd + ['file-system', 'list-parts', io_type, json.dumps({'file_id': create_result['file_id']})]
+        list_parts_result = self._run_cmd(list_parts_cmd, env=user_env)
+        list_parts = json.loads(list_parts_result.stdout)['result']
+        self.assertEqual(len(list_parts['items']), 1, 'Should be exactly 1 part in list parts result')
+        self.assertEqual(list_parts['total'], 1, 'Total in list parts result should be 1')
+
+        part_record = list_parts['items'][0]
+        self.assertEqual(part_record['file_id'], create_result['file_id'], 'Part file_id in list parts result does not match created file_id')
+        self.assertEqual(part_record['part_number'], 1, 'Part number in list parts result does not match expected part number')
+        self.assertEqual(part_record['size'], sample_size, 'Part size in list parts result does not match expected size')
+        self.assertEqual(part_record['sha3_256'], sample_checksum, 'Part sha3_256 in list parts result does not match expected hash')
+        self.assertEqual(part_record['user_id'], user['id'], 'Part user_id in list parts result does not match expected user_id')
+
+        # confirm can get part content #
+        local_part_dest = os.path.join(self.test_dir, f'splash-fs-part-content-{io_type}.png')
+        get_part_cmd = self.cmd + ['-fo', local_part_dest, 'file-system', 'get-part-content', io_type, json.dumps({'file_id': create_result['file_id'], 'part_number': 1})]
+        get_part_output = self._run_cmd(get_part_cmd, env=user_env)
+        get_part_result = json.loads(get_part_output.stdout)['result']
+        self.assertTrue(get_part_result['acknowledged'], 'Get part content result not acknowledged')
+        self.assertTrue(os.path.exists(local_part_dest), 'Local file for part content does not exist after get-part-content command')
+        self.assertEqual(os.path.getsize(local_part_dest), sample_size, 'Local file size for part content does not match expected size')
+        with open(local_part_dest, 'rb') as f:
+            local_checksum = hashlib.sha3_256(f.read()).hexdigest()
+        self.assertEqual(local_checksum, sample_checksum, 'Local file checksum for part content does not match expected checksum')
+
+        # confirm can get file content #
+
+        local_file_dest = os.path.join(self.test_dir, f'splash-fs-file-content-{io_type}.png')
+        get_file_cmd = self.cmd + ['-fo', local_file_dest, 'file-system', 'get-file-content', io_type, json.dumps({'file_id': create_result['file_id']})]
+        get_file_output = self._run_cmd(get_file_cmd, env=user_env)
+        get_file_result = json.loads(get_file_output.stdout)['result']
+        self.assertTrue(get_file_result['acknowledged'], 'Get file content result not acknowledged')
+        self.assertTrue(os.path.exists(local_file_dest), 'Local file for file content does not exist after get-file-content command')
+        self.assertEqual(os.path.getsize(local_file_dest), sample_size, 'Local file size for file content does not match expected size')
+        with open(local_file_dest, 'rb') as f:
+            local_checksum = hashlib.sha3_256(f.read()).hexdigest()
+        self.assertEqual(local_checksum, sample_checksum, 'Local file checksum for file content does not match expected checksum')
+
+
+    def test_cli_run_file_system_ingest_flow(self):
+        self._test_file_system_ingest_flow(self.crud_ctx, 'run')
+        
     # crud tests #
 
     def _test_cli_crud_commands(self, command_type:str, user_index:int):

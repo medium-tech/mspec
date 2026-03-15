@@ -21,39 +21,43 @@ __all__ = [
 	'process_file'
 ]
 
-MAPP_APP_PATH = os.getenv('MAPP_APP_PATH', '')
-
+MAPP_FILE_SYSTEM_REPO = os.getenv('MAPP_FILE_SYSTEM_REPO', '')
 FILE_SIZE_LIMIT = 50 * 1024 * 1024
+OS_HANDLE_BUFFER_SIZE = 8192
 
 """
 
-./run.sh --log -fi ./app/file_system/splash.png file-system ingest-start run '{"name": "splash.png", "size": 4007485, "parts": 1, "finish": true}'
-
-./run.sh --log file-system process-file run '{"file_id": "1"}'
+./run.sh --log -fi ./tests/samples/splash.png file-system ingest-start run '{"name": "splash.png", "size": 4007485, "parts": 1, "finish": true}'
 
 ./run.sh file-system list-files run
 
-./run.sh file-system list-parts run '{"file_id": "3"}'
+./run.sh file-system list-parts run '{"file_id": ""}'
 
-./run.sh -fo splash_copy.png file-system get-part-content run '{"file_id": "3", "part_number": 1}'
+./run.sh -fo splash-part.png file-system get-part-content run '{"file_id": "", "part_number": 1}'
+
+./run.sh -fo splash-file.png file-system get-file-content run '{"file_id": ""}'
 
 """
 
+#
+# path helpers
+#
+
 def _file_dir(file_id: str) -> str:
 	"""get the directory where full file content is stored"""
-	if MAPP_APP_PATH == '':
-		raise ValueError('MAPP_APP_PATH environment variable not set')
-	return os.path.join(MAPP_APP_PATH, 'file_system/files', file_id)
+	if MAPP_FILE_SYSTEM_REPO == '':
+		raise ValueError('MAPP_FILE_SYSTEM_REPO environment variable not set')
+	return os.path.join(MAPP_FILE_SYSTEM_REPO, 'file_system/files', str(file_id))
 
-def _file_path(file_id: str) -> str:
-	"""get the path where full file content for file_id is stored"""
-	return os.path.join(_file_dir(file_id), 'content')
+def _file_path(file_record: File) -> str:
+	"""get the path where full file content for file_record is stored"""
+	return os.path.join(_file_dir(file_record.id), f'content.{file_record.extension}')
 
 def _file_part_dir(file_id: str) -> str:
 	"""get the directory where file parts are stored"""
-	if MAPP_APP_PATH == '':
-		raise ValueError('MAPP_APP_PATH environment variable not set')
-	return os.path.join(MAPP_APP_PATH, 'file_system/file_parts', file_id)
+	if MAPP_FILE_SYSTEM_REPO == '':
+		raise ValueError('MAPP_FILE_SYSTEM_REPO environment variable not set')
+	return os.path.join(MAPP_FILE_SYSTEM_REPO, 'file_system/file_parts', str(file_id))
 
 def _file_part_path(file_id: str, part_number: int) -> str:
 	"""get the path where a file part should be stored"""
@@ -111,7 +115,7 @@ def _ingest_part(ctx: MappContext, part_number:int, file_input: bytes, file_reco
 
 	ctx.log(f'_ingest_part - complete - {file_record.id=}')
 
-	return file_part._replace(id=ctx.db.cursor.lastrowid)
+	return file_part._replace(id=str(ctx.db.cursor.lastrowid))
 
 def _list_parts(ctx: MappContext, file_id:str) -> list[FilePart]:
 	ctx.db.cursor.execute(
@@ -131,7 +135,7 @@ def _list_parts(ctx: MappContext, file_id:str) -> list[FilePart]:
 			size=row[2],
 			part_number=row[3],
 			sha3_256=row[4],
-			user_id=row[5],
+			user_id=str(row[5]),
 			uploaded_at=datetime_from_db(row[6])
 		) for row in ctx.db.cursor.fetchall()
 	]
@@ -188,12 +192,107 @@ def _ingest_finish(ctx: MappContext, file_record: File) -> File:
 
 	return file_record
 
+def _process_file(ctx: MappContext, file_record: File) -> File:
+	"""
+	Assemble file from parts, compute sha3_256, update file_record, handle errors.
+	"""
+	ctx.log(f'_process_file - begin - {file_record.id=}')
+	#
+	# initialize
+	#
+
+	file_path = _file_path(file_record)
+	parts = _list_parts(ctx, file_record.id)
+	checksum = sha3_256()
+
+	#
+	# copy data to single file and compute checksum
+	#
+
+	try:
+
+		# actual process #
+
+		os.makedirs(os.path.dirname(file_path), exist_ok=True)
+		with open(file_path, 'wb') as full_file_handle:
+			for part in parts:
+				part_path = _file_part_path(file_record.id, part.part_number)
+				with open(part_path, 'rb') as part_handle:
+					while True:
+						chunk = part_handle.read(OS_HANDLE_BUFFER_SIZE)
+						if not chunk:
+							break
+						full_file_handle.write(chunk)
+						checksum.update(chunk)
+	
+	except Exception as e:
+
+		# handle error in process #
+
+		err_msg = f'Error processing file: {str(e)}'
+		file_record = file_record._replace(
+			status='error',
+			message=err_msg,
+			updated_at=datetime_for_db(datetime_now_utc())
+		)
+	
+	else:
+
+		# handle successful process #
+
+		file_record = file_record._replace(
+			status='good',
+			sha3_256=checksum.hexdigest(),
+			updated_at=datetime_for_db(datetime_now_utc()),
+			message='File processed successfully'
+		)
+		
+	#
+	# update file record with status
+	#
+
+	ctx.db.cursor.execute(
+		"""
+		UPDATE file
+		SET status = ?, sha3_256 = ?, message = ?, updated_at = ?
+		WHERE id = ?
+		""",
+		(
+			file_record.status,
+			file_record.sha3_256,
+			file_record.message,
+			file_record.updated_at,
+			file_record.id
+		)
+	)
+	ctx.db.commit()
+
+	#
+	# return
+	#
+
+	return file_record
+
+
 #
 # commands
 #
 
-def ingest_start(ctx: MappContext, name: str, size: int, parts: int, content_type: str = '', finish: bool = False) -> dict:
-	"""Placeholder for ingest_start operation."""
+def ingest_start(ctx: MappContext, name: str, size: int, parts: int, content_type: str = '', finish: bool = False) -> dict: 
+	f"""Ingest a file
+
+	name: file name with extension
+	size: total size of the file in bytes
+	parts: total number of parts the file is split into; must be 1 for now
+	content_type: optional content type of the file; will be guessed from name if not provided
+	finish: if true, will attempt to finish ingest and process file after ingesting part(s); must provide part content in file_input
+
+	CURRENT LIMITATIONS:
+	- Only single part files are supported (parts must be 1)
+	- must provide finish=true
+	- file must be less than {FILE_SIZE_LIMIT} bytes in size
+
+	"""
 
 	file_input = ctx.self.get('file_input', None)
 
@@ -209,6 +308,8 @@ def ingest_start(ctx: MappContext, name: str, size: int, parts: int, content_typ
 		field_errors['finish'] = 'User must supply a file_input if finish is true'
 	elif finish and parts != 1:
 		field_errors['finish'] = f'Cannot finish ingest in ingest_start call if multiple parts are specified; got: {parts}'
+	elif not finish:
+		field_errors['finish'] = 'Currently only auto-finish of single part files is supported'
 	
 	if parts < 0:
 		field_errors['parts'] = 'Parts must be a non-negative integer'
@@ -260,7 +361,7 @@ def ingest_start(ctx: MappContext, name: str, size: int, parts: int, content_typ
 
 	ctx.db.commit()
 
-	file_record = file_record._replace(id=ctx.db.cursor.lastrowid)
+	file_record = file_record._replace(id=str(ctx.db.cursor.lastrowid))
 
 	# 
 	# upload part and/or finish if requested
@@ -270,12 +371,14 @@ def ingest_start(ctx: MappContext, name: str, size: int, parts: int, content_typ
 		_ingest_part(ctx, 1, file_input, file_record, user)
 		if finish:
 			file_record = _ingest_finish(ctx, file_record)
+			if file_record.status == 'processing_queue':
+				file_record = _process_file(ctx, file_record)
 		
-	msg = f'File id {file_record.id} created with status: {file_record.status}'
-	ctx.log(f'ingest_start - complete - {file_record.id=} {file_record.status=} {file_record.message=}')
-
+	msg = f'file id {file_record.id} created with status: {file_record.status}'
 	if file_record.message:
-		msg += f': {file_record.message}'
+		msg += f' - {file_record.message}'
+
+	ctx.log(f'ingest_start - {msg}')
 	
 	return {'file_id': file_record.id, 'message': msg}
 
@@ -320,26 +423,40 @@ def ingest_finish(ctx: MappContext, file_id: str) -> dict:
 
 def get_part_content(ctx: MappContext, file_id: str, part_number: int) -> dict:
 
+	#
+	# validate input
+	#
+
 	# check to see if we're logged in, any user can ready any file
 	current_user(ctx)['value']
+
+	# user provided file_output #
 
 	file_output = ctx.self.get('file_output', None)
 
 	if file_output is None:
-		MappUserError('NO_FILE_OUTPUT', 'User must supply a file_output to write file part content to')
+		raise MappUserError('NO_FILE_OUTPUT', 'User must supply a file_output to write file part content to')
+
+	#
+	# copy contents to file_output
+	#
 
 	part_path = _file_part_path(file_id, part_number)
 
 	try:
 		with open(part_path, 'rb') as f:
 			while True:
-				chunk = f.read(8192)
+				chunk = f.read(OS_HANDLE_BUFFER_SIZE)
 				if not chunk:
 					break
 				file_output.write(chunk)
 				file_output.flush()
 	except FileNotFoundError:
 		raise MappUserError('FILE_PART_NOT_FOUND', f'File part not found for file_id: {file_id} part_number: {part_number}')
+	
+	#
+	# return
+	#
 
 	return {
 		'acknowledged': True,
@@ -347,9 +464,57 @@ def get_part_content(ctx: MappContext, file_id: str, part_number: int) -> dict:
 	}
 
 def get_file_content(ctx: MappContext, file_id: str) -> dict:
+
+	#
+	# validate input
+	#
+
+	# check to see if we're logged in, any user can ready any file
+	current_user(ctx)['value']
+
+	# user provided file_output #
+
+	file_output = ctx.self.get('file_output', None)
+
+	if file_output is None:
+		raise MappUserError('NO_FILE_OUTPUT', 'User must supply a file_output to write file content to')
+	
+	# file record #
+
+	files = list_files(ctx, 0, 1, user_id='-1', file_id=file_id)
+	try:
+		file_record_dict = files['items'][0]
+	except IndexError:
+		raise NotFoundError('FILE_NOT_FOUND', f'File not found for id: {file_id}')
+	
+	if file_record_dict['parts'] > 1:
+		raise MappUserError('MULTIPART_FILE', 'get_file_content does not support multipart files yet')
+	
+	full_file_path = _file_path(File(**file_record_dict))
+
+	#
+	# copy contents to file_output
+	#
+
+	try:
+		with open(full_file_path, 'rb') as f:
+			
+			while True:
+				chunk = f.read(OS_HANDLE_BUFFER_SIZE)
+				if not chunk:
+					break
+				file_output.write(chunk)
+				file_output.flush()
+	except FileNotFoundError:
+		raise MappUserError('FILE_CONTENT_NOT_FOUND', f'File content not found for file_id: {file_id}')
+	
+	#
+	# return
+	#
+	
 	return {
 		'acknowledged': True,
-		'message': 'File content written to self.file_output',
+		'message': 'Feature only implemented for single part files'
 	} 
 
 def verify_file(ctx: MappContext, file_id: str) -> dict:
@@ -363,7 +528,7 @@ def verify_file(ctx: MappContext, file_id: str) -> dict:
 
 def delete_file(ctx: MappContext, file_id: str) -> dict:
 	"""Placeholder for delete_file operation."""
-	return {'acknowledged': True, 'message': 'File deleted'}
+	return {'acknowledged': False, 'message': 'delete_file is not implemented yet'}
 
 def list_files(ctx: MappContext, offset: int = 0, size: int = 50, user_id: str = '-1', file_id: str = '-1', status: str = 'all') -> dict:
 	
@@ -393,7 +558,7 @@ def list_files(ctx: MappContext, offset: int = 0, size: int = 50, user_id: str =
 			'size': row[5],
 			'parts': row[6],
 			'content_type': row[7],
-			'user_id': row[8],
+			'user_id': str(row[8]),
 			'created_at': datetime_from_db(row[9]).isoformat(),
 			'updated_at': datetime_from_db(row[10]).isoformat(),
 			'sha3_256': row[11]
@@ -439,7 +604,7 @@ def list_parts(ctx: MappContext, file_id: str = '-1', offset: int = 0, size: int
 			'size': row[2],
 			'part_number': row[3],
 			'sha3_256': row[4],
-			'user_id': row[5],
+			'user_id': str(row[5]),
 			'uploaded_at': datetime_from_db(row[6]).isoformat()
 		} for row in rows
 	]
@@ -470,7 +635,7 @@ def process_file(ctx: MappContext, file_id: str) -> dict:
 		raise NotFoundError('FILE_NOT_FOUND', f'File not found for id: {file_id}')
 
 	file_record = File(**file_record_dict)
-	file_path = _file_path(file_id)
+	file_path = _file_path(file_record)
 	parts = _list_parts(ctx, file_id)
 	checksum = sha3_256()
 
@@ -481,7 +646,7 @@ def process_file(ctx: MappContext, file_id: str) -> dict:
 				part_path = _file_part_path(file_id, part.part_number)
 				with open(part_path, 'rb') as part_handle:
 					while True:
-						chunk = part_handle.read(8192)
+						chunk = part_handle.read(OS_HANDLE_BUFFER_SIZE)
 						if not chunk:
 							break
 						full_file_handle.write(chunk)
