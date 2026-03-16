@@ -725,6 +725,7 @@ def application(env, start_response):
             break
 
         except DownloadFileResponse as e:
+            server_ctx.log(f'Preparing download response for file: {e.filename} {len(e.content)=} bytes')
             body = e.content
             status_code = '200 OK'
             content_type = e.content_type
@@ -797,7 +798,7 @@ def application(env, start_response):
 
     server_ctx.log(f':: RESP :: {request_id} :: {status_code} :: {elapsed_time:.4f}s')
 
-    start_response(status_code, [('Content-Type', content_type)])
+    start_response(status_code, [('Content-Type', content_type)] + additional_headers)
 
     if content_type == JSONResponse.content_type:
         return [to_json(body).encode('utf-8')]

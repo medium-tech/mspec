@@ -1004,10 +1004,9 @@ class TestMTemplateApp(unittest.TestCase):
         # list images #
 
         list_images_cmd_1 = self.cmd + ['media', 'list-images', io_type, json.dumps({'image_id': create_result['image_id']})]
-        list_images_cmd_2 = self.cmd + ['media', 'list-images', io_type, json.dumps({'file_id': create_result['file_id']})]
-        list_images_cmd_3 = self.cmd + ['media', 'list-images', io_type, json.dumps({'user_id': user['id']})]
+        list_images_cmd_2 = self.cmd + ['media', 'list-images', io_type, json.dumps({'file_id': create_result['file_id'], 'user_id': user['id']})]
 
-        list_cmds = [list_images_cmd_1, list_images_cmd_2, list_images_cmd_3]
+        list_cmds = [list_images_cmd_1, list_images_cmd_2]
 
         for cmd in list_cmds:
 
@@ -1035,9 +1034,11 @@ class TestMTemplateApp(unittest.TestCase):
             local_checksum = hashlib.sha3_256(f.read()).hexdigest()
         self.assertEqual(local_checksum, sample_checksum, 'Local file checksum for media content does not match expected checksum')
 
-
     def test_cli_run_media_create_image_flow(self):
         self._test_media_create_image_flow(self.crud_ctx, 'run')
+
+    def test_cli_http_media_create_image_flow(self):
+        self._test_media_create_image_flow(self.crud_ctx, 'http')
         
     # crud tests #
 

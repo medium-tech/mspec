@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import sys
 import atexit
 
@@ -73,14 +74,17 @@ def main(ctx: MappContext, spec:dict):
             ctx.self = {'file_input': sys.stdin.buffer.read(), 'file_input_name': 'stdin.bin'}
         else:
             with open(args.file_input, 'rb') as f:
-                ctx.self = {'file_input': f.read(), 'file_input_name': args.file_input}
+                ctx.self = {'file_input': f.read(), 'file_input_name': os.path.basename(args.file_input)}
 
     if args.file_output is not None:
         if args.file_output == '-':
             ctx.self['file_output'] = sys.stdout.buffer
         else:
             ctx.self['file_output'] = open(args.file_output, 'wb+')
-            atexit.register(lambda: ctx.self['file_output'].close())
+            def _file_output_cleanup():
+                ctx.self['file_output'].flush()
+                ctx.self['file_output'].close()
+            atexit.register(_file_output_cleanup)
 
     if hasattr(args, 'func'):
         try:

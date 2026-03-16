@@ -5,7 +5,7 @@ from typing import Any, Optional, NamedTuple, Callable
 from datetime import datetime, timezone
 from dataclasses import dataclass, asdict
 
-from mapp.errors import MappValidationError, MappError
+from mapp.errors import MappValidationError, MappError, MappUserError
 
 __all__ = [
     'DATETIME_FORMAT_STR',
@@ -775,7 +775,7 @@ def json_to_op_output(json_str:str, op_class:type) -> object:
         data = json.loads(json_str)
         return new_op_output(op_class, data)
     except json.JSONDecodeError as e:
-        raise MappValidationError(f'Invalid JSON: {e}')
+        raise MappUserError('INVALID_JSON', f'Invalid JSON: {e}')
     except TypeError as e:
         raise MappValidationError(f'Error creating op output instance: {e}')
 

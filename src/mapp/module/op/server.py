@@ -5,7 +5,7 @@ import json
 from mimetypes import guess_type
 from urllib.parse import parse_qs
 
-from multipart import parse_form_data, is_form_request, MultipartPart, parse_options_header
+from multipart import parse_form_data, is_form_request, MultipartPart, parse_options_header, MultipartParser
 
 from mapp.context import MappContext, OpRouteContext, RequestContext
 from mapp.types import JSONResponse, DownloadFileResponse, new_op_classes, json_to_op_params_w_convert, convert_dict_to_op_params
@@ -35,17 +35,24 @@ def op_route(route: OpRouteContext, server: MappContext, request: RequestContext
     if re.match(route.api_op_regex, request.env['PATH_INFO']):
         input_file_content = None
         content_type, options = parse_options_header(request.env["CONTENT_TYPE"])
+        json_body = '{}'
 
         if content_type == 'multipart/form-data' and 'boundary' in options:
-            
-            forms, files = parse_form_data(request.env)
-            json_body = forms.get('json', '{}')
 
-            server.log(f'PROCESSING MULTIPART REQUEST - {list(forms.keys())} - {list(files.keys())}')
+            boundary = options["boundary"]
+            parser = MultipartParser(io.BytesIO(request.raw_req_body), boundary)
 
-            input_file:MultipartPart = files.get('file', None)
-            if input_file is not None:
-                input_file_content = input_file.file.read()
+            for part in parser:
+                server.log(f'PROCESSING MULTIPART REQUEST - got part with name: {part.name} and filename: {part.filename}')
+                if part.name == 'json':
+                    json_body = part.value
+                elif part.name == 'file':
+                    input_file_content = part.file.read()
+                    server.self['file_input_name'] = part.filename
+
+            # Free up resources after use
+            for part in parser.parts():
+                part.close()
         
         else:
             json_body = request.raw_req_body.decode('utf-8')
@@ -73,8 +80,9 @@ def op_route(route: OpRouteContext, server: MappContext, request: RequestContext
                 raise JSONResponse('200 OK', op_output)
             
             else:
+                server.self['file_output'].seek(0)
                 raise DownloadFileResponse(
-                    content=server.self['file_output'].read(),
+                    content=server.self['file_output'],
                     content_type=guess_type(file_output_name)[0] or 'application/octet-stream',
                     filename=file_output_name
                 )
@@ -93,6 +101,7 @@ def op_route(route: OpRouteContext, server: MappContext, request: RequestContext
                 raise JSONResponse('200 OK', op_output)
             
             else:
+                server.self['file_output'].seek(0)
                 raise DownloadFileResponse(
                     content=server.self['file_output'].read(),
                     content_type=guess_type(file_output_name)[0] or 'application/octet-stream',

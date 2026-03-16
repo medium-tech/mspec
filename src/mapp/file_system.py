@@ -543,8 +543,6 @@ def list_files(ctx: MappContext, offset: int = 0, size: int = 50, user_id: str =
 	
 	# fetch files #
 
-	ctx.log(f'list_files - {user_id=} {file_id=} {status=} {offset=} {size=}')
-
 	ctx.db.cursor.execute(
 		"""
 		SELECT id, name, status, message, extension, size, parts, content_type, user_id, created_at, updated_at, sha3_256

@@ -7,7 +7,7 @@ from urllib.error import HTTPError
 
 from mapp.context import MappContext
 from mapp.errors import MappError, ServerError, ResponseError
-from mapp.types import op_params_to_json, json_to_op_output
+from mapp.types import op_params_to_json, json_to_op_output, new_op_output
 
 __all__ = [
 	'http_run_op'
@@ -27,7 +27,6 @@ def http_run_op(ctx: MappContext, params_class:type, output_class:type, params:o
 	# send request #
 	try:
 		if file_input is not None:
-			raise Exception('SANITY_CHECK')
 			boundary = f'----MappBoundary{uuid.uuid4().hex}'
 			headers = ctx.client.headers.copy()
 			headers['Content-Type'] = f'multipart/form-data; boundary={boundary}'
@@ -61,8 +60,24 @@ def http_run_op(ctx: MappContext, params_class:type, output_class:type, params:o
 			request = Request(url, headers=ctx.client.headers, method='POST', data=json_request_body)
 
 		with urlopen(request) as response:
-			response_body = response.read().decode('utf-8')
-			return json_to_op_output(response_body, output_class)
+
+			# Check if Content-Disposition is an attachment
+
+			content_disposition = response.getheader('Content-Disposition', '')
+
+			if content_disposition.startswith('attachment'):
+				try:
+					filename = content_disposition.split('filename=')[-1].strip('"')
+				except IndexError:
+					filename = 'downloaded_file.bin'
+
+				ctx.self['file_output'].write(response.read())
+
+				return new_op_output(output_class, {'result': {'acknowledged': True, 'message': f'Retrieved as: {filename}'}})
+			
+			else:
+				response_body = response.read().decode('utf-8')
+				return json_to_op_output(response_body, output_class)
 
 	except HTTPError as e:
 		if e.code >= 500:

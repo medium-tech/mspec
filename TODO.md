@@ -11,19 +11,19 @@
 
 ## priorities
 * 🟡 file upload
-    * 🟡 backend
+    * 🟢 backend
         * 🟢 cli
-        * 🟡 server
-        * 🟡 tests
+        * 🟢 server
+        * 🟢 tests
     * 🔴 browser1
         * 🔴 model create
         * 🔴 model view
         * 🔴 tests
 * 🟡 media
-    * 🟡 backend
+    * 🟢 backend
         * 🟢 cli
-        * 🟡 server
-        * 🟡 tests
+        * 🟢 server
+        * 🟢 tests
     * 🔴 browser1
         * 🔴 create image
         * 🔴 view image
