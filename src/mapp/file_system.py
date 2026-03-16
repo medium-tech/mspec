@@ -27,15 +27,15 @@ OS_HANDLE_BUFFER_SIZE = 8192
 
 """
 
-./run.sh --log -fi ./tests/samples/splash.png file-system ingest-start run '{"name": "splash.png", "size": 4007485, "parts": 1, "finish": true}'
+./run.sh --log -fi ./tests/samples/splash-orig file-system ingest-start run '{"name": "splash-orig", "size": 4007485, "parts": 1, "finish": true}'
 
 ./run.sh file-system list-files run
 
 ./run.sh file-system list-parts run '{"file_id": ""}'
 
-./run.sh -fo splash-part.png file-system get-part-content run '{"file_id": "", "part_number": 1}'
+./run.sh -fo splash-orig-part.png file-system get-part-content run '{"file_id": "", "part_number": 1}'
 
-./run.sh -fo splash-file.png file-system get-file-content run '{"file_id": ""}'
+./run.sh -fo splash-orig-file.png file-system get-file-content run '{"file_id": ""}'
 
 """
 

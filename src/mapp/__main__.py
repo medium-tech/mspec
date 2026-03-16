@@ -70,10 +70,10 @@ def main(ctx: MappContext, spec:dict):
     if args.file_input is not None:
         if args.file_input == '-':
             ctx.log(':: reading file input from stdin')
-            ctx.self = {'file_input': sys.stdin.buffer.read()}
+            ctx.self = {'file_input': sys.stdin.buffer.read(), 'file_input_name': 'stdin.bin'}
         else:
             with open(args.file_input, 'rb') as f:
-                ctx.self = {'file_input': f.read()}
+                ctx.self = {'file_input': f.read(), 'file_input_name': args.file_input}
 
     if args.file_output is not None:
         if args.file_output == '-':

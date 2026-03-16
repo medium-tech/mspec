@@ -1,3 +1,7 @@
+import uuid
+import mimetypes
+import traceback
+
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
@@ -9,31 +13,65 @@ __all__ = [
 	'http_run_op'
 ]
 
-def http_run_op(cxt: MappContext, params_class:type, output_class:type, params:object) -> object:
+def http_run_op(ctx: MappContext, params_class:type, output_class:type, params:object) -> object:
 
 	# init #
-	
 	module_kebab = params_class._module_spec['name']['kebab_case']
 	op_kebab = params_class._op_spec['name']['kebab_case']
 
-	url = f'{cxt.client.host}/api/{module_kebab}/{op_kebab}'
-	request_body = op_params_to_json(params).encode()
+	url = f'{ctx.client.host}/api/{module_kebab}/{op_kebab}'
+	json_request_body = op_params_to_json(params).encode()
+
+	file_input = ctx.self.get('file_input', None)
 
 	# send request #
-
 	try:
-		request = Request(url, headers=cxt.client.headers, method='POST', data=request_body)
+		if file_input is not None:
+			raise Exception('SANITY_CHECK')
+			boundary = f'----MappBoundary{uuid.uuid4().hex}'
+			headers = ctx.client.headers.copy()
+			headers['Content-Type'] = f'multipart/form-data; boundary={boundary}'
+
+			# Prepare multipart body
+			parts = []
+			# JSON part
+			parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="json"\r\nContent-Type: application/json\r\n\r\n{json_request_body.decode()}\r\n')
+
+			# File part
+			filename = ctx.self.get('file_input_name', 'file.bin')
+
+			mime_type = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+			parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="{filename}"\r\nContent-Type: {mime_type}\r\n\r\n')
+			parts[-1] = parts[-1].encode() + file_input + b'\r\n'
+
+
+			# End boundary
+			parts.append(f'--{boundary}--\r\n')
+
+			# Combine parts
+			body = b''
+			for part in parts:
+				if isinstance(part, str):
+					body += part.encode()
+				else:
+					body += part
+
+			request = Request(url, headers=headers, method='POST', data=body)
+		else:
+			request = Request(url, headers=ctx.client.headers, method='POST', data=json_request_body)
+
 		with urlopen(request) as response:
 			response_body = response.read().decode('utf-8')
 			return json_to_op_output(response_body, output_class)
-		
+
 	except HTTPError as e:
 		if e.code >= 500:
+			ctx.log(f'Server error when running op via http: {e}\n{traceback.format_exc()}')
 			raise ServerError(f'Got {e.code}: {e}')
-		
 		else:
 			raise ResponseError.from_json(e.read().decode('utf-8'))
-	
+
 	except Exception as e:
+		ctx.log(f'Unknown exception when running op via http: {e}\n{traceback.format_exc()}')
 		raise MappError('UNKNOWN_ERROR', f'Error running op: {e}')
 	
