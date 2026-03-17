@@ -38,12 +38,13 @@ def op_route(route: OpRouteContext, server: MappContext, request: RequestContext
         json_body = '{}'
 
         if content_type == 'multipart/form-data' and 'boundary' in options:
+            server.log(f'  :: MULTIPART - w boundary')
 
             boundary = options["boundary"]
             parser = MultipartParser(io.BytesIO(request.raw_req_body), boundary)
 
             for part in parser:
-                server.log(f'PROCESSING MULTIPART REQUEST - got part with name: {part.name} and filename: {part.filename}')
+                server.log(f'  :: MULTIPART - PART - got part with name: {part.name} and filename: {part.filename}')
                 if part.name == 'json':
                     json_body = part.value
                 elif part.name == 'file':
@@ -55,6 +56,7 @@ def op_route(route: OpRouteContext, server: MappContext, request: RequestContext
                 part.close()
         
         else:
+            server.log(f'  :: NON-MULTIPART - content type: {content_type}')
             json_body = request.raw_req_body.decode('utf-8')
 
         req_method = request.env['REQUEST_METHOD']

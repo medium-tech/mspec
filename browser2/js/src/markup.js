@@ -3,6 +3,12 @@
  * This is equivalent to the Python markup.py module
  */
 
+// // // // //
+//
+// helper functions
+//
+// // // // //
+
 // Date/time formatting
 const datetimeFormatStr = '%Y-%m-%dT%H:%M:%S';
 
@@ -53,9 +59,58 @@ function getRequestHeaders() {
     return headers;
 }
 
+async function fileSystemIngestFile(file) {
+
+    let params = {
+        name: file.name,
+        size: file.size,
+        parts: 1,
+        finish: true
+    };
+
+    console.log('fileSystemIngestFile()', file, params);
+
+    // multipart upload to /api/file-system/ingest-start
+    
+    const formData = new FormData();
+    formData.append('file', file); 
+    formData.append('json', JSON.stringify(params));
+    let headers = getRequestHeaders();
+
+    // let browser set the correct Content-Type for multipart form data w proper boundary
+    delete headers['Content-Type']; 
+
+    try {
+        const response = await fetch('/api/file-system/ingest-start', {
+            method: 'POST',
+            headers: headers,
+            body: formData
+        });
+
+        if(response.ok) {
+            const data = await response.json();
+            console.log('File ingested successfully:', data);
+            return data;
+            // You can handle the response data as needed, e.g., update the UI or store the file ID
+        } else {
+            const errMsg = `Error ingesting file: ${response.status} - ${response.statusText}`;
+            const responseText = await response.text();
+            console.error(errMsg, response, responseText);
+            return {'error': errMsg};
+        }
+
+    } catch (error) {
+        console.error('Error uploading file:', error);
+        return {'error': error.message};
+    }
+
+}
+
+// // // // //
 //
 // lingo functions
 //
+// // // // //
 
 
 const lingoFunctionLookup = {
@@ -372,6 +427,9 @@ class LingoApp {
         this.buffer = buffer;
         this.afterUpdate = afterUpdate;
         this.afterRender = afterRender;
+        this.clientState = {
+            forms: {},
+        };
     }
 }
 
@@ -3055,6 +3113,15 @@ function createFormElement(app, element) {
     for (const [fieldKey, fieldSpec] of Object.entries(fields)) {
         const row = document.createElement('tr');
 
+        // client state for tracking form status and errors
+        let ingestState;
+        if (app.clientState.forms.hasOwnProperty(fieldKey)) {
+            ingestState = app.clientState.forms[fieldKey];
+        } else {
+            ingestState = {status: 'idle', error: null};
+            app.clientState.forms[fieldKey] = ingestState;
+        }
+
         // Column 1: Field name
         const nameCell = document.createElement('td');
         const fieldName = fieldSpec.name.lower_case;
@@ -3267,11 +3334,21 @@ function createFormElement(app, element) {
         } else if (fieldType === 'foreign_key') {
             inputElement = document.createElement('input');
             inputElement.type = 'text';
-            inputElement.value = typeof formData[fieldKey] !== 'undefined' ? formData[fieldKey] : '';
-            inputElement.placeholder = 'Enter ID';
-            inputElement.addEventListener('input', () => {
-                formData[fieldKey] = inputElement.value;
-            });
+
+            if(fieldSpec.references.table === 'user') {
+                inputElement.placeholder = 'Will be set automatically';
+                inputElement.disabled = true;
+                inputElement.value = '';
+            }else{
+                inputElement.placeholder = 'Enter ID';
+                inputElement.value = typeof formData[fieldKey] !== 'undefined' ? formData[fieldKey] : '';
+                inputElement.addEventListener('input', () => {
+                    formData[fieldKey] = inputElement.value;
+                });
+                if (ingestState.status !== 'idle') {
+                    inputElement.disabled = true;
+                }
+            }
 
         } else if (fieldSpec.enum) {
             inputElement = document.createElement('select');
@@ -3314,6 +3391,75 @@ function createFormElement(app, element) {
             updateListDisplay();
             
             thirdCell.appendChild(listValuesContainer);
+        } else if (fieldType == 'foreign_key') {
+
+            if(fieldSpec.references.table === 'file') {
+                // add file chooser to thirdCell
+
+                let fileIngestStatus = document.createElement('span');
+                
+                // file input //
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.addEventListener('change', async () => {
+                    const file = fileInput.files[0];
+                    if (file) {
+                        ingestState.status = 'uploading';
+                        fileIngestStatus.textContent = 'Uploading file...';
+
+                        const ingestResult = await fileSystemIngestFile(file);
+                        if (ingestResult.error) {
+                            ingestState.status = 'error';
+                            ingestState.error = ingestResult.error;
+
+                            fileIngestStatus.textContent = ingestResult.error;
+                            console.error('File ingest error:', ingestResult.error);
+                        } else {
+                            ingestState.status = 'success';
+                            ingestState.error = null;
+
+                            formData[fieldKey] = ingestResult.result.file_id;
+                            fileIngestStatus.textContent = 'File uploaded successfully!';
+                        }
+                        
+                        renderLingoApp(app, fileInput.closest('.lingo-container'), true);
+                    }
+                });
+
+                // status display //
+                const resetStateButton = document.createElement('button');
+                resetStateButton.textContent = 'Reset';
+                resetStateButton.type = 'button';
+                resetStateButton.className = 'reset-button';
+                resetStateButton.addEventListener('click', () => {
+                    console.log('Resetting ingest state for field', fieldKey, ingestState);
+                    ingestState.status = 'idle';
+                    ingestState.error = null;
+                    renderLingoApp(app, document.getElementById('lingo-app'), true);
+                });
+
+                if(ingestState.status === 'uploading') {
+                    thirdCell.appendChild(resetStateButton);
+                    fileIngestStatus.textContent = 'Uploading file...';
+                }else if(ingestState.status === 'error') {
+                    thirdCell.appendChild(resetStateButton);
+                    fileIngestStatus.textContent = ingestState.error;
+                }else if(ingestState.status === 'success') {
+                    thirdCell.appendChild(resetStateButton);
+                    fileIngestStatus.textContent = 'File uploaded successfully!';
+                }else{
+                    fileIngestStatus.textContent = '';
+                    thirdCell.appendChild(fileInput);
+                }
+
+                thirdCell.appendChild(fileIngestStatus);
+
+            }else{
+                // For foreign keys, show a link to the referenced item if the field value is set
+                thirdCell.className = 'form-description';
+                thirdCell.textContent = `ID for ${fieldSpec.references.table}.${fieldSpec.references.field} - ${formData[fieldKey]}`;
+            }
+
         } else {
             // Description for non-list fields
             thirdCell.className = 'form-description';

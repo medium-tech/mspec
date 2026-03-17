@@ -307,6 +307,44 @@ modules:
             lower_case: "file system"
         
         models:
+            attachment:
+                name:
+                    lower_case: "attachment"
+                description: "For testing file uploads from a model form"
+                auth:
+                    require_login: true
+
+                fields:
+                    file_id:
+                        name:
+                            lower_case: "file id"
+                        type: foreign_key
+                        references:
+                            table: "file"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    description:
+                        name:
+                            lower_case: "description"
+                        type: str
+                        default: "unknown attachment"
+                        examples:
+                            - "a PDF of the project proposal"
+                            - "a screenshot of the error message"
+
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        references:
+                            table: "user"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
 
             file:
                 hidden: true
@@ -1065,6 +1103,128 @@ modules:
                         examples:
                             - "2000-01-11T12:34:56"
                             - "2020-10-02T15:30:00"
+            
+            profile_picture:
+                name:
+                    lower_case: "profile picture"
+                description: "For testing image uploads from a model form"
+                auth:
+                    require_login: true
+
+                fields:
+
+                    image_id:
+                        name:
+                            lower_case: "image id"
+                        type: foreign_key
+                        references:
+                            table: "image"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    description:
+                        name:
+                            lower_case: "description"
+                        type: str
+                        examples:
+                            - "a profile picture for my account"
+                            - "a new profile picture after haircut"
+
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        references:
+                            table: "user"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+            press_kit:
+
+                name:
+                    lower_case: "press kit"
+                description: "For testing file and image uploads from a model form"
+                auth:
+                    require_login: true
+
+                fields:
+
+                    image_a:
+                        name:
+                            lower_case: "image a"
+                        type: foreign_key
+                        references:
+                            table: "image"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+                            
+                    image_b:
+                        name:
+                            lower_case: "image b"
+                        type: foreign_key
+                        references:
+                            table: "image"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    file_a:
+                        name:
+                            lower_case: "file a"
+                        type: foreign_key
+                        references:
+                            table: "file"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    file_b:
+                        name:
+                            lower_case: "file b"
+                        type: foreign_key
+                        references:
+                            table: "file"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    attachment_id:
+                        name:
+                            lower_case: "attachment id"
+                        type: foreign_key
+                        references:
+                            table: "attachment"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+                    description:
+                        name:
+                            lower_case: "description"
+                        type: str
+                        examples:
+                            - "a press kit for the new product launch"
+                            - "an updated press kit with latest company information"
+
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        references:
+                            table: "user"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
 
         ops:
             create_image:

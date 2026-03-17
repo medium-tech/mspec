@@ -29,6 +29,7 @@
         * 🔴 view image
         * 🔴 tests
 * 🔴 mega app for testing (merge modules from multiple files)
+* 🔴 merge js dev lingo server into mapp template
 * 🔴 update testing
     * 🔴 split functions.json apart
         * 🔴 create matching specs for script spec
