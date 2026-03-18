@@ -2200,9 +2200,32 @@ function _renderModelRead(app, element, ctx = null) {
     }else{
         console.log('renderModelRead - loaded mode - definition:', definition);
         // view loaded data as struct key/value table
+        // iterate over each key/value in state.data
+        // and convert to list of arrays where each array is [key, value]
+        let convertedFields = [];
+        console.log('renderModelRead - state.data:', state.data);
+        for (const field of Object.keys(state.data)) {
+            convertedFields.push({
+                type: 'struct',
+                value: {
+                    key: field,
+                    value: state.data[field],
+                    additional: ''
+                }
+            });
+        }
+
         elements.push({
-            type: 'struct',
-            value: state.data,
+            type: 'list',
+            display: {
+                format: 'table',
+                headers: [
+                    {text: 'Key', field: 'key'},
+                    {text: 'Value', field: 'value'},
+                    {text: 'Additional', field: 'additional'}
+                ]
+            },
+            value: convertedFields
         });
     }
 
