@@ -100,7 +100,7 @@ async function clearAllListParams(page, op) {
 // op test
 //
 
-test('test ops for all modules', async ({ browser, crudEnv, crudSession }) => {
+test('test ops for all modules', async ({ browser, crudEnv, crudSession, skipModules }) => {
   const context = await browser.newContext({ storageState: crudSession.storageState });
   const page = await context.newPage();
   const { host, spec } = crudEnv;
@@ -112,8 +112,14 @@ test('test ops for all modules', async ({ browser, crudEnv, crudSession }) => {
   // Iterate over each module
   for (const [moduleName, module] of Object.entries(spec.modules)) {
     const moduleKebab = module.name.kebab_case;
+
+    // Skip built-in modules
+    if (skipModules.includes(moduleKebab)) {
+      continue;
+    }
     
     // Skip auth module
+    
     if (moduleKebab === 'auth') {
       continue;
     }

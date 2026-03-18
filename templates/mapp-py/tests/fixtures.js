@@ -111,5 +111,8 @@ export const test = base.extend({
       await use(session);
     },
     { scope: 'worker' }
-  ]
+  ],
+  skipModules: async ({}, use) => {
+    await use(['auth', 'file-system', 'media']);
+  }
 });
