@@ -2005,6 +2005,41 @@ function handleSequenceOp(app, expression, ctx = null) {
 
         app.clientState.forms[formName].state = 'loading';
 
+        // call /api/file-system/list-files with {file_id: fileId} to get file metadata (including name and mime type)
+        // this function takes the id, and returns either the filename as a string from the remote server, 
+        // or a default filename `file_id_<id>` in the event of error
+
+        const defaultFileName = `file_id_${fileId}`;
+        const fileName = (async () => {
+            try {
+
+                console.log('handleSequenceOp - file_system.get_file_content - fetching...');
+
+                const response = await fetch('/api/file-system/list-files', {
+                    method: 'POST',
+                    headers: getRequestHeaders(),
+                    body: JSON.stringify({file_id: fileId})
+                });
+
+                if (response.ok) {
+                    const responseData = await response.json();
+                    try {
+                        return responseData.result.items[0].name || defaultFileName;
+                    } catch (error) {
+                        console.error('handleSequenceOp - file_system.get_file_content - error parsing file metadata response:', error);
+                        return defaultFileName;
+                    }
+                } else {
+                    console.error('handleSequenceOp - file_system.get_file_content - HTTP error while fetching file metadata:', response.status, response.statusText); 
+                    return defaultFileName;
+                }
+
+            } catch (error) {
+                console.error('handleSequenceOp - file_system.get_file_content - network error while fetching file metadata:', error);
+                return defaultFileName;
+            }
+        })();
+
 
         // call POST /api/file-system/get-file-content with {file_id: fileId}
         // download to local file 
@@ -2022,12 +2057,14 @@ function handleSequenceOp(app, expression, ctx = null) {
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = fileId; // You can set the desired file name here
+                    a.download = await fileName;
                     document.body.appendChild(a);
                     a.click();
                     a.remove();
                     window.URL.revokeObjectURL(url);
-                    console.log('handleSequenceOp - file_system.get_file_content - file download initiated');
+                    console.log('handleSequenceOp - file_system.get_file_content - file download completed');
+                    app.clientState.forms[formName].state = 'success';
+
                 } else {
                     const errorData = await response.json();
                     let errorMessage = `${response.status} ${response.statusText}`;
@@ -2036,22 +2073,23 @@ function handleSequenceOp(app, expression, ctx = null) {
                             errorMessage = errorData.error.message;
                         }
                     }
-                    console.error('handleSequenceOp - file_system.get_file_content - HTTP error:', response.status, response.statusText); 
+                    console.error('handleSequenceOp - file_system.get_file_content - HTTP error:', response.status, response.statusText);
+                    app.clientState.forms[formName].state = 'error';
+                    app.clientState.forms[formName].error = errorMessage;
                     return {state: 'error', error: errorMessage};
                 }
 
             } catch (error) {
                 console.error('handleSequenceOp - file_system.get_file_content - network error:', error);
+                app.clientState.forms[formName].state = 'error';
+                app.clientState.forms[formName].error = `Network error: ${error.message}`;
                 return {state: 'error', error: `Network error: ${error.message}`};
+            }finally{
+                renderLingoApp(app, document.getElementById('lingo-app'), true);
             }
         }
 
-        sendGetFileContentRequest(fileId);
-
-        return {
-            acknowledged: true,
-            message: `File ${fileId} content retrieval initiated.`
-        }
+        return sendGetFileContentRequest(fileId);
 
     }else{
         throw new Error(`handleSequenceOp - unknown function: ${funcName}`);
