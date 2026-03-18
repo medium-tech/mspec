@@ -408,12 +408,21 @@ const lingoFunctionLookup = {
             createArgs: true
         }
     },
+
     'op': {
         'http': {
             func: null, // handled specially in renderCall
             createArgs: true
         }
+    },
+
+    'file_system': {
+        'get_file_content': {
+            func: null, // handled specially in renderCall
+            createArgs: true
+        }
     }
+
 };
 
 /**
@@ -1979,6 +1988,71 @@ function handleSequenceOp(app, expression, ctx = null) {
         
         return sendOpHttpRequest(url, params);
 
+    
+    
+    
+    }else if(funcName === 'file_system.get_file_content'){
+
+        //
+        // init params
+        //
+
+        const fileId = unwrapValue(lingoExecute(app, args.file_id, ctx));
+
+        const formName = `model-field-get-file-content`
+
+        console.log('handleSequenceOp - file_system.get_file_content - fileId:', fileId, app.clientState.forms[formName]);
+
+        app.clientState.forms[formName].state = 'loading';
+
+
+        // call POST /api/file-system/get-file-content with {file_id: fileId}
+        // download to local file 
+
+        async function sendGetFileContentRequest(fileId) {
+            try {
+                const response = await fetch('/api/file-system/get-file-content', {
+                    method: 'POST',
+                    headers: getRequestHeaders(),
+                    body: JSON.stringify({file_id: fileId})
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileId; // You can set the desired file name here
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                    console.log('handleSequenceOp - file_system.get_file_content - file download initiated');
+                } else {
+                    const errorData = await response.json();
+                    let errorMessage = `${response.status} ${response.statusText}`;
+                    if (errorData.hasOwnProperty('error')) {
+                        if (errorData.error.hasOwnProperty('message')) {    
+                            errorMessage = errorData.error.message;
+                        }
+                    }
+                    console.error('handleSequenceOp - file_system.get_file_content - HTTP error:', response.status, response.statusText); 
+                    return {state: 'error', error: errorMessage};
+                }
+
+            } catch (error) {
+                console.error('handleSequenceOp - file_system.get_file_content - network error:', error);
+                return {state: 'error', error: `Network error: ${error.message}`};
+            }
+        }
+
+        sendGetFileContentRequest(fileId);
+
+        return {
+            acknowledged: true,
+            message: `File ${fileId} content retrieval initiated.`
+        }
+
     }else{
         throw new Error(`handleSequenceOp - unknown function: ${funcName}`);
     }
@@ -2203,14 +2277,14 @@ function _renderModelRead(app, element, ctx = null) {
         // iterate over each key/value in state.data
         // and convert to list of arrays where each array is [key, value]
         let convertedFields = [];
-        console.log('renderModelRead - state.data:', state.data);
+        // console.log('renderModelRead - state.data:', state.data);
         for (const field of Object.keys(state.data)) {
 
             const fieldDef = definition.fields[field] || {};
 
             // additional actions for field
 
-            console.log('renderModelRead - field definition:', fieldDef);
+            // console.log('renderModelRead - field definition:', fieldDef);
             let additional;
             
             if(fieldDef.type === 'foreign_key'){
@@ -2220,9 +2294,41 @@ function _renderModelRead(app, element, ctx = null) {
                 if (table === 'user' && refField === 'id') {
                     additional = 'the user that created this item';
                 }else if(table === 'file' && refField === 'id'){
-                    additional = {
-                        button: { type: 'str', value: 'replace this value with function to fetch file' },
-                        text: 'download file'
+
+                    const formName = `model-field-get-file-content`
+
+                    if(!app.clientState.forms.hasOwnProperty(formName)){
+                        app.clientState.forms[formName] = {
+                            state: 'idle',
+                        }
+                    }
+                    console.log('renderModelRead - file field - formName:', formName);
+
+                    if(app.clientState.forms[formName].state === 'idle'){
+                        additional = {
+                            button: { 
+                                call: 'file_system.get_file_content',
+                                args: {
+                                    file_id: state.data['file_id']
+                                }
+                            },
+                            text: 'download file'
+                        }
+                    }else{
+                        // switch against loading, success, and default (for error)
+
+                        switch(app.clientState.forms[formName].state){
+                            case 'loading':
+                                additional = {text: 'file downloading...', style: {italic: true}};
+                                break;
+                            case 'success':
+                                additional = {text: 'file downloaded', style: {color: 'green', bold: true}};
+                                break;
+                            default:
+                                const errMsg = app.clientState.forms[formName].error || 'unknown error';
+                                additional = {text: errMsg, style: {color: 'red', bold: true}};
+                                break;
+                        }
                     }
                 }else{
                     additional = `go to ${table}.${refField} ${state.data[field]}`
@@ -2953,7 +3059,7 @@ function createValueElement(app, element) {
                     const fieldName = headerDef.field;
                     const fieldValue = item.value[fieldName];
 
-                    console.log('createValueElement - ', fieldName, fieldValue, typeof fieldValue);
+                    // console.log('createValueElement - ', fieldName, fieldValue, typeof fieldValue);
                     
                     // Evaluate the value if it's an expression
                     let cellValue = fieldValue;
@@ -2978,6 +3084,8 @@ function createValueElement(app, element) {
                             cellValue = createLinkElement(app, fieldValue);
                         }else if('button' in fieldValue){
                             cellValue = createButtonElement(app, fieldValue);
+                        }else if('text' in fieldValue){
+                            cellValue = createTextElement(app, fieldValue);
                         }
                     }
                     
