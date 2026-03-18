@@ -2,7 +2,7 @@ import { test } from './fixtures.js';
 import { expect } from '@playwright/test';
 
 
-test('test pagination for all models', async ({ browser, paginationEnv, paginationSession }) => {
+test('test pagination for all models', async ({ browser, paginationEnv, paginationSession, skipModules }) => {
   const context = await browser.newContext({ storageState: paginationSession.storageState });
   const page = await context.newPage();
   const { host, spec } = paginationEnv;
@@ -18,8 +18,9 @@ test('test pagination for all models', async ({ browser, paginationEnv, paginati
   // Iterate over each module
   for (const module of Object.values(spec.modules)) {
     const moduleKebab = module.name.kebab_case;
-    if(moduleKebab === 'auth') {
-      // skip auth module
+
+    // Skip built-in modules
+    if(skipModules.includes(moduleKebab)) {
       continue;
     }
     

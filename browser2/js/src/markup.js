@@ -2757,19 +2757,19 @@ function renderLingoApp(app, container, preserveFocus = false) {
  */
 function createDOMElement(app, element) {
     if ('heading' in element) {
-        return createHeadingElement(element);
+        return createHeadingElement(app, element);
     } else if ('break' in element) {
-        return createBreakElement(element);
+        return createBreakElement(app, element);
     } else if ('button' in element) {
         return createButtonElement(app, element);
     } else if ('input' in element) {
         return createInputElement(app, element);
     } else if ('link' in element) {
-        return createLinkElement(element);
+        return createLinkElement(app, element);
     } else if ('text' in element) {
-        return createTextElement(element);
+        return createTextElement(app, element);
     } else if ('value' in element) {
-        return createValueElement(element);
+        return createValueElement(app, element);
     } else if ('form' in element) {
         return createFormElement(app, element);
     } else {
@@ -2780,7 +2780,7 @@ function createDOMElement(app, element) {
 /**
  * Create heading element
  */
-function createHeadingElement(element) {
+function createHeadingElement(app, element) {
     const level = element.level || 1;
     const heading = document.createElement(`h${level}`);
     heading.textContent = element.heading;
@@ -2790,7 +2790,7 @@ function createHeadingElement(element) {
 /**
  * Create text element
  */
-function createTextElement(element) {
+function createTextElement(app, element) {
     const span = document.createElement('span');
     span.textContent = element.text;
     
@@ -2829,7 +2829,7 @@ function createTextElement(element) {
 
 /** Create value element
  */
-function createValueElement(element) {
+function createValueElement(app, element) {
 
     // console.log('createValueElement()', element);
 
@@ -2977,9 +2977,9 @@ function createValueElement(element) {
                                 cellValue = '[Error]';
                             }
                         }else if('link' in fieldValue){
-                            cellValue = createLinkElement(fieldValue);
+                            cellValue = createLinkElement(app, fieldValue);
                         }else if('button' in fieldValue){
-                            cellValue = createButtonElement({}, fieldValue);
+                            cellValue = createButtonElement(app, fieldValue);
                         }
                     }
                     
@@ -3042,7 +3042,7 @@ function createValueElement(element) {
 /**
  * Create break element
  */
-function createBreakElement(element) {
+function createBreakElement(app, element) {
     const container = document.createElement('div');
     for (let i = 0; i < element.break; i++) {
         container.appendChild(document.createElement('br'));
@@ -3123,7 +3123,7 @@ function createInputElement(app, element) {
 /**
  * Create link element
  */
-function createLinkElement(element) {
+function createLinkElement(app, element) {
     const link = document.createElement('a');
     link.href = element.link;
     link.textContent = element.text || element.link;

@@ -123,7 +123,7 @@ async function fillFormField(page, fieldName, field, value) {
 // crud test
 //
 
-test('test crud and list for all models', async ({ browser, crudEnv, crudSession }) => {
+test('test crud and list for all models', async ({ browser, crudEnv, crudSession, skipModules }) => {
   const context = await browser.newContext({ storageState: crudSession.storageState });
   const page = await context.newPage();
   
@@ -135,6 +135,11 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
   for (const [moduleName, module] of Object.entries(crudEnv.spec.modules)) {
     const moduleKebab = module.name.kebab_case;
     
+  // Skip built-in modules
+    if (skipModules.includes(moduleKebab)) {
+      continue;
+    }
+
     // Click module link
     await page.getByRole('link', { name: moduleKebab }).click();
     await expect(page.locator('h1')).toContainText(`:: ${moduleKebab}`);
@@ -145,7 +150,7 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
       
       // Skip hidden models
       if (model.hidden === true) {
-        continue;
+        continue
       }
 
       // Skip models with max_models_per_user = 0 (can't create any)
