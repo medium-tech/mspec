@@ -2205,12 +2205,42 @@ function _renderModelRead(app, element, ctx = null) {
         let convertedFields = [];
         console.log('renderModelRead - state.data:', state.data);
         for (const field of Object.keys(state.data)) {
+
+            const fieldDef = definition.fields[field] || {};
+
+            // additional actions for field
+
+            console.log('renderModelRead - field definition:', fieldDef);
+            let additional;
+            
+            if(fieldDef.type === 'foreign_key'){
+                const table = fieldDef.references.table;
+                const refField = fieldDef.references.field;
+
+                if (table === 'user' && refField === 'id') {
+                    additional = 'the user that created this item';
+                }else if(table === 'file' && refField === 'id'){
+                    additional = {
+                        button: { type: 'str', value: 'replace this value with function to fetch file' },
+                        text: 'download file'
+                    }
+                }else{
+                    additional = `go to ${table}.${refField} ${state.data[field]}`
+                }
+            }else if(field === 'id'){
+                additional = 'the unique identifier for this item';
+            
+            }else{
+                additional = '';
+            }
+
+
             convertedFields.push({
                 type: 'struct',
                 value: {
                     key: field,
                     value: state.data[field],
-                    additional: ''
+                    additional: additional
                 }
             });
         }
@@ -2924,7 +2954,7 @@ function createValueElement(element) {
                     const fieldName = headerDef.field;
                     const fieldValue = item.value[fieldName];
 
-                    // console.log('createValueElement - ', fieldName, fieldValue, typeof fieldValue);
+                    console.log('createValueElement - ', fieldName, fieldValue, typeof fieldValue);
                     
                     // Evaluate the value if it's an expression
                     let cellValue = fieldValue;
@@ -2948,6 +2978,8 @@ function createValueElement(element) {
                             }
                         }else if('link' in fieldValue){
                             cellValue = createLinkElement(fieldValue);
+                        }else if('button' in fieldValue){
+                            cellValue = createButtonElement({}, fieldValue);
                         }
                     }
                     
