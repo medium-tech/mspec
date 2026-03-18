@@ -2878,8 +2878,7 @@ function createValueElement(app, element) {
                 } else if('call' in value || 'lingo' in value) {
                     // Scripted expression - need to evaluate it
                     try {
-                        const dummyApp = {spec: {lingo: {version: 'page-beta-1'}}, state: {}, params: {}};
-                        const result = lingoExecute(dummyApp, value);
+                        const result = lingoExecute(app, value);
                         if(typeof result === 'object' && result !== null && 'value' in result) {
                             cellValue = result.value;
                         } else {
@@ -2965,8 +2964,7 @@ function createValueElement(app, element) {
                         } else if('call' in fieldValue || 'lingo' in fieldValue) {
                             // Scripted expression - need to evaluate it
                             try {
-                                const dummyApp = {spec: {lingo: {version: 'page-beta-1'}}, state: {}, params: {}};
-                                const result = lingoExecute(dummyApp, fieldValue);
+                                const result = lingoExecute(app, fieldValue);
                                 if(typeof result === 'object' && result !== null && 'value' in result) {
                                     cellValue = result.value;
                                 } else {
