@@ -307,10 +307,10 @@ modules:
             lower_case: "file system"
         
         models:
-            attachment:
+            record:
                 name:
-                    lower_case: "attachment"
-                description: "For testing file uploads from a model form"
+                    lower_case: "record"
+                description: "A record for where a file came from"
                 auth:
                     require_login: true
 
@@ -330,10 +330,37 @@ modules:
                         name:
                             lower_case: "description"
                         type: str
-                        default: "unknown attachment"
+                        default: ""
                         examples:
                             - "a PDF of the project proposal"
                             - "a screenshot of the error message"
+
+                    source:
+                        name:
+                            lower_case: "source"
+                        type: str
+                        default: ""
+                        examples:
+                            - "email attachment"
+                            - "web upload"
+
+                    url:
+                        name:
+                            lower_case: "url"
+                        type: str
+                        default: ""
+                        examples:
+                            - "https://example.com/file.pdf"
+                            - "https://example.com/image.png"
+
+                    note:
+                        name:
+                            lower_case: "note"
+                        type: str
+                        default: ""
+                        examples:
+                            - "This is the replacement file for id 374 which was corrupted during upload"
+                            - "This file was provided by the user during support ticket #1234"
 
                     user_id:
                         name:

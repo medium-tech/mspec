@@ -386,6 +386,8 @@ def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int
                     value = bool(row[index])
                 case 'datetime' if row[index] is not None:
                     value = datetime.strptime(row[index], DATETIME_FORMAT_STR).replace(microsecond=0)
+                case 'foreign_key':
+                    value = str(row[index])
                 case _:
                     value = row[index]
 
@@ -408,6 +410,8 @@ def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int
                     convert_element = bool
                 case 'datetime':
                     convert_element = lambda x: datetime.strptime(x, DATETIME_FORMAT_STR).replace(microsecond=0)
+                case 'foreign_key':
+                    convert_element = str
                 case _:
                     convert_element = lambda x: x
 

@@ -757,18 +757,26 @@ def application(env, start_response):
             body = e.to_dict()
             status_code = '400 Bad Request'
             content_type = JSONResponse.content_type
+
+            msg = f'  :: MappValidationError - {e.__class__.__name__} - {e} \n{format_exc()}'
+            field_msgs = [f'    :: {field} - {error}' for field, error in e.field_errors.items()]
+            msg += '\n'.join(field_msgs)
+
+            server_ctx.log(msg)
             break
 
         except MappUserError as e:
             body = e.to_dict()
             status_code = '400 Bad Request'
             content_type = JSONResponse.content_type
+            server_ctx.log(f'  :: MappUserError - {e.__class__.__name__} - {e} \n' + format_exc())
             break
 
         except RequestError as e:
             body = e.to_dict()
             status_code = '400 Bad Request'
             content_type = JSONResponse.content_type 
+            server_ctx.log(f'  :: RequestError - {e.__class__.__name__} - {e} \n' + format_exc())
             break
 
         # uncaught exception | internal server error #
@@ -783,7 +791,7 @@ def application(env, start_response):
             }
             status_code = '500 Internal Server Error'
             content_type = JSONResponse.content_type
-            server_ctx.log(f'ERROR - {e.__class__.__name__} - {e} \n' + format_exc())
+            server_ctx.log(f'  :: UNCAUGHT_EXCEPTION - {e.__class__.__name__} - {e} \n' + format_exc())
             break
 
     # url not found #
@@ -796,7 +804,7 @@ def application(env, start_response):
 
     elapsed_time = time.time() - request_start
 
-    server_ctx.log(f':: RESP :: {request_id} :: {status_code} :: {elapsed_time:.4f}s')
+    server_ctx.log(f'  :: RESP :: {request_id} :: {status_code} :: {elapsed_time:.4f}s')
 
     start_response(status_code, [('Content-Type', content_type)] + additional_headers)
 

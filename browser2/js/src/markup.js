@@ -1848,8 +1848,10 @@ function handleSequenceOp(app, expression, ctx = null) {
 
                 if (response.ok) {
 
+                    // console.log('handleSequenceOp - crud.list - raw text response:', await response.text());
+
                     const responseData = await response.json();
-                    // console.log('handleSequenceOp - crud.list - responseData:', responseData);
+                    console.log('handleSequenceOp - crud.list - responseData:', responseData);
 
                     return {
                         state: 'loaded',
@@ -2465,6 +2467,7 @@ function _renderModelList(app, element, ctx = null) {
         const instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
 
         for (let item of app.state[stateField].items) {
+            console.log('renderModelList - pre processing:', item);
 
             let copyOfItem = JSON.parse(JSON.stringify(item));
             copyOfItem.value.id = {
@@ -2472,6 +2475,8 @@ function _renderModelList(app, element, ctx = null) {
                 text: String(item.value.id)
             };
             itemsForTable.push(copyOfItem);
+
+            console.log('renderModelList - post processing:', copyOfItem);
         }
     }else{
         itemsForTable = app.state[stateField].items;
@@ -2836,8 +2841,14 @@ function createValueElement(element) {
             
             // Format the cell value for display
             if(Array.isArray(cellValue)) {
-                // Format arrays as comma-separated values
-                valueCell.textContent = cellValue.join(', ');
+                valueCell.innerHTML = cellValue.map(item => {
+                        if(typeof item === 'object' && item !== null) {
+                            return JSON.stringify(item, null, 4);
+                        } else {
+                            return String(item);
+                        }
+                    }).join('<br><br>');
+                
             } else {
                 valueCell.textContent = String(cellValue);
             }
