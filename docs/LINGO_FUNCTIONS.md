@@ -12,6 +12,9 @@
   - [Sequence Ops](#sequence-ops-functions)
   - [Date and Time](#date-and-time-functions)
   - [Random](#random-functions)
+  - [Auth](#auth-functions)
+  - [File System](#file-system-functions)
+  - [Media](#media-functions)
 - [Control Flow](#control-flow)
 - [UI Elements](#ui-elements)
 - [Expressions](#expressions)
@@ -288,11 +291,114 @@
   - **return:** `int`
 
 ### Random Functions
+
 `random.randint` - return a random integer between `a` and `b` (inclusive)
   - **args:**
     - **a** `int`
     - **b** `int`
   - **return:** `int`
+
+### Auth Functions
+`auth.create_user` - Create a new user with name, email, password, and password confirmation
+  - **args:**
+    - **name** `str` - Name of the user
+    - **email** `str` - Email of the user
+    - **password** `str` - Password for the user
+    - **password_confirm** `str` - Password confirmation
+  - **return:** struct with `id`, `name`, `email`
+
+`auth.login_user` - Login a user with email and password
+  - **args:**
+    - **email** `str` - Email of the user
+    - **password** `str` - Password for the user
+  - **return:** struct with `access_token`, `token_type`
+
+`auth.current_user` - Get the current logged in user
+  - **args:** *(none)*
+  - **return:** struct with `id`, `name`, `email`, `number_of_sessions`
+
+`auth.logout_user` - Logout the current user
+  - **args:**
+    - **mode** `str` - Logout mode (`all`, `current`, `others`)
+  - **return:** struct with `acknowledged`, `message`
+
+`auth.delete_user` - Delete currently logged in user
+  - **args:** *(none)*
+  - **return:** struct with `acknowledged`, `message`
+
+`auth.drop_sessions` - Drop all sessions (requires root password)
+  - **args:**
+    - **root_password** `str` - Root password to authorize dropping all sessions
+  - **return:** struct with `acknowledged`, `message`
+
+### File System Functions
+`file_system.ingest_start` - Start ingesting a file
+  - **args:**
+    - **name** `str` - Name of the file
+    - **size** `int` - Size in bytes
+    - **parts** `int` - Number of parts
+    - **content_type** `str` (optional) - MIME type
+    - **finish** `bool` (optional) - Mark as finished if single part
+  - **return:** struct with `file_id`, `message`
+
+`file_system.list_files` - List files with pagination and filters
+  - **args:**
+    - **offset** `int` (default: 0)
+    - **size** `int` (default: 50)
+    - **user_id** `str` (optional)
+    - **file_id** `str` (optional)
+    - **status** `str` (optional)
+  - **return:** struct with `items`, `total`
+
+`file_system.list_parts` - List file parts for a file
+  - **args:**
+    - **file_id** `str`
+    - **offset** `int` (default: 0)
+    - **size** `int` (default: 50)
+    - **user_id** `str` (optional)
+  - **return:** struct with `items`, `total`
+
+`file_system.get_part_content` - Get the content of a file part
+  - **args:**
+    - **file_id** `str`
+    - **part_number** `int`
+  - **return:** struct with `acknowledged`, `message`
+
+`file_system.get_file_content` - Get the content of a file
+  - **args:**
+    - **file_id** `str`
+  - **return:** struct with `acknowledged`, `message`
+
+`file_system.process_file` - Assemble file parts to create final file
+  - **args:**
+    - **file_id** `str`
+  - **return:** struct with `acknowledged`, `message`
+
+### Media Functions
+`media.create_image` - Create an image record for a file
+  - **args:**
+    - **name** `str` - Name of the image
+    - **content_type** `str` (optional) - MIME type
+  - **return:** struct with `image_id`, `file_id`, `message`
+
+`media.get_image` - Get an image record by ID
+  - **args:**
+    - **image_id** `str`
+  - **return:** struct with image metadata fields
+
+`media.get_media_file_content` - Get the file content of a media file (image)
+  - **args:**
+    - **image_id** `str`
+  - **return:** struct with `acknowledged`, `message`
+
+`media.list_images` - List image records with pagination and filtering
+  - **args:**
+    - **offset** `int` (default: 0)
+    - **size** `int` (default: 50)
+    - **image_id** `str` (optional)
+    - **file_id** `str` (optional)
+    - **user_id** `str` (optional)
+  - **return:** struct with `items`, `total`
 
 ## Control Flow
 
