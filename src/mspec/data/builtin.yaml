@@ -1015,7 +1015,6 @@ modules:
             lower_case: "media"
         description: "Media management for files, such as generating thumbnails and previews, and extracting metadata"
         models:
-
             image:
                 hidden: true
                 name:
@@ -1241,6 +1240,17 @@ modules:
                         examples:
                             - "a press kit for the new product launch"
                             - "an updated press kit with latest company information"
+                    
+                    record_id:
+                        name:
+                            lower_case: "record id"
+                        type: foreign_key
+                        references:
+                            table: "record"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
 
                     user_id:
                         name:

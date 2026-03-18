@@ -59,7 +59,7 @@ function getRequestHeaders() {
     return headers;
 }
 
-async function fileSystemIngestFile(file) {
+async function fileSystemIngestStart(file) {
 
     let params = {
         name: file.name,
@@ -101,6 +101,51 @@ async function fileSystemIngestFile(file) {
 
     } catch (error) {
         console.error('Error uploading file:', error);
+        return {'error': error.message};
+    }
+
+}
+
+async function mediaCreateImage(file) {
+
+    let params = {
+        name: file.name,
+        content_type: '' // let backend auto-detect content type
+    };
+
+    console.log('mediaCreateImage()', file, params);
+
+    // multipart upload to /api/media/create-image
+    
+    const formData = new FormData();
+    formData.append('file', file); 
+    formData.append('json', JSON.stringify(params));
+    let headers = getRequestHeaders();
+
+    // let browser set the correct Content-Type for multipart form data w proper boundary
+    delete headers['Content-Type'];
+
+    try {
+        const response = await fetch('/api/media/create-image', {
+            method: 'POST',
+            headers: headers,
+            body: formData
+        });
+
+        if(response.ok) {
+            const data = await response.json();
+            console.log('Image created successfully:', data);
+            return data;
+            // You can handle the response data as needed, e.g., update the UI or store the media ID
+        } else {
+            const errMsg = `Error creating image: ${response.status} - ${response.statusText}`;
+            const responseText = await response.text();
+            console.error(errMsg, response, responseText);
+            return {'error': errMsg};
+        }
+
+    } catch (error) {
+        console.error('Error uploading image:', error);
         return {'error': error.message};
     }
 
@@ -2664,7 +2709,7 @@ function _renderModelList(app, element, ctx = null) {
         const instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
 
         for (let item of app.state[stateField].items) {
-            console.log('renderModelList - pre processing:', item);
+            // console.log('renderModelList - pre processing:', item);
 
             let copyOfItem = JSON.parse(JSON.stringify(item));
             copyOfItem.value.id = {
@@ -2673,7 +2718,7 @@ function _renderModelList(app, element, ctx = null) {
             };
             itemsForTable.push(copyOfItem);
 
-            console.log('renderModelList - post processing:', copyOfItem);
+            // console.log('renderModelList - post processing:', copyOfItem);
         }
     }else{
         itemsForTable = app.state[stateField].items;
@@ -3602,8 +3647,8 @@ function createFormElement(app, element) {
             
             thirdCell.appendChild(listValuesContainer);
         } else if (fieldType == 'foreign_key') {
-
-            if(fieldSpec.references.table === 'file') {
+            const tableRef = fieldSpec.references.table;
+            if(['file', 'image'].includes(tableRef)) {
                 // add file chooser to thirdCell
 
                 let fileIngestStatus = document.createElement('span');
@@ -3616,8 +3661,20 @@ function createFormElement(app, element) {
                     if (file) {
                         ingestState.status = 'uploading';
                         fileIngestStatus.textContent = 'Uploading file...';
+                        
+                        let ingestFunction;
+                        switch (tableRef) {
+                            case 'file':
+                                ingestFunction = fileSystemIngestStart;
+                                break;
+                            case 'image':
+                                ingestFunction = mediaCreateImage;
+                                break;
+                            default:
+                                throw new Error(`Unsupported file type for ingest: ${tableRef}`);
+                        }
 
-                        const ingestResult = await fileSystemIngestFile(file);
+                        const ingestResult = await ingestFunction(file);
                         if (ingestResult.error) {
                             ingestState.status = 'error';
                             ingestState.error = ingestResult.error;
@@ -3628,7 +3685,7 @@ function createFormElement(app, element) {
                             ingestState.status = 'success';
                             ingestState.error = null;
 
-                            formData[fieldKey] = ingestResult.result.file_id;
+                            formData[fieldKey] = (tableRef === 'file') ? ingestResult.result.file_id : ingestResult.result.image_id;
                             fileIngestStatus.textContent = 'File uploaded successfully!';
                         }
                         
