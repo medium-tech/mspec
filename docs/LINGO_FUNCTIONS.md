@@ -1,7 +1,17 @@
 # Lingo Expressions
 
 - [Data Types](#data-types)
-- [Built-in Functions](#built-in-functions)
+- [Built-in Functions](#functions)
+  - [Comparison](#comparison-functions)
+  - [Bool](#bool-functions)
+  - [Int](#int-functions)
+  - [Float](#float-functions)
+  - [Str](#str-functions)
+  - [Math](#math-functions)
+  - [Sequence](#sequence-functions)
+  - [Sequence Ops](#sequence-ops-functions)
+  - [Date and Time](#date-and-time-functions)
+  - [Random](#random-functions)
 - [Control Flow](#control-flow)
 - [UI Elements](#ui-elements)
 - [Expressions](#expressions)
