@@ -37,6 +37,10 @@ OS_HANDLE_BUFFER_SIZE = 8192
 
 ./run.sh -fo splash-orig-file.png file-system get-file-content run '{"file_id": ""}'
 
+curl -X GET -o file-get-12.jpg  "http://localhost:3003/api/file-system/get-file-content?file_id=12" \
+	-H "Content-Type: application/json" \
+	-H "Authorization: Bearer xyz"
+
 """
 
 #

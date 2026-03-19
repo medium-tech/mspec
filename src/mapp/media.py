@@ -28,6 +28,10 @@ MAPP_MEDIA_INFO_PATH = os.getenv('MAPP_MEDIA_INFO_PATH', 'mediainfo')
 
 ./run.sh -fo splash-media-id-1.png media get-media-file-content run '{"image_id": "1"}'
 
+curl -X GET -o image-8.jpg  "http://localhost:3003/api/media/get-media-file-content?image_id=8" \
+	-H "Content-Type: application/json" \
+	-H "Authorization: Bearer xyz"
+
 """
 
 #

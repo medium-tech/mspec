@@ -84,7 +84,7 @@ def op_route(route: OpRouteContext, server: MappContext, request: RequestContext
             else:
                 server.self['file_output'].seek(0)
                 raise DownloadFileResponse(
-                    content=server.self['file_output'],
+                    content=server.self['file_output'].read(),
                     content_type=guess_type(file_output_name)[0] or 'application/octet-stream',
                     filename=file_output_name
                 )

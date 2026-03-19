@@ -151,6 +151,52 @@ async function mediaCreateImage(file) {
 
 }
 
+const placeholderImage = (width, height, text) => {
+    // 1. Create a canvas element
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+
+    // 2. Get 2D rendering context
+    const ctx = canvas.getContext('2d');
+
+    // 3. Fill with a fully transparent color (rgba with alpha = 0)
+    //   ctx.fillStyle = 'rgb(168, 168, 168)';
+    //   ctx.fillRect(0, 0, width, height);
+
+    // 3. Use a checkerboard pattern
+    const color1 = 'rgba(234, 234, 234, 0.96)'; // light gray
+    const color2 = 'rgba(209, 207, 207, 0.76)'; // darker gray
+    const tileSize = 17; // size of each checkerboard tile
+    const numTilesX = width / tileSize;
+    const numTilesY = height / tileSize;
+
+    for (let i = 0; i < numTilesX; i++) {
+        for (let j = 0; j < numTilesY; j++) {
+            // Alternate colors based on row and column indices
+            ctx.fillStyle = (i + j) % 2 === 0 ? color1 : color2;
+            ctx.fillRect(i * tileSize, j * tileSize, tileSize, tileSize);
+        }
+    }
+
+    // 4. write text
+    ctx.fillStyle = 'rgb(0, 0, 0)';
+    ctx.font = '24px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, width / 2, height / 2);
+
+    // 5. Convert to data URL
+    // Default format is 'image/png' which supports transparency
+    const dataURL = canvas.toDataURL(); 
+
+    // 6. Use the data URL in an Image object
+    const img = new Image(width, height);
+    img.src = dataURL; 
+
+    return img;
+};
+
 // // // // //
 //
 // lingo functions
@@ -490,6 +536,7 @@ class LingoApp {
         this.afterRender = afterRender;
         this.clientState = {
             forms: {},
+            media: {}
         };
     }
 }
@@ -2167,10 +2214,9 @@ function handleSequenceOp(app, expression, ctx = null) {
 
                 console.log('handleSequenceOp - media.get_media_file_content - fetching image metadata...');
 
-                const response = await fetch('/api/media/get-image', {
-                    method: 'POST',
-                    headers: getRequestHeaders(),
-                    body: JSON.stringify({image_id: imageId})
+                const response = await fetch(`/api/media/get-image?image_id=${imageId}`, {
+                    method: 'GET',
+                    headers: getRequestHeaders()
                 });
 
                 if (response.ok) {
@@ -2245,6 +2291,8 @@ function handleSequenceOp(app, expression, ctx = null) {
                 if (response.ok) {
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);
+                    app.clientState.forms[formName].imageUrl = url;
+
                     const a = document.createElement('a');
                     a.href = url;
                     a.download = await fileName;
@@ -2252,8 +2300,11 @@ function handleSequenceOp(app, expression, ctx = null) {
                     a.click();
                     a.remove();
                     window.URL.revokeObjectURL(url);
-                    console.log('handleSequenceOp - media.get_media_file_content - file download completed');
                     app.clientState.forms[formName].state = 'success';
+                
+
+                    console.log('handleSequenceOp - media.get_media_file_content - file download completed');
+
                 } else {
                     const errorData = await response.json();
                     let errorMessage = `${response.status} ${response.statusText}`;
@@ -2464,7 +2515,6 @@ function _renderModelRead(app, element, ctx = null) {
 
     if (state.state === 'editing') {
         // view editable form
-        console.log('renderModelRead - editing mode - definition:', definition);
         elements.push({
             form: {
                 fields: definition.fields,
@@ -2484,7 +2534,6 @@ function _renderModelRead(app, element, ctx = null) {
         });
 
     }else if(state.state === 'pending'){
-        console.log('renderModelRead - pending load - definition:', definition);
         // view loading placeholder
         const placeholder = {};
 
@@ -2498,7 +2547,6 @@ function _renderModelRead(app, element, ctx = null) {
         });
         
     }else{
-        console.log('renderModelRead - loaded mode - definition:', definition);
         // view loaded data as struct key/value table
         // iterate over each key/value in state.data
         // and convert to list of arrays where each array is [key, value]
@@ -2562,24 +2610,37 @@ function _renderModelRead(app, element, ctx = null) {
                     if(!app.clientState.forms.hasOwnProperty(formName)){
                         app.clientState.forms[formName] = {
                             state: 'idle',
+                            img: null
                         }
                     }
-                    console.log('renderModelRead - image field - formName:', formName);
 
                     if(app.clientState.forms[formName].state === 'idle'){
                         additional = {
-                            button: {
-                                call: 'media.get_media_file_content',
-                                args: {
-                                    image_id: state.data['image_id']
+                            block: [
+                                {
+                                    button: {
+                                        call: 'media.get_media_file_content',
+                                        args: {
+                                            image_id: state.data['image_id']
+                                        }
+                                    },
+                                    text: 'download'
+                                },
+                                {text: ' | '},
+                                {
+                                    viewer: {
+                                        image_id: state.data['image_id']
+                                    },
                                 }
-                            },
-                            text: 'download image'
+                            ]
                         }
                     }else{
                         // switch against loading, success, and default (for error)
 
                         switch(app.clientState.forms[formName].state){
+                            case 'viewing':
+                                //additional = app.clientState.forms[formName].img
+                                additional = 'viewing'
                             case 'loading':
                                 additional = {text: 'image downloading...', style: {italic: true}};
                                 break;
@@ -2659,8 +2720,6 @@ function _renderModelDelete(app, element, ctx = null) {
     }
 
     let state = app.state[stateField];
-
-    console.log('renderModelDelete - state:', state);
 
     if (!state.hasOwnProperty('state')) state.state = 'initial';
     if (!state.hasOwnProperty('error')) state.error = '';
@@ -3140,6 +3199,8 @@ function createDOMElement(app, element) {
         return createValueElement(app, element);
     } else if ('form' in element) {
         return createFormElement(app, element);
+    } else if ('viewer' in element) {
+        return createViewerElement(app, element);
     } else {
         throw new Error('createDOMElement - unknown element type: ' + JSON.stringify(element));
     }
@@ -3348,6 +3409,15 @@ function createValueElement(app, element) {
                             cellValue = createButtonElement(app, fieldValue);
                         }else if('text' in fieldValue){
                             cellValue = createTextElement(app, fieldValue);
+                        }else if('block' in fieldValue){
+                            const blockContainer = document.createElement('div');
+                            for(const blockElement of fieldValue.block) {
+                                const domElement = createDOMElement(app, blockElement);
+                                if (domElement) {
+                                    blockContainer.appendChild(domElement);
+                                }
+                            }
+                            cellValue = blockContainer;
                         }
                     }
                     
@@ -3942,4 +4012,93 @@ function createFormElement(app, element) {
 
     console.log('createFormElement - formData after:', formData);
     return formContainer;
+}
+
+function createViewerElement(app, element) {
+
+    // init
+
+    if(!element.viewer.image_id) {
+        throw new Error('createViewerElement - missing viewer or image_id');
+    }
+
+    const imageId = element.viewer.image_id;
+    const height = element.viewer.height || 100;
+    const width = element.viewer.width || 175;
+
+    // init client state
+
+    const stateKey = `image_${element.viewer.image_id}`;
+
+    if(!app.clientState.media.hasOwnProperty(stateKey)) {
+        app.clientState.media[stateKey] = {status: 'pending', error: null};
+    }
+    const mediaState = app.clientState.media[stateKey];
+
+    // function to fetch media
+
+    async function getMediaFileContent(imageId) {
+        console.log('Fetching media content for image ID:', imageId);
+        try {
+            const response = await fetch('/api/media/get-media-file-content', {
+                method: 'POST',
+                headers: getRequestHeaders(),
+                body: JSON.stringify({image_id: imageId})
+            });
+
+            if (response.ok) {
+                console.log('Media content fetched successfully for image ID:', imageId);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                mediaState.status = 'loaded';
+                mediaState.error = null;
+                mediaState.url = url;
+
+            } else {
+                const errorData = await response.json();
+                mediaState.status = 'error';
+                mediaState.error = errorData.error || 'Failed to load image';
+                console.error('Error response from get-media-file-content:', errorData);
+            }
+
+        } catch (error) {
+            mediaState.status = 'error';
+            mediaState.error = error.message || 'Failed to load image';
+            console.error('Network error while fetching image:', error);
+            return null;
+        } finally {
+            renderLingoApp(app, document.getElementById('lingo-app'), true);
+        }
+    }
+
+    // create image element
+
+    const img = document.createElement('img');
+
+    switch (mediaState.status) {
+
+        case 'pending': 
+            getMediaFileContent(imageId);
+             // fall through to loading state
+        case 'loading':
+            img.src = placeholderImage(width, height, 'Loading...').src;
+            break;
+
+        case 'loaded':
+            // loading and pending
+            img.src = mediaState.url;
+            break;
+
+        case 'error':
+            img.src = placeholderImage(width, height, 'Error').src;
+            break;
+
+        default:
+            throw new Error('Invalid media state: ' + mediaState.status);
+    }
+
+    img.width = width;
+    img.height = height;
+
+    return img;
 }

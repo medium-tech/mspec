@@ -16,18 +16,23 @@
         * 🟢 server
         * 🟢 tests
     * 🔴 browser1
-        * 🔴 model create
-        * 🔴 model view
+        * 🟢 model create
+        * 🟢 model download
         * 🔴 tests
 * 🟡 media
     * 🟢 backend
         * 🟢 cli
         * 🟢 server
         * 🟢 tests
-    * 🔴 browser1
-        * 🔴 create image
-        * 🔴 view image
+    * 🟡 browser1
+        * 🟢 create image
+        * 🟢 download image
+        * 🟡 view image
         * 🔴 tests
+* 🔴 browser - foreign key
+    * 🔴 link to item from model list
+    * 🔴 link to item from model view
+    * 🔴 tests
 * 🔴 mega app for testing (merge modules from multiple files)
 * 🔴 merge js dev lingo server into mapp template
 * 🔴 update testing
