@@ -466,6 +466,13 @@ const lingoFunctionLookup = {
             func: null, // handled specially in renderCall
             createArgs: true
         }
+    },
+
+    'media': {
+        'get_media_file_content': {
+            func: null, // handled specially in renderCall
+            createArgs: true
+        }
     }
 
 };
@@ -2135,6 +2142,142 @@ function handleSequenceOp(app, expression, ctx = null) {
         }
 
         return sendGetFileContentRequest(fileId);
+    
+    }else if(funcName === 'media.get_media_file_content'){
+
+        //
+        // init params
+        //
+
+        const imageId = unwrapValue(lingoExecute(app, args.image_id, ctx));
+        
+        const formName = `model-field-get-media-file-content`;
+
+        console.log('handleSequenceOp - media.get_media_file_content - imageId:', imageId, app.clientState.forms[formName]);
+
+        app.clientState.forms[formName].state = 'loading';
+
+        // call /api/media/get-image with {image_id: imageId} to get media metadata (including name and mime type)
+        // this function takes the id, and returns either the file_id from the result as a string from the remote server,
+        // or '-1' in the event of error
+
+        const defaultFileId = '-1';
+        const fileId = (async () => {
+            try {
+
+                console.log('handleSequenceOp - media.get_media_file_content - fetching image metadata...');
+
+                const response = await fetch('/api/media/get-image', {
+                    method: 'POST',
+                    headers: getRequestHeaders(),
+                    body: JSON.stringify({image_id: imageId})
+                });
+
+                if (response.ok) {
+                    const responseData = await response.json();
+                    console.log('handleSequenceOp - media.get_media_file_content - image data:', responseData);
+                    try {
+                        return responseData.result.file_id || defaultFileId;
+                    } catch (error) {
+                        console.error('handleSequenceOp - media.get_media_file_content - error parsing media metadata response:', error);
+                        return defaultFileId;
+                    }
+                } else {
+                    console.error('handleSequenceOp - media.get_media_file_content - HTTP error while fetching media metadata:', response.status, response.statusText); 
+                    return defaultFileId;
+                }
+
+            } catch (error) {
+                console.error('handleSequenceOp - media.get_media_file_content - network error while fetching media metadata:', error);
+                return defaultFileId;
+            }
+        })();
+
+        const defaultFileName = `image_id_${imageId}`;
+
+        // if fileID is not -1, call POST /api/file-system/list-files with {file_id: fileId} to get the filename, otherwise use default filename
+
+        const fileName = (async () => {
+            if (await fileId === '-1') {
+                return defaultFileName;
+            }
+            try {
+
+                console.log('handleSequenceOp - media.get_media_file_content - fetching file metadata...');
+
+                const response = await fetch('/api/file-system/list-files', {
+                    method: 'POST',
+                    headers: getRequestHeaders(),
+                    body: JSON.stringify({file_id: await fileId})
+                });
+
+                if (response.ok) {
+                    const responseData = await response.json();
+                    try {
+                        console.log('handleSequenceOp - media.get_media_file_content - file metadata:', responseData);
+                        return responseData.result.items[0].name || defaultFileName;
+                    } catch (error) {
+                        console.error('handleSequenceOp - media.get_media_file_content - error parsing file metadata response:', error);
+                        return defaultFileName;
+                    }
+                } else {
+                    console.error('handleSequenceOp - media.get_media_file_content - HTTP error while fetching file metadata:', response.status, response.statusText); 
+                    return defaultFileName;
+                }
+
+            } catch (error) {
+                console.error('handleSequenceOp - media.get_media_file_content - network error while fetching file metadata:', error);
+                return defaultFileName;
+            }
+        })();
+
+        // call POST /api/media/get-media-file-content with {image_id: imageId}
+        // download to local file
+
+        async function sendGetMediaFileContentRequest(imageId) {
+            try {
+                const response = await fetch('/api/media/get-media-file-content', {
+                    method: 'POST',
+                    headers: getRequestHeaders(),
+                    body: JSON.stringify({image_id: imageId})
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = await fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                    console.log('handleSequenceOp - media.get_media_file_content - file download completed');
+                    app.clientState.forms[formName].state = 'success';
+                } else {
+                    const errorData = await response.json();
+                    let errorMessage = `${response.status} ${response.statusText}`;
+                    if (errorData.hasOwnProperty('error')) {
+                        if (errorData.error.hasOwnProperty('message')) {
+                            errorMessage = errorData.error.message;
+                        }
+                    }
+                    console.error('handleSequenceOp - media.get_media_file_content - HTTP error:', response.status, response.statusText);
+                    app.clientState.forms[formName].state = 'error';
+                    app.clientState.forms[formName].error = errorMessage;
+                    return {state: 'error', error: errorMessage};
+                }
+            } catch (error) {
+                console.error('handleSequenceOp - media.get_media_file_content - network error:', error);
+                app.clientState.forms[formName].state = 'error';
+                app.clientState.forms[formName].error = `Network error: ${error.message}`;
+                return {state: 'error', error: `Network error: ${error.message}`};
+            }finally{
+                renderLingoApp(app, document.getElementById('lingo-app'), true);
+            }
+        }
+
+        return sendGetMediaFileContentRequest(imageId);
 
     }else{
         throw new Error(`handleSequenceOp - unknown function: ${funcName}`);
@@ -2406,6 +2549,42 @@ function _renderModelRead(app, element, ctx = null) {
                                 break;
                             case 'success':
                                 additional = {text: 'file downloaded', style: {color: 'green', bold: true}};
+                                break;
+                            default:
+                                const errMsg = app.clientState.forms[formName].error || 'unknown error';
+                                additional = {text: errMsg, style: {color: 'red', bold: true}};
+                                break;
+                        }
+                    }
+                }else if(table === 'image' && refField === 'id'){
+                    const formName = `model-field-get-media-file-content`
+
+                    if(!app.clientState.forms.hasOwnProperty(formName)){
+                        app.clientState.forms[formName] = {
+                            state: 'idle',
+                        }
+                    }
+                    console.log('renderModelRead - image field - formName:', formName);
+
+                    if(app.clientState.forms[formName].state === 'idle'){
+                        additional = {
+                            button: {
+                                call: 'media.get_media_file_content',
+                                args: {
+                                    image_id: state.data['image_id']
+                                }
+                            },
+                            text: 'download image'
+                        }
+                    }else{
+                        // switch against loading, success, and default (for error)
+
+                        switch(app.clientState.forms[formName].state){
+                            case 'loading':
+                                additional = {text: 'image downloading...', style: {italic: true}};
+                                break;
+                            case 'success':
+                                additional = {text: 'image downloaded', style: {color: 'green', bold: true}};
                                 break;
                             default:
                                 const errMsg = app.clientState.forms[formName].error || 'unknown error';
