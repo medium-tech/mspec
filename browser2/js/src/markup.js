@@ -2199,12 +2199,18 @@ function handleSequenceOp(app, expression, ctx = null) {
         //
 
         const imageId = unwrapValue(lingoExecute(app, args.image_id, ctx));
-        
-        const formName = `model-field-get-media-file-content`;
+        console.log('handleSequenceOp - media.get_media_file_content - imageId:', imageId);
 
-        console.log('handleSequenceOp - media.get_media_file_content - imageId:', imageId, app.clientState.forms[formName]);
+         // raise exception if ctx.self.file_output is not defined
+        if (!ctx || !ctx.self || !ctx.self.file_output) {
+            throw new Error('handleSequenceOp - media.get_media_file_content - missing self.file_output in context');
+        }
 
-        app.clientState.forms[formName].state = 'loading';
+        let fileOutput = ctx.self.file_output;
+
+        //
+        // get metadata
+        //
 
         // call /api/media/get-image with {image_id: imageId} to get media metadata (including name and mime type)
         // this function takes the id, and returns either the file_id from the result as a string from the remote server,
@@ -2225,7 +2231,10 @@ function handleSequenceOp(app, expression, ctx = null) {
                     const responseData = await response.json();
                     console.log('handleSequenceOp - media.get_media_file_content - image data:', responseData);
                     try {
-                        return responseData.result.file_id || defaultFileId;
+                        const fileId = responseData.result.file_id;
+                        fileOutput.fileId = fileId;
+                        return fileId
+                        
                     } catch (error) {
                         console.error('handleSequenceOp - media.get_media_file_content - error parsing media metadata response:', error);
                         return defaultFileId;
@@ -2263,7 +2272,9 @@ function handleSequenceOp(app, expression, ctx = null) {
                     const responseData = await response.json();
                     try {
                         console.log('handleSequenceOp - media.get_media_file_content - file metadata:', responseData);
-                        return responseData.result.items[0].name || defaultFileName;
+                        const fileName = responseData.result.items[0].name;
+                        fileOutput.fileName = fileName;
+                        return fileName;
                     } catch (error) {
                         console.error('handleSequenceOp - media.get_media_file_content - error parsing file metadata response:', error);
                         return defaultFileName;
@@ -2283,6 +2294,8 @@ function handleSequenceOp(app, expression, ctx = null) {
         // download to local file
 
         async function sendGetMediaFileContentRequest(imageId) {
+            await fileName;
+
             try {
                 const response = await fetch('/api/media/get-media-file-content', {
                     method: 'POST',
@@ -2293,19 +2306,10 @@ function handleSequenceOp(app, expression, ctx = null) {
                 if (response.ok) {
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);
-                    app.clientState.forms[formName].imageUrl = url;
-
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = await fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    window.URL.revokeObjectURL(url);
-                    app.clientState.forms[formName].state = 'success';
-                
-
+                    fileOutput.localUrl = url;
+                    fileOutput.status = 'loaded';
                     console.log('handleSequenceOp - media.get_media_file_content - file download completed');
+                    return {acknowledged: true, message: 'File download complete'};
 
                 } else {
                     const errorData = await response.json();
@@ -2316,20 +2320,20 @@ function handleSequenceOp(app, expression, ctx = null) {
                         }
                     }
                     console.error('handleSequenceOp - media.get_media_file_content - HTTP error:', response.status, response.statusText);
-                    app.clientState.forms[formName].state = 'error';
-                    app.clientState.forms[formName].error = errorMessage;
+                    fileOutput.status = 'error';
+                    fileOutput.error = errorMessage;
                     return {state: 'error', error: errorMessage};
                 }
             } catch (error) {
                 console.error('handleSequenceOp - media.get_media_file_content - network error:', error);
-                app.clientState.forms[formName].state = 'error';
-                app.clientState.forms[formName].error = `Network error: ${error.message}`;
+                fileOutput.status = 'error';
+                fileOutput.error = `Network error: ${error.message}`;
                 return {state: 'error', error: `Network error: ${error.message}`};
             }finally{
                 renderLingoApp(app, document.getElementById('lingo-app'), true);
             }
         }
-
+        fileOutput.status = 'loading';
         return sendGetMediaFileContentRequest(imageId);
 
     }else{
@@ -3502,7 +3506,7 @@ function createBreakElement(app, element, ctx = null) {
 /**
  * Create button element
  */
-function createButtonElement(app, element, ctx = null) {
+function createButtonElement(app, element, ctx) {
     const button = document.createElement('button');
     button.textContent = element.text;
 
@@ -3510,7 +3514,7 @@ function createButtonElement(app, element, ctx = null) {
 
 
     if (element.hasOwnProperty('disabled')) {
-        const disabled = unwrapValue(lingoExecute(app, element.disabled));
+        const disabled = unwrapValue(lingoExecute(app, element.disabled, ctx));
         button.disabled = disabled;
     }
 
@@ -3521,7 +3525,7 @@ function createButtonElement(app, element, ctx = null) {
     } else{
         onClick = () => {
             try {
-                lingoExecute(app, element.button);
+                lingoExecute(app, element.button, ctx);
                 renderLingoApp(app, button.closest('.lingo-container'));
             } catch (error) {
                 console.error('Button click error:', error);
@@ -4058,6 +4062,8 @@ function createViewerElement(app, element, ctx = null) {
             status: 'pending', 
             error: null,
             localUrl: null,
+            fileId: null,
+            fileName: null
         };
     }
     const mediaState = app.clientState.media[stateKey];
@@ -4146,7 +4152,7 @@ function createViewerElement(app, element, ctx = null) {
                     document.body.removeChild(link);
                 }
             },
-            text: 'download.'
+            text: 'download'
         });
 
     }else{
@@ -4158,8 +4164,8 @@ function createViewerElement(app, element, ctx = null) {
                 }
             },
             disabled: mediaState.status !== 'error',
-            text: 'download'
-        });
+            text: mediaState.status === 'error' ? 'retry' : 'loading'
+        }, {self: {file_output: mediaState}});
     }
 
     // container div
