@@ -2608,52 +2608,45 @@ function _renderModelRead(app, element, ctx = null) {
                         }
                     }
                 }else if(table === 'image' && refField === 'id'){
-                    const formName = `model-field-get-media-file-content`
+                    // const formName = `model-field-get-media-file-content`
 
-                    if(!app.clientState.forms.hasOwnProperty(formName)){
-                        app.clientState.forms[formName] = {
-                            state: 'idle',
-                            img: null
-                        }
-                    }
+                    // if(!app.clientState.forms.hasOwnProperty(formName)){
+                    //     app.clientState.forms[formName] = {
+                    //         state: 'idle',
+                    //         img: null
+                    //     }
+                    // }
 
-                    if(app.clientState.forms[formName].state === 'idle'){
-                        additional = {block: [
-                                {
-                                    button: {
-                                        call: 'media.get_media_file_content',
-                                        args: {
-                                            image_id: state.data[field]
-                                        }
-                                    },
-                                    text: 'download'
-                                },
-                                {
-                                    viewer: {
-                                        image_id: state.data[field]
-                                    },
-                                }
-                            ]
-                        }
+                    // if(app.clientState.forms[formName].state === 'idle'){
+                    //     additional = {
+                    //         viewer: {
+                    //             image_id: state.data[field]
+                    //         },
+                    //     }
                         
-                    }else{
-                        // switch against loading, success, and default (for error)
+                    // }else{
+                    //     // switch against loading, success, and default (for error)
 
-                        switch(app.clientState.forms[formName].state){
-                            case 'viewing':
-                                //additional = app.clientState.forms[formName].img
-                                additional = 'viewing'
-                            case 'loading':
-                                additional = {text: 'image downloading...', style: {italic: true}};
-                                break;
-                            case 'success':
-                                additional = {text: 'image downloaded', style: {color: 'green', bold: true}};
-                                break;
-                            default:
-                                const errMsg = app.clientState.forms[formName].error || 'unknown error';
-                                additional = {text: errMsg, style: {color: 'red', bold: true}};
-                                break;
-                        }
+                    //     switch(app.clientState.forms[formName].state){
+                    //         case 'viewing':
+                    //             //additional = app.clientState.forms[formName].img
+                    //             additional = 'viewing'
+                    //         case 'loading':
+                    //             additional = {text: 'image downloading...', style: {italic: true}};
+                    //             break;
+                    //         case 'success':
+                    //             additional = {text: 'image downloaded', style: {color: 'green', bold: true}};
+                    //             break;
+                    //         default:
+                    //             const errMsg = app.clientState.forms[formName].error || 'unknown error';
+                    //             additional = {text: errMsg, style: {color: 'red', bold: true}};
+                    //             break;
+                    //     }
+                    // }
+                    additional = {
+                        viewer: {
+                            image_id: state.data[field]
+                        },
                     }
                 }else{
                     const loc = `${refModule}/${table}/${state.data[field]}`;
@@ -3425,6 +3418,8 @@ function createValueElement(app, element) {
                             }
                             console.log('createValueElement - rendering block element in table cell:', fieldValue);
                             cellValue = blockContainer;
+                        }else if('viewer' in fieldValue){
+                            cellValue = createViewerElement(app, fieldValue);
                         }
                     }
                     
@@ -3511,20 +3506,30 @@ function createButtonElement(app, element) {
     const button = document.createElement('button');
     button.textContent = element.text;
 
+    console.log('createButtonElement()', typeof element.button, element);
+
 
     if (element.hasOwnProperty('disabled')) {
         const disabled = unwrapValue(lingoExecute(app, element.disabled));
         button.disabled = disabled;
     }
+
+    let onClick;
+
+    if (element.button.hasOwnProperty('clientFunction')) {
+        onClick = () => element.button.clientFunction();
+    } else{
+        onClick = () => {
+            try {
+                lingoExecute(app, element.button);
+                renderLingoApp(app, button.closest('.lingo-container'));
+            } catch (error) {
+                console.error('Button click error:', error);
+            }
+        };
+    }
     
-    button.onclick = () => {
-        try {
-            lingoExecute(app, element.button);
-            renderLingoApp(app, button.closest('.lingo-container'));
-        } catch (error) {
-            console.error('Button click error:', error);
-        }
-    };
+    button.onclick = onClick;
     return button;
 }
 
@@ -4042,14 +4047,18 @@ function createViewerElement(app, element) {
 
     const imageId = element.viewer.image_id;
     const height = element.viewer.height || 100;
-    const width = element.viewer.width || 175;
+    const width = element.viewer.width || 200;
 
     // init client state
 
     const stateKey = `image_${element.viewer.image_id}`;
 
     if(!app.clientState.media.hasOwnProperty(stateKey)) {
-        app.clientState.media[stateKey] = {status: 'pending', error: null};
+        app.clientState.media[stateKey] = {
+            status: 'pending', 
+            error: null,
+            localUrl: null,
+        };
     }
     const mediaState = app.clientState.media[stateKey];
 
@@ -4070,7 +4079,7 @@ function createViewerElement(app, element) {
                 const url = window.URL.createObjectURL(blob);
                 mediaState.status = 'loaded';
                 mediaState.error = null;
-                mediaState.url = url;
+                mediaState.localUrl = url;
 
             } else {
                 const errorData = await response.json();
@@ -4104,7 +4113,7 @@ function createViewerElement(app, element) {
 
         case 'loaded':
             // loading and pending
-            img.src = mediaState.url;
+            img.src = mediaState.localUrl;
             break;
 
         case 'error':
@@ -4115,8 +4124,52 @@ function createViewerElement(app, element) {
             throw new Error('Invalid media state: ' + mediaState.status);
     }
 
-    img.width = width;
-    img.height = height;
+    img.style.maxWidth = '100%';
+    img.style.height = 'auto';
+    img.style.display = 'block';
+    img.style.margin = '0 auto';
 
-    return img;
+    // button
+    const localFileName = `image_${imageId}`;
+    let button;
+    if(mediaState.status === 'loaded') {
+        console.log('media loaded')
+        button = createButtonElement(app, {
+            button: {
+                clientFunction: () => {
+                    // using mediaState.localUrl, download the file
+                    const link = document.createElement('a');
+                    link.href = mediaState.localUrl;
+                    link.download = localFileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            },
+            text: 'download.'
+        });
+
+    }else{
+        button = createButtonElement(app, {
+            button: {
+                call: 'media.get_media_file_content',
+                args: {
+                    image_id: imageId
+                }
+            },
+            disabled: mediaState.status !== 'error',
+            text: 'download'
+        });
+    }
+
+    // container div
+
+    const div = document.createElement('div');
+    div.style.width = width + 'px';
+    // div.style.height = height + 'px';
+    div.className = 'image-viewer';
+    div.appendChild(img);
+    div.appendChild(button);
+
+    return div;
 }
