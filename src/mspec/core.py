@@ -260,6 +260,22 @@ def init_generator_spec(spec:dict) -> dict:
                     field_type = field['type']
                 except KeyError:
                     raise ValueError(f'No type defined for field {field_name} in model {model_path}')
+
+                if field_type == 'foreign_key':
+                    try:
+                        references = field['references']
+                    except KeyError:
+                        raise ValueError(f'Missing references for foreign_key field {field_name} in model {model_path}')
+                    
+                    try:
+                        references['table']
+                        references['field']
+                        ref_module = references['module']
+                    except KeyError as e:
+                        raise ValueError(f'Missing key references.{e} foreign_key field {field_name} in model {model_path}')
+                    
+                    if '-' in ref_module:
+                        raise ValueError(f'Invalid character "-" in references.module for foreign_key field {field_name} in model {model_path}, module names cannot contain "-"')
                 
                 type_id = field_type
                 

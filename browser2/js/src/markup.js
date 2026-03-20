@@ -2096,11 +2096,13 @@ function handleSequenceOp(app, expression, ctx = null) {
         // init params
         //
 
+        if (!args.file_id) {
+            throw new Error('handleSequenceOp - file_system.get_file_content - missing required arg: file_id');
+        }
+
         const fileId = unwrapValue(lingoExecute(app, args.file_id, ctx));
 
-        const formName = `model-field-get-file-content`
-
-        console.log('handleSequenceOp - file_system.get_file_content - fileId:', fileId, app.clientState.forms[formName]);
+        const formName = `model-field-get-file-content`;
 
         app.clientState.forms[formName].state = 'loading';
 
@@ -2563,6 +2565,7 @@ function _renderModelRead(app, element, ctx = null) {
             
             if(fieldDef.type === 'foreign_key'){
                 const table = fieldDef.references.table;
+                const refModule = fieldDef.references.module.replaceAll('_', '-');
                 const refField = fieldDef.references.field;
 
                 if (table === 'user' && refField === 'id') {
@@ -2583,7 +2586,7 @@ function _renderModelRead(app, element, ctx = null) {
                             button: { 
                                 call: 'file_system.get_file_content',
                                 args: {
-                                    file_id: state.data['file_id']
+                                    file_id: state.data[field]
                                 }
                             },
                             text: 'download file'
@@ -2621,7 +2624,7 @@ function _renderModelRead(app, element, ctx = null) {
                                     button: {
                                         call: 'media.get_media_file_content',
                                         args: {
-                                            image_id: state.data['image_id']
+                                            image_id: state.data[field]
                                         }
                                     },
                                     text: 'download'
@@ -2629,7 +2632,7 @@ function _renderModelRead(app, element, ctx = null) {
                                 {text: ' | '},
                                 {
                                     viewer: {
-                                        image_id: state.data['image_id']
+                                        image_id: state.data[field]
                                     },
                                 }
                             ]
@@ -2654,7 +2657,11 @@ function _renderModelRead(app, element, ctx = null) {
                         }
                     }
                 }else{
-                    additional = `go to ${table}.${refField} ${state.data[field]}`
+                    const loc = `${refModule}/${table}/${state.data[field]}`;
+                    additional = {
+                        link: `/${loc}`,
+                        text: `go to ${loc}`
+                    }
                 }
             }else if(field === 'id'){
                 additional = 'the unique identifier for this item';
@@ -4015,6 +4022,8 @@ function createFormElement(app, element) {
 }
 
 function createViewerElement(app, element) {
+
+    console.log('createViewerElement', element);
 
     // init
 

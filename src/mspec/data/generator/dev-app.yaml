@@ -207,6 +207,7 @@ modules:
               lower_case: 'user id'
             type: foreign_key
             references:
+              module: 'auth'
               table: 'user'
               field: 'id'
             examples:
@@ -276,6 +277,7 @@ modules:
               lower_case: 'user id'
             type: foreign_key
             references:
+              module: 'auth'
               table: 'user'
               field: 'id'
             examples:
@@ -305,6 +307,7 @@ modules:
               lower_case: 'user id'
             type: foreign_key
             references:
+              module: 'auth'
               table: 'user'
               field: 'id'
             examples:
@@ -335,6 +338,7 @@ modules:
               lower_case: 'user id'
             type: foreign_key
             references:
+              module: 'auth'
               table: 'user'
               field: 'id'
             examples:

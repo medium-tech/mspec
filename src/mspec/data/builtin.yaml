@@ -41,6 +41,7 @@ modules:
                             lower_case: "user id"
                         type: foreign_key
                         references:
+                            module: "auth"
                             table: "user"
                             field: "id"
                         examples:
@@ -82,6 +83,7 @@ modules:
                             lower_case: "user id"
                         type: foreign_key
                         references:
+                            module: "auth"
                             table: "user"
                             field: "id"
                         examples:
@@ -320,6 +322,7 @@ modules:
                             lower_case: "file id"
                         type: foreign_key
                         references:
+                            module: "file_system"
                             table: "file"
                             field: "id"
                         examples:
@@ -367,6 +370,7 @@ modules:
                             lower_case: "user id"
                         type: foreign_key
                         references:
+                            module: "auth"
                             table: "user"
                             field: "id"
                         examples:
@@ -453,6 +457,7 @@ modules:
                             lower_case: "user id"
                         type: foreign_key
                         references:
+                            module: "auth"
                             table: "user"
                             field: "id"
                         examples:
@@ -498,6 +503,7 @@ modules:
                             lower_case: "file id"
                         type: foreign_key
                         references:
+                            module: "file_system"
                             table: "file"
                             field: "id"
                         examples:
@@ -533,6 +539,7 @@ modules:
                             lower_case: "user id"
                         type: foreign_key
                         references:
+                            module: "auth"
                             table: "user"
                             field: "id"
                         examples:
@@ -628,6 +635,7 @@ modules:
                             lower_case: "file id"
                         type: foreign_key
                         references:
+                            module: "file_system"
                             table: "file"
                             field: "id"
                         description: "ID of the file being uploaded"
@@ -665,6 +673,7 @@ modules:
                             lower_case: "file id"
                         type: foreign_key
                         references:
+                            module: "file_system"
                             table: "file"
                             field: "id"
                         description: "ID of the file being uploaded"
@@ -699,6 +708,7 @@ modules:
                             lower_case: "file id"
                         type: foreign_key
                         references:
+                            module: "file_system"
                             table: "file"
                             field: "id"
                         description: "ID of the file being accessed"
@@ -736,6 +746,7 @@ modules:
                             lower_case: "file id"
                         type: foreign_key
                         references:
+                            module: "file_system"
                             table: "file"
                             field: "id"
                         description: "ID of the file being accessed"
@@ -768,6 +779,7 @@ modules:
                             lower_case: "file id"
                         type: foreign_key
                         references:
+                            module: "file_system"
                             table: "file"
                             field: "id"
                         description: "ID of the file being verified"
@@ -813,6 +825,7 @@ modules:
                             lower_case: "file id"
                         type: foreign_key
                         references:
+                            module: "file_system"
                             table: "file"
                             field: "id"
                         description: "ID of the file being deleted"
@@ -868,6 +881,7 @@ modules:
                         type: foreign_key
                         default: "-1"
                         references:
+                            module: "auth"
                             table: "user"
                             field: "id"
                         description: "ID of the user whose files to list, if not provided lists files for all users"
@@ -878,6 +892,7 @@ modules:
                         type: foreign_key
                         default: "-1"
                         references:
+                            module: "file_system"
                             table: "file"
                             field: "id"
                         description: "ID of the file to list, if provided lists only the file with this ID if it exists and the user has access to it"
@@ -949,6 +964,7 @@ modules:
                         type: foreign_key
                         default: "-1"
                         references:
+                            module: "file_system"
                             table: "file"
                             field: "id"
                         description: "ID of the file whose parts are being listed"
@@ -959,6 +975,7 @@ modules:
                         type: foreign_key
                         default: "-1"
                         references:
+                            module: "auth"
                             table: "user"
                             field: "id"
                         description: "ID of the user whose file parts to list, if not provided lists file parts for all users"
@@ -993,6 +1010,7 @@ modules:
                             lower_case: "file id"
                         type: foreign_key
                         references:
+                            module: "file_system"
                             table: "file"
                             field: "id"
                         description: "ID of the file being processed"
@@ -1028,6 +1046,7 @@ modules:
                             lower_case: "file id"
                         type: foreign_key
                         references:
+                            module: "file_system"
                             table: "file"
                             field: "id"
                         examples:
@@ -1039,6 +1058,7 @@ modules:
                             lower_case: "user id"
                         type: foreign_key
                         references:
+                            module: "auth"
                             table: "user"
                             field: "id"
                         examples:
@@ -1144,6 +1164,7 @@ modules:
                             lower_case: "image id"
                         type: foreign_key
                         references:
+                            module: "media"
                             table: "image"
                             field: "id"
                         examples:
@@ -1163,6 +1184,7 @@ modules:
                             lower_case: "user id"
                         type: foreign_key
                         references:
+                            module: "auth"
                             table: "user"
                             field: "id"
                         examples:
@@ -1179,60 +1201,6 @@ modules:
 
                 fields:
 
-                    image_a:
-                        name:
-                            lower_case: "image a"
-                        type: foreign_key
-                        references:
-                            table: "image"
-                            field: "id"
-                        examples:
-                            - "1"
-                            - "2"
-                            
-                    image_b:
-                        name:
-                            lower_case: "image b"
-                        type: foreign_key
-                        references:
-                            table: "image"
-                            field: "id"
-                        examples:
-                            - "1"
-                            - "2"
-
-                    file_a:
-                        name:
-                            lower_case: "file a"
-                        type: foreign_key
-                        references:
-                            table: "file"
-                            field: "id"
-                        examples:
-                            - "1"
-                            - "2"
-
-                    file_b:
-                        name:
-                            lower_case: "file b"
-                        type: foreign_key
-                        references:
-                            table: "file"
-                            field: "id"
-                        examples:
-                            - "1"
-                            - "2"
-
-                    attachment_id:
-                        name:
-                            lower_case: "attachment id"
-                        type: foreign_key
-                        references:
-                            table: "attachment"
-                            field: "id"
-                        examples:
-                            - "1"
-                            - "2"
                     description:
                         name:
                             lower_case: "description"
@@ -1240,12 +1208,37 @@ modules:
                         examples:
                             - "a press kit for the new product launch"
                             - "an updated press kit with latest company information"
-                    
+
+                    logo_image:
+                        name:
+                            lower_case: "logo image"
+                        type: foreign_key
+                        references:
+                            module: "media"
+                            table: "image"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    brochure_file:
+                        name:
+                            lower_case: "brochure file"
+                        type: foreign_key
+                        references:
+                            module: "file_system"
+                            table: "file"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
                     record_id:
                         name:
                             lower_case: "record id"
                         type: foreign_key
                         references:
+                            module: "file_system"
                             table: "record"
                             field: "id"
                         examples:
@@ -1257,6 +1250,7 @@ modules:
                             lower_case: "user id"
                         type: foreign_key
                         references:
+                            module: "auth"
                             table: "user"
                             field: "id"
                         examples:
@@ -1325,6 +1319,7 @@ modules:
                             lower_case: "image id"
                         type: foreign_key
                         references:
+                            module: "media"
                             table: "image"
                             field: "id"
                         description: "ID of the image to retrieve"
@@ -1426,6 +1421,7 @@ modules:
                             lower_case: "image id"
                         type: foreign_key
                         references:
+                            module: "media"
                             table: "image"
                             field: "id"
                         description: "ID of the image whose file content is being retrieved"
@@ -1481,6 +1477,7 @@ modules:
                         type: foreign_key
                         default: "-1"
                         references:
+                            module: "media"
                             table: "image"
                             field: "id"
                         description: "ID of the image to list, if provided lists only the image with this ID if it exists and the user has access to it"
@@ -1491,6 +1488,7 @@ modules:
                         type: foreign_key
                         default: "-1"
                         references:
+                            module: "file_system"
                             table: "file"
                             field: "id"
                         description: "ID of the file to filter images by, if provided lists only images associated with this file ID if they exist and the user has access to them"
@@ -1501,6 +1499,7 @@ modules:
                         type: foreign_key
                         default: "-1"
                         references:
+                            module: "auth"
                             table: "user"
                             field: "id"
                         description: "ID of the user to filter images by, if provided lists only images associated with files owned by this user ID if they exist and the user has access to them"
