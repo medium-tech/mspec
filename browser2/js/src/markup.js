@@ -2233,6 +2233,8 @@ function handleSequenceOp(app, expression, ctx = null) {
                     try {
                         const fileId = responseData.result.file_id;
                         fileOutput.fileId = fileId;
+                        fileOutput.originalWidth = responseData.result.width;
+                        fileOutput.originalHeight = responseData.result.height;
                         return fileId
                         
                     } catch (error) {
@@ -4065,6 +4067,10 @@ function createViewerElement(app, element, ctx = null) {
             fileId: null,
             fileName: null,
             insetZoom: 1,
+            poppedUp: false,
+            originalWidth: null,
+            originalHeight: null,
+            displayOriginalSize: false
         };
     }
     const mediaState = app.clientState.media[stateKey];
@@ -4105,9 +4111,123 @@ function createViewerElement(app, element, ctx = null) {
         }
     }
 
-    // create image element
+    // 
+    // download button
+    //
+
+    const localFileName = `image_${imageId}`;
+    let downloadButton;
+    if(mediaState.status === 'loaded') {
+        // source is loaded, this download button will trigger
+        // a download using the local source URL without needing to re-fetch from the server
+        console.log('media loaded')
+        downloadButton = createButtonElement(app, {
+            button: {
+                clientFunction: () => {
+                    // using mediaState.localUrl, download the file
+                    const link = document.createElement('a');
+                    link.href = mediaState.localUrl;
+                    link.download = localFileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            },
+            text: '⬇'
+        });
+
+    }else{
+        // used to re-trigger download if there is an error,
+        // or placeholder button while loading
+        downloadButton = createButtonElement(app, {
+            button: {
+                call: 'media.get_media_file_content',
+                args: {
+                    image_id: imageId
+                }
+            },
+            disabled: mediaState.status !== 'error',
+            text: mediaState.status === 'error' ? '⬇' : '⬇'
+        }, {self: {file_output: mediaState}});
+    }
+
+    //
+    // pop up
+    //
+
+    const background = document.createElement('div');
+    background.style.position = 'fixed';
+    background.style.top = '0';
+    background.style.left = '0';
+    background.style.width = '100%';
+    background.style.height = '100%';
+    background.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    background.style.zIndex = '99';
+
+
+    //
+    // view contol buttons
+    //
+
+    const zoomIncrement = 0.25;
+    const zoomMin = (mediaState.poppedUp) ? 0.05 : 1;
+    const zoomMax = (mediaState.poppedUp) ? 5 : 3.5
+
+    const zoomInButton = createButtonElement(app, {
+        button: {
+            clientFunction: () => {
+                mediaState.insetZoom = Math.min(zoomMax, mediaState.insetZoom + zoomIncrement);
+                renderLingoApp(app, document.getElementById('lingo-app'), true);
+            }
+        },
+        text: '✚',
+        disabled: (mediaState.status !== 'loaded' || mediaState.insetZoom >= zoomMax) || mediaState.displayOriginalSize
+    });
+
+    // zoom out 
+    const zoomOutButton = createButtonElement(app, {
+        button: {
+            clientFunction: () => {
+                mediaState.insetZoom = Math.max(zoomMin, mediaState.insetZoom - zoomIncrement);
+                renderLingoApp(app, document.getElementById('lingo-app'), true);
+            }
+        },
+        text: '—',
+        disabled: mediaState.status !== 'loaded' || mediaState.insetZoom <= zoomMin || mediaState.displayOriginalSize
+    });
+
+    // pop up buttom
+    const popUpButton = createButtonElement(app, {
+        button: {
+            clientFunction: () => {
+                mediaState.poppedUp = !mediaState.poppedUp;
+                mediaState.insetZoom = 1;
+                mediaState.displayOriginalSize = false;
+                renderLingoApp(app, document.getElementById('lingo-app'), true);
+            }
+        },
+        text: (mediaState.poppedUp) ? '×' : '⌞ ⌝',
+        disabled: mediaState.status !== 'loaded'
+    });
+
+    // original size buttom
+    const originalSizeButton = createButtonElement(app, {
+        button: {
+            clientFunction: () => {
+                mediaState.displayOriginalSize = !mediaState.displayOriginalSize;
+                renderLingoApp(app, document.getElementById('lingo-app'), true);
+            }
+        },
+        text: mediaState.displayOriginalSize ? 'scaled' : 'original size',
+        disabled: mediaState.status !== 'loaded' && mediaState.hasOwnProperty('originalWidth')
+    });
+
+    //
+    // img
+    //
 
     const img = document.createElement('img');
+    img.style.zIndex = '100';
 
     switch (mediaState.status) {
 
@@ -4131,92 +4251,27 @@ function createViewerElement(app, element, ctx = null) {
             throw new Error('Invalid media state: ' + mediaState.status);
     }
 
-    img.style.maxWidth = '100%';
-    img.style.height = 'auto';
-    img.style.display = 'block';
-    img.style.margin = '0 auto';
-
-    // 
-    // download button
-    //
-
-    const localFileName = `image_${imageId}`;
-    let downloadButton;
-    if(mediaState.status === 'loaded') {
-        // source is loaded, this download button will trigger
-        // a download using the local source URL without needing to re-fetch from the server
-        console.log('media loaded')
-        downloadButton = createButtonElement(app, {
-            button: {
-                clientFunction: () => {
-                    // using mediaState.localUrl, download the file
-                    const link = document.createElement('a');
-                    link.href = mediaState.localUrl;
-                    link.download = localFileName;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                }
-            },
-            text: '💾' // Unicode character for download icon
-        });
-
+    if(mediaState.poppedUp) {
+        img.style.position = 'fixed';
+        img.style.top = '5%';
+        if(mediaState.displayOriginalSize) {
+            img.style.width = mediaState.originalWidth ? `${mediaState.originalWidth}px` : 'auto';
+            img.style.height = mediaState.originalHeight ? `${mediaState.originalHeight}px` : 'auto';
+        }else{
+            const windowX = window.innerWidth;
+            const baseX = (.75 * windowX);
+            const zoomedValue = baseX * mediaState.insetZoom;
+            img.style.left = `${(windowX - zoomedValue) / 2}px`;
+            img.style.width = `${zoomedValue}px`;
+            img.style.padding
+            // img.style.display = 'block';
+        }
     }else{
-        // used to re-trigger download if there is an error,
-        // or placeholder button while loading
-        downloadButton = createButtonElement(app, {
-            button: {
-                call: 'media.get_media_file_content',
-                args: {
-                    image_id: imageId
-                }
-            },
-            disabled: mediaState.status !== 'error',
-            text: mediaState.status === 'error' ? 'retry' : 'loading'
-        }, {self: {file_output: mediaState}});
+        img.style.maxWidth = '100%';
+        img.style.height = 'auto';
+        img.style.display = 'block';
+        img.style.margin = '0 auto';
     }
-
-    //
-    // view contol buttons
-    //
-
-    const zoomIncrement = 0.25;
-    const zoomMin = 1;
-    const zoomMax = 3.5;
-
-    const zoomInButton = createButtonElement(app, {
-        button: {
-            clientFunction: () => {
-                mediaState.insetZoom = Math.min(zoomMax, mediaState.insetZoom + zoomIncrement);
-                renderLingoApp(app, document.getElementById('lingo-app'), true);
-            }
-        },
-        text: '✚',
-        disabled: mediaState.status !== 'loaded' || mediaState.insetZoom >= zoomMax
-    });
-
-    // zoom out 
-    const zoomOutButton = createButtonElement(app, {
-        button: {
-            clientFunction: () => {
-                mediaState.insetZoom = Math.max(zoomMin, mediaState.insetZoom - zoomIncrement);
-                renderLingoApp(app, document.getElementById('lingo-app'), true);
-            }
-        },
-        text: '—',
-        disabled: mediaState.status !== 'loaded' || mediaState.insetZoom <= zoomMin
-    });
-
-    // pop up
-    const popUpButton = createButtonElement(app, {
-        button: {
-            clientFunction: () => {
-                console.log('placeholder for pop-up view functionality');
-            }
-        },
-        text: '⌞ ⌝',
-        disabled: mediaState.status !== 'loaded'
-    });
 
     //
     // container div
@@ -4225,16 +4280,38 @@ function createViewerElement(app, element, ctx = null) {
     const zoomedWidth = width * mediaState.insetZoom;
 
     const div = document.createElement('div');
+    div.style.zIndex = '101';
     div.className = 'viewer-container';
     div.style.width = `${zoomedWidth}px`;
 
     const controlsDiv = document.createElement('div');
+    controlsDiv.style.zIndex = '102';
     controlsDiv.className = 'viewer-controls';
     controlsDiv.appendChild(downloadButton);
-    if(mediaState.status === 'loaded') {
-        controlsDiv.appendChild(zoomOutButton);
-        controlsDiv.appendChild(zoomInButton);
-        controlsDiv.appendChild(popUpButton);
+    controlsDiv.appendChild(zoomOutButton);
+    controlsDiv.appendChild(zoomInButton);
+    controlsDiv.appendChild(popUpButton);
+
+    if(mediaState.poppedUp) {
+        div.appendChild(background);
+        controlsDiv.appendChild(originalSizeButton);
+        controlsDiv.style.position = 'fixed';
+        controlsDiv.style.top = '10px';
+        controlsDiv.style.left = '50%';
+        controlsDiv.style.transform = 'translateX(-50%)';
+
+        // img.style.position = 'fixed';
+        // img.style.top = '50%';
+        // img.style.left = '50%';
+        // img.style.transform = 'translate(-50%, -50%)';
+        // img.style.zIndex = '100';
+
+    }else if(mediaState.status === 'loaded') {
+        img.style.cursor = 'pointer';
+        img.onclick = () => {
+            mediaState.poppedUp = true;
+            renderLingoApp(app, document.getElementById('lingo-app'), true);
+        }
     }
 
     div.appendChild(controlsDiv);
