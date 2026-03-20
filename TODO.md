@@ -29,7 +29,7 @@
         * 🟢 download image
         * 🟢 view image
         * 🔴 tests
-* 🔴 browser - foreign key
+* 🟡 browser - foreign key
     * 🟢 link to item from model view
     * 🔴 tests
 * 🔴 mega app for testing (merge modules from multiple files)
