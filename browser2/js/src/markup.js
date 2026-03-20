@@ -2618,8 +2618,7 @@ function _renderModelRead(app, element, ctx = null) {
                     }
 
                     if(app.clientState.forms[formName].state === 'idle'){
-                        additional = {
-                            block: [
+                        additional = {block: [
                                 {
                                     button: {
                                         call: 'media.get_media_file_content',
@@ -2629,7 +2628,6 @@ function _renderModelRead(app, element, ctx = null) {
                                     },
                                     text: 'download'
                                 },
-                                {text: ' | '},
                                 {
                                     viewer: {
                                         image_id: state.data[field]
@@ -2637,6 +2635,7 @@ function _renderModelRead(app, element, ctx = null) {
                                 }
                             ]
                         }
+                        
                     }else{
                         // switch against loading, success, and default (for error)
 
@@ -3417,13 +3416,14 @@ function createValueElement(app, element) {
                         }else if('text' in fieldValue){
                             cellValue = createTextElement(app, fieldValue);
                         }else if('block' in fieldValue){
-                            const blockContainer = document.createElement('div');
+                            let blockContainer = [];
                             for(const blockElement of fieldValue.block) {
                                 const domElement = createDOMElement(app, blockElement);
                                 if (domElement) {
-                                    blockContainer.appendChild(domElement);
+                                    blockContainer.push(domElement);
                                 }
                             }
+                            console.log('createValueElement - rendering block element in table cell:', fieldValue);
                             cellValue = blockContainer;
                         }
                     }
@@ -3431,7 +3431,16 @@ function createValueElement(app, element) {
                     // Format the cell value for display
                     if(Array.isArray(cellValue)) {
                         // Format arrays as comma-separated values
-                        td.textContent = cellValue.join(', ');
+                        console.log('createValueElement - cellValue is array:', cellValue);
+
+                        if (cellValue.every(item => item instanceof HTMLElement)) {
+                            // td.appendChild for each item
+                            cellValue.forEach(item => {
+                                td.appendChild(item);
+                            });
+                        } else {
+                            td.textContent = cellValue.join(', ');
+                        }
                     } else if(cellValue instanceof HTMLElement) {
                         td.appendChild(cellValue);
                     } else {
