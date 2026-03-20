@@ -138,3 +138,12 @@ table td {
     font-size: 16px;
     cursor: pointer;
 }
+
+/* viewer styles */
+.viewer-container {
+    display: inline-block;
+}
+
+.viewer-controls {
+    text-align: left;
+}

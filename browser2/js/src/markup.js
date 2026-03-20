@@ -4051,7 +4051,7 @@ function createViewerElement(app, element, ctx = null) {
 
     const imageId = element.viewer.image_id;
     const height = element.viewer.height || 100;
-    const width = element.viewer.width || 200;
+    const width = element.viewer.width || 250;
 
     // init client state
 
@@ -4063,7 +4063,8 @@ function createViewerElement(app, element, ctx = null) {
             error: null,
             localUrl: null,
             fileId: null,
-            fileName: null
+            fileName: null,
+            insetZoom: 1,
         };
     }
     const mediaState = app.clientState.media[stateKey];
@@ -4135,12 +4136,17 @@ function createViewerElement(app, element, ctx = null) {
     img.style.display = 'block';
     img.style.margin = '0 auto';
 
-    // button
+    // 
+    // download button
+    //
+
     const localFileName = `image_${imageId}`;
-    let button;
+    let downloadButton;
     if(mediaState.status === 'loaded') {
+        // source is loaded, this download button will trigger
+        // a download using the local source URL without needing to re-fetch from the server
         console.log('media loaded')
-        button = createButtonElement(app, {
+        downloadButton = createButtonElement(app, {
             button: {
                 clientFunction: () => {
                     // using mediaState.localUrl, download the file
@@ -4152,11 +4158,13 @@ function createViewerElement(app, element, ctx = null) {
                     document.body.removeChild(link);
                 }
             },
-            text: 'download'
+            text: '💾' // Unicode character for download icon
         });
 
     }else{
-        button = createButtonElement(app, {
+        // used to re-trigger download if there is an error,
+        // or placeholder button while loading
+        downloadButton = createButtonElement(app, {
             button: {
                 call: 'media.get_media_file_content',
                 args: {
@@ -4168,14 +4176,69 @@ function createViewerElement(app, element, ctx = null) {
         }, {self: {file_output: mediaState}});
     }
 
+    //
+    // view contol buttons
+    //
+
+    const zoomIncrement = 0.25;
+    const zoomMin = 1;
+    const zoomMax = 3.5;
+
+    const zoomInButton = createButtonElement(app, {
+        button: {
+            clientFunction: () => {
+                mediaState.insetZoom = Math.min(zoomMax, mediaState.insetZoom + zoomIncrement);
+                renderLingoApp(app, document.getElementById('lingo-app'), true);
+            }
+        },
+        text: '✚',
+        disabled: mediaState.status !== 'loaded' || mediaState.insetZoom >= zoomMax
+    });
+
+    // zoom out 
+    const zoomOutButton = createButtonElement(app, {
+        button: {
+            clientFunction: () => {
+                mediaState.insetZoom = Math.max(zoomMin, mediaState.insetZoom - zoomIncrement);
+                renderLingoApp(app, document.getElementById('lingo-app'), true);
+            }
+        },
+        text: '—',
+        disabled: mediaState.status !== 'loaded' || mediaState.insetZoom <= zoomMin
+    });
+
+    // pop up
+    const popUpButton = createButtonElement(app, {
+        button: {
+            clientFunction: () => {
+                console.log('placeholder for pop-up view functionality');
+            }
+        },
+        text: '⌞ ⌝',
+        disabled: mediaState.status !== 'loaded'
+    });
+
+    //
     // container div
+    //
+
+    const zoomedWidth = width * mediaState.insetZoom;
 
     const div = document.createElement('div');
-    div.style.width = width + 'px';
-    // div.style.height = height + 'px';
-    div.className = 'image-viewer';
+    div.className = 'viewer-container';
+    div.style.width = `${zoomedWidth}px`;
+
+    const controlsDiv = document.createElement('div');
+    controlsDiv.className = 'viewer-controls';
+    controlsDiv.appendChild(downloadButton);
+    if(mediaState.status === 'loaded') {
+        controlsDiv.appendChild(zoomOutButton);
+        controlsDiv.appendChild(zoomInButton);
+        controlsDiv.appendChild(popUpButton);
+    }
+
+    div.appendChild(controlsDiv);
     div.appendChild(img);
-    div.appendChild(button);
 
     return div;
 }
