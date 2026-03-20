@@ -3181,7 +3181,7 @@ function renderLingoApp(app, container, preserveFocus = false) {
 /**
  * Create a DOM element from a buffer element
  */
-function createDOMElement(app, element) {
+function createDOMElement(app, element, ctx = null) {
     if ('heading' in element) {
         return createHeadingElement(app, element);
     } else if ('break' in element) {
@@ -3208,7 +3208,7 @@ function createDOMElement(app, element) {
 /**
  * Create heading element
  */
-function createHeadingElement(app, element) {
+function createHeadingElement(app, element, ctx = null) {
     const level = element.level || 1;
     const heading = document.createElement(`h${level}`);
     heading.textContent = element.heading;
@@ -3218,7 +3218,7 @@ function createHeadingElement(app, element) {
 /**
  * Create text element
  */
-function createTextElement(app, element) {
+function createTextElement(app, element, ctx = null) {
     const span = document.createElement('span');
     span.textContent = element.text;
     
@@ -3257,7 +3257,7 @@ function createTextElement(app, element) {
 
 /** Create value element
  */
-function createValueElement(app, element) {
+function createValueElement(app, element, ctx = null) {
 
     // console.log('createValueElement()', element);
 
@@ -3491,7 +3491,7 @@ function createValueElement(app, element) {
 /**
  * Create break element
  */
-function createBreakElement(app, element) {
+function createBreakElement(app, element, ctx = null) {
     const container = document.createElement('div');
     for (let i = 0; i < element.break; i++) {
         container.appendChild(document.createElement('br'));
@@ -3502,7 +3502,7 @@ function createBreakElement(app, element) {
 /**
  * Create button element
  */
-function createButtonElement(app, element) {
+function createButtonElement(app, element, ctx = null) {
     const button = document.createElement('button');
     button.textContent = element.text;
 
@@ -3536,7 +3536,7 @@ function createButtonElement(app, element) {
 /**
  * Create input element
  */
-function createInputElement(app, element) {
+function createInputElement(app, element, ctx = null) {
     const input = document.createElement('input');
     input.type = element.input.type || 'text';
     
@@ -3582,7 +3582,7 @@ function createInputElement(app, element) {
 /**
  * Create link element
  */
-function createLinkElement(app, element) {
+function createLinkElement(app, element, ctx = null) {
     const link = document.createElement('a');
     link.href = element.link;
     link.textContent = element.text || element.link;
@@ -3592,7 +3592,7 @@ function createLinkElement(app, element) {
 /**
  * Create form element with table layout
  */
-function createFormElement(app, element) {
+function createFormElement(app, element, ctx = null) {
 
     // console.log('createFormElement()', app, element);
 
@@ -4035,7 +4035,7 @@ function createFormElement(app, element) {
     return formContainer;
 }
 
-function createViewerElement(app, element) {
+function createViewerElement(app, element, ctx = null) {
 
     console.log('createViewerElement', element);
 
