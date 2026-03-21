@@ -74,6 +74,7 @@
                         },
                         "type": "foreign_key",
                         "references": {
+                            "module": "inventory",
                             "table": "supplier",
                             "field": "id"
                         },

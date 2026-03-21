@@ -469,7 +469,7 @@ test('test - forms page', async ({ page }) => {
   await expect(releaseDateInput).toHaveValue('2024-01-15T10:30');
   
   // Check foreign key field (supplier_id)
-  const supplierIdInput = page.getByPlaceholder('Enter ID');
+  const supplierIdInput = page.getByPlaceholder('Enter inventory.supplier ID');
   await expect(supplierIdInput).toBeVisible();
   await expect(supplierIdInput).toHaveValue('1');
   
