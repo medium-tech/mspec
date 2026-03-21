@@ -4052,30 +4052,55 @@ function createFormElement(app, element, ctx = null) {
                 // find item for foreign key reference //
 
                 if(ingestState.status === 'finding') {
+
+                    const closePopupFunction = () => {
+                        ingestState.status = 'idle';
+                        renderLingoApp(app, document.getElementById('lingo-app'), true);
+                    }
+
                     console.log(`Finding item for ${moduleRef}.${tableRef}...`);
                     const background = document.createElement('div');
                     background.className = 'popup-background';
+                    background.onclick = closePopupFunction;
 
-                    const popupModelList = {
+                    const popUpContentContainer = document.createElement('div');
+                    popUpContentContainer.className = 'popup-content';
+
+                    const popupModelList = {model: {
                         bind: { clientState: { forms: { [formKeyId]: {} } } },
                         display: 'list',
-                        http: '',
-                        definition: null,
-                    }
+                        http: `/api/${moduleRef}/${tableRef}`,
+                        definition: app.params['model_definition'],
+                    }};
 
-                    thirdCell.appendChild(background);
-                }else{
-                    const findItemButton = createButtonElement(app, {
-                        button: {
-                            clientFunction: () => {
-                                console.log(`Find item button clicked for ${moduleRef}.${tableRef}`);
-                                ingestState.status = 'finding';
-                                renderLingoApp(app, document.getElementById('lingo-app'), true);
-                            }
-                        }
+                    const popupModelElements = renderModel(app, popupModelList)
+
+                    popupModelElements.forEach(el => {
+                        const domElement = createDOMElement(app, el);
+                        console.log('* * POP UP ELEMENT', el, domElement);
+                        domElement.style.zIndex = 101;
+                        popUpContentContainer.appendChild(domElement);
                     });
-                    findItemButton.textContent = `Find ${tableRef}`;
-                    thirdCell.appendChild(findItemButton);
+                    thirdCell.appendChild(background);
+                    thirdCell.appendChild(popUpContentContainer);
+                }else{
+                    if(app.params.hasOwnProperty('model_definition')) {
+                        const findItemButton = createButtonElement(app, {
+                            button: {
+                                clientFunction: () => {
+                                    console.log(`Find item button clicked for ${moduleRef}.${tableRef}`);
+                                    ingestState.status = 'finding';
+                                    renderLingoApp(app, document.getElementById('lingo-app'), true);
+                                }
+                            }
+                        });
+                        findItemButton.textContent = `Find ${tableRef}`;
+                        thirdCell.appendChild(findItemButton);
+                    }else{
+                        // currently this feature is tighly coupled to the builtin-mapp-model.json page spec
+                        // it needs the model definition to be defined in in params.model_definition
+                        thirdCell.textContent = `Can't browse for ${tableRef} items w/o model definition`;
+                    }
                 }
             }
         } else {
