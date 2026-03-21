@@ -765,6 +765,7 @@ function renderOutput(app, ctx = null) {
                 throw new Error(`Rendered output is not an object or array: ${typeof rendered} - output ${n}`);
             }
         } catch (error) {
+            console.error(`Error rendering output element ${n}:`, error, element);
             throw new Error(`Render error - output ${n} - ${error.message}`);
         }
     }
@@ -2790,25 +2791,65 @@ function _renderModelDelete(app, element, ctx = null) {
 
 function _renderModelList(app, element, ctx = null) {
 
+    /*
+
+    bind can be in these forms:
+        * bind: { state: { myStateField: { }}}
+        * bind: { clientState: { form: { myFormField: { }}}}
+    */
+
+    //
+    // bind to state
+    //
+
     if( !element.model.hasOwnProperty('bind')) {
         throw new Error('renderModelList - missing model bind definition');
     }
 
-    if( !element.model.bind.hasOwnProperty('state')) {
-        throw new Error('renderModelList - model bind definition must bind to state');
+    let state;
+    let setStatement;
+
+    if (element.model.bind.hasOwnProperty('state')) {
+
+         // get first (and only) field in bind.state
+        const stateKeys = Object.keys(element.model.bind.state);
+        if( stateKeys.length !== 1 ) {
+            throw new Error('renderModelList - model bind.state must have exactly one field');
+        }
+
+        const stateField = stateKeys[0];
+
+        state = app.state[stateField];
+
+        setStatement = {state: {[stateField]: {}}};
+        
+    }else if( element.model.bind.hasOwnProperty('clientState')) {
+
+        // if form not found in clientState, throw error
+        if (!element.model.bind.clientState.hasOwnProperty('forms')) {
+            throw new Error('renderModelList - model bind.clientState must have forms defined in clientState');
+        }
+
+        // get form name
+        const formKeys = Object.keys(element.model.bind.clientState.forms);
+        if (formKeys.length !== 1) {
+            throw new Error('renderModelList - model bind.clientState must have exactly one form');
+        }
+        const formName = formKeys[0];
+
+        state = app.clientState.forms[formName];
+
+        setStatement = {clientState: {forms: {[formName]: {}}}};
+        
+    }else{
+        throw new Error('renderModelList - model bind definition must bind to state or clientState');
     }
 
-    // get first (and only) field in bind.state
-    const stateKeys = Object.keys(element.model.bind.state);
-    if( stateKeys.length !== 1 ) {
-        throw new Error('renderModelList - model bind.state must have exactly one field');
-    }
+   
+    //
+    // default state
+    //
 
-    const stateField = stateKeys[0];
-
-    let state = app.state[stateField];
-
-    /* assume state is an object and ensure defaults are set */
     if (!state.hasOwnProperty('items')) state.items = [];
     if (!state.hasOwnProperty('total')) state.total = 0;
     if (!state.hasOwnProperty('offset')) state.offset = 0;
@@ -2827,7 +2868,7 @@ function _renderModelList(app, element, ctx = null) {
     elements.push({
         text: 'prev',
         button: {
-            set: {state: {[stateField]: {}}},
+            set: setStatement,
             to: {
                 call: 'crud.list', 
                 args: {
@@ -2842,7 +2883,7 @@ function _renderModelList(app, element, ctx = null) {
     });
 
     const loadScript = {
-        set: {state: {[stateField]: {}}},
+        set: setStatement,
         to: {
             call: 'crud.list', 
             args: {
@@ -2862,7 +2903,7 @@ function _renderModelList(app, element, ctx = null) {
     elements.push({
         text: 'next',
         button: {
-            set: {state: {[stateField]: {}}},
+            set: setStatement,
             to: {
                 call: 'crud.list', 
                 args: {
@@ -2949,7 +2990,7 @@ function _renderModelList(app, element, ctx = null) {
     if(element.model.hasOwnProperty('instance_url')) {
         const instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
 
-        for (let item of app.state[stateField].items) {
+        for (let item of state.items) {
             // console.log('renderModelList - pre processing:', item);
 
             let copyOfItem = JSON.parse(JSON.stringify(item));
@@ -2962,7 +3003,7 @@ function _renderModelList(app, element, ctx = null) {
             // console.log('renderModelList - post processing:', copyOfItem);
         }
     }else{
-        itemsForTable = app.state[stateField].items;
+        itemsForTable = state.items;
     }
 
     elements.push({
@@ -3598,7 +3639,7 @@ function createLinkElement(app, element, ctx = null) {
  */
 function createFormElement(app, element, ctx = null) {
 
-    // console.log('createFormElement()', app, element);
+    console.log('* * * createFormElement()', app, element);
 
     // init //
     const formContainer = document.createElement('div');
@@ -3630,6 +3671,8 @@ function createFormElement(app, element, ctx = null) {
     }
     const formStateField = stateKeys[0];
 
+    const formId = `form_${formStateField}`;
+
     if( !app.state.hasOwnProperty(formStateField) ) {
         throw new Error(`createFormElement - state field not found: ${formStateField}`);
     }
@@ -3642,13 +3685,15 @@ function createFormElement(app, element, ctx = null) {
     for (const [fieldKey, fieldSpec] of Object.entries(fields)) {
         const row = document.createElement('tr');
 
+        const formKeyId = `${formId}_${fieldKey}`;
+
         let ingestState;    // ingest state is for tracking file uploads
                             // or finding items for foreign_key fields
-        if (app.clientState.forms.hasOwnProperty(fieldKey)) {
-            ingestState = app.clientState.forms[fieldKey];
+        if (app.clientState.forms.hasOwnProperty(formKeyId)) {
+            ingestState = app.clientState.forms[formKeyId];
         } else {
             ingestState = {status: 'idle', error: null};
-            app.clientState.forms[fieldKey] = ingestState;
+            app.clientState.forms[formKeyId] = ingestState;
         }
 
         // Column 1: Field name
@@ -4010,6 +4055,13 @@ function createFormElement(app, element, ctx = null) {
                     console.log(`Finding item for ${moduleRef}.${tableRef}...`);
                     const background = document.createElement('div');
                     background.className = 'popup-background';
+
+                    const popupModelList = {
+                        bind: { clientState: { forms: { [formKeyId]: {} } } },
+                        display: 'list',
+                        http: '',
+                        definition: null,
+                    }
 
                     thirdCell.appendChild(background);
                 }else{
