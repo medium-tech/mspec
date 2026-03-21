@@ -3644,8 +3644,8 @@ function createFormElement(app, element, ctx = null) {
     for (const [fieldKey, fieldSpec] of Object.entries(fields)) {
         const row = document.createElement('tr');
 
-        // client state for tracking form status and errors
-        let ingestState;
+        let ingestState;    // ingest state is for tracking file uploads
+                            // or finding items for foreign_key fields
         if (app.clientState.forms.hasOwnProperty(fieldKey)) {
             ingestState = app.clientState.forms[fieldKey];
         } else {
@@ -3879,7 +3879,7 @@ function createFormElement(app, element, ctx = null) {
                 inputElement.addEventListener('input', () => {
                     formData[fieldKey] = inputElement.value;
                 });
-                
+
                 if (ingestState.status !== 'idle') {
                     inputElement.disabled = true;
                 }
@@ -3929,7 +3929,9 @@ function createFormElement(app, element, ctx = null) {
         } else if (fieldType == 'foreign_key') {
             const moduleRef = fieldSpec.references.module;
             const tableRef = fieldSpec.references.table;
-            if(['file', 'image'].includes(tableRef)) {
+            if(tableRef === 'user') {
+                thirdCell.textContent = 'Your user id';
+            }else if(['file', 'image'].includes(tableRef)) {
                 // add file chooser to thirdCell
 
                 let fileIngestStatus = document.createElement('span');
@@ -4003,11 +4005,25 @@ function createFormElement(app, element, ctx = null) {
                 thirdCell.appendChild(fileIngestStatus);
 
             }else{
-                // For foreign keys, show a link to the referenced item if the field value is set
-                thirdCell.className = 'form-description';
-                thirdCell.textContent = `ID for ${moduleRef}.${tableRef}`;
-            }
 
+                // find item for foreign key reference //
+
+                if(ingestState.status === 'finding') {
+                    console.log(`Finding item for ${moduleRef}.${tableRef}...`);
+                }else{
+                    const findItemButton = createButtonElement(app, {
+                        button: {
+                            clientFunction: () => {
+                                console.log(`Find item button clicked for ${moduleRef}.${tableRef}`);
+                                ingestState.status = 'finding';
+                                renderLingoApp(app, document.getElementById('lingo-app'), true);
+                            }
+                        }
+                    });
+                    findItemButton.textContent = `Find ${tableRef}`;
+                    thirdCell.appendChild(findItemButton);
+                }
+            }
         } else {
             // Description for non-list fields
             thirdCell.className = 'form-description';
@@ -4161,13 +4177,7 @@ function createViewerElement(app, element, ctx = null) {
     //
 
     const background = document.createElement('div');
-    background.style.position = 'fixed';
-    background.style.top = '0';
-    background.style.left = '0';
-    background.style.width = '100%';
-    background.style.height = '100%';
-    background.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-    background.style.zIndex = '99';
+    background.className = 'popup-background';
 
 
     //
