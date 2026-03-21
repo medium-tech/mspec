@@ -3866,16 +3866,20 @@ function createFormElement(app, element, ctx = null) {
             inputElement = document.createElement('input');
             inputElement.type = 'text';
 
-            if(fieldSpec.references.table === 'user') {
+            const module = fieldSpec.references.module;
+            const table = fieldSpec.references.table;
+
+            if(table === 'user') {
                 inputElement.placeholder = 'Will be set automatically';
                 inputElement.disabled = true;
                 inputElement.value = '';
-            }else{
-                inputElement.placeholder = 'Enter ID';
+            }else {
+                inputElement.placeholder = `Enter ${module}.${table} ID`;
                 inputElement.value = typeof formData[fieldKey] !== 'undefined' ? formData[fieldKey] : '';
                 inputElement.addEventListener('input', () => {
                     formData[fieldKey] = inputElement.value;
                 });
+                
                 if (ingestState.status !== 'idle') {
                     inputElement.disabled = true;
                 }
@@ -3923,6 +3927,7 @@ function createFormElement(app, element, ctx = null) {
             
             thirdCell.appendChild(listValuesContainer);
         } else if (fieldType == 'foreign_key') {
+            const moduleRef = fieldSpec.references.module;
             const tableRef = fieldSpec.references.table;
             if(['file', 'image'].includes(tableRef)) {
                 // add file chooser to thirdCell
@@ -4000,7 +4005,7 @@ function createFormElement(app, element, ctx = null) {
             }else{
                 // For foreign keys, show a link to the referenced item if the field value is set
                 thirdCell.className = 'form-description';
-                thirdCell.textContent = `ID for ${fieldSpec.references.table}.${fieldSpec.references.field} - ${formData[fieldKey]}`;
+                thirdCell.textContent = `ID for ${moduleRef}.${tableRef}`;
             }
 
         } else {
