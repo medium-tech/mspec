@@ -2233,8 +2233,6 @@ function handleSequenceOp(app, expression, ctx = null) {
                     try {
                         const fileId = responseData.result.file_id;
                         fileOutput.fileId = fileId;
-                        fileOutput.originalWidth = responseData.result.width;
-                        fileOutput.originalHeight = responseData.result.height;
                         return fileId
                         
                     } catch (error) {
@@ -4010,6 +4008,10 @@ function createFormElement(app, element, ctx = null) {
 
                 if(ingestState.status === 'finding') {
                     console.log(`Finding item for ${moduleRef}.${tableRef}...`);
+                    const background = document.createElement('div');
+                    background.className = 'popup-background';
+
+                    thirdCell.appendChild(background);
                 }else{
                     const findItemButton = createButtonElement(app, {
                         button: {
@@ -4089,8 +4091,6 @@ function createViewerElement(app, element, ctx = null) {
             fileName: null,
             insetZoom: 1,
             poppedUp: false,
-            originalWidth: null,
-            originalHeight: null,
             displayOriginalSize: false
         };
     }
@@ -4168,9 +4168,16 @@ function createViewerElement(app, element, ctx = null) {
                 }
             },
             disabled: mediaState.status !== 'error',
-            text: mediaState.status === 'error' ? '⬇' : '⬇'
+            text: mediaState.status === 'error' ? '↻' : '⬇'
         }, {self: {file_output: mediaState}});
     }
+
+    const closePopupFunction = () => {
+        mediaState.poppedUp = !mediaState.poppedUp;
+        mediaState.insetZoom = 1;
+        mediaState.displayOriginalSize = false;
+        renderLingoApp(app, document.getElementById('lingo-app'), true);
+    };
 
     //
     // pop up
@@ -4178,7 +4185,7 @@ function createViewerElement(app, element, ctx = null) {
 
     const background = document.createElement('div');
     background.className = 'popup-background';
-
+    background.onclick = closePopupFunction;
 
     //
     // view contol buttons
@@ -4214,12 +4221,7 @@ function createViewerElement(app, element, ctx = null) {
     // pop up buttom
     const popUpButton = createButtonElement(app, {
         button: {
-            clientFunction: () => {
-                mediaState.poppedUp = !mediaState.poppedUp;
-                mediaState.insetZoom = 1;
-                mediaState.displayOriginalSize = false;
-                renderLingoApp(app, document.getElementById('lingo-app'), true);
-            }
+            clientFunction: closePopupFunction
         },
         text: (mediaState.poppedUp) ? '×' : '⌞ ⌝',
         disabled: mediaState.status !== 'loaded'
@@ -4234,7 +4236,7 @@ function createViewerElement(app, element, ctx = null) {
             }
         },
         text: mediaState.displayOriginalSize ? 'scaled' : 'original size',
-        disabled: mediaState.status !== 'loaded' && mediaState.hasOwnProperty('originalWidth')
+        disabled: mediaState.status !== 'loaded'
     });
 
     //
@@ -4266,25 +4268,30 @@ function createViewerElement(app, element, ctx = null) {
             throw new Error('Invalid media state: ' + mediaState.status);
     }
 
+    img.style.display = 'block';
+
     if(mediaState.poppedUp) {
         img.style.position = 'fixed';
         img.style.top = '5%';
         if(mediaState.displayOriginalSize) {
-            img.style.width = mediaState.originalWidth ? `${mediaState.originalWidth}px` : 'auto';
-            img.style.height = mediaState.originalHeight ? `${mediaState.originalHeight}px` : 'auto';
+            img.style.width = `${img.naturalWidth}px`
+            img.style.height = `${img.naturalHeight}px`
+    
+            // calculate left to center the image
+            const windowX = window.innerWidth;
+            const left = (windowX - img.naturalWidth) / 2;
+            img.style.left = `${left}px`;
+            console.log(`Original size - window width: ${windowX}, image width: ${img.naturalWidth}, left: ${left}`);
         }else{
             const windowX = window.innerWidth;
             const baseX = (.75 * windowX);
             const zoomedValue = baseX * mediaState.insetZoom;
             img.style.left = `${(windowX - zoomedValue) / 2}px`;
             img.style.width = `${zoomedValue}px`;
-            img.style.padding
-            // img.style.display = 'block';
         }
     }else{
         img.style.maxWidth = '100%';
         img.style.height = 'auto';
-        img.style.display = 'block';
         img.style.margin = '0 auto';
     }
 
