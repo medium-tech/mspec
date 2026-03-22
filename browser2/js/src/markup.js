@@ -940,29 +940,66 @@ function renderParams(app, expression, ctx = null) {
 function renderSet(app, expression, ctx = null) {
     console.log('renderSet()', app, expression);
     try {
-
-        // init
-
-        const target = expression.set.state;
-        const valueExpr = expression.to;
         
-        // get state field
+        // init
+        let target;             // requested target frome expression
+        let stateToSet;         // the object to be updated
+        let setStateValue;      // the function to call to update state
+        let setStructValue;     // the function to call to update a struct field if applicable
+        let fieldType;          // type of value being set
+        let fieldName;          // the name of the state field being set
+        let fieldDisplayName;   // the name of the field to display in error messages (includes struct field if applicable)
 
-        const fieldNames = Object.keys(target);
-        if (fieldNames.length !== 1) {
-            throw new Error('set - must have exactly one state field');
-        }
-        const fieldName = fieldNames[0];
+        if('state' in expression.set){
 
-        if(!app.spec.state.hasOwnProperty(fieldName)){
-            throw new Error(`set - state field not found: ${fieldName}`);
+            target = expression.set.state;
+            
+            // get state field
+
+            const fieldNames = Object.keys(target);
+            if (fieldNames.length !== 1) {
+                throw new Error('set - must have exactly one state field');
+            }
+            fieldName = fieldNames[0];
+
+            if(!app.spec.state.hasOwnProperty(fieldName)){
+                throw new Error(`set - state field not found: ${fieldName}`);
+            }
+
+            stateToSet = app.state[fieldName];
+            setStateValue = (newValue) => app.state[fieldName] = newValue;
+            setStructValue = (structFieldName, newValue) => app.state[fieldName][structFieldName] = newValue;
+            fieldType = app.spec.state[fieldName].type;
+            fieldDisplayName = `state.${fieldName}`;
+
+        }else if('clientState' in expression.set){
+
+            if('forms' in expression.set.clientState){
+                target = expression.set.clientState.forms;
+                const formNames = Object.keys(expression.set.clientState.forms);
+                if (formNames.length !== 1) {
+                    throw new Error('set - must have exactly one form in clientState');
+                }
+                fieldName = formNames[0];
+                if (!app.clientState.forms.hasOwnProperty(fieldName)) {
+                    throw new Error(`set - clientState form not found: ${fieldName}`);
+                }
+
+                stateToSet = app.clientState.forms[fieldName];
+                setStateValue = (newValue) => app.clientState.forms[fieldName] = newValue;
+                setStructValue = (structFieldName, newValue) => app.clientState.forms[fieldName][structFieldName] = newValue;
+                fieldType = getTypeName(stateToSet);
+                fieldDisplayName = `clientState.forms.${fieldName}`;
+
+            }else{
+                throw new Error('set - clientState must have forms field');
+            }
+        }else{
+            throw new Error('set - must have either state or clientState field');
         }
 
         // if is a struct, get struct field name
-        
-        const fieldType = app.spec.state[fieldName].type;
-
-        let value = lingoExecute(app, valueExpr, ctx);
+        let value = lingoExecute(app, expression.to, ctx);
 
         const setValue = () => {
 
@@ -1005,56 +1042,55 @@ function renderSet(app, expression, ctx = null) {
                     // struct field name is the only key in target[fieldName]
                     const structFieldName = Object.keys(target[fieldName])[0];
 
-                    if (!(structFieldName in app.state[fieldName])) {
+                    if (!(structFieldName in stateToSet)) {
                         throw new Error(`set - struct field not found: ${fieldName}.${structFieldName}`);
                     }
 
-                    const origStructValue = app.state[fieldName][structFieldName];
+                    const origStructValue = stateToSet[structFieldName];
 
                     // verify type of outValue matches type of origStructValue
                     const newStructType = getTypeName(origStructValue);
                     const outValueType = getTypeName(outValue);
                     if (!typesMatch(outValueType, newStructType)) {
-                        throw new Error(`set - type mismatch: ${newStructType} != ${outValueType} - field: ${fieldName}.${structFieldName}`);
+                        throw new Error(`set - type mismatch: ${newStructType} != ${outValueType} - ${fieldDisplayName}.${structFieldName}`);
                     }
 
-                    app.state[fieldName][structFieldName] = outValue;
+                    setStructValue(structFieldName, outValue);
 
-                    // console.log(`set - setting struct field: ${fieldName}.${structFieldName} =`, outValue);
+                    console.log(`set - setting struct field: ${fieldDisplayName}.${structFieldName} =`, outValue);
                 }else{
 
-                    // console.log('set - setting multiple struct fields for', fieldName, outValue);
+                    // console.log('set - setting multiple struct fields for', fieldDisplayName, outValue);
 
                     // for each field in outValue, set the corresponding struct field and ensure type matches
 
                     for(const [structFieldName, structFieldValue] of Object.entries(outValue)){
 
-                        if (!(structFieldName in app.state[fieldName])) {
-                            throw new Error(`set - struct field not found: ${fieldName}.${structFieldName}`);
+                        if (!(structFieldName in stateToSet)) {
+                            throw new Error(`set - struct field not found: ${fieldDisplayName}.${structFieldName}`);
                         }
 
-                        const origStructValue = app.state[fieldName][structFieldName];
+                        const origStructValue = stateToSet[structFieldName];
 
                         // verify type of `structFieldValue` matches type of `origStructValue`
                         const newStructType = getTypeName(origStructValue);
                         const structFieldValueType = getTypeName(structFieldValue);
                         if (!typesMatch(structFieldValueType, newStructType)) {
-                            throw new Error(`set - type mismatch: ${newStructType} != ${structFieldValueType} - field: ${fieldName}.${structFieldName}`);
+                            throw new Error(`set - type mismatch: ${newStructType} != ${structFieldValueType} - ${fieldDisplayName}.${structFieldName}`);
                         }
 
-                        app.state[fieldName][structFieldName] = structFieldValue;
+                        setStructValue(structFieldName, structFieldValue);
 
-                        // console.log(`set - setting struct field: ${fieldName}.${structFieldName} =`, structFieldValue);
+                        console.log(`set - setting struct field: ${fieldDisplayName}.${structFieldName} =`, structFieldValue);
                     }
                 }
 
             }else{
                 if (!typesMatch(newType, fieldType)) {
-                    // console.error(`set - type mismatch: ${fieldType} != ${newType} - field: ${fieldName}`, outValue);
-                    throw new Error(`set - type mismatch: ${fieldType} != ${newType} - field: ${fieldName}`, outValue);
+                    throw new Error(`set - type mismatch: ${fieldType} != ${newType} - ${fieldDisplayName}`, outValue);
                 }
-                app.state[fieldName] = outValue;
-                // console.log(`set - setting state field: ${fieldName} =`, outValue);
+                setStateValue(outValue);
+                console.log(`set - setting value: ${fieldDisplayName} =`, outValue);
             }
         }
 
@@ -4077,7 +4113,6 @@ function createFormElement(app, element, ctx = null) {
 
                     popupModelElements.forEach(el => {
                         const domElement = createDOMElement(app, el);
-                        console.log('* * POP UP ELEMENT', el, domElement);
                         domElement.style.zIndex = 101;
                         popUpContentContainer.appendChild(domElement);
                     });
