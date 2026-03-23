@@ -132,6 +132,12 @@ table td {
     color: #999;
 }
 
+.list-selecting:hover {
+    background-color: #1300c0;
+    color: white;
+    cursor: pointer;
+}
+
 /* Remove button styles */
 .remove-button {
     padding: 0 5px;
@@ -161,9 +167,10 @@ table td {
 
 .popup-content {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    width: 65%;
+    top: 30%;
+    left: 5%;
+    
     background-color: white;
     padding: 20px;
     border-radius: 5px;

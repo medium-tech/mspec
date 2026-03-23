@@ -534,6 +534,44 @@ class LingoApp {
         this.buffer = buffer;
         this.afterUpdate = afterUpdate;
         this.afterRender = afterRender;
+
+        this.parentUrl = this.spec.lingo.parent_url || null;
+        this.parentSpec = null;
+
+        console.log('LingoApp()', this.parentUrl)
+
+        //
+        // if parent_url is defined, fetch the parent spec
+        //
+
+        if(this.parentUrl) {
+            const xhr = new XMLHttpRequest();
+
+            try{
+                xhr.open('GET', this.parentUrl, false); // false for synchronous request
+                xhr.send(null);
+
+            }catch(error){
+                console.error('LingoApp() - error during parent spec fetch:', error);
+                throw new Error(`Error during parent spec fetch: ${error.message}`);
+            }
+
+            if (xhr.status === 200) {
+                try {
+                    this.parentSpec = JSON.parse(xhr.responseText);
+                    console.log('LingoApp() - fetched parent spec:', this.parentSpec);
+
+                } catch (error) {
+                    console.error('LingoApp() - error parsing parent spec JSON:', error, xhr.responseText);
+                    throw new Error(`Failed to parse parent spec JSON: ${error.message}`);
+                }
+            } else {
+                console.error('LingoApp() - error fetching parent spec:', xhr.status, xhr.statusText);
+                throw new Error(`Failed to fetch parent spec: ${xhr.status} - ${xhr.statusText}`);
+            }
+
+        }
+
         this.clientState = {
             forms: {},
             media: {}
@@ -744,7 +782,7 @@ function lingoExecute(app, expression, ctx = null) {
  */
 function renderOutput(app, ctx = null) {
     app.buffer = [];
-    // console.log('* * * renderOutput()', typeof app.spec.output, app.spec.output.length);
+    // console.log('renderOutput()', typeof app.spec.output, app.spec.output.length);
     for (let n = 0; n < app.spec.output.length; n++) {
         const element = app.spec.output[n];
         try {
@@ -938,7 +976,7 @@ function renderParams(app, expression, ctx = null) {
  * Render state setter - equivalent to Python render_set()
  */
 function renderSet(app, expression, ctx = null) {
-    console.log('renderSet()', app, expression);
+    // console.log('renderSet()', app, expression);
     try {
         
         // init
@@ -1057,7 +1095,7 @@ function renderSet(app, expression, ctx = null) {
 
                     setStructValue(structFieldName, outValue);
 
-                    console.log(`set - setting struct field: ${fieldDisplayName}.${structFieldName} =`, outValue);
+                // console.log(`set - setting struct field: ${fieldDisplayName}.${structFieldName} =`, outValue);
                 }else{
 
                     // console.log('set - setting multiple struct fields for', fieldDisplayName, outValue);
@@ -1081,7 +1119,7 @@ function renderSet(app, expression, ctx = null) {
 
                         setStructValue(structFieldName, structFieldValue);
 
-                        console.log(`set - setting struct field: ${fieldDisplayName}.${structFieldName} =`, structFieldValue);
+                        // console.log(`set - setting struct field: ${fieldDisplayName}.${structFieldName} =`, structFieldValue);
                     }
                 }
 
@@ -1090,7 +1128,7 @@ function renderSet(app, expression, ctx = null) {
                     throw new Error(`set - type mismatch: ${fieldType} != ${newType} - ${fieldDisplayName}`, outValue);
                 }
                 setStateValue(outValue);
-                console.log(`set - setting value: ${fieldDisplayName} =`, outValue);
+                // console.log(`set - setting value: ${fieldDisplayName} =`, outValue);
             }
         }
 
@@ -1996,7 +2034,7 @@ function handleSequenceOp(app, expression, ctx = null) {
                     // console.log('handleSequenceOp - crud.list - raw text response:', await response.text());
 
                     const responseData = await response.json();
-                    console.log('handleSequenceOp - crud.list - responseData:', responseData);
+                    // console.log('handleSequenceOp - crud.list - responseData:', responseData);
 
                     return {
                         state: 'loaded',
@@ -2832,7 +2870,17 @@ function _renderModelList(app, element, ctx = null) {
     bind can be in these forms:
         * bind: { state: { myStateField: { }}}
         * bind: { clientState: { form: { myFormField: { }}}}
+
     */
+
+    // selecting can be enabled to choose a model from the list,
+    //     -1 means it is disabled,
+    //      1 means it is enabled and single selection
+    //      
+    //      other numbers are reserved for future use (e.g. 2 for multi-selection, 0 for unlimited)
+    const selecting = element.model.selecting || -1
+    const onSelect = element.model.onSelect || null // onSelect is the callback that will be run when an item is selected
+                                                    // it will be called with the selected item as the argument
 
     //
     // bind to state
@@ -2873,9 +2921,17 @@ function _renderModelList(app, element, ctx = null) {
         }
         const formName = formKeys[0];
 
-        state = app.clientState.forms[formName];
-
-        setStatement = {clientState: {forms: {[formName]: {}}}};
+        const formStructKeys = Object.keys(element.model.bind.clientState.forms[formName]);
+        if (formStructKeys.length === 0) {
+            state = app.clientState.forms[formName];
+            setStatement = {clientState: {forms: {[formName]: {}}}};
+        } else if (formStructKeys.length === 1) {
+            const formStructKeyName = formStructKeys[0];
+            state = app.clientState.forms[formName][formStructKeyName];
+            setStatement = {clientState: {forms: {[formName]: {[formStructKeyName]: {}}}}};
+        }else{
+            throw new Error('renderModelList - model bind.clientState form definition has too many nested levels. Only one level of nesting allowed after form name.');
+        }
         
     }else{
         throw new Error('renderModelList - model bind definition must bind to state or clientState');
@@ -2892,6 +2948,8 @@ function _renderModelList(app, element, ctx = null) {
     if (!state.hasOwnProperty('size')) state.size = 5;
     if (!state.hasOwnProperty('state')) state.state = "initial";
     if (!state.hasOwnProperty('error')) state.error = "";
+    if (!state.hasOwnProperty('showing')) state.showing = 0;
+    if (!state.hasOwnProperty('selected')) state.selected = []; // if we're selecting items, this will be a list of their ids
 
     const definition = lingoExecute(app, element.model.definition, ctx);
 
@@ -3046,7 +3104,9 @@ function _renderModelList(app, element, ctx = null) {
         type: 'list',
         display: {
             format: 'table',
-            headers: headers
+            headers: headers,
+            selecting: selecting,
+            onSelect: onSelect
         },
         value: itemsForTable
     });
@@ -3455,6 +3515,13 @@ function createValueElement(app, element, ctx = null) {
                 }
                 
                 const row = document.createElement('tr');
+                if (element.display.selecting === 1) {
+                    row.className = 'list-selecting';
+                }
+
+                if (element.display.onSelect) {
+                    row.onclick = () => element.display.onSelect(item);
+                }
                 
                 for(const headerDef of element.display.headers) {
                     const td = document.createElement('td');
@@ -3587,7 +3654,7 @@ function createButtonElement(app, element, ctx) {
     const button = document.createElement('button');
     button.textContent = element.text;
 
-    console.log('createButtonElement()', typeof element.button, element);
+    // console.log('createButtonElement()', typeof element.button, element);
 
 
     if (element.hasOwnProperty('disabled')) {
@@ -3675,7 +3742,7 @@ function createLinkElement(app, element, ctx = null) {
  */
 function createFormElement(app, element, ctx = null) {
 
-    console.log('* * * createFormElement()', app, element);
+    // console.log('createFormElement()', app, element);
 
     // init //
     const formContainer = document.createElement('div');
@@ -3714,7 +3781,7 @@ function createFormElement(app, element, ctx = null) {
     }
     const currentState = app.state[formStateField];
     const formData = currentState.data || {};
-    console.log('createFormElement - formData before:', formData);
+    // console.log('createFormElement - formData before:', formData);
     
     // create a row for each field //
 
@@ -3728,7 +3795,7 @@ function createFormElement(app, element, ctx = null) {
         if (app.clientState.forms.hasOwnProperty(formKeyId)) {
             ingestState = app.clientState.forms[formKeyId];
         } else {
-            ingestState = {status: 'idle', error: null};
+            ingestState = {status: 'idle', error: null, popup: null};
             app.clientState.forms[formKeyId] = ingestState;
         }
 
@@ -4089,12 +4156,22 @@ function createFormElement(app, element, ctx = null) {
 
                 if(ingestState.status === 'finding') {
 
+                    if (ingestState.popup === null) {
+                        ingestState.popup = {
+                            items: [],
+                            total: 0,
+                            offset: 0,
+                            size: 10,
+                            state: 'pending',
+                            errors: ''
+                        };
+                    }
+
                     const closePopupFunction = () => {
                         ingestState.status = 'idle';
                         renderLingoApp(app, document.getElementById('lingo-app'), true);
                     }
 
-                    console.log(`Finding item for ${moduleRef}.${tableRef}...`);
                     const background = document.createElement('div');
                     background.className = 'popup-background';
                     background.onclick = closePopupFunction;
@@ -4102,11 +4179,22 @@ function createFormElement(app, element, ctx = null) {
                     const popUpContentContainer = document.createElement('div');
                     popUpContentContainer.className = 'popup-content';
 
+                    const popupModelSpec = app.parentSpec.modules[moduleRef].models[tableRef]
+
+                    const onPopupSelect = (item) => {
+                        console.log('Selected item from popup:', item);
+                        formData[fieldKey] = item.value.id;
+                        ingestState.status = 'idle';
+                        renderLingoApp(app, document.getElementById('lingo-app'), true);
+                    }
+
                     const popupModelList = {model: {
-                        bind: { clientState: { forms: { [formKeyId]: {} } } },
+                        bind: { clientState: { forms: { [formKeyId]: {popup: {}} } } },
                         display: 'list',
-                        http: `/api/${moduleRef}/${tableRef}`,
-                        definition: app.params['model_definition'],
+                        http: `/api/${moduleRef}/${tableRef}`.replaceAll('_', '-'),
+                        definition: popupModelSpec,
+                        selecting: 1,
+                        onSelect: onPopupSelect
                     }};
 
                     const popupModelElements = renderModel(app, popupModelList)
@@ -4118,8 +4206,9 @@ function createFormElement(app, element, ctx = null) {
                     });
                     thirdCell.appendChild(background);
                     thirdCell.appendChild(popUpContentContainer);
+
                 }else{
-                    if(app.params.hasOwnProperty('model_definition')) {
+                    if(app.parentSpec) {
                         const findItemButton = createButtonElement(app, {
                             button: {
                                 clientFunction: () => {
@@ -4132,8 +4221,8 @@ function createFormElement(app, element, ctx = null) {
                         findItemButton.textContent = `Find ${tableRef}`;
                         thirdCell.appendChild(findItemButton);
                     }else{
-                        // currently this feature is tighly coupled to the builtin-mapp-model.json page spec
-                        // it needs the model definition to be defined in in params.model_definition
+                        // this feature requiers that the page spec define a parent spec
+                        // which is used to look of the model definition for the browsing table
                         thirdCell.textContent = `Can't browse for ${tableRef} items w/o model definition`;
                     }
                 }
@@ -4172,13 +4261,13 @@ function createFormElement(app, element, ctx = null) {
     
     formContainer.appendChild(table);
 
-    console.log('createFormElement - formData after:', formData);
+    // console.log('createFormElement - formData after:', formData);
     return formContainer;
 }
 
 function createViewerElement(app, element, ctx = null) {
 
-    console.log('createViewerElement', element);
+    // console.log('createViewerElement', element);
 
     // init
 

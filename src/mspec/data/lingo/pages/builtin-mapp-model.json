@@ -1,6 +1,7 @@
 {
     "lingo": {
-        "version": "page-beta-1"
+        "version": "page-beta-1",
+        "parent_url": "/api/spec"
     },
     "params": {
         "project_name": {

@@ -31,7 +31,7 @@
         * 🔴 tests
 * 🟡 browser - foreign key
     * 🟢 link to item from model view
-    * 🟡 search for item from form
+    * 🟢 search for item from form
     * 🔴 tests
 
 
