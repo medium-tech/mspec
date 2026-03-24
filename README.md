@@ -185,6 +185,8 @@ With dev server running, in another terminal run:
 
 	npm run test
 
+⚠️ If these tests fail you may need to run `build.sh` from the root of the repo.
+
 ## mapp framework
 The mapp framework is used to run an application defined in the [application spec](#application). Its features include:
 * db crud/list ops for data models

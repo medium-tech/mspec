@@ -10,31 +10,29 @@
 |🔴|🟡|🟢|
 
 ## priorities
-* 🟡 file upload
+* 🟢 file upload
     * 🟢 backend
         * 🟢 cli
         * 🟢 server
         * 🟢 tests
-    * 🔴 browser1
+    * 🟢 browser1
         * 🟢 model create
         * 🟢 model download
-        * 🔴 tests
-* 🟡 media
+        * 🟢 tests
+* 🟢 media
     * 🟢 backend
         * 🟢 cli
         * 🟢 server
         * 🟢 tests
-    * 🟡 browser1
+    * 🟢 browser1
         * 🟢 create image
         * 🟢 download image
         * 🟢 view image
-        * 🔴 tests
-* 🟡 browser - foreign key
+        * 🟢 tests
+* 🟢 browser - foreign key
     * 🟢 link to item from model view
     * 🟢 search for item from form
-    * 🔴 tests
-
-
+    * 🟢 tests
 * 🔴 mega app for testing (merge modules from multiple files)
 * 🔴 merge js dev lingo server into mapp template
 * 🔴 update testing
