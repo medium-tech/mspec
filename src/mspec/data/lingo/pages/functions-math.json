@@ -1,0 +1,64 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+    "state": {
+        "test_add": {
+            "type": "int",
+            "calc": {"call": "add", "args": {"a": 10, "b": 5}}
+        },
+        "test_sub": {
+            "type": "int", 
+            "calc": {"call": "sub", "args": {"a": 10, "b": 3}}
+        },
+        "test_mul": {
+            "type": "int",
+            "calc": {"call": "mul", "args": {"a": 4, "b": 7}}
+        },
+        "test_div": {
+            "type": "float",
+            "calc": {"call": "div", "args": {"a": 15, "b": 3}}
+        },
+        "test_floordiv": {
+            "type": "int",
+            "calc": {"call": "floordiv", "args": {"a": 15, "b": 2}}
+        },
+        "test_mod": {
+            "type": "int",
+            "calc": {"call": "mod", "args": {"a": 15, "b": 4}}
+        },
+        "test_pow": {
+            "type": "int",
+            "calc": {"call": "pow", "args": {"a": 2, "b": 3}}
+        },
+        "test_min": {
+            "type": "int",
+            "calc": {"call": "min", "args": {"a": 3, "b": 7}}
+        },
+        "test_max": {
+            "type": "int",
+            "calc": {"call": "max", "args": {"a": 3, "b": 7}}
+        },
+        "test_abs": {
+            "type": "int",
+            "calc": {"call": "abs", "args": {"number": -10}}
+        }
+    },
+    "ops": {},
+    "output": [
+        {"heading": {"text": "Math Functions"}, "level": 1},
+        {"block": [
+            {"text": "add(10, 5) = "}, {"lingo": {"state": {"test_add": {}}}}, {"break": 1},
+            {"text": "sub(10, 3) = "}, {"lingo": {"state": {"test_sub": {}}}}, {"break": 1},
+            {"text": "mul(4, 7) = "}, {"lingo": {"state": {"test_mul": {}}}}, {"break": 1},
+            {"text": "div(15, 3) = "}, {"lingo": {"state": {"test_div": {}}}}, {"break": 1},
+            {"text": "floordiv(15, 2) = "}, {"lingo": {"state": {"test_floordiv": {}}}}, {"break": 1},
+            {"text": "mod(15, 4) = "}, {"lingo": {"state": {"test_mod": {}}}}, {"break": 1},
+            {"text": "pow(2, 3) = "}, {"lingo": {"state": {"test_pow": {}}}}, {"break": 1},
+            {"text": "min(3, 7) = "}, {"lingo": {"state": {"test_min": {}}}}, {"break": 1},
+            {"text": "max(3, 7) = "}, {"lingo": {"state": {"test_max": {}}}}, {"break": 1},
+            {"text": "abs(-10) = "}, {"lingo": {"state": {"test_abs": {}}}}, {"break": 1}
+        ]}
+    ]
+}

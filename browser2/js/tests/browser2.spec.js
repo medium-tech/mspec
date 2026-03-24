@@ -143,6 +143,206 @@ test('test - functions', async ({ page }) => {
 
 });
 
+test('test - functions-comparison', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/functions-comparison.json');
+
+  await expect(page.locator('h1')).toContainText('Comparison Functions');
+
+  const expectedText = [
+    'eq(5, 5) = true',
+    'eq(5, 3) = false',
+    'ne(5, 3) = true',
+    'ne(5, 5) = false',
+    'lt(3, 5) = true',
+    'lt(5, 3) = false',
+    'le(5, 5) = true',
+    'le(7, 5) = false',
+    'gt(7, 5) = true',
+    'gt(3, 5) = false',
+    'ge(5, 5) = true',
+    'ge(3, 5) = false',
+  ];
+
+  for (const text of expectedText) {
+    await expect(page.locator('#lingo-app')).toContainText(text);
+  }
+});
+
+test('test - functions-bool', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/functions-bool.json');
+
+  await expect(page.locator('h1')).toContainText('Bool Functions');
+
+  const expectedText = [
+    'bool(1) = true',
+    'bool(0) = false',
+    'not(true) = false',
+    'not(false) = true',
+    'neg(5) = -5',
+    'and(true, true) = true',
+    'and(true, false) = false',
+    'or(false, true) = true',
+    'or(false, false) = false',
+  ];
+
+  for (const text of expectedText) {
+    await expect(page.locator('#lingo-app')).toContainText(text);
+  }
+});
+
+test('test - functions-int', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/functions-int.json');
+
+  await expect(page.locator('h1')).toContainText('Int Functions');
+
+  const expectedText = [
+    'int(42.7) = 42',
+    'int(\'2A\', base=16) = 42',
+  ];
+
+  for (const text of expectedText) {
+    await expect(page.locator('#lingo-app')).toContainText(text);
+  }
+});
+
+test('test - functions-float', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/functions-float.json');
+
+  await expect(page.locator('h1')).toContainText('Float Functions');
+
+  const expectedText = [
+    'float(\'1e-003\') = 0.001',
+    'round(3.14159) = 3',
+    'round(3.14159, ndigits=3) = 3.142',
+  ];
+
+  for (const text of expectedText) {
+    await expect(page.locator('#lingo-app')).toContainText(text);
+  }
+});
+
+test('test - functions-str', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/functions-str.json');
+
+  await expect(page.locator('h1')).toContainText('Str Functions');
+
+  const expectedText = [
+    'str(123) = 123',
+    'join(\'-\', [\'a\',\'b\',\'c\']) = a-b-c',
+    'concat([\'hello\', \' \', \'world\']) = hello world',
+  ];
+
+  for (const text of expectedText) {
+    await expect(page.locator('#lingo-app')).toContainText(text);
+  }
+});
+
+test('test - functions-math', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/functions-math.json');
+
+  await expect(page.locator('h1')).toContainText('Math Functions');
+
+  const expectedText = [
+    'add(10, 5) = 15',
+    'sub(10, 3) = 7',
+    'mul(4, 7) = 28',
+    'div(15, 3) = 5',
+    'floordiv(15, 2) = 7',
+    'mod(15, 4) = 3',
+    'pow(2, 3) = 8',
+    'min(3, 7) = 3',
+    'max(3, 7) = 7',
+    'abs(-10) = 10',
+  ];
+
+  for (const text of expectedText) {
+    await expect(page.locator('#lingo-app')).toContainText(text);
+  }
+});
+
+test('test - functions-sequence', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/functions-sequence.json');
+
+  await expect(page.locator('h1')).toContainText('Sequence Functions');
+
+  const expectedText = [
+    'len([1,2,3,4,5]) = 5',
+    'len(\'hello\') = 5',
+    'range(5) = 0, 1, 2, 3, 4',
+    'range(1, 7) = 1, 2, 3, 4, 5, 6',
+    'range(0, 10, 2) = 0, 2, 4, 6, 8',
+    'slice([0,1,2,3,4], stop=2) = 0, 1',
+    'slice([0,1,2,3,4,5,6], start=2, stop=5) = 2, 3, 4',
+    'slice([0,1,2,3,4], start=1, stop=4, step=2) = 1, 3',
+    'any([true, false]) = true',
+    'any([false, false]) = false',
+    'all([true, true]) = true',
+    'all([true, false]) = false',
+    'sum([1,2,3], start=0) = 6',
+    'sum([1,2,3], start=10) = 16',
+    'sorted([5,2,9]) = 2, 5, 9',
+  ];
+
+  for (const text of expectedText) {
+    await expect(page.locator('#lingo-app')).toContainText(text);
+  }
+});
+
+test('test - functions-sequence-ops', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/functions-sequence-ops.json');
+
+  await expect(page.locator('h1')).toContainText('Sequence Ops Functions');
+
+  const expectedText = [
+    'map(add(item, 10), [1,2,3,4,5]) = 11, 12, 13, 14, 15',
+    'filter(gt(item, 3), [1,2,3,4,5,6,7]) = 4, 5, 6, 7',
+    'dropwhile(lt(item, 4), [1,2,3,4,5,6,7]) = 4, 5, 6, 7',
+    'takewhile(lt(item, 4), [1,2,3,4,5,6,7]) = 1, 2, 3',
+    'reversed([1,2,3]) = 3, 2, 1',
+    'accumulate([1,2,3,4], add) = 1, 3, 6, 10',
+    'accumulate([1,2,3,4], add, initial=10) = 10, 11, 13, 16, 20',
+    'reduce([1,2,3,4], add) = 10',
+    'reduce([1,2,3,4], add, initial=10) = 20',
+  ];
+
+  for (const text of expectedText) {
+    await expect(page.locator('#lingo-app')).toContainText(text);
+  }
+});
+
+test('test - functions-datetime', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/functions-datetime.json');
+
+  await expect(page.locator('h1')).toContainText('Date and Time Functions');
+
+  const expectedText = [
+    'current.weekday() = ',
+    'datetime.now() = ',
+  ];
+
+  for (const text of expectedText) {
+    await expect(page.locator('#lingo-app')).toContainText(text);
+  }
+});
+
+test('test - functions-random', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/functions-random.json');
+
+  await expect(page.locator('h1')).toContainText('Random Functions');
+
+  await expect(page.locator('#lingo-app')).toContainText('random.randint(1, 10) = ');
+});
+
 test('test - hello_world script', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
   

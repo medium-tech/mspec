@@ -1,0 +1,14 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+    "state": {},
+    "ops": {},
+    "output": [
+        {"heading": {"text": "Random Functions"}, "level": 1},
+        {"block": [
+            {"text": "random.randint(1, 10) = "}, {"lingo": {"call": "random.randint", "args": {"a": 1, "b": 10}}}, {"break": 1}
+        ]}
+    ]
+}
