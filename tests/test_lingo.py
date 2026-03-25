@@ -281,6 +281,7 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(app.state['test_sum'], 6)
         self.assertEqual(app.state['test_sum_start'], 16)
         self.assertEqual(app.state['test_sorted'], [2, 5, 9])
+        self.assertEqual(app.state['test_sorted_strings'], ['apple', 'banana', 'cherry'])
 
     def test_sequence_ops_functions(self):
         """Test sequence ops: map, filter, dropwhile, takewhile, reversed, accumulate, reduce"""

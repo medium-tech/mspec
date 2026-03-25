@@ -705,7 +705,7 @@ const lingoFunctionLookup = {
         }
     },
     'sorted': {
-        func: (iterable) => [...iterable].sort((a, b) => a - b),
+        func: (iterable) => [...iterable].sort(),
         args: {'iterable': {'type': 'list'}}
     },
     
@@ -2091,6 +2091,8 @@ function renderCall(app, expression, ctx = null) {
             argTypes[argName] = valueType;
         }
     }
+
+    // console.log('call - rendered args', expression.call, renderedArgs);
     
     // Call function based on signature
     let returnValue;

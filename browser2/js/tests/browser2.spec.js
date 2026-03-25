@@ -7,7 +7,6 @@ test('test - hello world', async ({ page }) => {
   await expect(page.locator('#debug-content')).toContainText('Lingo: page-beta-1');
 });
 
-
 test('test - test page', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
   await page.locator('#spec-select').selectOption('data/lingo/pages/test-page.json');
@@ -288,6 +287,7 @@ test('test - functions-sequence', async ({ page }) => {
     'sum([1,2,3], start=0) = 6',
     'sum([1,2,3], start=10) = 16',
     'sorted([5,2,9]) = 2, 5, 9',
+    'sorted([\'banana\', \'apple\', \'cherry\']) = apple, banana, cherry'
   ];
 
   for (const text of expectedText) {

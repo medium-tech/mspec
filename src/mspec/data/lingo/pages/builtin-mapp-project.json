@@ -63,13 +63,6 @@
             "break": 1
         },
         {
-            "text": "To Do: Fix sorting of module names",
-            "style": {
-                "bold": true,
-                "color": "red"
-            }
-        },
-        {
             "call": "map",
             "args": {
                 "iterable": {

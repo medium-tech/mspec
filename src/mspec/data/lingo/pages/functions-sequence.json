@@ -63,6 +63,10 @@
         "test_sorted": {
             "type": "list",
             "calc": {"call": "sorted", "args": {"iterable": [5,2,9]}}
+        },
+        "test_sorted_strings": {
+            "type": "list",
+            "calc": {"call": "sorted", "args": {"iterable": ["banana", "apple", "cherry"]}}
         }
     },
     "ops": {},
@@ -83,7 +87,8 @@
             {"text": "all([true, false]) = "}, {"lingo": {"state": {"test_all_false": {}}}}, {"break": 1},
             {"text": "sum([1,2,3], start=0) = "}, {"lingo": {"state": {"test_sum": {}}}}, {"break": 1},
             {"text": "sum([1,2,3], start=10) = "}, {"lingo": {"state": {"test_sum_start": {}}}}, {"break": 1},
-            {"text": "sorted([5,2,9]) = "}, {"lingo": {"state": {"test_sorted": {}}}}, {"break": 1}
+            {"text": "sorted([5,2,9]) = "}, {"lingo": {"state": {"test_sorted": {}}}}, {"break": 1},
+            {"text": "sorted(['banana', 'apple', 'cherry']) = "}, {"lingo": {"state": {"test_sorted_strings": {}}}}, {"break": 1}
         ]}
     ]
 }
