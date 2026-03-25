@@ -17,15 +17,11 @@ class TestLingoPages(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.test_spec_path = SAMPLE_BROWSER2_SPEC_DIR / 'test-page.json'
-        cls.functions_spec_path = SAMPLE_BROWSER2_SPEC_DIR / 'functions.json'
 
         with open(cls.test_spec_path, 'r') as f:
             cls.test_spec = json.load(f)
 
-        with open(cls.functions_spec_path, 'r') as f:
-            cls.functions_spec = json.load(f)
-
-        group_files = [
+        cls.function_files = [
             'functions-comparison',
             'functions-bool',
             'functions-int',
@@ -37,11 +33,13 @@ class TestLingoPages(unittest.TestCase):
             'functions-datetime',
             'functions-random',
         ]
-        for name in group_files:
+        cls.function_specs = []
+        for name in cls.function_files:
             path = SAMPLE_BROWSER2_SPEC_DIR / f'{name}.json'
             with open(path, 'r') as f:
                 attr = name.replace('-', '_')
                 setattr(cls, f'{attr}_spec', json.load(f))
+                cls.function_specs.append(getattr(cls, f'{attr}_spec'))
 
     def test_example_app_first_visit(self):
         app = lingo_app(self.test_spec, first_visit=True)
@@ -105,19 +103,6 @@ class TestLingoPages(unittest.TestCase):
         app = lingo_app(spec)
         doc = render_output(lingo_update_state(app))
 
-    def test_functions_page(self):
-        """Test all functions defined in lingo_function_lookup using functions.json"""
-        app = lingo_app(self.functions_spec)
-        doc = render_output(app)
-        
-        # Test that we get the expected number of output elements
-        self.assertGreater(len(doc), 90, "Should have many output elements for comprehensive function testing")
-        
-        # Verify it's structured as expected
-        heading = doc[0]
-        self.assertEqual(heading['heading'], 'Function Tests')
-        self.assertEqual(heading['level'], 1)
-
     def test_all_functions_coverage(self):
         """Verify that all functions in lingo_function_lookup are tested"""
         
@@ -137,9 +122,10 @@ class TestLingoPages(unittest.TestCase):
         tested_functions = set()
         
         # Check state calculations for tested functions
-        for state_key, state_def in self.functions_spec['state'].items():
-            if 'calc' in state_def and 'call' in state_def['calc']:
-                tested_functions.add(state_def['calc']['call'])
+        for func_spec in self.function_specs:
+            for state_key, state_def in func_spec['state'].items():
+                if 'calc' in state_def and 'call' in state_def['calc']:
+                    tested_functions.add(state_def['calc']['call'])
         
         # Check output for direct function calls
         def check_calls_in_element(element):
@@ -153,8 +139,9 @@ class TestLingoPages(unittest.TestCase):
                 for item in element:
                     check_calls_in_element(item)
 
-        for output_element in self.functions_spec['output']:
-            check_calls_in_element(output_element)
+        for func_spec in self.function_specs:
+            for output_element in func_spec['output']:
+                check_calls_in_element(output_element)
         
         # Verify coverage
         missing_functions = expected_functions - tested_functions

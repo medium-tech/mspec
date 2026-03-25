@@ -225,8 +225,8 @@ class TestMspecCLI(unittest.TestCase):
     #
 
     def test_run_command_functions(self):
-        """Test the run command with functions.json"""
-        result = self._run_cli(['run', 'functions.json'])
+        """Test the run command with functions-str.json"""
+        result = self._run_cli(['run', 'functions-str.json'])
         self.assertEqual(result.returncode, 0)
         # Should output JSON to stdout
         self.assertTrue(len(result.stdout) > 0)
