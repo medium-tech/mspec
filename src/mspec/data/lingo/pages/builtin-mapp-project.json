@@ -31,6 +31,15 @@
                     "items": [":: ", {"params": {"project_name": {}}}]
                 }
             }
+        },
+        "sorted_module_names": {
+            "type": "list",
+            "calc": {
+                "call": "sorted",
+                "args": {
+                    "iterable": {"params": {"module_names": {}}}
+                }
+            }
         }
     },
     "ops": {},
@@ -54,11 +63,18 @@
             "break": 1
         },
         {
+            "text": "To Do: Fix sorting of module names",
+            "style": {
+                "bold": true,
+                "color": "red"
+            }
+        },
+        {
             "call": "map",
             "args": {
                 "iterable": {
-                    "params": {
-                        "module_names": {}
+                    "state": {
+                        "sorted_module_names": {}
                     }
                 },
                 "function": {
