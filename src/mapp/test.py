@@ -251,6 +251,7 @@ class TestMTemplateApp(unittest.TestCase):
         crud_env['MAPP_CLIENT_HOST'] = f'http://localhost:{crud_port}'
         crud_env['MAPP_DB_URL'] = str(cls.crud_db_file.resolve())
         crud_env['MAPP_FILE_SYSTEM_REPO'] = str((Path(cls.test_dir) / 'crud_file_system').resolve())
+        crud_env['MAPP_SERVER_DEVELOPMENT_MODE'] = 'true'
 
         try:
             del crud_env['DEBUG_DELAY']
