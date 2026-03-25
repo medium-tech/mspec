@@ -35,7 +35,11 @@ modules:
           user_id:
             name:
               lower_case: 'user id'
-            type: str
+            type: foreign_key
+            references:
+              module: 'auth'
+              table: 'user'
+              field: 'id'
             examples:
               - "1"
               - "2"
@@ -76,7 +80,11 @@ modules:
           user_id:
             name:
               lower_case: 'user id'
-            type: str
+            type: foreign_key
+            references:
+              module: 'auth'
+              table: 'user'
+              field: 'id'
             examples:
               - "1"
               - "2"
@@ -102,7 +110,11 @@ modules:
           user_id:
             name:
               lower_case: 'user id'
-            type: str
+            type: foreign_key
+            references:
+              module: 'auth'
+              table: 'user'
+              field: 'id'
             examples:
               - "1"
               - "2"

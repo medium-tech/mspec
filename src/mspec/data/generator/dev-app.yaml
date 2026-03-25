@@ -18,9 +18,10 @@ server:
 client:
   default_host: 'http://localhost:2002'
 
-import_modules:
-    - ./spec-a.yaml
-    - ./spec-b.yaml
+import:
+  modules:
+    - ./my-sample-store.yaml
+    - ./simple-social-network.yaml
 
 modules:
   module_a:

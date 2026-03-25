@@ -138,6 +138,7 @@ modules:
             type: str
             examples:
               - 'my-name@email.com'
+              - 'another-email-address@email.com'
             random: random_email
 
           phone_number:

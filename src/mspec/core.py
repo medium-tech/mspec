@@ -130,11 +130,12 @@ def load_generator_spec(spec_file:str, try_examples:bool=True) -> dict:
     """
     try:
         contents = load_json_or_yaml(spec_file)
+        source_path = Path(spec_file)
 
     except FileNotFoundError:
         if try_examples:
-            _path = SAMPLE_GENERATOR_SPEC_DIR / spec_file
-            contents = load_json_or_yaml(_path)
+            source_path = SAMPLE_GENERATOR_SPEC_DIR / spec_file
+            contents = load_json_or_yaml(source_path)
         else:
             raise
 
@@ -144,12 +145,12 @@ def load_generator_spec(spec_file:str, try_examples:bool=True) -> dict:
     except KeyError:
         raise ValueError(f'No lingo.version defined in spec file: {spec_file}')
 
-    return init_generator_spec(contents)
+    return init_generator_spec(contents, source_path)
 
 load_mapp_spec = load_generator_spec  # alias for backward compatibility
 
 
-def init_generator_spec(spec:dict) -> dict:
+def init_generator_spec(spec:dict, source_path:Path) -> dict:
 
     #
     # project
@@ -164,11 +165,21 @@ def init_generator_spec(spec:dict) -> dict:
         spec_modules:dict = spec['modules']
     except KeyError:
         raise ValueError('No modules defined in the spec file.')
+    
+    # additional modules to import #
 
-    try:
-        spec_modules += project['import_modules']
-    except KeyError:
-        pass
+    modules_to_import = spec.get('import', {}).get('modules', [])
+
+    for import_file in modules_to_import:
+        try:
+            import_spec = load_generator_spec(import_file)
+            import_modules:dict = import_spec.get('modules', {})
+            for module_name, module in import_modules.items():
+                if module_name in spec_modules and not module['builtin']:
+                    raise ValueError(f'Module name {module_name} in imported spec {import_file} conflicts with existing module name in main spec.')
+                spec_modules[module_name] = module
+        except Exception as e:
+            raise RuntimeError(f'Failed to import {import_file} from import.modules: {e.__class__.__name__}: {str(e)}')
     
     try:
         use_builtin_modules = project['use_builtin_modules']
@@ -183,7 +194,8 @@ def init_generator_spec(spec:dict) -> dict:
             raise ValueError(f'Failed to load builtin modules: {str(e)}')
         
         for module_name, module in builtin_modules['modules'].items():
-            if module_name not in spec_modules:
+            #if module_name not in spec_modules:
+                module['builtin'] = True
                 spec_modules[module_name] = module
 
     #
@@ -194,6 +206,9 @@ def init_generator_spec(spec:dict) -> dict:
         for key, value in generate_names(module['name']['lower_case']).items():
             if key not in module['name']:
                 module['name'][key] = value
+
+        if 'builtin' not in module:
+            module['builtin'] = False
 
         module_snake = module['name']['snake_case']
 
