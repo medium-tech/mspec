@@ -31,7 +31,6 @@ test('test file system and media flow', async ({ browser, crudEnv, crudSession }
 
 	await page.getByRole('link', { name: 'file-system' }).click();
 	await page.getByRole('link', { name: 'record' }).click();
-	await page.getByRole('button', { name: 'Choose File' }).click();
 	await page.getByRole('button', { name: 'Choose File' }).setInputFiles('./tests/samples/lorem-document.pdf');
 
 	await page.getByRole('row', { name: 'description:' }).getByRole('textbox').click();
@@ -62,11 +61,9 @@ test('test file system and media flow', async ({ browser, crudEnv, crudSession }
 
 	await page.getByRole('row', { name: 'description:' }).getByRole('textbox').click();
 	await page.getByRole('row', { name: 'description:' }).getByRole('textbox').fill('Press kit for JS Unittest');
-	await page.getByRole('row', { name: 'logo image: Choose File' }).getByRole('button').click();
 	await page.getByRole('row', { name: 'logo image: Choose File' }).getByRole('button').setInputFiles('./tests/samples/splash-low.jpg');
 	await expect(page.locator('#lingo-app')).toContainText('File uploaded successfully!');
 
-	await page.getByRole('row', { name: 'brochure file: Choose File' }).getByRole('button').click();
 	await page.getByRole('button', { name: 'Choose File' }).setInputFiles('./tests/samples/lorem-document.pdf');
 	await expect(page.locator('#lingo-app')).toContainText('File uploaded successfully!');
 
