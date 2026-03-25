@@ -244,14 +244,16 @@ Tests will run their own servers, with own sqlite file, on different ports that 
 **From dir:** `cd templates/mapp-py`
 
 * python
-	* run tests - `./test.sh`
+	* run tests: `./test.sh`
 	* test logs and data in dir: `./mapp-tests`
+    * use cached test data: `./test.sh --use-cache`
 * browser
 	* run tests - `./test.sh --npm-run`
         * this will start the same test servers used in the python tests and then run `npm run test` against them
 	* run specific npm commands w/ test servers/data
 		* tests with gui: `./test.sh --npm-run test-ui`
         * test generator: `./test.sh --npm-run test-gen`
+    * use cached test data: `./test.sh --use-cache --npm-run`
 
 # Development
 

@@ -219,10 +219,16 @@ class TestMTemplateApp(unittest.TestCase):
 
         print(':: Setting up TestMTemplateApp')
 
+        crud_fs_path = Path(cls.test_dir) / 'crud_file_system'
+
         # delete old files #
     
         if not cls.use_cache:
             shutil.rmtree(cls.test_dir, ignore_errors=True)
+        else:
+            # the crud environment is always recreated
+            # so we need to wipe this dir always
+            shutil.rmtree(crud_fs_path, ignore_errors=True)
 
         os.makedirs(cls.test_dir, exist_ok=True)
 
@@ -250,7 +256,7 @@ class TestMTemplateApp(unittest.TestCase):
         crud_env['MAPP_SERVER_PORT'] = str(crud_port)
         crud_env['MAPP_CLIENT_HOST'] = f'http://localhost:{crud_port}'
         crud_env['MAPP_DB_URL'] = str(cls.crud_db_file.resolve())
-        crud_env['MAPP_FILE_SYSTEM_REPO'] = str((Path(cls.test_dir) / 'crud_file_system').resolve())
+        crud_env['MAPP_FILE_SYSTEM_REPO'] = str(crud_fs_path.resolve())
         crud_env['MAPP_SERVER_DEVELOPMENT_MODE'] = 'true'
 
         try:
