@@ -163,8 +163,9 @@
                     // from specSelect.pages and specSelect.scripts
                     const pagesOptGroup = document.createElement('optgroup');
                     pagesOptGroup.label = 'Pages';
-                    data.pages.forEach(page => {
-                        
+                    // Sort pages alphabetically before adding options
+                    const sortedPages = data.pages.slice().sort();
+                    sortedPages.forEach(page => {
                         if (page.includes('_test_data')) {
                             return; // skip test data files
                         }
@@ -180,7 +181,9 @@
 
                     const scriptsOptGroup = document.createElement('optgroup');
                     scriptsOptGroup.label = 'Scripts';
-                    data.scripts.forEach(script => {
+                    // Sort scripts alphabetically before adding options
+                    const sortedScripts = data.scripts.slice().sort();
+                    sortedScripts.forEach(script => {
                         if (script.includes('_test_data')) {
                             return; // skip test data files
                         }

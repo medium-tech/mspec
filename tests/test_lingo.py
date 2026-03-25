@@ -25,6 +25,24 @@ class TestLingoPages(unittest.TestCase):
         with open(cls.functions_spec_path, 'r') as f:
             cls.functions_spec = json.load(f)
 
+        group_files = [
+            'functions-comparison',
+            'functions-bool',
+            'functions-int',
+            'functions-float',
+            'functions-str',
+            'functions-math',
+            'functions-sequence',
+            'functions-sequence-ops',
+            'functions-datetime',
+            'functions-random',
+        ]
+        for name in group_files:
+            path = SAMPLE_BROWSER2_SPEC_DIR / f'{name}.json'
+            with open(path, 'r') as f:
+                attr = name.replace('-', '_')
+                setattr(cls, f'{attr}_spec', json.load(f))
+
     def test_example_app_first_visit(self):
         app = lingo_app(self.test_spec, first_visit=True)
         app.state['name'] = 'Alice'
@@ -145,7 +163,7 @@ class TestLingoPages(unittest.TestCase):
 
     def test_comparison_functions(self):
         """Test comparison operators: eq, ne, lt, le, gt, ge"""
-        app = lingo_app(self.functions_spec)
+        app = lingo_app(self.functions_comparison_spec)
         
         # Test equality
         self.assertTrue(app.state['test_eq_true'])
@@ -165,7 +183,7 @@ class TestLingoPages(unittest.TestCase):
 
     def test_bool_functions(self):
         """Test bool operators: bool, not, neg, and, or"""
-        app = lingo_app(self.functions_spec)
+        app = lingo_app(self.functions_bool_spec)
         
         # Test bool function
         self.assertTrue(app.state['test_bool_true'])
@@ -188,7 +206,7 @@ class TestLingoPages(unittest.TestCase):
 
     def test_int_functions(self):
         """Test int conversion functions: int"""
-        app = lingo_app(self.functions_spec)
+        app = lingo_app(self.functions_int_spec)
         
         # Test int function with number
         self.assertEqual(app.state['test_int'], 42)
@@ -198,7 +216,7 @@ class TestLingoPages(unittest.TestCase):
 
     def test_float_functions(self):
         """Test float conversion and rounding functions: float, round"""
-        app = lingo_app(self.functions_spec)
+        app = lingo_app(self.functions_float_spec)
 
         # Test float function
         self.assertEqual(app.state['test_float'], 0.001)
@@ -209,7 +227,7 @@ class TestLingoPages(unittest.TestCase):
 
     def test_str_functions(self):
         """Test string functions: str, join"""
-        app = lingo_app(self.functions_spec)
+        app = lingo_app(self.functions_str_spec)
         
         # Test str function
         self.assertEqual(app.state['test_str'], '123')
@@ -219,7 +237,7 @@ class TestLingoPages(unittest.TestCase):
 
     def test_math_functions(self):
         """Test math operators: add, sub, mul, div, floordiv, mod, pow, min, max, abs"""
-        app = lingo_app(self.functions_spec)
+        app = lingo_app(self.functions_math_spec)
         
         # Test arithmetic operations
         self.assertEqual(app.state['test_add'], 15)
@@ -237,7 +255,7 @@ class TestLingoPages(unittest.TestCase):
 
     def test_sequence_functions(self):
         """Test sequence functions: len, range, slice, any, all, sum, sorted"""
-        app = lingo_app(self.functions_spec)
+        app = lingo_app(self.functions_sequence_spec)
 
         # Test len
         self.assertEqual(app.state['test_len_list'], 5)
@@ -266,7 +284,7 @@ class TestLingoPages(unittest.TestCase):
 
     def test_sequence_ops_functions(self):
         """Test sequence ops: map, filter, dropwhile, takewhile, reversed, accumulate, reduce"""
-        app = lingo_app(self.functions_spec)
+        app = lingo_app(self.functions_sequence_ops_spec)
 
         # Test map
         self.assertEqual(app.state['test_map'], [11, 12, 13, 14, 15])
@@ -289,7 +307,7 @@ class TestLingoPages(unittest.TestCase):
 
     def test_datetime_functions(self):
         """Test date and time functions: current.weekday, datetime.now"""
-        app = lingo_app(self.functions_spec)
+        app = lingo_app(self.functions_datetime_spec)
         doc = render_output(app)
         
         # Find the datetime output in the rendered document
@@ -315,7 +333,7 @@ class TestLingoPages(unittest.TestCase):
 
     def test_random_functions(self):
         """Test random functions: random.randint"""
-        app = lingo_app(self.functions_spec)
+        app = lingo_app(self.functions_random_spec)
         doc = render_output(app)
         
         # Find the random output in the rendered document

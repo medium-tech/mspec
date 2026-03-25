@@ -1,0 +1,24 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+    "state": {
+        "test_int": {
+            "type": "int",
+            "calc": {"call": "int", "args": {"number": 42.7}}
+        },
+        "test_int_base": {
+            "type": "int",
+            "calc": {"call": "int", "args": {"string": "2A", "base": 16}}
+        }
+    },
+    "ops": {},
+    "output": [
+        {"heading": {"text": "Int Functions"}, "level": 1},
+        {"block": [
+            {"text": "int(42.7) = "}, {"lingo": {"state": {"test_int": {}}}}, {"break": 1},
+            {"text": "int('2A', base=16) = "}, {"lingo": {"state": {"test_int_base": {}}}}, {"break": 1}
+        ]}
+    ]
+}

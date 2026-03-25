@@ -1,0 +1,74 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+    "state": {
+        "test_eq_true": {
+            "type": "bool",
+            "calc": {"call": "eq", "args": {"a": 5, "b": 5}}
+        },
+        "test_eq_false": {
+            "type": "bool",
+            "calc": {"call": "eq", "args": {"a": 5, "b": 3}}
+        },
+        "test_ne_true": {
+            "type": "bool",
+            "calc": {"call": "ne", "args": {"a": 5, "b": 3}}
+        },
+        "test_ne_false": {
+            "type": "bool",
+            "calc": {"call": "ne", "args": {"a": 5, "b": 5}}
+        },
+        "test_lt_true": {
+            "type": "bool",
+            "calc": {"call": "lt", "args": {"a": 3, "b": 5}}
+        },
+        "test_lt_false": {
+            "type": "bool",
+            "calc": {"call": "lt", "args": {"a": 5, "b": 3}}
+        },
+        "test_le_true": {
+            "type": "bool",
+            "calc": {"call": "le", "args": {"a": 5, "b": 5}}
+        },
+        "test_le_false": {
+            "type": "bool",
+            "calc": {"call": "le", "args": {"a": 7, "b": 5}}
+        },
+        "test_gt_true": {
+            "type": "bool",
+            "calc": {"call": "gt", "args": {"a": 7, "b": 5}}
+        },
+        "test_gt_false": {
+            "type": "bool",
+            "calc": {"call": "gt", "args": {"a": 3, "b": 5}}
+        },
+        "test_ge_true": {
+            "type": "bool",
+            "calc": {"call": "ge", "args": {"a": 5, "b": 5}}
+        },
+        "test_ge_false": {
+            "type": "bool",
+            "calc": {"call": "ge", "args": {"a": 3, "b": 5}}
+        }
+    },
+    "ops": {},
+    "output": [
+        {"heading": {"text": "Comparison Functions"}, "level": 1},
+        {"block": [
+            {"text": "eq(5, 5) = "}, {"lingo": {"state": {"test_eq_true": {}}}}, {"break": 1},
+            {"text": "eq(5, 3) = "}, {"lingo": {"state": {"test_eq_false": {}}}}, {"break": 1},
+            {"text": "ne(5, 3) = "}, {"lingo": {"state": {"test_ne_true": {}}}}, {"break": 1},
+            {"text": "ne(5, 5) = "}, {"lingo": {"state": {"test_ne_false": {}}}}, {"break": 1},
+            {"text": "lt(3, 5) = "}, {"lingo": {"state": {"test_lt_true": {}}}}, {"break": 1},
+            {"text": "lt(5, 3) = "}, {"lingo": {"state": {"test_lt_false": {}}}}, {"break": 1},
+            {"text": "le(5, 5) = "}, {"lingo": {"state": {"test_le_true": {}}}}, {"break": 1},
+            {"text": "le(7, 5) = "}, {"lingo": {"state": {"test_le_false": {}}}}, {"break": 1},
+            {"text": "gt(7, 5) = "}, {"lingo": {"state": {"test_gt_true": {}}}}, {"break": 1},
+            {"text": "gt(3, 5) = "}, {"lingo": {"state": {"test_gt_false": {}}}}, {"break": 1},
+            {"text": "ge(5, 5) = "}, {"lingo": {"state": {"test_ge_true": {}}}}, {"break": 1},
+            {"text": "ge(3, 5) = "}, {"lingo": {"state": {"test_ge_false": {}}}}, {"break": 1}
+        ]}
+    ]
+}

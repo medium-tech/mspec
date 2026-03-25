@@ -1,0 +1,83 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+    "state": {
+        "test_map": {
+            "type": "list",
+            "calc": {
+                "call": "map",
+                "args": {
+                    "function": {"call": "add", "args": {"a": {"self": "item"}, "b": 10}},
+                    "iterable": [1, 2, 3, 4, 5]
+                }
+            }
+        },
+        "test_filter": {
+            "type": "list",
+            "calc": {
+                "call": "filter",
+                "args": {
+                    "function": {"call": "gt", "args": {"a": {"self": "item"}, "b": 3}},
+                    "iterable": [1, 2, 3, 4, 5, 6, 7]
+                }
+            }
+        },
+        "test_dropwhile": {
+            "type": "list",
+            "calc": {
+                "call": "dropwhile",
+                "args": {
+                    "function": {"call": "lt", "args": {"a": {"self": "item"}, "b": 4}},
+                    "iterable": [1, 2, 3, 4, 5, 6, 7]
+                }
+            }
+        },
+        "test_takewhile": {
+            "type": "list",
+            "calc": {
+                "call": "takewhile",
+                "args": {
+                    "function": {"call": "lt", "args": {"a": {"self": "item"}, "b": 4}},
+                    "iterable": [1, 2, 3, 4, 5, 6, 7]
+                }
+            }
+        },
+        "test_reversed": {
+            "type": "list",
+            "calc": {"call": "reversed", "args": {"sequence": [1,2,3]}}
+        },
+        "test_accumulate": {
+            "type": "list",
+            "calc": {"call": "accumulate", "args": {"iterable": [1,2,3,4], "function": {"call": "add", "args": {"a": {"self": "item"}, "b": {"self": "next_item"}}}}}
+        },
+        "test_accumulate_initial": {
+            "type": "list",
+            "calc": {"call": "accumulate", "args": {"iterable": [1,2,3,4], "function": {"call": "add", "args": {"a": {"self": "item"}, "b": {"self": "next_item"}}}, "initial": 10}}
+        },
+        "test_reduce": {
+            "type": "int",
+            "calc": {"call": "reduce", "args": {"iterable": [1,2,3,4], "function": {"call": "add", "args": {"a": {"self": "item"}, "b": {"self": "next_item"}}}}}
+        },
+        "test_reduce_initial": {
+            "type": "int",
+            "calc": {"call": "reduce", "args": {"iterable": [1,2,3,4], "function": {"call": "add", "args": {"a": {"self": "item"}, "b": {"self": "next_item"}}}, "initial": 10}}
+        }
+    },
+    "ops": {},
+    "output": [
+        {"heading": {"text": "Sequence Ops Functions"}, "level": 1},
+        {"block": [
+            {"text": "map(add(item, 10), [1,2,3,4,5]) = "}, {"lingo": {"state": {"test_map": {}}}}, {"break": 1},
+            {"text": "filter(gt(item, 3), [1,2,3,4,5,6,7]) = "}, {"lingo": {"state": {"test_filter": {}}}}, {"break": 1},
+            {"text": "dropwhile(lt(item, 4), [1,2,3,4,5,6,7]) = "}, {"lingo": {"state": {"test_dropwhile": {}}}}, {"break": 1},
+            {"text": "takewhile(lt(item, 4), [1,2,3,4,5,6,7]) = "}, {"lingo": {"state": {"test_takewhile": {}}}}, {"break": 1},
+            {"text": "reversed([1,2,3]) = "}, {"lingo": {"state": {"test_reversed": {}}}}, {"break": 1},
+            {"text": "accumulate([1,2,3,4], add) = "}, {"lingo": {"state": {"test_accumulate": {}}}}, {"break": 1},
+            {"text": "accumulate([1,2,3,4], add, initial=10) = "}, {"lingo": {"state": {"test_accumulate_initial": {}}}}, {"break": 1},
+            {"text": "reduce([1,2,3,4], add) = "}, {"lingo": {"state": {"test_reduce": {}}}}, {"break": 1},
+            {"text": "reduce([1,2,3,4], add, initial=10) = "}, {"lingo": {"state": {"test_reduce_initial": {}}}}, {"break": 1}
+        ]}
+    ]
+}

@@ -1,0 +1,15 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+    "state": {},
+    "ops": {},
+    "output": [
+        {"heading": {"text": "Date and Time Functions"}, "level": 1},
+        {"block": [
+            {"text": "current.weekday() = "}, {"lingo": {"call": "current.weekday"}}, {"break": 1},
+            {"text": "datetime.now() = "}, {"lingo": {"call": "datetime.now"}}, {"break": 1}
+        ]}
+    ]
+}

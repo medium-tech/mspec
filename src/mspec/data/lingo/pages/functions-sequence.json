@@ -1,0 +1,89 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+    "state": {
+        "test_len_list": {
+            "type": "int",
+            "calc": {"call": "len", "args": {"object": [1,2,3,4,5]}}
+        },
+        "test_len_string": {
+            "type": "int",
+            "calc": {"call": "len", "args": {"object": "hello"}}
+        },
+        "test_range_default": {
+            "type": "list",
+            "calc": {"call": "range", "args": {"stop": 5}}
+        },
+        "test_range_start": {
+            "type": "list",
+            "calc": {"call": "range", "args": {"start": 1, "stop": 7}}
+        },
+        "test_range_step": {
+            "type": "list",
+            "calc": {"call": "range", "args": {"start": 0, "stop": 10, "step": 2}}
+        },
+        "test_slice_default": {
+            "type": "list",
+            "calc": {"call": "slice", "args": {"iterator": [0,1,2,3,4], "stop": 2}}
+        },
+        "test_slice_start": {
+            "type": "list",
+            "calc": {"call": "slice", "args": {"iterator": [0,1,2,3,4,5,6], "start": 2, "stop": 5}}
+        },
+        "test_slice_step": {
+            "type": "list",
+            "calc": {"call": "slice", "args": {"iterator": [0,1,2,3,4], "start": 1, "stop": 4, "step": 2}}
+        },
+        "test_any_true": {
+            "type": "bool",
+            "calc": {"call": "any", "args": {"iterable": [true, false]}}
+        },
+        "test_any_false": {
+            "type": "bool",
+            "calc": {"call": "any", "args": {"iterable": [false, false]}}
+        },
+        "test_all_true": {
+            "type": "bool",
+            "calc": {"call": "all", "args": {"iterable": [true, true]}}
+        },
+        "test_all_false": {
+            "type": "bool",
+            "calc": {"call": "all", "args": {"iterable": [true, false]}}
+        },
+        "test_sum": {
+            "type": "int",
+            "calc": {"call": "sum", "args": {"iterable": [1,2,3], "start": 0}}
+        },
+        "test_sum_start": {
+            "type": "int",
+            "calc": {"call": "sum", "args": {"iterable": [1,2,3], "start": 10}}
+        },
+        "test_sorted": {
+            "type": "list",
+            "calc": {"call": "sorted", "args": {"iterable": [5,2,9]}}
+        }
+    },
+    "ops": {},
+    "output": [
+        {"heading": {"text": "Sequence Functions"}, "level": 1},
+        {"block": [
+            {"text": "len([1,2,3,4,5]) = "}, {"lingo": {"state": {"test_len_list": {}}}}, {"break": 1},
+            {"text": "len('hello') = "}, {"lingo": {"state": {"test_len_string": {}}}}, {"break": 1},
+            {"text": "range(5) = "}, {"lingo": {"state": {"test_range_default": {}}}}, {"break": 1},
+            {"text": "range(1, 7) = "}, {"lingo": {"state": {"test_range_start": {}}}}, {"break": 1},
+            {"text": "range(0, 10, 2) = "}, {"lingo": {"state": {"test_range_step": {}}}}, {"break": 1},
+            {"text": "slice([0,1,2,3,4], stop=2) = "}, {"lingo": {"state": {"test_slice_default": {}}}}, {"break": 1},
+            {"text": "slice([0,1,2,3,4,5,6], start=2, stop=5) = "}, {"lingo": {"state": {"test_slice_start": {}}}}, {"break": 1},
+            {"text": "slice([0,1,2,3,4], start=1, stop=4, step=2) = "}, {"lingo": {"state": {"test_slice_step": {}}}}, {"break": 1},
+            {"text": "any([true, false]) = "}, {"lingo": {"state": {"test_any_true": {}}}}, {"break": 1},
+            {"text": "any([false, false]) = "}, {"lingo": {"state": {"test_any_false": {}}}}, {"break": 1},
+            {"text": "all([true, true]) = "}, {"lingo": {"state": {"test_all_true": {}}}}, {"break": 1},
+            {"text": "all([true, false]) = "}, {"lingo": {"state": {"test_all_false": {}}}}, {"break": 1},
+            {"text": "sum([1,2,3], start=0) = "}, {"lingo": {"state": {"test_sum": {}}}}, {"break": 1},
+            {"text": "sum([1,2,3], start=10) = "}, {"lingo": {"state": {"test_sum_start": {}}}}, {"break": 1},
+            {"text": "sorted([5,2,9]) = "}, {"lingo": {"state": {"test_sorted": {}}}}, {"break": 1}
+        ]}
+    ]
+}

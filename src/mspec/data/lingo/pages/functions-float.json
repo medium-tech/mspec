@@ -1,0 +1,29 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+    "state": {
+        "test_float": {
+            "type": "float",
+            "calc": {"call": "float", "args": {"number": "1e-003"}}
+        },
+        "test_round_default": {
+            "type": "int",
+            "calc": {"call": "round", "args": {"number": 3.14159}}
+        },
+        "test_round_ndigits": {
+            "type": "float",
+            "calc": {"call": "round", "args": {"number": 3.14159, "ndigits": 3}}
+        }
+    },
+    "ops": {},
+    "output": [
+        {"heading": {"text": "Float Functions"}, "level": 1},
+        {"block": [
+            {"text": "float('1e-003') = "}, {"lingo": {"state": {"test_float": {}}}}, {"break": 1},
+            {"text": "round(3.14159) = "}, {"lingo": {"state": {"test_round_default": {}}}}, {"break": 1},
+            {"text": "round(3.14159, ndigits=3) = "}, {"lingo": {"state": {"test_round_ndigits": {}}}}, {"break": 1}
+        ]}
+    ]
+}
