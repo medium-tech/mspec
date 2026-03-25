@@ -247,10 +247,11 @@ Tests will run their own servers, with own sqlite file, on different ports that 
 	* run tests - `./test.sh`
 	* test logs and data in dir: `./mapp-tests`
 * browser
-	* start server - `./test.sh --servers-only`
-	* in another terminal run test
-		* headless: `npm run test`
-		* interactively: `npm run test-ui`
+	* run tests - `./test.sh --npm-run`
+        * this will start the same test servers used in the python tests and then run `npm run test` against them
+	* run specific npm commands w/ test servers/data
+		* tests with gui: `./test.sh --npm-run test-ui`
+        * test generator: `./test.sh --npm-run test-gen`
 
 # Development
 

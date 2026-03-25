@@ -2072,9 +2072,11 @@ def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:st
 
     return result.wasSuccessful()
 
-def test_servers(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:str|None, use_cache:bool=False, app_type:str='', verbose:bool=False) -> bool:
+def test_npm(npm_run:str, spec_path:str|Path, cli_args:list[str], host:str|None, env_file:str|None, use_cache:bool=False, app_type:str='', verbose:bool=False) -> bool:
     if cli_args is None:
         raise ValueError('args must be provided as a list of strings')
+    
+    # start servers
 
     TestMTemplateApp.spec = load_generator_spec(spec_path)
     TestMTemplateApp.cmd = cli_args
@@ -2082,13 +2084,44 @@ def test_servers(spec_path:str|Path, cli_args:list[str], host:str|None, env_file
     TestMTemplateApp.env_file = env_file
     TestMTemplateApp.use_cache = use_cache
     TestMTemplateApp.app_type = app_type
-
     TestMTemplateApp.setUpClass()
-    print('***** SETUP COMPLETE, SERVERS RUNNING *****')
-    print('Press Enter to stop servers and exit...')
-    input()
-    TestMTemplateApp.tearDownClass()
-    print('***DONE, SERVERS STOPPED***')
+    print(':: server setup complete')
+
+    # run npm command #
+
+    npm_cmd = ['npm', 'run', npm_run]
+    print(f':: running npm command: {" ".join(npm_cmd)}')
+
+    test_result = False
+    
+    try:
+        process = subprocess.Popen(npm_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        # run command and forward stdout/stderr in real time
+        while True:
+            output = process.stdout.readline()
+            if output == '' and process.poll() is not None:
+                break
+            if output:
+                print(output, end='')
+
+        # process exited
+        stderr = process.stderr.read()
+        if stderr:
+            print(stderr, end='')
+
+        return_code = process.poll()
+        print(f':: npm command exit code {return_code}')
+        if return_code == 0:
+            test_result = True
+
+    except Exception as e:
+        print(f':: exception while running npm command: {e}')
+
+    finally:
+        TestMTemplateApp.tearDownClass()
+
+    print(f'\n:: npm test result: {"PASS" if test_result else "FAIL"}\n\n')
+    return test_result
 
 if __name__ == '__main__':
     import argparse
@@ -2101,12 +2134,12 @@ if __name__ == '__main__':
     parser.add_argument('--use-cache', action='store_true', help='Use cached test resources if available')
     parser.add_argument('--app-type', type=str, default='', help='Supply "python" to run setup for python apps')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose output')
-    parser.add_argument('--servers-only', action='store_true', help='Only start and stop servers without running tests')
+    parser.add_argument('--npm-run', type=str, help='Start test servers, then run "npm run <arg>", ex: "--npm-run test"')
 
     args = parser.parse_args()
 
-    if args.servers_only:
-        test_servers(args.spec, args.cmd, args.host, args.env_file, args.use_cache, args.app_type, args.verbose)
+    if args.npm_run:
+        test_npm(args.npm_run, args.spec, args.cmd, args.host, args.env_file, args.use_cache, args.app_type, args.verbose)
 
     else:
         if args.test_filter:
