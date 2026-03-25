@@ -18,6 +18,10 @@ server:
 client:
   default_host: 'http://localhost:2002'
 
+import_modules:
+    - ./spec-a.yaml
+    - ./spec-b.yaml
+
 modules:
   module_a:
     name:

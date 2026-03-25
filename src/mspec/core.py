@@ -164,6 +164,11 @@ def init_generator_spec(spec:dict) -> dict:
         spec_modules:dict = spec['modules']
     except KeyError:
         raise ValueError('No modules defined in the spec file.')
+
+    try:
+        spec_modules += project['import_modules']
+    except KeyError:
+        pass
     
     try:
         use_builtin_modules = project['use_builtin_modules']

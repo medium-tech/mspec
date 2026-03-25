@@ -35,8 +35,8 @@
     * 🟢 tests
 * 🔴 mega app for testing (merge modules from multiple files)
 * 🔴 merge js dev lingo server into mapp template
-* 🔴 update testing
-    * 🔴 split functions.json apart
+* 🟡 update testing
+    * 🟢 split functions.json apart
         * 🔴 create matching specs for script spec
     * 🔴 implement testing data for page spec
 * 🔴 create features table for different clients
