@@ -199,6 +199,303 @@ const placeholderImage = (width, height, text) => {
 
 // // // // //
 //
+// argument mappers | mapping JS and lingo function signatures
+//
+// // // // //
+
+// sequence ops //
+
+function _mapFunctionArgs(app, expression, ctx) {
+    const args = expression.args || {};
+    const iterable = lingoExecute(app, args.iterable, ctx);
+    const iterableValue = (typeof iterable === 'object' && 'value' in iterable) ? iterable.value : iterable;
+    const predicate = (item) => {
+        const newCtx = ctx ? {...ctx} : {};
+        newCtx.self = {item};
+        const result = lingoExecute(app, args.function, newCtx);
+        if (typeof result === 'object' && result !== null && 'value' in result) {
+            return result.value;
+        } else if (typeof result === 'object' && result !== null && !Array.isArray(result)) {
+            const evaluatedResult = {};
+            for (const [key, value] of Object.entries(result)) {
+                const evaluated = lingoExecute(app, value, newCtx);
+                evaluatedResult[key] = (typeof evaluated === 'object' && evaluated !== null && 'value' in evaluated)
+                    ? evaluated.value
+                    : evaluated;
+            }
+            return evaluatedResult;
+        }
+        return result;
+    };
+    return [predicate, iterableValue];
+}
+
+function _predicateFunctionArgs(app, expression, ctx) {
+    const args = expression.args || {};
+    const iterable = lingoExecute(app, args.iterable, ctx);
+    const iterableValue = (typeof iterable === 'object' && 'value' in iterable) ? iterable.value : iterable;
+    const predicate = (item) => {
+        const newCtx = ctx ? {...ctx} : {};
+        newCtx.self = {item};
+        const result = lingoExecute(app, args.function, newCtx);
+        return (typeof result === 'object' && 'value' in result) ? result.value : result;
+    };
+    return [predicate, iterableValue];
+}
+
+function _accumulateFunctionArgs(app, expression, ctx) {
+    const args = expression.args || {};
+    const iterable = lingoExecute(app, args.iterable, ctx);
+    const iterableValue = (typeof iterable === 'object' && 'value' in iterable) ? iterable.value : iterable;
+    const accumulateFunc = (a, b) => {
+        const newCtx = ctx ? {...ctx} : {};
+        newCtx.self = {item: a, next_item: b};
+        const result = lingoExecute(app, args.function, newCtx);
+        return (typeof result === 'object' && 'value' in result) ? result.value : result;
+    };
+    const initial = args.initial !== undefined ? lingoExecute(app, args.initial, ctx) : null;
+    const initialValue = (initial && typeof initial === 'object' && 'value' in initial) ? initial.value : initial;
+    return [accumulateFunc, iterableValue, initialValue];
+}
+
+function _reduceFunctionArgs(app, expression, ctx) {
+    const args = expression.args || {};
+    const iterable = lingoExecute(app, args.iterable, ctx);
+    const iterableValue = (typeof iterable === 'object' && 'value' in iterable) ? iterable.value : iterable;
+    const reduceFunc = (a, b) => {
+        const newCtx = ctx ? {...ctx} : {};
+        newCtx.self = {item: a, next_item: b};
+        const result = lingoExecute(app, args.function, newCtx);
+        return (typeof result === 'object' && 'value' in result) ? result.value : result;
+    };
+    const initial = args.initial !== undefined ? lingoExecute(app, args.initial, ctx) : null;
+    const initialValue = (initial && typeof initial === 'object' && 'value' in initial) ? initial.value : null;
+    return [reduceFunc, iterableValue, initialValue];
+}
+
+// crud //
+
+function _crudCreateArgs(app, expression, ctx) {
+    const args = expression.args || {};
+    const url = unwrapValue(lingoExecute(app, args.http, ctx));
+    const data = lingoExecute(app, args.data, ctx);
+    if (expression.args.bind && expression.args.bind.state) {
+        const stateKeys = Object.keys(expression.args.bind.state);
+        if (stateKeys.length === 1) {
+            const stateField = stateKeys[0];
+            if (!app.state.hasOwnProperty(stateField)) {
+                throw new Error(`crud.create - state field not found: ${stateField}`);
+            }
+            app.state[stateField].state = 'loading';
+        }
+    }
+    return [url, data];
+}
+
+function _crudUpdateArgs(app, expression, ctx) {
+    const args = expression.args || {};
+    const url = unwrapValue(lingoExecute(app, args.http, ctx));
+    const data = lingoExecute(app, args.data, ctx);
+    if (expression.args.bind && expression.args.bind.state) {
+        const stateKeys = Object.keys(expression.args.bind.state);
+        if (stateKeys.length === 1) {
+            const stateField = stateKeys[0];
+            if (!app.state.hasOwnProperty(stateField)) {
+                throw new Error(`crud.update - state field not found: ${stateField}`);
+            }
+            app.state[stateField].state = 'loading';
+        }
+    }
+    return [url, data];
+}
+
+function _crudReadArgs(app, expression, ctx) {
+    const args = expression.args || {};
+    const url = unwrapValue(lingoExecute(app, args.http, ctx));
+    if (expression.args.bind && expression.args.bind.state) {
+        const stateKeys = Object.keys(expression.args.bind.state);
+        if (stateKeys.length === 1) {
+            const stateField = stateKeys[0];
+            if (!app.state.hasOwnProperty(stateField)) {
+                throw new Error(`crud.read - state field not found: ${stateField}`);
+            }
+            app.state[stateField].state = 'loading...';
+        }
+    }
+    return [url];
+}
+
+function _crudDeleteArgs(app, expression, ctx) {
+    const args = expression.args || {};
+    const url = unwrapValue(lingoExecute(app, args.http, ctx));
+    if (expression.args.bind && expression.args.bind.state) {
+        const stateKeys = Object.keys(expression.args.bind.state);
+        if (stateKeys.length === 1) {
+            const stateField = stateKeys[0];
+            if (!app.state.hasOwnProperty(stateField)) {
+                throw new Error(`crud.delete - state field not found: ${stateField}`);
+            }
+            app.state[stateField].state = 'loading';
+        }
+    }
+    return [url];
+}
+
+function _crudListArgs(app, expression, ctx) {
+    const args = expression.args || {};
+    const urlBase = unwrapValue(lingoExecute(app, args.http, ctx));
+    const offset = unwrapValue(lingoExecute(app, args.offset, ctx));
+    const size = unwrapValue(lingoExecute(app, args.size, ctx));
+    const url = `${urlBase}?offset=${offset}&size=${size}`;
+    if (expression.args.bind && expression.args.bind.state) {
+        const stateKeys = Object.keys(expression.args.bind.state);
+        if (stateKeys.length === 1) {
+            const stateField = stateKeys[0];
+            if (!app.state.hasOwnProperty(stateField)) {
+                throw new Error(`crud.list - state field not found: ${stateField}`);
+            }
+            app.state[stateField].state = 'loading';
+        }
+    }
+    return [url, offset, size];
+}
+
+// op //
+
+function _opHttpArgs(app, expression, ctx) {
+    const args = expression.args || {};
+    const url = unwrapValue(lingoExecute(app, args.url, ctx));
+    const params = lingoExecute(app, args.data, ctx);
+    if (expression.args.bind && expression.args.bind.state) {
+        const stateKeys = Object.keys(expression.args.bind.state);
+        if (stateKeys.length === 1) {
+            const stateField = stateKeys[0];
+            if (!app.state.hasOwnProperty(stateField)) {
+                throw new Error(`op.http - state field not found: ${stateField}`);
+            }
+            app.state[stateField].state = 'loading';
+        }
+    }
+    console.log('op.http - url:', expression, url, 'params:', params);
+    return [url, params];
+}
+
+// file system //
+
+function _fileSystemGetFileContentArgs(app, expression, ctx) {
+    const args = expression.args || {};
+    if (!args.file_id) {
+        throw new Error('file_system.get_file_content - missing required arg: file_id');
+    }
+    const fileId = unwrapValue(lingoExecute(app, args.file_id, ctx));
+    const formName = `model-field-get-file-content`;
+    app.clientState.forms[formName].state = 'loading';
+    const defaultFileName = `file_id_${fileId}`;
+    const fileName = (async () => {
+        try {
+            console.log('file_system.get_file_content - fetching...');
+            const response = await fetch('/api/file-system/list-files', {
+                method: 'POST',
+                headers: getRequestHeaders(),
+                body: JSON.stringify({file_id: fileId})
+            });
+            if (response.ok) {
+                const responseData = await response.json();
+                try {
+                    return responseData.result.items[0].name || defaultFileName;
+                } catch (error) {
+                    console.error('file_system.get_file_content - error parsing file metadata response:', error);
+                    return defaultFileName;
+                }
+            } else {
+                console.error('file_system.get_file_content - HTTP error while fetching file metadata:', response.status, response.statusText);
+                return defaultFileName;
+            }
+        } catch (error) {
+            console.error('file_system.get_file_content - network error while fetching file metadata:', error);
+            return defaultFileName;
+        }
+    })();
+    return [app, fileId, fileName, formName];
+}
+
+// media //
+
+function _mediaGetMediaFileContentArgs(app, expression, ctx) {
+    const args = expression.args || {};
+    const imageId = unwrapValue(lingoExecute(app, args.image_id, ctx));
+    console.log('media.get_media_file_content - imageId:', imageId);
+    if (!ctx || !ctx.self || !ctx.self.file_output) {
+        throw new Error('media.get_media_file_content - missing self.file_output in context');
+    }
+    const fileOutput = ctx.self.file_output;
+    const defaultFileId = '-1';
+    const fileId = (async () => {
+        try {
+            console.log('media.get_media_file_content - fetching image metadata...');
+            const response = await fetch(`/api/media/get-image?image_id=${imageId}`, {
+                method: 'GET',
+                headers: getRequestHeaders()
+            });
+            if (response.ok) {
+                const responseData = await response.json();
+                console.log('media.get_media_file_content - image data:', responseData);
+                try {
+                    const fileId = responseData.result.file_id;
+                    fileOutput.fileId = fileId;
+                    return fileId;
+                } catch (error) {
+                    console.error('media.get_media_file_content - error parsing media metadata response:', error);
+                    return defaultFileId;
+                }
+            } else {
+                console.error('media.get_media_file_content - HTTP error while fetching media metadata:', response.status, response.statusText);
+                return defaultFileId;
+            }
+        } catch (error) {
+            console.error('media.get_media_file_content - network error while fetching media metadata:', error);
+            return defaultFileId;
+        }
+    })();
+    const defaultFileName = `image_id_${imageId}`;
+    const fileName = (async () => {
+        if (await fileId === '-1') {
+            return defaultFileName;
+        }
+        try {
+            console.log('media.get_media_file_content - fetching file metadata...');
+            const response = await fetch('/api/file-system/list-files', {
+                method: 'POST',
+                headers: getRequestHeaders(),
+                body: JSON.stringify({file_id: await fileId})
+            });
+            if (response.ok) {
+                const responseData = await response.json();
+                try {
+                    console.log('media.get_media_file_content - file metadata:', responseData);
+                    const fileName = responseData.result.items[0].name;
+                    fileOutput.fileName = fileName;
+                    return fileName;
+                } catch (error) {
+                    console.error('media.get_media_file_content - error parsing file metadata response:', error);
+                    return defaultFileName;
+                }
+            } else {
+                console.error('media.get_media_file_content - HTTP error while fetching file metadata:', response.status, response.statusText);
+                return defaultFileName;
+            }
+        } catch (error) {
+            console.error('media.get_media_file_content - network error while fetching file metadata:', error);
+            return defaultFileName;
+        }
+    })();
+    fileOutput.status = 'loading';
+    return [app, imageId, fileName, fileOutput];
+}
+
+
+// // // // //
+//
 // lingo functions
 //
 // // // // //
@@ -415,32 +712,69 @@ const lingoFunctionLookup = {
     // sequence ops //
     
     'map': {
-        func: null, // handled specially in renderCall
-        createArgs: true
+        func: (predicate, iterable) => ({type: 'list', value: iterable.map(predicate)}),
+        createArgs: _mapFunctionArgs
     },
     'filter': {
-        func: null, // handled specially in renderCall
-        createArgs: true
+        func: (predicate, iterable) => ({type: 'list', value: iterable.filter(predicate)}),
+        createArgs: _predicateFunctionArgs
     },
     'dropwhile': {
-        func: null, // handled specially in renderCall
-        createArgs: true
+        func: (predicate, iterable) => {
+            const result = [];
+            let dropping = true;
+            for (const item of iterable) {
+                if (dropping && !predicate(item)) dropping = false;
+                if (!dropping) result.push(item);
+            }
+            return {type: 'list', value: result};
+        },
+        createArgs: _predicateFunctionArgs
     },
     'takewhile': {
-        func: null, // handled specially in renderCall
-        createArgs: true
+        func: (predicate, iterable) => {
+            const result = [];
+            for (const item of iterable) {
+                if (predicate(item)) result.push(item);
+                else break;
+            }
+            return {type: 'list', value: result};
+        },
+        createArgs: _predicateFunctionArgs
     },
     'reversed': {
         func: (sequence) => [...sequence].reverse(),
         args: {'sequence': {'type': 'list'}}
     },
     'accumulate': {
-        func: null, // handled specially in renderCall
-        createArgs: true
+        func: (accumulateFunc, iterable, initialValue) => {
+            const result = [];
+            let accumulator = initialValue !== null ? initialValue : iterable[0];
+            if (initialValue !== null) {
+                result.push(accumulator);
+                for (const item of iterable) {
+                    accumulator = accumulateFunc(accumulator, item);
+                    result.push(accumulator);
+                }
+            } else {
+                result.push(accumulator);
+                for (let i = 1; i < iterable.length; i++) {
+                    accumulator = accumulateFunc(accumulator, iterable[i]);
+                    result.push(accumulator);
+                }
+            }
+            return {type: 'list', value: result};
+        },
+        createArgs: _accumulateFunctionArgs
     },
     'reduce': {
-        func: null, // handled specially in renderCall
-        createArgs: true
+        func: (reduceFunc, iterable, initialValue) => {
+            const result = initialValue !== null
+                ? iterable.reduce(reduceFunc, initialValue)
+                : iterable.reduce(reduceFunc);
+            return {type: getTypeName(result), value: result};
+        },
+        createArgs: _reduceFunctionArgs
     },
     
     // date and time #
@@ -479,45 +813,288 @@ const lingoFunctionLookup = {
 
     'crud': {
         'create': {
-            func: null, // handled specially in renderCall
-            createArgs: true
+            func: async (url, data) => {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: getRequestHeaders(),
+                        body: JSON.stringify(data)
+                    });
+                    if (response.ok) {
+                        const responseData = await response.json();
+                        // console.log('crud.create - responseData:', responseData);
+                        return {state: 'success', item_id: responseData.id};
+                    } else {
+                        const errorData = await response.json();
+                        let errorMessage = `${response.status} ${response.statusText}`;
+                        if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
+                            errorMessage = errorData.error.message;
+                        }
+                        console.error('crud.create - HTTP error:', response.status, response.statusText);
+                        return {state: 'error', error: errorMessage};
+                    }
+                } catch (error) {
+                    console.error('crud.create - network error:', error);
+                    return {state: 'error', error: `Network error: ${error.message}`};
+                }
+            },
+            createArgs: _crudCreateArgs
         },
         'read': {
-            func: null, // handled specially in renderCall
-            createArgs: true
+            func: async (url) => {
+                // console.log('crud.read - url:', url);
+                try {
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: getRequestHeaders()
+                    });
+                    if (response.ok) {
+                        const responseData = await response.json();
+                        // console.log('crud.read - responseData:', responseData);
+                        return {state: 'loaded', data: responseData};
+                    } else {
+                        const errorData = await response.json();
+                        let errorMessage = `${response.status} ${response.statusText}`;
+                        if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
+                            errorMessage = errorData.error.message;
+                        }
+                        console.error('crud.read - HTTP error:', response.status, response.statusText);
+                        return {state: 'error', error: errorMessage};
+                    }
+                } catch (error) {
+                    console.error('crud.read - network error:', error);
+                    return {state: 'error', error: `Network error: ${error.message}`};
+                }
+            },
+            createArgs: _crudReadArgs
         },
         'update': {
-            func: null, // handled specially in renderCall
-            createArgs: true
+            func: async (url, data) => {
+                try {
+                    const response = await fetch(url, {
+                        method: 'PUT',
+                        headers: getRequestHeaders(),
+                        body: JSON.stringify(data)
+                    });
+                    if (response.ok) {
+                        const responseData = await response.json();
+                        // console.log('crud.update - responseData:', responseData);
+                        return {state: 'edited', data: responseData};
+                    } else {
+                        const errorData = await response.json();
+                        let errorMessage = `${response.status} ${response.statusText}`;
+                        if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
+                            errorMessage = errorData.error.message;
+                        }
+                        console.error('crud.update - HTTP error:', response.status, response.statusText);
+                        return {state: 'error', error: errorMessage};
+                    }
+                } catch (error) {
+                    console.error('crud.update - network error:', error);
+                    return {state: 'error', error: `Network error: ${error.message}`};
+                }
+            },
+            createArgs: _crudUpdateArgs
         },
         'delete': {
-            func: null, // handled specially in renderCall
-            createArgs: true
+            func: async (url) => {
+                try {
+                    const response = await fetch(url, {
+                        method: 'DELETE',
+                        headers: getRequestHeaders()
+                    });
+                    if (response.ok) {
+                        console.log('crud.delete - item deleted successfully');
+                        return {state: 'deleted'};
+                    } else {
+                        const errorData = await response.json();
+                        let errorMessage = `${response.status} ${response.statusText}`;
+                        if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
+                            errorMessage = errorData.error.message;
+                        }
+                        console.error('crud.delete - HTTP error:', response.status, response.statusText);
+                        return {state: 'error', error: errorMessage};
+                    }
+                } catch (error) {
+                    console.error('crud.delete - network error:', error);
+                    return {state: 'error', error: `Network error: ${error.message}`};
+                }
+            },
+            createArgs: _crudDeleteArgs
         },
         'list': {
-            func: null, // handled specially in renderCall
-            createArgs: true
+            func: async (url, offset, size) => {
+                try {
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: getRequestHeaders()
+                    });
+                    if (response.ok) {
+                        // console.log('crud.list - raw text response:', await response.text());
+                        const responseData = await response.json();
+                        // console.log('crud.list - responseData:', responseData);
+                        return {
+                            state: 'loaded',
+                            total: responseData.total,
+                            items: responseData.items.map(item => ({type: 'struct', value: item})),
+                            showing: responseData.items.length,
+                            offset: offset,
+                            size: size
+                        };
+                    } else {
+                        const errorData = await response.json();
+                        let errorMessage = `${response.status} ${response.statusText}`;
+                        if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
+                            errorMessage = errorData.error.message;
+                        }
+                        console.error('crud.list - HTTP error:', response.status, response.statusText);
+                        return {state: 'error', error: errorMessage};
+                    }
+                } catch (error) {
+                    console.error('crud.list - network error:', error);
+                    return {state: 'error', error: `Network error: ${error.message}`};
+                }
+            },
+            createArgs: _crudListArgs
         }
     },
+
+    // op //
 
     'op': {
         'http': {
-            func: null, // handled specially in renderCall
-            createArgs: true
+            func: async (url, params) => {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: getRequestHeaders(),
+                        body: JSON.stringify(params)
+                    });
+                    if (response.ok) {
+                        const responseData = await response.json();
+                        console.log('op.http - responseData:', responseData);
+                        if (responseData.hasOwnProperty('result')) {
+                            const wrappedResult = wrapValue(responseData.result);
+                            console.log('op.http - wrappedResult:', wrappedResult);
+                            if (url === '/api/auth/login-user') {
+                                const accessToken = responseData.result.access_token;
+                                if (accessToken) {
+                                    localStorage.setItem('access_token', accessToken);
+                                    console.log('op.http - stored access_token in localStorage');
+                                }
+                            } else if (url === '/api/auth/logout-user' && params.mode !== 'others') {
+                                localStorage.removeItem('access_token');
+                                console.log('op.http - removed access_token from localStorage');
+                            }
+                            return {state: 'result', result: wrappedResult};
+                        } else {
+                            return {state: 'error', error: 'Response missing result field'};
+                        }
+                    } else {
+                        const errorData = await response.json();
+                        let errorMessage = `${response.status} ${response.statusText}`;
+                        if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
+                            errorMessage = errorData.error.message;
+                        }
+                        console.error('op.http - HTTP error:', response.status, response.statusText);
+                        return {state: 'error', error: errorMessage};
+                    }
+                } catch (error) {
+                    console.error('op.http - network error:', error);
+                    return {state: 'error', error: `Network error: ${error.message}`};
+                }
+            },
+            createArgs: _opHttpArgs
         }
     },
+
+    // file system //
 
     'file_system': {
         'get_file_content': {
-            func: null, // handled specially in renderCall
-            createArgs: true
+            func: async (app, fileId, fileName, formName) => {
+                try {
+                    const response = await fetch('/api/file-system/get-file-content', {
+                        method: 'POST',
+                        headers: getRequestHeaders(),
+                        body: JSON.stringify({file_id: fileId})
+                    });
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = await fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(url);
+                        console.log('file_system.get_file_content - file download completed');
+                        app.clientState.forms[formName].state = 'success';
+                    } else {
+                        const errorData = await response.json();
+                        let errorMessage = `${response.status} ${response.statusText}`;
+                        if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
+                            errorMessage = errorData.error.message;
+                        }
+                        console.error('file_system.get_file_content - HTTP error:', response.status, response.statusText);
+                        app.clientState.forms[formName].state = 'error';
+                        app.clientState.forms[formName].error = errorMessage;
+                        return {state: 'error', error: errorMessage};
+                    }
+                } catch (error) {
+                    console.error('file_system.get_file_content - network error:', error);
+                    app.clientState.forms[formName].state = 'error';
+                    app.clientState.forms[formName].error = `Network error: ${error.message}`;
+                    return {state: 'error', error: `Network error: ${error.message}`};
+                } finally {
+                    renderLingoApp(app, document.getElementById('lingo-app'), true);
+                }
+            },
+            createArgs: _fileSystemGetFileContentArgs
         }
     },
 
+    // media //
+
     'media': {
         'get_media_file_content': {
-            func: null, // handled specially in renderCall
-            createArgs: true
+            func: async (app, imageId, fileName, fileOutput) => {
+                await fileName;
+                try {
+                    const response = await fetch('/api/media/get-media-file-content', {
+                        method: 'POST',
+                        headers: getRequestHeaders(),
+                        body: JSON.stringify({image_id: imageId})
+                    });
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        fileOutput.localUrl = url;
+                        fileOutput.status = 'loaded';
+                        console.log('media.get_media_file_content - file download completed');
+                        return {acknowledged: true, message: 'File download complete'};
+                    } else {
+                        const errorData = await response.json();
+                        let errorMessage = `${response.status} ${response.statusText}`;
+                        if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
+                            errorMessage = errorData.error.message;
+                        }
+                        console.error('media.get_media_file_content - HTTP error:', response.status, response.statusText);
+                        fileOutput.status = 'error';
+                        fileOutput.error = errorMessage;
+                        return {state: 'error', error: errorMessage};
+                    }
+                } catch (error) {
+                    console.error('media.get_media_file_content - network error:', error);
+                    fileOutput.status = 'error';
+                    fileOutput.error = `Network error: ${error.message}`;
+                    return {state: 'error', error: `Network error: ${error.message}`};
+                } finally {
+                    renderLingoApp(app, document.getElementById('lingo-app'), true);
+                }
+            },
+            createArgs: _mediaGetMediaFileContentArgs
         }
     }
 
@@ -1464,9 +2041,10 @@ function renderCall(app, expression, ctx = null) {
     const func = definition.func;
     const argsDef = definition.args || {};
     
-    // Handle special sequence ops functions with custom arg handling
-    if (definition.createArgs) {
-        return handleSequenceOp(app, expression, ctx);
+    // Handle functions with custom arg handling
+    if (typeof definition.createArgs === 'function') {
+        const args = definition.createArgs(app, expression, ctx);
+        return definition.func(...args);
     }
     
     // Validate and render args
@@ -1580,841 +2158,6 @@ function renderCall(app, expression, ctx = null) {
     }
 }
 
-/**
- * Handle special sequence operations (map, filter, etc.)
- */
-function handleSequenceOp(app, expression, ctx = null) {
-    const funcName = expression.call;
-    const args = expression.args || {};
-    
-    if (funcName === 'map') {
-        const iterable = lingoExecute(app, args.iterable, ctx);
-        const iterableValue = (typeof iterable === 'object' && 'value' in iterable) 
-            ? iterable.value 
-            : iterable;
-        
-        const mapFunc = (item) => {
-            const newCtx = ctx ? {...ctx} : {};
-            newCtx.self = {item: item};
-            const result = lingoExecute(app, args.function, newCtx);
-            // If result has a 'value' key, extract it
-            if (typeof result === 'object' && result !== null && 'value' in result) {
-                return result.value;
-            } else if (typeof result === 'object' && result !== null && !Array.isArray(result)) {
-                // It's a dict without 'value' - need to recursively evaluate expressions
-                const evaluatedResult = {};
-                for (const [key, value] of Object.entries(result)) {
-                    const evaluated = lingoExecute(app, value, newCtx);
-                    // Extract value if wrapped
-                    evaluatedResult[key] = (typeof evaluated === 'object' && evaluated !== null && 'value' in evaluated) 
-                        ? evaluated.value 
-                        : evaluated;
-                }
-                return evaluatedResult;
-            }
-            return result;
-        };
-        
-        const resultArray = iterableValue.map(mapFunc);
-        return {type: 'list', value: resultArray};
-        
-    } else if (funcName === 'filter') {
-        const iterable = lingoExecute(app, args.iterable, ctx);
-        const iterableValue = (typeof iterable === 'object' && 'value' in iterable) 
-            ? iterable.value 
-            : iterable;
-        
-        const filterFunc = (item) => {
-            const newCtx = ctx ? {...ctx} : {};
-            newCtx.self = {item: item};
-            const result = lingoExecute(app, args.function, newCtx);
-            return (typeof result === 'object' && 'value' in result) ? result.value : result;
-        };
-        
-        const resultArray = iterableValue.filter(filterFunc);
-        return {type: 'list', value: resultArray};
-        
-    } else if (funcName === 'dropwhile') {
-        const iterable = lingoExecute(app, args.iterable, ctx);
-        const iterableValue = (typeof iterable === 'object' && 'value' in iterable) 
-            ? iterable.value 
-            : iterable;
-        
-        const dropwhileFunc = (item) => {
-            const newCtx = ctx ? {...ctx} : {};
-            newCtx.self = {item: item};
-            const result = lingoExecute(app, args.function, newCtx);
-            return (typeof result === 'object' && 'value' in result) ? result.value : result;
-        };
-        
-        const resultArray = [];
-        let dropping = true;
-        for (const item of iterableValue) {
-            if (dropping && !dropwhileFunc(item)) {
-                dropping = false;
-            }
-            if (!dropping) {
-                resultArray.push(item);
-            }
-        }
-        return {type: 'list', value: resultArray};
-        
-    } else if (funcName === 'takewhile') {
-        const iterable = lingoExecute(app, args.iterable, ctx);
-        const iterableValue = (typeof iterable === 'object' && 'value' in iterable) 
-            ? iterable.value 
-            : iterable;
-        
-        const takewhileFunc = (item) => {
-            const newCtx = ctx ? {...ctx} : {};
-            newCtx.self = {item: item};
-            const result = lingoExecute(app, args.function, newCtx);
-            return (typeof result === 'object' && 'value' in result) ? result.value : result;
-        };
-        
-        const resultArray = [];
-        for (const item of iterableValue) {
-            if (takewhileFunc(item)) {
-                resultArray.push(item);
-            } else {
-                break;
-            }
-        }
-        return {type: 'list', value: resultArray};
-        
-    } else if (funcName === 'accumulate') {
-        const iterable = lingoExecute(app, args.iterable, ctx);
-        const iterableValue = (typeof iterable === 'object' && 'value' in iterable) 
-            ? iterable.value 
-            : iterable;
-        
-        const accumulateFunc = (a, b) => {
-            const newCtx = ctx ? {...ctx} : {};
-            newCtx.self = {item: a, next_item: b};
-            const result = lingoExecute(app, args.function, newCtx);
-            return (typeof result === 'object' && 'value' in result) ? result.value : result;
-        };
-        
-        const initial = args.initial !== undefined ? lingoExecute(app, args.initial, ctx) : null;
-        const initialValue = (initial && typeof initial === 'object' && 'value' in initial) 
-            ? initial.value 
-            : initial;
-        
-        const resultArray = [];
-        let accumulator = initialValue !== null ? initialValue : iterableValue[0];
-        
-        if (initialValue !== null) {
-            resultArray.push(accumulator);
-            for (const item of iterableValue) {
-                accumulator = accumulateFunc(accumulator, item);
-                resultArray.push(accumulator);
-            }
-        } else {
-            resultArray.push(accumulator);
-            for (let i = 1; i < iterableValue.length; i++) {
-                accumulator = accumulateFunc(accumulator, iterableValue[i]);
-                resultArray.push(accumulator);
-            }
-        }
-        
-        return {type: 'list', value: resultArray};
-        
-    } else if (funcName === 'reduce') {
-        const iterable = lingoExecute(app, args.iterable, ctx);
-        const iterableValue = (typeof iterable === 'object' && 'value' in iterable) 
-            ? iterable.value 
-            : iterable;
-        
-        const reduceFunc = (a, b) => {
-            const newCtx = ctx ? {...ctx} : {};
-            newCtx.self = {item: a, next_item: b};
-            const result = lingoExecute(app, args.function, newCtx);
-            return (typeof result === 'object' && 'value' in result) ? result.value : result;
-        };
-        
-        const initial = args.initial !== undefined ? lingoExecute(app, args.initial, ctx) : null;
-        const initialValue = (initial && typeof initial === 'object' && 'value' in initial) 
-            ? initial.value 
-            : null;
-        
-        let result;
-        if (initialValue !== null) {
-            result = iterableValue.reduce(reduceFunc, initialValue);
-        } else {
-            result = iterableValue.reduce(reduceFunc);
-        }
-        
-        return {type: getTypeName(result), value: result};
-
-    } else if (funcName === 'crud.create') {
-
-        //
-        // init params
-        //
-
-        const url = unwrapValue(lingoExecute(app, args.http, ctx));
-        const data = lingoExecute(app, args.data, ctx);
-
-        // update state to loading if bind is provided
-        let stateField = null;
-        if (expression.args.bind && expression.args.bind.state) {
-            const stateKeys = Object.keys(expression.args.bind.state);
-            if (stateKeys.length === 1) {
-                stateField = stateKeys[0];
-                if(!(app.state.hasOwnProperty(stateField))){
-                    throw new Error(`handleSequenceOp - crud.create - state field not found: ${stateField}`);
-                }
-                app.state[stateField].state = 'loading';
-            }
-        }
-
-        //
-        // send request
-        //
-
-        async function sendCreateRequest(url, data) {
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: getRequestHeaders(),
-                    body: JSON.stringify(data)
-                });
-
-                if (response.ok) {
-
-                    const responseData = await response.json();
-                    // console.log('handleSequenceOp - crud.create - responseData:', responseData);
-                    return {state: 'success', item_id: responseData.id};
-                    
-                }else{
-                    const errorData = await response.json();
-                    let errorMessage = `${response.status} ${response.statusText}`;
-                    if(errorData.hasOwnProperty('error')){
-                        if(errorData.error.hasOwnProperty('message')){
-                            errorMessage = errorData.error.message;
-                        }
-                    }
-                    console.error('handleSequenceOp - crud.create - HTTP error:', response.status, response.statusText); 
-                    return {state: 'error', error: errorMessage};
-                }
-
-            } catch (error) {
-                console.error('handleSequenceOp - crud.create - network error:', error);
-                return {state: 'error', error: `Network error: ${error.message}`};
-            }
-        }
-        
-        return sendCreateRequest(url, data)
-
-    }else if(funcName === 'crud.update'){
-
-        //
-        // init params
-        //
-
-        const url = unwrapValue(lingoExecute(app, args.http, ctx));
-        const data = lingoExecute(app, args.data, ctx);
-
-        // update state to loading if bind is provided
-        let stateField = null;
-        if (expression.args.bind && expression.args.bind.state) {
-            const stateKeys = Object.keys(expression.args.bind.state);
-            if (stateKeys.length === 1) {
-                stateField = stateKeys[0];
-                if(!(app.state.hasOwnProperty(stateField))){
-                    throw new Error(`handleSequenceOp - crud.update - state field not found: ${stateField}`);
-                }
-                app.state[stateField].state = 'loading';
-            }
-        }
-
-        //
-        // send request
-        //
-
-        async function sendUpdateRequest(url, data) {
-            try {
-                const response = await fetch(url, {
-                    method: 'PUT',
-                    headers: getRequestHeaders(),
-                    body: JSON.stringify(data)
-                });
-
-                if (response.ok) {
-
-                    const responseData = await response.json();
-                    // console.log('handleSequenceOp - crud.update - responseData:', responseData);
-                    return {state: 'edited', data: responseData};
-                    
-                }else{
-                    const errorData = await response.json();
-                    let errorMessage = `${response.status} ${response.statusText}`;
-                    if(errorData.hasOwnProperty('error')){
-                        if(errorData.error.hasOwnProperty('message')){
-                            errorMessage = errorData.error.message;
-                        }
-                    }
-                    console.error('handleSequenceOp - crud.update - HTTP error:', response.status, response.statusText); 
-                    return {state: 'error', error: errorMessage};
-                }
-
-            } catch (error) {
-                console.error('handleSequenceOp - crud.update - network error:', error);
-                return {state: 'error', error: `Network error: ${error.message}`};
-            }
-        }
-
-        return sendUpdateRequest(url, data);
-    
-    }else if(funcName === 'crud.read'){
-
-        //
-        // init params
-        //
-
-        const url = unwrapValue(lingoExecute(app, args.http, ctx));
-        
-        // update state to loading if bind is provided
-        let stateField = null;
-        if (expression.args.bind && expression.args.bind.state) {
-            const stateKeys = Object.keys(expression.args.bind.state);
-            if (stateKeys.length === 1) {
-                stateField = stateKeys[0];
-                if(!(app.state.hasOwnProperty(stateField))){
-                    throw new Error(`handleSequenceOp - crud.read - state field not found: ${stateField}`);
-                }
-                app.state[stateField].state = 'loading...';
-            }
-        }
-        
-        //
-        // send request
-        //
-        
-        async function sendReadRequest(url) {
-
-            // console.log('handleSequenceOp - crud.read - url:', url);
-
-            try {
-                const response = await fetch(url, {
-                    method: 'GET',
-                    headers: getRequestHeaders()
-                });
-
-                if (response.ok) {
-                    const responseData = await response.json();
-                    // console.log('handleSequenceOp - crud.read - responseData:', responseData);
-
-                    return {
-                        state: 'loaded',
-                        data: responseData
-                    };
-                    
-                }else{
-                    const errorData = await response.json();
-                    let errorMessage = `${response.status} ${response.statusText}`;
-                    if(errorData.hasOwnProperty('error')){
-                        if(errorData.error.hasOwnProperty('message')){
-                            errorMessage = errorData.error.message;
-                        }
-                    }
-                    console.error('handleSequenceOp - crud.read - HTTP error:', response.status, response.statusText); 
-                    return {
-                        state: 'error',
-                        error: errorMessage
-                    };
-                }
-
-            } catch (error) {
-                console.error('handleSequenceOp - crud.read - network error:', error);
-                return {
-                    state: 'error',
-                    error: `Network error: ${error.message}`
-                };
-            }
-        }
-
-        return sendReadRequest(url);
-    
-    }else if(funcName === 'crud.delete'){
-        
-        //
-        // init params
-        //
-
-        const url = unwrapValue(lingoExecute(app, args.http, ctx));
-
-        // update state to loading if bind is provided
-        let stateField = null;
-        if (expression.args.bind && expression.args.bind.state) {
-            const stateKeys = Object.keys(expression.args.bind.state);
-            if (stateKeys.length === 1) {
-                stateField = stateKeys[0];
-                if(!(app.state.hasOwnProperty(stateField))){
-                    throw new Error(`handleSequenceOp - crud.delete - state field not found: ${stateField}`);
-                }
-                app.state[stateField].state = 'loading';
-            }
-        }
-
-        //
-        // send request
-        //
-
-        async function sendDeleteRequest(url) {
-            try {
-                const response = await fetch(url, {
-                    method: 'DELETE',
-                    headers: getRequestHeaders()
-                });
-
-                if (response.ok) {
-                    console.log('handleSequenceOp - crud.delete - item deleted successfully');
-                    return {state: 'deleted'};
-                    
-                }else{
-                    const errorData = await response.json();
-                    let errorMessage = `${response.status} ${response.statusText}`;
-                    if(errorData.hasOwnProperty('error')){
-                        if(errorData.error.hasOwnProperty('message')){
-                            errorMessage = errorData.error.message;
-                        }
-                    }
-                    console.error('handleSequenceOp - crud.delete - HTTP error:', response.status, response.statusText); 
-                    return {
-                        state: 'error', 
-                        error: errorMessage
-                    };
-                }
-
-            } catch (error) {
-                console.error('handleSequenceOp - crud.delete - network error:', error);
-                return {
-                    state: 'error',
-                    error: `Network error: ${error.message}`
-                }
-            }
-        }
-
-        return sendDeleteRequest(url);
-
-    }else if(funcName === 'crud.list'){
-
-        //
-        // init params
-        //
-
-        const urlBase = unwrapValue(lingoExecute(app, args.http, ctx));
-        const offset = unwrapValue(lingoExecute(app, args.offset, ctx));
-        const size = unwrapValue(lingoExecute(app, args.size, ctx));
-        const url = `${urlBase}?offset=${offset}&size=${size}`;
-
-        // update state to loading if bind is provided
-        let stateField = null;
-        if (expression.args.bind && expression.args.bind.state) {
-            const stateKeys = Object.keys(expression.args.bind.state);
-            if (stateKeys.length === 1) {
-                stateField = stateKeys[0];
-                if(!(app.state.hasOwnProperty(stateField))){
-                    throw new Error(`handleSequenceOp - crud.list - state field not found: ${stateField}`);
-                }
-                app.state[stateField].state = 'loading';
-            }
-        }
-
-        async function sendListRequest(url) {
-            try {
-                const response = await fetch(url, {
-                    method: 'GET',
-                    headers: getRequestHeaders()
-                });
-
-                if (response.ok) {
-
-                    // console.log('handleSequenceOp - crud.list - raw text response:', await response.text());
-
-                    const responseData = await response.json();
-                    // console.log('handleSequenceOp - crud.list - responseData:', responseData);
-
-                    return {
-                        state: 'loaded',
-                        total: responseData.total,
-                        items: responseData.items.map(item => ({type: 'struct', value: item})),
-                        showing: responseData.items.length,
-                        offset: offset,
-                        size: size
-                    };
-                    
-                }else{
-                    const errorData = await response.json();
-                    let errorMessage = `${response.status} ${response.statusText}`;
-                    if(errorData.hasOwnProperty('error')){
-                        if(errorData.error.hasOwnProperty('message')){
-                            errorMessage = errorData.error.message;
-                        }
-                    }
-                    console.error('handleSequenceOp - crud.list - HTTP error:', response.status, response.statusText); 
-                    return {
-                        state: 'error',
-                        error: errorMessage
-                    };
-                }
-
-            } catch (error) {
-                console.error('handleSequenceOp - crud.list - network error:', error);
-                return {
-                    state: 'error',
-                    error: `Network error: ${error.message}`
-                };
-            }
-        }
-
-        return sendListRequest(url);
-    }else if(funcName === 'op.http'){
-
-        //
-        // init params
-        //
-
-        const url = unwrapValue(lingoExecute(app, args.url, ctx));
-        const params = lingoExecute(app, args.data, ctx);
-
-        // update state to loading if bind is provided
-        let stateField = null;
-        if (expression.args.bind && expression.args.bind.state) {
-            const stateKeys = Object.keys(expression.args.bind.state);
-            if (stateKeys.length === 1) {
-                stateField = stateKeys[0];
-                if(!(app.state.hasOwnProperty(stateField))){
-                    throw new Error(`handleSequenceOp - op.http - state field not found: ${stateField}`);
-                }
-                app.state[stateField].state = 'loading';
-            }
-        }
-
-        //
-        // send request
-        //
-
-        console.log('handleSequenceOp - op.http - url:', expression, url, 'params:', params);
-
-        async function sendOpHttpRequest(url, params) {
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: getRequestHeaders(),
-                    body: JSON.stringify(params)
-                });
-
-                if (response.ok) {
-
-                    const responseData = await response.json();
-                    console.log('handleSequenceOp - op.http - responseData:', responseData);
-                    if(responseData.hasOwnProperty('result')){
-                        const wrappedResult = wrapValue(responseData.result);
-                        console.log('handleSequenceOp - op.http - wrappedResult:', wrappedResult);
-                        if(url === '/api/auth/login-user'){
-                            const accessToken = responseData.result.access_token;
-                            if(accessToken){
-                                localStorage.setItem('access_token', accessToken);
-                                console.log('handleSequenceOp - op.http - stored access_token in localStorage');
-                            }
-                        }else if(url === '/api/auth/logout-user' && params.mode !== 'others'){
-                            localStorage.removeItem('access_token');
-                            console.log('handleSequenceOp - op.http - removed access_token from localStorage');
-                        }
-                        return {state: 'result', result: wrappedResult};
-                    }else{
-                        return {state: 'error', error: 'Response missing result field'};
-                    }
-                    
-                }else{
-                    const errorData = await response.json();
-
-                    /*
-                    expect:
-                        {
-                            "error": {
-                                "code": "...",
-                                "message": "..."
-                            }
-                        }
-                    with ${response.status} ${response.statusText} as a fallback
-                    */
-
-                    let errorMessage = `${response.status} ${response.statusText}`;
-                    if(errorData.hasOwnProperty('error')){
-                        if(errorData.error.hasOwnProperty('message')){
-                            errorMessage = errorData.error.message;
-                        }
-                    }
-
-
-                    console.error('handleSequenceOp - op.http - HTTP error:', response.status, response.statusText); 
-                    return {state: 'error', error: errorMessage};
-                }
-
-            } catch (error) {
-                console.error('handleSequenceOp - op.http - network error:', error);
-                return {state: 'error', error: `Network error: ${error.message}`};
-            }
-        }
-        
-        return sendOpHttpRequest(url, params);
-
-    
-    
-    
-    }else if(funcName === 'file_system.get_file_content'){
-
-        //
-        // init params
-        //
-
-        if (!args.file_id) {
-            throw new Error('handleSequenceOp - file_system.get_file_content - missing required arg: file_id');
-        }
-
-        const fileId = unwrapValue(lingoExecute(app, args.file_id, ctx));
-
-        const formName = `model-field-get-file-content`;
-
-        app.clientState.forms[formName].state = 'loading';
-
-        // call /api/file-system/list-files with {file_id: fileId} to get file metadata (including name and mime type)
-        // this function takes the id, and returns either the filename as a string from the remote server, 
-        // or a default filename `file_id_<id>` in the event of error
-
-        const defaultFileName = `file_id_${fileId}`;
-        const fileName = (async () => {
-            try {
-
-                console.log('handleSequenceOp - file_system.get_file_content - fetching...');
-
-                const response = await fetch('/api/file-system/list-files', {
-                    method: 'POST',
-                    headers: getRequestHeaders(),
-                    body: JSON.stringify({file_id: fileId})
-                });
-
-                if (response.ok) {
-                    const responseData = await response.json();
-                    try {
-                        return responseData.result.items[0].name || defaultFileName;
-                    } catch (error) {
-                        console.error('handleSequenceOp - file_system.get_file_content - error parsing file metadata response:', error);
-                        return defaultFileName;
-                    }
-                } else {
-                    console.error('handleSequenceOp - file_system.get_file_content - HTTP error while fetching file metadata:', response.status, response.statusText); 
-                    return defaultFileName;
-                }
-
-            } catch (error) {
-                console.error('handleSequenceOp - file_system.get_file_content - network error while fetching file metadata:', error);
-                return defaultFileName;
-            }
-        })();
-
-
-        // call POST /api/file-system/get-file-content with {file_id: fileId}
-        // download to local file 
-
-        async function sendGetFileContentRequest(fileId) {
-            try {
-                const response = await fetch('/api/file-system/get-file-content', {
-                    method: 'POST',
-                    headers: getRequestHeaders(),
-                    body: JSON.stringify({file_id: fileId})
-                });
-
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = await fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    window.URL.revokeObjectURL(url);
-                    console.log('handleSequenceOp - file_system.get_file_content - file download completed');
-                    app.clientState.forms[formName].state = 'success';
-
-                } else {
-                    const errorData = await response.json();
-                    let errorMessage = `${response.status} ${response.statusText}`;
-                    if (errorData.hasOwnProperty('error')) {
-                        if (errorData.error.hasOwnProperty('message')) {    
-                            errorMessage = errorData.error.message;
-                        }
-                    }
-                    console.error('handleSequenceOp - file_system.get_file_content - HTTP error:', response.status, response.statusText);
-                    app.clientState.forms[formName].state = 'error';
-                    app.clientState.forms[formName].error = errorMessage;
-                    return {state: 'error', error: errorMessage};
-                }
-
-            } catch (error) {
-                console.error('handleSequenceOp - file_system.get_file_content - network error:', error);
-                app.clientState.forms[formName].state = 'error';
-                app.clientState.forms[formName].error = `Network error: ${error.message}`;
-                return {state: 'error', error: `Network error: ${error.message}`};
-            }finally{
-                renderLingoApp(app, document.getElementById('lingo-app'), true);
-            }
-        }
-
-        return sendGetFileContentRequest(fileId);
-    
-    }else if(funcName === 'media.get_media_file_content'){
-
-        //
-        // init params
-        //
-
-        const imageId = unwrapValue(lingoExecute(app, args.image_id, ctx));
-        console.log('handleSequenceOp - media.get_media_file_content - imageId:', imageId);
-
-         // raise exception if ctx.self.file_output is not defined
-        if (!ctx || !ctx.self || !ctx.self.file_output) {
-            throw new Error('handleSequenceOp - media.get_media_file_content - missing self.file_output in context');
-        }
-
-        let fileOutput = ctx.self.file_output;
-
-        //
-        // get metadata
-        //
-
-        // call /api/media/get-image with {image_id: imageId} to get media metadata (including name and mime type)
-        // this function takes the id, and returns either the file_id from the result as a string from the remote server,
-        // or '-1' in the event of error
-
-        const defaultFileId = '-1';
-        const fileId = (async () => {
-            try {
-
-                console.log('handleSequenceOp - media.get_media_file_content - fetching image metadata...');
-
-                const response = await fetch(`/api/media/get-image?image_id=${imageId}`, {
-                    method: 'GET',
-                    headers: getRequestHeaders()
-                });
-
-                if (response.ok) {
-                    const responseData = await response.json();
-                    console.log('handleSequenceOp - media.get_media_file_content - image data:', responseData);
-                    try {
-                        const fileId = responseData.result.file_id;
-                        fileOutput.fileId = fileId;
-                        return fileId
-                        
-                    } catch (error) {
-                        console.error('handleSequenceOp - media.get_media_file_content - error parsing media metadata response:', error);
-                        return defaultFileId;
-                    }
-                } else {
-                    console.error('handleSequenceOp - media.get_media_file_content - HTTP error while fetching media metadata:', response.status, response.statusText); 
-                    return defaultFileId;
-                }
-
-            } catch (error) {
-                console.error('handleSequenceOp - media.get_media_file_content - network error while fetching media metadata:', error);
-                return defaultFileId;
-            }
-        })();
-
-        const defaultFileName = `image_id_${imageId}`;
-
-        // if fileID is not -1, call POST /api/file-system/list-files with {file_id: fileId} to get the filename, otherwise use default filename
-
-        const fileName = (async () => {
-            if (await fileId === '-1') {
-                return defaultFileName;
-            }
-            try {
-
-                console.log('handleSequenceOp - media.get_media_file_content - fetching file metadata...');
-
-                const response = await fetch('/api/file-system/list-files', {
-                    method: 'POST',
-                    headers: getRequestHeaders(),
-                    body: JSON.stringify({file_id: await fileId})
-                });
-
-                if (response.ok) {
-                    const responseData = await response.json();
-                    try {
-                        console.log('handleSequenceOp - media.get_media_file_content - file metadata:', responseData);
-                        const fileName = responseData.result.items[0].name;
-                        fileOutput.fileName = fileName;
-                        return fileName;
-                    } catch (error) {
-                        console.error('handleSequenceOp - media.get_media_file_content - error parsing file metadata response:', error);
-                        return defaultFileName;
-                    }
-                } else {
-                    console.error('handleSequenceOp - media.get_media_file_content - HTTP error while fetching file metadata:', response.status, response.statusText); 
-                    return defaultFileName;
-                }
-
-            } catch (error) {
-                console.error('handleSequenceOp - media.get_media_file_content - network error while fetching file metadata:', error);
-                return defaultFileName;
-            }
-        })();
-
-        // call POST /api/media/get-media-file-content with {image_id: imageId}
-        // download to local file
-
-        async function sendGetMediaFileContentRequest(imageId) {
-            await fileName;
-
-            try {
-                const response = await fetch('/api/media/get-media-file-content', {
-                    method: 'POST',
-                    headers: getRequestHeaders(),
-                    body: JSON.stringify({image_id: imageId})
-                });
-
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    fileOutput.localUrl = url;
-                    fileOutput.status = 'loaded';
-                    console.log('handleSequenceOp - media.get_media_file_content - file download completed');
-                    return {acknowledged: true, message: 'File download complete'};
-
-                } else {
-                    const errorData = await response.json();
-                    let errorMessage = `${response.status} ${response.statusText}`;
-                    if (errorData.hasOwnProperty('error')) {
-                        if (errorData.error.hasOwnProperty('message')) {
-                            errorMessage = errorData.error.message;
-                        }
-                    }
-                    console.error('handleSequenceOp - media.get_media_file_content - HTTP error:', response.status, response.statusText);
-                    fileOutput.status = 'error';
-                    fileOutput.error = errorMessage;
-                    return {state: 'error', error: errorMessage};
-                }
-            } catch (error) {
-                console.error('handleSequenceOp - media.get_media_file_content - network error:', error);
-                fileOutput.status = 'error';
-                fileOutput.error = `Network error: ${error.message}`;
-                return {state: 'error', error: `Network error: ${error.message}`};
-            }finally{
-                renderLingoApp(app, document.getElementById('lingo-app'), true);
-            }
-        }
-        fileOutput.status = 'loading';
-        return sendGetMediaFileContentRequest(imageId);
-
-    }else{
-        throw new Error(`handleSequenceOp - unknown function: ${funcName}`);
-    }
-}
 
 /**
  * Render args access - equivalent to Python render_args()
