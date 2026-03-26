@@ -33,7 +33,7 @@
     * 🟢 link to item from model view
     * 🟢 search for item from form
     * 🟢 tests
-* 🔴 mega app for testing (merge modules from multiple files)
+* 🟡 mega app for testing (merge modules from multiple files)
 * 🔴 merge js dev lingo server into mapp template
 * 🟡 update testing
     * 🟢 split functions.json apart
