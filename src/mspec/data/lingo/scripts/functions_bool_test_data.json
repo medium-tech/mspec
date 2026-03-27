@@ -1,0 +1,97 @@
+{
+    "results": {
+        "default": {
+            "element_type": "struct",
+            "type": "list",
+            "value": [
+                {
+                    "result": {
+                        "args": {
+                            "object": 1
+                        },
+                        "call": "bool"
+                    },
+                    "test_name": "test_bool_true"
+                },
+                {
+                    "result": {
+                        "args": {
+                            "object": 0
+                        },
+                        "call": "bool"
+                    },
+                    "test_name": "test_bool_false"
+                },
+                {
+                    "result": {
+                        "args": {
+                            "object": true
+                        },
+                        "call": "not"
+                    },
+                    "test_name": "test_not_true"
+                },
+                {
+                    "result": {
+                        "args": {
+                            "object": false
+                        },
+                        "call": "not"
+                    },
+                    "test_name": "test_not_false"
+                },
+                {
+                    "result": {
+                        "args": {
+                            "object": 5
+                        },
+                        "call": "neg"
+                    },
+                    "test_name": "test_neg"
+                },
+                {
+                    "result": {
+                        "args": {
+                            "a": true,
+                            "b": true
+                        },
+                        "call": "and"
+                    },
+                    "test_name": "test_and_true"
+                },
+                {
+                    "result": {
+                        "args": {
+                            "a": true,
+                            "b": false
+                        },
+                        "call": "and"
+                    },
+                    "test_name": "test_and_false"
+                },
+                {
+                    "result": {
+                        "args": {
+                            "a": false,
+                            "b": true
+                        },
+                        "call": "or"
+                    },
+                    "test_name": "test_or_true"
+                },
+                {
+                    "result": {
+                        "args": {
+                            "a": false,
+                            "b": false
+                        },
+                        "call": "or"
+                    },
+                    "test_name": "test_or_false"
+                }
+            ]
+        },
+        "test_cases": [
+        ]
+    }
+}
