@@ -1,0 +1,127 @@
+{
+    "lingo": {
+        "version": "script-beta-1"
+    },
+    "params": {
+        "int_param": {
+            "type": "int",
+            "default": 42
+        },
+        "float_param": {
+            "type": "float",
+            "default": 3.0
+        },
+        "bool_param": {
+            "type": "bool",
+            "default": true
+        },
+        "string_param": {
+            "type": "str",
+            "default": "hello"
+        }
+    },
+    "state": {
+        "bool_state": {
+            "type": "bool",
+            "default": false,
+            "calc": {
+                "call": "not",
+                "args": {
+                    "object": {"params": {"bool_param": {}}}
+                }
+            }
+        },
+        "int_state": {
+            "type": "int",
+            "default": 0,
+            "calc": {
+                "call": "add",
+                "args": {
+                    "a": {"params": {"int_param": {}}},
+                    "b": {"value": 1, "type": "int"}
+                }
+            }
+        },
+        "float_state": {
+            "type": "float",
+            "default": 0.0,
+            "calc": {
+                "call": "div",
+                "args": {
+                    "a": {"params": {"float_param": {}}},
+                    "b": {"value": 2.0, "type": "float"}
+                }
+            }
+        },
+        "str_state": {
+            "type": "str",
+            "default": "",
+            "calc": {
+                "call": "concat",
+                "args": {
+                    "items": [{"params": {"string_param": {}}}, " world"]
+                }
+            }
+        }
+    },
+    "ops": {
+        "set_bool_state": {
+            "args": {"value": {"type": "bool"}},
+            "func": {
+                "set": {"state": {"bool_state": {}}},
+                "to": {
+                    "call": "not",
+                    "args": {
+                        "object": {"args": "value"}
+                    }
+                }
+            }
+        },
+        "set_int_state": {
+            "args": {"value": {"type": "int"}},
+            "func": {
+                "set": {"state": {"int_state": {}}},
+                "to": {
+                    "call": "add",
+                    "args": {
+                        "a": {"args": "value"},
+                        "b": {"value": 1, "type": "int"}
+                    }
+                }
+            }
+        },
+        "set_float_state": {
+            "args": {"value": {"type": "float"}},
+            "func": {
+                "set": {"state": {"float_state": {}}},
+                "to": {
+                    "call": "div",
+                    "args": {
+                        "a": {"args": "value"},
+                        "b": {"value": 2.0, "type": "float"}
+                    }
+                }
+            }
+        },
+        "set_str_state": {
+            "args": {"value": {"type": "str"}},
+            "func": {
+                "set": {"state": {"str_state": {}}},
+                "to": {
+                    "call": "concat",
+                    "args": {
+                        "items": [{"args": "value"}, " world"]
+                    }
+                }
+            }
+        }
+    },
+    "output": {
+        "block": [
+            {"state": {"bool_state": {}}},
+            {"state": {"int_state": {}}},
+            {"state": {"float_state": {}}},
+            {"state": {"str_state": {}}}
+        ]
+    }
+}

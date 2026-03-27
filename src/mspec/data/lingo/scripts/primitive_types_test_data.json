@@ -1,0 +1,50 @@
+{
+    "results": {
+        "default": [
+            {
+                "type": "bool",
+                "value": false
+            },
+            {
+                "type": "int",
+                "value": 43
+            },
+            {
+                "type": "float",
+                "value": 1.5
+            },
+            {
+                "type": "str",
+                "value": "hello world"
+            }
+        ],
+        "test_cases": [
+            {
+                "params": {
+                    "bool_param": false,
+                    "int_param": 10,
+                    "float_param": 5.0,
+                    "string_param": "foo"
+                },
+                "result": [
+                    {
+                        "type": "bool",
+                        "value": true
+                    },
+                    {
+                        "type": "int",
+                        "value": 11
+                    },
+                    {
+                        "type": "float",
+                        "value": 2.5
+                    },
+                    {
+                        "type": "str",
+                        "value": "foo world"
+                    }
+                ]
+            }
+        ]
+    }
+}
