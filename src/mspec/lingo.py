@@ -510,6 +510,8 @@ def lingo_execute(app:LingoApp, expression:Any, ctx:Optional[dict]=None) -> Any:
             result = render_args(app, expression, ctx)
         elif 'self' in expression:
             result = render_self(app, expression, ctx)
+        elif 'value' in expression:
+            result = render_value(app, expression, ctx)
         else:
             result = expression
     else:
@@ -937,3 +939,66 @@ def render_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
         return ctx[arg_name]
     except KeyError:
         raise ValueError(f'args - undefined arg: {arg_name}')
+
+def render_value(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
+    """
+    if primitive value: execute possible expression and return value
+
+    if list: iterate over items and execute expressions, return list of results
+
+    if struct: execute expressions for each field and return dict of results
+    
+    """
+
+    try:
+        _type = expression['type']
+    except KeyError:
+        raise ValueError('value - missing type key')
+    
+    match _type:
+        case 'bool' | 'int' | 'float' | 'str' | 'datetime':
+            if isinstance(expression['value'], dict):
+                try:
+                    return lingo_execute(app, expression['value'], ctx)
+                except Exception as e:
+                    raise ValueError('value - error processing expression') from e
+            else:
+                return expression
+        
+        case 'list':
+            if not isinstance(expression['value'], list):
+                raise ValueError('value - expected list value')
+            
+            result_list = []
+            for n, item in enumerate(expression['value']):
+                if isinstance(item, dict):
+                    try:
+                        result_list.append(lingo_execute(app, item, ctx))
+                    except Exception as e:
+                        raise ValueError(f'value - error processing list item {n}') from e
+                else:
+                    result_list.append(item)
+            
+            expression['value'] = result_list
+
+            return expression
+        
+        case 'struct':
+            if not isinstance(expression['value'], dict):
+                raise ValueError('value - expected struct value')
+            
+            result_struct = {}
+            for field_name, field_value in expression['value'].items():
+                if isinstance(field_value, dict):
+                    try:
+                        result_struct[field_name] = lingo_execute(app, field_value, ctx)
+                    except Exception as e:
+                        raise ValueError(f'value - error processing struct field {field_name}') from e
+                else:
+                    result_struct[field_name] = field_value
+            
+            expression['value'] = result_struct
+            return expression
+        
+        case _:
+            raise ValueError(f'value - unsupported type: {_type}')

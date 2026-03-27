@@ -373,32 +373,32 @@ class TestLingoPages(unittest.TestCase):
         # Dynamic primitive struct
         self.assertEqual(doc[9]['type'], 'struct')
         self.assertEqual(doc[9]['display']['headers'], False)
-        self.assertIn('call', doc[9]['value']['color'])
-        self.assertIn('call', doc[9]['value']['amount'])
-        self.assertIn('call', doc[9]['value']['in_stock'])
+        self.assertEqual(doc[9]['value']['color'], {'value': 'blue', 'type': 'str'})
+        self.assertEqual(doc[9]['value']['amount'], {'value': 20, 'type': 'int'})
+        self.assertEqual(doc[9]['value']['in_stock'], {'value': True, 'type': 'bool'})
         
         # Test primitives: float, datetime #
         
         # Hardcoded float/datetime struct
         self.assertEqual(doc[12]['type'], 'struct')
-        self.assertEqual(doc[12]['value']['price'], 19.99)
-        self.assertEqual(doc[12]['value']['weight'], 2.5)
+        self.assertAlmostEqual(doc[12]['value']['price'], 19.99)
+        self.assertAlmostEqual(doc[12]['value']['weight'], 2.5)
         self.assertEqual(doc[12]['value']['created_at'], '2024-01-15T10:30:00')
         self.assertEqual(doc[12]['value']['updated_at'], '2024-06-20T14:45:30')
         
         # Typed float/datetime struct
         self.assertEqual(doc[15]['type'], 'struct')
         self.assertEqual(doc[15]['value']['price']['type'], 'float')
-        self.assertEqual(doc[15]['value']['price']['value'], 29.99)
+        self.assertAlmostEqual(doc[15]['value']['price']['value'], 29.99)
         self.assertEqual(doc[15]['value']['weight']['type'], 'float')
-        self.assertEqual(doc[15]['value']['weight']['value'], 3.75)
+        self.assertAlmostEqual(doc[15]['value']['weight']['value'], 3.75)
         self.assertEqual(doc[15]['value']['created_at']['type'], 'datetime')
         self.assertEqual(doc[15]['value']['created_at']['value'], '2023-12-01T08:00:00')
         
         # Dynamic float struct
         self.assertEqual(doc[18]['type'], 'struct')
-        self.assertIn('call', doc[18]['value']['price'])
-        self.assertIn('call', doc[18]['value']['weight'])
+        self.assertAlmostEqual(doc[18]['value']['price']['value'], 19.99)
+        self.assertAlmostEqual(doc[18]['value']['weight']['value'], 2.5)
         
         # Test lists of primitives #
         
@@ -419,8 +419,8 @@ class TestLingoPages(unittest.TestCase):
         
         # Dynamic lists
         self.assertEqual(doc[27]['type'], 'struct')
-        self.assertIn('call', doc[27]['value']['tags'])
-        self.assertIn('call', doc[27]['value']['total_score'])
+        self.assertEqual(doc[27]['value']['tags']['value'], ['1', '2', '3'])
+        self.assertEqual(doc[27]['value']['total_score'], {'value': 60, 'type': 'int'})
         
         # Test datetime lists #
         
@@ -438,7 +438,7 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(doc[36]['value']['name'], 'Product A')
         self.assertEqual(doc[36]['value']['quantity'], 42)
         self.assertEqual(doc[36]['value']['in_stock'], True)
-        self.assertEqual(doc[36]['value']['price'], 99.95)
+        self.assertAlmostEqual(doc[36]['value']['price'], 99.95)
         self.assertEqual(doc[36]['value']['launch_date'], '2024-01-15T10:00:00')
         
         # Verify list of structs heading

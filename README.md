@@ -157,9 +157,9 @@ A browser2 implementation in Python using the built in `tkinter` library.
 
 You can open any spec json file with this:
 
-	python -m mspec.browser2 --spec functions.json
+	python -m mspec.browser2 --spec hello-world-page.json
 
-`functions.json` is a built in example spec and the above command will work even if that file is not in your working directory. the `--spec` arg will first be check to see if the path exists, if not then the arg will be checked against built in specs.
+`hello-world-page.json` is a built in example spec and the above command will work even if that file is not in your working directory. the `--spec` arg will first be check to see if the path exists, if not then the arg will be checked against built in specs.
 
 ⚠️ Be careful with untrusted input as this project is still in alpha phase. ⚠️
 

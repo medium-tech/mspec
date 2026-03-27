@@ -5,89 +5,94 @@
             "type": "list",
             "value": [
                 {
-                    "result": {
-                        "args": {
-                            "object": 1
+                    "type": "struct",
+                    "value": {
+                        "result": {
+                            "type": "bool",
+                            "value": true
                         },
-                        "call": "bool"
-                    },
-                    "test_name": "test_bool_true"
+                        "test_name": "test_bool_true"
+                    }
                 },
                 {
-                    "result": {
-                        "args": {
-                            "object": 0
+                    "type": "struct",
+                    "value": {
+                        "result": {
+                            "type": "bool",
+                            "value": false
                         },
-                        "call": "bool"
-                    },
-                    "test_name": "test_bool_false"
+                        "test_name": "test_bool_false"
+                    }
                 },
                 {
-                    "result": {
-                        "args": {
-                            "object": true
+                    "type": "struct",
+                    "value": {
+                        "result": {
+                            "type": "bool",
+                            "value": false
                         },
-                        "call": "not"
-                    },
-                    "test_name": "test_not_true"
+                        "test_name": "test_not_true"
+                    }
                 },
                 {
-                    "result": {
-                        "args": {
-                            "object": false
+                    "type": "struct",
+                    "value": {
+                        "result": {
+                            "type": "bool",
+                            "value": true
                         },
-                        "call": "not"
-                    },
-                    "test_name": "test_not_false"
+                        "test_name": "test_not_false"
+                    }
                 },
                 {
-                    "result": {
-                        "args": {
-                            "object": 5
+                    "type": "struct",
+                    "value": {
+                        "result": {
+                            "type": "int",
+                            "value": -5
                         },
-                        "call": "neg"
-                    },
-                    "test_name": "test_neg"
+                        "test_name": "test_neg"
+                    }
                 },
                 {
-                    "result": {
-                        "args": {
-                            "a": true,
-                            "b": true
+                    "type": "struct",
+                    "value": {
+                        "result": {
+                            "type": "bool",
+                            "value": true
                         },
-                        "call": "and"
-                    },
-                    "test_name": "test_and_true"
+                        "test_name": "test_and_true"
+                    }
                 },
                 {
-                    "result": {
-                        "args": {
-                            "a": true,
-                            "b": false
+                    "type": "struct",
+                    "value": {
+                        "result": {
+                            "type": "bool",
+                            "value": false
                         },
-                        "call": "and"
-                    },
-                    "test_name": "test_and_false"
+                        "test_name": "test_and_false"
+                    }
                 },
                 {
-                    "result": {
-                        "args": {
-                            "a": false,
-                            "b": true
+                    "type": "struct",
+                    "value": {
+                        "result": {
+                            "type": "bool",
+                            "value": true
                         },
-                        "call": "or"
-                    },
-                    "test_name": "test_or_true"
+                        "test_name": "test_or_true"
+                    }
                 },
                 {
-                    "result": {
-                        "args": {
-                            "a": false,
-                            "b": false
+                    "type": "struct",
+                    "value": {
+                        "result": {
+                            "type": "bool",
+                            "value": false
                         },
-                        "call": "or"
-                    },
-                    "test_name": "test_or_false"
+                        "test_name": "test_or_false"
+                    }
                 }
             ]
         },
@@ -95,3 +100,4 @@
         ]
     }
 }
+                           

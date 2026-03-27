@@ -10,15 +10,36 @@
         "type": "list",
         "element_type": "struct",
         "value": [
-            {"test_name": "test_bool_true", "result": {"call": "bool", "args": {"object": 1}}},
-            {"test_name": "test_bool_false", "result": {"call": "bool", "args": {"object": 0}}},
-            {"test_name": "test_not_true", "result": {"call": "not", "args": {"object": true}}},
-            {"test_name": "test_not_false", "result": {"call": "not", "args": {"object": false}}},
-            {"test_name": "test_neg", "result": {"call": "neg", "args": {"object": 5}}},
-            {"test_name": "test_and_true", "result": {"call": "and", "args": {"a": true, "b": true}}},
-            {"test_name": "test_and_false", "result": {"call": "and", "args": {"a": true, "b": false}}},
-            {"test_name": "test_or_true", "result": {"call": "or", "args": {"a": false, "b": true}}},
-            {"test_name": "test_or_false", "result": {"call": "or", "args": {"a": false, "b": false}}}
+            {
+                "type": "struct",
+                "value": {"test_name": "test_bool_true", "result": {"call": "bool", "args": {"object": 1}}}
+            },
+            {
+                "type": "struct", 
+                "value": {"test_name": "test_bool_false", "result": {"call": "bool", "args": {"object": 0}}}
+            },
+            {
+                "type": "struct", 
+                "value": {"test_name": "test_not_true", "result": {"call": "not", "args": {"object": true}}}},
+            {
+                "type": "struct", 
+                "value": {"test_name": "test_not_false", "result": {"call": "not", "args": {"object": false}}}},
+            {
+                "type": "struct", 
+                "value": {"test_name": "test_neg", "result": {"call": "neg", "args": {"object": 5}}}},
+            {
+                "type": "struct", 
+                "value": {"test_name": "test_and_true", "result": {"call": "and", "args": {"a": true, "b": true}}}},
+            {
+                "type": "struct", 
+                "value": {"test_name": "test_and_false", "result": {"call": "and", "args": {"a": true, "b": false}}}},
+            {
+                "type": "struct", 
+                "value": {"test_name": "test_or_true", "result": {"call": "or", "args": {"a": false, "b": true}}}},
+            {
+                "type": "struct", 
+                "value": {"test_name": "test_or_false", "result": {"call": "or", "args": {"a": false, "b": false}}}
+            }
         ]
     }
 }
