@@ -37,7 +37,7 @@
 * 🔴 merge js dev lingo server into mapp template
 * 🟡 update testing
     * 🟢 split functions.json apart
-        * 🔴 create matching specs for script spec
+        * 🟡 create matching specs for script spec
     * 🔴 implement testing data for page spec
 * 🔴 create features table for different clients
 * 🔴 mspec dev blender extension
