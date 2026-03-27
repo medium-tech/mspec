@@ -419,7 +419,7 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
                 op['result']['name'] = {'lower_case': 'result'}
                 op_output = {'result': op['result']}
             except KeyError as e:
-                raise ValueError(f'{e} not defined in {op_snake_case}.{module_snake} op')
+                raise ValueError(f'{e} not defined in op {module_snake}.{op_snake_case}')
                 
             for out_name, out_field in op_output.items():
                 for key, value in generate_names(out_field['name']['lower_case']).items():

@@ -17,10 +17,10 @@ client:
   default_host: 'http://localhost:8008'
 
 modules:
-  user:
+  sosh_net:
     name:
-      lower_case: 'user'
-    
+      lower_case: 'sosh net'
+
     models:
       profile:
         name:
@@ -50,9 +50,10 @@ modules:
               lower_case: 'username'
             type: str
             examples:
-              - 'alice'
-              - 'bob'
-              - 'charlie'
+              - "alice123"
+              - "bob_the_builder"
+              - "charlie_brown"
+            random: random_user_name
 
           bio:
             name:
@@ -63,11 +64,56 @@ modules:
               - 'Avid reader and coffee enthusiast.'
               - 'Tech geek and gamer.'
 
-  content:
-    name:
-      lower_case: 'content'
+      forum:
+        name:
+          lower_case: 'forum'
 
-    models:
+        auth:
+          require_login: true
+
+        fields:
+
+          user_id:
+            name:
+              lower_case: 'user id'
+            type: foreign_key
+            references:
+              module: 'auth'
+              table: 'user'
+              field: 'id'
+            examples:
+              - "1"
+              - "2"
+              - "3"
+          
+          topic:
+            name:
+              lower_case: 'topic'
+            type: str
+            examples:
+              - 'Favorite Hiking Trails'
+              - 'Best Coffee Shops in Town'
+              - 'Latest Tech Gadgets'
+          
+          description:
+            name:
+              lower_case: 'description'
+            type: str
+            examples:
+              - 'Share your favorite hiking trails and tips!'
+              - 'Discuss the best coffee shops in our city.'
+              - 'Talk about the latest tech gadgets and innovations.'
+
+          tags:
+            name:
+              lower_case: 'tags'
+            type: list
+            element_type: str
+            examples:
+              - ['hiking', 'outdoors', 'nature']
+              - ['coffee', 'cafe', 'drinks']
+              - ['tech', 'gadgets', 'innovation']
+      
       post:
         name:
           lower_case: 'post'
@@ -90,14 +136,75 @@ modules:
               - "2"
               - "3"
 
-          content:
+          forum_id:
             name:
-              lower_case: 'content'
+              lower_case: 'forum id'
+            description: 'The forum this post belongs to, if -1 then it is not tied to a forum and will show up in chatter'
+            type: foreign_key
+            references:
+              module: 'sosh_net'
+              table: 'forum'
+              field: 'id'
+            default: "-1"
+            examples:
+              - "1"
+              - "2"
+              - "3"
+
+          reply_to:
+            name:
+              lower_case: 'reply to'
+            description: 'The post this is a reply to, if -1 then it is not a reply'
+            type: foreign_key
+            references:
+              module: 'sosh_net'
+              table: 'post'
+              field: 'id'
+            default: "-1"
+            examples:
+              - "1"
+              - "2"
+              - "-1"
+
+          message:
+            name:
+              lower_case: 'message'
             type: str
             examples:
               - 'Just had an amazing day at the beach!'
               - "Loving the new book I'm reading."
               - "Can't wait for the weekend!"
+          
+          attachments:
+            name:
+              lower_case: 'attachments'
+            type: list
+            default: []
+            element_type: foreign_key
+            references:
+              module: 'file_system'
+              table: 'file'
+              field: 'id'
+            examples:
+              - ["1", "2"]
+              - ["3"]
+              - []
+          
+          images:
+            name:
+              lower_case: 'images'
+            type: list
+            default: []
+            element_type: foreign_key
+            references:
+              module: 'media'
+              table: 'master_image'
+              field: 'id'
+            examples:
+              - ["4", "5"]
+              - ["6"]
+              - []
+      
       event:
         name:
           lower_case: 'event'
@@ -129,14 +236,23 @@ modules:
               - 'Hiking Trip'
               - 'Book Club Meeting'
 
-          event_date:
+          event_start_time:
             name:
-              lower_case: 'event date'
+              lower_case: 'event start time'
             type: datetime
             examples:
               - '2023-10-15T18:00:00'
               - '2023-11-20T09:30:00'
               - '2023-12-05T14:00:00'
+          
+          event_end_time:
+            name:
+              lower_case: 'event end time'
+            type: datetime
+            examples:
+              - '2023-10-15T21:00:00'
+              - '2023-11-20T12:30:00'
+              - '2023-12-05T17:00:00'
 
           location:
             name:
@@ -155,3 +271,62 @@ modules:
               - 'Join us for a fun birthday celebration!'
               - 'A day of hiking and exploring nature.'
               - 'Discussing our latest book over coffee.'
+
+      reaction:
+        name:
+          lower_case: 'reaction'
+
+        auth:
+          require_login: true
+          max_models_by_field:
+            post_id: 1 # only allow one reaction per user per post
+
+        fields:
+
+          user_id:
+            name:
+              lower_case: 'user id'
+            type: foreign_key
+            references:
+              module: 'auth'
+              table: 'user'
+              field: 'id'
+            examples:
+              - "1"
+              - "2"
+              - "3"
+
+          post_id:
+            name:
+              lower_case: 'post id'
+            type: foreign_key
+            references:
+              module: 'sosh_net'
+              table: 'post'
+              field: 'id'
+            examples:
+              - "1"
+              - "2"
+              - "3"
+
+          reaction_type:
+            name:
+              lower_case: 'reaction type'
+            type: str
+            enum:
+              - '🙂'
+              - '❤️'
+              - '😂'
+              - '👍'
+              - '👎'
+              - '😢'
+              - '😡'
+              - '😬'
+              - '🥱'
+              - '😮'
+              - '🤔'
+            examples:
+              - '🙂'
+              - '❤️'
+              - '😂'
+              - '👍'

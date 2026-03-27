@@ -39,6 +39,14 @@
     * 🟢 split functions.json apart
         * 🟡 create matching specs for script spec
     * 🔴 implement testing data for page spec
+* 🔴 define custom pages
+    * 🔴 project index page
+    * 🔴 module index page
+    * 🔴 model index page
+    * 🔴 model instance page
+    * 🔴 op page
+* 🔴 implement max_models_by_field - ie. limit 1 reaction per post_id
+* 🔴 add unique constraint to str fields - ie. only 1 profile with a specific username can exist
 * 🔴 create features table for different clients
 * 🔴 mspec dev blender extension
     * 🔴 update nodes for new functions
