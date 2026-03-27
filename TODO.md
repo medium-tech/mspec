@@ -33,20 +33,26 @@
     * 🟢 link to item from model view
     * 🟢 search for item from form
     * 🟢 tests
-* 🟡 mega app for testing (merge modules from multiple files)
-* 🔴 merge js dev lingo server into mapp template
-* 🟡 update testing
-    * 🟢 split functions.json apart
-        * 🟡 create matching specs for script spec
-    * 🔴 implement testing data for page spec
+* 🟢 mega app for testing (merge modules from multiple files)
 * 🔴 define custom pages
     * 🔴 project index page
     * 🔴 module index page
     * 🔴 model index page
     * 🔴 model instance page
     * 🔴 op page
+* 🔴 support for list of foreign keys
+    * 🔴 backend
+    * 🔴 ui
+* 🔴 split social media off from dev app
+    * 🔴 custom pages
+    * 🔴 deploy to web
 * 🔴 implement max_models_by_field - ie. limit 1 reaction per post_id
 * 🔴 add unique constraint to str fields - ie. only 1 profile with a specific username can exist
+* 🟡 update testing
+    * 🟢 split functions.json apart
+        * 🟡 create matching specs for script spec
+    * 🔴 implement testing data for page spec
+* 🔴 merge js dev lingo server into mapp template
 * 🔴 create features table for different clients
 * 🔴 mspec dev blender extension
     * 🔴 update nodes for new functions
