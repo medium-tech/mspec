@@ -47,13 +47,13 @@ class TestMspecCLI(unittest.TestCase):
     #
 
     def test_example_command_generator(self):
-        """Test the example command with test-gen.yaml"""
-        result = self._run_cli(['example', 'test-gen.yaml', '--yes'])
+        """Test the example command with dev-app.yaml"""
+        result = self._run_cli(['example', 'dev-app.yaml', '--yes'])
         self.assertEqual(result.returncode, 0)
         self.assertIn('Copied example spec file to current directory:', result.stdout)
         
         # Clean up - remove the copied file
-        copied_file = Path('test-gen.yaml')
+        copied_file = Path('dev-app.yaml')
         self.assertTrue(copied_file.exists())
         copied_file.unlink()
     
@@ -93,11 +93,11 @@ class TestMspecCLI(unittest.TestCase):
     def test_example_command_file_exists_no(self):
         """Test the example command when file exists and --no is used"""
         # First, create a dummy file to simulate existing file
-        existing_file = Path('test-gen.yaml')
+        existing_file = Path('dev-app.yaml')
         existing_file.touch()
         
         try:
-            result = self._run_cli(['example', 'test-gen.yaml', '--no'])
+            result = self._run_cli(['example', 'dev-app.yaml', '--no'])
             self.assertEqual(result.returncode, 0)
             self.assertIn('File already exists, not overwriting:', result.stdout)
             self.assertEqual(existing_file.stat().st_size, 0)
@@ -111,11 +111,11 @@ class TestMspecCLI(unittest.TestCase):
     def test_example_command_file_exists_yes(self):
         """Test the example command when file exists and --yes is used"""
         # First, create a dummy file to simulate existing file
-        existing_file = Path('test-gen.yaml')
+        existing_file = Path('dev-app.yaml')
         existing_file.touch()
         
         try:
-            result = self._run_cli(['example', 'test-gen.yaml', '--yes'])
+            result = self._run_cli(['example', 'dev-app.yaml', '--yes'])
             self.assertEqual(result.returncode, 0)
             self.assertIn('Copied example spec file to current directory:', result.stdout)
         finally:
@@ -128,12 +128,12 @@ class TestMspecCLI(unittest.TestCase):
     def test_example_command_file_exists_prompt_no(self):
         """Test the example command when file exists and user inputs 'n'"""
         # First, create a dummy file to simulate existing file
-        existing_file = Path('test-gen.yaml')
+        existing_file = Path('dev-app.yaml')
         existing_file.touch()
         
         try:
             # Use subprocess to simulate user input 'n'
-            cmd = [sys.executable, '-m', 'mspec', 'example', 'test-gen.yaml']
+            cmd = [sys.executable, '-m', 'mspec', 'example', 'dev-app.yaml']
             process = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             stdout, stderr = process.communicate(input='n\n')
             self.assertEqual(process.returncode, 1)
@@ -148,12 +148,12 @@ class TestMspecCLI(unittest.TestCase):
     def test_example_command_file_exists_prompt_yes(self):
         """Test the example command when file exists and user inputs 'y'"""
         # First, create a dummy file to simulate existing file
-        existing_file = Path('test-gen.yaml')
+        existing_file = Path('dev-app.yaml')
         existing_file.touch()
         
         try:
             # Use subprocess to simulate user input 'y'
-            cmd = [sys.executable, '-m', 'mspec', 'example', 'test-gen.yaml']
+            cmd = [sys.executable, '-m', 'mspec', 'example', 'dev-app.yaml']
             process = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             stdout, stderr = process.communicate(input='y\n')
             self.assertEqual(process.returncode, 0)

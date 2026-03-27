@@ -164,7 +164,8 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
     try:
         spec_modules:dict = spec['modules']
     except KeyError:
-        raise ValueError('No modules defined in the spec file.')
+        spec['modules'] = {}
+        spec_modules = spec['modules']
     
     # additional modules to import #
 
@@ -218,6 +219,9 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
 
         module_model_names = []
         module_op_names = []
+
+        if 'models' not in module:
+            module['models'] = {}
 
         for model in module['models'].values():
             for key, value in generate_names(model['name']['lower_case']).items():
@@ -359,7 +363,10 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
         # ops
         #
 
-        for op in module.get('ops', {}).values():
+        if 'ops' not in module:
+            module['ops'] = {}
+
+        for op in module['ops'].values():
 
             # name #
 

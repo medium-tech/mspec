@@ -4,63 +4,31 @@ lingo:
 project:
   
   name:
-    lower_case: 'test gen'
+    lower_case: 'model type testing'
 
-  description: 'A test project for mspec-alpha python app generator'
+  description: 'A test project for testing various data types in the mapp framework'
 
   author:
     name: 'B rad C'
     email: 'sample@email.com'
 
 server:
-  port: 6006
+  port: 2002
 
 client:
-  default_host: 'http://localhost:6006'
+  default_host: 'http://localhost:2002'
 
 modules:
-  generated_module_a:
+  model_type_tests:
     name:
-      lower_case: 'generated module a'
-
-    ops:
-      say_hello:
-        name:
-          lower_case: 'say hello'
-        description: 'Return a greeting message'
-        func:
-          call: concat
-          args:
-            items:
-              - 'Hello, '
-              - params: {name: {}}
-              - '!'
-        params:
-          name:
-            name:
-              lower_case: 'name'
-            type: str
-            description: 'Name of the person to greet'
-        
-        result:
-          type: str
-          description: 'Greeting message'
-
-        tests:
-          test_cases:
-            - params:
-                name: 'Alice'
-              expected_result: 'Hello, Alice!'
-              name: 'Test with Alice'
-            - params:
-                name: 'Bob'
-              expected_result: 'Hello, Bob!'
-              name: 'Test with Bob'
+      lower_case: 'model type tests'
 
     models:
-      singular_model:
+      single_choice_fields:
         name:
-          lower_case: 'singular model'
+          lower_case: 'single choice fields'
+
+        description: 'A model with various single choice field types for testing purposes'
 
         fields:
 
@@ -122,9 +90,11 @@ modules:
               - "2000-01-11T12:34:56"
               - "2020-10-02T15:30:00"
 
-      plural_model:
+      multi_choice_fields:
         name:
-          lower_case: 'plural model'
+          lower_case: 'multi choice fields'
+
+        description: 'A model with various multi choice field types for testing purposes'
 
         fields:
 
@@ -189,14 +159,11 @@ modules:
               - ["2000-01-11T12:34:56"]
               - ["2020-10-02T15:30:00", "2021-01-01T00:00:00"]
 
-  generated_module_b:
-    name:
-      lower_case: 'generated module b'
-
-    models:
-      custom_random_model:
+      rando_model:
         name:
-          lower_case: 'custom random model'
+          lower_case: 'rando model'
+
+        description: 'A model to test random data generator functions for various field types'
 
         auth:
           require_login: true
@@ -264,9 +231,11 @@ modules:
               - "+1 (987) 654-3210"
             random: random_phone_number
 
-      custom_limit_model_a:
+      limit_a:
         name:
-          lower_case: 'custom limit model a'
+          lower_case: 'limit a'
+
+        description: 'A model to test max_models_per_user limit of 0 (cannot create models)'
 
         auth:
           require_login: true
@@ -293,9 +262,11 @@ modules:
               - "example1"
               - "example2"
 
-      custom_limit_model_b:
+      limit_b:
         name:
-          lower_case: 'custom limit model b'
+          lower_case: 'limit b'
+
+        description: 'A model to test max_models_per_user limit of 1'
 
         auth:
           require_login: true
@@ -324,9 +295,11 @@ modules:
               - "example1"
               - "example2"
 
-      custom_limit_model_c:
+      limit_c:
         name:
-          lower_case: 'custom limit model c'
+          lower_case: 'limit c'
+
+        description: 'A model to test max_models_per_user limit of 5'
 
         auth:
           require_login: true
