@@ -1,7 +1,6 @@
 import random
+import datetime
 import argparse
-
-import mapp.seed as seed_funcs
 
 from mapp.context import spec_from_env, get_context_from_env
 from mapp.types import new_model_class, new_model, new_op_classes, new_op_params
@@ -9,8 +8,165 @@ from mapp.module.model.http import http_model_create
 from mapp.module.op.http import http_run_op
 
 
-__all__ = ['main']
+__all__ = [
+    'random_nouns',
+    'random_adjectives',
+    'random_words',
 
+    'random_first_names',
+    'random_last_names',
+
+    'random_bool',
+    'random_int',
+    'random_float',
+    'random_str',
+    'random_str_enum',
+    'random_list',
+    'random_datetime',
+    'random_cid',
+    'random_entity',
+    'random_permission',
+    'random_person_name',
+    'random_user_name',
+    'random_thing_name',
+    'random_email',
+    'random_phone_number',
+
+    'seed',
+    'main',
+]
+
+#
+# random data generators
+#
+
+random_nouns = ['apple', 'banana', 'horse', 'iguana', 'jellyfish', 'kangaroo', 'lion', 'quail', 'rabbit', 'snake', 'tiger', 'x-ray', 'yak', 'zebra']
+random_adjectives = ['shiny', 'dull', 'new', 'old', 'big', 'small', 'fast', 'slow', 'hot', 'cold', 'happy', 'sad', 'angry', 'calm', 'loud', 'quiet']
+random_words = random_nouns + random_adjectives
+
+random_first_names = ['Alice', 'Bob', 'Charlie', 'David', 'Eve', 'Frank', 'Grace', 'Hank', 'Ivy', 'Jack', 'Kate', 'Liam', 'Mia', 'Noah', 'Olivia', 'Paul', 'Quinn', 'Ryan', 'Sara', 'Tom', 'Uma', 'Vince', 'Wendy', 'Xander', 'Yara', 'Zane']
+random_last_names = ['Adams', 'Brown', 'Clark', 'Davis', 'Evans', 'Ford', 'Garcia', 'Hill', 'Irwin', 'Jones', 'King', 'Lee', 'Moore', 'Nolan', 'Owens', 'Perez', 'Quinn', 'Reed', 'Smith', 'Taylor', 'Upton', 'Vance', 'Wong', 'Xu', 'Young', 'Zhang']
+
+def random_bool() -> bool:
+    return random.choice([True, False])
+
+def random_int(min:int=-100, max:int=100) -> int:
+    return random.randint(min, max)
+
+def random_float(min:float=-100.0, max:float=100.0, round_to=2) -> float:
+    return round(random.uniform(min, max), round_to)
+
+def random_str() -> str:
+    return ' '.join(random.choices(random_words, k=random.randint(1, 5)))
+
+def random_str_enum(enum:list) -> str:
+    return random.choice(enum)
+
+def random_list(element_type:str, enum_choices=None) -> list:
+    items = []
+    for _ in range(random.randint(0, 5)):
+        if enum_choices is not None:
+            items.append(random.choice(enum_choices))
+        elif element_type == 'str':
+            items.append(random.choice(random_words))
+        else:
+            items.append(globals()[f'random_{element_type}']())
+    return items
+
+def random_datetime() -> datetime.datetime:
+    return datetime.datetime.fromtimestamp(random.randint(1705900793, 1768972793))
+
+def random_person_name() -> str:
+    first = random.choice(random_first_names)
+    middle = random.choice(random_first_names)
+    last = random.choice(random_last_names)
+
+    name = ''
+    if random.randint(0, 3) > 0:
+        name += first
+    else:
+        name += first[0]
+
+    middle_seed = random.randint(0, 5)
+    if middle_seed == 0:
+        name += ' ' + middle
+    elif middle_seed < 2:
+        name += ' ' + middle[0]
+    else:
+        name += ' '
+
+    last_seed = random.randint(0, 5)
+    if last_seed == 0:
+        pass
+    elif last_seed < 2:
+        name += ' ' + last[0]
+    else:
+        name += ' ' + last
+
+    return name
+
+def random_user_name() -> str:
+    num = random.randint(1, 4)
+    if num == 1:
+        name = random.choice(random_adjectives) + ' ' + random.choice(random_nouns)
+    elif num == 2:
+        name = ('The ' + random.choice(random_nouns) + ' ' + random.choice(random_nouns)).title()
+    elif num == 3:
+        name = random.choice(random_words).title()
+        if random.randint(0, 2) == 0:
+            name += f'_{random.randint(1, 100)}'
+    else:
+        _words = []
+
+        for i in range(random.randint(3, 4)):
+            _word = random.choice(random_words)
+            if random.randint(0, 2) == 0:
+                _words.append(_word.upper())
+            else:
+                _words.append(_word)
+
+        random.shuffle(_words)
+        name = ' '.join(_words)
+
+    return name
+
+def random_thing_name() -> str:
+    words = []
+    for _ in range(random.randint(1, 3)):
+        words.append(random.choice(random_adjectives))
+
+    words.append(random.choice(random_nouns))
+
+    return ' '.join(words)
+
+def random_email() -> str:
+    user_name = random_user_name().replace(' ', '_')
+    domain = random.choice(random_words)
+    tld = random.choice(['com', 'net', 'org', 'io', 'ai'])
+    return f'{user_name}@{domain}.{tld}'
+
+def random_phone_number() -> str:
+    country_code = random.randint(1, 99)
+    area_code = random.randint(100, 999)
+    exchange = random.randint(100, 999)
+    number = random.randint(1000, 9999)
+    return f'+{country_code} ({area_code}) {exchange}-{number}'
+
+# random_cid, random_entity and random_permission are referenced in __all__ for
+# forward-compatibility; they are not yet implemented
+
+def random_cid() -> str:
+    raise NotImplementedError('random_cid is not yet implemented')
+
+def random_entity() -> str:
+    raise NotImplementedError('random_entity is not yet implemented')
+
+def random_permission() -> str:
+    raise NotImplementedError('random_permission is not yet implemented')
+
+#
+# seeder internals
+#
 
 _SKIP_MODULES = {'auth', 'file_system', 'media'}
 
@@ -19,9 +175,9 @@ def _random_field_value(field: dict):
     """Return a random value for the given field spec."""
     random_func_name = field.get('random')
     if random_func_name:
-        return getattr(seed_funcs, random_func_name)()
+        return globals()[random_func_name]()
     if field['type'] == 'list':
-        return seed_funcs.random_list(field.get('element_type', 'str'))
+        return random_list(field.get('element_type', 'str'))
     return random.choice(field['examples'])
 
 
@@ -77,8 +233,8 @@ def _seed_users(ctx, spec: dict, num_users: int) -> list:
     password = 'Seed_pass_1!'
 
     for i in range(num_users):
-        name = seed_funcs.random_person_name()
-        email = seed_funcs.random_email()
+        name = random_person_name()
+        email = random_email()
 
         create_params = new_op_params(create_params_class, {
             'name': name,
@@ -109,34 +265,27 @@ def _seed_users(ctx, spec: dict, num_users: int) -> list:
 
     return users
 
+#
+# public seed function
+#
 
-def main():
+def seed(ctx, spec: dict, num_users: int, min_models: int, max_models: int):
+    """
+    Seed random data into a running mapp application.
 
-    # parse args #
-
-    parser = argparse.ArgumentParser(
-        prog='mspec.seed',
-        description='Seed data for a mapp application using its spec'
-    )
-    parser.add_argument('--users', type=int, default=5,
-                        help='Number of users to create (default: 5)')
-    parser.add_argument('--min-models', type=int, default=0,
-                        help='Minimum models to create per user/model (default: 0)')
-    parser.add_argument('--max-models', type=int, default=10,
-                        help='Maximum models to create per user/model (default: 10)')
-
-    args = parser.parse_args()
-
-    # load spec and context #
-
-    spec = spec_from_env()
-    ctx = get_context_from_env()
+    args ::
+        ctx         :: MappContext from get_context_from_env()
+        spec        :: loaded app spec from spec_from_env()
+        num_users   :: number of users to create
+        min_models  :: minimum models to create per user / per model
+        max_models  :: maximum models to create per user / per model
+    """
 
     # create users #
 
-    print(f':: creating {args.users} users...')
-    users = _seed_users(ctx, spec, args.users)
-    print(f':: created {len(users)}/{args.users} users')
+    print(f':: creating {num_users} users...')
+    users = _seed_users(ctx, spec, num_users)
+    print(f':: created {len(users)}/{num_users} users')
 
     # seed models #
 
@@ -161,23 +310,55 @@ def main():
 
             if require_login:
 
-                if args.users == 0:
+                if num_users == 0:
                     print(f':: skipping {model_path}: no users created (--users 0)')
                     continue
 
+                max_per_user = model['auth'].get('max_models_per_user', -1)
+
                 for user_id, access_token in users:
                     ctx.client.set_bearer_token(access_token)
-                    num_models = random.randint(args.min_models, args.max_models)
+                    num_models = random.randint(min_models, max_models)
+                    if max_per_user >= 0:
+                        num_models = min(num_models, max_per_user)
                     print(f':: seeding {num_models} {model_path} models for user {user_id}...')
                     for _ in range(num_models):
                         _create_model(ctx, module, model)
 
             else:
                 ctx.client.headers.pop('Authorization', None)
-                num_models = random.randint(args.min_models, args.max_models)
+                num_models = random.randint(min_models, max_models)
                 print(f':: seeding {num_models} {model_path} models...')
                 for _ in range(num_models):
                     _create_model(ctx, module, model)
+
+#
+# cli entry point
+#
+
+def main():
+
+    # parse args #
+
+    parser = argparse.ArgumentParser(
+        prog='mspec.seed',
+        description='Seed data for a mapp application using its spec'
+    )
+    parser.add_argument('--users', type=int, default=5,
+                        help='Number of users to create (default: 5)')
+    parser.add_argument('--min-models', type=int, default=0,
+                        help='Minimum models to create per user/model (default: 0)')
+    parser.add_argument('--max-models', type=int, default=10,
+                        help='Maximum models to create per user/model (default: 10)')
+
+    args = parser.parse_args()
+
+    # load spec and context #
+
+    spec = spec_from_env()
+    ctx = get_context_from_env()
+
+    seed(ctx, spec, num_users=args.users, min_models=args.min_models, max_models=args.max_models)
 
 
 if __name__ == '__main__':
