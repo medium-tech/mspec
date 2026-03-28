@@ -1,0 +1,22 @@
+{
+    "results": {
+        "default": {
+            "type": "str",
+            "value": "bool: false, int: 43, float: 1.4, str: hello.world"
+        },
+        "test_cases": [
+            {
+                "params": {
+                    "bool_param": false,
+                    "int_param": 10,
+                    "float_param": 5.5,
+                    "str_param": "foo"
+                },
+                "result": {
+                    "type": "str",
+                    "value": "bool: true, int: 11, float: 2.2, str: foo.world"
+                }
+            }
+        ]
+    }
+}

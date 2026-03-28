@@ -1,0 +1,79 @@
+{
+    "lingo": {
+        "version": "script-beta-1"
+    },
+    "params": {
+        "int_param": {
+            "type": "int",
+            "default": 42
+        },
+        "float_param": {
+            "type": "float",
+            "default": 3.5
+        },
+        "bool_param": {
+            "type": "bool",
+            "default": true
+        },
+        "str_param": {
+            "type": "str",
+            "default": "hello"
+        }
+    },
+    "state": {
+        "bool_state": {
+            "type": "bool",
+            "calc": {
+                "call": "not",
+                "args": {
+                    "object": {"params": {"bool_param": {}}}
+                }
+            }
+        },
+        "int_state": {
+            "type": "int",
+            "calc": {
+                "call": "add",
+                "args": {
+                    "a": {"params": {"int_param": {}}},
+                    "b": {"value": 1, "type": "int"}
+                }
+            }
+        },
+        "float_state": {
+            "type": "float",
+            "calc": {
+                "call": "div",
+                "args": {
+                    "a": {"params": {"float_param": {}}},
+                    "b": {"value": 2.5, "type": "float"}
+                }
+            }
+        },
+        "str_state": {
+            "type": "str",
+            "calc": {
+                "call": "concat",
+                "args": {
+                    "items": [{"params": {"str_param": {}}}, ".", "world"]
+                }
+            }
+        }
+    },
+    "ops": {},
+    "output": {
+        "call": "concat",
+        "args": {
+            "items": [
+                "bool: ",
+                {"call": "str", "args": {"object": {"state": {"bool_state": {}}}}},
+                ", int: ",
+                {"call": "str", "args": {"object": {"state": {"int_state": {}}}}},
+                ", float: ",
+                {"call": "str", "args": {"object": {"state": {"float_state": {}}}}},
+                ", str: ",
+                {"call": "str", "args": {"object": {"state": {"str_state": {}}}}}
+            ]
+        }
+    }
+}
