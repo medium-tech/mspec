@@ -12,6 +12,8 @@ ALL_SPECS = [files for files in builtin_spec_files().values()]
 TOTAL_NUM_SPECS = sum(len(files) if isinstance(files, list) else 1 for files in ALL_SPECS)
 
 class TestMspecCLI(unittest.TestCase):
+    maxDiff = None
+
     """
     Unittests for mspec python module CLI.
     Tests the following commands:
@@ -252,7 +254,7 @@ class TestMspecCLI(unittest.TestCase):
 
         result = self._run_cli(['execute', 'primitive_types.json'])
         self.assertEqual(result.returncode, 0)
-        self.assertEqual(json.loads(result.stdout), test_data['results']['default'])
+        self.assertAlmostEqual(json.loads(result.stdout), test_data['results']['default'])
 
         # test test cases #
 

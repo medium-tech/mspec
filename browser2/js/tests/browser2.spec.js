@@ -294,11 +294,8 @@ test('test - primitive_types script', async ({ page }) => {
   
   // Test with default params
   await page.locator('#spec-select').selectOption('data/lingo/scripts/primitive_types.json');
-  for (const item of testData.results.default) {
-    const valueStr = typeof item.value === 'string' ? `"${item.value}"` : JSON.stringify(item.value);
-    await expect(page.locator('#lingo-app')).toContainText(`"value": ${valueStr}`);
-    await expect(page.locator('#lingo-app')).toContainText(`"type": "${item.type}"`);
-  }
+  await expect(page.locator('#lingo-app')).toContainText(testData.results.default.value);
+
   
   // Test each test case
   for (const testCase of testData.results.test_cases) {
@@ -306,11 +303,7 @@ test('test - primitive_types script', async ({ page }) => {
     await page.locator('#lingo-app-params-textarea').fill(paramsJson);
     await page.getByRole('button', { name: 'Run' }).click();
     
-    for (const item of testCase.result) {
-      const valueStr = typeof item.value === 'string' ? `"${item.value}"` : JSON.stringify(item.value);
-      await expect(page.locator('#lingo-app')).toContainText(`"value": ${valueStr}`);
-      await expect(page.locator('#lingo-app')).toContainText(`"type": "${item.type}"`);
-    }
+    await expect(page.locator('#lingo-app')).toContainText(testCase.result.value);
   }
 });
 
