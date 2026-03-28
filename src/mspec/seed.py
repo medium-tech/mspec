@@ -23,9 +23,6 @@ __all__ = [
     'random_str_enum',
     'random_list',
     'random_datetime',
-    'random_cid',
-    'random_entity',
-    'random_permission',
     'random_person_name',
     'random_user_name',
     'random_thing_name',
@@ -152,18 +149,6 @@ def random_phone_number() -> str:
     number = random.randint(1000, 9999)
     return f'+{country_code} ({area_code}) {exchange}-{number}'
 
-# random_cid, random_entity and random_permission are referenced in __all__ for
-# forward-compatibility; they are not yet implemented
-
-def random_cid() -> str:
-    raise NotImplementedError('random_cid is not yet implemented')
-
-def random_entity() -> str:
-    raise NotImplementedError('random_entity is not yet implemented')
-
-def random_permission() -> str:
-    raise NotImplementedError('random_permission is not yet implemented')
-
 #
 # seeder internals
 #
@@ -175,6 +160,8 @@ def _random_field_value(field: dict):
     """Return a random value for the given field spec."""
     random_func_name = field.get('random')
     if random_func_name:
+        if not random_func_name.startswith('random_') or random_func_name not in __all__:
+            raise ValueError(f'Invalid random function specified for field {field["name"]["snake_case"]}: {random_func_name}')
         return globals()[random_func_name]()
     if field['type'] == 'list':
         return random_list(field.get('element_type', 'str'))
@@ -344,12 +331,12 @@ def main():
         prog='mspec.seed',
         description='Seed data for a mapp application using its spec'
     )
-    parser.add_argument('--users', type=int, default=5,
-                        help='Number of users to create (default: 5)')
+    parser.add_argument('--users', type=int, default=10,
+                        help='Number of users to create (default: 10)')
     parser.add_argument('--min-models', type=int, default=0,
                         help='Minimum models to create per user/model (default: 0)')
-    parser.add_argument('--max-models', type=int, default=10,
-                        help='Maximum models to create per user/model (default: 10)')
+    parser.add_argument('--max-models', type=int, default=25,
+                        help='Maximum models to create per user/model (default: 25)')
 
     args = parser.parse_args()
 
