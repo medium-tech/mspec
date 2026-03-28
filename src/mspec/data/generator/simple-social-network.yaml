@@ -204,6 +204,21 @@ modules:
               - ["4", "5"]
               - ["6"]
               - []
+
+          related_posts:
+            name:
+              lower_case: 'related posts'
+            type: list
+            default: []
+            element_type: foreign_key
+            references:
+              module: 'sosh_net'
+              table: 'post'
+              field: 'id'
+            examples:
+              - ["7", "8"]
+              - ["9"]
+              - []
       
       event:
         name:
