@@ -12,6 +12,8 @@ ALL_SPECS = [files for files in builtin_spec_files().values()]
 TOTAL_NUM_SPECS = sum(len(files) if isinstance(files, list) else 1 for files in ALL_SPECS)
 
 class TestMspecCLI(unittest.TestCase):
+    maxDiff = None
+
     """
     Unittests for mspec python module CLI.
     Tests the following commands:
@@ -242,23 +244,23 @@ class TestMspecCLI(unittest.TestCase):
     # execute command
     #
 
-    def test_execute_command_all_param_types(self):
-        """Test the execute command with all_param_types.json"""
-        test_data_path = SAMPLE_LINGO_SCRIPT_SPEC_DIR / 'all_param_types_test_data.json'
+    def test_execute_command_primitive_types(self):
+        """Test the execute command with primitive_types.json"""
+        test_data_path = SAMPLE_LINGO_SCRIPT_SPEC_DIR / 'primitive_types_test_data.json'
         with open(test_data_path) as f:
             test_data = json.load(f)
 
         # test default case #
 
-        result = self._run_cli(['execute', 'all_param_types.json'])
+        result = self._run_cli(['execute', 'primitive_types.json'])
         self.assertEqual(result.returncode, 0)
-        self.assertEqual(json.loads(result.stdout), test_data['results']['default'])
+        self.assertAlmostEqual(json.loads(result.stdout), test_data['results']['default'])
 
         # test test cases #
 
         for test_case in test_data['results']['test_cases']:
             params_json = json.dumps(test_case['params'])
-            result = self._run_cli(['execute', 'all_param_types.json', '--params', params_json])
+            result = self._run_cli(['execute', 'primitive_types.json', '--params', params_json])
             self.assertEqual(result.returncode, 0)
             self.assertEqual(json.loads(result.stdout), test_case['result'])
 

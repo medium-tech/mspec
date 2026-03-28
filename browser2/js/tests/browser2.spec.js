@@ -285,17 +285,17 @@ test('test - basic_math script', async ({ page }) => {
   }
 });
 
-test('test - all_param_types script', async ({ page }) => {
+test('test - primitive_types script', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
   
   // Load test data
-  const response = await page.request.get('http://127.0.0.1:8000/data/lingo/scripts/all_param_types_test_data.json');
+  const response = await page.request.get('http://127.0.0.1:8000/data/lingo/scripts/primitive_types_test_data.json');
   const testData = await response.json();
   
   // Test with default params
-  await page.locator('#spec-select').selectOption('data/lingo/scripts/all_param_types.json');
-  await expect(page.locator('#lingo-app')).toContainText(`"value": ${testData.results.default.value}`);
-  await expect(page.locator('#lingo-app')).toContainText(`"type": "${testData.results.default.type}"`);
+  await page.locator('#spec-select').selectOption('data/lingo/scripts/primitive_types.json');
+  await expect(page.locator('#lingo-app')).toContainText(testData.results.default.value);
+
   
   // Test each test case
   for (const testCase of testData.results.test_cases) {
@@ -303,8 +303,7 @@ test('test - all_param_types script', async ({ page }) => {
     await page.locator('#lingo-app-params-textarea').fill(paramsJson);
     await page.getByRole('button', { name: 'Run' }).click();
     
-    await expect(page.locator('#lingo-app')).toContainText(`"value": ${testCase.result.value}`);
-    await expect(page.locator('#lingo-app')).toContainText(`"type": "${testCase.result.type}"`);
+    await expect(page.locator('#lingo-app')).toContainText(testCase.result.value);
   }
 });
 

@@ -294,6 +294,14 @@ def _media_list_images_function_args(app:LingoApp, expression: dict, ctx:Optiona
 # other
 #
 
+def str_convert(object:Any) -> str:
+    if object is True:
+        return 'true'
+    elif object is False:
+        return 'false'
+    else:
+        return str(object)
+
 def str_join(separator:str, items:list) -> str:
     return separator.join(str(item) for item in items)
 
@@ -350,7 +358,7 @@ lingo_function_lookup = {
 
     # str #
 
-    'str': {'func': str, 'args': {'object': {'type': 'any'}}},
+    'str': {'func': str_convert, 'args': {'object': {'type': 'any'}}},
     'join': {'func': str_join, 'args': {'separator': {'type': 'str'}, 'items': {'type': 'list'}}},
     'concat': {'func': str_concat, 'args': {'items': {'type': 'list'}}},
 
