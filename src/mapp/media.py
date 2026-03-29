@@ -1,21 +1,24 @@
 import json
 import os
 import subprocess
+import tempfile
 
 from mapp.auth import current_user
 from mapp.context import MappContext
 from mapp.errors import MappUserError, MappError
 from mapp.file_system import _file_path, ingest_start, _get_file_record, get_file_content
-from mapp.types import Image, datetime_from_db, datetime_now_utc
+from mapp.types import Image, MasterImage, datetime_from_db, datetime_now_utc
 
 __all__ = [
 	'create_image',
 	'get_image',
 	'get_media_file_content',
+	'ingest_master_image',
 	'list_images'
 ]
 
 MAPP_MEDIA_INFO_PATH = os.getenv('MAPP_MEDIA_INFO_PATH', 'mediainfo')
+MAPP_FFMPEG_PATH = os.getenv('MAPP_FFMPEG_PATH', 'ffmpeg')
 
 """
 
@@ -53,6 +56,15 @@ def _call_mediainfo(file_path: str) -> dict:
 			raise MappError(f'Mediainfo tool not found at path: {MAPP_MEDIA_INFO_PATH}')
 		else:
 			raise MappUserError(f'Error getting media info: {e.stderr.decode()}')
+
+def _call_ffmpeg(args: list[str]) -> None:
+	"""Call ffmpeg with the given arguments. Raises an error if ffmpeg is not found or returns a non-zero exit code."""
+	try:
+		subprocess.run([MAPP_FFMPEG_PATH] + args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+	except subprocess.CalledProcessError as e:
+		raise MappUserError('FFMPEG_ERROR', f'Error calling ffmpeg: {e.stderr.decode()}')
+	except FileNotFoundError:
+		raise MappError('FFMPEG_NOT_FOUND', f'ffmpeg tool not found at path: {MAPP_FFMPEG_PATH}')
 
 def _get_image_record(ctx: MappContext, image_id: str) -> Image:
 	"""Fetch an image record by ID and return it as an Image namedtuple. Raises an error if the record is not found, or user doesn't have access to it."""
@@ -203,6 +215,112 @@ def create_image(ctx: MappContext, name:str, content_type: str) -> dict:
 		'image_id': image_record.id,
 		'file_id': file_record.id,
 		'message': 'Image created successfully'
+	}
+
+def ingest_master_image(ctx: MappContext, name: str, content_type: str, thumbnail_max_size: int = 300) -> dict:
+	"""Ingest an image and create alternate versions (web and thumbnail) via ffmpeg. 
+		Creates an image record for each version and links them via a master image record.
+
+		Must provide ctx.self.file_input as bytes for the original file content to ingest.
+
+	Args:
+		name: str - the name of the original image file (e.g. "photo.png")
+		content_type: str - the content type of the original image file (e.g. "image/png")
+		thumbnail_max_size: int - the maximum width or height of the thumbnail in pixels (default: 300)
+	Returns: a dict with
+		master_image_id:str - the ID of the created master image record
+		original_image_id:str - the ID of the original image record
+		web_image_id:str - the ID of the web version image record
+		thumbnail_image_id:str - the ID of the thumbnail image record
+		message:str - a message indicating success
+	"""
+
+	user = current_user(ctx)['value']
+
+	#
+	# step 1: ingest original image
+	#
+
+	original_result = create_image(ctx, name, content_type)
+	original_image_id = original_result['image_id']
+	original_file_record = _get_file_record(ctx, original_result['file_id'])
+	original_file_path = _file_path(original_file_record)
+
+	with tempfile.TemporaryDirectory() as tmp_dir:
+
+		#
+		# step 2: create web version via ffmpeg (full resolution, JPEG, quality ~85)
+		#
+
+		web_path = os.path.join(tmp_dir, 'web.jpg')
+		_call_ffmpeg(['-y', '-i', original_file_path, '-q:v', '5', web_path])
+
+		with open(web_path, 'rb') as f:
+			web_bytes = f.read()
+
+		#
+		# step 3: ingest web version
+		#
+
+		web_name = os.path.splitext(name)[0] + '.web.jpg'
+		ctx.self['file_input'] = web_bytes
+		web_result = create_image(ctx, web_name, 'image/jpeg')
+		web_image_id = web_result['image_id']
+
+		#
+		# step 4: create thumbnail via ffmpeg (constrained size, maintaining aspect ratio)
+		#
+
+		thumb_path = os.path.join(tmp_dir, 'thumb.jpg')
+		n = thumbnail_max_size
+		_call_ffmpeg(['-y', '-i', original_file_path, '-vf', f'scale={n}:{n}:force_original_aspect_ratio=decrease', '-q:v', '5', thumb_path])
+
+		with open(thumb_path, 'rb') as f:
+			thumb_bytes = f.read()
+
+		#
+		# step 5: ingest thumbnail
+		#
+
+		thumb_name = os.path.splitext(name)[0] + '.thumb.jpg'
+		ctx.self['file_input'] = thumb_bytes
+		thumb_result = create_image(ctx, thumb_name, 'image/jpeg')
+		thumbnail_image_id = thumb_result['image_id']
+
+	#
+	# step 6: create master image record
+	#
+
+	master_image_record = MasterImage(
+		id='',
+		original_image_id=original_image_id,
+		web_image_id=web_image_id,
+		thumbnail_image_id=thumbnail_image_id,
+		user_id=user['id'],
+		created_at=datetime_now_utc()
+	)
+
+	ctx.db.cursor.execute("""
+		INSERT INTO master_image (original_image_id, web_image_id, thumbnail_image_id, user_id, created_at)
+		VALUES (?, ?, ?, ?, ?)
+	""", (
+		master_image_record.original_image_id,
+		master_image_record.web_image_id,
+		master_image_record.thumbnail_image_id,
+		master_image_record.user_id,
+		master_image_record.created_at,
+	))
+
+	ctx.db.commit()
+
+	master_image_id = str(ctx.db.cursor.lastrowid)
+
+	return {
+		'master_image_id': master_image_id,
+		'original_image_id': original_image_id,
+		'web_image_id': web_image_id,
+		'thumbnail_image_id': thumbnail_image_id,
+		'message': 'Master image created successfully'
 	}
 
 def get_image(ctx: MappContext, image_id: str) -> dict:

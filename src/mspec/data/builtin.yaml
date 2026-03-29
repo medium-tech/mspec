@@ -1257,6 +1257,71 @@ modules:
                             - "1"
                             - "2"
 
+            master_image:
+                hidden: true
+                name:
+                    lower_case: "master image"
+                description: "Links an original image to its web and thumbnail alternate versions"
+                auth:
+                    require_login: true
+                fields:
+
+                    original_image_id:
+                        name:
+                            lower_case: "original image id"
+                        type: foreign_key
+                        references:
+                            module: "media"
+                            table: "image"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    web_image_id:
+                        name:
+                            lower_case: "web image id"
+                        type: foreign_key
+                        references:
+                            module: "media"
+                            table: "image"
+                            field: "id"
+                        examples:
+                            - "2"
+                            - "4"
+
+                    thumbnail_image_id:
+                        name:
+                            lower_case: "thumbnail image id"
+                        type: foreign_key
+                        references:
+                            module: "media"
+                            table: "image"
+                            field: "id"
+                        examples:
+                            - "3"
+                            - "5"
+
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        references:
+                            module: "auth"
+                            table: "user"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    created_at:
+                        name:
+                            lower_case: "created at"
+                        type: datetime
+                        examples:
+                            - "2000-01-11T12:34:56"
+                            - "2020-10-02T15:30:00"
+
         ops:
             create_image:
                 name:
@@ -1517,3 +1582,71 @@ modules:
                                 lower_case: "total"
                             type: int
                             description: "Total number of images available for pagination"
+            ingest_master_image:
+                name:
+                    lower_case: "ingest master image"
+                description: "Ingest an image and create alternate versions (web and thumbnail). Creates an image record for each version and links them via a master image record."
+
+                func:
+                    call: "media.ingest_master_image"
+                    args:
+                        name:
+                            params: {name: {}}
+                        content_type:
+                            params: {content_type: {}}
+                        thumbnail_max_size:
+                            params: {thumbnail_max_size: {}}
+
+                params:
+                    name:
+                        name:
+                            lower_case: "name"
+                        type: str
+                        description: "Name of the original image file being ingested"
+
+                    content_type:
+                        name:
+                            lower_case: "content type"
+                        type: str
+                        description: "MIME content type of the original image file such as 'image/png'"
+                        default: ""
+
+                    thumbnail_max_size:
+                        name:
+                            lower_case: "thumbnail max size"
+                        type: int
+                        description: "Maximum width or height of the thumbnail in pixels, maintains aspect ratio"
+                        default: 300
+
+                result:
+                    type: struct
+                    fields:
+                        master_image_id:
+                            name:
+                                lower_case: "master image id"
+                            type: str
+                            description: "ID of the created master image record"
+
+                        original_image_id:
+                            name:
+                                lower_case: "original image id"
+                            type: str
+                            description: "ID of the original image record"
+
+                        web_image_id:
+                            name:
+                                lower_case: "web image id"
+                            type: str
+                            description: "ID of the web version image record"
+
+                        thumbnail_image_id:
+                            name:
+                                lower_case: "thumbnail image id"
+                            type: str
+                            description: "ID of the thumbnail image record"
+
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message for creating the master image record"
