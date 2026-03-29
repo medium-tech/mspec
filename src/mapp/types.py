@@ -189,6 +189,15 @@ class Image(NamedTuple):
     created_at: datetime
 
 
+class MasterImage(NamedTuple):
+    id: str
+    original_image_id: str
+    web_image_id: str
+    thumbnail_image_id: str
+    user_id: str
+    created_at: datetime
+
+
 CurrentUserFuncReturn = tuple[Optional[User], str]              # deprecated
 CurrentUserFunc = Callable[[], Optional[CurrentUserFuncReturn]] # deprecated
 

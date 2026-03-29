@@ -10,7 +10,7 @@ from functools import reduce
 
 from mapp.auth import create_user, login_user, current_user, logout_user, delete_user, drop_sessions
 from mapp.file_system import get_file_content, ingest_start, list_files, get_part_content, list_parts, process_file
-from mapp.media import create_image, get_image, get_media_file_content, list_images
+from mapp.media import create_image, get_image, get_media_file_content, ingest_master_image, list_images
 from mapp.types import get_python_type_for_field
 
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
@@ -290,6 +290,20 @@ def _media_list_images_function_args(app:LingoApp, expression: dict, ctx:Optiona
 
     return (ctx, offset, size, image_id, file_id, user_id), {}
 
+def _media_ingest_master_image_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        name_expr = expression['args']['name']
+        content_type_expr = expression['args']['content_type']
+        thumbnail_max_size_expr = expression['args']['thumbnail_max_size']
+    except KeyError as e:
+        raise ValueError(f'ingest_master_image - missing arg: {e}')
+
+    name = unwrap_primitive(lingo_execute(app, name_expr, ctx))
+    content_type = unwrap_primitive(lingo_execute(app, content_type_expr, ctx))
+    thumbnail_max_size = unwrap_primitive(lingo_execute(app, thumbnail_max_size_expr, ctx))
+
+    return (ctx, name, content_type, thumbnail_max_size), {}
+
 #
 # other
 #
@@ -439,6 +453,7 @@ lingo_function_lookup = {
         'create_image': {'func': create_image, 'create_args': _media_create_image_function_args},
         'get_image': {'func': get_image, 'create_args': _media_get_image_function_args},
         'get_media_file_content': {'func': get_media_file_content, 'create_args': _media_get_media_file_content_function_args},
+        'ingest_master_image': {'func': ingest_master_image, 'create_args': _media_ingest_master_image_function_args},
         'list_images': {'func': list_images, 'create_args': _media_list_images_function_args}
     }
 }

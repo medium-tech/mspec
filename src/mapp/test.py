@@ -1046,7 +1046,77 @@ class TestMTemplateApp(unittest.TestCase):
 
     def test_cli_http_media_create_image_flow(self):
         self._test_media_create_image_flow(self.crud_ctx, 'http')
-        
+
+    def _test_media_ingest_master_image_flow(self, ctx:dict, io_type:str):
+        """
+        ./run.sh --log -fi ./tests/samples/splash-orig.png media ingest-master-image run '{"name": "splash-orig.png"}'
+        """
+
+        #
+        # init
+        #
+
+        logged_out_ctx = self.crud_ctx.copy()
+        user = self.crud_users[0]['user']
+        user_env = self.crud_users[0]['env']
+
+        sample_path = 'tests/samples/splash-orig.png'
+
+        self.assertTrue(os.path.exists(sample_path), 'Sample file for ingest master image test does not exist')
+
+        json_params = json.dumps({
+            'name': 'splash-orig.png',
+            'thumbnail_max_size': 200
+        })
+
+        cmd = self.cmd + ['-fi', sample_path, 'media', 'ingest-master-image', io_type, json_params]
+
+        # ensure logged out user cannot ingest master image #
+
+        self._run_cmd(cmd, env=logged_out_ctx, expected_code=1)
+
+        # ingest master image with logged in user #
+
+        result_output = self._run_cmd(cmd, env=user_env)
+        result = json.loads(result_output.stdout)['result']
+
+        self.assertIn('master_image_id', result, 'Ingest master image result does not contain master_image_id')
+        self.assertIn('original_image_id', result, 'Ingest master image result does not contain original_image_id')
+        self.assertIn('web_image_id', result, 'Ingest master image result does not contain web_image_id')
+        self.assertIn('thumbnail_image_id', result, 'Ingest master image result does not contain thumbnail_image_id')
+        self.assertIn('message', result, 'Ingest master image result does not contain message')
+
+        self.assertTrue(isinstance(result['master_image_id'], str), 'master_image_id is not a string')
+        self.assertTrue(isinstance(result['original_image_id'], str), 'original_image_id is not a string')
+        self.assertTrue(isinstance(result['web_image_id'], str), 'web_image_id is not a string')
+        self.assertTrue(isinstance(result['thumbnail_image_id'], str), 'thumbnail_image_id is not a string')
+
+        # verify three distinct image records were created #
+
+        ids = [result['original_image_id'], result['web_image_id'], result['thumbnail_image_id']]
+        self.assertEqual(len(set(ids)), 3, 'Expected 3 distinct image IDs for original, web, and thumbnail')
+
+        # verify thumbnail is smaller than original #
+
+        get_original_cmd = self.cmd + ['media', 'get-image', io_type, json.dumps({'image_id': result['original_image_id']})]
+        get_thumb_cmd = self.cmd + ['media', 'get-image', io_type, json.dumps({'image_id': result['thumbnail_image_id']})]
+
+        original_output = self._run_cmd(get_original_cmd, env=user_env)
+        original_image = json.loads(original_output.stdout)['result']
+
+        thumb_output = self._run_cmd(get_thumb_cmd, env=user_env)
+        thumb_image = json.loads(thumb_output.stdout)['result']
+
+        self.assertLessEqual(thumb_image['width'], 200, 'Thumbnail width should not exceed thumbnail_max_size')
+        self.assertLessEqual(thumb_image['height'], 200, 'Thumbnail height should not exceed thumbnail_max_size')
+        self.assertGreater(original_image['width'], thumb_image['width'], 'Original should be wider than thumbnail')
+
+    def test_cli_run_media_ingest_master_image_flow(self):
+        self._test_media_ingest_master_image_flow(self.crud_ctx, 'run')
+
+    def test_cli_http_media_ingest_master_image_flow(self):
+        self._test_media_ingest_master_image_flow(self.crud_ctx, 'http')
+
     # crud tests #
 
     def _test_cli_crud_commands(self, command_type:str, user_index:int):

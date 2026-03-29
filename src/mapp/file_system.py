@@ -27,15 +27,15 @@ OS_HANDLE_BUFFER_SIZE = 8192
 
 """
 
-./run.sh --log -fi ./tests/samples/splash-orig file-system ingest-start run '{"name": "splash-orig", "size": 4007485, "parts": 1, "finish": true}'
+./run.sh --log -fi ./tests/samples/lorem-document.pdf file-system ingest-start run '{"name": "lorem-document.pdf", "size": 142786, "parts": 1, "finish": true}'
 
 ./run.sh file-system list-files run
 
 ./run.sh file-system list-parts run '{"file_id": ""}'
 
-./run.sh -fo splash-orig-part.png file-system get-part-content run '{"file_id": "", "part_number": 1}'
+./run.sh -fo lorem-document.pdf file-system get-part-content run '{"file_id": "", "part_number": 1}'
 
-./run.sh -fo splash-orig-file.png file-system get-file-content run '{"file_id": ""}'
+./run.sh -fo lorem-document.pdf file-system get-file-content run '{"file_id": ""}'
 
 curl -X GET -o file-get-12.jpg  "http://localhost:3003/api/file-system/get-file-content?file_id=12" \
 	-H "Content-Type: application/json" \
