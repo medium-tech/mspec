@@ -20,6 +20,9 @@ __all__ = [
 MAPP_MEDIA_INFO_PATH = os.getenv('MAPP_MEDIA_INFO_PATH', 'mediainfo')
 MAPP_FFMPEG_PATH = os.getenv('MAPP_FFMPEG_PATH', 'ffmpeg')
 
+# ffmpeg -q:v scale: 1 (best) to 31 (worst); 5 gives roughly 85% JPEG quality #
+FFMPEG_JPEG_QUALITY = '5'
+
 """
 
 ./run.sh --log -fi ./tests/samples/splash-orig.png media create-image run '{"name": "splash.png"}'
@@ -253,7 +256,7 @@ def ingest_master_image(ctx: MappContext, name: str, content_type: str, thumbnai
 		#
 
 		web_path = os.path.join(tmp_dir, 'web.jpg')
-		_call_ffmpeg(['-y', '-i', original_file_path, '-q:v', '5', web_path])
+		_call_ffmpeg(['-y', '-i', original_file_path, '-q:v', FFMPEG_JPEG_QUALITY, web_path])
 
 		with open(web_path, 'rb') as f:
 			web_bytes = f.read()
@@ -273,7 +276,7 @@ def ingest_master_image(ctx: MappContext, name: str, content_type: str, thumbnai
 
 		thumb_path = os.path.join(tmp_dir, 'thumb.jpg')
 		n = thumbnail_max_size
-		_call_ffmpeg(['-y', '-i', original_file_path, '-vf', f'scale={n}:{n}:force_original_aspect_ratio=decrease', '-q:v', '5', thumb_path])
+		_call_ffmpeg(['-y', '-i', original_file_path, '-vf', f'scale={n}:{n}:force_original_aspect_ratio=decrease', '-q:v', FFMPEG_JPEG_QUALITY, thumb_path])
 
 		with open(thumb_path, 'rb') as f:
 			thumb_bytes = f.read()
