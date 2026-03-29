@@ -1302,64 +1302,6 @@ modules:
             lower_case: "media"
         description: "Media management for files, such as generating thumbnails and previews, and extracting metadata"
         models:
-            master_image:
-                name:
-                    lower_case: "master image"
-                description: "A model representing the master record for an image file with metadata extracted from the file and fields for storing different versions of the image such as thumbnails and previews for testing image uploads and media processing functionality"
-                auth:
-                    require_login: true
-
-                fields:
-                    user_id:
-                        name:
-                            lower_case: "user id"
-                        type: foreign_key
-                        references:
-                            module: "auth"
-                            table: "user"
-                            field: "id"
-                        examples:
-                            - "1"
-                            - "2"
-                    
-                    master_image_id:
-                        name:
-                            lower_case: "master image id"
-                        type: foreign_key
-                        references:
-                            module: "media"
-                            table: "image"
-                            field: "id"
-                        description: "ID of the master image record, used for referencing the image in other models and ops"
-                        examples:
-                            - "432"
-                            - "2"
-                    
-                    web_image_id:
-                        name:
-                            lower_case: "web image id"
-                        type: foreign_key
-                        references:
-                            module: "media"
-                            table: "image"
-                            field: "id"
-                        description: "ID of the web-optimized version of the image, generated from the master image for testing storing and retrieving different versions of an image"
-                        examples:
-                            - "1"
-                            - "2"
-                    
-                    thumbnail_id:
-                        name:
-                            lower_case: "thumbnail id"
-                        type: foreign_key
-                        references:
-                            module: "media"
-                            table: "image"
-                            field: "id"
-                        description: "ID of the thumbnail version of the image, generated from the master image for testing storing and retrieving different versions of an image"
-                        examples:
-                            - "1"
-                            - "2"
 
             image:
                 hidden: true
