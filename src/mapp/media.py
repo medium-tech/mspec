@@ -67,7 +67,7 @@ def _call_ffmpeg(args: list[str]) -> None:
 	except subprocess.CalledProcessError as e:
 		raise MappUserError('FFMPEG_ERROR', f'Error calling ffmpeg: {e.stderr.decode()}')
 	except FileNotFoundError:
-		raise MappError('FFMPEG_NOT_FOUND', f'ffmpeg tool not found at path: {MAPP_FFMPEG_PATH}')
+		raise MappError('FFMPEG_NOT_FOUND', f'ffmpeg tool not found at path: {MAPP_FFMPEG_PATH}, set path via env MAPP_FFMPEG_PATH')
 
 def _get_image_record(ctx: MappContext, image_id: str) -> Image:
 	"""Fetch an image record by ID and return it as an Image namedtuple. Raises an error if the record is not found, or user doesn't have access to it."""

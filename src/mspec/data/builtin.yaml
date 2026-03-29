@@ -1582,6 +1582,7 @@ modules:
                                 lower_case: "total"
                             type: int
                             description: "Total number of images available for pagination"
+            
             ingest_master_image:
                 name:
                     lower_case: "ingest master image"
