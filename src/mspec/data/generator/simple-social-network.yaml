@@ -205,9 +205,9 @@ modules:
               - ["3"]
               - []
           
-          images:
+          web_images:
             name:
-              lower_case: 'images'
+              lower_case: 'web images'
             type: list
             default: []
             element_type: foreign_key
@@ -219,6 +219,22 @@ modules:
               - ["4", "5"]
               - ["6"]
               - []
+          
+          raw_images:
+            name:
+              lower_case: 'raw images'
+            type: list
+            default: []
+            element_type: foreign_key
+            references:
+              module: 'media'
+              table: 'image'
+              field: 'id'
+            examples:
+              - ["10", "11"]
+              - ["12"]
+              - []
+
 
           related_posts:
             name:
