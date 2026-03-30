@@ -1111,6 +1111,55 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertLessEqual(thumb_image['height'], 200, 'Thumbnail height should not exceed thumbnail_max_size')
         self.assertGreater(original_image['width'], thumb_image['width'], 'Original should be wider than thumbnail')
 
+        # get master image record #
+
+        get_master_cmd = self.cmd + ['media', 'get-master-image', io_type, json.dumps({'master_image_id': result['master_image_id']})]
+
+        master_output = self._run_cmd(get_master_cmd, env=user_env)
+        master_image = json.loads(master_output.stdout)['result']
+
+        self.assertIn('id', master_image, 'get_master_image result does not contain id')
+        self.assertIn('original_image_id', master_image, 'get_master_image result does not contain original_image_id')
+        self.assertIn('web_image_id', master_image, 'get_master_image result does not contain web_image_id')
+        self.assertIn('thumbnail_image_id', master_image, 'get_master_image result does not contain thumbnail_image_id')
+        self.assertIn('user_id', master_image, 'get_master_image result does not contain user_id')
+        self.assertIn('created_at', master_image, 'get_master_image result does not contain created_at')
+
+        self.assertEqual(master_image['id'], result['master_image_id'], 'Master image ID does not match')
+        self.assertEqual(master_image['original_image_id'], result['original_image_id'], 'original_image_id does not match')
+        self.assertEqual(master_image['web_image_id'], result['web_image_id'], 'web_image_id does not match')
+        self.assertEqual(master_image['thumbnail_image_id'], result['thumbnail_image_id'], 'thumbnail_image_id does not match')
+
+        # ensure logged out user cannot get master image #
+
+        self._run_cmd(get_master_cmd, env=logged_out_ctx, expected_code=1)
+
+        # list master images #
+
+        list_master_cmd = self.cmd + ['media', 'list-master-images', io_type, json.dumps({'offset': 0, 'size': 50, 'master_image_id': '-1', 'user_id': '-1'})]
+
+        list_output = self._run_cmd(list_master_cmd, env=user_env)
+        list_result = json.loads(list_output.stdout)['result']
+
+        self.assertIn('items', list_result, 'list_master_images result does not contain items')
+        self.assertIn('total', list_result, 'list_master_images result does not contain total')
+        self.assertGreaterEqual(list_result['total'], 1, 'Expected at least one master image in list')
+        self.assertGreaterEqual(len(list_result['items']), 1, 'Expected at least one master image item in list')
+
+        # filter by master_image_id #
+
+        list_by_id_cmd = self.cmd + ['media', 'list-master-images', io_type, json.dumps({'offset': 0, 'size': 50, 'master_image_id': result['master_image_id'], 'user_id': '-1'})]
+
+        list_by_id_output = self._run_cmd(list_by_id_cmd, env=user_env)
+        list_by_id_result = json.loads(list_by_id_output.stdout)['result']
+
+        self.assertEqual(list_by_id_result['total'], 1, 'Expected exactly one master image when filtering by master_image_id')
+        self.assertEqual(list_by_id_result['items'][0]['id'], result['master_image_id'], 'Filtered master image ID does not match')
+
+        # ensure logged out user cannot list master images #
+
+        self._run_cmd(list_master_cmd, env=logged_out_ctx, expected_code=1)
+
     def test_cli_run_media_ingest_master_image_flow(self):
         self._test_media_ingest_master_image_flow(self.crud_ctx, 'run')
 
