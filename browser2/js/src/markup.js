@@ -3656,6 +3656,7 @@ function createFormElement(app, element, ctx = null) {
             };
             // Create input based on element type
             let listInput;
+            const isListFK = (elementType === 'foreign_key');
             if (hasEnum) {
                 listInput = document.createElement('select');
                 for (const option of fieldSpec.enum) {
@@ -3680,55 +3681,105 @@ function createFormElement(app, element, ctx = null) {
             } else if (elementType === 'datetime') {
                 listInput = document.createElement('input');
                 listInput.type = 'datetime-local';
+            } else if (elementType === 'foreign_key') {
+                const moduleRef = fieldSpec.references.module;
+                const tableRef = fieldSpec.references.table;
+                if (['file', 'image', 'master_image'].includes(tableRef)) {
+                    listInput = document.createElement('input');
+                    listInput.type = 'file';
+                    const fileIngestStatus = document.createElement('span');
+                    listInput.addEventListener('change', async () => {
+                        const file = listInput.files[0];
+                        if (!file) return;
+                        fileIngestStatus.textContent = 'Uploading...';
+                        let ingestFunction;
+                        switch (tableRef) {
+                            case 'file': ingestFunction = fileSystemIngestStart; break;
+                            case 'image': ingestFunction = mediaCreateImage; break;
+                            case 'master_image': ingestFunction = mediaIngestMasterImage; break;
+                            default: throw new Error(`Unsupported file type for FK list ingest: ${tableRef}`);
+                        }
+                        const ingestResult = await ingestFunction(file);
+                        if (ingestResult.error) {
+                            fileIngestStatus.textContent = `Upload failed: ${ingestResult.error}`;
+                            console.error('FK list file ingest error:', ingestResult.error);
+                        } else {
+                            const id = (tableRef === 'file') ? ingestResult.result.file_id : ingestResult.result.image_id;
+                            formData[fieldKey].push(id);
+                            fileIngestStatus.textContent = 'File uploaded successfully!';
+                            listInput.value = '';
+                        }
+                        renderLingoApp(app, document.getElementById('lingo-app'), true);
+                    });
+                    listContainer.appendChild(listInput);
+                    listContainer.appendChild(fileIngestStatus);
+                } else {
+                    listInput = document.createElement('span');
+                    if (app.parentSpec) {
+                        const findButton = document.createElement('button');
+                        findButton.textContent = `Find ${tableRef}`;
+                        findButton.type = 'button';
+                        findButton.addEventListener('click', () => {
+                            ingestState.status = 'finding';
+                            renderLingoApp(app, document.getElementById('lingo-app'), true);
+                        });
+                        listContainer.appendChild(findButton);
+                    } else {
+                        listContainer.textContent = `Can't browse for ${tableRef} items w/o model definition`;
+                    }
+                }
             } else {
                 listInput = document.createElement('input');
                 listInput.type = 'text';
                 listInput.placeholder = 'Enter text';
             }
-            listInput.className = 'list-input';
-            listContainer.appendChild(listInput);
 
-            const addButton = document.createElement('button');
-            addButton.textContent = 'Add';
-            addButton.type = 'button';
-            listContainer.appendChild(addButton);
+            if (!isListFK) {
+                listInput.className = 'list-input';
+                listContainer.appendChild(listInput);
 
-            const addToList = () => {
-                let value;
-                if (hasEnum) {
-                    value = listInput.value;
-                } else if (elementType === 'bool') {
-                    value = listInput.checked;
-                } else if (elementType === 'int') {
-                    value = parseInt(listInput.value, 10);
-                    if (isNaN(value)) return;
-                } else if (elementType === 'float') {
-                    value = parseFloat(listInput.value);
-                    if (isNaN(value)) return;
-                } else if (elementType === 'datetime') {
-                    if (!listInput.value) return;
-                    value = listInput.value ? initDateTimeFromInput(listInput.value) : '';
-                } else {
-                    value = listInput.value;
-                    if (!value) return;
-                }
-                formData[fieldKey].push(value);
-                if (elementType === 'bool') {
-                    listInput.checked = false;
-                } else if (!hasEnum) {
-                    listInput.value = '';
-                }
-                console.log(`Add to list for field ${fieldKey}`, value, 'Current list:', formData[fieldKey]);
-                updateListDisplay();
-            };
-            addButton.addEventListener('click', addToList);
-            if (listInput.tagName === 'INPUT' && (elementType === 'str' || elementType === 'int' || elementType === 'float')) {
-                listInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        addToList();
+                const addButton = document.createElement('button');
+                addButton.textContent = 'Add';
+                addButton.type = 'button';
+                listContainer.appendChild(addButton);
+
+                const addToList = () => {
+                    let value;
+                    if (hasEnum) {
+                        value = listInput.value;
+                    } else if (elementType === 'bool') {
+                        value = listInput.checked;
+                    } else if (elementType === 'int') {
+                        value = parseInt(listInput.value, 10);
+                        if (isNaN(value)) return;
+                    } else if (elementType === 'float') {
+                        value = parseFloat(listInput.value);
+                        if (isNaN(value)) return;
+                    } else if (elementType === 'datetime') {
+                        if (!listInput.value) return;
+                        value = listInput.value ? initDateTimeFromInput(listInput.value) : '';
+                    } else {
+                        value = listInput.value;
+                        if (!value) return;
                     }
-                });
+                    formData[fieldKey].push(value);
+                    if (elementType === 'bool') {
+                        listInput.checked = false;
+                    } else if (!hasEnum) {
+                        listInput.value = '';
+                    }
+                    console.log(`Add to list for field ${fieldKey}`, value, 'Current list:', formData[fieldKey]);
+                    updateListDisplay();
+                };
+                addButton.addEventListener('click', addToList);
+                if (listInput.tagName === 'INPUT' && (elementType === 'str' || elementType === 'int' || elementType === 'float')) {
+                    listInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addToList();
+                        }
+                    });
+                }
             }
             inputCell.appendChild(listContainer);
             inputElement = listContainer;
@@ -3834,6 +3885,64 @@ function createFormElement(app, element, ctx = null) {
             updateListDisplay();
             
             thirdCell.appendChild(listValuesContainer);
+
+            // Popup for non-file FK list types
+            if (fieldSpec.element_type === 'foreign_key' && !['file', 'image', 'master_image'].includes(fieldSpec.references.table)) {
+                const moduleRef = fieldSpec.references.module;
+                const tableRef = fieldSpec.references.table;
+                if (ingestState.status === 'finding' && app.parentSpec) {
+                    if (ingestState.popup === null) {
+                        ingestState.popup = {
+                            items: [],
+                            total: 0,
+                            offset: 0,
+                            size: 10,
+                            state: 'pending',
+                            errors: ''
+                        };
+                    }
+
+                    const closePopupFunction = () => {
+                        ingestState.status = 'idle';
+                        renderLingoApp(app, document.getElementById('lingo-app'), true);
+                    };
+
+                    const background = document.createElement('div');
+                    background.className = 'popup-background';
+                    background.onclick = closePopupFunction;
+
+                    const popUpContentContainer = document.createElement('div');
+                    popUpContentContainer.className = 'popup-content';
+
+                    const popupModelSpec = app.parentSpec.modules[moduleRef].models[tableRef];
+
+                    const onPopupSelect = (item) => {
+                        console.log('Selected item from popup for FK list:', item);
+                        formData[fieldKey].push(item.value.id);
+                        ingestState.status = 'idle';
+                        renderLingoApp(app, document.getElementById('lingo-app'), true);
+                    };
+
+                    const popupModelList = {model: {
+                        bind: { clientState: { forms: { [formKeyId]: {popup: {}} } } },
+                        display: 'list',
+                        http: `/api/${moduleRef}/${tableRef}`.replaceAll('_', '-'),
+                        definition: popupModelSpec,
+                        selecting: 1,
+                        onSelect: onPopupSelect
+                    }};
+
+                    const popupModelElements = renderModel(app, popupModelList);
+
+                    popupModelElements.forEach(el => {
+                        const domElement = createDOMElement(app, el);
+                        domElement.style.zIndex = 101;
+                        popUpContentContainer.appendChild(domElement);
+                    });
+                    thirdCell.appendChild(background);
+                    thirdCell.appendChild(popUpContentContainer);
+                }
+            }
         } else if (fieldType == 'foreign_key') {
             const moduleRef = fieldSpec.references.module;
             const tableRef = fieldSpec.references.table;

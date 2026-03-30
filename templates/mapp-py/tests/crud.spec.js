@@ -53,6 +53,11 @@ async function fillFormField(page, fieldName, field, value) {
 
   // Handle list types
   if (fieldType === 'list') {
+    if (elementType === 'foreign_key') {
+      // FK list fields require file upload or popup interaction
+      // handled separately in dedicated tests
+      return;
+    }
     // For list fields, we need to add each value individually using the Add button
     const values = Array.isArray(value) ? value : [value];
     const row = page.getByRole('row', { name: pattern });
