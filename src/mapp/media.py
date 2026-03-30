@@ -405,10 +405,10 @@ def get_media_file_content(ctx: MappContext, image_id: str = '-1', master_image_
 	if image_id != '-1':
 		image_record = _get_image_record(ctx, image_id)
 		return get_file_content(ctx, image_record.file_id)
-
-	master_image_record = _get_master_image_record(ctx, master_image_id)
-	image_record = _get_image_record(ctx, master_image_record.original_image_id)
-	return get_file_content(ctx, image_record.file_id)
+	else:
+		master_image_record = _get_master_image_record(ctx, master_image_id)
+		image_record = _get_image_record(ctx, master_image_record.original_image_id)
+		return get_file_content(ctx, image_record.file_id)
 
 def list_images(ctx: MappContext, offset: int = 0, size: int = 50, image_id: str = '-1', file_id: str = '-1', user_id: str = '-1') -> dict:
 	"""List images that the current user has access to. Supports pagination and filtering by image ID and file ID.

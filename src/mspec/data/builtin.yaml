@@ -1485,6 +1485,72 @@ modules:
                             - "2000-01-11T12:34:56"
                             - "2020-10-02T15:30:00"
 
+            press_kit:
+
+                name:
+                    lower_case: "press kit"
+                description: "For testing file and image uploads from a model form"
+                auth:
+                    require_login: true
+
+                fields:
+
+                    description:
+                        name:
+                            lower_case: "description"
+                        type: str
+                        examples:
+                            - "a press kit for the new product launch"
+                            - "an updated press kit with latest company information"
+
+                    logo_image:
+                        name:
+                            lower_case: "logo image"
+                        type: foreign_key
+                        references:
+                            module: "media"
+                            table: "image"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    brochure_file:
+                        name:
+                            lower_case: "brochure file"
+                        type: foreign_key
+                        references:
+                            module: "file_system"
+                            table: "file"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    record_id:
+                        name:
+                            lower_case: "record id"
+                        type: foreign_key
+                        references:
+                            module: "file_system"
+                            table: "record"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        references:
+                            module: "auth"
+                            table: "user"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
         ops:
             create_image:
                 name:
