@@ -1,0 +1,23 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+
+    "state": {},
+
+    "ops": {},
+
+    "output": [
+        {"heading": "Gallery Viewer", "level": 1},
+        {"text": "A gallery viewer with multiple images:"},
+        {"break": 1},
+        {
+            "viewer": {
+                "image_ids": ["img-001", "img-002", "img-003"],
+                "width": 250,
+                "height": 100
+            }
+        }
+    ]
+}

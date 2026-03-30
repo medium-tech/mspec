@@ -2488,7 +2488,6 @@ function _renderModelRead(app, element, ctx = null) {
                             master_image_id: state.data[field]
                         },
                     }
-                }
                 }else{
                     const loc = `${refModule}/${table}/${state.data[field]}`;
                     additional = {
@@ -4036,17 +4035,41 @@ function createViewerElement(app, element, ctx = null) {
 
     // init
 
-    if(!element.viewer.image_id) {
+    const isGallery = Array.isArray(element.viewer.image_ids);
+
+    if (!isGallery && !element.viewer.image_id) {
         throw new Error('createViewerElement - missing viewer or image_id');
     }
+    if (isGallery && element.viewer.image_ids.length === 0) {
+        throw new Error('createViewerElement - image_ids must not be empty');
+    }
 
-    const imageId = element.viewer.image_id;
     const height = element.viewer.height || 100;
     const width = element.viewer.width || 250;
 
-    // init client state
+    // init gallery state (gallery mode only)
 
-    const stateKey = `image_${element.viewer.image_id}`;
+    let galleryState = null;
+    if (isGallery) {
+        const galleryKey = `gallery_${element.viewer.image_ids.join('_')}`;
+        if (!app.clientState.media.hasOwnProperty(galleryKey)) {
+            app.clientState.media[galleryKey] = {
+                galleryIndex: 0,
+                insetZoom: 1,
+                poppedUp: false,
+                displayOriginalSize: false
+            };
+        }
+        galleryState = app.clientState.media[galleryKey];
+    }
+
+    const imageId = isGallery
+        ? element.viewer.image_ids[galleryState.galleryIndex]
+        : element.viewer.image_id;
+
+    // init per-image client state
+
+    const stateKey = `image_${imageId}`;
 
     if(!app.clientState.media.hasOwnProperty(stateKey)) {
         app.clientState.media[stateKey] = {
@@ -4061,6 +4084,9 @@ function createViewerElement(app, element, ctx = null) {
         };
     }
     const mediaState = app.clientState.media[stateKey];
+
+    // viewer state: gallery mode uses galleryState for zoom/popup/index; single mode uses mediaState
+    const viewerState = isGallery ? galleryState : mediaState;
 
     // function to fetch media
 
@@ -4139,9 +4165,9 @@ function createViewerElement(app, element, ctx = null) {
     }
 
     const closePopupFunction = () => {
-        mediaState.poppedUp = !mediaState.poppedUp;
-        mediaState.insetZoom = 1;
-        mediaState.displayOriginalSize = false;
+        viewerState.poppedUp = !viewerState.poppedUp;
+        viewerState.insetZoom = 1;
+        viewerState.displayOriginalSize = false;
         renderLingoApp(app, document.getElementById('lingo-app'), true);
     };
 
@@ -4158,30 +4184,30 @@ function createViewerElement(app, element, ctx = null) {
     //
 
     const zoomIncrement = 0.25;
-    const zoomMin = (mediaState.poppedUp) ? 0.05 : 1;
-    const zoomMax = (mediaState.poppedUp) ? 5 : 3.5
+    const zoomMin = (viewerState.poppedUp) ? 0.05 : 1;
+    const zoomMax = (viewerState.poppedUp) ? 5 : 3.5
 
     const zoomInButton = createButtonElement(app, {
         button: {
             clientFunction: () => {
-                mediaState.insetZoom = Math.min(zoomMax, mediaState.insetZoom + zoomIncrement);
+                viewerState.insetZoom = Math.min(zoomMax, viewerState.insetZoom + zoomIncrement);
                 renderLingoApp(app, document.getElementById('lingo-app'), true);
             }
         },
         text: '✚',
-        disabled: (mediaState.status !== 'loaded' || mediaState.insetZoom >= zoomMax) || mediaState.displayOriginalSize
+        disabled: (mediaState.status !== 'loaded' || viewerState.insetZoom >= zoomMax) || viewerState.displayOriginalSize
     });
 
     // zoom out 
     const zoomOutButton = createButtonElement(app, {
         button: {
             clientFunction: () => {
-                mediaState.insetZoom = Math.max(zoomMin, mediaState.insetZoom - zoomIncrement);
+                viewerState.insetZoom = Math.max(zoomMin, viewerState.insetZoom - zoomIncrement);
                 renderLingoApp(app, document.getElementById('lingo-app'), true);
             }
         },
         text: '—',
-        disabled: mediaState.status !== 'loaded' || mediaState.insetZoom <= zoomMin || mediaState.displayOriginalSize
+        disabled: mediaState.status !== 'loaded' || viewerState.insetZoom <= zoomMin || viewerState.displayOriginalSize
     });
 
     // pop up buttom
@@ -4189,7 +4215,7 @@ function createViewerElement(app, element, ctx = null) {
         button: {
             clientFunction: closePopupFunction
         },
-        text: (mediaState.poppedUp) ? '×' : '⌞ ⌝',
+        text: (viewerState.poppedUp) ? '×' : '⌞ ⌝',
         disabled: mediaState.status !== 'loaded'
     });
 
@@ -4197,13 +4223,52 @@ function createViewerElement(app, element, ctx = null) {
     const originalSizeButton = createButtonElement(app, {
         button: {
             clientFunction: () => {
-                mediaState.displayOriginalSize = !mediaState.displayOriginalSize;
+                viewerState.displayOriginalSize = !viewerState.displayOriginalSize;
                 renderLingoApp(app, document.getElementById('lingo-app'), true);
             }
         },
-        text: mediaState.displayOriginalSize ? 'scaled' : 'original size',
+        text: viewerState.displayOriginalSize ? 'scaled' : 'original size',
         disabled: mediaState.status !== 'loaded'
     });
+
+    //
+    // gallery navigation buttons (gallery mode only)
+    //
+
+    let prevButton = null;
+    let nextButton = null;
+    let galleryIndicator = null;
+
+    if (isGallery) {
+        const imageCount = element.viewer.image_ids.length;
+
+        prevButton = createButtonElement(app, {
+            button: {
+                clientFunction: () => {
+                    galleryState.galleryIndex = Math.max(0, galleryState.galleryIndex - 1);
+                    renderLingoApp(app, document.getElementById('lingo-app'), true);
+                }
+            },
+            text: '◀',
+            disabled: galleryState.galleryIndex <= 0
+        });
+
+        nextButton = createButtonElement(app, {
+            button: {
+                clientFunction: () => {
+                    galleryState.galleryIndex = Math.min(imageCount - 1, galleryState.galleryIndex + 1);
+                    renderLingoApp(app, document.getElementById('lingo-app'), true);
+                }
+            },
+            text: '▶',
+            disabled: galleryState.galleryIndex >= imageCount - 1
+        });
+
+        galleryIndicator = document.createElement('span');
+        galleryIndicator.textContent = `${galleryState.galleryIndex + 1} / ${imageCount}`;
+        galleryIndicator.style.margin = '0 4px';
+        galleryIndicator.style.fontWeight = 'bold';
+    }
 
     //
     // img
@@ -4236,10 +4301,10 @@ function createViewerElement(app, element, ctx = null) {
 
     img.style.display = 'block';
 
-    if(mediaState.poppedUp) {
+    if(viewerState.poppedUp) {
         img.style.position = 'fixed';
         img.style.top = '5%';
-        if(mediaState.displayOriginalSize) {
+        if(viewerState.displayOriginalSize) {
             img.style.width = `${img.naturalWidth}px`
             img.style.height = `${img.naturalHeight}px`
     
@@ -4251,7 +4316,7 @@ function createViewerElement(app, element, ctx = null) {
         }else{
             const windowX = window.innerWidth;
             const baseX = (.75 * windowX);
-            const zoomedValue = baseX * mediaState.insetZoom;
+            const zoomedValue = baseX * viewerState.insetZoom;
             img.style.left = `${(windowX - zoomedValue) / 2}px`;
             img.style.width = `${zoomedValue}px`;
         }
@@ -4265,7 +4330,7 @@ function createViewerElement(app, element, ctx = null) {
     // container div
     //
 
-    const zoomedWidth = width * mediaState.insetZoom;
+    const zoomedWidth = width * viewerState.insetZoom;
 
     const div = document.createElement('div');
     div.style.zIndex = '101';
@@ -4275,12 +4340,19 @@ function createViewerElement(app, element, ctx = null) {
     const controlsDiv = document.createElement('div');
     controlsDiv.style.zIndex = '102';
     controlsDiv.className = 'viewer-controls';
+
+    if (isGallery) {
+        controlsDiv.appendChild(prevButton);
+        controlsDiv.appendChild(galleryIndicator);
+        controlsDiv.appendChild(nextButton);
+    }
+
     controlsDiv.appendChild(downloadButton);
     controlsDiv.appendChild(zoomOutButton);
     controlsDiv.appendChild(zoomInButton);
     controlsDiv.appendChild(popUpButton);
 
-    if(mediaState.poppedUp) {
+    if(viewerState.poppedUp) {
         div.appendChild(background);
         controlsDiv.appendChild(originalSizeButton);
         controlsDiv.style.position = 'fixed';
@@ -4297,7 +4369,7 @@ function createViewerElement(app, element, ctx = null) {
     }else if(mediaState.status === 'loaded') {
         img.style.cursor = 'pointer';
         img.onclick = () => {
-            mediaState.poppedUp = true;
+            viewerState.poppedUp = true;
             renderLingoApp(app, document.getElementById('lingo-app'), true);
         }
     }
