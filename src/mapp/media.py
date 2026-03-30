@@ -12,9 +12,11 @@ from mapp.types import Image, MasterImage, datetime_from_db, datetime_now_utc
 __all__ = [
 	'create_image',
 	'get_image',
+	'get_master_image',
 	'get_media_file_content',
 	'ingest_master_image',
-	'list_images'
+	'list_images',
+	'list_master_images'
 ]
 
 MAPP_MEDIA_INFO_PATH = os.getenv('MAPP_MEDIA_INFO_PATH', 'mediainfo')
@@ -98,6 +100,30 @@ def _get_image_record(ctx: MappContext, image_id: str) -> Image:
 		color_space=row[10],
 		chroma_subsampling=row[11],
 		created_at=datetime_from_db(row[12])
+	)
+
+def _get_master_image_record(ctx: MappContext, master_image_id: str) -> MasterImage:
+	"""Fetch a master image record by ID and return it as a MasterImage namedtuple. Raises an error if the record is not found, or user doesn't have access to it."""
+
+	user = current_user(ctx)['value']
+
+	ctx.db.cursor.execute("""
+	SELECT id, original_image_id, web_image_id, thumbnail_image_id, user_id, created_at
+	FROM master_image
+	WHERE id = ?
+	""", (master_image_id,))
+
+	row = ctx.db.cursor.fetchone()
+	if row is None:
+		raise MappUserError('MASTER_IMAGE_NOT_FOUND', f'No master image found with ID: {master_image_id}')
+
+	return MasterImage(
+		id=str(row[0]),
+		original_image_id=str(row[1]),
+		web_image_id=str(row[2]),
+		thumbnail_image_id=str(row[3]),
+		user_id=str(row[4]),
+		created_at=datetime_from_db(row[5])
 	)
 
 #
@@ -365,13 +391,24 @@ def get_image(ctx: MappContext, image_id: str) -> dict:
 		'created_at': image_record.created_at.isoformat()
 	}
 
-def get_media_file_content(ctx: MappContext, image_id: str) -> bytes:
-	
-	# check to see if we're logged in, any user can ready any file
+def get_media_file_content(ctx: MappContext, image_id: str = '-1', master_image_id: str = '-1') -> bytes:
+
+	# check to see if we're logged in, any user can read any file
 	current_user(ctx)['value']
 
-	image_record = _get_image_record(ctx, image_id)
-	return get_file_content(ctx, image_record.file_id)
+	if image_id == '-1' and master_image_id == '-1':
+		raise MappUserError('MISSING_ARG', 'get_media_file_content requires either image_id or master_image_id')
+
+	if image_id != '-1' and master_image_id != '-1':
+		raise MappUserError('AMBIGUOUS_ARG', 'get_media_file_content requires either image_id or master_image_id, not both')
+
+	if image_id != '-1':
+		image_record = _get_image_record(ctx, image_id)
+		return get_file_content(ctx, image_record.file_id)
+	else:
+		master_image_record = _get_master_image_record(ctx, master_image_id)
+		image_record = _get_image_record(ctx, master_image_record.original_image_id)
+		return get_file_content(ctx, image_record.file_id)
 
 def list_images(ctx: MappContext, offset: int = 0, size: int = 50, image_id: str = '-1', file_id: str = '-1', user_id: str = '-1') -> dict:
 	"""List images that the current user has access to. Supports pagination and filtering by image ID and file ID.
@@ -425,6 +462,85 @@ def list_images(ctx: MappContext, offset: int = 0, size: int = 50, image_id: str
 	FROM image
 	WHERE (? = '-1' OR id = ?) AND (? = '-1' OR file_id = ?) AND (? = '-1' OR user_id = ?)
 	""", (image_id, image_id, file_id, file_id, user_id, user_id))
+
+	total = ctx.db.cursor.fetchone()[0]
+
+	# return result #
+
+	return {
+		'items': items,
+		'total': total
+	}
+
+def get_master_image(ctx: MappContext, master_image_id: str) -> dict:
+	"""Get a master image record by ID. Returns an error if the record is not found, or user doesn't have access to it.
+
+	Args:
+		master_image_id: str - the ID of the master image record to fetch
+	Returns: a dict with
+		id:str - the ID of the master image record
+		original_image_id:str - the ID of the original image record
+		web_image_id:str - the ID of the web version image record
+		thumbnail_image_id:str - the ID of the thumbnail image record
+		user_id:str - the ID of the user who created the master image record
+		created_at:str - the ISO format timestamp when the master image record was created
+	"""
+
+	master_image_record = _get_master_image_record(ctx, master_image_id)
+
+	return {
+		'id': master_image_record.id,
+		'original_image_id': master_image_record.original_image_id,
+		'web_image_id': master_image_record.web_image_id,
+		'thumbnail_image_id': master_image_record.thumbnail_image_id,
+		'user_id': master_image_record.user_id,
+		'created_at': master_image_record.created_at.isoformat()
+	}
+
+def list_master_images(ctx: MappContext, offset: int = 0, size: int = 50, master_image_id: str = '-1', user_id: str = '-1') -> dict:
+	"""List master images that the current user has access to. Supports pagination and filtering by master image ID and user ID.
+
+	Args:
+		offset: int - the number of records to skip for pagination
+		size: int - the maximum number of records to return
+		master_image_id: str - filter by master image ID
+		user_id: str - filter by user ID
+	Returns: a dict with
+		items: a list of master image records matching the filters and pagination
+		total: the total number of master images matching the filters (ignoring pagination)
+	"""
+
+	user = current_user(ctx)['value']
+
+	# fetch master images #
+
+	ctx.db.cursor.execute("""
+	SELECT id, original_image_id, web_image_id, thumbnail_image_id, user_id, created_at
+	FROM master_image
+	WHERE (? = '-1' OR id = ?) AND (? = '-1' OR user_id = ?)
+	ORDER BY created_at DESC
+	LIMIT ? OFFSET ?
+	""", (master_image_id, master_image_id, user_id, user_id, size, offset))
+
+	items = [
+		{
+			'id': str(row[0]),
+			'original_image_id': str(row[1]),
+			'web_image_id': str(row[2]),
+			'thumbnail_image_id': str(row[3]),
+			'user_id': str(row[4]),
+			'created_at': datetime_from_db(row[5]).isoformat()
+		}
+		for row in ctx.db.cursor.fetchall()
+	]
+
+	# fetch total count #
+
+	ctx.db.cursor.execute("""
+	SELECT COUNT(*)
+	FROM master_image
+	WHERE (? = '-1' OR id = ?) AND (? = '-1' OR user_id = ?)
+	""", (master_image_id, master_image_id, user_id, user_id))
 
 	total = ctx.db.cursor.fetchone()[0]
 

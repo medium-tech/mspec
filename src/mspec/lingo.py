@@ -10,7 +10,7 @@ from functools import reduce
 
 from mapp.auth import create_user, login_user, current_user, logout_user, delete_user, drop_sessions
 from mapp.file_system import get_file_content, ingest_start, list_files, get_part_content, list_parts, process_file
-from mapp.media import create_image, get_image, get_media_file_content, ingest_master_image, list_images
+from mapp.media import create_image, get_image, get_master_image, get_media_file_content, ingest_master_image, list_images, list_master_images
 from mapp.types import get_python_type_for_field
 
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
@@ -263,14 +263,13 @@ def _media_get_image_function_args(app:LingoApp, expression: dict, ctx:Optional[
     return (ctx, image_id), {}
 
 def _media_get_media_file_content_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
-    try:
-        image_id_expr = expression['args']['image_id']
-    except KeyError as e:
-        raise ValueError(f'get_media_file_content - missing arg: {e}')
+    image_id_expr = expression['args'].get('image_id')
+    master_image_id_expr = expression['args'].get('master_image_id')
 
-    image_id = unwrap_primitive(lingo_execute(app, image_id_expr, ctx))
+    image_id = unwrap_primitive(lingo_execute(app, image_id_expr, ctx)) if image_id_expr is not None else '-1'
+    master_image_id = unwrap_primitive(lingo_execute(app, master_image_id_expr, ctx)) if master_image_id_expr is not None else '-1'
 
-    return (ctx, image_id), {}
+    return (ctx, image_id, master_image_id), {}
 
 def _media_list_images_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     try:
@@ -303,6 +302,32 @@ def _media_ingest_master_image_function_args(app:LingoApp, expression: dict, ctx
     thumbnail_max_size = unwrap_primitive(lingo_execute(app, thumbnail_max_size_expr, ctx))
 
     return (ctx, name, content_type, thumbnail_max_size), {}
+
+def _media_get_master_image_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        master_image_id_expr = expression['args']['master_image_id']
+    except KeyError as e:
+        raise ValueError(f'get_master_image - missing arg: {e}')
+
+    master_image_id = unwrap_primitive(lingo_execute(app, master_image_id_expr, ctx))
+
+    return (ctx, master_image_id), {}
+
+def _media_list_master_images_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        offset_expr = expression['args']['offset']
+        size_expr = expression['args']['size']
+        master_image_id_expr = expression['args']['master_image_id']
+        user_id_expr = expression['args']['user_id']
+    except KeyError as e:
+        raise ValueError(f'list_master_images - missing arg: {e}')
+
+    offset = unwrap_primitive(lingo_execute(app, offset_expr, ctx))
+    size = unwrap_primitive(lingo_execute(app, size_expr, ctx))
+    master_image_id = unwrap_primitive(lingo_execute(app, master_image_id_expr, ctx))
+    user_id = unwrap_primitive(lingo_execute(app, user_id_expr, ctx))
+
+    return (ctx, offset, size, master_image_id, user_id), {}
 
 #
 # other
@@ -452,9 +477,11 @@ lingo_function_lookup = {
     'media': {
         'create_image': {'func': create_image, 'create_args': _media_create_image_function_args},
         'get_image': {'func': get_image, 'create_args': _media_get_image_function_args},
+        'get_master_image': {'func': get_master_image, 'create_args': _media_get_master_image_function_args},
         'get_media_file_content': {'func': get_media_file_content, 'create_args': _media_get_media_file_content_function_args},
         'ingest_master_image': {'func': ingest_master_image, 'create_args': _media_ingest_master_image_function_args},
-        'list_images': {'func': list_images, 'create_args': _media_list_images_function_args}
+        'list_images': {'func': list_images, 'create_args': _media_list_images_function_args},
+        'list_master_images': {'func': list_master_images, 'create_args': _media_list_master_images_function_args}
     }
 }
 

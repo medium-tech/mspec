@@ -1485,6 +1485,72 @@ modules:
                             - "2000-01-11T12:34:56"
                             - "2020-10-02T15:30:00"
 
+            press_kit:
+
+                name:
+                    lower_case: "press kit"
+                description: "For testing file and image uploads from a model form"
+                auth:
+                    require_login: true
+
+                fields:
+
+                    description:
+                        name:
+                            lower_case: "description"
+                        type: str
+                        examples:
+                            - "a press kit for the new product launch"
+                            - "an updated press kit with latest company information"
+
+                    logo_image:
+                        name:
+                            lower_case: "logo image"
+                        type: foreign_key
+                        references:
+                            module: "media"
+                            table: "image"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    brochure_file:
+                        name:
+                            lower_case: "brochure file"
+                        type: foreign_key
+                        references:
+                            module: "file_system"
+                            table: "file"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    record_id:
+                        name:
+                            lower_case: "record id"
+                        type: foreign_key
+                        references:
+                            module: "file_system"
+                            table: "record"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        references:
+                            module: "auth"
+                            table: "user"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
         ops:
             create_image:
                 name:
@@ -1637,22 +1703,35 @@ modules:
             get_media_file_content:
                 name:
                     lower_case: "get media file content"
-                description: "Get the file content of a media file by  ID, currently only supports images"
+                description: "Get the file content of a media file by image ID or master image ID. Exactly one of image_id or master_image_id must be provided."
                 func:
                     call: "media.get_media_file_content"
                     args:
                         image_id:
                             params: {image_id: {}}
+                        master_image_id:
+                            params: {master_image_id: {}}
                 params:
                     image_id:
                         name:
                             lower_case: "image id"
                         type: foreign_key
+                        default: "-1"
                         references:
                             module: "media"
                             table: "image"
                             field: "id"
                         description: "ID of the image whose file content is being retrieved"
+                    master_image_id:
+                        name:
+                            lower_case: "master image id"
+                        type: foreign_key
+                        default: "-1"
+                        references:
+                            module: "media"
+                            table: "master_image"
+                            field: "id"
+                        description: "ID of the master image whose original file content is being retrieved"
                 result:
                     type: struct
                     fields:
@@ -1814,3 +1893,127 @@ modules:
                                 lower_case: "message"
                             type: str
                             description: "Acknowledgement message for creating the master image record"
+
+            get_master_image:
+                name:
+                    lower_case: "get master image"
+                description: "Get a master image record by ID"
+                func:
+                    call: "media.get_master_image"
+                    args:
+                        master_image_id:
+                            params: {master_image_id: {}}
+                params:
+                    master_image_id:
+                        name:
+                            lower_case: "master image id"
+                        type: foreign_key
+                        references:
+                            module: "media"
+                            table: "master_image"
+                            field: "id"
+                        description: "ID of the master image to retrieve"
+                result:
+                    type: struct
+                    fields:
+                        id:
+                            name:
+                                lower_case: "id"
+                            type: str
+                            description: "ID of the master image record"
+
+                        original_image_id:
+                            name:
+                                lower_case: "original image id"
+                            type: str
+                            description: "ID of the original image record"
+
+                        web_image_id:
+                            name:
+                                lower_case: "web image id"
+                            type: str
+                            description: "ID of the web version image record"
+
+                        thumbnail_image_id:
+                            name:
+                                lower_case: "thumbnail image id"
+                            type: str
+                            description: "ID of the thumbnail image record"
+
+                        user_id:
+                            name:
+                                lower_case: "user id"
+                            type: str
+                            description: "ID of the user who created the master image record"
+
+                        created_at:
+                            name:
+                                lower_case: "created at"
+                            type: datetime
+                            description: "Timestamp of when the master image record was created"
+
+            list_master_images:
+                name:
+                    lower_case: "list master images"
+                description: "List master image records with pagination and filtering by master image id and user id"
+                func:
+                    call: "media.list_master_images"
+                    args:
+                        offset:
+                            params: {offset: {}}
+                        size:
+                            params: {size: {}}
+                        master_image_id:
+                            params: {master_image_id: {}}
+                        user_id:
+                            params: {user_id: {}}
+                params:
+                    offset:
+                        name:
+                            lower_case: "offset"
+                        type: int
+                        description: "Number of master images to skip for pagination"
+                        default: 0
+
+                    size:
+                        name:
+                            lower_case: "size"
+                        type: int
+                        description: "Number of master images to return per page"
+                        default: 50
+
+                    master_image_id:
+                        name:
+                            lower_case: "master image id"
+                        type: foreign_key
+                        default: "-1"
+                        references:
+                            module: "media"
+                            table: "master_image"
+                            field: "id"
+                        description: "ID of the master image to list, if provided lists only the master image with this ID if it exists and the user has access to it"
+
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        default: "-1"
+                        references:
+                            module: "auth"
+                            table: "user"
+                            field: "id"
+                        description: "ID of the user to filter master images by, if provided lists only master images owned by this user ID if they exist and the user has access to them"
+                result:
+                    type: struct
+                    fields:
+                        items:
+                            name:
+                                lower_case: "items"
+                            type: list
+                            description: "List of master images for the current page"
+
+                        total:
+                            name:
+                                lower_case: "total"
+                            type: int
+                            description: "Total number of master images available for pagination"
