@@ -1160,6 +1160,26 @@ class TestMTemplateApp(unittest.TestCase):
 
         self._run_cmd(list_master_cmd, env=logged_out_ctx, expected_code=1)
 
+        # get master image file content (download original image via master_image_id) #
+
+        local_master_content_dest = os.path.join(self.test_dir, f'splash-master-content-{io_type}.png')
+        get_master_content_cmd = self.cmd + ['-fo', local_master_content_dest, 'media', 'get-media-file-content', io_type, json.dumps({'master_image_id': result['master_image_id']})]
+
+        get_master_content_output = self._run_cmd(get_master_content_cmd, env=user_env)
+        get_master_content_result = json.loads(get_master_content_output.stdout)['result']
+        self.assertTrue(get_master_content_result['acknowledged'], 'Get media file content via master_image_id not acknowledged')
+        self.assertTrue(os.path.exists(local_master_content_dest), 'Local file for master image content does not exist after get-media-file-content command')
+
+        # ensure both image_id and master_image_id together throws an error #
+
+        get_both_cmd = self.cmd + ['media', 'get-media-file-content', io_type, json.dumps({'image_id': result['original_image_id'], 'master_image_id': result['master_image_id']})]
+        self._run_cmd(get_both_cmd, env=user_env, expected_code=1)
+
+        # ensure neither image_id nor master_image_id throws an error #
+
+        get_neither_cmd = self.cmd + ['media', 'get-media-file-content', io_type, json.dumps({})]
+        self._run_cmd(get_neither_cmd, env=user_env, expected_code=1)
+
     def test_cli_run_media_ingest_master_image_flow(self):
         self._test_media_ingest_master_image_flow(self.crud_ctx, 'run')
 

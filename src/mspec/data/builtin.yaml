@@ -1637,22 +1637,35 @@ modules:
             get_media_file_content:
                 name:
                     lower_case: "get media file content"
-                description: "Get the file content of a media file by  ID, currently only supports images"
+                description: "Get the file content of a media file by image ID or master image ID. Exactly one of image_id or master_image_id must be provided."
                 func:
                     call: "media.get_media_file_content"
                     args:
                         image_id:
                             params: {image_id: {}}
+                        master_image_id:
+                            params: {master_image_id: {}}
                 params:
                     image_id:
                         name:
                             lower_case: "image id"
                         type: foreign_key
+                        default: "-1"
                         references:
                             module: "media"
                             table: "image"
                             field: "id"
                         description: "ID of the image whose file content is being retrieved"
+                    master_image_id:
+                        name:
+                            lower_case: "master image id"
+                        type: foreign_key
+                        default: "-1"
+                        references:
+                            module: "media"
+                            table: "master_image"
+                            field: "id"
+                        description: "ID of the master image whose original file content is being retrieved"
                 result:
                     type: struct
                     fields:

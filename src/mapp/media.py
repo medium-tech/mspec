@@ -391,12 +391,23 @@ def get_image(ctx: MappContext, image_id: str) -> dict:
 		'created_at': image_record.created_at.isoformat()
 	}
 
-def get_media_file_content(ctx: MappContext, image_id: str) -> bytes:
-	
-	# check to see if we're logged in, any user can ready any file
+def get_media_file_content(ctx: MappContext, image_id: str = '-1', master_image_id: str = '-1') -> bytes:
+
+	# check to see if we're logged in, any user can read any file
 	current_user(ctx)['value']
 
-	image_record = _get_image_record(ctx, image_id)
+	if image_id == '-1' and master_image_id == '-1':
+		raise MappUserError('MISSING_ARG', 'get_media_file_content requires either image_id or master_image_id')
+
+	if image_id != '-1' and master_image_id != '-1':
+		raise MappUserError('AMBIGUOUS_ARG', 'get_media_file_content requires either image_id or master_image_id, not both')
+
+	if image_id != '-1':
+		image_record = _get_image_record(ctx, image_id)
+		return get_file_content(ctx, image_record.file_id)
+
+	master_image_record = _get_master_image_record(ctx, master_image_id)
+	image_record = _get_image_record(ctx, master_image_record.original_image_id)
 	return get_file_content(ctx, image_record.file_id)
 
 def list_images(ctx: MappContext, offset: int = 0, size: int = 50, image_id: str = '-1', file_id: str = '-1', user_id: str = '-1') -> dict:

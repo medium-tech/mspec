@@ -263,14 +263,13 @@ def _media_get_image_function_args(app:LingoApp, expression: dict, ctx:Optional[
     return (ctx, image_id), {}
 
 def _media_get_media_file_content_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
-    try:
-        image_id_expr = expression['args']['image_id']
-    except KeyError as e:
-        raise ValueError(f'get_media_file_content - missing arg: {e}')
+    image_id_expr = expression['args'].get('image_id')
+    master_image_id_expr = expression['args'].get('master_image_id')
 
-    image_id = unwrap_primitive(lingo_execute(app, image_id_expr, ctx))
+    image_id = unwrap_primitive(lingo_execute(app, image_id_expr, ctx)) if image_id_expr is not None else '-1'
+    master_image_id = unwrap_primitive(lingo_execute(app, master_image_id_expr, ctx)) if master_image_id_expr is not None else '-1'
 
-    return (ctx, image_id), {}
+    return (ctx, image_id, master_image_id), {}
 
 def _media_list_images_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     try:
