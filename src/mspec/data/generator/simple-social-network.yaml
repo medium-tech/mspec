@@ -63,6 +63,21 @@ modules:
               - 'Loves hiking and outdoor adventures.'
               - 'Avid reader and coffee enthusiast.'
               - 'Tech geek and gamer.'
+          
+          profile_picture:
+            name:
+              lower_case: 'profile picture'
+            type: foreign_key
+            references:
+              module: 'media'
+              table: 'master_image'
+              field: 'id'
+            default: "-1"
+            examples:
+              - "1"
+              - "2"
+              - "-1"
+
 
       forum:
         name:

@@ -151,6 +151,51 @@ async function mediaCreateImage(file) {
 
 }
 
+async function mediaIngestMasterImage(file) {
+
+    let params = {
+        name: file.name,
+        content_type: '' // let backend auto-detect content type
+    };
+
+    console.log('mediaIngestMasterImage()', file, params);
+
+    // multipart upload to /api/media/ingest-master-image
+    
+    const formData = new FormData();
+    formData.append('file', file); 
+    formData.append('json', JSON.stringify(params));
+    let headers = getRequestHeaders();
+
+    // let browser set the correct Content-Type for multipart form data w proper boundary
+    delete headers['Content-Type'];
+
+    try {
+        const response = await fetch('/api/media/ingest-master-image', {
+            method: 'POST',
+            headers: headers,
+            body: formData
+        });
+
+        if(response.ok) {
+            const data = await response.json();
+            console.log('Master image ingested successfully:', data);
+            return data;
+            // You can handle the response data as needed, e.g., update the UI or store the media ID
+        } else {
+            const errMsg = `Error ingesting master image: ${response.status} - ${response.statusText}`;
+            const responseText = await response.text();
+            console.error(errMsg, response, responseText);
+            return {'error': errMsg};
+        }
+
+    } catch (error) {
+        console.error('Error ingesting master image:', error);
+        return {'error': error.message};
+    }
+
+}
+
 const placeholderImage = (width, height, text) => {
     // 1. Create a canvas element
     const canvas = document.createElement('canvas');
@@ -2431,47 +2476,19 @@ function _renderModelRead(app, element, ctx = null) {
                                 break;
                         }
                     }
-                }else if(table === 'image' && refField === 'id'){
-                    // const formName = `model-field-get-media-file-content`
-
-                    // if(!app.clientState.forms.hasOwnProperty(formName)){
-                    //     app.clientState.forms[formName] = {
-                    //         state: 'idle',
-                    //         img: null
-                    //     }
-                    // }
-
-                    // if(app.clientState.forms[formName].state === 'idle'){
-                    //     additional = {
-                    //         viewer: {
-                    //             image_id: state.data[field]
-                    //         },
-                    //     }
-                        
-                    // }else{
-                    //     // switch against loading, success, and default (for error)
-
-                    //     switch(app.clientState.forms[formName].state){
-                    //         case 'viewing':
-                    //             //additional = app.clientState.forms[formName].img
-                    //             additional = 'viewing'
-                    //         case 'loading':
-                    //             additional = {text: 'image downloading...', style: {italic: true}};
-                    //             break;
-                    //         case 'success':
-                    //             additional = {text: 'image downloaded', style: {color: 'green', bold: true}};
-                    //             break;
-                    //         default:
-                    //             const errMsg = app.clientState.forms[formName].error || 'unknown error';
-                    //             additional = {text: errMsg, style: {color: 'red', bold: true}};
-                    //             break;
-                    //     }
-                    // }
+                }else if((table === 'image') && refField === 'id'){
                     additional = {
                         viewer: {
                             image_id: state.data[field]
                         },
                     }
+                }else if((table === 'master_image') && refField === 'id'){
+                    additional = {
+                        viewer: {
+                            master_image_id: state.data[field]
+                        },
+                    }
+                }
                 }else{
                     const loc = `${refModule}/${table}/${state.data[field]}`;
                     additional = {
@@ -3822,7 +3839,7 @@ function createFormElement(app, element, ctx = null) {
             const tableRef = fieldSpec.references.table;
             if(tableRef === 'user') {
                 thirdCell.textContent = 'Your user id';
-            }else if(['file', 'image'].includes(tableRef)) {
+            }else if(['file', 'image', 'master_image'].includes(tableRef)) {
                 // add file chooser to thirdCell
 
                 let fileIngestStatus = document.createElement('span');
@@ -3843,6 +3860,9 @@ function createFormElement(app, element, ctx = null) {
                                 break;
                             case 'image':
                                 ingestFunction = mediaCreateImage;
+                                break;
+                            case 'master_image':
+                                ingestFunction = mediaIngestMasterImage;
                                 break;
                             default:
                                 throw new Error(`Unsupported file type for ingest: ${tableRef}`);
