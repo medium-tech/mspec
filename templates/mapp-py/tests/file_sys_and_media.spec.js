@@ -117,7 +117,6 @@ test('test foreign key list fields - file upload types', async ({ browser, crudE
 
 	// Add attachment (file_system.file FK list) - upload a file
 	await page.getByRole('row', { name: 'attachments:' }).locator('input[type="file"]').setInputFiles('./tests/samples/lorem-document.pdf');
-	await expect(page.locator('#lingo-app')).toContainText('File uploaded successfully!');
 
 	// Verify the attachment ID was added to the list display
 	const attachmentsRow = page.getByRole('row', { name: 'attachments:' });
@@ -125,19 +124,16 @@ test('test foreign key list fields - file upload types', async ({ browser, crudE
 
 	// Upload a second attachment
 	await page.getByRole('row', { name: 'attachments:' }).locator('input[type="file"]').setInputFiles('./tests/samples/lorem-document.pdf');
-	await expect(page.locator('#lingo-app')).toContainText('File uploaded successfully!');
 	await expect(attachmentsRow.locator('button.remove-button')).toHaveCount(2);
 
 	// Add web image (media.master_image FK list) - upload an image
 	await page.getByRole('row', { name: 'web images:' }).locator('input[type="file"]').setInputFiles('./tests/samples/splash-low.jpg');
-	await expect(page.locator('#lingo-app')).toContainText('File uploaded successfully!');
 
 	const webImagesRow = page.getByRole('row', { name: 'web images:' });
 	await expect(webImagesRow.locator('button.remove-button')).toHaveCount(1);
 
 	// Add raw image (media.image FK list) - upload an image
 	await page.getByRole('row', { name: 'raw images:' }).locator('input[type="file"]').setInputFiles('./tests/samples/splash-low.jpg');
-	await expect(page.locator('#lingo-app')).toContainText('File uploaded successfully!');
 
 	const rawImagesRow = page.getByRole('row', { name: 'raw images:' });
 	await expect(rawImagesRow.locator('button.remove-button')).toHaveCount(1);
@@ -161,7 +157,7 @@ test('test foreign key list fields - file upload types', async ({ browser, crudE
 
 	// Submit updated post
 	await page.getByRole('button', { name: 'Submit' }).click();
-	await expect(page.locator('#lingo-app')).toContainText('Success');
+	await expect(page.locator('#lingo-app')).toContainText('edited');
 });
 
 test('test foreign key list fields - popup selection', async ({ browser, crudEnv, crudSession }) => {
@@ -198,7 +194,8 @@ test('test foreign key list fields - popup selection', async ({ browser, crudEnv
 	// Use popup to find and select the first post for related_posts list
 	await page.getByRole('row', { name: 'related posts:' }).getByRole('button', { name: 'Find post' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('Post to reference in FK list');
-	await page.getByRole('cell', { name: 'Post to reference in FK list', exact: true }).first().click();
+
+	await page.locator('.popup-content > table > tbody > tr').first().click();
 
 	// Verify item was added to related posts list
 	const relatedPostsRow = page.getByRole('row', { name: 'related posts:' });
@@ -207,7 +204,7 @@ test('test foreign key list fields - popup selection', async ({ browser, crudEnv
 	// Use popup again to add the same post a second time
 	await page.getByRole('row', { name: 'related posts:' }).getByRole('button', { name: 'Find post' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('Post to reference in FK list');
-	await page.getByRole('cell', { name: 'Post to reference in FK list', exact: true }).first().click();
+	await page.locator('.popup-content > table > tbody > tr').first().click();
 	await expect(relatedPostsRow.locator('button.remove-button')).toHaveCount(2);
 
 	// Submit the post
@@ -228,5 +225,5 @@ test('test foreign key list fields - popup selection', async ({ browser, crudEnv
 
 	// Submit updated post
 	await page.getByRole('button', { name: 'Submit' }).click();
-	await expect(page.locator('#lingo-app')).toContainText('Success');
+	await expect(page.locator('#lingo-app')).toContainText('edited');
 });

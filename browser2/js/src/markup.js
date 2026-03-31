@@ -2437,7 +2437,10 @@ function _renderModelRead(app, element, ctx = null) {
                 const refModule = fieldDef.references.module.replaceAll('_', '-');
                 const refField = fieldDef.references.field;
 
-                if (table === 'user' && refField === 'id') {
+                if(refField === 'id' && state.data[field] === '-1') {
+                    additional = '-1 indicates no id was set'
+
+                } else if (table === 'user' && refField === 'id') {
                     additional = 'the user that created this item';
                 }else if(table === 'file' && refField === 'id'){
 
@@ -2488,7 +2491,6 @@ function _renderModelRead(app, element, ctx = null) {
                             master_image_id: state.data[field]
                         },
                     }
-                }
                 }else{
                     const loc = `${refModule}/${table}/${state.data[field]}`;
                     additional = {
@@ -3704,7 +3706,14 @@ function createFormElement(app, element, ctx = null) {
                             fileIngestStatus.textContent = `Upload failed: ${ingestResult.error}`;
                             console.error('FK list file ingest error:', ingestResult.error);
                         } else {
-                            const id = (tableRef === 'file') ? ingestResult.result.file_id : ingestResult.result.image_id;
+
+                            let id;
+                            switch (tableRef) {
+                                case 'file': id = ingestResult.result.file_id; break;
+                                case 'image': id = ingestResult.result.image_id; break;
+                                case 'master_image': id = ingestResult.result.master_image_id; break;
+                                default: throw new Error(`Unsupported file type for FK list ingest: ${tableRef}`);
+                            }
                             formData[fieldKey].push(id);
                             fileIngestStatus.textContent = 'File uploaded successfully!';
                             listInput.value = '';
@@ -3988,7 +3997,20 @@ function createFormElement(app, element, ctx = null) {
                             ingestState.status = 'success';
                             ingestState.error = null;
 
-                            formData[fieldKey] = (tableRef === 'file') ? ingestResult.result.file_id : ingestResult.result.image_id;
+                            switch(tableRef) {
+                                case 'file':
+                                    formData[fieldKey] = ingestResult.result.file_id;
+                                    break;
+                                case 'image':
+                                    formData[fieldKey] = ingestResult.result.image_id;
+                                    break;
+                                case 'master_image':
+                                    formData[fieldKey] = ingestResult.result.master_image_id;
+                                    break;
+                                default:
+                                    throw new Error(`Unsupported file type for setting formData: ${tableRef}`);
+                            }
+
                             fileIngestStatus.textContent = 'File uploaded successfully!';
                         }
                         
@@ -4145,17 +4167,28 @@ function createViewerElement(app, element, ctx = null) {
 
     // init
 
-    if(!element.viewer.image_id) {
-        throw new Error('createViewerElement - missing viewer or image_id');
+    let mediaType;
+    let mediaId;
+    let mediaFileContentReqBody;
+
+    if(element.viewer.hasOwnProperty('image_id')) {
+        mediaType = 'image';
+        mediaId = element.viewer.image_id;
+        mediaFileContentReqBody = {image_id: mediaId};
+    }else if(element.viewer.hasOwnProperty('master_image_id')) {
+        mediaType = 'master_image';
+        mediaId = element.viewer.master_image_id;
+        mediaFileContentReqBody = {master_image_id: mediaId};
+    }else{
+        throw new Error('createViewerElement - missing viewer image_id or master_image_id');
     }
 
-    const imageId = element.viewer.image_id;
     const height = element.viewer.height || 100;
     const width = element.viewer.width || 250;
 
     // init client state
 
-    const stateKey = `image_${element.viewer.image_id}`;
+    const stateKey = `${mediaType}_${mediaId}`;
 
     if(!app.clientState.media.hasOwnProperty(stateKey)) {
         app.clientState.media[stateKey] = {
@@ -4173,17 +4206,18 @@ function createViewerElement(app, element, ctx = null) {
 
     // function to fetch media
 
-    async function getMediaFileContent(imageId) {
-        console.log('Fetching media content for image ID:', imageId);
+    async function getMediaFileContent() {
+        const body = mediaType === 'image' ? {image_id: mediaId} : {master_image_id: mediaId};
+        console.log('Fetching media content for media type:', mediaType, 'media ID:', mediaId);
         try {
             const response = await fetch('/api/media/get-media-file-content', {
                 method: 'POST',
                 headers: getRequestHeaders(),
-                body: JSON.stringify({image_id: imageId})
+                body: JSON.stringify(mediaFileContentReqBody)
             });
 
             if (response.ok) {
-                console.log('Media content fetched successfully for image ID:', imageId);
+                console.log('Media content fetched successfully for media type:', mediaType, 'media ID:', mediaId);
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 mediaState.status = 'loaded';
@@ -4211,7 +4245,7 @@ function createViewerElement(app, element, ctx = null) {
     // download button
     //
 
-    const localFileName = `image_${imageId}`;
+    const localFileName = `${mediaType}_${mediaId}`;
     let downloadButton;
     if(mediaState.status === 'loaded') {
         // source is loaded, this download button will trigger
@@ -4238,9 +4272,7 @@ function createViewerElement(app, element, ctx = null) {
         downloadButton = createButtonElement(app, {
             button: {
                 call: 'media.get_media_file_content',
-                args: {
-                    image_id: imageId
-                }
+                args: mediaFileContentReqBody
             },
             disabled: mediaState.status !== 'error',
             text: mediaState.status === 'error' ? '↻' : '⬇'
@@ -4324,7 +4356,7 @@ function createViewerElement(app, element, ctx = null) {
     switch (mediaState.status) {
 
         case 'pending': 
-            getMediaFileContent(imageId);
+            getMediaFileContent();
              // fall through to loading state
         case 'loading':
             img.src = placeholderImage(width, height, 'Loading...').src;
