@@ -53,6 +53,11 @@ async function fillFormField(page, fieldName, field, value) {
 
   // Handle list types
   if (fieldType === 'list') {
+    if (elementType === 'foreign_key') {
+      // FK list fields require file upload or popup interaction
+      // handled separately in dedicated tests
+      return;
+    }
     // For list fields, we need to add each value individually using the Add button
     const values = Array.isArray(value) ? value : [value];
     const row = page.getByRole('row', { name: pattern });
@@ -218,8 +223,12 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
 
           // if value is a list expect it to be joined on ", "
           if(Array.isArray(value)) {
+            if (model.fields[fieldName].element_type === 'foreign_key') {
+              // FK list fields require file upload or popup interaction
+              // handled separately in dedicated tests
+              continue;
+            }
             await expect(page.locator('#lingo-app')).toContainText(value.join(', '));
-            continue;
           }else{
             await expect(page.locator('#lingo-app')).toContainText(String(value));
           }
