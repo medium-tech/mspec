@@ -20,7 +20,6 @@ client:
 
 import:
   modules:
-    - ./my-sample-store.yaml
     - ./simple-social-network.yaml
     - ./model-type-testing.yaml
     - ./op-testing.yaml

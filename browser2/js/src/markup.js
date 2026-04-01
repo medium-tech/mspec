@@ -2432,7 +2432,79 @@ function _renderModelRead(app, element, ctx = null) {
             // console.log('renderModelRead - field definition:', fieldDef);
             let additional;
             
-            if(fieldDef.type === 'foreign_key'){
+            if(fieldDef.type === 'list' && fieldDef.element_type === 'foreign_key'){
+
+                const table = fieldDef.references.table;
+                const refModule = fieldDef.references.module.replaceAll('_', '-');
+                const ids = state.data[field] || [];
+
+                if(table === 'file'){
+
+                    const formName = `model-field-get-file-content`
+                    if(!app.clientState.forms.hasOwnProperty(formName)){
+                        app.clientState.forms[formName] = {
+                            state: 'idle',
+                        }
+                    }
+
+                    if(app.clientState.forms[formName].state === 'idle'){
+                        additional = {
+                            block: ids.map(fileId => ({
+                                button: {
+                                    call: 'file_system.get_file_content',
+                                    args: {file_id: fileId}
+                                },
+                                text: `⬇ ${fileId}`
+                            }))
+                        };
+                    }else{
+                        const resetButton = {
+                            button: {
+                                clientFunction: () => {
+                                    app.clientState.forms[formName].state = 'idle';
+                                    renderLingoApp(app, document.getElementById('lingo-app'), true)
+                                }, 
+                                args: {form: formName}
+                            },
+                            text: 'reset'
+                        };
+                        let indicator;
+                        switch(app.clientState.forms[formName].state){
+                            case 'loading':
+                                indicator = {text: 'file downloading...', style: {italic: true}};
+                                break;
+                            case 'success':
+                                indicator = {text: 'file downloaded', style: {color: 'green', bold: true}};
+                                break;
+                            default:
+                                const errMsg = app.clientState.forms[formName].error || 'unknown error';
+                                indicator = {text: `error downloading file: ${errMsg}`, style: {color: 'red', bold: true}};
+                                break;
+                        }
+                        additional = {
+                            block: [resetButton, indicator]
+                        };
+                    }
+
+                }else if(table === 'image'){
+                    additional = {
+                        viewer: {image_ids: ids}
+                    };
+                }else if(table === 'master_image'){
+                    additional = {
+                        viewer: {master_image_ids: ids}
+                    };
+                }else{
+                    additional = {
+                        block: ids.flatMap((id, idx) => {
+                            const loc = `${refModule}/${table}/${id}`;
+                            const link = {link: `/${loc}`, text: `go to ${id}`};
+                            // Add a separator after each link except the last
+                            return idx < ids.length - 1 ? [link, {text: ' '}] : [link];
+                        })
+                    };
+                }
+            }else if(fieldDef.type === 'foreign_key'){
                 const table = fieldDef.references.table;
                 const refModule = fieldDef.references.module.replaceAll('_', '-');
                 const refField = fieldDef.references.field;
@@ -4167,32 +4239,70 @@ function createViewerElement(app, element, ctx = null) {
 
     // init
 
+
+    let isGallery;
     let mediaType;
+    let galleryIds;
     let mediaId;
     let mediaFileContentReqBody;
 
-    if(element.viewer.hasOwnProperty('image_id')) {
+    if (element.viewer.hasOwnProperty('image_ids')) {
+        // if (element.viewer.image_ids.length === 0) {
+        //     throw new Error('createViewerElement - image_ids must not be empty');
+        // }
+        isGallery = true;
+        mediaType = 'image';
+        galleryIds = element.viewer.image_ids;
+        // mediaId and mediaFileContentReqBody set after galleryState is initialized below
+    } else if (element.viewer.hasOwnProperty('image_id')) {
         mediaType = 'image';
         mediaId = element.viewer.image_id;
         mediaFileContentReqBody = {image_id: mediaId};
-    }else if(element.viewer.hasOwnProperty('master_image_id')) {
+    } else if (element.viewer.hasOwnProperty('master_image_ids')) {
+        // if (element.viewer.master_image_ids.length === 0) {
+        //     throw new Error('createViewerElement - master_image_ids must not be empty');
+        // }
+        isGallery = true;
+        mediaType = 'master_image';
+        galleryIds = element.viewer.master_image_ids;
+        // mediaId and mediaFileContentReqBody set after galleryState is initialized below
+
+    } else if (element.viewer.hasOwnProperty('master_image_id')) {
         mediaType = 'master_image';
         mediaId = element.viewer.master_image_id;
         mediaFileContentReqBody = {master_image_id: mediaId};
-    }else{
-        throw new Error('createViewerElement - missing viewer image_id or master_image_id');
+    } else {
+        throw new Error('createViewerElement - missing viewer image_id, image_ids, or master_image_id');
     }
 
     const height = element.viewer.height || 100;
-    const width = element.viewer.width || 250;
+    const width = element.viewer.width || 275;
 
-    // init client state
+    // init gallery state (gallery mode only)
+
+    let galleryState = null;
+    if (isGallery) {
+        const galleryKey = `gallery_${galleryIds.join('_')}`;
+        if (!app.clientState.media.hasOwnProperty(galleryKey)) {
+            app.clientState.media[galleryKey] = {
+                galleryIndex: 0,
+                insetZoom: 1,
+                poppedUp: false,
+                displayOriginalSize: false
+            };
+        }
+        galleryState = app.clientState.media[galleryKey];
+        mediaId = galleryIds[galleryState.galleryIndex];
+        mediaFileContentReqBody = mediaType === 'image' ? {image_id: mediaId} : {master_image_id: mediaId};
+    }
+
+    // init per-image client state
 
     const stateKey = `${mediaType}_${mediaId}`;
 
     if(!app.clientState.media.hasOwnProperty(stateKey)) {
         app.clientState.media[stateKey] = {
-            status: 'pending', 
+            status: (isGallery && galleryIds.length === 0) ? 'empty-gallery' : 'pending', 
             error: null,
             localUrl: null,
             fileId: null,
@@ -4204,10 +4314,12 @@ function createViewerElement(app, element, ctx = null) {
     }
     const mediaState = app.clientState.media[stateKey];
 
+    // viewer state: gallery mode uses galleryState for zoom/popup/index; single mode uses mediaState
+    const viewerState = isGallery ? galleryState : mediaState;
+
     // function to fetch media
 
     async function getMediaFileContent() {
-        const body = mediaType === 'image' ? {image_id: mediaId} : {master_image_id: mediaId};
         console.log('Fetching media content for media type:', mediaType, 'media ID:', mediaId);
         try {
             const response = await fetch('/api/media/get-media-file-content', {
@@ -4280,9 +4392,9 @@ function createViewerElement(app, element, ctx = null) {
     }
 
     const closePopupFunction = () => {
-        mediaState.poppedUp = !mediaState.poppedUp;
-        mediaState.insetZoom = 1;
-        mediaState.displayOriginalSize = false;
+        viewerState.poppedUp = !viewerState.poppedUp;
+        viewerState.insetZoom = 1;
+        viewerState.displayOriginalSize = false;
         renderLingoApp(app, document.getElementById('lingo-app'), true);
     };
 
@@ -4299,30 +4411,30 @@ function createViewerElement(app, element, ctx = null) {
     //
 
     const zoomIncrement = 0.25;
-    const zoomMin = (mediaState.poppedUp) ? 0.05 : 1;
-    const zoomMax = (mediaState.poppedUp) ? 5 : 3.5
+    const zoomMin = (viewerState.poppedUp) ? 0.05 : 1;
+    const zoomMax = (viewerState.poppedUp) ? 5 : 3.5
 
     const zoomInButton = createButtonElement(app, {
         button: {
             clientFunction: () => {
-                mediaState.insetZoom = Math.min(zoomMax, mediaState.insetZoom + zoomIncrement);
+                viewerState.insetZoom = Math.min(zoomMax, viewerState.insetZoom + zoomIncrement);
                 renderLingoApp(app, document.getElementById('lingo-app'), true);
             }
         },
         text: '✚',
-        disabled: (mediaState.status !== 'loaded' || mediaState.insetZoom >= zoomMax) || mediaState.displayOriginalSize
+        disabled: (mediaState.status !== 'loaded' || viewerState.insetZoom >= zoomMax) || viewerState.displayOriginalSize
     });
 
     // zoom out 
     const zoomOutButton = createButtonElement(app, {
         button: {
             clientFunction: () => {
-                mediaState.insetZoom = Math.max(zoomMin, mediaState.insetZoom - zoomIncrement);
+                viewerState.insetZoom = Math.max(zoomMin, viewerState.insetZoom - zoomIncrement);
                 renderLingoApp(app, document.getElementById('lingo-app'), true);
             }
         },
         text: '—',
-        disabled: mediaState.status !== 'loaded' || mediaState.insetZoom <= zoomMin || mediaState.displayOriginalSize
+        disabled: mediaState.status !== 'loaded' || viewerState.insetZoom <= zoomMin || viewerState.displayOriginalSize
     });
 
     // pop up buttom
@@ -4330,7 +4442,7 @@ function createViewerElement(app, element, ctx = null) {
         button: {
             clientFunction: closePopupFunction
         },
-        text: (mediaState.poppedUp) ? '×' : '⌞ ⌝',
+        text: (viewerState.poppedUp) ? '×' : '⌞ ⌝',
         disabled: mediaState.status !== 'loaded'
     });
 
@@ -4338,13 +4450,55 @@ function createViewerElement(app, element, ctx = null) {
     const originalSizeButton = createButtonElement(app, {
         button: {
             clientFunction: () => {
-                mediaState.displayOriginalSize = !mediaState.displayOriginalSize;
+                viewerState.displayOriginalSize = !viewerState.displayOriginalSize;
                 renderLingoApp(app, document.getElementById('lingo-app'), true);
             }
         },
-        text: mediaState.displayOriginalSize ? 'scaled' : 'original size',
+        text: viewerState.displayOriginalSize ? 'scaled' : 'original size',
         disabled: mediaState.status !== 'loaded'
     });
+
+    //
+    // gallery navigation buttons (gallery mode only)
+    //
+
+    let prevButton = null;
+    let nextButton = null;
+    let galleryIndicator = null;
+
+    if (isGallery) {
+        const imageCount = galleryIds.length;
+
+        prevButton = createButtonElement(app, {
+            button: {
+                clientFunction: () => {
+                    galleryState.galleryIndex = Math.max(0, galleryState.galleryIndex - 1);
+                    renderLingoApp(app, document.getElementById('lingo-app'), true);
+                }
+            },
+            text: '◀',
+            disabled: galleryState.galleryIndex <= 0
+        });
+
+        nextButton = createButtonElement(app, {
+            button: {
+                clientFunction: () => {
+                    galleryState.galleryIndex = Math.min(imageCount - 1, galleryState.galleryIndex + 1);
+                    renderLingoApp(app, document.getElementById('lingo-app'), true);
+                }
+            },
+            text: '▶',
+            disabled: galleryState.galleryIndex >= imageCount - 1
+        });
+
+        galleryIndicator = document.createElement('span');
+        const galleryIndexDisplay = (galleryIds.length > 0) ? `${galleryState.galleryIndex + 1}` : '0';
+        galleryIndicator.textContent = `${galleryIndexDisplay} / ${imageCount}`;
+        galleryIndicator.style.margin = '0 4px';
+        galleryIndicator.style.fontWeight = 'bold';
+        galleryIndicator.style.padding = '2px 4px';
+        galleryIndicator.style.backgroundColor = 'rgba(255, 255, 255, 1.0)';
+    }
 
     //
     // img
@@ -4367,6 +4521,10 @@ function createViewerElement(app, element, ctx = null) {
             img.src = mediaState.localUrl;
             break;
 
+        case 'empty-gallery':
+            img.src = placeholderImage(width, height, 'No pics in gallery').src;
+            break;
+
         case 'error':
             img.src = placeholderImage(width, height, 'Error').src;
             break;
@@ -4377,10 +4535,10 @@ function createViewerElement(app, element, ctx = null) {
 
     img.style.display = 'block';
 
-    if(mediaState.poppedUp) {
+    if(viewerState.poppedUp) {
         img.style.position = 'fixed';
         img.style.top = '5%';
-        if(mediaState.displayOriginalSize) {
+        if(viewerState.displayOriginalSize) {
             img.style.width = `${img.naturalWidth}px`
             img.style.height = `${img.naturalHeight}px`
     
@@ -4392,7 +4550,7 @@ function createViewerElement(app, element, ctx = null) {
         }else{
             const windowX = window.innerWidth;
             const baseX = (.75 * windowX);
-            const zoomedValue = baseX * mediaState.insetZoom;
+            const zoomedValue = baseX * viewerState.insetZoom;
             img.style.left = `${(windowX - zoomedValue) / 2}px`;
             img.style.width = `${zoomedValue}px`;
         }
@@ -4406,7 +4564,7 @@ function createViewerElement(app, element, ctx = null) {
     // container div
     //
 
-    const zoomedWidth = width * mediaState.insetZoom;
+    const zoomedWidth = width * viewerState.insetZoom;
 
     const div = document.createElement('div');
     div.style.zIndex = '101';
@@ -4416,12 +4574,19 @@ function createViewerElement(app, element, ctx = null) {
     const controlsDiv = document.createElement('div');
     controlsDiv.style.zIndex = '102';
     controlsDiv.className = 'viewer-controls';
+
+    if (isGallery) {
+        controlsDiv.appendChild(prevButton);
+        controlsDiv.appendChild(galleryIndicator);
+        controlsDiv.appendChild(nextButton);
+    }
+
     controlsDiv.appendChild(downloadButton);
     controlsDiv.appendChild(zoomOutButton);
     controlsDiv.appendChild(zoomInButton);
     controlsDiv.appendChild(popUpButton);
 
-    if(mediaState.poppedUp) {
+    if(viewerState.poppedUp) {
         div.appendChild(background);
         controlsDiv.appendChild(originalSizeButton);
         controlsDiv.style.position = 'fixed';
@@ -4438,7 +4603,7 @@ function createViewerElement(app, element, ctx = null) {
     }else if(mediaState.status === 'loaded') {
         img.style.cursor = 'pointer';
         img.onclick = () => {
-            mediaState.poppedUp = true;
+            viewerState.poppedUp = true;
             renderLingoApp(app, document.getElementById('lingo-app'), true);
         }
     }

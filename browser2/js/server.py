@@ -125,6 +125,8 @@ if __name__ == '__main__':
     # Custom thread-limited server if max_threads > 0
     if max_threads > 0:
         class LimitedThreadingTCPServer(socketserver.ThreadingTCPServer):
+            allow_reuse_address = True
+
             def __init__(self, server_address, RequestHandlerClass):
                 super().__init__(server_address, RequestHandlerClass)
                 self._thread_semaphore = threading.BoundedSemaphore(max_threads)
@@ -138,7 +140,10 @@ if __name__ == '__main__':
 
         ServerClass = LimitedThreadingTCPServer
     else:
-        ServerClass = socketserver.ThreadingTCPServer
+        class ReuseThreadingTCPServer(socketserver.ThreadingTCPServer):
+            allow_reuse_address = True
+
+        ServerClass = ReuseThreadingTCPServer
 
     with ServerClass(('', port), DevRequestHandler) as httpd:
         print(f'Dev server running at http://localhost:{port}/ (threads: {"unlimited" if max_threads == 0 else max_threads})')

@@ -665,3 +665,40 @@ test('test - formatting page', async ({ page }) => {
   const lightGrayListItem = lingoApp.locator('li').filter({ hasText: 'Light Gray' }).locator('span');
   await expect(lightGrayListItem).toHaveCSS('color', 'rgb(211, 211, 211)'); // lightgray in RGB
 });
+
+test('test - viewer gallery page', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/viewer-gallery.json');
+
+  // Check heading
+  await expect(page.locator('h1')).toContainText('Gallery Viewer');
+
+  // Gallery controls should be visible
+  const prevButton = page.getByRole('button', { name: '◀' });
+  const nextButton = page.getByRole('button', { name: '▶' });
+  await expect(prevButton).toBeVisible();
+  await expect(nextButton).toBeVisible();
+
+  // Initial state: first image (1 / 3), prev disabled, next enabled
+  await expect(page.locator('.viewer-controls span')).toContainText('1 / 3');
+  await expect(prevButton).toBeDisabled();
+  await expect(nextButton).toBeEnabled();
+
+  // Navigate to second image
+  await nextButton.click();
+  await expect(page.locator('.viewer-controls span')).toContainText('2 / 3');
+  await expect(prevButton).toBeEnabled();
+  await expect(nextButton).toBeEnabled();
+
+  // Navigate to third (last) image
+  await nextButton.click();
+  await expect(page.locator('.viewer-controls span')).toContainText('3 / 3');
+  await expect(prevButton).toBeEnabled();
+  await expect(nextButton).toBeDisabled();
+
+  // Navigate back to second image
+  await prevButton.click();
+  await expect(page.locator('.viewer-controls span')).toContainText('2 / 3');
+  await expect(prevButton).toBeEnabled();
+  await expect(nextButton).toBeEnabled();
+});
