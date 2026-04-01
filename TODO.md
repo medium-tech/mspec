@@ -34,16 +34,16 @@
     * 🟢 search for item from form
     * 🟢 tests
 * 🟢 mega app for testing (merge modules from multiple files)
-* 🔴 master image ingest operation
+* 🟢 master image ingest operation
 * 🔴 define custom pages
     * 🔴 project index page
     * 🔴 module index page
     * 🔴 model index page
     * 🔴 model instance page
     * 🔴 op page
-* 🔴 support for list of foreign keys
-    * 🔴 backend
-    * 🔴 ui
+* 🟢 support for list of foreign keys
+    * 🟢 backend
+    * 🟢 ui
 * 🔴 split social media off from dev app
     * 🔴 custom pages
     * 🔴 deploy to web
@@ -51,7 +51,7 @@
 * 🔴 add unique constraint to str fields - ie. only 1 profile with a specific username can exist
 * 🟡 update testing
     * 🟢 split functions.json apart
-        * 🟡 create matching specs for script spec
+        * 🔴 create matching specs for script spec
     * 🔴 implement testing data for page spec
 * 🔴 merge js dev lingo server into mapp template
 * 🔴 create features table for different clients
