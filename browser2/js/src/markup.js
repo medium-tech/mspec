@@ -2433,20 +2433,59 @@ function _renderModelRead(app, element, ctx = null) {
             let additional;
             
             if(fieldDef.type === 'list' && fieldDef.element_type === 'foreign_key'){
+
                 const table = fieldDef.references.table;
                 const refModule = fieldDef.references.module.replaceAll('_', '-');
                 const ids = state.data[field] || [];
 
                 if(table === 'file'){
-                    additional = {
-                        block: ids.map(fileId => ({
+
+                    const formName = `model-field-get-file-content`
+                    if(!app.clientState.forms.hasOwnProperty(formName)){
+                        app.clientState.forms[formName] = {
+                            state: 'idle',
+                        }
+                    }
+
+                    if(app.clientState.forms[formName].state === 'idle'){
+                        additional = {
+                            block: ids.map(fileId => ({
+                                button: {
+                                    call: 'file_system.get_file_content',
+                                    args: {file_id: fileId}
+                                },
+                                text: `⬇ ${fileId}`
+                            }))
+                        };
+                    }else{
+                        const resetButton = {
                             button: {
-                                call: 'file_system.get_file_content',
-                                args: {file_id: fileId}
+                                clientFunction: () => {
+                                    app.clientState.forms[formName].state = 'idle';
+                                    renderLingoApp(app, document.getElementById('lingo-app'), true)
+                                }, 
+                                args: {form: formName}
                             },
-                            text: `download ${fileId}`
-                        }))
-                    };
+                            text: 'reset'
+                        };
+                        let indicator;
+                        switch(app.clientState.forms[formName].state){
+                            case 'loading':
+                                indicator = {text: 'file downloading...', style: {italic: true}};
+                                break;
+                            case 'success':
+                                indicator = {text: 'file downloaded', style: {color: 'green', bold: true}};
+                                break;
+                            default:
+                                const errMsg = app.clientState.forms[formName].error || 'unknown error';
+                                indicator = {text: `error downloading file: ${errMsg}`, style: {color: 'red', bold: true}};
+                                break;
+                        }
+                        additional = {
+                            block: [resetButton, indicator]
+                        };
+                    }
+
                 }else if(table === 'image'){
                     additional = {
                         viewer: {image_ids: ids}
@@ -2457,9 +2496,11 @@ function _renderModelRead(app, element, ctx = null) {
                     };
                 }else{
                     additional = {
-                        block: ids.map(id => {
+                        block: ids.flatMap((id, idx) => {
                             const loc = `${refModule}/${table}/${id}`;
-                            return {link: `/${loc}`, text: `go to ${loc}`};
+                            const link = {link: `/${loc}`, text: `go to ${id}`};
+                            // Add a separator after each link except the last
+                            return idx < ids.length - 1 ? [link, {text: ' '}] : [link];
                         })
                     };
                 }
@@ -4206,9 +4247,9 @@ function createViewerElement(app, element, ctx = null) {
     let mediaFileContentReqBody;
 
     if (element.viewer.hasOwnProperty('image_ids')) {
-        if (element.viewer.image_ids.length === 0) {
-            throw new Error('createViewerElement - image_ids must not be empty');
-        }
+        // if (element.viewer.image_ids.length === 0) {
+        //     throw new Error('createViewerElement - image_ids must not be empty');
+        // }
         isGallery = true;
         mediaType = 'image';
         galleryIds = element.viewer.image_ids;
@@ -4218,9 +4259,9 @@ function createViewerElement(app, element, ctx = null) {
         mediaId = element.viewer.image_id;
         mediaFileContentReqBody = {image_id: mediaId};
     } else if (element.viewer.hasOwnProperty('master_image_ids')) {
-        if (element.viewer.master_image_ids.length === 0) {
-            throw new Error('createViewerElement - master_image_ids must not be empty');
-        }
+        // if (element.viewer.master_image_ids.length === 0) {
+        //     throw new Error('createViewerElement - master_image_ids must not be empty');
+        // }
         isGallery = true;
         mediaType = 'master_image';
         galleryIds = element.viewer.master_image_ids;
@@ -4235,7 +4276,7 @@ function createViewerElement(app, element, ctx = null) {
     }
 
     const height = element.viewer.height || 100;
-    const width = element.viewer.width || 250;
+    const width = element.viewer.width || 275;
 
     // init gallery state (gallery mode only)
 
@@ -4261,7 +4302,7 @@ function createViewerElement(app, element, ctx = null) {
 
     if(!app.clientState.media.hasOwnProperty(stateKey)) {
         app.clientState.media[stateKey] = {
-            status: 'pending', 
+            status: (isGallery && galleryIds.length === 0) ? 'empty-gallery' : 'pending', 
             error: null,
             localUrl: null,
             fileId: null,
@@ -4451,9 +4492,12 @@ function createViewerElement(app, element, ctx = null) {
         });
 
         galleryIndicator = document.createElement('span');
-        galleryIndicator.textContent = `${galleryState.galleryIndex + 1} / ${imageCount}`;
+        const galleryIndexDisplay = (galleryIds.length > 0) ? `${galleryState.galleryIndex + 1}` : '0';
+        galleryIndicator.textContent = `${galleryIndexDisplay} / ${imageCount}`;
         galleryIndicator.style.margin = '0 4px';
         galleryIndicator.style.fontWeight = 'bold';
+        galleryIndicator.style.padding = '2px 4px';
+        galleryIndicator.style.backgroundColor = 'rgba(255, 255, 255, 1.0)';
     }
 
     //
@@ -4475,6 +4519,10 @@ function createViewerElement(app, element, ctx = null) {
         case 'loaded':
             // loading and pending
             img.src = mediaState.localUrl;
+            break;
+
+        case 'empty-gallery':
+            img.src = placeholderImage(width, height, 'No pics in gallery').src;
             break;
 
         case 'error':
