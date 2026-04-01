@@ -4167,22 +4167,34 @@ function createViewerElement(app, element, ctx = null) {
 
     // init
 
-    const isGallery = Array.isArray(element.viewer.image_ids);
 
+    let isGallery;
     let mediaType;
+    let galleryIds;
     let mediaId;
     let mediaFileContentReqBody;
 
-    if (isGallery) {
+    if (element.viewer.hasOwnProperty('image_ids')) {
         if (element.viewer.image_ids.length === 0) {
             throw new Error('createViewerElement - image_ids must not be empty');
         }
+        isGallery = true;
         mediaType = 'image';
+        galleryIds = element.viewer.image_ids;
         // mediaId and mediaFileContentReqBody set after galleryState is initialized below
     } else if (element.viewer.hasOwnProperty('image_id')) {
         mediaType = 'image';
         mediaId = element.viewer.image_id;
         mediaFileContentReqBody = {image_id: mediaId};
+    } else if (element.viewer.hasOwnProperty('master_image_ids')) {
+        if (element.viewer.master_image_ids.length === 0) {
+            throw new Error('createViewerElement - master_image_ids must not be empty');
+        }
+        isGallery = true;
+        mediaType = 'master_image';
+        galleryIds = element.viewer.master_image_ids;
+        // mediaId and mediaFileContentReqBody set after galleryState is initialized below
+
     } else if (element.viewer.hasOwnProperty('master_image_id')) {
         mediaType = 'master_image';
         mediaId = element.viewer.master_image_id;
@@ -4198,7 +4210,7 @@ function createViewerElement(app, element, ctx = null) {
 
     let galleryState = null;
     if (isGallery) {
-        const galleryKey = `gallery_${element.viewer.image_ids.join('_')}`;
+        const galleryKey = `gallery_${galleryIds.join('_')}`;
         if (!app.clientState.media.hasOwnProperty(galleryKey)) {
             app.clientState.media[galleryKey] = {
                 galleryIndex: 0,
@@ -4208,8 +4220,8 @@ function createViewerElement(app, element, ctx = null) {
             };
         }
         galleryState = app.clientState.media[galleryKey];
-        mediaId = element.viewer.image_ids[galleryState.galleryIndex];
-        mediaFileContentReqBody = {image_id: mediaId};
+        mediaId = galleryIds[galleryState.galleryIndex];
+        mediaFileContentReqBody = mediaType === 'image' ? {image_id: mediaId} : {master_image_id: mediaId};
     }
 
     // init per-image client state
@@ -4383,7 +4395,7 @@ function createViewerElement(app, element, ctx = null) {
     let galleryIndicator = null;
 
     if (isGallery) {
-        const imageCount = element.viewer.image_ids.length;
+        const imageCount = galleryIds.length;
 
         prevButton = createButtonElement(app, {
             button: {
