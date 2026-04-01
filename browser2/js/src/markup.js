@@ -2432,15 +2432,42 @@ function _renderModelRead(app, element, ctx = null) {
             // console.log('renderModelRead - field definition:', fieldDef);
             let additional;
             
-            if(fieldDef.type === 'foreign_key'){
+            if(fieldDef.type === 'list' && fieldDef.element_type === 'foreign_key'){
+                const table = fieldDef.references.table;
+                const refModule = fieldDef.references.module.replaceAll('_', '-');
+                const ids = state.data[field] || [];
+
+                if(table === 'file'){
+                    additional = {
+                        block: ids.map(fileId => ({
+                            button: {
+                                call: 'file_system.get_file_content',
+                                args: {file_id: fileId}
+                            },
+                            text: `download ${fileId}`
+                        }))
+                    };
+                }else if(table === 'image'){
+                    additional = {
+                        viewer: {image_ids: ids}
+                    };
+                }else if(table === 'master_image'){
+                    additional = {
+                        viewer: {master_image_ids: ids}
+                    };
+                }else{
+                    additional = {
+                        block: ids.map(id => {
+                            const loc = `${refModule}/${table}/${id}`;
+                            return {link: `/${loc}`, text: `go to ${loc}`};
+                        })
+                    };
+                }
+            }else if(fieldDef.type === 'foreign_key'){
                 const table = fieldDef.references.table;
                 const refModule = fieldDef.references.module.replaceAll('_', '-');
                 const refField = fieldDef.references.field;
 
-                if(refField === 'id' && state.data[field] === '-1') {
-                    additional = '-1 indicates no id was set'
-
-                } else if (table === 'user' && refField === 'id') {
                 if(refField === 'id' && state.data[field] === '-1') {
                     additional = '-1 indicates no id was set'
 
