@@ -2441,6 +2441,10 @@ function _renderModelRead(app, element, ctx = null) {
                     additional = '-1 indicates no id was set'
 
                 } else if (table === 'user' && refField === 'id') {
+                if(refField === 'id' && state.data[field] === '-1') {
+                    additional = '-1 indicates no id was set'
+
+                } else if (table === 'user' && refField === 'id') {
                     additional = 'the user that created this item';
                 }else if(table === 'file' && refField === 'id'){
 
