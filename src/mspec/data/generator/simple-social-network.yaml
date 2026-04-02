@@ -78,7 +78,6 @@ modules:
               - "2"
               - "-1"
 
-
       forum:
         name:
           lower_case: 'forum'

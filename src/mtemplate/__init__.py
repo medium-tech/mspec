@@ -94,6 +94,7 @@ class MTemplateProject:
     def load_template_paths(self, use_cache:bool=False) -> dict[str, list[dict[str, str]]]:
         paths = {
             'app': [],
+            'binary': [],
             'module': [],
             'model': [],
             'macro_only': []
@@ -111,12 +112,6 @@ class MTemplateProject:
                     continue
             
             if '.egg-info' in root:
-                continue
-
-            if 'playwright-report' in root:
-                continue
-            
-            if 'test-results' in root:
                 continue
 
             for name in files:
@@ -144,6 +139,8 @@ class MTemplateProject:
 
                 for prefix, template_type in prefixes_by_key_len.items():
                     if rel_path.startswith(prefix):
+                        if template_type == 'ignore':
+                            break
                         paths[template_type].append(template)
                         break
                 else:
@@ -216,6 +213,10 @@ class MTemplateProject:
         #
 
         for template_type in self.template_paths.keys():
+            if template_type == 'binary':
+                # skip binary templates from loading as jinja templates
+                continue
+
             for template_info in self.template_paths[template_type]:
                 rel_path = template_info['rel']
                 
@@ -323,6 +324,19 @@ class MTemplateProject:
 
         print(f'\twrote {template_paths_cache_path}')
 
+        #
+        # cache binary files
+        #
+
+        print(':: cache_state | cache binary files')
+
+        for info in self.template_paths['binary']:
+            src_path = Path(info['src'])
+            dst_path = self.cache_dir / info['rel']
+            dst_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src_path, dst_path)
+            print(f'\twrote -> {dst_path}')
+
 
         #
         # cache jinja templates
@@ -413,6 +427,13 @@ class MTemplateProject:
             print('  ', output_path(app_output))
             self.render_template({}, template['rel'], app_output, template['rel_template'])
 
+        print(':: binary')
+        for template in self.template_paths['binary']:
+            binary_output = output_path(output_dir / template['rel'])
+            print('  ', binary_output)
+            os.makedirs(binary_output.parent, exist_ok=True)
+            shutil.copyfile(template['src'], binary_output)
+
         print(':: modules')
         for module in self.spec['modules'].values():
             print('  ', module['name']['lower_case'])
@@ -435,10 +456,11 @@ class MTemplateProject:
                     if 'user_id' not in model['fields']:
                         raise MTemplateError(f'model {model["name"]["kebab_case"]} requires auth but does not have user_id field')
                 if auth.get('max_models_per_user', None) is not None:
-                    if not isinstance(auth['max_models_per_user'], int) or auth['max_models_per_user'] < 1:
-                        raise MTemplateError(f'model {model["name"]["kebab_case"]} max_models_per_user must be int > 0')
+                    if not isinstance(auth['max_models_per_user'], int):
+                        raise MTemplateError(f'model {model["name"]["kebab_case"]} max_models_per_user must be int')
                     
-                    if auth.get('require_login', False) is not True:
+                    if auth.get('require_login', False) is not True and auth['max_models_per_user'] >= 0:
+                        # max_models_per_user of -1 disables the feature, if it is enabled auth must require login
                         raise MTemplateError(f'model {model["name"]["kebab_case"]} has max_models_per_user set but does not require login')
 
                 print('      ', model['name']['lower_case'])
@@ -484,7 +506,7 @@ class MTemplateProject:
                 print(f'Applied slots to macro template: {macro["src"]}')
 
     @classmethod
-    def render(cls, spec:dict, env_file:str|Path=None, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplateProject':
+    def render(cls, spec:dict, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MTemplateProject':
         """
         Render the project templates based on the provided specification.
 
@@ -914,6 +936,14 @@ class MTemplateExtractor:
 # utility functions
 #
 
+def indent_lines(lines:str, indent:int=2) -> str:
+    '''Indent each line of a multi-line string for pretty printing'''
+    return '\n'.join(f'{"\t" * indent}{line}' for line in lines.splitlines())
+
+#
+# deprecated app functions
+#
+
 def setup_generated_app(root_dir:Path) -> dict:
 
     py_dir = root_dir / 'py'
@@ -950,10 +980,6 @@ def setup_generated_app(root_dir:Path) -> dict:
         raise RuntimeError(f'Failed to install npm dependencies: {npm_install_result.stderr}')
     
     return {'venv_dir': venv_dir}
-
-def indent_lines(lines:str, indent:int=2) -> str:
-    '''Indent each line of a multi-line string for pretty printing'''
-    return '\n'.join(f'{"\t" * indent}{line}' for line in lines.splitlines())
 
 def run_server_and_app_tests(root_dir:Path, venv_dir:Optional[Path]=None, quiet:bool=False) -> None:
 

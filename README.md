@@ -208,7 +208,11 @@ The mapp framework is used to run an application defined in the [application spe
 
 The `mapp` python framework code is in `src/mapp`. It uses the mapp spec to define an app.
 
-The example implementation of a `mapp` app is in `templates/mapp-py`, use this for testing the framework.
+The development implementation of a `mapp` app is in `templates/mapp-py`, use this for testing the framework. It is also used by the [mtemplate](#mtemplate) module as a template for boostrapping new mapp framework apps. Use the following command for boostrapping:
+
+    python -m mtemplate render --output <output dir> --spec <spec file>
+
+`--spec` can be a built in spec file or path to any spec file.
 
 The UI for a mapp app is defined by lingo page files in `src/mspec/data/lingo/pages`, specifically the files in this dir starting with `builtin-mapp`.
 
@@ -218,7 +222,6 @@ To test develop and test the JS lingo interpreter use the dev lingo server `brow
 
 Use `./build.sh` to sync the files in `browser2/js` to the python mapp app in `src/mspec/data/mapp-ui/src`. These are the lingo interpreter files that the template app `templates/mapp-py` will use for it's UI. For development testing you can run the `mapp-py` server like this to force it to use the development js interpreter without needing to use `build.sh` to sync your chages.
 
-    ./server.sh --ui-src ../../browser2/js/src/
 
 ### running the mapp test app
 
@@ -342,10 +345,10 @@ Testing framework to automate gui testing across languages
 ## mtemplate
 A templating project to embed templating commands into real code. 
 
-⚠️ Currently in refactoring state ⚠️
+⚠️ Currently in refactoring state, docs may be out of date ⚠️
 
 Templates in `./templates`:
-* `mapp-py` - incomplete - for the [mapp framework](#mapp-framework) once the framework stabilizes.
+* `mapp-py` - used to bootstrap a [mapp framework](#mapp-framework) app
 * `go` - deprecated
 * `py` - deprecated
 * `browser1` - deprecated
