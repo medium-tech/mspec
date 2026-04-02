@@ -4,7 +4,7 @@ import secrets
 from pathlib import Path
 
 from mspec.core import SAMPLE_GENERATOR_SPEC_DIR, load_generator_spec
-from mtemplate import MTemplateProject
+from mtemplate.core import MTemplateProject
 
 
 class MappPyProject(MTemplateProject):
