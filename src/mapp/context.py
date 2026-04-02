@@ -122,7 +122,10 @@ def spec_from_env() -> dict:
 # cli
 #
 
-CLI_SESSION_FILE_PATH = os.path.join(os.path.expanduser('~'), '.mapp', 'cli_session.json')
+try:
+    MAPP_CLI_SESSION_FILE = os.environ['MAPP_CLI_SESSION_FILE']
+except KeyError:
+    MAPP_CLI_SESSION_FILE = os.path.join(os.path.expanduser('~'), '.mapp', 'cli_session.json')
 
 def _get_fernet(ctx:MappContext) -> Fernet:
     key_hex = os.environ.get('MAPP_AUTH_SECRET_KEY')
@@ -140,7 +143,7 @@ def _get_fernet(ctx:MappContext) -> Fernet:
 def cli_load_session(ctx:MappContext) -> str | None:
     """TODO: optimize by caching the file contents in memory"""
     try:
-        with open(CLI_SESSION_FILE_PATH, 'rb') as f:
+        with open(MAPP_CLI_SESSION_FILE, 'rb') as f:
             encrypted = f.read()
         cipher = _get_fernet(ctx)
         ctx.log('Loaded CLI session from disk.')
@@ -150,16 +153,16 @@ def cli_load_session(ctx:MappContext) -> str | None:
         return None
     
 def cli_write_session(ctx:MappContext, access_token: str):
-    session_dir = os.path.dirname(CLI_SESSION_FILE_PATH)
+    session_dir = os.path.dirname(MAPP_CLI_SESSION_FILE)
     os.makedirs(session_dir, exist_ok=True)
     cipher = _get_fernet(ctx)
     encrypted = cipher.encrypt(access_token.encode())
-    with open(CLI_SESSION_FILE_PATH, 'wb') as f:
+    with open(MAPP_CLI_SESSION_FILE, 'wb') as f:
         f.write(encrypted)
 
 def cli_delete_session():
     try:
-        os.remove(CLI_SESSION_FILE_PATH)
+        os.remove(MAPP_CLI_SESSION_FILE)
     except FileNotFoundError:
         pass
 

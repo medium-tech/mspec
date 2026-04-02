@@ -20,6 +20,6 @@ client:
 
 import:
   modules:
-    - ./simple-social-network.yaml
+    - ./sosh-net.yaml
     - ./model-type-testing.yaml
     - ./op-testing.yaml

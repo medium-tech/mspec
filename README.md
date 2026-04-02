@@ -208,7 +208,7 @@ The mapp framework is used to run an application defined in the [application spe
 
 The `mapp` python framework code is in `src/mapp`. It uses the mapp spec to define an app.
 
-The development implementation of a `mapp` app is in `templates/mapp-py`, use this for testing the framework. It is also used by the [mtemplate](#mtemplate) module as a template for boostrapping new mapp framework apps. Use the following command for boostrapping:
+The development implementation of a `mapp` app is in `templates/mapp-py`, use this for testing the framework. It is also used by the [mtemplate](#mtemplate) module as a template for boostrapping new mapp framework apps. Use the following command for bootstrapping:
 
     python -m mtemplate render --output <output dir> --spec <spec file>
 

@@ -2,9 +2,9 @@ lingo:
   version: 'generator-beta-1'
 project:
   name:
-    lower_case: 'simple social network'
+    lower_case: 'sosh net'
 
-  description: 'A simple social network project'
+  description: 'A simple social network'
 
   author:
     name: 'B rad C'

@@ -218,7 +218,7 @@ class BaseMSpecTest(unittest.TestCase):
 class TestSimpleSocialSpec(BaseMSpecTest):
     '''Test the complete app generation workflow'''
 
-    spec_file = REPO_ROOT / 'src' / 'mspec' / 'data' / 'generator' / 'simple-social-network.yaml'
+    spec_file = REPO_ROOT / 'src' / 'mspec' / 'data' / 'generator' / 'sosh-net.yaml'
     
     def test_cache(self):
         self._test_cache(self.spec_file)

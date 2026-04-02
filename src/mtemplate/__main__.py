@@ -30,6 +30,7 @@ parser.add_argument('--debug', action='store_true', help='write jinja template f
 parser.add_argument('--disable-strict', action='store_true', help='disable jinja strict mode when rendering - discouraged but may be useful for debugging')
 parser.add_argument('--use-cache', action='store_true', default=True, help='use cached templates if available (default: True)')
 parser.add_argument('--no-cache', action='store_true', help='do not use cached templates, extract fresh templates')
+parser.add_argument('--as-builtin', action='store_true', help='when rendering, do not emit a mapp.yaml spec, this means the template app will use the built-in spec file dynamically. This is useful for developing built in specs, otherwise ignore.')
 # parser.add_argument('--cmd', type=str, nargs='*', default=None, help='CLI command for template app (used with "test-spec" command)')
 # parser.add_argument('--host', type=str, default=None, help='host for http client in "test-spec" command (if host diff than in spec file)')
 
@@ -65,7 +66,7 @@ elif args.command == 'render':
     
     if args.app == 'mapp-py':
         mapp_py_out = None if args.output is None else args.output
-        MappPyProject.render(args.spec, mapp_py_out, args.debug, args.disable_strict, use_cache)
+        MappPyProject.render(args.spec, mapp_py_out, args.debug, args.disable_strict, use_cache, args.as_builtin)
     else:
         raise RuntimeError(f'Unknown app value: {args.app}')
 

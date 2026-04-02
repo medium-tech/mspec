@@ -22,9 +22,12 @@ class MappPyProject(MTemplateProject):
     }
 
     @classmethod
-    def render(cls, spec_path:str, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True) -> 'MappPyProject':
-                
-        mapp_file = output_dir / 'mapp.yaml'
+    def render(cls, spec_path:str, output_dir:str|Path=None, debug:bool=False, disable_strict:bool=False, use_cache:bool=True, as_builtin:bool=False) -> 'MappPyProject':
+
+        if as_builtin:
+            mapp_file = Path(spec_path)
+        else:
+            mapp_file = output_dir / 'mapp.yaml'
         
         spec = load_generator_spec(spec_path)
         spec['context'] = {
@@ -37,17 +40,18 @@ class MappPyProject(MTemplateProject):
         (output_dir / '.env.example').rename(output_dir / '.env')
         print(f':: moved .env.example to .env')
 
-        try:
-            shutil.copyfile(spec_path, mapp_file)
-            print(f':: copied spec file {spec_path} to {mapp_file}')
-
-        except FileNotFoundError:
-            builtin_spec = SAMPLE_GENERATOR_SPEC_DIR / spec_path
+        if not as_builtin:
             try:
-                shutil.copyfile(builtin_spec, mapp_file)
-                print(f':: copied builtin spec file {builtin_spec} to {mapp_file}')
+                shutil.copyfile(spec_path, mapp_file)
+                print(f':: copied spec file {spec_path} to {mapp_file}')
+
             except FileNotFoundError:
-                print(f'ERROR: Could not find spec file at {spec_path} or builtin spec file at {builtin_spec}')
-                raise SystemExit(1)
+                builtin_spec = SAMPLE_GENERATOR_SPEC_DIR / spec_path
+                try:
+                    shutil.copyfile(builtin_spec, mapp_file)
+                    print(f':: copied builtin spec file {builtin_spec} to {mapp_file}')
+                except FileNotFoundError:
+                    print(f'ERROR: Could not find spec file at {spec_path} or builtin spec file at {builtin_spec}')
+                    raise SystemExit(1)
 
         return template_proj
