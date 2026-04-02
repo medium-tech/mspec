@@ -70,4 +70,4 @@ if [ "${TEST_FILTERS[*]}" != "" ]; then
     TF_ARGS="--test-filter ${TEST_FILTERS[@]}"
 fi
 
-python -m mapp.test fix-me.yaml --cmd ./run.sh --env-file .env $TF_ARGS $USE_CACHE --app-type python $VERBOSE $NPM_RUN $NPM_CMD
+python -m mapp.test --cmd ./run.sh --env-file .env $TF_ARGS $USE_CACHE --app-type python $VERBOSE $NPM_RUN $NPM_CMD

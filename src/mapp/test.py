@@ -188,7 +188,7 @@ class TestMTemplateApp(unittest.TestCase):
     spec: dict
     cmd: list[str]
     host: str | None
-    env_file: str | None
+    env_vars: dict
     use_cache: bool
     app_type: str = ''
     threads: int = 8
@@ -245,14 +245,12 @@ class TestMTemplateApp(unittest.TestCase):
 
         # base env #
 
-        env_vars = dotenv_values(cls.env_file)
-
         # crud env file #
 
         default_host = cls.spec['client']['default_host']
         default_port = int(default_host.split(':')[-1])
         crud_port = default_port + 1
-        crud_env = dict(env_vars)
+        crud_env = dict(cls.env_vars)
         crud_env['MAPP_SERVER_PORT'] = str(crud_port)
         crud_env['MAPP_CLIENT_HOST'] = f'http://localhost:{crud_port}'
         crud_env['MAPP_DB_URL'] = str(cls.crud_db_file.resolve())
@@ -274,7 +272,7 @@ class TestMTemplateApp(unittest.TestCase):
         # pagination env file #
 
         pagination_port = default_port + 2
-        pagination_env = dict(env_vars)
+        pagination_env = dict(cls.env_vars)
         pagination_env['MAPP_SERVER_PORT'] = str(pagination_port)
         pagination_env['MAPP_CLIENT_HOST'] = f'http://localhost:{pagination_port}'
         pagination_env['MAPP_DB_URL'] = str(cls.pagination_db_file.resolve())
@@ -2179,15 +2177,20 @@ class TestMTemplateApp(unittest.TestCase):
             assertion(stdout, stderr, code, args)
     
 
-def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:str|None, use_cache:bool=False, app_type:str='', verbose:bool=False) -> bool:
+def test_spec(cli_args:list[str], host:str|None, env_vars:dict, use_cache:bool=False, app_type:str='', verbose:bool=False) -> bool:
     if cli_args is None:
         raise ValueError('args must be provided as a list of strings')
+    
+    try:
+        spec_path = env_vars['MAPP_SPEC_FILE']
+    except KeyError:
+        raise ValueError('MAPP_SPEC_FILE must be set in env')
 
     test_suite = unittest.TestSuite()
     TestMTemplateApp.spec = load_generator_spec(spec_path)
     TestMTemplateApp.cmd = cli_args
     TestMTemplateApp.host = host
-    TestMTemplateApp.env_file = env_file
+    TestMTemplateApp.env_vars = env_vars
     TestMTemplateApp.use_cache = use_cache
     TestMTemplateApp.app_type = app_type
 
@@ -2217,16 +2220,21 @@ def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:st
 
     return result.wasSuccessful()
 
-def test_npm(npm_run:str, spec_path:str|Path, cli_args:list[str], host:str|None, env_file:str|None, use_cache:bool=False, app_type:str='', verbose:bool=False) -> bool:
+def test_npm(npm_run:str, cli_args:list[str], host:str|None, env_vars:dict, use_cache:bool=False, app_type:str='', verbose:bool=False) -> bool:
     if cli_args is None:
         raise ValueError('args must be provided as a list of strings')
+    
+    try:
+        spec_path = env_vars['MAPP_SPEC_FILE']
+    except KeyError:
+        raise ValueError('MAPP_SPEC_FILE must be set in env_vars')
     
     # start servers
 
     TestMTemplateApp.spec = load_generator_spec(spec_path)
     TestMTemplateApp.cmd = cli_args
     TestMTemplateApp.host = host
-    TestMTemplateApp.env_file = env_file
+    TestMTemplateApp.env_vars = env_vars
     TestMTemplateApp.use_cache = use_cache
     TestMTemplateApp.app_type = app_type
     TestMTemplateApp.setUpClass()
@@ -2271,7 +2279,6 @@ def test_npm(npm_run:str, spec_path:str|Path, cli_args:list[str], host:str|None,
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Test mapp spec app', prog='mapp.test')
-    parser.add_argument('spec', type=str, help='spec file to test')
     parser.add_argument('--cmd', type=str, nargs='*', required=True, help='CLI command for generated app')
     parser.add_argument('--env-file', type=str, required=True, help='path to .env file to load for tests')
     parser.add_argument('--host', type=str, default=None, help='host for http client in tests (if host diff than in spec file)')
@@ -2283,8 +2290,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    env_vars = dotenv_values(args.env_file)
+
     if args.npm_run:
-        test_npm(args.npm_run, args.spec, args.cmd, args.host, args.env_file, args.use_cache, args.app_type, args.verbose)
+        test_npm(args.npm_run, args.cmd, args.host, env_vars, args.use_cache, args.app_type, args.verbose)
 
     else:
         if args.test_filter:
@@ -2293,4 +2302,4 @@ if __name__ == '__main__':
         else:
             test_spec._test_filters = None
 
-        test_spec(args.spec, args.cmd, args.host, args.env_file, args.use_cache, args.app_type, args.verbose)
+        test_spec(args.cmd, args.host, env_vars, args.use_cache, args.app_type, args.verbose)
