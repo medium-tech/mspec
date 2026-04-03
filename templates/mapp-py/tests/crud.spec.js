@@ -178,14 +178,15 @@ async function fillFormField(page, fieldName, field, value, preSeedMode = false)
 test('test crud and list for all models', async ({ browser, crudEnv, crudSession, skipModules }) => {
   const context = await browser.newContext({ storageState: crudSession.storageState });
   const page = await context.newPage();
-  
-  // Navigate to index page
+
+  //
+  // pre-seed CRUD tests
+  //
+
   await page.goto(crudEnv.host);
   await expect(page.locator('h1')).toContainText('::');
 
-  // Pre-seed records for non-file FK popup selections.
-  // These records persist throughout the test since the main CRUD loop only
-  // deletes records it creates, not the ones created here.
+  // Pre-seed records for non-file FK popup selections
   const preSeeded = new Set();
   for (const [moduleName, module] of Object.entries(crudEnv.spec.modules)) {
     const moduleKebab = module.name.kebab_case;
@@ -240,7 +241,10 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
     }
   }
 
-  // Navigate back to index before starting main CRUD loop
+  //
+  // main CRUD tests
+  // 
+
   await page.goto(crudEnv.host);
   await expect(page.locator('h1')).toContainText('::');
 
