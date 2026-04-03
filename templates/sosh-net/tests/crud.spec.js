@@ -53,6 +53,113 @@ function getExampleFromModel(model, index = 0) {
   return data;
 }
 
+async function checkViewField(page, fieldName, field, value) {
+
+  // Skip user_id field as it's set automatically
+  if (fieldName === 'user_id') return;
+
+  const fieldType = field.type;
+  const elementType = field.element_type;
+  const refs = field.references;
+
+  // Skip auth FK references
+  if (refs && refs.module === 'auth') return;
+
+  // Scope element searches to the row for this field in the view table
+  const fieldRow = page.getByRole('row', { name: new RegExp('^' + fieldName) });
+
+  if (fieldType === 'list' && elementType === 'foreign_key') {
+    if (!refs) return;
+    const table = refs.table;
+    if (!Array.isArray(value) || value.length === 0) return;
+
+    if (table === 'file') {
+      // File IDs are dynamically assigned by the server, so we can't use example values.
+      // Verify at least one download button is present and trigger a download via the first one.
+      const downloadButtons = fieldRow.getByRole('button', { name: /^⬇/ });
+      await expect(downloadButtons.first()).toBeVisible();
+      const downloadPromise = page.waitForEvent('download');
+      await downloadButtons.first().click();
+      await downloadPromise;
+    } else if (table === 'image' || table === 'master_image') {
+      // Verify gallery viewer is present with navigation controls
+      await expect(fieldRow.locator('.viewer-container')).toBeVisible();
+      await expect(fieldRow.getByRole('button', { name: '◀' })).toBeVisible();
+      await expect(fieldRow.getByRole('button', { name: '▶' })).toBeVisible();
+      // Navigate through the gallery (we always add 2 images so nav buttons are enabled)
+      await fieldRow.getByRole('button', { name: '▶' }).click();
+      await fieldRow.getByRole('button', { name: '◀' }).click();
+    } else {
+      // Non-file FK list: find all "go to" links actually rendered in the row
+      const links = fieldRow.getByRole('link', { name: /^go to / });
+      await expect(links.first()).toBeVisible();
+      for (const link of await links.all()) {
+        await link.click();
+        await expect(page.locator('#lingo-app')).toContainText('id');
+        await page.goBack();
+        await expect(page.locator('#lingo-app')).toContainText('id');
+      }
+    }
+
+  } else if (fieldType === 'foreign_key') {
+    if (!refs) return;
+    const table = refs.table;
+    const refField = refs.field;
+    const refModule = refs.module.replaceAll('_', '-');
+    const refTable = table.replaceAll('_', '-');
+
+    if (String(value) === '-1') {
+      // Default placeholder value
+      await expect(fieldRow).toContainText('-1 indicates no id was set');
+    } else if (table === 'file' && refField === 'id') {
+      // Click download file button and verify download starts
+      const downloadPromise = page.waitForEvent('download');
+      await fieldRow.getByRole('button', { name: 'download file' }).click();
+      await downloadPromise;
+    } else if ((table === 'image' || table === 'master_image') && refField === 'id') {
+      // Verify viewer is present
+      await expect(fieldRow.locator('.viewer-container')).toBeVisible();
+      // Download button becomes enabled once image loads (Playwright auto-retries)
+      const downloadPromise = page.waitForEvent('download');
+      await fieldRow.getByRole('button', { name: '⬇' }).click();
+      await downloadPromise;
+      // Open viewer popup by clicking the popup button
+      await fieldRow.getByRole('button', { name: '⌞ ⌝' }).click();
+      // Close the popup
+      await fieldRow.getByRole('button', { name: '×' }).click();
+    } else {
+      // Non-file FK: verify link is present and takes you to the correct page
+      const loc = `${refModule}/${refTable}/${value}`;
+      await expect(fieldRow.getByRole('link', { name: `go to ${loc}` })).toBeVisible();
+      await fieldRow.getByRole('link', { name: `go to ${loc}` }).click();
+      await expect(page.locator('#lingo-app')).toContainText('id');
+      await page.goBack();
+      await expect(page.locator('#lingo-app')).toContainText('id');
+    }
+
+  } else if (fieldType === 'datetime') {
+    // Datetime is stored as YYYY-MM-DDTHH:MM:SS; check first 16 chars to match input
+    await expect(page.locator('#lingo-app')).toContainText(String(value).substring(0, 16));
+
+  } else if (fieldType === 'list') {
+    if (Array.isArray(value) && value.length > 0) {
+      if (elementType === 'datetime') {
+        // Each list datetime element displayed as YYYY-MM-DDTHH:MM:SS
+        for (const v of value) {
+          await expect(page.locator('#lingo-app')).toContainText(String(v).substring(0, 16));
+        }
+      } else {
+        // Other list types displayed as ", " joined string
+        await expect(page.locator('#lingo-app')).toContainText(value.join(', '));
+      }
+    }
+
+  } else {
+    // Primitive fields: bool, int, float, str, enum
+    await expect(page.locator('#lingo-app')).toContainText(String(value));
+  }
+}
+
 async function fillFormField(page, fieldName, field, value, preSeedMode = false) {
   const fieldType = field.type;
   const elementType = field.element_type;
@@ -79,16 +186,19 @@ async function fillFormField(page, fieldName, field, value, preSeedMode = false)
       const row = page.getByRole('row', { name: pattern });
 
       if (isFileFkRef(refs)) {
-        // File-based FK list: upload a sample file to add one item
+        // File-based FK list: upload one file per example value so the list has the right count
         const sampleFile = getSampleFileForRef(refs);
-        await row.locator('input[type="file"]').setInputFiles(sampleFile);
-        await expect(row.locator('button.remove-button')).toHaveCount(1);
+        const count = Math.max(Array.isArray(value) ? value.length : 0, 1);
+        for (let i = 0; i < count; i++) {
+          await row.locator('input[type="file"]').setInputFiles(sampleFile);
+          await expect(row.locator('button.remove-button')).toHaveCount(i + 1);
+        }
       } else if (refs) {
-        // Non-file FK list: use the popup to find and select a pre-seeded record
+        // Non-file FK list: use the popup to find and select pre-seeded records
         const values = Array.isArray(value) ? value : [];
         for (let i = 0; i < Math.max(values.length, 1); i++) {
           await row.getByRole('button', { name: `Find ${refs.table}` }).click();
-          await page.locator('.popup-content > table > tbody > tr').first().click();
+          await page.locator('.popup-content > table > tbody > tr').nth(i).click();
           await expect(row.locator('button.remove-button')).toHaveCount(i + 1);
         }
       }
@@ -221,19 +331,22 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
         const refSpecModel = refSpecModule.models[refs.table];
         if (!refSpecModel) continue;
 
-        // Navigate to create a pre-seeded record for this referenced model
-        await page.goto(crudEnv.host);
-        await page.getByRole('link', { name: refSpecModule.name.kebab_case }).click();
-        await page.getByRole('link', { name: refSpecModel.name.kebab_case }).click();
+        // Create 2 pre-seeded records so that list FK fields can select 2 distinct items
+        for (let seedNum = 0; seedNum < 2; seedNum++) {
+          // Navigate to create a pre-seeded record for this referenced model
+          await page.goto(crudEnv.host);
+          await page.getByRole('link', { name: refSpecModule.name.kebab_case }).click();
+          await page.getByRole('link', { name: refSpecModel.name.kebab_case }).click();
 
-        // Fill form with example data (preSeedMode=true skips FK fields to avoid cycles)
-        const seedExample = getExampleFromModel(refSpecModel, 0);
-        for (const [fn, val] of Object.entries(seedExample)) {
-          await fillFormField(page, fn, refSpecModel.fields[fn], val, true);
+          // Fill form with example data (preSeedMode=true skips FK fields to avoid cycles)
+          const seedExample = getExampleFromModel(refSpecModel, 0);
+          for (const [fn, val] of Object.entries(seedExample)) {
+            await fillFormField(page, fn, refSpecModel.fields[fn], val, true);
+          }
+
+          await page.getByRole('button', { name: 'Submit' }).click();
+          await expect(page.locator('#lingo-app')).toContainText('Success');
         }
-
-        await page.getByRole('button', { name: 'Submit' }).click();
-        await expect(page.locator('#lingo-app')).toContainText('Success');
 
         preSeeded.add(seedKey);
       }
@@ -295,6 +408,11 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
       // Confirm it loads successfully
       await expect(page.locator('h1')).toContainText(`:: ${modelKebab}`);
       await expect(page.locator('#lingo-app')).toContainText('id');
+
+      // Verify that the created data is displayed correctly for each field
+      for (const [fieldName, value] of Object.entries(createExample)) {
+        await checkViewField(page, fieldName, model.fields[fieldName], value);
+      }
 
       // Click edit button to update model
       await page.getByRole('button', { name: 'edit' }).click();

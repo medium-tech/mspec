@@ -403,7 +403,7 @@ modules:
               field: 'id'
             default: []
             examples:
-              - ["1"]
+              - ["1", "2"]
               - ["1", "2"]
 
           x_list_fk_file:
@@ -417,7 +417,7 @@ modules:
               field: 'id'
             default: []
             examples:
-              - ["1"]
+              - ["1", "2"]
               - ["1", "2"]
 
           x_list_fk_image:
@@ -431,7 +431,7 @@ modules:
               field: 'id'
             default: []
             examples:
-              - ["1"]
+              - ["1", "2"]
               - ["1", "2"]
 
 
@@ -446,5 +446,5 @@ modules:
               field: 'id'
             default: []
             examples:
-              - ["1"]
+              - ["1", "2"]
               - ["1", "2"]
