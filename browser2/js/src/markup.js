@@ -3765,7 +3765,7 @@ function createFormElement(app, element, ctx = null) {
                     listInput.addEventListener('change', async () => {
                         const file = listInput.files[0];
                         if (!file) return;
-                        fileIngestStatus.textContent = 'Uploading...';
+                        fileIngestStatus.textContent = 'Uploading file...';
                         let ingestFunction;
                         switch (tableRef) {
                             case 'file': ingestFunction = fileSystemIngestStart; break;

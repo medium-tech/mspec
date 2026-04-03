@@ -266,7 +266,9 @@ async function fillFormField(page, fieldName, field, value, preSeedMode = false)
       const sampleFile = getSampleFileForRef(refs);
       const row = page.getByRole('row', { name: pattern });
       await row.locator('input[type="file"]').setInputFiles(sampleFile);
+      await expect(page.locator('#lingo-app')).not.toContainText('Uploading file...');
       await expect(page.locator('#lingo-app')).toContainText('File uploaded successfully!');
+      await expect(page.locator('#lingo-app')).not.toContainText('error');
     } else if (refs && String(value) !== '-1') {
       // Non-file FK with non-default value: use the popup to find a pre-seeded record
       const row = page.getByRole('row', { name: pattern });
