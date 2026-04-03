@@ -327,3 +327,123 @@ modules:
             examples:
               - "example1"
               - "example2"
+
+      single_choice_fk:
+        name:
+          lower_case: 'single choice fk'
+
+        description: 'A model with various single choice foreign key field types for testing purposes'
+
+        fields:
+
+          x_fk_field:
+            name:
+              lower_case: 'x fk field'
+            type: foreign_key
+            references:
+              module: 'model_type_tests'
+              table: 'single_choice_fields'
+              field: 'id'
+            examples:
+              - "1"
+              - "1"
+
+          x_fk_file:
+            name:
+              lower_case: 'x fk file'
+            type: foreign_key
+            references:
+              module: 'file_system'
+              table: 'file'
+              field: 'id'
+            examples:
+              - "-1"
+              - "-1"
+
+          x_fk_image:
+            name:
+              lower_case: 'x fk image'
+            type: foreign_key
+            references:
+              module: 'media'
+              table: 'image'
+              field: 'id'
+            examples:
+              - "-1"
+              - "-1"
+
+          x_fk_master_image:
+            name:
+              lower_case: 'x fk master image'
+            type: foreign_key
+            references:
+              module: 'media'
+              table: 'master_image'
+              field: 'id'
+            examples:
+              - "-1"
+              - "-1"
+
+      multi_choice_fk:
+        name:
+          lower_case: 'multi choice fk'
+
+        description: 'A model with various multi choice foreign key field types for testing purposes'
+
+        fields:
+
+          x_list_fk_field:
+            name:
+              lower_case: 'x list fk field'
+            type: list
+            element_type: foreign_key
+            references:
+              module: 'model_type_tests'
+              table: 'single_choice_fields'
+              field: 'id'
+            default: []
+            examples:
+              - ["1"]
+              - ["1"]
+
+          x_list_fk_file:
+            name:
+              lower_case: 'x list fk file'
+            type: list
+            element_type: foreign_key
+            references:
+              module: 'file_system'
+              table: 'file'
+              field: 'id'
+            default: []
+            examples:
+              - []
+              - []
+
+          x_list_fk_image:
+            name:
+              lower_case: 'x list fk image'
+            type: list
+            element_type: foreign_key
+            references:
+              module: 'media'
+              table: 'image'
+              field: 'id'
+            default: []
+            examples:
+              - []
+              - []
+
+          x_list_fk_master_image:
+            name:
+              lower_case: 'x list fk master image'
+            type: list
+            element_type: foreign_key
+            references:
+              module: 'media'
+              table: 'master_image'
+              field: 'id'
+            default: []
+            examples:
+              - []
+              - []

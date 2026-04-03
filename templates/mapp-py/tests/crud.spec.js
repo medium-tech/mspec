@@ -5,6 +5,19 @@ import { expect } from '@playwright/test';
 // helper functions
 //
 
+const FILE_TABLE_REFS = ['file', 'image', 'master_image'];
+
+function isFileFkRef(references) {
+  return references && FILE_TABLE_REFS.includes(references.table);
+}
+
+function getSampleFileForRef(references) {
+  if (references.module === 'file_system' && references.table === 'file') {
+    return './tests/samples/lorem-document.pdf';
+  }
+  return './tests/samples/splash-low.jpg';
+}
+
 async function clearAllListFields(page, model) {
   for (const [fieldName, field] of Object.entries(model.fields)) {
     if (field.type === 'list') {
@@ -40,22 +53,45 @@ function getExampleFromModel(model, index = 0) {
   return data;
 }
 
-async function fillFormField(page, fieldName, field, value) {
+async function fillFormField(page, fieldName, field, value, preSeedMode = false) {
   const fieldType = field.type;
   const elementType = field.element_type;
-  
+  const refs = field.references;
+
   // Skip user_id field as it's set automatically
   if (fieldName === 'user_id') {
     return;
   }
 
-  const pattern = new RegExp('^' + field.name.lower_case + '', 'i')
+  // Skip auth FK references
+  if (refs && refs.module === 'auth') {
+    return;
+  }
+
+  const pattern = new RegExp('^' + field.name.lower_case, 'i')
 
   // Handle list types
   if (fieldType === 'list') {
     if (elementType === 'foreign_key') {
-      // FK list fields require file upload or popup interaction
-      // handled separately in dedicated tests
+      // Skip FK list fields in pre-seed mode to avoid cycles
+      if (preSeedMode) return;
+
+      const row = page.getByRole('row', { name: pattern });
+
+      if (isFileFkRef(refs)) {
+        // File-based FK list: upload a sample file to add one item
+        const sampleFile = getSampleFileForRef(refs);
+        await row.locator('input[type="file"]').setInputFiles(sampleFile);
+        await expect(row.locator('button.remove-button')).toHaveCount(1);
+      } else if (refs) {
+        // Non-file FK list: use the popup to find and select a pre-seeded record
+        const values = Array.isArray(value) ? value : [];
+        for (let i = 0; i < Math.max(values.length, 1); i++) {
+          await row.getByRole('button', { name: `Find ${refs.table}` }).click();
+          await page.locator('.popup-content > table > tbody > tr').first().click();
+          await expect(row.locator('button.remove-button')).toHaveCount(i + 1);
+        }
+      }
       return;
     }
     // For list fields, we need to add each value individually using the Add button
@@ -112,10 +148,21 @@ async function fillFormField(page, fieldName, field, value) {
       .locator('input[type="datetime-local"]')
       .fill(String(value).substring(0, 16));
   } else if (fieldType === 'foreign_key') {
-    // For foreign_key fields, use input[type="text"]
-    await page.getByRole('row', { name: pattern })
-      .locator('input[type="text"]')
-      .fill(String(value));
+    // Skip FK fields in pre-seed mode to avoid cycles
+    if (preSeedMode) return;
+
+    if (isFileFkRef(refs)) {
+      // File-based FK: upload a sample file
+      const sampleFile = getSampleFileForRef(refs);
+      const row = page.getByRole('row', { name: pattern });
+      await row.locator('input[type="file"]').setInputFiles(sampleFile);
+      await expect(page.locator('#lingo-app')).toContainText('File uploaded successfully!');
+    } else if (refs && String(value) !== '-1') {
+      // Non-file FK with non-default value: use the popup to find a pre-seeded record
+      const row = page.getByRole('row', { name: pattern });
+      await row.getByRole('button', { name: `Find ${refs.table}` }).click();
+      await page.locator('.popup-content > table > tbody > tr').first().click();
+    }
   } else {
     // For str and fallback, use input[type="text"]
     await page.getByRole('row', { name: pattern })
@@ -133,6 +180,67 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
   const page = await context.newPage();
   
   // Navigate to index page
+  await page.goto(crudEnv.host);
+  await expect(page.locator('h1')).toContainText('::');
+
+  // Pre-seed records for non-file FK popup selections.
+  // These records persist throughout the test since the main CRUD loop only
+  // deletes records it creates, not the ones created here.
+  const preSeeded = new Set();
+  for (const [moduleName, module] of Object.entries(crudEnv.spec.modules)) {
+    const moduleKebab = module.name.kebab_case;
+    if (skipModules.includes(moduleKebab)) continue;
+
+    for (const [modelName, model] of Object.entries(module.models || {})) {
+      if (model.hidden === true) continue;
+      if (model.auth && model.auth.max_models_per_user === 0) continue;
+
+      for (const [fieldName, field] of Object.entries(model.fields || {})) {
+        const refs = field.references;
+        if (!refs || refs.module === 'auth' || refs.table === 'user') continue;
+        if (isFileFkRef(refs)) continue;
+
+        const isFkField = field.type === 'foreign_key';
+        const isListFkField = field.type === 'list' && field.element_type === 'foreign_key';
+        if (!isFkField && !isListFkField) continue;
+
+        // Only pre-seed if the field has a non-default example (will actually use popup)
+        const examples = field.examples || [];
+        const hasNonDefaultExample = examples.some(ex => {
+          if (Array.isArray(ex)) return ex.length > 0;
+          return String(ex) !== '-1' && ex !== null && ex !== undefined;
+        });
+        if (!hasNonDefaultExample) continue;
+
+        const seedKey = `${refs.module}.${refs.table}`;
+        if (preSeeded.has(seedKey)) continue;
+
+        // Find the referenced module and model in the spec
+        const refSpecModule = crudEnv.spec.modules[refs.module];
+        if (!refSpecModule) continue;
+        const refSpecModel = refSpecModule.models[refs.table];
+        if (!refSpecModel) continue;
+
+        // Navigate to create a pre-seeded record for this referenced model
+        await page.goto(crudEnv.host);
+        await page.getByRole('link', { name: refSpecModule.name.kebab_case }).click();
+        await page.getByRole('link', { name: refSpecModel.name.kebab_case }).click();
+
+        // Fill form with example data (preSeedMode=true skips FK fields to avoid cycles)
+        const seedExample = getExampleFromModel(refSpecModel, 0);
+        for (const [fn, val] of Object.entries(seedExample)) {
+          await fillFormField(page, fn, refSpecModel.fields[fn], val, true);
+        }
+
+        await page.getByRole('button', { name: 'Submit' }).click();
+        await expect(page.locator('#lingo-app')).toContainText('Success');
+
+        preSeeded.add(seedKey);
+      }
+    }
+  }
+
+  // Navigate back to index before starting main CRUD loop
   await page.goto(crudEnv.host);
   await expect(page.locator('h1')).toContainText('::');
 
@@ -219,13 +327,17 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
       // Confirm data was edited - check that we can see the updated values
       for (const [fieldName, value] of Object.entries(updateExample)) {
         if (fieldName !== 'user_id') {
-          // The page should contain the updated value somewhere
+          const fieldDef = model.fields[fieldName];
+
+          // Skip FK fields - values are dynamic IDs from file uploads or popup selections
+          if (fieldDef.type === 'foreign_key') {
+            continue;
+          }
 
           // if value is a list expect it to be joined on ", "
-          if(Array.isArray(value)) {
-            if (model.fields[fieldName].element_type === 'foreign_key') {
-              // FK list fields require file upload or popup interaction
-              // handled separately in dedicated tests
+          if (Array.isArray(value)) {
+            if (fieldDef.element_type === 'foreign_key') {
+              // FK list fields - values are dynamic IDs, skip exact check
               continue;
             }
             await expect(page.locator('#lingo-app')).toContainText(value.join(', '));
