@@ -2490,7 +2490,7 @@ function _renderModelRead(app, element, ctx = null) {
                     additional = {
                         viewer: {image_ids: ids}
                     };
-                }else if(table === 'master_image'){
+                }else if(table === 'master-image'){
                     additional = {
                         viewer: {master_image_ids: ids}
                     };
@@ -2557,7 +2557,7 @@ function _renderModelRead(app, element, ctx = null) {
                             image_id: state.data[field]
                         },
                     }
-                }else if((table === 'master_image') && refField === 'id'){
+                }else if((table === 'master-image') && refField === 'id'){
                     additional = {
                         viewer: {
                             master_image_id: state.data[field]
