@@ -53,6 +53,119 @@ function getExampleFromModel(model, index = 0) {
   return data;
 }
 
+async function checkViewField(page, fieldName, field, value) {
+
+  // Skip user_id field as it's set automatically
+  if (fieldName === 'user_id') return;
+
+  const fieldType = field.type;
+  const elementType = field.element_type;
+  const refs = field.references;
+
+  // Skip auth FK references
+  if (refs && refs.module === 'auth') return;
+
+  // Scope element searches to the row for this field in the view table
+  const fieldRow = page.getByRole('row', { name: new RegExp('^' + fieldName) });
+
+  if (fieldType === 'list' && elementType === 'foreign_key') {
+    if (!refs) return;
+    const table = refs.table;
+    const ids = Array.isArray(value) ? value : [];
+    if (ids.length === 0) return;
+
+    if (table === 'file') {
+      // Verify download buttons are present for each file ID
+      for (const fileId of ids) {
+        await expect(fieldRow).toContainText(`⬇ ${fileId}`);
+      }
+      // Click the first download button to verify it works
+      const downloadPromise = page.waitForEvent('download');
+      await fieldRow.getByRole('button', { name: `⬇ ${ids[0]}` }).click();
+      await downloadPromise;
+    } else if (table === 'image' || table === 'master_image') {
+      // Verify gallery viewer is present with navigation controls
+      await expect(fieldRow.locator('.viewer-container')).toBeVisible();
+      await expect(fieldRow.getByRole('button', { name: '◀' })).toBeVisible();
+      await expect(fieldRow.getByRole('button', { name: '▶' })).toBeVisible();
+      // If multiple images, navigate through the gallery
+      if (ids.length > 1) {
+        await fieldRow.getByRole('button', { name: '▶' }).click();
+        await fieldRow.getByRole('button', { name: '◀' }).click();
+      }
+    } else {
+      // Non-file FK list: verify a link is present for each ID
+      for (const id of ids) {
+        await expect(fieldRow).toContainText(`go to ${id}`);
+      }
+      // Click each link and verify navigation to the referenced page
+      for (const id of ids) {
+        await fieldRow.getByRole('link', { name: `go to ${id}` }).click();
+        await expect(page.locator('#lingo-app')).toContainText('id');
+        await page.goBack();
+        await expect(page.locator('#lingo-app')).toContainText('id');
+      }
+    }
+
+  } else if (fieldType === 'foreign_key') {
+    if (!refs) return;
+    const table = refs.table;
+    const refField = refs.field;
+    const refModule = refs.module.replaceAll('_', '-');
+    const refTable = table.replaceAll('_', '-');
+
+    if (String(value) === '-1') {
+      // Default placeholder value
+      await expect(fieldRow).toContainText('-1 indicates no id was set');
+    } else if (table === 'file' && refField === 'id') {
+      // Click download file button and verify download starts
+      const downloadPromise = page.waitForEvent('download');
+      await fieldRow.getByRole('button', { name: 'download file' }).click();
+      await downloadPromise;
+    } else if ((table === 'image' || table === 'master_image') && refField === 'id') {
+      // Verify viewer is present
+      await expect(fieldRow.locator('.viewer-container')).toBeVisible();
+      // Download button becomes enabled once image loads (Playwright auto-retries)
+      const downloadPromise = page.waitForEvent('download');
+      await fieldRow.getByRole('button', { name: '⬇' }).click();
+      await downloadPromise;
+      // Open viewer popup by clicking the popup button
+      await fieldRow.getByRole('button', { name: '⌞ ⌝' }).click();
+      // Close the popup
+      await fieldRow.getByRole('button', { name: '×' }).click();
+    } else {
+      // Non-file FK: verify link is present and takes you to the correct page
+      const loc = `${refModule}/${refTable}/${value}`;
+      await expect(fieldRow.getByRole('link', { name: `go to ${loc}` })).toBeVisible();
+      await fieldRow.getByRole('link', { name: `go to ${loc}` }).click();
+      await expect(page.locator('#lingo-app')).toContainText('id');
+      await page.goBack();
+      await expect(page.locator('#lingo-app')).toContainText('id');
+    }
+
+  } else if (fieldType === 'datetime') {
+    // Datetime is stored as YYYY-MM-DDTHH:MM:SS; check first 16 chars to match input
+    await expect(page.locator('#lingo-app')).toContainText(String(value).substring(0, 16));
+
+  } else if (fieldType === 'list') {
+    if (Array.isArray(value) && value.length > 0) {
+      if (elementType === 'datetime') {
+        // Each list datetime element displayed as YYYY-MM-DDTHH:MM:SS
+        for (const v of value) {
+          await expect(page.locator('#lingo-app')).toContainText(String(v).substring(0, 16));
+        }
+      } else {
+        // Other list types displayed as ", " joined string
+        await expect(page.locator('#lingo-app')).toContainText(value.join(', '));
+      }
+    }
+
+  } else {
+    // Primitive fields: bool, int, float, str, enum
+    await expect(page.locator('#lingo-app')).toContainText(String(value));
+  }
+}
+
 async function fillFormField(page, fieldName, field, value, preSeedMode = false) {
   const fieldType = field.type;
   const elementType = field.element_type;
@@ -295,6 +408,11 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
       // Confirm it loads successfully
       await expect(page.locator('h1')).toContainText(`:: ${modelKebab}`);
       await expect(page.locator('#lingo-app')).toContainText('id');
+
+      // Verify that the created data is displayed correctly for each field
+      for (const [fieldName, value] of Object.entries(createExample)) {
+        await checkViewField(page, fieldName, model.fields[fieldName], value);
+      }
 
       // Click edit button to update model
       await page.getByRole('button', { name: 'edit' }).click();
