@@ -2434,7 +2434,7 @@ function _renderModelRead(app, element, ctx = null) {
             
             if(fieldDef.type === 'list' && fieldDef.element_type === 'foreign_key'){
 
-                const table = fieldDef.references.table;
+                const table = fieldDef.references.table.replaceAll('_', '-');
                 const refModule = fieldDef.references.module.replaceAll('_', '-');
                 const ids = state.data[field] || [];
 
@@ -2505,9 +2505,9 @@ function _renderModelRead(app, element, ctx = null) {
                     };
                 }
             }else if(fieldDef.type === 'foreign_key'){
-                const table = fieldDef.references.table;
+                const table = fieldDef.references.table.replaceAll('_', '-');
                 const refModule = fieldDef.references.module.replaceAll('_', '-');
-                const refField = fieldDef.references.field;
+                const refField = fieldDef.references.field.replaceAll('_', '-');
 
                 if(refField === 'id' && state.data[field] === '-1') {
                     additional = '-1 indicates no id was set'
