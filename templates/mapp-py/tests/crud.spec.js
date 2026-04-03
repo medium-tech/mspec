@@ -71,8 +71,7 @@ async function checkViewField(page, fieldName, field, value) {
   if (fieldType === 'list' && elementType === 'foreign_key') {
     if (!refs) return;
     const table = refs.table;
-    const ids = Array.isArray(value) ? value : [];
-    if (ids.length === 0) return;
+    if (!Array.isArray(value) || value.length === 0) return;
 
     if (table === 'file') {
       // File IDs are dynamically assigned by the server, so we can't use example values.
@@ -87,19 +86,15 @@ async function checkViewField(page, fieldName, field, value) {
       await expect(fieldRow.locator('.viewer-container')).toBeVisible();
       await expect(fieldRow.getByRole('button', { name: '◀' })).toBeVisible();
       await expect(fieldRow.getByRole('button', { name: '▶' })).toBeVisible();
-      // If multiple images, navigate through the gallery
-      if (ids.length > 1) {
-        await fieldRow.getByRole('button', { name: '▶' }).click();
-        await fieldRow.getByRole('button', { name: '◀' }).click();
-      }
+      // Navigate through the gallery (we always add 2 images so nav buttons are enabled)
+      await fieldRow.getByRole('button', { name: '▶' }).click();
+      await fieldRow.getByRole('button', { name: '◀' }).click();
     } else {
-      // Non-file FK list: verify a link is present for each ID
-      for (const id of ids) {
-        await expect(fieldRow).toContainText(`go to ${id}`);
-      }
-      // Click each link and verify navigation to the referenced page
-      for (const id of ids) {
-        await fieldRow.getByRole('link', { name: `go to ${id}` }).click();
+      // Non-file FK list: find all "go to" links actually rendered in the row
+      const links = fieldRow.getByRole('link', { name: /^go to / });
+      await expect(links.first()).toBeVisible();
+      for (const link of await links.all()) {
+        await link.click();
         await expect(page.locator('#lingo-app')).toContainText('id');
         await page.goBack();
         await expect(page.locator('#lingo-app')).toContainText('id');
@@ -191,16 +186,19 @@ async function fillFormField(page, fieldName, field, value, preSeedMode = false)
       const row = page.getByRole('row', { name: pattern });
 
       if (isFileFkRef(refs)) {
-        // File-based FK list: upload a sample file to add one item
+        // File-based FK list: upload one file per example value so the list has the right count
         const sampleFile = getSampleFileForRef(refs);
-        await row.locator('input[type="file"]').setInputFiles(sampleFile);
-        await expect(row.locator('button.remove-button')).toHaveCount(1);
+        const count = Math.max(Array.isArray(value) ? value.length : 0, 1);
+        for (let i = 0; i < count; i++) {
+          await row.locator('input[type="file"]').setInputFiles(sampleFile);
+          await expect(row.locator('button.remove-button')).toHaveCount(i + 1);
+        }
       } else if (refs) {
-        // Non-file FK list: use the popup to find and select a pre-seeded record
+        // Non-file FK list: use the popup to find and select pre-seeded records
         const values = Array.isArray(value) ? value : [];
         for (let i = 0; i < Math.max(values.length, 1); i++) {
           await row.getByRole('button', { name: `Find ${refs.table}` }).click();
-          await page.locator('.popup-content > table > tbody > tr').first().click();
+          await page.locator('.popup-content > table > tbody > tr').nth(i).click();
           await expect(row.locator('button.remove-button')).toHaveCount(i + 1);
         }
       }
@@ -334,19 +332,22 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
         const refSpecModel = refSpecModule.models[refs.table];
         if (!refSpecModel) continue;
 
-        // Navigate to create a pre-seeded record for this referenced model
-        await page.goto(crudEnv.host);
-        await page.getByRole('link', { name: refSpecModule.name.kebab_case }).click();
-        await page.getByRole('link', { name: refSpecModel.name.kebab_case }).click();
+        // Create 2 pre-seeded records so that list FK fields can select 2 distinct items
+        for (let seedNum = 0; seedNum < 2; seedNum++) {
+          // Navigate to create a pre-seeded record for this referenced model
+          await page.goto(crudEnv.host);
+          await page.getByRole('link', { name: refSpecModule.name.kebab_case }).click();
+          await page.getByRole('link', { name: refSpecModel.name.kebab_case }).click();
 
-        // Fill form with example data (preSeedMode=true skips FK fields to avoid cycles)
-        const seedExample = getExampleFromModel(refSpecModel, 0);
-        for (const [fn, val] of Object.entries(seedExample)) {
-          await fillFormField(page, fn, refSpecModel.fields[fn], val, true);
+          // Fill form with example data (preSeedMode=true skips FK fields to avoid cycles)
+          const seedExample = getExampleFromModel(refSpecModel, 0);
+          for (const [fn, val] of Object.entries(seedExample)) {
+            await fillFormField(page, fn, refSpecModel.fields[fn], val, true);
+          }
+
+          await page.getByRole('button', { name: 'Submit' }).click();
+          await expect(page.locator('#lingo-app')).toContainText('Success');
         }
-
-        await page.getByRole('button', { name: 'Submit' }).click();
-        await expect(page.locator('#lingo-app')).toContainText('Success');
 
         preSeeded.add(seedKey);
       }
