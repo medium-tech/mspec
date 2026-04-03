@@ -519,6 +519,73 @@ def generate_model_instance_html(spec: dict, module_key: str, model_key: str, ur
     
     return html
 
+def generate_page_spec_html(spec_file:str, params:dict|None=None) -> str:
+    """
+    Generate the index.html page with embedded Lingo JSON spec.
+    """
+
+    # init spec #
+    
+    page_spec = load_browser2_spec(spec_file)
+    
+    try:
+        page_name = page_spec['lingo']['title']
+    except KeyError as e:
+        raise KeyError(f'Missing expected key {e} in in page spec: {page_spec}')
+    
+    # genereate html and embed spec #
+
+    lingo_spec_json = json.dumps(page_spec, indent=4)
+    lingo_params_json = json.dumps({} if params is None else params, indent=4)
+    
+
+    html = f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{page_name}</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="lingo-app" class="lingo-container">
+        <p>Loading...</p>
+    </div>
+    
+    <!-- Embedded Lingo spec -->
+    <script type="application/json" id="lingoSpec">
+{lingo_spec_json}
+    </script>
+    
+    <!-- Embedded Lingo params -->
+    <script type="application/json" id="lingoParams">
+{lingo_params_json}
+    </script>
+    
+    <script src="markup.js"></script>
+    
+    <script>
+        // Retrieve and parse the embedded spec and params
+        const specText = document.getElementById('lingoSpec').textContent;
+        const paramsText = document.getElementById('lingoParams').textContent;
+        const lingoSpec = JSON.parse(specText);
+        const lingoParams = JSON.parse(paramsText);
+        
+        // Run the lingo app on load
+        window.addEventListener('load', () => {{
+            try {{
+                const app = lingoApp(lingoSpec, lingoParams, {{}});
+                renderLingoApp(app, document.getElementById('lingo-app'));
+            }} catch (error) {{
+                console.error('Failed to initialize Lingo app:', error);
+                document.getElementById('lingo-app').innerHTML = `<p style="color: red;">Error: ${{error.message}}</p>`;
+            }}
+        }});
+    </script>
+</body>
+</html>'''
+    
+    return html
 
 #
 # load static ui files
@@ -552,16 +619,31 @@ for file_path in get_mapp_ui_files(ui_src_dir):
         content_type=content_type
     )
 
-# add generated index.html to static files #
-index_html_content = generate_index_html(mapp_spec)
-static_files['index.html'] = StaticFileData(
-    content=index_html_content.encode('utf-8'),
-    content_type='text/html'
-)
 static_files['api/spec'] = StaticFileData(
     content=mapp_spec,                  # FUTURE OPTIMIZE: serialize only once at startup
     content_type='application/json'
 )
+
+#
+# index page
+#
+
+if mapp_spec['index_page'] is None:
+    # add default index page #
+    index_html_content = generate_index_html(mapp_spec)
+
+else:
+    index_html_path = mapp_spec['index_page']
+    index_html_content = generate_page_spec_html(index_html_path)
+
+static_files['index.html'] = StaticFileData(
+    content=index_html_content.encode('utf-8'),
+    content_type='text/html'
+)
+
+#
+# module pages
+#
 
 # add generated module pages to static files #
 for module_key, module in mapp_spec['modules'].items():

@@ -16,6 +16,8 @@ server:
 client:
   default_host: 'http://localhost:8008'
 
+index_page: 'hello-world-page.yaml'
+
 modules:
   sosh_net:
     name:

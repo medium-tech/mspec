@@ -1,6 +1,7 @@
 {
     "lingo": {
-        "version": "page-beta-1"
+        "version": "page-beta-1",
+        "title": "Hello World"
     },
     "params": {},
 
@@ -9,7 +10,7 @@
     "ops": {},
 
     "output": [
-        {"heading": "Hello World", "level": 1},
+        {"heading": "hello.world", "level": 1},
         {"block": [
             {"text": "I am a sample page."}
         ]}

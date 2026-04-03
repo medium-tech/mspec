@@ -199,6 +199,9 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
                 module['builtin'] = True
                 spec_modules[module_name] = module
 
+    if 'index_page' not in spec:
+        spec['index_page'] = None
+
     #
     # modules
     #
