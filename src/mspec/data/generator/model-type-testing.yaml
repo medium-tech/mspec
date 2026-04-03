@@ -346,7 +346,7 @@ modules:
               field: 'id'
             examples:
               - "1"
-              - "1"
+              - "2"
 
           x_fk_file:
             name:
@@ -357,8 +357,8 @@ modules:
               table: 'file'
               field: 'id'
             examples:
-              - "-1"
-              - "-1"
+              - "1"
+              - "2"
 
           x_fk_image:
             name:
@@ -369,8 +369,8 @@ modules:
               table: 'image'
               field: 'id'
             examples:
-              - "-1"
-              - "-1"
+              - "1"
+              - "2"
 
           x_fk_master_image:
             name:
@@ -381,8 +381,8 @@ modules:
               table: 'master_image'
               field: 'id'
             examples:
-              - "-1"
-              - "-1"
+              - "1"
+              - "2"
 
       multi_choice_fk:
         name:
@@ -404,7 +404,7 @@ modules:
             default: []
             examples:
               - ["1"]
-              - ["1"]
+              - ["1", "2"]
 
           x_list_fk_file:
             name:
@@ -417,8 +417,8 @@ modules:
               field: 'id'
             default: []
             examples:
-              - []
-              - []
+              - ["1"]
+              - ["1", "2"]
 
           x_list_fk_image:
             name:
@@ -431,8 +431,9 @@ modules:
               field: 'id'
             default: []
             examples:
-              - []
-              - []
+              - ["1"]
+              - ["1", "2"]
+
 
           x_list_fk_master_image:
             name:
@@ -445,5 +446,5 @@ modules:
               field: 'id'
             default: []
             examples:
-              - []
-              - []
+              - ["1"]
+              - ["1", "2"]

@@ -322,7 +322,7 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
       await expect(page.locator('#lingo-app')).toContainText('edited');
 
       // Click load to re-load data from server
-      await page.getByRole('button', { name: 'load' }).click();
+      await page.getByRole('button', { name: 'load', exact: true }).click();
       
       // Confirm data was edited - check that we can see the updated values
       for (const [fieldName, value] of Object.entries(updateExample)) {
