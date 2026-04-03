@@ -75,13 +75,12 @@ async function checkViewField(page, fieldName, field, value) {
     if (ids.length === 0) return;
 
     if (table === 'file') {
-      // Verify download buttons are present for each file ID
-      for (const fileId of ids) {
-        await expect(fieldRow).toContainText(`⬇ ${fileId}`);
-      }
-      // Click the first download button to verify it works
+      // File IDs are dynamically assigned by the server, so we can't use example values.
+      // Verify at least one download button is present and trigger a download via the first one.
+      const downloadButtons = fieldRow.getByRole('button', { name: /^⬇/ });
+      await expect(downloadButtons.first()).toBeVisible();
       const downloadPromise = page.waitForEvent('download');
-      await fieldRow.getByRole('button', { name: `⬇ ${ids[0]}` }).click();
+      await downloadButtons.first().click();
       await downloadPromise;
     } else if (table === 'image' || table === 'master_image') {
       // Verify gallery viewer is present with navigation controls
