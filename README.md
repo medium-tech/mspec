@@ -223,9 +223,9 @@ To test develop and test the JS lingo interpreter use the dev lingo server `brow
 Use `./build.sh` to sync the files in `browser2/js` to the python mapp app in `src/mspec/data/mapp-ui/src`. These are the lingo interpreter files that the template app `templates/mapp-py` will use for it's UI. For development testing you can run the `mapp-py` server like this to force it to use the development js interpreter without needing to use `build.sh` to sync your chages.
 
 
-### running the mapp test app
+### running the mapp dev app
 
-Eventually this spec will be able to generate an app including python, html, shell scripts, etc. The template is still being finished so that's not available yet. For now the test app can be run against the test spec as follows.
+The mapp development app is used to test the mapp python framework and javascript lingo front end. It is also used by [mtemplate](#mtemplate) to bootstrap an app using the mapp framework.
 
 Change to mapp directory:
 
@@ -257,6 +257,26 @@ Tests will run their own servers, with own sqlite file, on different ports that 
 		* tests with gui: `./test.sh --npm-run test-ui`
         * test generator: `./test.sh --npm-run test-gen`
     * use cached test data: `./test.sh --use-cache --npm-run`
+
+### sosh net app
+The sosh net app is an implementation of the mapp framework to build a social media network. It is generated with this command:
+
+    python -m mtemplate render --output templates/sosh-net --spec sosh-net.yaml --as-builtin --no-cache
+
+To setup
+
+    cd sosh-net
+    npm install
+
+**env file**
+
+You'll need to update a few env variables for this to work properly.
+
+* `MAPP_CLI_SESSION_FILE` - set this so that this app uses a different session file than the dev app
+* `UWSGI_STATIC_SAFE` - confirm this is set to the parent directory of the app
+* `VIRTUAL_ENV` - ensure this is set to a python venv w/ dependencies installed
+
+**running and testing** - is the same as for the dev mapp app
 
 # Development
 

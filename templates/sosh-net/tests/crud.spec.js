@@ -266,7 +266,9 @@ async function fillFormField(page, fieldName, field, value, preSeedMode = false)
       const sampleFile = getSampleFileForRef(refs);
       const row = page.getByRole('row', { name: pattern });
       await row.locator('input[type="file"]').setInputFiles(sampleFile);
+      await expect(page.locator('#lingo-app')).not.toContainText('Uploading file...');
       await expect(page.locator('#lingo-app')).toContainText('File uploaded successfully!');
+      await expect(page.locator('#lingo-app')).not.toContainText('error');
     } else if (refs && String(value) !== '-1') {
       // Non-file FK with non-default value: use the popup to find a pre-seeded record
       const row = page.getByRole('row', { name: pattern });
@@ -288,25 +290,19 @@ async function fillFormField(page, fieldName, field, value, preSeedMode = false)
 test('test crud and list for all models', async ({ browser, crudEnv, crudSession, skipModules }) => {
   const context = await browser.newContext({ storageState: crudSession.storageState });
   const page = await context.newPage();
-  await page.goto(crudEnv.host);
-  await context.addCookies([{ 
-    name: 'protocol_mode', 
-    value: 'true', 
-    path: '/',
-    domain: new URL(crudEnv.host).hostname,
-    secure: false,
-  }]);
-  console.log(await context.cookies());
-  await page.reload();
-  console.log(await context.cookies());
 
-  // Navigate to index page
+  // set protocol_mode=true as cookie
+
+  await context.addCookies([{ name: 'protocol_mode', value: 'true', domain: new URL(crudEnv.host).hostname, path: '/' }]);
+
+  //
+  // pre-seed CRUD tests
+  //
+
   await page.goto(crudEnv.host);
   await expect(page.locator('h1')).toContainText('::');
 
-  // Pre-seed records for non-file FK popup selections.
-  // These records persist throughout the test since the main CRUD loop only
-  // deletes records it creates, not the ones created here.
+  // Pre-seed records for non-file FK popup selections
   const preSeeded = new Set();
   for (const [moduleName, module] of Object.entries(crudEnv.spec.modules)) {
     const moduleKebab = module.name.kebab_case;
@@ -364,7 +360,10 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
     }
   }
 
-  // Navigate back to index before starting main CRUD loop
+  //
+  // main CRUD tests
+  // 
+
   await page.goto(crudEnv.host);
   await expect(page.locator('h1')).toContainText('::');
 
@@ -451,7 +450,7 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
       await expect(page.locator('#lingo-app')).toContainText('edited');
 
       // Click load to re-load data from server
-      await page.getByRole('button', { name: 'load' }).click();
+      await page.getByRole('button', { name: 'load', exact: true }).click();
       
       // Confirm data was edited - check that we can see the updated values
       for (const [fieldName, value] of Object.entries(updateExample)) {

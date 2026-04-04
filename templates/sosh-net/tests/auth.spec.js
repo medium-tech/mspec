@@ -23,6 +23,7 @@ test('test user auth flow', async ({ browser, crudEnv }) => {
     secure: false,
   }]);
   await page.reload();
+
   await page.goto(crudHost);
   await page.getByRole('link', { name: 'auth' }).click();
   await expect(page.locator('h1')).toContainText(':: auth');
