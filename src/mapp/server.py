@@ -729,7 +729,7 @@ def static_routes(server: MappContext, request: RequestContext):
             file_data = static_files[path]
         except KeyError:
             server.log(f'Static file not found: {path}')
-            
+
     if file_data is not None:
         raise StaticFileResponse('200 OK', file_data.content, file_data.content_type)
     
@@ -790,8 +790,8 @@ def application(env, start_response):
     # init request logging #
 
     request_id = f'{time.time_ns()}-{os.getpid()}'
-    request_start = time.time()
-    server_ctx.log(f':: REQ :: {request_id} :: {env["REQUEST_METHOD"]} - {env["PATH_INFO"]}')
+    server_ctx.log(f':: REQ :: {env["REQUEST_METHOD"]} {env["PATH_INFO"]} :: {request_id}')
+    uwsgi.set_logvar('request_id', request_id)
 
     request = RequestContext(
         env=env,
@@ -911,10 +911,6 @@ def application(env, start_response):
         body = {'code': 'NOT_FOUND', 'message': f'not found: ' + env['PATH_INFO']}
         status_code = '404 Not Found'
         content_type = JSONResponse.content_type
-
-    elapsed_time = time.time() - request_start
-
-    server_ctx.log(f'  :: RESP :: {request_id} :: {status_code} :: {elapsed_time:.4f}s')
 
     start_response(status_code, [('Content-Type', content_type)] + additional_headers)
 
