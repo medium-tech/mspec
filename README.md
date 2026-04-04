@@ -263,6 +263,10 @@ The sosh net app is an implementation of the mapp framework to build a social me
 
     python -m mtemplate render --output templates/sosh-net --spec sosh-net.yaml --as-builtin --no-cache
 
+For development you can run the build script form the roots of the repo which does the above command plus sync the ui files:
+
+    ./build.sh
+
 To setup
 
     cd sosh-net
@@ -270,11 +274,16 @@ To setup
 
 **env file**
 
-You'll need to update a few env variables for this to work properly.
+The template generator will attempt to set sensible defaults based on your environment, 
+but you should check the following env variables to confirm they are correct.
 
+* `MAPP_AUTH_SECRET_KEY` - a cryptographic key will be generated using python's secrets library
 * `MAPP_CLI_SESSION_FILE` - set this so that this app uses a different session file than the dev app
 * `UWSGI_STATIC_SAFE` - confirm this is set to the parent directory of the app
 * `VIRTUAL_ENV` - ensure this is set to a python venv w/ dependencies installed
+* `MAPP_CLI_SESSION_FILE` - should be a file in `<output>/app`
+* `MAPP_MEDIA_INFO_PATH` - ensure media info is installed and available at this path
+* `MAPP_FFMPEG_PATH` - ensure ffmpeg is installed and available at this path
 
 **running and testing** - is the same as for the dev mapp app
 

@@ -230,12 +230,10 @@ class TestSimpleSocialSpec(BaseMSpecTest):
     
     def test_render(self):
         self._render(self.spec_file)
-        self.run_cleanup = True
 
         expected_files = """
 		seed.sh
 		server.py
-		tests/file_sys_and_media.spec.js
 		tests/crud.spec.js
 		tests/op.spec.js
 		tests/README.md
@@ -257,8 +255,38 @@ class TestSimpleSocialSpec(BaseMSpecTest):
 		root.py
 		test.sh
         mapp.yaml
+        .env.example
+        .env
 		"""
 
         expected_files = sorted([line.strip() for line in expected_files.strip().splitlines()])
-        actual_files = sorted([str(p.relative_to(self.test_dir)) for p in self.test_dir.rglob('*') if p.is_file() and p.name != '.env'])
+        actual_files = sorted([str(p.relative_to(self.test_dir)) for p in self.test_dir.rglob('*') if p.is_file()])
         self.assertListEqual(expected_files, actual_files, 'Generated files do not match expected files')
+
+        # confirm .gitignore is ignoring env files
+        with open(self.test_dir / '.gitignore', 'r') as f:
+            gitignore_contents = f.read()
+        self.assertIn('.env*', gitignore_contents, '.gitignore does not ignore .env file')
+
+        # .env.example does not have sensitive values
+        with open(self.test_dir / '.env.example', 'r') as f:
+            env_example_contents = f.read()
+        
+        # check for default values to confirm they
+        # were not overwritten with real sensitive values
+        expected_values = [
+            'MAPP_AUTH_SECRET_KEY=change_me',
+            'VIRTUAL_ENV=/path/to/.venv',
+            'MAPP_COMMAND="/path/to/.venv/bin/python -m mapp"'
+        ]
+        for value in expected_values:
+            self.assertIn(value, env_example_contents, f'.env.example is missing expected value: {value}')
+
+        # confirm generated .env file does not have default values
+        # implying they were changed to real values during generation
+        with open(self.test_dir / '.env', 'r') as f:
+            env_contents = f.read()
+        for value in expected_values:
+            self.assertNotIn(value, env_contents, f'.env contains default value that should have been replaced: {value}')
+
+        self.run_cleanup = True

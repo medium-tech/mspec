@@ -124,6 +124,9 @@ class MTemplateProject:
                 continue
 
             for name in files:
+                if name == '.env':
+                    continue
+
                 if name == '.DS_Store':
                     continue
 
@@ -387,7 +390,7 @@ class MTemplateProject:
             out_stat = path.stat()
             os.chmod(path.as_posix(), out_stat.st_mode | stat.S_IEXEC)
 
-    def render_template(self, vars:dict, rel_path:str, out_path:Path|str, rel_template:str):
+    def render_template(self, vars:dict, rel_path:str, out_path:Path|str):
 
         out_path = Path(out_path)
         if self.debug:
@@ -414,13 +417,6 @@ class MTemplateProject:
     def render_templates(self, output_dir:str|Path):
 
         print(f':: rendering :: {self.spec["project"]["name"]["kebab_case"]} :: {self.app_name}')
-
-        if not self.debug:
-            print(f':: removing old output dir: {output_dir}')
-            try:
-                shutil.rmtree(output_dir, ignore_errors=True)
-            except TypeError:
-                raise ValueError(f'Invalid output dir')
             
         cwd = Path.cwd()
         def output_path(path:str) -> Path:
@@ -434,7 +430,7 @@ class MTemplateProject:
             app_output = output_dir / template['rel']
 
             print('  ', output_path(app_output))
-            self.render_template({}, template['rel'], app_output, template['rel_template'])
+            self.render_template({}, template['rel'], app_output)
 
         print(':: binary')
         for template in self.template_paths['binary']:
@@ -455,7 +451,7 @@ class MTemplateProject:
                 module_output = module_output.replace('{{ module.name.camel_case }}', module['name']['camel_case'])
 
                 print('    ', output_path(module_output))
-                self.render_template({'module': module}, template['rel'], module_output, template['rel_template'])
+                self.render_template({'module': module}, template['rel'], module_output)
 
             print('\n     models')
             for model in module['models'].values():
@@ -487,7 +483,7 @@ class MTemplateProject:
                     model_output = model_output.replace('{{ module.name.camel_case }}', module['name']['camel_case'])
 
                     print('        ', output_path(model_output))
-                    self.render_template({'module': module, 'model': model}, template['rel'], model_output, template['rel_template'])
+                    self.render_template({'module': module, 'model': model}, template['rel'], model_output)
 
         print(f':: done :: {self.spec["project"]["name"]["kebab_case"]} :: {self.app_name}')
 
