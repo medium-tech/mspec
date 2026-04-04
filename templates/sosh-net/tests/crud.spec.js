@@ -288,7 +288,18 @@ async function fillFormField(page, fieldName, field, value, preSeedMode = false)
 test('test crud and list for all models', async ({ browser, crudEnv, crudSession, skipModules }) => {
   const context = await browser.newContext({ storageState: crudSession.storageState });
   const page = await context.newPage();
-  
+  await page.goto(crudEnv.host);
+  await context.addCookies([{ 
+    name: 'protocol_mode', 
+    value: 'true', 
+    path: '/',
+    domain: new URL(crudEnv.host).hostname,
+    secure: false,
+  }]);
+  console.log(await context.cookies());
+  await page.reload();
+  console.log(await context.cookies());
+
   // Navigate to index page
   await page.goto(crudEnv.host);
   await expect(page.locator('h1')).toContainText('::');

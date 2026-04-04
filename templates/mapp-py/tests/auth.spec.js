@@ -5,13 +5,24 @@ import { expect } from '@playwright/test';
 // tests
 //
 
-test('test user auth flow', async ({ page, crudEnv }) => {
+test('test user auth flow', async ({ browser, crudEnv }) => {
 
   const { host: crudHost } = crudEnv;
   const uniqueId = Date.now();
   const uniqueEmail = `test-auth-flow-${uniqueId}@email.com`;
 
   // init //
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto(crudHost);
+  await context.addCookies([{ 
+    name: 'protocol_mode', 
+    value: 'true', 
+    path: '/',
+    domain: new URL(crudHost).hostname,
+    secure: false,
+  }]);
+  await page.reload();
 
   await page.goto(crudHost);
   await page.getByRole('link', { name: 'auth' }).click();

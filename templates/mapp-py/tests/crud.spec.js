@@ -291,6 +291,10 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
   const context = await browser.newContext({ storageState: crudSession.storageState });
   const page = await context.newPage();
 
+  // set protocol_mode=true as cookie
+
+  await context.addCookies([{ name: 'protocol_mode', value: 'true', domain: new URL(crudEnv.host).hostname, path: '/' }]);
+
   //
   // pre-seed CRUD tests
   //

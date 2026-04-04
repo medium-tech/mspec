@@ -52,6 +52,16 @@ async function createAndLoginUser(host, browser, envName) {
   const context = await browser.newContext();
   const page = await context.newPage();
   await page.goto(host);
+  await context.addCookies([{ 
+    name: 'protocol_mode', 
+    value: 'true', 
+    path: '/',
+    domain: new URL(host).hostname,
+    secure: false,
+  }]);
+  await page.reload();
+  console.log('createAndLoginUser context.cookies():', await context.cookies());
+  await page.goto(host);
   await page.getByRole('link', { name: 'auth' }).click();
   await page.getByRole('link', { name: 'create-user' }).click();
   await page.getByRole('row', { name: /name:/ }).getByRole('textbox').fill('Test User');
