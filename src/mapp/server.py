@@ -596,6 +596,7 @@ class StaticFileData(NamedTuple):
     content_type: str
 
 static_files = {}
+static_protocol_files = {}
 dynamic_files = []
 
 ui_src_dir = os.environ.get('MAPP_UI_FILE_SOURCE', None)
@@ -628,18 +629,31 @@ static_files['api/spec'] = StaticFileData(
 # index page
 #
 
-if mapp_spec['index_page'] is None:
-    # add default index page #
-    index_html_content = generate_index_html(mapp_spec)
+"""
+An app spec can override the index page by specifying an `index_page` entry in the spec.
 
+If `index_page` is specified in the app spec, the server will generate the index page
+from that spec file, otherwise it will generate the default index page. Users can
+override the custom page by supplying cookie protocol_mode=true and the server will 
+serve the protocol version which is the default index page generated from the protocol spec.
+"""
+
+index_protocol_html_content = generate_index_html(mapp_spec)
+
+if mapp_spec['index_page'] is None:
+    index_html_content = index_protocol_html_content
 else:
-    index_html_path = mapp_spec['index_page']
-    index_html_content = generate_page_spec_html(index_html_path)
+    index_html_content = generate_page_spec_html( mapp_spec['index_page'])
 
 static_files['index.html'] = StaticFileData(
     content=index_html_content.encode('utf-8'),
     content_type='text/html'
 )
+static_protocol_files['index.html'] = StaticFileData(
+    content=index_protocol_html_content.encode('utf-8'),
+    content_type='text/html'
+)
+
 
 #
 # module pages
@@ -697,12 +711,26 @@ def static_routes(server: MappContext, request: RequestContext):
     
     path_stripped = request.env['PATH_INFO'].strip('/')
     path = 'index.html' if path_stripped == '' else path_stripped
-    
-    try:
-        file_data = static_files[path]
-    except KeyError:
-        server.log(f'Static file not found: {path}')
+
+    file_data = None
+
+    if request.env.get('HTTP_COOKIE', '').find('protocol_mode=true') != -1:
+        try:
+            file_data = static_protocol_files[path]
+            server.log(f'Serving protocol file for: {path}')
+        except KeyError:
+            try:
+                file_data = static_files[path]
+                server.log(f'Serving fallback static file for: {path}')
+            except KeyError:
+                pass
     else:
+        try:
+            file_data = static_files[path]
+        except KeyError:
+            server.log(f'Static file not found: {path}')
+            
+    if file_data is not None:
         raise StaticFileResponse('200 OK', file_data.content, file_data.content_type)
     
 def dynamic_file_routes(server: MappContext, request: RequestContext):

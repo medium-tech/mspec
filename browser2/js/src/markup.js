@@ -3,6 +3,19 @@
  * This is equivalent to the Python markup.py module
  */
 
+function enableProtocol() {
+    document.cookie = "protocol_mode=true; path=/";
+    return 'refresh to enable protocol mode'
+}
+
+function disableProtocol() {
+    document.cookie = "protocol_mode=false; path=/";
+    return 'refresh to disable protocol mode'
+}
+
+window.enableProtocol = enableProtocol;
+window.disableProtocol = disableProtocol;
+
 // // // // //
 //
 // helper functions
