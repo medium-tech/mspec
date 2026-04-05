@@ -60,7 +60,6 @@ async function createAndLoginUser(host, browser, envName) {
     secure: false,
   }]);
   await page.reload();
-  console.log('createAndLoginUser context.cookies():', await context.cookies());
   
   await page.goto(host);
   await page.getByRole('link', { name: 'auth' }).click();
