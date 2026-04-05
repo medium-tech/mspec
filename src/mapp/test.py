@@ -43,8 +43,8 @@ def seed_pagination_item(unique_id, base_cmd, seed_cmd, env, require_auth, model
         user_data = {
             'name': f'user {unique_id}', 
             'email': f'user.{unique_id}@example.com', 
-            'password': 'testpass123', 
-            'password_confirm': 'testpass123'
+            'password': 'password123', 
+            'password_confirm': 'password123'
         }
         create_user_cmd = base_cmd + ['auth', 'create-user', 'run', json.dumps(user_data)]
         result = subprocess.run(create_user_cmd, capture_output=True, text=True, env=env, timeout=10)
@@ -224,6 +224,8 @@ class TestMTemplateApp(unittest.TestCase):
         {'size': 25, 'expected_pages': 1},
     ]
 
+    test_password = 'testpass123'
+
     @classmethod
     def setUpClass(cls):
 
@@ -370,8 +372,8 @@ class TestMTemplateApp(unittest.TestCase):
                 user_data = {
                     'name': user_name,
                     'email': f'{user_name}@example.com',
-                    'password': 'testpass123',
-                    'password_confirm': 'testpass123'
+                    'password': cls.test_password,
+                    'password_confirm': cls.test_password
                 }
 
                 create_cmd = cls.cmd + ['auth', 'create-user', 'run', json.dumps(user_data)]
@@ -381,10 +383,12 @@ class TestMTemplateApp(unittest.TestCase):
                 
                 user_id = json.loads(result.stdout)['result']['id']
                 user_data['id'] = user_id
+
+                print('    :: created user: ' + user_data['email'])
                 
                 # login #
 
-                login_params = {'email': user_data['email'], 'password': 'testpass123'}
+                login_params = {'email': user_data['email'], 'password': cls.test_password}
                 login_cmd = cls.cmd + ['auth', 'login-user', 'run', json.dumps(login_params), '--show', '--no-session']
                 result = subprocess.run(login_cmd, capture_output=True, text=True, env=cls.crud_ctx)
 
@@ -496,8 +500,8 @@ class TestMTemplateApp(unittest.TestCase):
                 user_data = {
                     'name': 'pagination_tester',
                     'email': 'pagination_tester@example.com',
-                    'password': 'testpass123',
-                    'password_confirm': 'testpass123'
+                    'password': cls.test_password,
+                    'password_confirm': cls.test_password
                 }
 
                 create_cmd = cls.cmd + ['auth', 'create-user', 'run', json.dumps(user_data)]
@@ -508,7 +512,7 @@ class TestMTemplateApp(unittest.TestCase):
                 user_id = json.loads(create_result.stdout)['result']['id']
                 user_data['id'] = user_id
                 
-                login_params = {'email': user_data['email'], 'password': 'testpass123'}
+                login_params = {'email': user_data['email'], 'password': cls.test_password}
                 login_cmd = cls.cmd + ['auth', 'login-user', 'run', json.dumps(login_params), '--show', '--no-session']
                 login_result = subprocess.run(login_cmd, capture_output=True, text=True, env=cls.pagination_ctx)
                 if login_result.returncode != 0:
@@ -684,7 +688,7 @@ class TestMTemplateApp(unittest.TestCase):
 
         user_name = 'alice'
         user_email = f'alice@{io_type}.com'
-        user_password = 'testpass123'
+        user_password = self.test_password
         
         # Helper to run a command and return output
         def run_auth_cmd(args, input_data=None, expected_code=-1):
@@ -834,8 +838,8 @@ class TestMTemplateApp(unittest.TestCase):
             request_body=json.dumps({
                 'name': 'alice',
                 'email': 'alice-server@example.com',
-                'password': 'testpass123',
-                'password_confirm': 'testpass123'
+                'password': self.test_password,
+                'password_confirm': self.test_password
             }).encode()
         )
         self.assertEqual(create_status, 200)
@@ -849,7 +853,7 @@ class TestMTemplateApp(unittest.TestCase):
             '/api/auth/login-user', 
             request_body=json.dumps({
                 'email': 'alice-server@example.com',
-                'password': 'testpass123'
+                'password': self.test_password
             }).encode()
         )
         self.assertEqual(login_status, 200)
@@ -906,7 +910,7 @@ class TestMTemplateApp(unittest.TestCase):
             '/api/auth/login-user', 
             request_body=json.dumps({
                 'email': 'alice-server@example.com',
-                'password': 'testpass123'
+                'password': self.test_password
             }).encode()
         )
         self.assertEqual(login_status, 200, f'Login failed: {login_resp}')
@@ -2282,6 +2286,70 @@ class TestMTemplateApp(unittest.TestCase):
         for (args, code, stdout, stderr), (_, _, assertion) in zip(results, help_jobs):
             assertion(stdout, stderr, code, args)
     
+    def test_secure_field_redaction(self):
+        """
+        Confirm secure fields are redacted in op output
+
+        This command:
+            ./mapp auth login-user run 
+
+        Should return:
+            {
+            "result": {
+                "access_token": "REDACTED",
+                "token_type": "bearer"
+            }
+        }
+
+        But this command:
+            ./mapp auth login-user run --show
+
+        Should return the unredacted output including the access token value, e.g.
+        {
+            "result": {
+                "access_token": "<actual access token>",
+                "token_type": "bearer"
+            }
+        }
+        """
+
+        env = self.crud_ctx.copy()
+
+        try:
+            del env['MAPP_CLI_ACCESS_TOKEN']
+        except KeyError:
+            pass
+
+        env['MAPP_CLI_SESSION_FILE'] = os.path.join(self.test_dir, 'secure-field-test-session.json')
+        try:
+            os.remove(env['MAPP_CLI_SESSION_FILE'])
+        except FileNotFoundError:
+            pass
+
+        login_params = json.dumps({'email': 'evelyn@example.com', 'password': self.test_password})
+        
+        # confirm access_token is redacted
+        args = self.cmd + ['auth', 'login-user', 'run', login_params]
+        _, code, stdout, stderr = run_cmd(args, env)
+        self.assertEqual(code, 0, f"Secure field redaction failed: {' '.join(args)}\n{stdout}\n{stderr}")
+        json_output = json.loads(stdout)
+        self.assertIn("access_token", json_output["result"])
+        self.assertEqual(json_output["result"]["access_token"], "REDACTED")
+
+        # logout
+        args_logout = self.cmd + ['auth', 'logout-user', 'run']
+        _, code, stdout, stderr = run_cmd(args_logout, env)
+        self.assertEqual(code, 0, f"Logout failed: {' '.join(args_logout)}\n{stdout}\n{stderr}")
+
+        # confirm access_token is unredacted when --show is passed
+        args_show = self.cmd + ['auth', 'login-user', 'run', '--show', login_params]
+        _, code, stdout, stderr = run_cmd(args_show, env)
+        self.assertEqual(code, 0, f"Secure field unredacted output failed: {' '.join(args_show)}\n{stdout}\n{stderr}")
+        json_output = json.loads(stdout)
+        self.assertIn("access_token", json_output["result"])
+        self.assertNotEqual(json_output["result"]["access_token"], "REDACTED")
+        self.assertGreater(len(json_output["result"]["access_token"]), 25)
+
 
 def test_spec(cli_args:list[str], host:str|None, env_vars:dict, use_cache:bool=False, app_type:str='', verbose:bool=False) -> bool:
     if cli_args is None:
