@@ -1942,7 +1942,9 @@ function renderOp(app, expression, ctx = null) {
 
     There are two ways to use an op, interactively with 
     a form and a call button, or non-interactively and
-    return the result directly.
+    return the result directly. The interactive form
+    will call the server to handle the op, but the non-interactive form
+    will locally execute the op defined in the page spec's op field.
 
     Interactive op example:
 
