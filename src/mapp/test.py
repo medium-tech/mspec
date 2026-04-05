@@ -2326,6 +2326,10 @@ class TestMTemplateApp(unittest.TestCase):
         except FileNotFoundError:
             pass
 
+        # logout
+        args_logout = self.cmd + ['auth', 'logout-user', 'run']
+        _, code, stdout, stderr = run_cmd(args_logout, env)
+
         login_params = json.dumps({'email': 'evelyn@example.com', 'password': self.test_password})
         
         # confirm access_token is redacted
