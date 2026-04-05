@@ -808,10 +808,19 @@ def redact_secure_fields(spec:dict, obj:object) -> object:
 
     replacements = {}
 
-    for field in spec.values():
+    for field_name, field in spec.items():
 
-        field_name = field['name']['snake_case']
-        if field['secure']:
+        if field['type'] == 'struct':
+            nested_spec = field['fields']
+            nested_obj = getattr(obj, field_name)
+            replacements[field_name] = redact_secure_fields(nested_spec, nested_obj)
+
+        if field.get('secure', False):
             replacements[field_name] = 'REDACTED'
-
-    return obj._replace(**replacements)
+    
+    if isinstance(obj, dict):
+        for k, v in replacements.items():
+            obj[k] = v
+        return obj
+    else:
+        return obj._replace(**replacements)

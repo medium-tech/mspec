@@ -205,7 +205,7 @@ def _cli_get_secure_input(spec:dict, json_str:str, interactive:bool) -> dict:
                 if field['secure_input']:
                     user_input = getpass.getpass(f'Enter value for {name}:')
                 else:
-                    user_input = input(f'Enter value for {name}: ')
+                    user_input = input(f'Enter value for {name}: ').strip()
 
                 json_data.update({name: user_input})
 

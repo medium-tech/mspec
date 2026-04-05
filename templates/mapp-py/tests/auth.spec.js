@@ -30,8 +30,15 @@ test('test user auth flow', async ({ browser, crudEnv }) => {
   await expect(page.locator('#lingo-app')).toContainText(':: available models');
   await expect(page.locator('#lingo-app')).toContainText(':: available operations');
 
+  // confirm is not logged in //
+
+  await page.getByRole('link', { name: 'is-logged-in' }).click();
+  await page.getByRole('button', { name: 'Submit' }).click();
+  await expect(page.locator('#lingo-app')).toContainText('false');
+
   // create user //
   
+  await page.getByRole('link', { name: 'auth' }).click();
   await page.getByRole('link', { name: 'create-user' }).click();
   await page.getByRole('row', { name: 'Name: Name of the user' }).getByRole('textbox').click();
   await page.getByRole('row', { name: 'Name: Name of the user' }).getByRole('textbox').fill('Test User');
@@ -61,6 +68,13 @@ test('test user auth flow', async ({ browser, crudEnv }) => {
   await page.getByRole('link', { name: 'current-user' }).click();
   await page.getByRole('button', { name: 'Submit' }).click();
   await expect(page.locator('tbody')).toContainText(uniqueEmail);
+
+  // confirm is logged in //
+
+  await page.getByRole('link', { name: 'auth' }).click();
+  await page.getByRole('link', { name: 'is-logged-in' }).click();
+  await page.getByRole('button', { name: 'Submit' }).click();
+  await expect(page.locator('#lingo-app')).toContainText('true');
 
   // logout current session //
 

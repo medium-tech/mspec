@@ -187,6 +187,38 @@ modules:
                             type: str
                             description: "Type of the token"
 
+            is_logged_in:
+                name:
+                    lower_case: "is logged in"
+                description: "Check if a user is currently logged in"
+                func:
+                    call: "auth.is_logged_in"
+                    args: 
+                        confirm:
+                            params: {confirm: {}}
+
+                params: 
+                    confirm:
+                        name:
+                            lower_case: "confirm"
+                        type: bool
+                        default: true
+                        description: "Whether to confirm the login status check, by calling auth.current_user"
+
+                result:
+                    type: struct
+                    fields:
+                        logged_in:
+                            name:
+                                lower_case: "logged in"
+                            type: bool
+                            description: "Whether a user is currently logged in"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Message providing additional information about the login status check"
+
             current_user:
                 name:
                     lower_case: "current user"
@@ -233,6 +265,7 @@ modules:
                         name:
                             lower_case: "mode"
                         type: str
+                        default: "current"
                         enum:
                             - "all"
                             - "current"

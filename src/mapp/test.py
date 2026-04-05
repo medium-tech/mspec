@@ -28,6 +28,16 @@ def seed_pagination_item(unique_id, base_cmd, seed_cmd, env, require_auth, model
         # have a max number of items per user.
         # this can be optimized
 
+        try:
+            del env['MAPP_CLI_SESSION_FILE']
+        except KeyError:
+            pass
+
+        try:
+            del env['MAPP_CLI_ACCESS_TOKEN']
+        except KeyError:
+            pass
+
         # create user #
 
         user_data = {
@@ -256,6 +266,12 @@ class TestMTemplateApp(unittest.TestCase):
         crud_env['MAPP_DB_URL'] = str(cls.crud_db_file.resolve())
         crud_env['MAPP_FILE_SYSTEM_REPO'] = str(crud_fs_path.resolve())
         crud_env['MAPP_SERVER_DEVELOPMENT_MODE'] = 'true'
+        crud_env['MAPP_CLI_SESSION_FILE'] = os.path.join(cls.test_dir, 'crud-env-test-session.json')
+
+        try:
+            os.remove(crud_env['MAPP_CLI_SESSION_FILE'])
+        except FileNotFoundError:
+            pass
 
         try:
             del crud_env['DEBUG_DELAY']
@@ -277,6 +293,12 @@ class TestMTemplateApp(unittest.TestCase):
         pagination_env['MAPP_CLIENT_HOST'] = f'http://localhost:{pagination_port}'
         pagination_env['MAPP_DB_URL'] = str(cls.pagination_db_file.resolve())
         pagination_env['MAPP_FILE_SYSTEM_REPO'] = str((Path(cls.test_dir) / 'pagination_file_system').resolve())
+        pagination_env['MAPP_CLI_SESSION_FILE'] = os.path.join(cls.test_dir, 'pagination-env-test-session.json')
+        try:
+            os.remove(pagination_env['MAPP_CLI_SESSION_FILE'])
+        except FileNotFoundError:
+            pass
+
         try:
             del pagination_env['DEBUG_DELAY']
         except KeyError:
@@ -337,6 +359,12 @@ class TestMTemplateApp(unittest.TestCase):
             print('  :: Creating crud users ::')
             for user_name in crud_users:
 
+                # logout #
+
+                logout_cmd = cls.cmd + ['auth', 'logout-user', 'run']
+                result = subprocess.run(logout_cmd, capture_output=True, text=True, env=cls.crud_ctx)
+                # do not check result because logout may fail if no user is logged in
+
                 # create #
 
                 user_data = {
@@ -370,6 +398,7 @@ class TestMTemplateApp(unittest.TestCase):
                     user_env['MAPP_CLI_ACCESS_TOKEN'] = access_token
                     user_env['Authorization'] = f'Bearer {access_token}'
                     cls.crud_users.append({'user': user_data, 'env': user_env})
+
 
         # setup tables in test dbs #
 
@@ -621,10 +650,13 @@ class TestMTemplateApp(unittest.TestCase):
             * expect error
         ./mapp auth current-user <io type>
             * expect error
+        ./mapp auth is-logged-in <io type>
+            * expect false
 
         ./mapp auth create-user <io type> {"name": "brad", ...}
         ./mapp auth login-user <io type> {"email": "...", ...}
         ./mapp auth current-user <io type>
+        ./mapp auth is-logged-in <io type>
         ./mapp auth logout-user <io type> {"mode": "current"}
         ./mapp auth current-user <io type>
             * expect error
@@ -632,23 +664,42 @@ class TestMTemplateApp(unittest.TestCase):
         ./mapp auth delete-user <io type>
         ./mapp auth current-user <io type>
             * expect error
+        ./mapp auth is-logged-in <io type>
+            * expect false
         """
         # Setup
         cmd = self.cmd
         env = ctx.copy()
+        try:
+            del env['MAPP_CLI_ACCESS_TOKEN']
+        except KeyError:
+            pass
+
+        env['MAPP_CLI_SESSION_FILE'] = os.path.join(self.test_dir, f'user-auth-flow-{io_type}-test-session.json')
+
+        try:
+            os.remove(env['MAPP_CLI_SESSION_FILE'])
+        except FileNotFoundError:
+            pass
+
         user_name = 'alice'
         user_email = f'alice@{io_type}.com'
         user_password = 'testpass123'
         
         # Helper to run a command and return output
-        def run_auth_cmd(args, input_data=None, expected_code=0):
+        def run_auth_cmd(args, input_data=None, expected_code=-1):
             if input_data is not None:
                 result = subprocess.run(args, input=input_data, capture_output=True, text=True, env=env)
             else:
                 result = subprocess.run(args, capture_output=True, text=True, env=env)
             msg = f'expected {expected_code} got {result.returncode} for command "{' '.join(args)}" output: {result.stdout + result.stderr}'
-            self.assertEqual(result.returncode, expected_code, msg)
+            if expected_code >= 0:
+                self.assertEqual(result.returncode, expected_code, msg)
             return result
+        
+        # confirm we are logged out
+        logout_input = json.dumps({"mode": "current"})
+        result = run_auth_cmd(cmd + ["auth", "logout-user", io_type, logout_input], expected_code=-1)
 
         # 1. delete-user (should error)
         result = run_auth_cmd(cmd + ["auth", "delete-user", io_type], expected_code=1)
@@ -658,40 +709,59 @@ class TestMTemplateApp(unittest.TestCase):
         result = run_auth_cmd(cmd + ["auth", "current-user", io_type], expected_code=1)
         self.assertIn("error", result.stdout.lower())
 
-        # 3. create-user
+        # 3. is-logged-in (should be false)
+        result = run_auth_cmd(cmd + ["auth", "is-logged-in", io_type])
+        self.assertIn('"logged_in": false', result.stdout)
+
+        # 4. create-user
         create_input = json.dumps({"name": user_name, "email": user_email, "password": user_password, "password_confirm": user_password})
-        result = run_auth_cmd(cmd + ["auth", "create-user", io_type, create_input])
+        try:
+            result = run_auth_cmd(cmd + ["auth", "create-user", io_type, create_input])
+        except AssertionError as e:
+            print(f'AssertionError running create-user command: {e}')
+            breakpoint()
+
+
         self.assertIn(user_email, result.stdout)
 
-        # 4. login-user
+        # 5. login-user
         login_input = json.dumps({"email": user_email, "password": user_password})
         result = run_auth_cmd(cmd + ["auth", "login-user", io_type, login_input])
         self.assertIn("access_token", result.stdout)
 
-        # 5. current-user (should succeed)
+        # 6. current-user (should succeed)
         result = run_auth_cmd(cmd + ["auth", "current-user", io_type])
         self.assertIn(user_email, result.stdout)
 
-        # 6. logout-user (current)
+        # 7. is-logged-in (should be true)
+        result = run_auth_cmd(cmd + ["auth", "is-logged-in", io_type])
+        self.assertIn('"logged_in": true', result.stdout)
+
+        # 8. logout-user (current)
         logout_input = json.dumps({"mode": "current"})
         result = run_auth_cmd(cmd + ["auth", "logout-user", io_type, logout_input])
         self.assertIn("logged out", result.stdout.lower())
 
-        # 7. current-user (should error)
+        # 9. current-user (should error)
         result = run_auth_cmd(cmd + ["auth", "current-user", io_type], expected_code=1)
         self.assertIn("error", result.stdout.lower())
 
-        # 8. login-user (again)
+        # 10. login-user (again)
         result = run_auth_cmd(cmd + ["auth", "login-user", io_type, login_input])
         self.assertIn("access_token", result.stdout)
 
-        # 9. delete-user
+        # 11. delete-user
         result = run_auth_cmd(cmd + ["auth", "delete-user", io_type])
         self.assertIn("deleted", result.stdout.lower())
 
-        # 10. current-user (should error)
+        # 12. current-user (should error)
         result = run_auth_cmd(cmd + ["auth", "current-user", io_type], expected_code=1)
         self.assertIn("error", result.stdout.lower())
+
+        # 13. is-logged-in (should be false)
+        result = run_auth_cmd(cmd + ["auth", "is-logged-in", io_type])
+        self.assertIn('"logged_in": false', result.stdout)
+
 
     def test_cli_run_auth_flow(self):
         self._test_user_auth_flow(self.crud_ctx, 'run')
@@ -709,16 +779,24 @@ class TestMTemplateApp(unittest.TestCase):
         /api/auth/current-user
             * expect error
 
+        /api/auth/is-logged-in
+            * expect false
+
         /api/auth/create-user {"name": "brad", ...}
         /api/auth/login-user {"email": "...", ...}
         /api/auth/current-user
+        /api/auth/is-logged-in
         /api/auth/logout-user {"mode": "current"}
         /api/auth/current-user
             * expect error
+        /api/auth/is-logged-in
+            * expect false
         /api/auth/login-user {"email": "...", ...}
         /api/auth/delete-user
         /api/auth/current-user
             * expect error
+        /api/auth/is-logged-in
+            * expect false
         """
 
         self._check_servers_running()
@@ -741,7 +819,14 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertEqual(logged_out_current_status, 401)
         self.assertIn('error', logged_out_current_resp)
 
-        # 3. create-user
+        # 3. is-logged-in (should be false)
+        logged_out_is_logged_in_status, logged_out_is_logged_in_resp = request(base_ctx, 'GET', '/api/auth/is-logged-in')
+        self.assertEqual(logged_out_is_logged_in_status, 200)
+        self.assertIn('logged_in', logged_out_is_logged_in_resp['result'])
+        self.assertFalse(logged_out_is_logged_in_resp['result']['logged_in'])
+
+
+        # 4. create-user
         create_status, create_resp = request(
             base_ctx, 
             'POST', 
@@ -757,7 +842,7 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertIn('result', create_resp)
         self.assertIn('id', create_resp['result'])
 
-        # 4. login-user
+        # 5. login-user
         login_status, login_resp = request(
             base_ctx, 
             'POST', 
@@ -775,7 +860,7 @@ class TestMTemplateApp(unittest.TestCase):
         access_token = login_resp['result']['access_token']
         logged_in_ctx['headers']['Authorization'] = f'Bearer {access_token}'
 
-        # 5. current-user
+        # 5. current-user (should succeed)
         current_status, current_resp = request(
             logged_in_ctx, 
             'GET', 
@@ -785,7 +870,13 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertIn('email', current_resp['result'])
         self.assertEqual(current_resp['result']['email'], 'alice-server@example.com')
 
-        # 6. logout-user (current)
+        # 6. is-logged-in (should be true)
+        is_logged_in_status, is_logged_in_resp = request(logged_in_ctx, 'GET', '/api/auth/is-logged-in')
+        self.assertEqual(is_logged_in_status, 200)
+        self.assertIn('logged_in', is_logged_in_resp['result'])
+        self.assertTrue(is_logged_in_resp['result']['logged_in'])
+
+        # 7. logout-user (current)
         logout_status, logout_resp = request(
             logged_in_ctx, 
             'POST', 
@@ -795,12 +886,20 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertEqual(logout_status, 200)
         self.assertIn('logged out', logout_resp['result']['message'].lower())
 
-        # 7. current-user (should error)
+        del logged_in_ctx['headers']['Authorization']
+
+        # 8. current-user (should error)
         logged_out_current_status, logged_out_current_resp = request(base_ctx, 'GET', '/api/auth/current-user')
         self.assertEqual(logged_out_current_status, 401)
         self.assertIn('error', logged_out_current_resp)
 
-        # 8. login-user (again)
+        # 9. is logged in (should be false)
+        logged_out_is_logged_in_status, logged_out_is_logged_in_resp = request(base_ctx, 'GET', '/api/auth/is-logged-in')
+        self.assertEqual(logged_out_is_logged_in_status, 200)
+        self.assertIn('logged_in', logged_out_is_logged_in_resp['result'])
+        self.assertFalse(logged_out_is_logged_in_resp['result']['logged_in'])
+
+        # 10. login-user (again)
         login_status, login_resp = request(
             base_ctx, 
             'POST', 
@@ -810,14 +909,14 @@ class TestMTemplateApp(unittest.TestCase):
                 'password': 'testpass123'
             }).encode()
         )
-        self.assertEqual(login_status, 200)
+        self.assertEqual(login_status, 200, f'Login failed: {login_resp}')
         self.assertIn('access_token', login_resp['result'])
 
         logged_in_ctx = base_ctx.copy()
         access_token = login_resp['result']['access_token']
         logged_in_ctx['headers']['Authorization'] = f'Bearer {access_token}'
 
-        # 9. delete-user
+        # 11. delete-user
         delete_status, delete_resp = request(
             logged_in_ctx, 
             'GET', 
@@ -826,10 +925,17 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertEqual(delete_status, 200)
         self.assertIn('deleted', delete_resp['result']['message'].lower())
 
-        # 10. current-user (should error)
+        # 12. current-user (should error)
         logged_out_current_status, logged_out_current_resp = request(base_ctx, 'GET', '/api/auth/current-user')
         self.assertEqual(logged_out_current_status, 401)
         self.assertIn('error', logged_out_current_resp)
+
+        # 13. is-logged-in (should be false)
+        logged_out_is_logged_in_status, logged_out_is_logged_in_resp = request(base_ctx, 'GET', '/api/auth/is-logged-in')
+        self.assertEqual(logged_out_is_logged_in_status, 200)
+        self.assertIn('logged_in', logged_out_is_logged_in_resp['result'])
+        self.assertFalse(logged_out_is_logged_in_resp['result']['logged_in'])
+
 
     # builtin - file system tests #
 

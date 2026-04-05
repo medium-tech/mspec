@@ -1,0 +1,16 @@
+lingo:
+    version: page-beta-1
+    title: "Hello World"
+
+params: {}
+
+state: {}
+
+ops: {}
+
+output:
+- heading: "sosh.net"
+  level: 1
+
+- block:
+    - text: welcome to sosh net.

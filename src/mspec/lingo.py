@@ -8,7 +8,7 @@ from typing import Any, Optional
 from itertools import dropwhile, takewhile, islice, accumulate
 from functools import reduce
 
-from mapp.auth import create_user, login_user, current_user, logout_user, delete_user, drop_sessions
+from mapp.auth import create_user, login_user, is_logged_in, current_user, logout_user, delete_user, drop_sessions
 from mapp.file_system import get_file_content, ingest_start, list_files, get_part_content, list_parts, process_file
 from mapp.media import create_image, get_image, get_master_image, get_media_file_content, ingest_master_image, list_images, list_master_images
 from mapp.types import get_python_type_for_field
@@ -119,6 +119,11 @@ def _login_user_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]
     password = unwrap_primitive(lingo_execute(app, password_expr, ctx))
 
     return (ctx, email, password), {}
+
+def _is_logged_in_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    confirm_expr = expression['args'].get('confirm', False)
+    confirm = unwrap_primitive(lingo_execute(app, confirm_expr, ctx))
+    return (ctx,), {'confirm': confirm}
 
 def _current_user_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     # current_user takes no params, only ctx
@@ -455,6 +460,7 @@ lingo_function_lookup = {
     'auth': {
         'create_user': {'func': create_user, 'create_args': _create_user_function_args},
         'login_user': {'func': login_user, 'create_args': _login_user_function_args},
+        'is_logged_in': {'func': is_logged_in, 'create_args': _is_logged_in_function_args},
         'current_user': {'func': current_user, 'create_args': _current_user_function_args},
         'logout_user': {'func': logout_user, 'create_args': _logout_user_function_args},
         'delete_user': {'func': delete_user, 'create_args': _delete_user_function_args},

@@ -35,8 +35,8 @@
     * 🟢 tests
 * 🟢 mega app for testing (merge modules from multiple files)
 * 🟢 master image ingest operation
-* 🔴 define custom pages
-    * 🔴 project index page
+* 🟡 define custom pages
+    * 🟡 project index page
     * 🔴 module index page
     * 🔴 model index page
     * 🔴 model instance page
@@ -44,8 +44,8 @@
 * 🟢 support for list of foreign keys
     * 🟢 backend
     * 🟢 ui
-* 🔴 split social media off from dev app
-    * 🔴 custom pages
+* 🟡 split social media off from dev app
+    * 🟡 custom pages
     * 🔴 deploy to web
 * 🔴 implement max_models_by_field - ie. limit 1 reaction per post_id
 * 🔴 add unique constraint to str fields - ie. only 1 profile with a specific username can exist

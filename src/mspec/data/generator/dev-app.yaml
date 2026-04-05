@@ -20,6 +20,5 @@ client:
 
 import:
   modules:
-    - ./sosh-net.yaml
     - ./model-type-testing.yaml
     - ./op-testing.yaml

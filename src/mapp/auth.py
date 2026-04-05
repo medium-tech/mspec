@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 
 import jwt
 
-from mapp.context import MappContext, MAPP_APP_PATH
+from mapp.context import MappContext, MAPP_APP_PATH, cli_delete_session
 from mapp.errors import AuthenticationError, MappError, MappValidationError
 from mapp.types import User, PasswordHash
 
@@ -192,6 +192,10 @@ def create_user(ctx: MappContext, name: str, email: str, password: str, password
     """
     Create a new user in the auth module.
     """
+
+    if is_logged_in(ctx, confirm=False)['value']['logged_in']:
+        raise AuthenticationError('User is already logged in')
+
     name = name.strip()
     email = email.strip().lower()
     password = password
@@ -275,6 +279,12 @@ def login_user(ctx: MappContext, email: str, password: str) -> dict:
     """
     Log in a user in the auth module.
     """
+
+    ctx.log(f'login_user - {email=}')
+
+    if is_logged_in(ctx, confirm=False)['value']['logged_in']:
+        raise AuthenticationError('User is already logged in')
+
     email = email.strip().lower()
     password = password
     user_id = _check_user_credentials(ctx, email, password)
@@ -293,6 +303,46 @@ def login_user(ctx: MappContext, email: str, password: str) -> dict:
         }
     }
 
+def is_logged_in(ctx: MappContext, confirm: bool) -> dict:
+    """
+    Check if a user is currently logged in in the auth module.
+    ctx: MappContext - The application context.
+    confirm: bool - Whether to confirm the login status check, by calling auth.current_user
+
+    return: bool
+        Whether a user is currently logged in
+    """
+
+    wrap_result = lambda status, message: {'type': 'struct', 'value': {'logged_in': status, 'message': message}}
+    try:
+        access_token = ctx.current_access_token()
+    except AuthenticationError as e:
+        ctx.log(f'is_logged_in - failed to get current access token: {e}')
+        return wrap_result(False, f'is_logged_in - failed to get current access token: {e}')
+
+    if access_token is None or access_token == '':
+        ctx.log('No access token found, user is not logged in')
+        return wrap_result(False, 'No access token found, user is not logged in')
+    
+    ctx.log(f'is_logged_in - {confirm=}')
+    if confirm:
+        try:
+            current_user(ctx)
+            ctx.log('User is logged in')
+            return wrap_result(True, 'User session was confirmed in the database')
+        
+        except AuthenticationError as e:
+            ctx.log(f'is_logged_in confirm check failed: {e}')
+            return wrap_result(False, f'is_logged_in confirm check failed: {e}')
+        
+        except Exception as e:
+            ctx.log(f'is_logged_in confirm check failed: {e}')
+            return wrap_result(False, f'is_logged_in confirm check failed: {e}')
+        
+    else:
+        ctx.log('User is logged in (not confirmed)')
+        return wrap_result(True, 'User access token exists, but login status was not confirmed in the database')
+
 def current_user(ctx: MappContext) -> dict:
     """
     Get the current logged-in user in the auth module.
@@ -309,7 +359,7 @@ def current_user(ctx: MappContext) -> dict:
     access_token = ctx.current_access_token()
     
     if access_token is None or access_token == '':
-        raise AuthenticationError('Not logged in')
+        raise AuthenticationError('Not logged in (a)')
 
     user, _jti = _parse_access_token(ctx, access_token)
     
@@ -343,7 +393,15 @@ def logout_user(ctx: MappContext, mode: str) -> dict:
     # get current user #
 
     access_token = ctx.current_access_token()
-    assert access_token is not None
+    if access_token is None:
+        return {
+            'type': 'struct',
+            'value': {
+                'acknowledged': True,
+                'message': 'Not logged in (b)'
+            }
+
+        }
 
     user, jti = _parse_access_token(ctx, access_token)
 
@@ -393,7 +451,7 @@ def delete_user(ctx: MappContext) -> dict:
 
     access_token = ctx.current_access_token()
     if access_token is None:
-        raise AuthenticationError('Not logged in')
+        raise AuthenticationError('Not logged in (c)')
 
     user, jti = _parse_access_token(ctx, access_token)
 

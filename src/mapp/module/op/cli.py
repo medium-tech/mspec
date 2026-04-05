@@ -148,12 +148,15 @@ def add_op_subparser(subparsers, spec:dict, module: dict, op:dict):
             else:
                 params = cli_op_user_input(param_class, args.json, args.interactive)
 
-            raw_output = op_function(ctx, params)
+            try:
+                raw_output = op_function(ctx, params)
+            finally:
+                if args.model == 'logout-user':
+                    cli_delete_session()
+                    
             if args.module == 'auth':
                 if args.model == 'login-user' and not args.no_session:
                     cli_write_session(ctx, raw_output.result['access_token'])
-                elif args.model == 'logout-user':
-                    cli_delete_session()
 
             if args.show:
                 output = raw_output
