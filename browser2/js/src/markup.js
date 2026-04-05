@@ -331,6 +331,19 @@ function _reduceFunctionArgs(app, expression, ctx) {
     return [reduceFunc, iterableValue, initialValue];
 }
 
+// auth //
+
+function _authIsLoggedInArgs(app, expression, ctx) {
+    const args = expression.args || {};
+    if(args.hasOwnProperty('confirm')) {
+        const confirm = unwrapValue(lingoExecute(app, args.confirm, ctx));
+        return [confirm];
+    }else{
+        return [false];
+    }
+}
+
+
 // crud //
 
 function _crudCreateArgs(app, expression, ctx) {
@@ -659,6 +672,16 @@ const lingoFunctionLookup = {
         func: strConcat,
         args: {
             'items': {'type': 'list'}
+        }
+    },
+
+    // struct //
+    
+    'key': {
+        func: (object, key) => object[key],
+        args: {
+            'object': {'type': 'struct'},
+            'key': {'type': 'str'}
         }
     },
     
@@ -1063,6 +1086,24 @@ const lingoFunctionLookup = {
                 }
             },
             createArgs: _opHttpArgs
+        }
+    },
+
+    // auth //
+
+    'auth': {
+        'is_logged_in': {
+            func: async () => {
+                console.log('auth.is_logged_in - checking login status');
+                try {
+                    const accessToken = localStorage.getItem('access_token');
+                    return {logged_in: !!accessToken, message: 'Logged in, not confirmed with server'};
+                } catch (error) {
+                    console.error('auth.is_logged_in - error:', error);
+                    return {logged_in: false, message: `Error checking login status: ${error.message}`};
+                }
+            },
+            createArgs: _authIsLoggedInArgs
         }
     },
 

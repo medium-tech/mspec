@@ -29,6 +29,13 @@ class LingoApp:
 #
 # # # #
 
+def _struct_key_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    object = lingo_execute(app, expression['args']['object'], ctx)
+    key = lingo_execute(app, expression['args']['key'], ctx)
+    struct_value = object['value'] if isinstance(object, dict) and 'value' in object else object
+    key_value = key['value'] if isinstance(key, dict) and 'value' in key else key
+    return (struct_value, key_value), {}
+
 def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     
     def map_func(item):
@@ -352,6 +359,12 @@ def str_join(separator:str, items:list) -> str:
 def str_concat(items:list) -> str:
     return ''.join(str(item) for item in items)
 
+def struct_key(object:dict, key_name:str) -> Any:
+    try:
+        return object[key_name]
+    except KeyError:
+        raise ValueError(f'struct_key - key not found in struct: {key_name}')
+
 def lingo_int(number:Any=None, string:str=None, base:int=10) -> int:
     if number is not None:
         return int(number)
@@ -370,6 +383,22 @@ def unwrap_primitive(value:Any) -> Any:
             raise ValueError('Invalid value element - missing value key')
     else:
         return value
+
+def lingo_type_from_py_obj(object:Any) -> str:
+    if isinstance(object, bool):
+        return 'bool'
+    elif isinstance(object, int):
+        return 'int'
+    elif isinstance(object, float):
+        return 'float'
+    elif isinstance(object, str):
+        return 'str'
+    elif isinstance(object, list):
+        return 'list'
+    elif isinstance(object, dict):
+        return 'struct'
+    else:
+        return 'any'
 
 
 lingo_function_lookup = {
@@ -405,6 +434,10 @@ lingo_function_lookup = {
     'str': {'func': str_convert, 'args': {'object': {'type': 'any'}}},
     'join': {'func': str_join, 'args': {'separator': {'type': 'str'}, 'items': {'type': 'list'}}},
     'concat': {'func': str_concat, 'args': {'items': {'type': 'list'}}},
+
+    # struct #
+
+    'key': {'func': struct_key, 'create_args': _struct_key_args},
 
     # math #
 
@@ -514,7 +547,7 @@ def lingo_update_state(app:LingoApp, ctx: Optional[dict]=None) -> LingoApp:
             # this is a non-calculated value, set state to default is not already set
             if key not in app.state:
                 try:
-                    if value['type'] != value['default'].__class__.__name__:
+                    if value['type'] != lingo_type_from_py_obj(value['default']):
                         raise ValueError(f'state - {key} - default value type mismatch')
                     app.state[key] = value['default']
                 except KeyError:

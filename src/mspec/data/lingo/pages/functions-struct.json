@@ -1,0 +1,70 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+    "state": {
+        "source_struct": {
+            "type": "struct",
+            "default": {
+                "type": "struct",
+                "value": {
+                    "x_bool": true,
+                    "x_int": 42,
+                    "x_float": 3.14,
+                    "x_str": "hello.world"
+                }
+            }
+        },
+        "key_x_bool": {
+            "type": "bool",
+            "calc": {
+                "call": "key",
+                "args": {
+                    "object": {"state": {"source_struct": {}}},
+                    "key": "x_bool"
+                }
+            }
+        },
+        "key_x_int": {
+            "type": "int",
+            "calc": {
+                "call": "key",
+                "args": {
+                    "object": {"state": {"source_struct": {}}},
+                    "key": "x_int"
+                }
+            }
+        },
+        "key_x_float": {
+            "type": "float",
+            "calc": {
+                "call": "key",
+                "args": {
+                    "object": {"state": {"source_struct": {}}},
+                    "key": "x_float"
+                }
+            }
+        },
+        "key_x_str": {
+            "type": "str",
+            "calc": {
+                "call": "key",
+                "args": {
+                    "object": {"state": {"source_struct": {}}},
+                    "key": "x_str"
+                }
+            }
+        }
+    },
+    "ops": {},
+    "output": [
+        {"heading": {"text": "Struct Functions"}, "level": 1},
+        {"block": [
+            {"text": "key(state.source_struct, 'x_bool') = "}, {"lingo": {"state": {"key_x_bool": {}}}}, {"break": 1},
+            {"text": "key(state.source_struct, 'x_int') = "}, {"lingo": {"state": {"key_x_int": {}}}}, {"break": 1},
+            {"text": "key(state.source_struct, 'x_float') = "}, {"lingo": {"state": {"key_x_float": {}}}}, {"break": 1},
+            {"text": "key(state.source_struct, 'x_str') = "}, {"lingo": {"state": {"key_x_str": {}}}}, {"break": 1}
+        ]}
+    ]
+}

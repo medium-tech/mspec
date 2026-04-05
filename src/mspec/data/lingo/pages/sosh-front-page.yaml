@@ -4,7 +4,12 @@ lingo:
 
 params: {}
 
-state: {}
+state: 
+  is_logged_in:
+    type: bool
+    calc: 
+      call: auth.is_logged_in
+      args: {}
 
 ops: {}
 
@@ -14,3 +19,4 @@ output:
 
 - block:
     - text: welcome to sosh net.
+    # - lingo: {state: {is_logged_in: {}}}

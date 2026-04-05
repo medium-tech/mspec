@@ -27,6 +27,7 @@ class TestLingoPages(unittest.TestCase):
             'functions-int',
             'functions-float',
             'functions-str',
+            'functions-struct',
             'functions-math',
             'functions-sequence',
             'functions-sequence-ops',
@@ -222,6 +223,16 @@ class TestLingoPages(unittest.TestCase):
         # Test join function
         self.assertEqual(app.state['test_join'], 'a-b-c')
 
+    def test_struct_functions(self):
+        """Test struct functions: key"""
+        app = lingo_app(self.functions_struct_spec)
+
+        # Test key function
+        self.assertEqual(app.state['key_x_bool'], True)
+        self.assertEqual(app.state['key_x_int'], 42)
+        self.assertAlmostEqual(app.state['key_x_float'], 3.14)
+        self.assertEqual(app.state['key_x_str'], 'hello.world')
+        
     def test_math_functions(self):
         """Test math operators: add, sub, mul, div, floordiv, mod, pow, min, max, abs"""
         app = lingo_app(self.functions_math_spec)
