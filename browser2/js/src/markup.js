@@ -678,7 +678,14 @@ const lingoFunctionLookup = {
     // struct //
     
     'key': {
-        func: (object, key) => object[key],
+        func: (object, key) => {
+            if (object && typeof object === 'object' && key in object) {
+                return object[key];
+            } else {
+                console.error('lingo function key - key not found in object:', key, 'object:', object);
+                throw new Error(`lingo function key - key '${key}' not found in object`);
+            }
+        },
         args: {
             'object': {'type': 'struct'},
             'key': {'type': 'str'}
@@ -1093,7 +1100,7 @@ const lingoFunctionLookup = {
 
     'auth': {
         'is_logged_in': {
-            func: async () => {
+            func: () => {
                 console.log('auth.is_logged_in - checking login status');
                 try {
                     const accessToken = localStorage.getItem('access_token');

@@ -8,8 +8,13 @@ state:
   is_logged_in:
     type: bool
     calc: 
-      call: auth.is_logged_in
-      args: {}
+      call: key
+      args:
+        object: 
+          call: auth.is_logged_in
+          args: {}
+        key: logged_in
+  
 
 ops: {}
 
@@ -19,4 +24,6 @@ output:
 
 - block:
     - text: welcome to sosh net.
-    # - lingo: {state: {is_logged_in: {}}}
+    - break: 1
+    - text: 'are you logged in: '
+    - lingo: {state: {is_logged_in: {}}}
