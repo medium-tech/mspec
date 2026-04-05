@@ -3694,7 +3694,7 @@ function createFormElement(app, element, ctx = null) {
         if (app.clientState.forms.hasOwnProperty(formKeyId)) {
             ingestState = app.clientState.forms[formKeyId];
         } else {
-            ingestState = {status: 'idle', error: null, popup: null};
+            ingestState = {status: 'idle', error: null, popup: null, showSecureFields: {}};
             app.clientState.forms[formKeyId] = ingestState;
         }
 
@@ -4005,7 +4005,14 @@ function createFormElement(app, element, ctx = null) {
         } else {
             inputElement = document.createElement('input');
             if(fieldSpec.secure || fieldSpec.secure_input) {
-                inputElement.type = 'password';
+                if(ingestState.showSecureFields[fieldKey] === undefined) {
+                    ingestState.showSecureFields[fieldKey] = false;
+                }
+                if(ingestState.showSecureFields[fieldKey] === true) {
+                    inputElement.type = 'text';
+                } else {
+                    inputElement.type = 'password';
+                }
             }else{
                 inputElement.type = 'text';
             }
@@ -4258,6 +4265,16 @@ function createFormElement(app, element, ctx = null) {
                     }
                 }
             }
+        
+        }else if(fieldSpec.secure || fieldSpec.secure_input) {
+            const toggleSecureFieldButton = document.createElement('button');
+                toggleSecureFieldButton.type = 'button';
+                toggleSecureFieldButton.textContent = ingestState.showSecureFields[fieldKey] ? 'hide' : 'show';
+                toggleSecureFieldButton.addEventListener('click', () => {
+                    ingestState.showSecureFields[fieldKey] = !ingestState.showSecureFields[fieldKey];
+                    renderLingoApp(app, document.getElementById('lingo-app'), true);
+                });
+                thirdCell.appendChild(toggleSecureFieldButton);
         } else {
             // Description for non-list fields
             thirdCell.className = 'form-description';

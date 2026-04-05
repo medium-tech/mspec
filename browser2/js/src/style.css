@@ -36,6 +36,13 @@ input[type="text"] {
     width: 233px;
 }
 
+input[type="password"] {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    width: 233px;
+}
+
 button {
     /* padding: 8px 16px; */
     margin: 4px;
