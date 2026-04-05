@@ -622,3 +622,54 @@ test('test - viewer gallery page', async ({ page }) => {
   await expect(prevButton).toBeEnabled();
   await expect(nextButton).toBeEnabled();
 });
+
+test('test - secure field redaction', async ({ page }) => {
+  const fakeToken = 'test_access_token_value_abc123xyz_very_long';
+
+  // Mock the login API endpoint
+  await page.route('**/api/auth/login-user', route => {
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        result: {
+          access_token: fakeToken,
+          token_type: 'bearer'
+        }
+      })
+    });
+  });
+
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/test-secure-fields.json');
+
+  // Confirm the login form is shown with a password input
+  await expect(page.locator('input[type="password"]')).toBeVisible();
+
+  // Fill in the form and submit
+  await page.locator('input[type="text"]').fill('test@example.com');
+  await page.getByRole('button', { name: 'Submit' }).click();
+
+  // Wait for result
+  await expect(page.locator('#lingo-app')).toContainText('success');
+
+  // Confirm access_token is redacted
+  await expect(page.locator('#lingo-app')).toContainText('REDACTED');
+  await expect(page.locator('#lingo-app')).not.toContainText(fakeToken);
+
+  // Press show button for access_token (last 'show' button, after the form's password show button)
+  await page.getByRole('button', { name: 'show' }).last().click();
+
+  // Confirm access_token is not redacted
+  await expect(page.locator('#lingo-app')).not.toContainText('REDACTED');
+  await expect(page.locator('#lingo-app')).toContainText(fakeToken);
+
+  // Confirm password input is still visible in the form (auth/login-user form)
+  await expect(page.locator('input[type="password"]')).toBeVisible();
+
+  // Click show sensitive fields for the password input
+  await page.getByRole('button', { name: 'show' }).first().click();
+
+  // Confirm there are no password inputs
+  await expect(page.locator('input[type="password"]')).not.toBeVisible();
+});
