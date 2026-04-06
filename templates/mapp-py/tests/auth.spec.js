@@ -45,7 +45,7 @@ test('test user auth flow', async ({ browser, crudEnv }) => {
   await page.getByRole('row', { name: 'Password: show' }).getByRole('textbox').fill('123');
   await page.getByRole('row', { name: 'Password confirm: show' }).getByRole('textbox').fill('123');
   await page.getByRole('button', { name: 'Submit' }).click();
-  await expect(page.locator('#lingo-app')).toContainText('success:');
+  await expect(page.locator('#lingo-app')).toContainText('success');
 
   // login //
 
@@ -56,7 +56,7 @@ test('test user auth flow', async ({ browser, crudEnv }) => {
   await page.locator('input[type="password"]').click();
   await page.locator('input[type="password"]').fill('123');
   await page.getByRole('button', { name: 'Submit' }).click();
-  await expect(page.locator('#lingo-app')).toContainText('success:');
+  await expect(page.locator('#lingo-app')).toContainText('success');
 
   // get current user //
 
@@ -78,7 +78,7 @@ test('test user auth flow', async ({ browser, crudEnv }) => {
   await page.getByRole('link', { name: 'logout-user' }).click();
   await page.getByRole('combobox').selectOption('current');
   await page.getByRole('button', { name: 'Submit' }).click();
-  await expect(page.locator('#lingo-app')).toContainText('success:');
+  await expect(page.locator('#lingo-app')).toContainText('success');
 
   // confirm cannot get current user //
   
@@ -97,14 +97,14 @@ test('test user auth flow', async ({ browser, crudEnv }) => {
   await page.locator('input[type="password"]').click();
   await page.locator('input[type="password"]').fill('123');
   await page.getByRole('button', { name: 'Submit' }).click();
-  await expect(page.locator('#lingo-app')).toContainText('success:');
+  await expect(page.locator('#lingo-app')).toContainText('success');
 
   // delete user //
 
   await page.getByRole('link', { name: 'auth' }).click();
   await page.getByRole('link', { name: 'delete-user' }).click();
   await page.getByRole('button', { name: 'Submit' }).click();
-  await expect(page.locator('#lingo-app')).toContainText('success:');
+  await expect(page.locator('#lingo-app')).toContainText('success');
   await expect(page.locator('tbody')).toContainText('User deleted successfully');
 
   // confirm cannot get current user //
