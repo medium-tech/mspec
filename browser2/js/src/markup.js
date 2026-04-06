@@ -2042,49 +2042,76 @@ function renderOp(app, expression, ctx = null) {
             }
         };
 
-        const stateSwitch = {
-            switch: {
-                expression: { type: 'str', value: app.state[stateField].state },
-                cases: [
-                    {
-                        case: 'result',
-                        then: {
-                            block: [
-                                {text: 'success: ', style: {color: 'green', bold: true}},
-                                app.state[stateField].result
-                            ]
-                        }
-                    },
-                    {
-                        case: 'error',
-                        then: {
-                            block: [
-                                {text: 'error: ', style: {color: 'red', bold: true}},
-                                {text: app.state[stateField].error}
-                            ]
-                        }
-                    },
-                    {
-                        case: 'loading',
-                        then: {
-                            text: 'Loading...', style: {italic: true}
-                        }
+        // initialize showSecureResultFields in bound state //
+
+        if (!app.state[stateField].hasOwnProperty('showSecureResultFields')) {
+            app.state[stateField].showSecureResultFields = {};
+        }
+
+        // collect secure fields from result definition //
+
+        const secureResultFields = {};
+        if (definition.result && definition.result.fields) {
+            for (const [fieldKey, fieldSpec] of Object.entries(definition.result.fields)) {
+                if (fieldSpec.secure) {
+                    secureResultFields[fieldKey] = fieldSpec;
+                    if (!(fieldKey in app.state[stateField].showSecureResultFields)) {
+                        app.state[stateField].showSecureResultFields[fieldKey] = false;
                     }
-                ],
-                default: {
-                    text: 'Please fill out the form and submit.', style: {italic: true}
                 }
             }
-        };
+        }
+
+        // build result display based on current op state //
+
+        const currentOpState = app.state[stateField];
+        let resultDisplayElements;
+
+        if (currentOpState.state === 'result') {
+            resultDisplayElements = [{text: 'success ', style: {color: 'green', bold: true}}];
+            const unwrapped = unwrapValue(currentOpState.result);
+
+            if (Object.keys(secureResultFields).length > 0 && typeof unwrapped === 'object' && unwrapped !== null) {
+                const redactedValue = {};
+                for (const [key, value] of Object.entries(unwrapped)) {
+                    if (secureResultFields.hasOwnProperty(key) && !currentOpState.showSecureResultFields[key]) {
+                        redactedValue[key] = 'REDACTED';
+                    } else {
+                        redactedValue[key] = value;
+                    }
+                }
+                
+                resultDisplayElements.push({type: 'struct', value: redactedValue});
+
+                for (const fieldKey of Object.keys(secureResultFields)) {
+                    const showSecureResultFields = currentOpState.showSecureResultFields;
+                    resultDisplayElements.push({
+                        button: {
+                            clientFunction: () => {
+                                showSecureResultFields[fieldKey] = !showSecureResultFields[fieldKey];
+                                renderLingoApp(app, document.getElementById('lingo-app'), true);
+                            }
+                        },
+                        text: showSecureResultFields[fieldKey] ? `hide ${fieldKey}` : `show ${fieldKey}`
+                    });
+                }
+            } else {
+                resultDisplayElements.push(currentOpState.result);
+            }
+        } else if (currentOpState.state === 'error') {
+            resultDisplayElements = [
+                {text: 'error: ', style: {color: 'red', bold: true}},
+                {text: currentOpState.error}
+            ];
+        } else if (currentOpState.state === 'loading') {
+            resultDisplayElements = [{text: 'Loading...', style: {italic: true}}];
+        } else {
+            resultDisplayElements = [{text: 'Please fill out the form and submit.', style: {italic: true}}];
+        }
 
         let elements = [];
         elements.push(formElement);
-        const renderedSwitch = renderSwitch(app, stateSwitch, ctx);
-        if(Array.isArray(renderedSwitch)){
-            elements.push(...renderedSwitch);
-        }else{
-            elements.push(renderedSwitch);
-        }
+        elements.push(...resultDisplayElements);
         return elements;
 
     }else{

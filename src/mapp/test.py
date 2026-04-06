@@ -383,8 +383,6 @@ class TestMTemplateApp(unittest.TestCase):
                 
                 user_id = json.loads(result.stdout)['result']['id']
                 user_data['id'] = user_id
-
-                print('    :: created user: ' + user_data['email'])
                 
                 # login #
 
