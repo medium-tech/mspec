@@ -138,7 +138,7 @@ if MAPP_SERVER_DEVELOPMENT_MODE is True:
 # generate dynamic index.html
 #
 
-def generate_index_html(spec: dict) -> str:
+def generate_index_html(spec: dict) -> bytes:
     """
     Generate the index.html page with embedded Lingo JSON spec.
     """
@@ -167,7 +167,7 @@ def generate_index_html(spec: dict) -> str:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{project_name}</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
     <div id="lingo-app" class="lingo-container">
@@ -184,7 +184,7 @@ def generate_index_html(spec: dict) -> str:
 {lingo_params_json}
     </script>
     
-    <script src="markup.js"></script>
+    <script src="/markup.js"></script>
     
     <script>
         // Retrieve and parse the embedded spec and params
@@ -207,9 +207,9 @@ def generate_index_html(spec: dict) -> str:
 </body>
 </html>'''
     
-    return html
+    return html.encode('utf-8')
 
-def generate_module_html(spec: dict, module_key: str) -> str:
+def generate_module_html(spec: dict, module_key: str) -> bytes:
     """
     Generate the module page with embedded Lingo JSON spec.
     """
@@ -285,9 +285,9 @@ def generate_module_html(spec: dict, module_key: str) -> str:
 </body>
 </html>'''
     
-    return html
+    return html.encode('utf-8')
 
-def generate_model_html(spec: dict, module_key: str, model_key: str) -> str:
+def generate_model_html(spec: dict, module_key: str, model_key: str) -> bytes:
     """
     Generate the model page with embedded Lingo JSON spec.
     """
@@ -361,9 +361,9 @@ def generate_model_html(spec: dict, module_key: str, model_key: str) -> str:
 </body>
 </html>'''
     
-    return html
+    return html.encode('utf-8')
 
-def generate_op_html(spec: dict, module_key: str, op_key: str) -> str:
+def generate_op_html(spec: dict, module_key: str, op_key: str) -> bytes:
     """
     Generate the op page with embedded Lingo JSON spec.
     """
@@ -437,9 +437,9 @@ def generate_op_html(spec: dict, module_key: str, op_key: str) -> str:
 </body>
 </html>'''
     
-    return html
+    return html.encode('utf-8')
 
-def generate_model_instance_html(spec: dict, module_key: str, model_key: str, url: str) -> str:
+def generate_model_instance_html(spec: dict, module_key: str, model_key: str, url: str) -> bytes:
     """
     Generate the model instance page with embedded Lingo JSON spec.
     """
@@ -516,10 +516,9 @@ def generate_model_instance_html(spec: dict, module_key: str, model_key: str, ur
     </script>
 </body>
 </html>'''
-    
-    return html
+    return html.encode('utf-8')
 
-def generate_page_spec_html(spec_file:str, params:dict|None=None) -> str:
+def generate_page_spec_html(spec_file:str, params:dict|None=None) -> bytes:
     """
     Generate the index.html page with embedded Lingo JSON spec.
     """
@@ -545,7 +544,7 @@ def generate_page_spec_html(spec_file:str, params:dict|None=None) -> str:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{page_name}</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
     <div id="lingo-app" class="lingo-container">
@@ -562,7 +561,7 @@ def generate_page_spec_html(spec_file:str, params:dict|None=None) -> str:
 {lingo_params_json}
     </script>
     
-    <script src="markup.js"></script>
+    <script src="/markup.js"></script>
     
     <script>
         // Retrieve and parse the embedded spec and params
@@ -584,8 +583,7 @@ def generate_page_spec_html(spec_file:str, params:dict|None=None) -> str:
     </script>
 </body>
 </html>'''
-    
-    return html
+    return html.encode('utf-8')
 
 #
 # load static ui files
@@ -646,11 +644,11 @@ else:
     index_html_content = generate_page_spec_html( mapp_spec['index_page'])
 
 static_files['index.html'] = StaticFileData(
-    content=index_html_content.encode('utf-8'),
+    content=index_html_content,
     content_type='text/html'
 )
 static_protocol_files['index.html'] = StaticFileData(
-    content=index_protocol_html_content.encode('utf-8'),
+    content=index_protocol_html_content,
     content_type='text/html'
 )
 
@@ -665,9 +663,19 @@ for module_key, module in mapp_spec['modules'].items():
         continue
     
     module_kebab = module['name']['kebab_case']
-    module_html_content = generate_module_html(mapp_spec, module_key)
+    module_protocol_html_content = generate_module_html(mapp_spec, module_key)
+
+    if module['page'] is None:
+        module_html_content = module_protocol_html_content
+    else:
+        module_html_content = generate_page_spec_html(module['page'])
+
     static_files[module_kebab] = StaticFileData(
-        content=module_html_content.encode('utf-8'),
+        content=module_html_content,
+        content_type='text/html'
+    )
+    static_protocol_files[module_kebab] = StaticFileData(
+        content=module_protocol_html_content,
         content_type='text/html'
     )
     
@@ -677,9 +685,17 @@ for module_key, module in mapp_spec['modules'].items():
             continue
         
         model_kebab = model['name']['kebab_case']
-        model_html_content = generate_model_html(mapp_spec, module_key, model_key)
+        model_protocol_html_content = generate_model_html(mapp_spec, module_key, model_key)
+        if model['page'] is None:
+            model_html_content = model_protocol_html_content
+        else:
+            model_html_content = generate_page_spec_html(model['page'])
         static_files[f'{module_kebab}/{model_kebab}'] = StaticFileData(
-            content=model_html_content.encode('utf-8'),
+            content=model_html_content,
+            content_type='text/html'
+        )
+        static_protocol_files[f'{module_kebab}/{model_kebab}'] = StaticFileData(
+            content=model_protocol_html_content,
             content_type='text/html'
         )
 
@@ -702,7 +718,7 @@ for module_key, module in mapp_spec['modules'].items():
         op_kebab = op['name']['kebab_case']
         op_html_content = generate_op_html(mapp_spec, module_key, op_key)
         static_files[f'{module_kebab}/{op_kebab}'] = StaticFileData(
-            content=op_html_content.encode('utf-8'),
+            content=op_html_content,
             content_type='text/html'
         )
 

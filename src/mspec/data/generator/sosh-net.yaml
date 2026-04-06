@@ -23,10 +23,14 @@ modules:
     name:
       lower_case: 'sosh net'
 
+    page: 'sosh-module-page.yaml'
+
     models:
       profile:
         name:
           lower_case: 'profile'
+
+        page: 'sosh-profile.yaml'
 
         auth:
           require_login: true

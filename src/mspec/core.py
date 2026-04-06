@@ -214,6 +214,9 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
         if 'builtin' not in module:
             module['builtin'] = False
 
+        if 'page' not in module:
+            module['page'] = None
+
         module_snake = module['name']['snake_case']
 
         #
@@ -235,6 +238,9 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
 
             if 'hidden' not in model:
                 model['hidden'] = False
+
+            if 'page' not in model:
+                model['page'] = None
 
             model_snake = model['name']['snake_case']
 
