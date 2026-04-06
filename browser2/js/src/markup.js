@@ -2068,7 +2068,7 @@ function renderOp(app, expression, ctx = null) {
         let resultDisplayElements;
 
         if (currentOpState.state === 'result') {
-            resultDisplayElements = [{text: 'success: ', style: {color: 'green', bold: true}}];
+            resultDisplayElements = [{text: 'success ', style: {color: 'green', bold: true}}];
             const unwrapped = unwrapValue(currentOpState.result);
 
             if (Object.keys(secureResultFields).length > 0 && typeof unwrapped === 'object' && unwrapped !== null) {
@@ -2080,6 +2080,7 @@ function renderOp(app, expression, ctx = null) {
                         redactedValue[key] = value;
                     }
                 }
+                
                 resultDisplayElements.push({type: 'struct', value: redactedValue});
 
                 for (const fieldKey of Object.keys(secureResultFields)) {
@@ -2091,7 +2092,7 @@ function renderOp(app, expression, ctx = null) {
                                 renderLingoApp(app, document.getElementById('lingo-app'), true);
                             }
                         },
-                        text: showSecureResultFields[fieldKey] ? 'hide' : 'show'
+                        text: showSecureResultFields[fieldKey] ? `hide ${fieldKey}` : `show ${fieldKey}`
                     });
                 }
             } else {
