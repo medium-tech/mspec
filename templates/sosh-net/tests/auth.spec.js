@@ -116,13 +116,25 @@ test('test user auth flow', async ({ browser, crudEnv }) => {
   
 });
 
-test('test redacted fields', async ({ page }) => {
-
+test('test redacted fields', async ({ browser, crudEnv }) => {
   // test that sensitive fields in forms and responses are redacted appropriately
-  
-  await page.goto('http://localhost:3003/');
-  await page.getByRole('link', { name: 'auth' }).click();
-  await page.getByRole('link', { name: 'create-user' }).click();
+  // but can also be enabled with buttons
+
+  // init page with cookies
+
+  const { host: crudHost } = crudEnv;
+
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto(crudHost);
+  await context.addCookies([{ 
+    name: 'protocol_mode', 
+    value: 'true', 
+    path: '/',
+    domain: new URL(crudHost).hostname,
+    secure: false,
+  }]);
+  await page.reload();
 
   //
   // create user
@@ -130,6 +142,9 @@ test('test redacted fields', async ({ page }) => {
 
   const curDate = new Date().getTime();
   const uniqueEmail = `afakeemail+${curDate}@email.com`;
+
+  await page.getByRole('link', { name: 'auth' }).click();
+  await page.getByRole('link', { name: 'create-user' }).click();
 
   await expect(page.locator('input[type="password"]')).toHaveCount(2);
 

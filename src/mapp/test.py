@@ -206,12 +206,16 @@ class TestMTemplateApp(unittest.TestCase):
     pool: Optional[multiprocessing.Pool] = None
 
     crud_db_file = Path(f'{test_dir}/test_crud_db.sqlite3')
+    crud_db_cache_file = Path(f'{test_dir}/test_crud_db_cache.sqlite3')
     crud_envfile = Path(f'{test_dir}/crud.env')
+    crud_cache_envfile = Path(f'{test_dir}/crud_cache.env')
     crud_users = []
     crud_ctx = {}
 
     pagination_db_file = Path(f'{test_dir}/test_pagination_db.sqlite3')
+    pagination_db_cache_file = Path(f'{test_dir}/test_pagination_db_cache.sqlite3')
     pagination_envfile = Path(f'{test_dir}/pagination.env')
+    pagination_cache_envfile = Path(f'{test_dir}/pagination_cache.env')
     pagination_user = {}
     pagination_ctx = {}
 
@@ -229,27 +233,35 @@ class TestMTemplateApp(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        print(':: Setting up TestMTemplateApp')
+        print(f':: Setting up TestMTemplateApp - use cache: {cls.use_cache}')
 
         crud_fs_path = Path(cls.test_dir) / 'crud_file_system'
 
         # delete old files #
-    
+
         if not cls.use_cache:
+            # delete everything including all db and cache files
             shutil.rmtree(cls.test_dir, ignore_errors=True)
+            print(f':: Deleted test directory: {cls.test_dir}')
         else:
-            # the crud environment is always recreated
-            # so we need to wipe this dir always
+            # always recreate the crud file system
             shutil.rmtree(crud_fs_path, ignore_errors=True)
+            # delete working db files so they are replaced with fresh cache copies
+            for db_file in [cls.crud_db_file, cls.pagination_db_file]:
+                try:
+                    db_file.unlink()
+                    print(f':: Deleted database file: {db_file}')
+                except FileNotFoundError:
+                    pass
 
         os.makedirs(cls.test_dir, exist_ok=True)
 
-        # Always delete crud DB to avoid max models exceeded errors with cached data
-        # Only cache the expensive pagination DB
-        if cls.crud_db_file.exists():
-            cls.crud_db_file.unlink()
-        
-        pagination_db_exists = cls.pagination_db_file.exists()
+        # check whether cache dbs already exist
+        crud_cache_exists = cls.crud_db_cache_file.exists()
+        pagination_cache_exists = cls.pagination_db_cache_file.exists()
+
+        needs_crud_rebuild = not cls.use_cache or not crud_cache_exists
+        needs_pagination_rebuild = not cls.use_cache or not pagination_cache_exists
         
         #
         # create test env files
@@ -333,32 +345,37 @@ class TestMTemplateApp(unittest.TestCase):
         tables for the pagination environment. This allows us to test both
         methods of table creation.
 
-        --use-cache can be used to skip recreating the pagination db as it is
-        expensive seed. This is fine for development testing, but full testing
-        should be done without the flag to ensure table creation works from scratch.
+        --use-cache can be used to reuse seeded cache dbs across test runs.
+        When the cache exists both dbs are copied from cache instead of being
+        recreated from scratch. User login sessions are always created fresh
+        from the copied working dbs, since tokens expire between runs.
         """
 
-        print('  :: Creating tables in test dbs ::')
+        # create crud tables in cache db #
 
-        # create crud tables #
-
-        crud_create_tables_cmd = cls.cmd + ['create-tables']
-        crud_result = subprocess.run(crud_create_tables_cmd, capture_output=True, text=True, env=cls.crud_ctx)
-        if crud_result.returncode != 0:
-            raise RuntimeError(f'Error creating tables for crud db: {crud_result.stdout + crud_result.stderr}')
+        if needs_crud_rebuild:
+            print(f':: Creating tables in CRUD cache db')
+            crud_create_tables_cmd = cls.cmd + ['create-tables']
+            crud_result = subprocess.run(crud_create_tables_cmd, capture_output=True, text=True, env=cls.crud_ctx)
+            if crud_result.returncode != 0:
+                raise RuntimeError(f'Error creating tables for crud db: {crud_result.stdout + crud_result.stderr}')
+            
+            try:
+                crud_output = json.loads(crud_result.stdout)
+                assert crud_output['acknowledged'] is True
+                assert crud_output['message'] == 'All tables created or already existed.'
+            except AssertionError as e:
+                raise RuntimeError(f'AssertionError {e} while creating tables for crud cache db: {crud_result.stdout + crud_result.stderr}')
         
-        try:
-            crud_output = json.loads(crud_result.stdout)
-            assert crud_output['acknowledged'] is True
-            assert crud_output['message'] == 'All tables created or already existed.'
-        except AssertionError as e:
-            raise RuntimeError(f'AssertionError {e} while creating table for crud db {module_name_kebab}.{model_name_kebab}: {crud_result.stdout + crud_result.stderr}')
-        
-        # create crud users (always fresh since crud DB is recreated each time) #
+        else:
+            print(f':: copying cached crud db to working db ::')
+            shutil.copy2(str(cls.crud_db_cache_file), str(cls.crud_db_file))
 
-        if cls.spec['project']['use_builtin_modules']:
+        # create crud users
+
+        if needs_crud_rebuild and cls.spec['project']['use_builtin_modules']:
             crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn']
-            print('  :: Creating crud users ::')
+            print(':: Creating crud users')
             for user_name in crud_users:
 
                 # logout #
@@ -380,87 +397,50 @@ class TestMTemplateApp(unittest.TestCase):
                 result = subprocess.run(create_cmd, capture_output=True, text=True, env=cls.crud_ctx)
                 if result.returncode != 0:
                     raise RuntimeError(f'Error creating crud user {user_name}:\n{result.stdout + result.stderr}')
-                
-                user_id = json.loads(result.stdout)['result']['id']
-                user_data['id'] = user_id
-                
-                # login #
+            
+            print(f':: caching db file to {cls.crud_db_cache_file}')
+            shutil.copy2(str(cls.crud_db_file), str(cls.crud_db_cache_file))
 
-                login_params = {'email': user_data['email'], 'password': cls.test_password}
-                login_cmd = cls.cmd + ['auth', 'login-user', 'run', json.dumps(login_params), '--show', '--no-session']
-                result = subprocess.run(login_cmd, capture_output=True, text=True, env=cls.crud_ctx)
+        # create pagination tables and seed data in cache db #
 
-                # confirm and store #
+        if needs_pagination_rebuild:
 
-                if result.returncode != 0:
-                    raise RuntimeError(f'Error logging in crud user {user_name}:\n{result.stdout + result.stderr}')
-                else:
-                    access_token = json.loads(result.stdout)['result']['access_token']
-                    user_env = cls.crud_ctx.copy()
-                    user_env['MAPP_CLI_ACCESS_TOKEN'] = access_token
-                    user_env['Authorization'] = f'Bearer {access_token}'
-                    cls.crud_users.append({'user': user_data, 'env': user_env})
+            # setup tables in cache db #
 
+            for module in cls.spec['modules'].values():
+                module_name_kebab = module['name']['kebab_case']
 
-        # setup tables in test dbs #
+                for model in module['models'].values():
 
-        for module in cls.spec['modules'].values():
-            module_name_kebab = module['name']['kebab_case']
+                    if model['hidden'] is True:
+                        continue
 
-            for model in module['models'].values():
+                    model_name_snake = model['name']['snake_case']
+                    model_name_kebab = model['name']['kebab_case']
 
-                if model['hidden'] is True:
-                    continue
-                
-                model_name_snake = model['name']['snake_case']
-                model_name_kebab = model['name']['kebab_case']
+                    create_table_args = cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create-table']
 
-                create_table_args = cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create-table']
-
-                # create pagination table #
-                
-                if not pagination_db_exists:
                     result = subprocess.run(create_table_args, capture_output=True, text=True, env=cls.pagination_ctx)
                     if result.returncode != 0:
                         raise RuntimeError(f'Error creating table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
-                    
+
                     try:
                         pagination_output = json.loads(result.stdout)
                         assert pagination_output['acknowledged'] is True
                         assert model_name_snake in pagination_output['message']
                     except AssertionError as e:
                         raise RuntimeError(f'AssertionError {e} while creating table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
-                    
-        # still need to use create-tables command because hidden models cannot be created individually #
 
-        pagination_create_tables_cmd = cls.cmd + ['create-tables']
-        pagination_result = subprocess.run(pagination_create_tables_cmd, capture_output=True, text=True, env=cls.pagination_ctx)
-        if pagination_result.returncode != 0:
-            raise RuntimeError(f'Error creating tables for pagination db: {pagination_result.stdout + pagination_result.stderr}')
-        
-        # seed pagination db #
+            # still need to use create-tables command because hidden models cannot be created individually #
 
-        if cls.use_cache and pagination_db_exists:
-            print('  :: Using cached pagination db ::')
-            
-            # login to cached pagination user #
-            
-            if cls.spec['project']['use_builtin_modules']:
-                print('  :: Logging in to cached pagination user ::')
-                try:
-                    cls.pagination_user = login_cached_user(
-                        cls.cmd, 
-                        cls.pagination_ctx, 
-                        'pagination_tester', 
-                        'pagination_tester@example.com'
-                    )
-                except RuntimeError as e:
-                    print(f'  :: Could not login to cached pagination user, will recreate: {e} ::')
-                    # fall through to else block to recreate pagination db
-                    cls.use_cache = False  # disable cache for pagination db
-        
-        if not cls.use_cache or not pagination_db_exists:
-            print(f'  :: Seeding pagination db ::')
+            pagination_create_tables_cmd = cls.cmd + ['create-tables']
+            pagination_result = subprocess.run(pagination_create_tables_cmd, capture_output=True, text=True, env=cls.pagination_ctx)
+            if pagination_result.returncode != 0:
+                raise RuntimeError(f'Error creating tables for pagination db: {pagination_result.stdout + pagination_result.stderr}')
+
+            # seed pagination cache db #
+
+            print(f':: Seeding pagination db')
             seed_jobs = []
             for module in cls.spec['modules'].values():
                 module_name_kebab = module['name']['kebab_case']
@@ -489,11 +469,11 @@ class TestMTemplateApp(unittest.TestCase):
             for (cmd_args, code, stdout, stderr) in results:
                 if code != 0:
                     raise RuntimeError(f':: ERROR seeding table for pagination db :: COMMAND :: {" ".join(cmd_args)} :: OUTPUT :: {stdout + stderr}')
-        
+
             # create pagination user #
 
             if cls.spec['project']['use_builtin_modules']:
-                print('  :: Creating pagination test user ::')
+                print(':: Creating pagination test user')
 
                 user_data = {
                     'name': 'pagination_tester',
@@ -506,21 +486,31 @@ class TestMTemplateApp(unittest.TestCase):
                 create_result = subprocess.run(create_cmd, capture_output=True, text=True, env=cls.pagination_ctx)
                 if create_result.returncode != 0:
                     raise RuntimeError(f'Error creating pagination test user: {create_result.stdout + create_result.stderr}')
-                
-                user_id = json.loads(create_result.stdout)['result']['id']
-                user_data['id'] = user_id
-                
-                login_params = {'email': user_data['email'], 'password': cls.test_password}
-                login_cmd = cls.cmd + ['auth', 'login-user', 'run', json.dumps(login_params), '--show', '--no-session']
-                login_result = subprocess.run(login_cmd, capture_output=True, text=True, env=cls.pagination_ctx)
-                if login_result.returncode != 0:
-                    raise RuntimeError(f'Error logging in pagination test user: {login_result.stdout + login_result.stderr}')
-                
-                access_token = json.loads(login_result.stdout)['result']['access_token']
-                user_env = cls.pagination_ctx.copy()
-                user_env['MAPP_CLI_ACCESS_TOKEN'] = access_token
-                user_env['Authorization'] = f'Bearer {access_token}'
-                cls.pagination_user = {'user': user_data, 'env': user_env}
+            
+            print(f':: caching db file to {cls.pagination_db_cache_file}')
+            shutil.copy2(str(cls.pagination_db_file), str(cls.pagination_db_cache_file))
+        
+        else:
+            print(f':: copying cached pagination db to working db ::')
+            shutil.copy2(str(cls.pagination_db_cache_file), str(cls.pagination_db_file))
+
+        # create login sessions in working dbs #
+
+        cls.crud_users = []
+        if cls.spec['project']['use_builtin_modules']:
+            crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn']
+            print(':: Logging in crud users ::')
+            for user_name in crud_users:
+                user = login_cached_user(cls.cmd, cls.crud_ctx, user_name, f'{user_name}@example.com')
+                cls.crud_users.append(user)
+
+            print(':: Logging in pagination test user ::')
+            cls.pagination_user = login_cached_user(
+                cls.cmd,
+                cls.pagination_ctx,
+                'pagination_tester',
+                'pagination_tester@example.com'
+            )
 
         # delete server logs #
 
@@ -579,13 +569,13 @@ class TestMTemplateApp(unittest.TestCase):
 
         # confirm servers are stopped from previous tests #
 
-        print('  :: Confirming no server processes are running ::')
+        print(':: Confirming no server processes are running ::')
         crud_result = subprocess.run(cls.crud_server_stop_cmd, env=cls.crud_ctx, capture_output=True, text=True, timeout=10)
         pagination_result = subprocess.run(cls.pagination_server_stop_cmd, env=cls.pagination_ctx, capture_output=True, text=True, timeout=10)
         
         # start servers #
 
-        print('  :: Starting server processes ::')
+        print(':: Starting server processes ::')
 
         print('    :: ', ' '.join(crud_server_start_cmd))
         crud_result = subprocess.run(crud_server_start_cmd, env=cls.crud_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
@@ -597,7 +587,7 @@ class TestMTemplateApp(unittest.TestCase):
         if pagination_result.returncode != 0:
             raise RuntimeError(f'Error starting pagination server: {pagination_result.stdout + pagination_result.stderr}')
 
-        print('  :: Setup complete ::')
+        print(':: Setup complete')
 
         print(':: test progress :: ', end='', flush=True)
     
