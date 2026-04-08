@@ -36,10 +36,11 @@
 * 🟢 mega app for testing (merge modules from multiple files)
 * 🟢 master image ingest operation
 * 🟡 define custom pages
-    * 🟡 project index page
-    * 🔴 module index page
-    * 🔴 model index page
-    * 🔴 model instance page
+    * 🟢 project index page
+    * 🟢 module index page
+    * 🟢 model index page
+    * 🟢 model instance page
+    * 🔴 arbitrary pages
     * 🔴 op page
 * 🟢 support for list of foreign keys
     * 🟢 backend

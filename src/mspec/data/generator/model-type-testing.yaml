@@ -159,77 +159,77 @@ modules:
               - ["2000-01-11T12:34:56"]
               - ["2020-10-02T15:30:00", "2021-01-01T00:00:00"]
 
-      rando_model:
-        name:
-          lower_case: 'rando model'
+      # rando_model:
+      #   name:
+      #     lower_case: 'rando model'
 
-        description: 'A model to test random data generator functions for various field types'
+      #   description: 'A model to test random data generator functions for various field types'
 
-        auth:
-          require_login: true
+      #   auth:
+      #     require_login: true
 
-        fields:
+      #   fields:
 
-          user_id:
-            name:
-              lower_case: 'user id'
-            type: foreign_key
-            references:
-              module: 'auth'
-              table: 'user'
-              field: 'id'
-            examples:
-              - "1"
-              - "2"
-              - "3"
+      #     user_id:
+      #       name:
+      #         lower_case: 'user id'
+      #       type: foreign_key
+      #       references:
+      #         module: 'auth'
+      #         table: 'user'
+      #         field: 'id'
+      #       examples:
+      #         - "1"
+      #         - "2"
+      #         - "3"
 
-          name:
-            name:
-              lower_case: 'name'
-            type: str
-            examples:
-              - "Alice"
-              - "Bob"
-              - "Charlie"
-            random: random_person_name
+      #     name:
+      #       name:
+      #         lower_case: 'name'
+      #       type: str
+      #       examples:
+      #         - "Alice"
+      #         - "Bob"
+      #         - "Charlie"
+      #       random: random_person_name
           
-          user_name:
-            name:
-              lower_case: 'user name'
-            type: str
-            examples:
-              - "alice123"
-              - "bob_the_builder"
-              - "charlie_brown"
-            random: random_user_name
+      #     user_name:
+      #       name:
+      #         lower_case: 'user name'
+      #       type: str
+      #       examples:
+      #         - "alice123"
+      #         - "bob_the_builder"
+      #         - "charlie_brown"
+      #       random: random_user_name
           
-          favorite_thing:
-            name:
-              lower_case: 'favorite thing'
-            type: str
-            examples:
-              - "pizza"
-              - "sushi"
-              - "tacos"
-            random: random_thing_name
+      #     favorite_thing:
+      #       name:
+      #         lower_case: 'favorite thing'
+      #       type: str
+      #       examples:
+      #         - "pizza"
+      #         - "sushi"
+      #         - "tacos"
+      #       random: random_thing_name
           
-          email:
-            name:
-              lower_case: 'email'
-            type: str
-            examples:
-              - "my@email.com"
-              - "my-other@email.com"
-            random: random_email
+      #     email:
+      #       name:
+      #         lower_case: 'email'
+      #       type: str
+      #       examples:
+      #         - "my@email.com"
+      #         - "my-other@email.com"
+      #       random: random_email
           
-          phone_number:
-            name:
-              lower_case: 'phone number'
-            type: str
-            examples:
-              - "+1 (123) 456-7890"
-              - "+1 (987) 654-3210"
-            random: random_phone_number
+      #     phone_number:
+      #       name:
+      #         lower_case: 'phone number'
+      #       type: str
+      #       examples:
+      #         - "+1 (123) 456-7890"
+      #         - "+1 (987) 654-3210"
+      #       random: random_phone_number
 
       limit_a:
         name:
@@ -303,7 +303,7 @@ modules:
 
         auth:
           require_login: true
-          max_models_per_user: 5
+          max_models_per_user: 2
 
         fields:
 

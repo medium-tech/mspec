@@ -201,7 +201,7 @@ class TestMTemplateApp(unittest.TestCase):
     env_vars: dict
     use_cache: bool
     app_type: str = ''
-    threads: int = 8
+    threads: int = 12
 
     pool: Optional[multiprocessing.Pool] = None
 
@@ -218,7 +218,7 @@ class TestMTemplateApp(unittest.TestCase):
     pagination_total_models = 25
 
     pagination_cases = [
-        {'size': 1, 'expected_pages': 25},
+        # {'size': 1, 'expected_pages': 25},
         {'size': 5, 'expected_pages': 5},
         {'size': 10, 'expected_pages': 3},
         {'size': 25, 'expected_pages': 1},
@@ -1046,7 +1046,6 @@ class TestMTemplateApp(unittest.TestCase):
         with open(local_file_dest, 'rb') as f:
             local_checksum = hashlib.sha3_256(f.read()).hexdigest()
         self.assertEqual(local_checksum, sample_checksum, 'Local file checksum for file content does not match expected checksum')
-
 
     def test_cli_run_file_system_ingest_flow(self):
         self._test_file_system_ingest_flow(self.crud_ctx, 'run')

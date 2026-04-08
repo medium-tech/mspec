@@ -756,10 +756,10 @@ def dynamic_file_routes(server: MappContext, request: RequestContext):
         if pattern.match(request.env['PATH_INFO']):
             mapp_spec, module_key, model_key = gen_args
     
-            html_content = generator_func(mapp_spec, module_key, model_key, request.env['PATH_INFO'])
+            html_content:bytes = generator_func(mapp_spec, module_key, model_key, request.env['PATH_INFO'])
             raise StaticFileResponse(
                 '200 OK',
-                content=html_content.encode('utf-8'),
+                content=html_content,
                 content_type='text/html'
             )
 
