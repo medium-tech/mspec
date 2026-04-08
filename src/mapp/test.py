@@ -138,9 +138,6 @@ def env_to_string(env:dict) -> str:
             out += f'{key}={value}\n'
     return out
 
-def run_request(ctx, method, endpoint, request_body=None):
-    return request(ctx, method, endpoint, request_body)
-
 def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, cmd, crud_ctx, create_user, create_user_env, other_user, other_user_env):
 
     logged_out_ctx = crud_ctx.copy()
@@ -152,7 +149,9 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
 
     ctx = create_user_env if require_login else crud_ctx
 
-    # create #
+    #
+    # create
+    #
 
     example_to_create = example_from_model(model)
     create_args = model_db_args + ['create', json.dumps(example_to_create)]
@@ -185,7 +184,9 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
         if max_models == 0:
             return
 
-    # read #
+    #
+    # read
+    #
 
     read_args = model_db_args + ['read', str(created_model_id)]
 
@@ -209,7 +210,9 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
             assert read_model['user_id'] is not None, f'Read {model_name} user_id is None'
             assert read_model['user_id'] == create_user['id'], f'Read {model_name} ID does not match created ID'
 
-    # update #
+    #
+    # update
+    #
 
     try:
         updated_example = example_from_model(model, index=1)
@@ -243,7 +246,9 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
             assert updated_model['user_id'] is not None, f'Updated {model_name} user_id is None'
             assert updated_model['user_id'] == create_user['id'], f'Updated {model_name} ID does not match created ID'
 
-    # delete #
+    #
+    # delete
+    #
 
     delete_args = model_db_args + ['delete', str(created_model_id)]
 
@@ -286,7 +291,9 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
         except json.JSONDecodeError as e:
             raise RuntimeError(f'JSONDecodeError {e} while reading after delete for {model_name} id {created_model_id}: {stdout + stderr}')
 
-    # test data isolation between users #
+    #
+    # isolation between users
+    #
 
     if require_login:
         assert create_user['id'] is not None, 'Create user ID is None, test setup error'
@@ -301,7 +308,9 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
     model_name_kebab = model['name']['kebab_case']
     max_models = model['auth']['max_models_per_user']
 
-    # create #
+    #
+    # create
+    #
 
     example_to_create = example_from_model(model)
     create_args = [
@@ -338,9 +347,12 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
         assert max_created_status == 400, f'Create {model_name} beyond max_models_per_user did not return 400 Bad Request, response: {max_created_model}'
 
     if max_models == 0:
+        # remaining tests not applicable
         return
 
-    # read #
+    #
+    # read
+    #
 
     if require_login and not hidden:
         read_status, data = request(logged_out_ctx, 'GET', f'/api/{module_name_kebab}/{model_name_kebab}/{1}', None)
@@ -357,7 +369,9 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
         assert read_model == example_to_create, f'Read {model_name} id: {read_model_id} does not match example data'
         assert read_model_id == created_model_id, f'Read {model_name} id: {read_model_id} does not match created id: {created_model_id}'
 
-    # update #
+    #
+    # update
+    #
 
     try:
         updated_example = example_from_model(model, index=1)
@@ -394,6 +408,8 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
         read_model_id = read_model.pop('id')
         assert read_model == example_to_create, f'Read {model_name} id: {read_model_id} does not match example data after failed update attempt'
 
+    # send request #
+
     updated_status, updated_model = request(
         ctx,
         'PUT',
@@ -411,7 +427,9 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
         assert updated_model == updated_example, f'Updated {model_name} id: {updated_model_id} does not match updated example data'
         assert updated_model_id == created_model_id, f'Updated {model_name} id: {updated_model_id} does not match created id: {created_model_id}'
 
-    # delete #
+    #
+    # delete
+    #
 
     if require_login and not hidden:
 
@@ -432,6 +450,8 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
         read_model_id = read_model.pop('id')
         assert read_model == updated_example, f'Read {model_name} id: {read_model_id} does not match updated example data after failed delete attempt'
 
+    # send request #
+
     delete_status, delete_output = request(ctx, 'DELETE', f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}', None)
 
     if hidden:
@@ -445,9 +465,9 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
         expected_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
         assert delete_output['message'].startswith(expected_msg), f'Delete {model_name} id: {created_model_id} did not return correct message'
 
-    # confirm delete is idempotent #
-
     if not hidden:
+
+        # confirm delete is idempotent #
 
         delete_status, delete_output = request(ctx, 'DELETE', f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}', None)
         assert delete_status == 200, f'Delete (2nd) {model_name} id: {created_model_id} did not return status 200 OK, response: {delete_output}'
@@ -1621,12 +1641,16 @@ class TestMTemplateApp(unittest.TestCase):
         other_user_env = self.crud_users[0]['env']
         self.assertNotEqual(user_index, 0, 'user_index must not be 0 to ensure different users for testing')
 
+        # create test cases #
+
         jobs = []
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
                 jobs.append((module_name_kebab, model_name, model, command_type, self.cmd, self.crud_ctx, create_user, create_user_env, other_user, other_user_env))
 
+        # parallel process tests #
+        
         self.pool.starmap(run_cli_crud_for_model, jobs)
  
     def test_cli_db_crud(self):
@@ -1653,6 +1677,10 @@ class TestMTemplateApp(unittest.TestCase):
             }
         }
 
+        #
+        # create test cases
+        #
+
         logged_out_ctx.update(self.crud_ctx)
 
         alice_user = self.crud_users[0]['user']
@@ -1667,6 +1695,10 @@ class TestMTemplateApp(unittest.TestCase):
             module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
                 jobs.append((module_name_kebab, model_name, model, base_ctx, logged_out_ctx, alice_ctx, bob_ctx, alice_user, bob_user))
+
+        #
+        # parallel process tests
+        #
 
         self.pool.starmap(run_server_crud_for_model, jobs)
 
@@ -1766,6 +1798,10 @@ class TestMTemplateApp(unittest.TestCase):
         request_jobs = []
         test_cases = []
 
+        #
+        # create test cases
+        #
+
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
@@ -1804,7 +1840,15 @@ class TestMTemplateApp(unittest.TestCase):
                         test_cases.append((module_name_kebab, model_name_kebab, size, expected_pages, page, offset))
                         offset += size
 
-        results = self.pool.starmap(run_request, request_jobs)
+        #
+        # parallel process tests
+        #
+
+        results = self.pool.starmap(request, request_jobs)
+
+        #
+        # confirm results
+        #
 
         grouped = defaultdict(list)
         for (module_name_kebab, model_name_kebab, size, expected_pages, page, offset), (status, response) in zip(test_cases, results):
