@@ -202,6 +202,11 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
     if 'index_page' not in spec:
         spec['index_page'] = None
 
+    if 'pages' not in spec:
+        spec['pages'] = {}
+
+    spec_page_keys = list(spec['pages'].keys())
+
     #
     # modules
     #
@@ -211,11 +216,19 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
             if key not in module['name']:
                 module['name'][key] = value
 
+        if module['name']['kebab_case'] in spec_page_keys:
+            raise ValueError(f'Module name {module["name"]["kebab_case"]} conflicts with a page defined in spec.pages')
+
         if 'builtin' not in module:
             module['builtin'] = False
 
         if 'page' not in module:
             module['page'] = None
+
+        if 'pages' not in module:
+            module['pages'] = {}
+        
+        module_page_keys = list(module['pages'].keys())
 
         module_snake = module['name']['snake_case']
 
@@ -236,11 +249,17 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
 
                 module_model_names.append(model['name'][key])
 
+            if model['name']['kebab_case'] in module_page_keys:
+                raise ValueError(f'Model name {model["name"]["kebab_case"]} in module {module["name"]["kebab_case"]} conflicts with a page defined in module.pages')
+
             if 'hidden' not in model:
                 model['hidden'] = False
 
             if 'page' not in model:
                 model['page'] = None
+
+            if 'pages' not in model:
+                model['pages'] = {}
 
             model_snake = model['name']['snake_case']
 

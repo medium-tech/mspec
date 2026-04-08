@@ -652,6 +652,11 @@ static_protocol_files['index.html'] = StaticFileData(
     content_type='text/html'
 )
 
+for page_key, page_spec_file in mapp_spec['pages'].items():
+    static_files[page_key] = StaticFileData(
+        content=generate_page_spec_html(page_spec_file),
+        content_type='text/html'
+    )
 
 #
 # module pages
@@ -664,6 +669,8 @@ for module_key, module in mapp_spec['modules'].items():
     
     module_kebab = module['name']['kebab_case']
     module_protocol_html_content = generate_module_html(mapp_spec, module_key)
+
+    # add default module page #
 
     if module['page'] is None:
         module_html_content = module_protocol_html_content
@@ -678,13 +685,25 @@ for module_key, module in mapp_spec['modules'].items():
         content=module_protocol_html_content,
         content_type='text/html'
     )
+
+    # additional optional module pages #
+
+    for page_key, page_spec_file in module['pages'].items():
+        static_files[f'{module_kebab}/{page_key}'] = StaticFileData(
+            content=generate_page_spec_html(page_spec_file),
+            content_type='text/html'
+        )
     
     # add dynamic and static model pages #
+
     for model_key, model in module.get('models', {}).items():
         if model.get('hidden', False) is True:
             continue
         
         model_kebab = model['name']['kebab_case']
+
+        # add default model page #
+
         model_protocol_html_content = generate_model_html(mapp_spec, module_key, model_key)
         if model['page'] is None:
             model_html_content = model_protocol_html_content
@@ -698,6 +717,16 @@ for module_key, module in mapp_spec['modules'].items():
             content=model_protocol_html_content,
             content_type='text/html'
         )
+
+        # add additional optional model pages #
+        
+        for page_key, page_spec_file in model.get('pages', {}).items():
+            static_files[f'{module_kebab}/{model_kebab}/{page_key}'] = StaticFileData(
+                content=generate_page_spec_html(page_spec_file),
+                content_type='text/html'
+            )
+
+        # model instance dynamic route #
 
         pattern = f'/{module_kebab}/{model_kebab}/[0-9a-zA-Z]+$'
 
