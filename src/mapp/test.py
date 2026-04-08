@@ -261,7 +261,7 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
         _, code, stdout, stderr = run_cmd(delete_args, ctx)
         assert code == 0, f'expected 0 got {code} for command "{" ".join(delete_args)}" output: {stdout + stderr}'
         delete_output = json.loads(stdout)
-        assert delete_output['acknowledged'] == True, f'Delete {model_name} ID did not return acknowledgement'
+        assert delete_output['acknowledged'], f'Delete {model_name} ID did not return acknowledgement'
         expected_delete_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
         assert delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message'
 
