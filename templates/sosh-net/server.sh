@@ -15,6 +15,7 @@ ENVFILE=".env"
 PID_FILE="app/server.pid"
 LOG_FILE="app/server.log"
 CONFIG_FILE="./uwsgi.yaml"
+RELOAD_CONFIG_FILE="./uwsgi-reload.yaml"
 STOP=false
 TAIL_AFTER=false
 RELOAD_EXT=""
@@ -40,6 +41,8 @@ usage() {
   echo "                            or supply via MAPP_ENV_FILE env var"
   echo "  --pid-file <path>     Path to PID file (default: app/server.pid)"
   echo "  --config <path>       Path to uwsgi config file (default: ./uwsgi.yaml)"
+  echo "  --reload-config <path> Path to uwsgi config file used in reload mode (default: ./uwsgi-reload.yaml)"
+  echo "                            this config runs uwsgi in the foreground so watchexec can manage the process"
   echo "  --ui-src <path>       Path to MAPP UI files source directory"
   echo "                            if provided will be used to set MAPP_UI_FILE_SOURCE env var"
   echo "  --dev                 Shortcut for --ui-src ../../browser2/js/src and sets default"
@@ -53,6 +56,11 @@ usage() {
   echo "  --tail                Tail log after starting or restarting the server"
   echo "                            (cannot be combined with --reload-dir)"
   echo -e "  -h, --help            Show this help message and exit\n"
+  echo ""
+  echo "Optional installation:"
+  echo "  watchexec             Install watchexec to enable auto-reloading with --reload-dir and --dev"
+  echo "                          See https://github.com/watchexec/watchexec"
+  echo ""
 
   local error_msg="$1"
 
@@ -94,6 +102,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --config)
       CONFIG_FILE="$2"
+      shift 2
+      ;;
+    --reload-config)
+      RELOAD_CONFIG_FILE="$2"
       shift 2
       ;;
     --ui-src)
@@ -145,6 +157,7 @@ printf "\n::\n:: init mapp environment\n::\n\n"
 printf "%-${COL_WIDTH}s %s\n" ":: env file"   "$ENVFILE"
 printf "%-${COL_WIDTH}s %s\n" ":: pid file"   "$PID_FILE"
 printf "%-${COL_WIDTH}s %s\n" ":: config file" "$CONFIG_FILE"
+printf "%-${COL_WIDTH}s %s\n" ":: reload config" "$RELOAD_CONFIG_FILE"
 printf "%-${COL_WIDTH}s %s\n" ":: log file"    "$LOG_FILE"
 printf "%-${COL_WIDTH}s %s\n" ":: ui src" "${MAPP_UI_FILE_SOURCE:- }"
 printf "%-${COL_WIDTH}s %s\n" ":: venv"       "${VIRTUAL_ENV:-}"
@@ -187,7 +200,7 @@ start_server() {
 }
 
 run_watchexec() {
-  local watchexec_args=()
+  local watchexec_args=('--restart')
   if [ -n "$RELOAD_EXT" ]; then
     watchexec_args+=('-e' "$RELOAD_EXT")
   fi
@@ -195,7 +208,8 @@ run_watchexec() {
     watchexec_args+=('-w' "$dir")
   done
   printf "\n::\n:: starting watchexec\n::\n\n"
-  watchexec "${watchexec_args[@]}" "$0" restart
+  watchexec "${watchexec_args[@]}" uwsgi --yaml "$RELOAD_CONFIG_FILE"
+  printf "\n\n:: exiting watchexec\n\n"
 }
 
 stop_server() {
@@ -238,9 +252,6 @@ case "$COMMAND" in
     ;;
   start)
     if [ ${#RELOAD_DIRS[@]} -gt 0 ]; then
-      if ! is_server_running; then
-        start_server
-      fi
       run_watchexec
     else
       if is_server_running; then

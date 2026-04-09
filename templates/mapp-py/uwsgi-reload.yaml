@@ -1,0 +1,9 @@
+# vars :: {"3003": "server.port"}
+uwsgi:
+    http: :3003
+    wsgi-file: server.py
+    master: true
+    log-master: true
+    processes: 1
+    lazy-apps: true
+    logformat: %('    ') :: RESP :: %(status) :: %(method) %(uri) :: %(size) bytes in %(msecs) msecs :: %(request_id)

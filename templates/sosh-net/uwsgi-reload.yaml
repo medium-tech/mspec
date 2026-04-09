@@ -1,0 +1,8 @@
+uwsgi:
+    http: :8008
+    wsgi-file: server.py
+    master: true
+    log-master: true
+    processes: 1
+    lazy-apps: true
+    logformat: %('    ') :: RESP :: %(status) :: %(method) %(uri) :: %(size) bytes in %(msecs) msecs :: %(request_id)
