@@ -81,6 +81,8 @@ class MTemplateProject:
             autoescape=False,
             loader=FunctionLoader(self.jinja_loader),
             undefined=Undefined if disable_strict else StrictUndefined,
+            comment_start_string='/*--', 
+            comment_end_string='--*/'
         )
 
     def _macro_by_type(self, macro_name:str, type_id:str, **vars) -> str:

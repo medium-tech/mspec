@@ -15,8 +15,11 @@ ENVFILE=".env"
 PID_FILE="app/server.pid"
 LOG_FILE="app/server.log"
 CONFIG_FILE="./uwsgi.yaml"
+TOUCH_RELOAD_FILE=app/touch-to-reload
 STOP=false
 TAIL_AFTER=false
+RELOAD_EXT=""
+RELOAD_DIRS=()
 
 # If ENVFILE env var is set, use it for env file path
 if [ -n "$MAPP_ENV_FILE" ]; then
@@ -26,23 +29,40 @@ fi
 usage() {
   echo -e "\nUsage: $0 <command> [options]\n"
   echo "Commands:"
-  echo "  start                 Start the uwsgi server"
-  echo "  stop                  Stop the uwsgi server"
-  echo "  restart               Restart the uwsgi server"
-  echo "  log                   Tail the uwsgi log file"
-  echo "  status                Check uwsgi server status"
+  echo "  start                       Start the uwsgi server"
+  echo "  stop                        Stop the uwsgi server"
+  echo "  restart                     Restart the uwsgi server"
+  echo "  log                         Tail the uwsgi log file"
+  echo "  status                      Check uwsgi server status"
   echo ""
   echo "Options:"
-  echo "  --log-file <path>     Path to uwsgi log file (default: app/server.log)"
-  echo "  --env-file <path>     Path to .env file (default: .env) "
-  echo "                            or supply via MAPP_ENV_FILE env var"
-  echo "  --pid-file <path>     Path to PID file (default: app/server.pid)"
-  echo "  --config <path>       Path to uwsgi config file (default: ./uwsgi.yaml)"
-  echo "  --ui-src <path>       Path to MAPP UI files source directory"
-  echo "                            if provided will be used to set MAPP_UI_FILE_SOURCE env var"
-  echo "  --dev                 Shortcut for --ui-src ../../browser2/js/src"
-  echo "  --tail                Tail log after starting or restarting the server"
-  echo -e "  -h, --help            Show this help message and exit\n"
+  echo "  --log-file <path>           Path to uwsgi log file (default: app/server.log)"
+  echo "  --env-file <path>           Path to .env file (default: .env) "
+  echo "                               or supply via MAPP_ENV_FILE env var"
+  echo "  --pid-file <path>           Path to PID file (default: app/server.pid)"
+  echo "  --config <path>             Path to uwsgi config file (default: ./uwsgi.yaml)"
+  echo "  --ui-src <path>             Path to MAPP UI files source directory"
+  echo "                                if provided will be used to set MAPP_UI_FILE_SOURCE env var"
+  echo "  --dev                       Development mode; adds these options:"
+  echo "                                --ui-src ../../browser2/js/src"
+  echo "                                --reload-ext py,yaml,json,js,html,css"
+  echo "                                --reload-dir ../../src"
+  echo "                                --reload-dir ../../browser2/js/src"
+  echo "                                (requires watchexec, see optional installation below)"
+  echo "  --touch-reload-file <path>  Path to file to touch for triggering reload (default: app/touch-to-reload)"
+  echo "                                must match \"touch-reload\" option in config file (--config)"
+  echo "  --reload-ext <exts>         Comma-separated list of file extensions to watch (e.g. py,yaml);"
+  echo "                                maps to watchexec -e; requires watchexec to be installed"
+  echo "  --reload-dir <path>         Directory to watch for changes; can be specified multiple times;"
+  echo "                                maps to watchexec -w; requires watchexec to be installed"
+  echo "  --tail                      Tail log after starting or restarting the server"
+  echo "                                (cannot be combined with --reload-dir)"
+  echo -e "  -h, --help               Show this help message and exit\n"
+  echo ""
+  echo "Optional installation:"
+  echo "  watchexec             Install watchexec to enable auto-reloading with --reload-dir and --dev"
+  echo "                          See https://github.com/watchexec/watchexec"
+  echo ""
 
   local error_msg="$1"
 
@@ -86,13 +106,28 @@ while [[ $# -gt 0 ]]; do
       CONFIG_FILE="$2"
       shift 2
       ;;
+    --touch-reload-file)
+      TOUCH_RELOAD_FILE="$2"
+      shift 2
+      ;;
     --ui-src)
       export MAPP_UI_FILE_SOURCE="$2"
       shift 2
       ;;
     --dev)
       export MAPP_UI_FILE_SOURCE="../../browser2/js/src"
+      RELOAD_EXT="py,yaml,json,js,html,css"
+      RELOAD_DIRS+=("../../src")
+      RELOAD_DIRS+=("../../browser2/js/src")
       shift
+      ;;
+    --reload-ext)
+      RELOAD_EXT="$2"
+      shift 2
+      ;;
+    --reload-dir)
+      RELOAD_DIRS+=("$2")
+      shift 2
       ;;
     --tail)
       TAIL_AFTER=true
@@ -124,6 +159,7 @@ printf "\n::\n:: init mapp environment\n::\n\n"
 printf "%-${COL_WIDTH}s %s\n" ":: env file"   "$ENVFILE"
 printf "%-${COL_WIDTH}s %s\n" ":: pid file"   "$PID_FILE"
 printf "%-${COL_WIDTH}s %s\n" ":: config file" "$CONFIG_FILE"
+printf "%-${COL_WIDTH}s %s\n" ":: reload file" "$TOUCH_RELOAD_FILE"
 printf "%-${COL_WIDTH}s %s\n" ":: log file"    "$LOG_FILE"
 printf "%-${COL_WIDTH}s %s\n" ":: ui src" "${MAPP_UI_FILE_SOURCE:- }"
 printf "%-${COL_WIDTH}s %s\n" ":: venv"       "${VIRTUAL_ENV:-}"
@@ -134,6 +170,18 @@ printf "%-${COL_WIDTH}s %s\n" ":: python" "$(which python)"
 printf "%-${COL_WIDTH}s %s\n" ":: pip "    "$(which pip)"
 
 
+# --- Validate reload options --- #
+
+if [ ${#RELOAD_DIRS[@]} -gt 0 ]; then
+  if ! command -v watchexec &> /dev/null; then
+    echo -e "\n  Error: watchexec is not installed. Install it to use --reload-dir.\n" >&2
+    exit 1
+  fi
+  if [ "$TAIL_AFTER" = true ]; then
+    echo -e "\n  Error: --tail cannot be combined with --reload-dir.\n" >&2
+    exit 1
+  fi
+fi
 
 
 # --- Reusable functions for server control --- #
@@ -147,6 +195,19 @@ start_server() {
     printf "\n::\n:: tailing uwsgi log\n::\n\n"
     tail -f "$LOG_FILE"
   fi
+}
+
+run_watchexec() {
+  local watchexec_args=()
+  if [ -n "$RELOAD_EXT" ]; then
+    watchexec_args+=('-e' "$RELOAD_EXT")
+  fi
+  for dir in "${RELOAD_DIRS[@]}"; do
+    watchexec_args+=('-w' "$dir")
+  done
+  printf "\n::\n:: starting watchexec\n::\n\n"
+  watchexec "${watchexec_args[@]}" touch "$TOUCH_RELOAD_FILE"
+  printf "\n\n:: exiting watchexec\n\n"
 }
 
 stop_server() {
@@ -188,11 +249,22 @@ case "$COMMAND" in
     exit 0
     ;;
   start)
-    if is_server_running; then
-      printf "\n::\n:: uwsgi is already running\n::\n\n"
-      exit 0
+    if [ ${#RELOAD_DIRS[@]} -gt 0 ]; then
+      # start server if not already running, then start watchexec to watch for changes and trigger reloads
+      if ! is_server_running; then
+        start_server
+      else
+        printf "\n::\n:: uwsgi is already running, entering watch mode\n::\n\n"
+      fi
+      run_watchexec
+      stop_server
+    else
+      if is_server_running; then
+        printf "\n::\n:: uwsgi is already running\n::\n\n"
+        exit 0
+      fi
+      start_server
     fi
-    start_server
     exit $?
     ;;
   stop)
@@ -201,26 +273,7 @@ case "$COMMAND" in
     ;;
   restart)
     
-    # call stop_server if is_server_running, otherwise just print message
-    if is_server_running; then
-      stop_server
-    else
-      printf "\n::\n:: uwsgi is not running, starting it\n::\n\n"
-    fi
-
-    # Poll for process to stop (max 10s)
-    TIMEOUT=10
-    INTERVAL=0.333
-    ELAPSED=0
-    while is_server_running; do
-      if (( $(echo "$ELAPSED >= $TIMEOUT" | bc -l) )); then
-        echo ":: ERROR: uwsgi did not stop after $TIMEOUT seconds. Aborting restart."
-        exit 1
-      fi
-      sleep $INTERVAL
-      ELAPSED=$(echo "$ELAPSED + $INTERVAL" | bc)
-    done
-    start_server
+    touch "$TOUCH_RELOAD_FILE"
     exit $?
     ;;
   log)
