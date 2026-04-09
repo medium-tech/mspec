@@ -53,6 +53,11 @@ usage() {
   echo "  --tail                Tail log after starting or restarting the server"
   echo "                            (cannot be combined with --reload-dir)"
   echo -e "  -h, --help            Show this help message and exit\n"
+  echo ""
+  echo "Optional installation:"
+  echo "  watchexec             Install watchexec to enable auto-reloading with --reload-dir and --dev"
+  echo "                          See https://github.com/watchexec/watchexec"
+  echo ""
 
   local error_msg="$1"
 
