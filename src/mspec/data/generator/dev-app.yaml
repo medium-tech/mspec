@@ -18,8 +18,6 @@ server:
 client:
   default_host: 'http://localhost:2002'
 
-index_page: 'sosh-front-page.yaml'
-
 import:
   modules:
     - ./model-type-testing.yaml
