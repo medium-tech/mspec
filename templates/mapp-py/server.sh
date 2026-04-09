@@ -27,6 +27,7 @@ usage() {
   echo "Commands:"
   echo "  start                 Start the uwsgi server"
   echo "  stop                  Stop the uwsgi server"
+  echo "  restart               Restart the uwsgi server"
   echo "  log                   Tail the uwsgi log file"
   echo "  status                Check uwsgi server status"
   echo ""
@@ -122,31 +123,88 @@ printf "%-${COL_WIDTH}s %s\n" ":: python" "$(which python)"
 printf "%-${COL_WIDTH}s %s\n" ":: pip "    "$(which pip)"
 
 
+
+
+# --- Reusable functions for server control --- #
+
+start_server() {
+  printf "\n::\n:: starting uwsgi\n::\n\n"
+  uwsgi --yaml "$CONFIG_FILE" --daemonize "$LOG_FILE"
+  printf "\n\n:: uwsgi started\n\n"
+}
+
+stop_server() {
+  printf "\n::\n:: stopping uwsgi\n::\n\n"
+  uwsgi --stop "$PID_FILE"
+  printf ":: uwsgi stopped\n\n"
+}
+
+# Returns 0 if running, 1 if stopped
+is_server_running() {
+  if [ -f "$PID_FILE" ]; then
+    PID=$(cat "$PID_FILE")
+    if ps -p "$PID" > /dev/null; then
+      return 0
+    fi
+  fi
+  return 1
+}
+
+print_server_status() {
+  printf "\n::\n:: uwsgi status\n::\n\n"
+  if [ -f "$PID_FILE" ]; then
+    PID=$(cat "$PID_FILE")
+    if ps -p "$PID" > /dev/null; then
+      echo -e ":: RUNNING - uwsgi is running (pid: $PID)\n"
+    else
+      echo -e ":: STOPPED - uwsgi pid file exists, but process is not running\n"
+    fi
+  else
+    echo -e ":: STOPPED - uwsgi pid file does not exist\n"
+  fi
+}
+
+# --- Command dispatch --- #
+
 case "$COMMAND" in
-    status)
-      printf "\n::\n:: uwsgi status\n::\n\n"
-      if [ -f "$PID_FILE" ]; then
-        PID=$(cat "$PID_FILE")
-        if ps -p "$PID" > /dev/null; then
-          echo -e ":: RUNNING - uwsgi is running (pid: $PID)\n"
-        else
-          echo -e ":: STOPPED - uwsgi pid file exists, but process is not running\n"
-        fi
-      else
-        echo -e ":: STOPPED - uwsgi pid file does not exist\n"
-      fi
-      exit 0
-      ;;
+  status)
+    print_server_status
+    exit 0
+    ;;
   start)
-    printf "\n::\n:: starting uwsgi\n::\n\n"
-    uwsgi --yaml "$CONFIG_FILE" --daemonize "$LOG_FILE"
-    printf "\n\n:: uwsgi started\n\n"
+    if is_server_running; then
+      printf "\n::\n:: uwsgi is already running\n::\n\n"
+      exit 0
+    fi
+    start_server
     exit $?
     ;;
   stop)
-    printf "\n::\n:: stopping uwsgi\n::\n\n"
-    uwsgi --stop "$PID_FILE"
-    printf ":: uwsgi stopped\n\n"
+    stop_server
+    exit $?
+    ;;
+  restart)
+    
+    # call stop_server if is_server_running, otherwise just print message
+    if is_server_running; then
+      stop_server
+    else
+      printf "\n::\n:: uwsgi is not running, starting it\n::\n\n"
+    fi
+
+    # Poll for process to stop (max 10s)
+    TIMEOUT=10
+    INTERVAL=0.333
+    ELAPSED=0
+    while is_server_running; do
+      if (( $(echo "$ELAPSED >= $TIMEOUT" | bc -l) )); then
+        echo ":: ERROR: uwsgi did not stop after $TIMEOUT seconds. Aborting restart."
+        exit 1
+      fi
+      sleep $INTERVAL
+      ELAPSED=$(echo "$ELAPSED + $INTERVAL" | bc)
+    done
+    start_server
     exit $?
     ;;
   log)
