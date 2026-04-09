@@ -22,7 +22,7 @@ output:
 - heading: "sosh.net"
   level: 1
 
-- heading: ":: the network"
+- heading: ":: the network!"
   level: 2
 
 - block:

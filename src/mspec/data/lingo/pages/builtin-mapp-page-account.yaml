@@ -15,6 +15,13 @@ state:
           args: {}
         key: logged_in
   
+  user_data:
+    type: struct
+    default:
+      state: 'pending'
+      error: ''
+      data: {}
+  
 
 ops: {}
 
@@ -25,11 +32,33 @@ output:
 - heading: ":: account"
   level: 2
 
+- breadcrumbs:
+  - "home"
+  - "account"
+
+- break: 1
+
 - block:
     - text: here you can adjust your stuffs.
     - break: 1
     - text: 'are you logged in: '
-    - lingo: {state: {is_logged_in: {}}}
-    - break: 2
-    - link: '/'
-      text: 'home'
+      style:
+        bold: true
+    - branch:
+      - if:
+          state: {is_logged_in: {}}
+        then:
+          text: 'yes'
+      - else:
+          - text: 'no'
+    - break: 1
+    - branch:
+      - if:
+          state: {is_logged_in: {}}
+        then:
+          # block:    <-- block is throwing error here
+          #   - text: 'placeholder for account details and settings'
+          text: 'placeholder for account details and settings'
+      - else:
+          block:
+            - text: 'please log in to see your account details and settings'

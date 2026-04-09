@@ -25,8 +25,8 @@ output:
 - block:
     - text: welcome to sosh net.
     - break: 1
-    - text: 'are you logged in: '
-    - lingo: {state: {is_logged_in: {}}}
-    - break: 1
     - link: '/sosh-net'
       text: 'enter the network'
+    - text: ' • '
+    - link: '/account'
+      text: 'account'
