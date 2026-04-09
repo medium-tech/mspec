@@ -178,11 +178,18 @@ fi
 
 
 
+
+# --- UWSGI command builder --- #
+uwsgi_cmd_args() {
+  # Outputs the uwsgi command and args as a string
+  echo "--yaml $CONFIG_FILE --daemonize $LOG_FILE"
+}
+
 # --- Reusable functions for server control --- #
 
 start_server() {
   printf "\n::\n:: starting uwsgi\n::\n\n"
-  uwsgi --yaml "$CONFIG_FILE" --daemonize "$LOG_FILE"
+  uwsgi $(uwsgi_cmd_args)
   printf "\n\n:: uwsgi started\n\n"
 
   if [ "$TAIL_AFTER" = true ]; then
@@ -194,13 +201,15 @@ start_server() {
 run_watchexec() {
   local watchexec_args=()
   if [ -n "$RELOAD_EXT" ]; then
-    watchexec_args+=('-e' "$RELOAD_EXT")
+    watchexec_args+=(--restart -e "$RELOAD_EXT")
+  else
+    watchexec_args+=(--restart)
   fi
   for dir in "${RELOAD_DIRS[@]}"; do
     watchexec_args+=('-w' "$dir")
   done
   printf "\n::\n:: starting watchexec\n::\n\n"
-  watchexec --on-busy-update=do-nothing "${watchexec_args[@]}" "$0" restart
+  watchexec "${watchexec_args[@]}" uwsgi --yaml $CONFIG_FILE
   printf "\n\n:: exiting watchexec\n\n"
 }
 

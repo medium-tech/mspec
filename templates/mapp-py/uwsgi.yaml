@@ -8,5 +8,5 @@ uwsgi:
     log-master: true
     processes: 4
     lazy-apps: true
-    py-autoreload: 1
+    py-autoreload: 0
     logformat: %('    ') :: RESP :: %(status) :: %(method) %(uri) :: %(size) bytes in %(msecs) msecs :: %(request_id)
