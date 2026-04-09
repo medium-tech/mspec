@@ -17,6 +17,8 @@ LOG_FILE="app/server.log"
 CONFIG_FILE="./uwsgi.yaml"
 STOP=false
 TAIL_AFTER=false
+RELOAD_EXT=""
+RELOAD_DIRS=()
 
 # If ENVFILE env var is set, use it for env file path
 if [ -n "$MAPP_ENV_FILE" ]; then
@@ -40,8 +42,16 @@ usage() {
   echo "  --config <path>       Path to uwsgi config file (default: ./uwsgi.yaml)"
   echo "  --ui-src <path>       Path to MAPP UI files source directory"
   echo "                            if provided will be used to set MAPP_UI_FILE_SOURCE env var"
-  echo "  --dev                 Shortcut for --ui-src ../../browser2/js/src"
+  echo "  --dev                 Shortcut for --ui-src ../../browser2/js/src and sets default"
+  echo "                            reload args: --reload-ext py,yaml,json,js,html,css"
+  echo "                            --reload-dir ../../src --reload-dir ../../browser2/js/src"
+  echo "                            (requires watchexec)"
+  echo "  --reload-ext <exts>   Comma-separated list of file extensions to watch (e.g. py,yaml);"
+  echo "                            maps to watchexec -e; requires watchexec to be installed"
+  echo "  --reload-dir <path>   Directory to watch for changes; can be specified multiple times;"
+  echo "                            maps to watchexec -w; requires watchexec to be installed"
   echo "  --tail                Tail log after starting or restarting the server"
+  echo "                            (cannot be combined with --reload-dir)"
   echo -e "  -h, --help            Show this help message and exit\n"
 
   local error_msg="$1"
@@ -92,7 +102,18 @@ while [[ $# -gt 0 ]]; do
       ;;
     --dev)
       export MAPP_UI_FILE_SOURCE="../../browser2/js/src"
+      RELOAD_EXT="py,yaml,json,js,html,css"
+      RELOAD_DIRS+=("../../src")
+      RELOAD_DIRS+=("../../browser2/js/src")
       shift
+      ;;
+    --reload-ext)
+      RELOAD_EXT="$2"
+      shift 2
+      ;;
+    --reload-dir)
+      RELOAD_DIRS+=("$2")
+      shift 2
       ;;
     --tail)
       TAIL_AFTER=true
@@ -136,6 +157,22 @@ printf "%-${COL_WIDTH}s %s\n" ":: pip "    "$(which pip)"
 
 
 
+# --- Validate reload options --- #
+
+if [ ${#RELOAD_DIRS[@]} -gt 0 ]; then
+  if ! command -v watchexec &> /dev/null; then
+    echo -e "\n  Error: watchexec is not installed. Install it to use --reload-dir.\n" >&2
+    exit 1
+  fi
+  if [ "$TAIL_AFTER" = true ]; then
+    echo -e "\n  Error: --tail cannot be combined with --reload-dir.\n" >&2
+    exit 1
+  fi
+fi
+
+
+
+
 # --- Reusable functions for server control --- #
 
 start_server() {
@@ -147,6 +184,18 @@ start_server() {
     printf "\n::\n:: tailing uwsgi log\n::\n\n"
     tail -f "$LOG_FILE"
   fi
+}
+
+run_watchexec() {
+  local watchexec_args=()
+  if [ -n "$RELOAD_EXT" ]; then
+    watchexec_args+=('-e' "$RELOAD_EXT")
+  fi
+  for dir in "${RELOAD_DIRS[@]}"; do
+    watchexec_args+=('-w' "$dir")
+  done
+  printf "\n::\n:: starting watchexec\n::\n\n"
+  watchexec "${watchexec_args[@]}" "$0" restart
 }
 
 stop_server() {
@@ -188,11 +237,18 @@ case "$COMMAND" in
     exit 0
     ;;
   start)
-    if is_server_running; then
-      printf "\n::\n:: uwsgi is already running\n::\n\n"
-      exit 0
+    if [ ${#RELOAD_DIRS[@]} -gt 0 ]; then
+      if ! is_server_running; then
+        start_server
+      fi
+      run_watchexec
+    else
+      if is_server_running; then
+        printf "\n::\n:: uwsgi is already running\n::\n\n"
+        exit 0
+      fi
+      start_server
     fi
-    start_server
     exit $?
     ;;
   stop)
