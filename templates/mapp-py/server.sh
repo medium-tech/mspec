@@ -200,7 +200,8 @@ run_watchexec() {
     watchexec_args+=('-w' "$dir")
   done
   printf "\n::\n:: starting watchexec\n::\n\n"
-  watchexec "${watchexec_args[@]}" "$0" restart
+  watchexec --on-busy-update=do-nothing "${watchexec_args[@]}" "$0" restart
+  printf "\n\n:: exiting watchexec\n\n"
 }
 
 stop_server() {
@@ -243,10 +244,11 @@ case "$COMMAND" in
     ;;
   start)
     if [ ${#RELOAD_DIRS[@]} -gt 0 ]; then
-      if ! is_server_running; then
-        start_server
-      fi
+      # if ! is_server_running; then
+      #   start_server
+      # fi
       run_watchexec
+      echo ":: watchexec exited"
     else
       if is_server_running; then
         printf "\n::\n:: uwsgi is already running\n::\n\n"
