@@ -30,7 +30,7 @@ output:
     - break: 1
     - text: 'are you logged in: '
     - lingo: {state: {is_logged_in: {}}}
-    - break: 2
+    - break: 1
     - link: '/'
       text: 'front page'
     - text: ' :: '
@@ -39,3 +39,6 @@ output:
     - text: ' :: '
     - link: '/sosh-net/forum'
       text: 'forum'
+    - text: ' :: '
+    - link: '/account'
+      text: 'account'

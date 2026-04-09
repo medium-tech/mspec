@@ -1,6 +1,6 @@
 lingo:
     version: page-beta-1
-    title: "sosh net :: front page"
+    title: "sosh net :: account"
 
 params: {}
 
@@ -22,11 +22,14 @@ output:
 - heading: "sosh.net"
   level: 1
 
+- heading: ":: account"
+  level: 2
+
 - block:
-    - text: welcome to sosh net.
+    - text: here you can adjust your stuffs.
     - break: 1
     - text: 'are you logged in: '
     - lingo: {state: {is_logged_in: {}}}
-    - break: 1
-    - link: '/sosh-net'
-      text: 'enter the network'
+    - break: 2
+    - link: '/'
+      text: 'home'

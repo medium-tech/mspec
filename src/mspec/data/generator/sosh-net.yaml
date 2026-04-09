@@ -19,7 +19,7 @@ client:
 index_page: 'sosh-front-page.yaml'
 
 pages:
-  hello: 'hello-world-page.yaml'
+  account: 'builtin-mapp-page-account.yaml'
 
 modules:
   sosh_net:
