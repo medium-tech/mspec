@@ -2,8 +2,7 @@
 uwsgi:
     http: :3003
     wsgi-file: server.py
-    master: true
-    log-master: true
+    master: false
     processes: 1
     lazy-apps: true
     logformat: %('    ') :: RESP :: %(status) :: %(method) %(uri) :: %(size) bytes in %(msecs) msecs :: %(request_id)

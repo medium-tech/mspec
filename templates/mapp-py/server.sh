@@ -201,7 +201,7 @@ start_server() {
 }
 
 run_watchexec() {
-  local watchexec_args=('--restart')
+  local watchexec_args=('--restart' '--signal' 'SIGINT')
   if [ -n "$RELOAD_EXT" ]; then
     watchexec_args+=('-e' "$RELOAD_EXT")
   fi
