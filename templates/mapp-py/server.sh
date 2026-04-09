@@ -16,6 +16,7 @@ PID_FILE="app/server.pid"
 LOG_FILE="app/server.log"
 CONFIG_FILE="./uwsgi.yaml"
 STOP=false
+TAIL_AFTER=false
 
 # If ENVFILE env var is set, use it for env file path
 if [ -n "$MAPP_ENV_FILE" ]; then
@@ -39,6 +40,8 @@ usage() {
   echo "  --config <path>       Path to uwsgi config file (default: ./uwsgi.yaml)"
   echo "  --ui-src <path>      Path to MAPP UI files source directory"
   echo "                          if provided will be used to set MAPP_UI_FILE_SOURCE env var"
+  echo "  --dev                 Shortcut for --ui-src ../../browser2/js/src"
+  echo "  --tail                Tail log after starting or restarting the server"
   echo -e "  -h, --help            Show this help message and exit\n"
 
   local error_msg="$1"
@@ -87,6 +90,14 @@ while [[ $# -gt 0 ]]; do
       export MAPP_UI_FILE_SOURCE="$2"
       shift 2
       ;;
+    --dev)
+      export MAPP_UI_FILE_SOURCE="../../browser2/js/src"
+      shift
+      ;;
+    --tail)
+      TAIL_AFTER=true
+      shift
+      ;;
     -h|--help)
       usage
       ;;
@@ -131,6 +142,11 @@ start_server() {
   printf "\n::\n:: starting uwsgi\n::\n\n"
   uwsgi --yaml "$CONFIG_FILE" --daemonize "$LOG_FILE"
   printf "\n\n:: uwsgi started\n\n"
+
+  if [ "$TAIL_AFTER" = true ]; then
+    printf "\n::\n:: tailing uwsgi log\n::\n\n"
+    tail -f "$LOG_FILE"
+  fi
 }
 
 stop_server() {
