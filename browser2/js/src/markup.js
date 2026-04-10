@@ -447,7 +447,7 @@ function _opHttpArgs(app, expression, ctx) {
             app.state[stateField].state = 'loading';
         }
     }
-    console.log('op.http - url:', expression, url, 'params:', params);
+    // console.log('op.http - url:', expression, url, 'params:', params);
     return [url, params];
 }
 
@@ -1060,19 +1060,19 @@ const lingoFunctionLookup = {
                     });
                     if (response.ok) {
                         const responseData = await response.json();
-                        console.log('op.http - responseData:', responseData);
+                        // console.log('op.http - responseData:', responseData);
                         if (responseData.hasOwnProperty('result')) {
                             const wrappedResult = wrapValue(responseData.result);
-                            console.log('op.http - wrappedResult:', wrappedResult);
+                            // console.log('op.http - wrappedResult:', wrappedResult);
                             if (url === '/api/auth/login-user') {
                                 const accessToken = responseData.result.access_token;
                                 if (accessToken) {
                                     localStorage.setItem('access_token', accessToken);
-                                    console.log('op.http - stored access_token in localStorage');
+                                    // console.log('op.http - stored access_token in localStorage');
                                 }
                             } else if (url === '/api/auth/logout-user' && params.mode !== 'others') {
                                 localStorage.removeItem('access_token');
-                                console.log('op.http - removed access_token from localStorage');
+                                // console.log('op.http - removed access_token from localStorage');
                             }
                             return {state: 'result', result: wrappedResult};
                         } else {
@@ -1101,7 +1101,7 @@ const lingoFunctionLookup = {
     'auth': {
         'is_logged_in': {
             func: () => {
-                console.log('auth.is_logged_in - checking login status');
+                // console.log('auth.is_logged_in - checking login status');
                 try {
                     const accessToken = localStorage.getItem('access_token');
                     return {logged_in: !!accessToken, message: 'Logged in, not confirmed with server'};
@@ -1568,9 +1568,9 @@ function renderBranch(app, element, ctx = null) {
             
             if (condition) {
                 try {
-                    console.log(`branch then condition matched`, then);
+                    // console.log(`branch then condition matched`, then);
                     const thenResult = lingoExecute(app, then, ctx);
-                    console.log(`branch then result`, thenResult);
+                    // console.log(`branch then result`, thenResult);
                     return thenResult;
                 } catch (error) {
                     throw new Error(`branch ${n} - error processing then expression: ${error.message}`);
@@ -2030,7 +2030,7 @@ function renderOp(app, expression, ctx = null) {
             autoSubmit = false;
         }
 
-        console.log('renderOp() - autoSubmit:', autoSubmit, expression.op);
+        // console.log('renderOp() - autoSubmit:', autoSubmit, expression.op);
 
         // bind state //
 
@@ -3760,7 +3760,7 @@ function createFormElement(app, element, ctx = null) {
         autoSubmit = false;
     }
 
-    console.log('createFormElement - autoSubmit:', autoSubmit, element.form);
+    // console.log('createFormElement - autoSubmit:', autoSubmit, element.form);
     
     // create a row for each field //
 
@@ -4369,15 +4369,19 @@ function createFormElement(app, element, ctx = null) {
      // submit action
 
     const submitAction = () => {
+        // console.log('Submitting form with data:', formData);
         const result = lingoExecute(app, element.form.action, {});
         // console.log('Form submission result:', result);
         renderLingoApp(app, document.getElementById('lingo-app'));
     };
 
     if (autoSubmit === true && currentState.state === 'initial') {
-        console.log('Auto-submitting form on initial render');
-        currentState.state = 'submitting';
-        submitAction();
+        setTimeout(() => {
+            // console.log('Auto-submitting form on initial render');
+            currentState.state = 'loading';
+            submitAction();
+            renderLingoApp(app, document.getElementById('lingo-app'), true);
+        }, 0);
     }
     
     // add submit button //
@@ -4390,12 +4394,12 @@ function createFormElement(app, element, ctx = null) {
     const submitButtonText = element.form.submit_button_text || 'Submit';
     
     const submitButton = document.createElement('button');
-    submitButton.disabled = currentState.state === 'submitting';
+    submitButton.disabled = currentState.state === 'loading';
     submitButton.textContent = submitButtonText;
     submitButton.addEventListener('click', submitAction);
 
     // final assembly //
-    
+    // console.log('createFormElement - adding button', {autoSubmit, currentState: currentState.state});
     submitCell.appendChild(submitButton);
     submitRow.appendChild(submitCell);
     table.appendChild(submitRow);
