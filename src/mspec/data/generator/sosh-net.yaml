@@ -18,17 +18,14 @@ client:
 
 index_page: 'sosh-front-page.yaml'
 
-pages:
-  account: 'builtin-mapp-page-account.yaml'
-
 modules:
   sosh_net:
     name:
       lower_case: 'sosh net'
 
-    page: 'sosh-module-page.yaml'
+    page: 'sosh-network-page.yaml'
     pages:
-      hello: 'hello-world-page.yaml'
+      account: 'builtin-mapp-page-account.yaml'
 
     models:
       profile:

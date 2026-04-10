@@ -1478,12 +1478,11 @@ function renderOutput(app, ctx = null) {
                     if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
                         app.buffer.push(item);
                     } else {
-                        console.error('Rendered output item is not an object:', typeof item, element, rendered, item);
-                        throw new Error(`Rendered output item is not an object: ${typeof item} - output ${n}`);
+                        app.buffer.push(...item);
                     }
                 }
             } else {
-                throw new Error(`Rendered output is not an object or array: ${typeof rendered} - output ${n}`);
+                throw new Error(`Rendered output is not an object or array: ${typeof rendered} - ${n}`);
             }
         } catch (error) {
             console.error(`Error rendering output element ${n}:`, error, element);
@@ -1569,7 +1568,10 @@ function renderBranch(app, element, ctx = null) {
             
             if (condition) {
                 try {
-                    return lingoExecute(app, then, ctx);
+                    console.log(`branch then condition matched`, then);
+                    const thenResult = lingoExecute(app, then, ctx);
+                    console.log(`branch then result`, thenResult);
+                    return thenResult;
                 } catch (error) {
                     throw new Error(`branch ${n} - error processing then expression: ${error.message}`);
                 }

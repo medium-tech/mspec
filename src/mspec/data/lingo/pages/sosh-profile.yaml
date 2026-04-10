@@ -25,12 +25,13 @@ output:
 - heading: ":: profile"
   level: 2
 
+- breadcrumbs:
+  - "home"
+  - "sosh-net"
+  - "profile"
+
+- break: 1
 
 - block:
-    - text: this is sosh net.
-    - break: 1
     - text: 'are you logged in: '
     - lingo: {state: {is_logged_in: {}}}
-    - break: 2
-    - link: '/sosh-net'
-      text: 'back'

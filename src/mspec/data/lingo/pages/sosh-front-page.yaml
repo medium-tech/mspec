@@ -19,14 +19,22 @@ state:
 ops: {}
 
 output:
-- heading: "sosh.net"
+- heading: 'shosh net'
   level: 1
 
-- block:
-    - text: welcome to sosh net.
-    - break: 1
-    - link: '/sosh-net'
-      text: 'enter the network'
-    - text: ' • '
-    - link: '/account'
-      text: 'account'
+- heading: ':: welcome to sosh net'
+  level: 2
+
+- text: ':: '
+
+- link: '/sosh-net'
+  text: 'enter the network'
+
+- break: 1
+
+- text: 'here are some interesting things:'
+- type: list
+  value:
+  - text: 'placeholder for cool stuff'
+    style:
+      italic: true

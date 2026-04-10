@@ -26,7 +26,7 @@ state:
 ops: {}
 
 output:
-- heading: "sosh.net"
+- heading: 'shosh net'
   level: 1
 
 - heading: ":: account"
@@ -34,13 +34,12 @@ output:
 
 - breadcrumbs:
   - "home"
+  - "sosh-net"
   - "account"
 
 - break: 1
 
 - block:
-    - text: here you can adjust your stuffs.
-    - break: 1
     - text: 'are you logged in: '
       style:
         bold: true
@@ -56,9 +55,12 @@ output:
       - if:
           state: {is_logged_in: {}}
         then:
-          # block:    <-- block is throwing error here
-          #   - text: 'placeholder for account details and settings'
-          text: 'placeholder for account details and settings'
+          block:
+            - text: 'here you can adjust your stuffs'
+            - break: 1
+            - text: 'Yessir!'
+              style:
+                italic: true
       - else:
           block:
             - text: 'please log in to see your account details and settings'

@@ -19,26 +19,31 @@ state:
 ops: {}
 
 output:
-- heading: "sosh.net"
+- heading: 'shosh net'
   level: 1
 
-- heading: ":: the network!"
+- heading: ":: the network"
   level: 2
 
+- breadcrumbs:
+  - "home"
+  - "sosh-net"
+
+- break: 1
+
 - block:
-    - text: this is sosh net.
-    - break: 1
-    - text: 'are you logged in: '
-    - lingo: {state: {is_logged_in: {}}}
-    - break: 1
+    - text: ' ● '
     - link: '/'
       text: 'front page'
-    - text: ' :: '
+    - text: ' ● '
     - link: '/sosh-net/profile'
       text: 'profiles'
-    - text: ' :: '
+    - text: ' ● '
     - link: '/sosh-net/forum'
-      text: 'forum'
-    - text: ' :: '
-    - link: '/account'
+      text: 'forums'
+    - text: ' ● '
+    - link: '/sosh-net/account'
       text: 'account'
+    - text: ' ● '
+    - break: 1
+    - text: this is sosh net.
