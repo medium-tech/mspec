@@ -3578,6 +3578,9 @@ function createValueElement(app, element, ctx = null) {
                         } else {
                             td.textContent = cellValue.join(', ');
                         }
+                    // else if is a Date object
+                    } else if(cellValue instanceof Date) {
+                        td.textContent = formatDateTime(cellValue);
                     } else if(cellValue instanceof HTMLElement) {
                         td.appendChild(cellValue);
                     } else {
