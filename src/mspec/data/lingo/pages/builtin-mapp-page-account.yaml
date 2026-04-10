@@ -15,16 +15,63 @@ state:
           args: {}
         key: logged_in
   
-  user_data:
+  fetch_user:
     type: struct
     default:
-      state: 'pending'
+      state: initial
       error: ''
       data: {}
+      result:
+        type: any
+        value: null
   
+  user_op_definition:
+    type: op
+    default:
+      name:
+          lower_case: "current user"
+      description: "Get the current logged in user"
+      func:
+          call: "auth.current_user"
+          args: {}
+      params: {}
+      result:
+          type: struct
+          fields:
+              id:
+                  name:
+                      lower_case: "id"
+                  type: str
+                  description: "ID of the current user"
+              name:
+                  name:
+                      lower_case: "name"
+                  type: str
+                  description: "Name of the current user"
+              email:
+                  name:
+                      lower_case: "email"
+                  type: str
+                  description: "Email of the current user"
+              number_of_sessions:
+                  name:
+                      lower_case: "number of sessions"
+                  type: int
+                  description: "Number of active sessions for the current user"
 
-ops: {}
 
+ops:
+  fetch_user_data:
+    set:
+      state: {user_data: {}}
+      to:
+        call: op.http
+        args:
+          url: '/api/auth/current-user'
+          # data:
+          #   state: {user_data: {}}
+          bind:
+            state: {user_info: {}}
 output:
 - heading: 'shosh net'
   level: 1
@@ -58,9 +105,17 @@ output:
           block:
             - text: 'here you can adjust your stuffs'
             - break: 1
-            - text: 'Yessir!'
-              style:
-                italic: true
+            - op: 
+                bind:
+                  state: {fetch_user: {}}
+                interactive: true
+                http: '/api/auth/current-user'
+                definition:
+                  state: {user_op_definition: {}}
+                submit_button_text: refresh
+                instruction: ''
+                auto_submit: true
+
       - else:
           block:
             - text: 'please log in to see your account details and settings'

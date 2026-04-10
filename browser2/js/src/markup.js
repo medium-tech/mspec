@@ -1850,8 +1850,21 @@ function renderState(app, expression, ctx = null) {
     if (!(fieldName in app.state)) {
         throw new Error(`state - field not found: ${fieldName}`);
     }
-    
+
+    // check if expression.state.fieldName is an object with a field
+    if (typeof expression.state[fieldName] === 'object' && expression.state[fieldName] !== null) {
+        // check for exactly one key
+        const keys = Object.keys(expression.state[fieldName]);
+        if (keys.length === 1) {
+            const structFieldName = keys[0];
+            return app.state[fieldName][structFieldName];
+        }else if(keys.length > 1){
+            throw new Error('state - cannot access struct field, multiple fields found in expression');
+        }
+    }
+
     return app.state[fieldName];
+    
 }
 
 /**
@@ -2009,6 +2022,16 @@ function renderOp(app, expression, ctx = null) {
             throw new Error('op - missing http for interactive op');
         }
 
+        // render op.auto_submit if provided, otherwise default to false
+        let autoSubmit;
+        if (expression.op.hasOwnProperty('auto_submit')) {
+            autoSubmit = unwrapValue(lingoExecute(app, expression.op.auto_submit, ctx));
+        }else{
+            autoSubmit = false;
+        }
+
+        console.log('renderOp() - autoSubmit:', autoSubmit, expression.op);
+
         // bind state //
 
         const stateKeys = Object.keys(op.bind.state);
@@ -2026,10 +2049,14 @@ function renderOp(app, expression, ctx = null) {
 
         const url = unwrapValue(lingoExecute(app, op.http, ctx));
 
+        const submitButtonText = expression.op.submit_button_text ? unwrapValue(lingoExecute(app, expression.op.submit_button_text, ctx)) : 'Submit';
+
         const formElement = {
             form: {
                 fields: definition.params,
                 bind: op.bind,
+                submit_button_text: submitButtonText,
+                auto_submit: autoSubmit,
                 action: {
                     set: {state: {[stateField]: {}}},
                     to: {
@@ -2108,7 +2135,9 @@ function renderOp(app, expression, ctx = null) {
         } else if (currentOpState.state === 'loading') {
             resultDisplayElements = [{text: 'Loading...', style: {italic: true}}];
         } else {
-            resultDisplayElements = [{text: 'Please fill out the form and submit.', style: {italic: true}}];
+            const defaultInstruction = 'Please fill out the form and submit.';
+            const instruction = expression.op.hasOwnProperty('instruction') ? unwrapValue(lingoExecute(app, expression.op.instruction, ctx)) : defaultInstruction;
+            resultDisplayElements = [{text: instruction, style: {italic: true}}];
         }
 
         let elements = [];
@@ -3269,6 +3298,18 @@ function createDOMElement(app, element, ctx = null) {
         return createFormElement(app, element);
     } else if ('viewer' in element) {
         return createViewerElement(app, element);
+    } else if (Array.isArray(element)) {
+        // If the element is an array, render each item and wrap in a div
+        const container = document.createElement('div');
+        for (const subElement of element) {
+            // call createDomElement recursively for each subElement
+            const childDom = createDOMElement(app, subElement, ctx);
+            if (childDom) {
+                container.appendChild(childDom);
+            }
+        }
+        return container;
+
     } else {
         throw new Error('createDOMElement - unknown element type: ' + JSON.stringify(element));
     }
@@ -3709,7 +3750,17 @@ function createFormElement(app, element, ctx = null) {
     }
     const currentState = app.state[formStateField];
     const formData = currentState.data || {};
-    // console.log('createFormElement - formData before:', formData);
+    // console.log('createFormElement - formData before:', formData); 
+    
+    // if element.form.auto_submit provided, execute and unwrap it, else set default false
+    let autoSubmit;
+    if (element.form.hasOwnProperty('auto_submit')) {
+        autoSubmit = unwrapValue(lingoExecute(app, element.form.auto_submit, ctx));
+    }else{
+        autoSubmit = false;
+    }
+
+    console.log('createFormElement - autoSubmit:', autoSubmit, element.form);
     
     // create a row for each field //
 
@@ -3721,6 +3772,7 @@ function createFormElement(app, element, ctx = null) {
         let ingestState;    // ingest state is for tracking file uploads
                             // or finding items for foreign_key fields
         if (app.clientState.forms.hasOwnProperty(formKeyId)) {
+            console.log(`Found existing form state for ${formKeyId}:`, app.clientState.forms[formKeyId]);
             ingestState = app.clientState.forms[formKeyId];
         } else {
             ingestState = {status: 'idle', error: null, popup: null, showSecureFields: {}};
@@ -4313,6 +4365,20 @@ function createFormElement(app, element, ctx = null) {
         row.appendChild(thirdCell);
         table.appendChild(row);
     }
+
+     // submit action
+
+    const submitAction = () => {
+        const result = lingoExecute(app, element.form.action, {});
+        // console.log('Form submission result:', result);
+        renderLingoApp(app, document.getElementById('lingo-app'));
+    };
+
+    if (autoSubmit === true && currentState.state === 'initial') {
+        console.log('Auto-submitting form on initial render');
+        currentState.state = 'submitting';
+        submitAction();
+    }
     
     // add submit button //
 
@@ -4320,15 +4386,13 @@ function createFormElement(app, element, ctx = null) {
     const submitCell = document.createElement('td');
     submitCell.colSpan = 3;
     submitCell.className = 'form-submit-cell';
+
+    const submitButtonText = element.form.submit_button_text || 'Submit';
     
     const submitButton = document.createElement('button');
     submitButton.disabled = currentState.state === 'submitting';
-    submitButton.textContent = 'Submit';
-    submitButton.addEventListener('click', () => {
-        const result = lingoExecute(app, element.form.action, {});
-        // console.log('Form submission result:', result);
-        renderLingoApp(app, document.getElementById('lingo-app'));
-    });
+    submitButton.textContent = submitButtonText;
+    submitButton.addEventListener('click', submitAction);
 
     // final assembly //
     
