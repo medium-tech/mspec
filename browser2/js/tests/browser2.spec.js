@@ -584,7 +584,7 @@ test('test - structs page', async ({ page }) => {
   await expect(floatDateRows.nth(1).locator('td').nth(2)).toContainText('2.75');
   await expect(floatDateRows.nth(1).locator('td').nth(3)).toContainText('2024-02-15T10:30:00');
   await expect(floatDateRows.nth(2).locator('td').nth(0)).toContainText('Widget C');
-  await expect(floatDateRows.nth(2).locator('td').nth(1)).toContainText('39.9'); // add(20.0, 19.99) ≈ 39.99
+  await expect(floatDateRows.nth(2).locator('td').nth(1)).toContainText('39.9'); // add(20.0, 19.99) renders as 39.989999999999995 due to JS float precision
   await expect(floatDateRows.nth(2).locator('td').nth(2)).toContainText('2.5'); // div(10.0, 4.0) = 2.5
 
   // Table 14: list-type columns table - with column headers
