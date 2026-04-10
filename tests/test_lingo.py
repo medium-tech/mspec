@@ -358,7 +358,7 @@ class TestLingoPages(unittest.TestCase):
         doc = render_output(lingo_update_state(app))
         
         # Verify we have the expected number of elements
-        self.assertEqual(len(doc), 47, 'Should have 47 output elements')
+        self.assertEqual(len(doc), 50, f'Should have 50 output elements, got {len(doc)}')
         
         # Verify main heading
         self.assertEqual(doc[0]['heading'], 'Individual Structs')

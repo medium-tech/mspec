@@ -3470,24 +3470,36 @@ function createValueElement(app, element, ctx = null) {
         // Check if this is a table format list
         if(listFormat == 'table') {
             // Render list of structs as a table
-            if(!element.display.headers) {
-                throw new Error('createValueElement - table format list requires headers definition');
+            if(!element.display.headers && !element.display.columns) {
+                throw new Error('createValueElement - table format list requires headers or columns definition');
             }
-            
+            if(element.display.hasOwnProperty('headers') && element.display.hasOwnProperty('columns')) {
+                throw new Error('createValueElement - table format list cannot have both headers and columns definition');
+            }
+
+            /// init table
+
             const table = document.createElement('table');
+            let columnNames = [];
+
+            if(element.display.headers) {
             
-            // Add header row
-            const thead = document.createElement('thead');
-            const headerRow = document.createElement('tr');
-            
-            for(const headerDef of element.display.headers) {
-                const th = document.createElement('th');
-                th.textContent = headerDef.text;
-                headerRow.appendChild(th);
+                // Add header row
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+                
+                for(const headerDef of element.display.headers) {
+                    const th = document.createElement('th');
+                    th.textContent = headerDef.text;
+                    headerRow.appendChild(th);
+                    columnNames.push(headerDef.field);
+                }
+                
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+            }else{
+                columnNames = element.display.columns;
             }
-            
-            thead.appendChild(headerRow);
-            table.appendChild(thead);
             
             // Add data rows
             const tbody = document.createElement('tbody');
@@ -3506,13 +3518,12 @@ function createValueElement(app, element, ctx = null) {
                     row.onclick = () => element.display.onSelect(item);
                 }
                 
-                for(const headerDef of element.display.headers) {
+                for(const columnName of columnNames) {
                     const td = document.createElement('td');
                     
-                    const fieldName = headerDef.field;
-                    const fieldValue = item.value[fieldName];
+                    const fieldValue = item.value[columnName];
 
-                    // console.log('createValueElement - ', fieldName, fieldValue, typeof fieldValue);
+                    // console.log('createValueElement - ', columnName, fieldValue, typeof fieldValue);
                     
                     // Evaluate the value if it's an expression
                     let cellValue = fieldValue;

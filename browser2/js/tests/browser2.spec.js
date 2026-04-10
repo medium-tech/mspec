@@ -382,30 +382,40 @@ test('test - structs page', async ({ page }) => {
   // Check for struct tables
   const tables = page.locator('table');
   // We should have many tables: individual structs (12) + list tables (3) = 15 total
-  await expect(tables).toHaveCount(15);
+  await expect(tables).toHaveCount(16);
+
+  //
+  // primitives: str, int, bool
+  //
 
   // Check first struct table (primitives: str, int, bool - hardcoded)
-  const firstTable = tables.nth(0);
-  await expect(firstTable.locator('th').nth(0)).toContainText('key');
-  await expect(firstTable.locator('th').nth(1)).toContainText('value');
-  await expect(firstTable.locator('td').filter({ hasText: 'color' })).toBeVisible();
-  await expect(firstTable.locator('td').filter({ hasText: 'red' })).toBeVisible();
-  await expect(firstTable.locator('td').filter({ hasText: 'amount' })).toBeVisible();
-  await expect(firstTable.locator('td').filter({ hasText: '10' })).toBeVisible();
-  await expect(firstTable.locator('td').filter({ hasText: 'in_stock' })).toBeVisible();
-  await expect(firstTable.locator('td').filter({ hasText: 'true' })).toBeVisible();
+  const primitivesHardcodedTable = tables.nth(0);
+  await expect(primitivesHardcodedTable.locator('th').nth(0)).toContainText('key');
+  await expect(primitivesHardcodedTable.locator('th').nth(1)).toContainText('value');
+  await expect(primitivesHardcodedTable.locator('td').filter({ hasText: 'color' })).toBeVisible();
+  await expect(primitivesHardcodedTable.locator('td').filter({ hasText: 'red' })).toBeVisible();
+  await expect(primitivesHardcodedTable.locator('td').filter({ hasText: 'amount' })).toBeVisible();
+  await expect(primitivesHardcodedTable.locator('td').filter({ hasText: '10' })).toBeVisible();
+  await expect(primitivesHardcodedTable.locator('td').filter({ hasText: 'in_stock' })).toBeVisible();
+  await expect(primitivesHardcodedTable.locator('td').filter({ hasText: 'true' })).toBeVisible();
 
   // Check second struct table (primitives with typed values)
-  const secondTable = tables.nth(1);
-  await expect(secondTable.locator('td').filter({ hasText: 'green' })).toBeVisible();
-  await expect(secondTable.locator('td').filter({ hasText: '20' })).toBeVisible();
+  const primitiveTypedTable = tables.nth(1);
+  await expect(primitiveTypedTable.locator('td').filter({ hasText: 'green' })).toBeVisible();
+  await expect(primitiveTypedTable.locator('td').filter({ hasText: '20' })).toBeVisible();
+  await expect(primitiveTypedTable.locator('td').filter({ hasText: 'true' })).toBeVisible();
 
   // Check third struct table (no headers, with scripted values)
-  const thirdTable = tables.nth(2);
+  const primitiveDynamicTable = tables.nth(2);
   // This table should NOT have header row
-  await expect(thirdTable.locator('th')).toHaveCount(0);
-  await expect(thirdTable.locator('td').filter({ hasText: 'blue' })).toBeVisible();
-  await expect(thirdTable.locator('td').filter({ hasText: '20' })).toBeVisible(); // 5 + 15 = 20
+  await expect(primitiveDynamicTable.locator('th')).toHaveCount(0);
+  await expect(primitiveDynamicTable.locator('td').filter({ hasText: 'blue' })).toBeVisible();
+  await expect(primitiveDynamicTable.locator('td').filter({ hasText: '20' })).toBeVisible(); // 5 + 15 = 20
+  await expect(primitiveDynamicTable.locator('td').filter({ hasText: 'true' })).toBeVisible(); // not false = true
+
+  //
+  // primitives float/datetime
+  //
 
   // Check float/datetime struct (hardcoded)
   const floatDatetimeTable = tables.nth(3);
@@ -414,23 +424,35 @@ test('test - structs page', async ({ page }) => {
   await expect(floatDatetimeTable.locator('td').filter({ hasText: 'created_at' })).toBeVisible();
   await expect(floatDatetimeTable.locator('td').filter({ hasText: '2024-01-15T10:30:00' })).toBeVisible();
 
-  // Check list values struct
-  const listStruct = tables.nth(6);
-  await expect(listStruct.locator('td').filter({ hasText: 'tags' })).toBeVisible();
-  // Lists should be displayed as comma-separated strings
-  await expect(listStruct).toContainText('urgent');
+  // Check float/datetime struct (typed) - MISSING COVERAGE
 
-  // Check for List of Structs heading
-  await expect(page.locator('h1').filter({ hasText: 'List of Structs' })).toBeVisible();
+  // Check float/datetime struct (dynamic) - MISSING COVERAGE
 
-  // Check the first list table (basic types) - this is table index 12
-  const listTable = tables.nth(12);
-  await expect(listTable.locator('th').filter({ hasText: 'Color' })).toBeVisible();
-  await expect(listTable.locator('th').filter({ hasText: 'Amount' })).toBeVisible();
-  await expect(listTable.locator('th').filter({ hasText: 'In Stock' })).toBeVisible();
+
+  //
+  // lists of primitives
+  //
+
+  // hardcoded list of primitives - NEED MORE COVERAGE
+  const listOfPrimitivesHardcoded = tables.nth(6);
+  await expect(listOfPrimitivesHardcoded.locator('td').filter({ hasText: 'tags' })).toBeVisible();
+  await expect(listOfPrimitivesHardcoded).toContainText('urgent');
+
+  // MISSING COVERAGE
+
+
+  //
+  // list of structs
+  //
+
+  // basic types in a table
+  const listStructsBasicTypesTable = tables.nth(12);
+  await expect(listStructsBasicTypesTable.locator('th').filter({ hasText: 'Color' })).toBeVisible();
+  await expect(listStructsBasicTypesTable.locator('th').filter({ hasText: 'Amount' })).toBeVisible();
+  await expect(listStructsBasicTypesTable.locator('th').filter({ hasText: 'In Stock' })).toBeVisible();
 
   // Check rows in list table
-  const rows = listTable.locator('tbody tr');
+  const rows = listStructsBasicTypesTable.locator('tbody tr');
   await expect(rows).toHaveCount(3);
   
   // First row

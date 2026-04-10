@@ -86,6 +86,39 @@ output:
 
 - break: 1
 
+- type: list
+  display:
+    format: table
+    columns:
+      - column1
+      - column2
+      - column3
+  value:
+    - type: struct
+      value: 
+        column1: 'are you logged in?'
+        column2: 
+          - branch:
+            - if:
+                state: {is_logged_in: {}}
+              then:
+                text: 'yes'
+            - else:
+                - text: ''
+        column3:
+          - branch:
+            - if:
+                state: {is_logged_in: {}}
+              then:
+                text: ''
+            - else:
+                text: 'no'
+    - type: struct
+      value: 
+        column1: 'do you want to be?'
+        column2: 'yes'
+        column3: 'no'
+
 - block:
     - text: 'are you logged in: '
       style:

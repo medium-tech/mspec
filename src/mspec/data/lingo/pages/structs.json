@@ -187,8 +187,8 @@
                 }
             ]
         },
+        {"break": 1},
 
-        {"heading": "Float and datetime in table", "level": 2},
         {"text": "Table with float and datetime columns:"},
         {
             "type": "list",
@@ -231,8 +231,8 @@
                 }
             ]
         },
+        {"break": 1},
 
-        {"heading": "Lists as field values in table", "level": 2},
         {"text": "Table with list-type columns:"},
         {
             "type": "list",
@@ -271,6 +271,42 @@
                         "tags": {"call": "map", "args": {"iterable": [1, 2], "function": {"call": "str", "args": {"object": {"self": "item"}}}}},
                         "scores": {"type": "list", "value": [75, 80, 85]},
                         "flags": {"call": "map", "args": {"iterable": [0, 1], "function": {"call": "eq", "args": {"a": {"self": "item"}, "b": 1}}}}
+                    }
+                }
+            ]
+        },
+
+        {"break": 1},
+
+        {"text": "Table without headers for an arbitrary grid"},
+        {
+            "type": "list",
+            "display": {
+                "format": "table",
+                "columns": [
+                    "column1",
+                    "column2",
+                    "column3",
+                    "column4"
+                ]
+            },
+            "value": [
+                {
+                    "type": "struct",
+                    "value": {
+                        "column1": "Arbitrary informtion",
+                        "column2": "More arbitrary information",
+                        "column3": "Even more arbitrary information",
+                        "column4": "This is the last column of arbitrary information"
+                    }
+                },
+                {
+                    "type": "struct",
+                    "value": {
+                        "column1": "Space astronaughts are cool",
+                        "column2": "Rainbows and unicorns are also cool",
+                        "column3": "I like turtles",
+                        "column4": "This is the last column of arbitrary information"
                     }
                 }
             ]
