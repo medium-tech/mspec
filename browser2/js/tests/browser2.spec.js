@@ -490,17 +490,25 @@ test('test - structs page', async ({ page }) => {
   await expect(listOfPrimitivesTyped.locator('td').filter({ hasText: 'tags' })).toBeVisible();
   await expect(listOfPrimitivesTyped).toContainText('electronics');
   await expect(listOfPrimitivesTyped).toContainText('gadgets');
+  await expect(listOfPrimitivesTyped).toContainText('tech');
   await expect(listOfPrimitivesTyped.locator('td').filter({ hasText: 'scores' })).toBeVisible();
   await expect(listOfPrimitivesTyped).toContainText('88');
+  await expect(listOfPrimitivesTyped).toContainText('91');
+  await expect(listOfPrimitivesTyped).toContainText('79');
   await expect(listOfPrimitivesTyped.locator('td').filter({ hasText: 'flags' })).toBeVisible();
   await expect(listOfPrimitivesTyped.locator('td').filter({ hasText: 'measurements' })).toBeVisible();
   await expect(listOfPrimitivesTyped).toContainText('2.5');
+  await expect(listOfPrimitivesTyped).toContainText('3.7');
+  await expect(listOfPrimitivesTyped).toContainText('1.2');
 
   // Table 8: lists of primitives dynamic - NO headers
   const listOfPrimitivesDynamic = tables.nth(8);
   await expect(listOfPrimitivesDynamic.locator('th')).toHaveCount(0);
   await expect(listOfPrimitivesDynamic.locator('td').filter({ hasText: 'tags' })).toBeVisible();
   await expect(listOfPrimitivesDynamic.locator('td').filter({ hasText: 'total_score' })).toBeVisible();
+  await expect(listOfPrimitivesDynamic).toContainText('1');
+  await expect(listOfPrimitivesDynamic).toContainText('2');
+  await expect(listOfPrimitivesDynamic).toContainText('3');
   await expect(listOfPrimitivesDynamic).toContainText('60'); // sum([10, 20, 30], start=0) = 60
 
   //
