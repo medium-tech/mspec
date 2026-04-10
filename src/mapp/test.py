@@ -583,7 +583,7 @@ class TestMTemplateApp(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        print(f':: Setting up TestMTemplateApp - use cache: {cls.use_cache}')
+        print(f':: setting up mapp tests - use cache: {cls.use_cache}')
 
         crud_fs_path = Path(cls.test_dir) / 'crud_file_system'
 
@@ -592,7 +592,7 @@ class TestMTemplateApp(unittest.TestCase):
         if not cls.use_cache:
             # delete everything including all db and cache files
             shutil.rmtree(cls.test_dir, ignore_errors=True)
-            print(f':: Deleted test directory: {cls.test_dir}')
+            print(f':: deleted test directory: {cls.test_dir}')
         else:
             # always recreate the crud file system
             shutil.rmtree(crud_fs_path, ignore_errors=True)
@@ -600,9 +600,10 @@ class TestMTemplateApp(unittest.TestCase):
             for db_file in [cls.crud_db_file, cls.pagination_db_file]:
                 try:
                     db_file.unlink()
-                    print(f':: Deleted database file: {db_file}')
                 except FileNotFoundError:
                     pass
+            
+            print(f':: deleted database files')
 
         os.makedirs(cls.test_dir, exist_ok=True)
 
@@ -704,7 +705,7 @@ class TestMTemplateApp(unittest.TestCase):
         # create crud tables in cache db #
 
         if needs_crud_rebuild:
-            print(f':: Creating tables in CRUD cache db')
+            print(f':: creating tables for crud environment')
             crud_create_tables_cmd = cls.cmd + ['create-tables']
             crud_result = subprocess.run(crud_create_tables_cmd, capture_output=True, text=True, env=cls.crud_ctx)
             if crud_result.returncode != 0:
@@ -725,7 +726,7 @@ class TestMTemplateApp(unittest.TestCase):
 
         if needs_crud_rebuild and cls.spec['project']['use_builtin_modules']:
             crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn']
-            print(':: Creating crud users')
+            print(':: creating crud users')
             for user_name in crud_users:
 
                 # logout #
@@ -748,7 +749,6 @@ class TestMTemplateApp(unittest.TestCase):
                 if result.returncode != 0:
                     raise RuntimeError(f'Error creating crud user {user_name}:\n{result.stdout + result.stderr}')
             
-            print(f':: caching db file to {cls.crud_db_cache_file}')
             shutil.copy2(str(cls.crud_db_file), str(cls.crud_db_cache_file))
 
         # create pagination tables and seed data in cache db #
@@ -790,7 +790,7 @@ class TestMTemplateApp(unittest.TestCase):
 
             # seed pagination cache db #
 
-            print(f':: Seeding pagination db')
+            print(f':: seeding pagination db')
             seed_jobs = []
             for module in cls.spec['modules'].values():
                 module_name_kebab = module['name']['kebab_case']
@@ -823,7 +823,7 @@ class TestMTemplateApp(unittest.TestCase):
             # create pagination user #
 
             if cls.spec['project']['use_builtin_modules']:
-                print(':: Creating pagination test user')
+                print(':: creating pagination test user')
 
                 user_data = {
                     'name': 'pagination_tester',
@@ -837,7 +837,7 @@ class TestMTemplateApp(unittest.TestCase):
                 if create_result.returncode != 0:
                     raise RuntimeError(f'Error creating pagination test user: {create_result.stdout + create_result.stderr}')
             
-            print(f':: caching db file to {cls.pagination_db_cache_file}')
+            # print(f':: caching db file to {cls.pagination_db_cache_file}')
             shutil.copy2(str(cls.pagination_db_file), str(cls.pagination_db_cache_file))
         
         else:
@@ -848,13 +848,13 @@ class TestMTemplateApp(unittest.TestCase):
 
         cls.crud_users = []
         if cls.spec['project']['use_builtin_modules']:
+            print(':: logging in users ::')
+
             crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn']
-            print(':: Logging in crud users ::')
             for user_name in crud_users:
                 user = login_cached_user(cls.cmd, cls.crud_ctx, user_name, f'{user_name}@example.com')
                 cls.crud_users.append(user)
 
-            print(':: Logging in pagination test user ::')
             cls.pagination_user = login_cached_user(
                 cls.cmd,
                 cls.pagination_ctx,
@@ -919,13 +919,12 @@ class TestMTemplateApp(unittest.TestCase):
 
         # confirm servers are stopped from previous tests #
 
-        print(':: Confirming no server processes are running ::')
         crud_result = subprocess.run(cls.crud_server_stop_cmd, env=cls.crud_ctx, capture_output=True, text=True, timeout=10)
         pagination_result = subprocess.run(cls.pagination_server_stop_cmd, env=cls.pagination_ctx, capture_output=True, text=True, timeout=10)
         
         # start servers #
 
-        print(':: Starting server processes ::')
+        print(':: starting server processes ::')
 
         print('    :: ', ' '.join(crud_server_start_cmd))
         crud_result = subprocess.run(crud_server_start_cmd, env=cls.crud_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
@@ -937,18 +936,16 @@ class TestMTemplateApp(unittest.TestCase):
         if pagination_result.returncode != 0:
             raise RuntimeError(f'Error starting pagination server: {pagination_result.stdout + pagination_result.stderr}')
 
-        print(':: Setup complete')
+        print(':: setup complete')
 
         print(':: test progress :: ', end='', flush=True)
     
     @classmethod
     def tearDownClass(cls):
 
-        print('\n:: Tearing down TestMTemplateApp')
+        print('\n:: tearing down tests')
 
         # stop pool #
-
-        print('  :: Closing process pool ::')
 
         if cls.pool:
             cls.pool.close()
@@ -963,7 +960,7 @@ class TestMTemplateApp(unittest.TestCase):
             except subprocess.CalledProcessError as e:
                 print(f'    :: Error stopping servers: {e} :: {e.output} :: {e.stderr} ::')
         
-        print(':: Teardown complete ::')
+        print(':: teardown complete ::')
 
     def _run_cmd(self, cmd:list[str], expected_code=0, env:Optional[dict[str, str]] = None) -> subprocess.CompletedProcess:
         result = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=10)

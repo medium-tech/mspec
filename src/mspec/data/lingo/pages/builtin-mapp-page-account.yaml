@@ -102,19 +102,18 @@ output:
       - if:
           state: {is_logged_in: {}}
         then:
-          block:
-            - text: 'here you can adjust your stuffs'
-            - break: 1
-            - op: 
-                bind:
-                  state: {fetch_user: {}}
-                interactive: true
-                http: '/api/auth/current-user'
-                definition:
-                  state: {user_op_definition: {}}
-                submit_button_text: refresh
-                instruction: ''
-                auto_submit: true
+          - heading: ':: account details'
+            level: 4
+          - op: 
+              bind:
+                state: {fetch_user: {}}
+              interactive: true
+              http: '/api/auth/current-user'
+              definition:
+                state: {user_op_definition: {}}
+              submit_button_text: refresh
+              instruction: ''
+              auto_submit: true
 
       - else:
           block:

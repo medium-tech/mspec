@@ -1403,6 +1403,8 @@ function formatDateTime(date) {
 function lingoExecute(app, expression, ctx = null) {
     // Calculate expression
     let result;
+
+    // console.log('lingoExecute()', expression, ctx);
     
     if (typeof expression === 'object' && expression !== null && !Array.isArray(expression)) {
         if ('set' in expression) {
@@ -1447,8 +1449,20 @@ function lingoExecute(app, expression, ctx = null) {
     if (typeof result === 'string' || typeof result === 'number' || 
                typeof result === 'boolean' || result instanceof Date) {
         // Primitive types - wrap with type info
-        // console.log('lingo - wrapping primitive result', expression, result);
+        console.log('lingo - wrapping primitive result', expression, result);
         return {type: getTypeName(result), value: result};
+    } else if (Array.isArray(result)) {
+        // Array - return as list type
+        let returnList;
+        
+        // if item is object call lingoExecute and append the result, otherwise append the item as is
+        if (result.every(item => typeof item === 'object' && item !== null)) {
+            returnList = result.map(item => lingoExecute(app, item, ctx));
+        } else {
+            returnList = result;
+        }
+        return returnList;
+
     }else if (typeof result === 'object' && result !== null) {
         // Already an object or array, return as is
         // console.log('lingo - returning object result', expression, result, result instanceof Date);
@@ -1568,9 +1582,9 @@ function renderBranch(app, element, ctx = null) {
             
             if (condition) {
                 try {
-                    // console.log(`branch then condition matched`, then);
+                    console.log(`branch then condition matched`, then);
                     const thenResult = lingoExecute(app, then, ctx);
-                    // console.log(`branch then result`, thenResult);
+                    console.log(`branch then result`, thenResult);
                     return thenResult;
                 } catch (error) {
                     throw new Error(`branch ${n} - error processing then expression: ${error.message}`);
