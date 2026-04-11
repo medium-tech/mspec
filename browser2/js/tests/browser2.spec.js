@@ -849,3 +849,19 @@ test('test - secure field redaction', async ({ page }) => {
   // Confirm there are no password inputs
   await expect(page.locator('input[type="password"]')).not.toBeVisible();
 });
+test('test - spec file loaded from url query param', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/?spec=data/lingo/pages/test-page.json');
+
+  await expect(page.locator('#spec-select')).toHaveValue('data/lingo/pages/test-page.json');
+  await expect(page.locator('h1')).toContainText('Example document');
+  await expect(page.locator('#lingo-app')).toContainText('Please tell us your name:');
+});
+
+test('test - spec file added to url on dropdown change', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+
+  await page.locator('#spec-select').selectOption('data/lingo/pages/test-page.json');
+
+  await expect(page).toHaveURL(/[?&]spec=data%2Flingo%2Fpages%2Ftest-page\.json/);
+  await expect(page.locator('h1')).toContainText('Example document');
+});
