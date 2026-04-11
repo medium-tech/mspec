@@ -26,9 +26,6 @@
                 "value": {"test_name": "test_not_false", "result": {"call": "not", "args": {"object": false}}}},
             {
                 "type": "struct", 
-                "value": {"test_name": "test_neg", "result": {"call": "neg", "args": {"object": 5}}}},
-            {
-                "type": "struct", 
                 "value": {"test_name": "test_and_true", "result": {"call": "and", "args": {"a": true, "b": true}}}},
             {
                 "type": "struct", 

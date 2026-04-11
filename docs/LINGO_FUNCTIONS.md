@@ -83,11 +83,6 @@
     - **object** `any`
   - **return:** `bool`
 
-`neg` - arithmetic negation
-  - **args:**
-    - **object** `any`
-  - **return:** `int|float`
-
 `and` - bitwise AND
   - **args:**
     - **a** `any`
@@ -107,6 +102,11 @@
     - **string** `str` (optional)
     - **base** `int` (default: 10)
   - **return:** `int`
+
+`neg` - arithmetic negation
+  - **args:**
+    - **object** `any`
+  - **return:** `int|float`
 
 ### Float Functions
 `float` - convert to float

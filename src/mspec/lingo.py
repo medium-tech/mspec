@@ -416,13 +416,13 @@ lingo_function_lookup = {
 
     'bool': {'func': bool, 'args': {'object': {'type': 'any'}}},
     'not': {'func': operator.not_, 'args': {'object': {'type': 'any'}}},
-    'neg': {'func': operator.neg, 'args': {'object': {'type': 'any'}}},
     'and': {'func': operator.and_, 'args': {'a': {'type': 'any'}, 'b': {'type': 'any'}}},
     'or': {'func': operator.or_, 'args': {'a': {'type': 'any'}, 'b': {'type': 'any'}}},
 
     # int #
 
     'int': {'func': lingo_int, 'args': {'number': {'type': 'any', 'default': None}, 'string': {'type': 'str', 'default': None}, 'base': {'type': 'int', 'default': 10}}},
+    'neg': {'func': operator.neg, 'args': {'object': {'type': 'any'}}},
 
     # float #
 
