@@ -20,10 +20,6 @@
             "type": "bool",
             "calc": {"call": "not", "args": {"object": false}}
         },
-        "test_neg": {
-            "type": "int",
-            "calc": {"call": "neg", "args": {"object": 5}}
-        },
         "test_and_true": {
             "type": "bool",
             "calc": {"call": "and", "args": {"a": true, "b": true}}
@@ -49,7 +45,6 @@
             {"text": "bool(0) = "}, {"lingo": {"state": {"test_bool_false": {}}}}, {"break": 1},
             {"text": "not(true) = "}, {"lingo": {"state": {"test_not_true": {}}}}, {"break": 1},
             {"text": "not(false) = "}, {"lingo": {"state": {"test_not_false": {}}}}, {"break": 1},
-            {"text": "neg(5) = "}, {"lingo": {"state": {"test_neg": {}}}}, {"break": 1},
             {"text": "and(true, true) = "}, {"lingo": {"state": {"test_and_true": {}}}}, {"break": 1},
             {"text": "and(true, false) = "}, {"lingo": {"state": {"test_and_false": {}}}}, {"break": 1},
             {"text": "or(false, true) = "}, {"lingo": {"state": {"test_or_true": {}}}}, {"break": 1},

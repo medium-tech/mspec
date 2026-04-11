@@ -611,10 +611,6 @@ const lingoFunctionLookup = {
         func: (obj) => !obj,
         args: {'object': {'type': 'any'}}
     },
-    'neg': {
-        func: (obj) => -obj,
-        args: {'object': {'type': 'any'}}
-    },
     'and': {
         func: (a, b) => a && b,
         args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
@@ -633,6 +629,10 @@ const lingoFunctionLookup = {
             'string': {'type': 'str', 'default': null},
             'base': {'type': 'int', 'default': 10}
         }
+    },
+    'neg': {
+        func: (obj) => -obj,
+        args: {'object': {'type': 'any'}}
     },
     
     // float //

@@ -1,0 +1,22 @@
+{
+    "results": {
+        "default": {
+            "element_type": "struct",
+            "type": "list",
+            "value": [
+                {
+                    "type": "struct",
+                    "value": {
+                        "result": {
+                            "type": "int",
+                            "value": -5
+                        },
+                        "test_name": "test_neg"
+                    }
+                }
+            ]
+        },
+        "test_cases": [
+        ]
+    }
+}

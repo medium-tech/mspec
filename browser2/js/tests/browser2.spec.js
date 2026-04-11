@@ -75,7 +75,6 @@ test('test - functions-bool', async ({ page }) => {
     'bool(0) = false',
     'not(true) = false',
     'not(false) = true',
-    'neg(5) = -5',
     'and(true, true) = true',
     'and(true, false) = false',
     'or(false, true) = true',
@@ -94,6 +93,7 @@ test('test - functions-int', async ({ page }) => {
   await expect(page.locator('h1')).toContainText('Int Functions');
 
   const expectedText = [
+    'neg(5) = -5',
     'int(42.7) = 42',
     'int(\'2A\', base=16) = 42',
   ];

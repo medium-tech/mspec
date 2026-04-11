@@ -170,7 +170,7 @@ class TestLingoPages(unittest.TestCase):
         self.assertFalse(app.state['test_ge_false'])
 
     def test_bool_functions(self):
-        """Test bool operators: bool, not, neg, and, or"""
+        """Test bool operators: bool, not, and, or"""
         app = lingo_app(self.functions_bool_spec)
         
         # Test bool function
@@ -181,9 +181,6 @@ class TestLingoPages(unittest.TestCase):
         self.assertFalse(app.state['test_not_true'])
         self.assertTrue(app.state['test_not_false'])
         
-        # Test neg function
-        self.assertEqual(app.state['test_neg'], -5)
-        
         # Test and function
         self.assertTrue(app.state['test_and_true'])
         self.assertFalse(app.state['test_and_false'])
@@ -193,8 +190,11 @@ class TestLingoPages(unittest.TestCase):
         self.assertFalse(app.state['test_or_false'])
 
     def test_int_functions(self):
-        """Test int conversion functions: int"""
+        """Test int conversion and negation functions: int, neg"""
         app = lingo_app(self.functions_int_spec)
+        
+        # Test neg function
+        self.assertEqual(app.state['test_neg'], -5)
         
         # Test int function with number
         self.assertEqual(app.state['test_int'], 42)
