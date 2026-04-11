@@ -1449,7 +1449,7 @@ function lingoExecute(app, expression, ctx = null) {
     if (typeof result === 'string' || typeof result === 'number' || 
                typeof result === 'boolean' || result instanceof Date) {
         // Primitive types - wrap with type info
-        console.log('lingo - wrapping primitive result', expression, result);
+        // console.log('lingo - wrapping primitive result', expression, result);
         return {type: getTypeName(result), value: result};
     } else if (Array.isArray(result)) {
         // Array - return as list type
@@ -1582,9 +1582,9 @@ function renderBranch(app, element, ctx = null) {
             
             if (condition) {
                 try {
-                    console.log(`branch then condition matched`, then);
+                    // console.log(`branch then condition matched`, then);
                     const thenResult = lingoExecute(app, then, ctx);
-                    console.log(`branch then result`, thenResult);
+                    // console.log(`branch then result`, thenResult);
                     return thenResult;
                 } catch (error) {
                     throw new Error(`branch ${n} - error processing then expression: ${error.message}`);
@@ -3531,10 +3531,12 @@ function createValueElement(app, element, ctx = null) {
                         if('value' in fieldValue && 'type' in fieldValue) {
                             // Typed value
                             cellValue = fieldValue.value;
-                        } else if('call' in fieldValue || 'lingo' in fieldValue) {
+                        } else if('call' in fieldValue || 'lingo' in fieldValue || 'branch' in fieldValue) {
                             // Scripted expression - need to evaluate it
+                            // console.log('createValueElement - evaluating scripted expression for table cell:', fieldValue);
                             try {
                                 const result = lingoExecute(app, fieldValue);
+                                // console.log('createValueElement - result of evaluating scripted expression for table cell:', result);
                                 if(typeof result === 'object' && result !== null && 'value' in result) {
                                     cellValue = result.value;
                                 } else {
@@ -3558,7 +3560,7 @@ function createValueElement(app, element, ctx = null) {
                                     blockContainer.push(domElement);
                                 }
                             }
-                            console.log('createValueElement - rendering block element in table cell:', fieldValue);
+                            //console.log('createValueElement - rendering block element in table cell:', fieldValue);
                             cellValue = blockContainer;
                         }else if('viewer' in fieldValue){
                             cellValue = createViewerElement(app, fieldValue);
@@ -3568,7 +3570,7 @@ function createValueElement(app, element, ctx = null) {
                     // Format the cell value for display
                     if(Array.isArray(cellValue)) {
                         // Format arrays as comma-separated values
-                        console.log('createValueElement - cellValue is array:', cellValue);
+                        //console.log('createValueElement - cellValue is array:', cellValue);
 
                         if (cellValue.every(item => item instanceof HTMLElement)) {
                             // td.appendChild for each item
@@ -3578,9 +3580,30 @@ function createValueElement(app, element, ctx = null) {
                         } else {
                             td.textContent = cellValue.join(', ');
                         }
+                    // else if is a Date object
+                    } else if(cellValue instanceof Date) {
+                        td.textContent = formatDateTime(cellValue);
                     } else if(cellValue instanceof HTMLElement) {
                         td.appendChild(cellValue);
+
+                    // if is scripted expression, execute it
+                    } else if(typeof cellValue === 'object' && cellValue !== null) {
+                        // console.log('createValueElement - evaluating object value for table cell:', cellValue);
+                        try {
+                            const result = lingoExecute(app, cellValue);
+                            // console.log('createValueElement - result of evaluating object value for table cell:', result);
+                            if(typeof result === 'object' && result !== null) {
+                                td.appendChild(createDOMElement(app, result));
+                            } else {
+                                td.textContent = String(result);
+                            }
+                        } catch(error) {
+                            console.error('Error evaluating struct field value:', error);
+                            td.textContent = '[Error]';
+                        }
+
                     } else {
+                        // console.log('createValueElement - converting cellValue to string:', cellValue);
                         td.textContent = String(cellValue);
                     }
                     row.appendChild(td);

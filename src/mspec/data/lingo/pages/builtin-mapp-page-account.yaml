@@ -59,19 +59,17 @@ state:
                   type: int
                   description: "Number of active sessions for the current user"
 
+  logout_state:
+    type: struct
+    default:
+      state: initial
+      error: ''
+      result:
+        type: any
+        value: null
 
-ops:
-  fetch_user_data:
-    set:
-      state: {user_data: {}}
-      to:
-        call: op.http
-        args:
-          url: '/api/auth/current-user'
-          # data:
-          #   state: {user_data: {}}
-          bind:
-            state: {user_info: {}}
+ops: {}
+
 output:
 - heading: 'shosh net'
   level: 1
@@ -96,58 +94,82 @@ output:
   value:
     - type: struct
       value: 
-        column1: 'are you logged in?'
+        column1: 
+          text: 'are you logged in?'
+          style:
+            bold: true
         column2: 
-          - branch:
+          branch:
             - if:
                 state: {is_logged_in: {}}
               then:
                 text: 'yes'
+                style:
+                  bold: true
+                  color: 'green'
             - else:
-                - text: ''
+                text: ''
         column3:
-          - branch:
+          branch:
             - if:
                 state: {is_logged_in: {}}
               then:
                 text: ''
             - else:
                 text: 'no'
+                style:
+                  bold: true
+                  color: 'red'
     - type: struct
       value: 
-        column1: 'do you want to be?'
-        column2: 'yes'
-        column3: 'no'
+        column1: 
+          text: 'do you want to be?'
+          style:
+            bold: true
+        column2:
+          branch:
+            - if:
+                state: {is_logged_in: {}}
+              then:
+                text: 'no'
+            - else:
+                text: 'signup'
+                link: '/auth/create-user'
+        column3: 
+          branch:
+            - if:
+                state: {is_logged_in: {}}
+              then:
+                button:
+                  call: 'op.http'
+                  args:
+                    url: '/api/auth/logout-user'
+                    data: {}
+                    bind: 
+                      state: {logout_state: {}}
+                text: 'log out'
+            - else:
+                text: 'login'
+                link: '/auth/login-user'
 
-- block:
-    - text: 'are you logged in: '
-      style:
-        bold: true
-    - branch:
-      - if:
-          state: {is_logged_in: {}}
-        then:
-          text: 'yes'
-      - else:
-          - text: 'no'
-    - break: 1
-    - branch:
-      - if:
-          state: {is_logged_in: {}}
-        then:
-          - heading: ':: account details'
-            level: 4
-          - op: 
-              bind:
-                state: {fetch_user: {}}
-              interactive: true
-              http: '/api/auth/current-user'
-              definition:
-                state: {user_op_definition: {}}
-              submit_button_text: refresh
-              instruction: ''
-              auto_submit: true
+- break: 1
 
-      - else:
-          block:
-            - text: 'please log in to see your account details and settings'
+- branch:
+  - if:
+      state: {is_logged_in: {}}
+    then:
+      - heading: ':: account details'
+        level: 4
+      - op: 
+          bind:
+            state: {fetch_user: {}}
+          interactive: true
+          http: '/api/auth/current-user'
+          definition:
+            state: {user_op_definition: {}}
+          submit_button_text: refresh
+          instruction: ''
+          auto_submit: true
+
+  - else:
+      text: '::'
