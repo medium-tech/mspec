@@ -108,6 +108,10 @@
                 return;
             }
 
+            const url = new URL(window.location);
+            url.searchParams.set('spec', specPath);
+            window.history.pushState({}, '', url);
+
             console.log(`Fetching and running spec file: ${specPath}`);
 
             fetch(`/${specPath}`)
@@ -198,7 +202,14 @@
                     specSelect.appendChild(scriptsOptGroup);
                 })
                 .then(() => {
-                    runHelloWorld(); // load Hello World by default
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const specParam = urlParams.get('spec');
+                    if (specParam) {
+                        document.getElementById('spec-select').value = specParam;
+                        fetchAndRunLingoSpec({ target: { value: specParam } });
+                    } else {
+                        runHelloWorld(); // load Hello World by default
+                    }
                 })
                 .catch(error => {
                     console.error('Error fetching spec files:', error);
