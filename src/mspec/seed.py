@@ -1,6 +1,9 @@
 import random
+import io
 import datetime
 import argparse
+
+from PIL import Image, ImageDraw
 
 from mapp.context import spec_from_env, get_context_from_env
 from mapp.types import new_model_class, new_model, new_op_classes, new_op_params
@@ -59,9 +62,9 @@ def random_str() -> str:
 def random_str_enum(enum:list) -> str:
     return random.choice(enum)
 
-def random_list(element_type:str, enum_choices=None) -> list:
+def random_list(element_type:str, enum_choices=None, min=0, max=5) -> list:
     items = []
-    for _ in range(random.randint(0, 5)):
+    for _ in range(random.randint(min, max)):
         if enum_choices is not None:
             items.append(random.choice(enum_choices))
         elif element_type == 'str':
@@ -155,6 +158,28 @@ def random_phone_number() -> str:
 
 _SKIP_MODULES = {'auth', 'file_system', 'media'}
 
+_MEDIA_INGEST_TABLES = {'file', 'image', 'master_image'}
+
+
+def _make_minimal_png() -> bytes:
+    """Create a 500x500 PNG with random text placed at random positions."""
+    if random.choice([True, False]):
+        bg_color = (255, 255, 255)
+        text_color = (0, 0, 0)
+    else:
+        bg_color = (0, 0, 0)
+        text_color = (255, 255, 255)
+    img = Image.new('RGB', (1000, 1000), color=bg_color)
+    draw = ImageDraw.Draw(img)
+    
+    for word in random_list('str', min=1, max=7):
+        x = random.randint(0, 800)
+        y = random.randint(0, 950)
+        draw.text((x, y), word, fill=text_color, font_size=random.randint(35, 150))
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    return buf.getvalue()
+
 
 def _random_field_value(field: dict):
     """Return a random value for the given field spec."""
@@ -168,23 +193,138 @@ def _random_field_value(field: dict):
     return random.choice(field['examples'])
 
 
-def _has_unsupported_fields(model: dict) -> bool:
-    """Return True if the model has non-user_id foreign_key fields."""
-    for field_name, field in model['fields'].items():
-        if field['type'] == 'foreign_key' and field_name != 'user_id':
-            return True
-    return False
+def _ingest_for_table(ctx, spec: dict, ref_table_name: str):
+    """
+    Ingest a dummy media asset for a foreign key that points to a media table.
+    Returns the new id string, or None on error.
+    """
+    try:
+        if ref_table_name == 'file':
+            file_system_module = spec['modules']['file_system']
+            op = file_system_module['ops']['ingest_start']
+            params_class, output_class = new_op_classes(op, file_system_module)
+            content = b'seed file content'
+            filename = 'seed-file.txt'
+            ctx.self['file_input'] = content
+            ctx.self['file_input_name'] = filename
+            params = new_op_params(params_class, {
+                'name': filename,
+                'size': len(content),
+                'parts': 1,
+                'content_type': 'text/plain',
+                'finish': True,
+            })
+            result = http_run_op(ctx, params_class, output_class, params)
+            return str(result.result['file_id'])
+
+        elif ref_table_name == 'image':
+            media_module = spec['modules']['media']
+            op = media_module['ops']['create_image']
+            params_class, output_class = new_op_classes(op, media_module)
+            content = _make_minimal_png()
+            filename = 'seed-image.png'
+            ctx.self['file_input'] = content
+            ctx.self['file_input_name'] = filename
+            params = new_op_params(params_class, {
+                'name': filename,
+                'content_type': 'image/png',
+            })
+            result = http_run_op(ctx, params_class, output_class, params)
+            return str(result.result['image_id'])
+
+        elif ref_table_name == 'master_image':
+            media_module = spec['modules']['media']
+            op = media_module['ops']['ingest_master_image']
+            params_class, output_class = new_op_classes(op, media_module)
+            content = _make_minimal_png()
+            filename = 'seed-master-image.png'
+            ctx.self['file_input'] = content
+            ctx.self['file_input_name'] = filename
+            params = new_op_params(params_class, {
+                'name': filename,
+                'content_type': 'image/png',
+                'thumbnail_max_size': 1,
+            })
+            result = http_run_op(ctx, params_class, output_class, params)
+            return str(result.result['master_image_id'])
+
+    except Exception as e:
+        print(f'  :: error ingesting {ref_table_name}: {e}')
+        return None
+
+    finally:
+        ctx.self.pop('file_input', None)
+        ctx.self.pop('file_input_name', None)
 
 
-def _create_model(ctx, module: dict, model: dict):
+def _seed_foreign_model(ctx, spec: dict, ref_module_name: str, ref_table_name: str, _depth: int = 0):
+    """
+    Create a model in the referenced module/table and return its id string,
+    or None on error. Circular foreign key references are not supported and
+    are guarded against with a depth limit.
+    """
+    if _depth > 1:
+        # print(f'  :: foreign key depth limit reached for {ref_module_name}.{ref_table_name}, skipping')
+        return None
+    try:
+        ref_module = spec['modules'][ref_module_name]
+        ref_model = ref_module['models'][ref_table_name]
+        result = _create_model(ctx, spec, ref_module, ref_model, _depth=_depth + 1)
+        if result is None:
+            return None
+        return str(result.id)
+    except Exception as e:
+        print(f'  :: error seeding foreign model {ref_module_name}.{ref_table_name}: {e}')
+        return None
+
+
+def _create_model(ctx, spec: dict, module: dict, model: dict, _depth: int = 0):
     """Build and POST a single random model. Returns the created model or None on error."""
     model_class = new_model_class(model, module)
     data = {}
     for field_name, field in model['fields'].items():
         snake_name = field['name']['snake_case']
         if field['type'] == 'foreign_key':
-            # user_id is overridden server-side; use first example as placeholder
-            data[snake_name] = str(field['examples'][0])
+            references = field['references']
+            ref_module_name = references['module']
+            ref_table_name = references['table']
+            if ref_table_name == 'user':
+                # user_id is overridden server-side; use first example as placeholder
+                data[snake_name] = str(field['examples'][0])
+            elif ref_table_name in _MEDIA_INGEST_TABLES:
+                new_id = _ingest_for_table(ctx, spec, ref_table_name)
+                if new_id is None:
+                    default = field.get('default')
+                    if default is not None:
+                        data[snake_name] = str(default)
+                    else:
+                        return None
+                else:
+                    data[snake_name] = new_id
+            else:
+                new_id = _seed_foreign_model(ctx, spec, ref_module_name, ref_table_name, _depth=_depth)
+                if new_id is None:
+                    default = field.get('default')
+                    if default is not None:
+                        data[snake_name] = str(default)
+                    else:
+                        return None
+                else:
+                    data[snake_name] = new_id
+        elif field['type'] == 'list' and field.get('element_type') == 'foreign_key':
+            references = field['references']
+            ref_module_name = references['module']
+            ref_table_name = references['table']
+            ids = []
+            if ref_table_name != 'user':
+                for _ in range(random.randint(0, 3)):
+                    if ref_table_name in _MEDIA_INGEST_TABLES:
+                        new_id = _ingest_for_table(ctx, spec, ref_table_name)
+                    else:
+                        new_id = _seed_foreign_model(ctx, spec, ref_module_name, ref_table_name, _depth=_depth)
+                    if new_id is not None:
+                        ids.append(new_id)
+            data[snake_name] = ids
         else:
             data[snake_name] = _random_field_value(field)
     model_obj = new_model(model_class, data)
@@ -291,10 +431,6 @@ def seed(ctx, spec: dict, num_users: int, min_models: int, max_models: int):
             model_path = f'{module["name"]["snake_case"]}.{model["name"]["snake_case"]}'
             require_login = model.get('auth', {}).get('require_login', False)
 
-            if _has_unsupported_fields(model):
-                print(f':: skipping {model_path}: has non-user_id foreign_key fields (not supported in seeder v1)')
-                continue
-
             if require_login:
 
                 if num_users == 0:
@@ -310,14 +446,14 @@ def seed(ctx, spec: dict, num_users: int, min_models: int, max_models: int):
                         num_models = min(num_models, max_per_user)
                     print(f':: seeding {num_models} {model_path} models for user {user_id}...')
                     for _ in range(num_models):
-                        _create_model(ctx, module, model)
+                        _create_model(ctx, spec, module, model)
 
             else:
                 ctx.client.headers.pop('Authorization', None)
                 num_models = random.randint(min_models, max_models)
                 print(f':: seeding {num_models} {model_path} models...')
                 for _ in range(num_models):
-                    _create_model(ctx, module, model)
+                    _create_model(ctx, spec, module, model)
 
 #
 # cli entry point
