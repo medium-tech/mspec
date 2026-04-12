@@ -333,7 +333,7 @@
   - **return:** struct with `acknowledged`, `message`
 
 ### Client Functions
-`client.reload` - Reload the current page in the browser
+`client.reload` - Reload the client, currently only availble in the js browser interpreter which calls `window.location.reload`
   - **args:** *(none)*
   - **return:** struct with `acknowledged`, `message`
 
