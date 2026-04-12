@@ -40,7 +40,7 @@
     * 🟢 module index page
     * 🟢 model index page
     * 🟢 model instance page
-    * 🔴 arbitrary pages
+    * 🟢 arbitrary pages
     * 🔴 op page
 * 🟢 support for list of foreign keys
     * 🟢 backend
