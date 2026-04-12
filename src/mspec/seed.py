@@ -62,9 +62,9 @@ def random_str() -> str:
 def random_str_enum(enum:list) -> str:
     return random.choice(enum)
 
-def random_list(element_type:str, enum_choices=None) -> list:
+def random_list(element_type:str, enum_choices=None, min=0, max=5) -> list:
     items = []
-    for _ in range(random.randint(0, 5)):
+    for _ in range(random.randint(min, max)):
         if enum_choices is not None:
             items.append(random.choice(enum_choices))
         elif element_type == 'str':
@@ -169,12 +169,13 @@ def _make_minimal_png() -> bytes:
     else:
         bg_color = (0, 0, 0)
         text_color = (255, 255, 255)
-    img = Image.new('RGB', (500, 500), color=bg_color)
+    img = Image.new('RGB', (1000, 1000), color=bg_color)
     draw = ImageDraw.Draw(img)
-    for word in random_list('str'):
-        x = random.randint(0, 480)
-        y = random.randint(0, 480)
-        draw.text((x, y), word, fill=text_color)
+    
+    for word in random_list('str', min=1, max=7):
+        x = random.randint(0, 800)
+        y = random.randint(0, 950)
+        draw.text((x, y), word, fill=text_color, font_size=random.randint(35, 150))
     buf = io.BytesIO()
     img.save(buf, format='PNG')
     return buf.getvalue()
@@ -262,8 +263,8 @@ def _seed_foreign_model(ctx, spec: dict, ref_module_name: str, ref_table_name: s
     or None on error. Circular foreign key references are not supported and
     are guarded against with a depth limit.
     """
-    if _depth > 10:
-        print(f'  :: foreign key depth limit reached for {ref_module_name}.{ref_table_name}, skipping')
+    if _depth > 1:
+        # print(f'  :: foreign key depth limit reached for {ref_module_name}.{ref_table_name}, skipping')
         return None
     try:
         ref_module = spec['modules'][ref_module_name]
