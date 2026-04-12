@@ -1072,12 +1072,13 @@ const lingoFunctionLookup = {
                                 }
                             } else if (url === '/api/auth/logout-user' && params.mode !== 'others') {
                                 localStorage.removeItem('access_token');
-                                // console.log('op.http - removed access_token from localStorage');
+                                // window.location.reload();
                             }
                             return {state: 'result', result: wrappedResult};
                         } else {
                             return {state: 'error', error: 'Response missing result field'};
                         }
+
                     } else {
                         const errorData = await response.json();
                         let errorMessage = `${response.status} ${response.statusText}`;
@@ -2015,8 +2016,44 @@ function renderOp(app, expression, ctx = null) {
             throw new Error('op - missing definition for interactive op');
         }
 
-        const definition = lingoExecute(app, op.definition, ctx);
+        const definitioResult = lingoExecute(app, op.definition, ctx);
+
+        if(typeof definitioResult === 'object' && definitioResult !== null && 'value' in definitioResult){
+            if(definitioResult.type === 'str'){
+                // split value by dot and confirrm it has 2 parts, module and op name
+                const parts = definitioResult.value.split('.');
+                if(parts.length !== 2){
+                    console.error('op - definition as string reference must be in format "module.op_name"', definitioResult.value);
+                    throw new Error('op - definition as string reference must be in format "module.op_name"');
+                }
+                const [moduleName, opName] = parts;
+
+                // get from app.parentSpec.modules or throw error if not found
+                if(!app.parentSpec || !app.parentSpec.modules || !app.parentSpec.modules.hasOwnProperty(moduleName)){
+                    console.error('op - definition module not found in parent spec modules', moduleName, app.parentSpec.modules);
+                    throw new Error(`op - definition module not found in parent spec modules: ${moduleName}`);
+                }
+                const module = app.parentSpec.modules[moduleName];
+                if(!module.hasOwnProperty('ops') || !module.ops.hasOwnProperty(opName)){
+                    console.error('op - definition op not found in parent spec module ops', opName, module.ops);
+                    throw new Error(`op - definition op not found in parent spec module ops: ${opName}`);
+                }
+                definition = module.ops[opName];
+
+
+            }else if(definitioResult.type === 'op'){
+                definition = definitioResult.value;
+            }else{
+                console.error('op - definition expression must return type op', definitioResult);
+                throw new Error('op - definition expression must return type op');
+            }
+            
+        }else{
+            definition = definitioResult;
+        }
+
         if(!definition.hasOwnProperty('params')){
+            console.error('op - definition missing params field for interactive op', definition);
             throw new Error('op - missing params in definition for interactive op');
         }
 
@@ -3343,6 +3380,8 @@ function createHeadingElement(app, element, ctx = null) {
  * Create text element
  */
 function createTextElement(app, element, ctx = null) {
+    // console.debug('createTextElement()', element);
+
     const span = document.createElement('span');
     span.textContent = element.text;
     
@@ -3577,7 +3616,13 @@ function createValueElement(app, element, ctx = null) {
                             cellValue.forEach(item => {
                                 td.appendChild(item);
                             });
+                        }else if (cellValue.every(item => typeof item === 'object' && item !== null)) {
+                            cellValue.forEach(item => {
+                                const domElement = createDOMElement(app, item);
+                                td.appendChild(domElement);
+                            });
                         } else {
+                            console.log('createValueElement - cellValue is array but not all items are HTMLElements, converting to string:', cellValue);
                             td.textContent = cellValue.join(', ');
                         }
                     // else if is a Date object
@@ -4432,26 +4477,69 @@ function createFormElement(app, element, ctx = null) {
         }, 0);
     }
     
-    // add submit button //
-
-    const submitRow = document.createElement('tr');
-    const submitCell = document.createElement('td');
-    submitCell.colSpan = 3;
-    submitCell.className = 'form-submit-cell';
+    // submit button //
 
     const submitButtonText = element.form.submit_button_text || 'Submit';
-    
     const submitButton = document.createElement('button');
     submitButton.disabled = currentState.state === 'loading';
     submitButton.textContent = submitButtonText;
     submitButton.addEventListener('click', submitAction);
 
+    // status display //
+    let stateColor;
+    switch(currentState.state) {
+        case 'success':
+            stateColor = 'green';
+            break;
+        case 'error':
+            stateColor = 'red';
+            break;
+        default:
+            stateColor = 'blue';
+    }
+
+    const statusDisplay = {text: currentState.state, style: {bold: true, color: stateColor}};
+    const statusElement = createTextElement(app, statusDisplay, ctx);
+    
+    // additional comment //
+
+    let commentText;
+    if (element.hasOwnProperty('comment')) {
+        commentText = element.comment;
+    } else if (currentState.state === 'error') {
+        commentText = {text: currentState.error || 'An error occurred', style: {italic: true, color: 'red'}};
+    }else{
+        commentText = {text: ''}
+    }
+
+    let additionalElement;
+    try{
+        additionalElement = createTextElement(app, commentText, ctx);
+    }catch(error) {
+        console.error('Error creating additionalElement for form comment:', error);
+        throw `Error creating form comment element must be a text element: ${error}`;
+    }
+
     // final assembly //
     // console.log('createFormElement - adding button', {autoSubmit, currentState: currentState.state});
-    submitCell.appendChild(submitButton);
-    submitRow.appendChild(submitCell);
-    table.appendChild(submitRow);
+    const submitRow = document.createElement('tr');
+    submitRow.className = 'form-submit-row';
+    const buttonCell = document.createElement('td');
+    // buttonCell.colSpan = 3;
+    // buttonCell.className = 'form-submit-cell';
+    buttonCell.appendChild(submitButton);
+
+    const statusCell = document.createElement('td');
+    statusCell.appendChild(statusElement);
     
+    const additionalCell = document.createElement('td');
+    additionalCell.appendChild(additionalElement);
+
+    submitRow.appendChild(buttonCell);
+    submitRow.appendChild(statusCell);
+    submitRow.appendChild(additionalCell);
+
+    table.appendChild(submitRow);
     formContainer.appendChild(table);
 
     // console.log('createFormElement - formData after:', formData);

@@ -1,5 +1,6 @@
 lingo:
     version: page-beta-1
+    parent_url: '/api/spec'
     title: "sosh net :: account"
 
 params: {}
@@ -25,45 +26,32 @@ state:
         type: any
         value: null
   
-  user_op_definition:
-    type: op
+  login_user:
+    type: struct
     default:
-      name:
-          lower_case: "current user"
-      description: "Get the current logged in user"
-      func:
-          call: "auth.current_user"
-          args: {}
-      params: {}
+      state: initial
+      error: ''
+      data: {}
       result:
-          type: struct
-          fields:
-              id:
-                  name:
-                      lower_case: "id"
-                  type: str
-                  description: "ID of the current user"
-              name:
-                  name:
-                      lower_case: "name"
-                  type: str
-                  description: "Name of the current user"
-              email:
-                  name:
-                      lower_case: "email"
-                  type: str
-                  description: "Email of the current user"
-              number_of_sessions:
-                  name:
-                      lower_case: "number of sessions"
-                  type: int
-                  description: "Number of active sessions for the current user"
-
+        type: any
+        value: null
+  
+  create_user:
+    type: struct
+    default:
+      state: initial
+      error: ''
+      data: {}
+      result:
+        type: any
+        value: null
+  
   logout_state:
     type: struct
     default:
       state: initial
       error: ''
+      data: {}
       result:
         type: any
         value: null
@@ -131,27 +119,58 @@ output:
             - if:
                 state: {is_logged_in: {}}
               then:
-                text: 'no'
+                text: 'yes'
+                style:
+                  bold: true
             - else:
-                text: 'signup'
-                link: '/auth/create-user'
+                text: 'yes'
+                style:
+                  bold: true
         column3: 
           branch:
             - if:
                 state: {is_logged_in: {}}
               then:
-                button:
-                  call: 'op.http'
-                  args:
-                    url: '/api/auth/logout-user'
-                    data: {}
-                    bind: 
-                      state: {logout_state: {}}
-                text: 'log out'
+                text: "then don't log out"
+                style:
+                  italic: true
             - else:
-                text: 'login'
-                link: '/auth/login-user'
-
+                text: 'see below'
+                style:
+                  italic: true
+    - type: struct
+      value:
+        column1:
+          text: ''
+        column2:
+          branch:
+            - if:
+                state: {is_logged_in: {}}
+              then:
+                text: 'no'
+                style:
+                  bold: true
+            - else:
+                text: 'no'
+                style:
+                  bold: true
+        column3:
+          branch:
+            - if:
+                state: {is_logged_in: {}}
+              then:
+                op:
+                  bind:
+                    state: {logout_state: {}}
+                  interactive: true
+                  http: '/api/auth/logout-user'
+                  submit_button_text: logout
+                  instruction: ''
+                  definition: 'auth.logout_user'
+            - else:
+                text: 'do nothing'
+                style:
+                  italic: true
 - break: 1
 
 - branch:
@@ -165,11 +184,29 @@ output:
             state: {fetch_user: {}}
           interactive: true
           http: '/api/auth/current-user'
-          definition:
-            state: {user_op_definition: {}}
+          definition: 'auth.current_user'
           submit_button_text: refresh
           instruction: ''
           auto_submit: true
 
   - else:
-      text: '::'
+      - heading: ':: login'
+        level: 4
+      - op:
+          bind:
+            state: {login_user: {}}
+          interactive: true
+          http: '/api/auth/login-user'
+          definition: 'auth.login_user'
+          submit_button_text: login
+
+      - heading: ':: create account'
+        level: 4
+      - op:
+          bind:
+            state: {create_user: {}}
+          interactive: true
+          http: '/api/auth/create-user'
+          definition: 'auth.create_user'
+          instruction: 'create a new account to access all features of sosh net'
+          submit_button_text: create account
