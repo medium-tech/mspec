@@ -293,13 +293,23 @@ def _create_model(ctx, spec: dict, module: dict, model: dict, _depth: int = 0):
             elif ref_table_name in _MEDIA_INGEST_TABLES:
                 new_id = _ingest_for_table(ctx, spec, ref_table_name)
                 if new_id is None:
-                    return None
-                data[snake_name] = new_id
+                    default = field.get('default')
+                    if default is not None:
+                        data[snake_name] = str(default)
+                    else:
+                        return None
+                else:
+                    data[snake_name] = new_id
             else:
                 new_id = _seed_foreign_model(ctx, spec, ref_module_name, ref_table_name, _depth=_depth)
                 if new_id is None:
-                    return None
-                data[snake_name] = new_id
+                    default = field.get('default')
+                    if default is not None:
+                        data[snake_name] = str(default)
+                    else:
+                        return None
+                else:
+                    data[snake_name] = new_id
         else:
             data[snake_name] = _random_field_value(field)
     model_obj = new_model(model_class, data)
