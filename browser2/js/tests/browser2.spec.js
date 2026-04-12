@@ -258,6 +258,19 @@ test('test - functions-random', async ({ page }) => {
   await expect(page.locator('#lingo-app')).toContainText('random.randint(1, 10) = ');
 });
 
+test('test - functions-client', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/functions-client.json');
+
+  await expect(page.locator('h1')).toContainText('Client Functions');
+  await expect(page.locator('#lingo-app')).toContainText('client.reload()');
+
+  await Promise.all([
+    page.waitForEvent('load'),
+    page.getByRole('button', { name: 'Reload Page' }).click()
+  ]);
+});
+
 test('test - hello_world script', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
   

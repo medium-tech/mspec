@@ -13,6 +13,7 @@
   - [Date and Time](#date-and-time-functions)
   - [Random](#random-functions)
   - [Auth](#auth-functions)
+  - [Client](#client-functions)
   - [File System](#file-system-functions)
   - [Media](#media-functions)
 - [Control Flow](#control-flow)
@@ -329,6 +330,11 @@
 `auth.drop_sessions` - Drop all sessions (requires root password)
   - **args:**
     - **root_password** `str` - Root password to authorize dropping all sessions
+  - **return:** struct with `acknowledged`, `message`
+
+### Client Functions
+`client.reload` - Reload the client, currently only availble in the js browser interpreter which calls `window.location.reload`
+  - **args:** *(none)*
   - **return:** struct with `acknowledged`, `message`
 
 ### File System Functions

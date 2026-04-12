@@ -1,0 +1,19 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+    "state": {},
+    "ops": {},
+    "output": [
+        {"heading": {"text": "Client Functions"}, "level": 1},
+        {"block": [
+            {"text": "Page loaded at: ", "style": {"bold": true}},
+            {"lingo": {"call": "datetime.now"}},
+            {"break": 1},
+            {"text": "client.reload() - Reload the current page in the browser."},
+            {"break": 1},
+            {"button": {"call": "client.reload"}, "text": "Reload Page"}
+        ]}
+    ]
+}
