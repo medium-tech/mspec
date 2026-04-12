@@ -188,7 +188,7 @@ For the `page-beta-1` spec, the output is a list of elements similar to HTML for
 
 When a page is loaded the first the time, the client will iterate though the output and execute all lingo expressions. These expressions will all return 
 elements suitable for display in a buffer. `{"lingo": {"state": {"counter": {}}}}` above is a references to the `counter` variable stored in state. 
-To display this to a user we will return it as text, when we render this expression it will be replaced ini the buffer with `{"text": "0"}`. The client 
+To display this to a user we will return it as text, when we render this expression it will be replaced in the buffer with `{"text": "0"}`. The client 
 then takes the buffer and uses it to drive their rendering process. If the user interacts with a form or button the buffer will be regenerated from the same elements defined in `output` but if the state has been modified the output will be different.
 
 ### timers
@@ -221,14 +221,14 @@ Each time a timer fires it executes `func` and then evaluates `interval` to deci
         "set": {"state": {"countdown_value": {}}},
         "to": {
           "branch": [
-            {"if": {"call": "eq", "args": [{"state": {"countdown_value": {}}}, -1]}, "then": 5},
-            {"else": {"call": "sub", "args": [{"state": {"countdown_value": {}}}, 1]}}
+            {"if": {"call": "eq", "args": {"a": {"state": {"countdown_value": {}}}, "b": -1}}, "then": 5},
+            {"else": {"call": "sub", "args": {"a": {"state": {"countdown_value": {}}}, "b": 1}}}
           ]
         }
       },
       "interval": {
         "branch": [
-          {"if": {"call": "gt", "args": [{"state": {"countdown_value": {}}}, -1]}, "then": 1},
+          {"if": {"call": "gt", "args": {"a": {"state": {"countdown_value": {}}}, "b": -1}}, "then": 1},
           {"else": -1}
         ]
       },

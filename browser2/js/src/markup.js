@@ -1312,8 +1312,11 @@ function startTimer(app, timerName) {
         }
 
         if (interval >= 0) {
+            // interval == 0: re-run on the next event loop tick (setTimeout delay of 0)
+            // interval > 0: re-run after interval seconds
             app.timers[timerName] = setTimeout(runTimer, interval * 1000);
         } else {
+            // interval < 0: timer self-disabled, will not re-run
             app.timers[timerName] = null;
         }
     }
