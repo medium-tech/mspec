@@ -897,6 +897,19 @@ const lingoFunctionLookup = {
         }
     },
 
+    // client //
+
+    'client': {
+        'reload': {
+            func: () => {
+                window.location.reload();
+                return {acknowledged: true, message: 'reload triggered'};
+            },
+            args: {},
+            sig: 'kwargs'
+        }
+    },
+
     // crud //
 
     'crud': {
