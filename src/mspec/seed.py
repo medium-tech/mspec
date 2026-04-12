@@ -310,6 +310,20 @@ def _create_model(ctx, spec: dict, module: dict, model: dict, _depth: int = 0):
                         return None
                 else:
                     data[snake_name] = new_id
+        elif field['type'] == 'list' and field.get('element_type') == 'foreign_key':
+            references = field['references']
+            ref_module_name = references['module']
+            ref_table_name = references['table']
+            ids = []
+            if ref_table_name != 'user':
+                for _ in range(random.randint(0, 3)):
+                    if ref_table_name in _MEDIA_INGEST_TABLES:
+                        new_id = _ingest_for_table(ctx, spec, ref_table_name)
+                    else:
+                        new_id = _seed_foreign_model(ctx, spec, ref_module_name, ref_table_name, _depth=_depth)
+                    if new_id is not None:
+                        ids.append(new_id)
+            data[snake_name] = ids
         else:
             data[snake_name] = _random_field_value(field)
     model_obj = new_model(model_class, data)
