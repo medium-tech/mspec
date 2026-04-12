@@ -125,6 +125,9 @@
                     try {
                         createParamsInput(specData)
                         const updateDebugInfo = (app) => showDebugInfo(app);
+                        if (currentApp) {
+                            stopAllTimers(currentApp);
+                        }
                         currentApp = lingoApp(specData, {}, {afterRender: updateDebugInfo});
                         renderApp();
                         console.log(`Spec file ${specPath} loaded successfully`);

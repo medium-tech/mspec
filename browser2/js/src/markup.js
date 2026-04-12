@@ -1273,6 +1273,63 @@ class LingoApp {
             forms: {},
             media: {}
         };
+
+        this.timers = {}; // { [timerName]: timeoutId | null }
+    }
+}
+
+/**
+ * Start a timer by name - runs func, then schedules itself based on interval
+ */
+function startTimer(app, timerName) {
+    const timerSpec = app.spec.timers[timerName];
+    if (!timerSpec) {
+        throw new Error(`timer '${timerName}' not defined in spec`);
+    }
+
+    function runTimer() {
+        try {
+            lingoExecute(app, timerSpec.func);
+        } catch (error) {
+            console.error(`Timer '${timerName}' func error:`, error);
+        }
+
+        const container = document.getElementById('lingo-app');
+        if (container) {
+            renderLingoApp(app, container);
+        }
+
+        let interval;
+        if (typeof timerSpec.interval === 'number') {
+            interval = timerSpec.interval;
+        } else {
+            try {
+                interval = unwrapValue(lingoExecute(app, timerSpec.interval));
+            } catch (error) {
+                console.error(`Timer '${timerName}' interval error:`, error);
+                interval = -1;
+            }
+        }
+
+        if (interval >= 0) {
+            app.timers[timerName] = setTimeout(runTimer, interval * 1000);
+        } else {
+            app.timers[timerName] = null;
+        }
+    }
+
+    runTimer();
+}
+
+/**
+ * Stop all running timers on an app
+ */
+function stopAllTimers(app) {
+    for (const timerName in app.timers) {
+        if (app.timers[timerName] !== null) {
+            clearTimeout(app.timers[timerName]);
+            app.timers[timerName] = null;
+        }
     }
 }
 
@@ -1290,7 +1347,18 @@ function lingoApp(spec, params = {}, options = {}) {
         }
     }
     
-    return lingoUpdateState(instance);
+    lingoUpdateState(instance);
+
+    // Auto-start timers
+    if (instance.spec.timers) {
+        for (const [timerName, timerSpec] of Object.entries(instance.spec.timers)) {
+            if (timerSpec.auto_start) {
+                startTimer(instance, timerName);
+            }
+        }
+    }
+
+    return instance;
 }
 
 /**
@@ -3741,6 +3809,15 @@ function createButtonElement(app, element, ctx) {
 
     if (element.button.hasOwnProperty('clientFunction')) {
         onClick = () => element.button.clientFunction();
+    } else if (element.button.hasOwnProperty('timer')) {
+        const timerName = element.button.timer;
+        onClick = () => {
+            try {
+                startTimer(app, timerName);
+            } catch (error) {
+                console.error('Button timer error:', error);
+            }
+        };
     } else{
         onClick = () => {
             try {

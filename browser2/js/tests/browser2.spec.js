@@ -878,3 +878,38 @@ test('test - spec file added to url on dropdown change', async ({ page }) => {
   await expect(page).toHaveURL(/[?&]spec=data%2Flingo%2Fpages%2Ftest-page\.json/);
   await expect(page.locator('h1')).toContainText('Example document');
 });
+
+test('test - timers', async ({ page }) => {
+  test.setTimeout(25000); // timers test needs extra time for countdown to complete
+
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/timers.json');
+
+  await expect(page.locator('h1')).toContainText('Timers');
+
+  // Auto-start: clock should be running - capture the time text and wait for it to change
+  const initialTime = await page.locator('#lingo-app').textContent();
+  await page.waitForTimeout(1500);
+  const updatedTime = await page.locator('#lingo-app').textContent();
+  expect(updatedTime).not.toEqual(initialTime);
+
+  // Initial countdown state is -1, button should be enabled
+  await expect(page.locator('#lingo-app')).toContainText('-1');
+  await expect(page.getByRole('button', { name: 'start countdown' })).toBeEnabled();
+
+  // Start the countdown from the button
+  await page.getByRole('button', { name: 'start countdown' }).click();
+
+  // -1 should disappear and countdown should start at 5
+  await expect(page.locator('#lingo-app')).not.toContainText('Countdown: -1');
+  await expect(page.locator('#lingo-app')).toContainText('5');
+
+  // Button should now be disabled since countdown is running
+  await expect(page.getByRole('button', { name: 'start countdown' })).toBeDisabled();
+
+  // Wait for the countdown to finish (it runs from 5 down to -1, 6 seconds max + buffer)
+  await expect(page.locator('#lingo-app')).toContainText('Countdown: -1', { timeout: 9000 });
+
+  // Timer has disabled itself - button should be enabled again
+  await expect(page.getByRole('button', { name: 'start countdown' })).toBeEnabled();
+});
