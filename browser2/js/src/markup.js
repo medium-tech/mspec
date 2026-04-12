@@ -1273,6 +1273,66 @@ class LingoApp {
             forms: {},
             media: {}
         };
+
+        this.timers = {}; // { [timerName]: timeoutId | null }
+    }
+}
+
+/**
+ * Start a timer by name - runs func, then schedules itself based on interval
+ */
+function startTimer(app, timerName) {
+    const timerSpec = app.spec.timers[timerName];
+    if (!timerSpec) {
+        throw new Error(`timer '${timerName}' not defined in spec`);
+    }
+
+    function runTimer() {
+        try {
+            lingoExecute(app, timerSpec.func);
+        } catch (error) {
+            console.error(`Timer '${timerName}' func error:`, error);
+        }
+
+        const container = document.getElementById('lingo-app');
+        if (container) {
+            renderLingoApp(app, container);
+        }
+
+        let interval;
+        if (typeof timerSpec.interval === 'number') {
+            interval = timerSpec.interval;
+        } else {
+            try {
+                interval = unwrapValue(lingoExecute(app, timerSpec.interval));
+            } catch (error) {
+                console.error(`Timer '${timerName}' interval error:`, error);
+                interval = -1;
+            }
+        }
+
+        if (interval >= 0) {
+            // interval == 0: re-run on the next event loop tick (setTimeout delay of 0)
+            // interval > 0: re-run after interval seconds
+            app.timers[timerName] = setTimeout(runTimer, interval * 1000);
+        } else {
+            // interval < 0: timer self-disabled, will not re-run
+            app.timers[timerName] = null;
+        }
+    }
+
+    runTimer();
+}
+
+/**
+ * Stop all running timers on an app
+ */
+function stopAllTimers(app) {
+    for (const timerName in app.timers) {
+        if (app.timers[timerName] !== null) {
+            clearTimeout(app.timers[timerName]);
+            app.timers[timerName] = null;
+        }
     }
 }
 
@@ -1290,7 +1350,18 @@ function lingoApp(spec, params = {}, options = {}) {
         }
     }
     
-    return lingoUpdateState(instance);
+    lingoUpdateState(instance);
+
+    // Auto-start timers
+    if (instance.spec.timers) {
+        for (const [timerName, timerSpec] of Object.entries(instance.spec.timers)) {
+            if (timerSpec.auto_start) {
+                startTimer(instance, timerName);
+            }
+        }
+    }
+
+    return instance;
 }
 
 /**
@@ -1321,11 +1392,19 @@ function lingoUpdateState(app, ctx = null) {
                 if (!('default' in value)) {
                     throw new Error(`state.${key} - missing default value`);
                 }
-                const typeName = getTypeName(value.default);
-                if (!typesMatch(typeName, value.type)) {
+                let defaultValue = value.default;
+                const typeName = getTypeName(defaultValue);
+                
+                if (value.type === 'datetime' && typeName === 'str') {
+                    console.log(`state.${key} - parsing datetime default value:`, defaultValue);
+                    defaultValue = new Date(defaultValue);
+                }else if (!typesMatch(typeName, value.type)) {
                     throw new Error(`state.${key} - default value type mismatch : ${typeName} != ${value.type}`);
                 }
-                app.state[key] = value.default;
+
+                app.state[key] = defaultValue;
+
+                console.log(`state.${key} - setting default value:`, defaultValue, 'type:', typeName);
             }
         }
     }
@@ -1871,6 +1950,7 @@ function renderSet(app, expression, ctx = null) {
 function renderState(app, expression, ctx = null) {
     const fieldNames = Object.keys(expression.state);
     if (fieldNames.length !== 1) {
+        console.error('state - invalid expression, must have exactly one state field', expression);
         throw new Error('state - must have exactly one state field');
     }
     const fieldName = fieldNames[0];
@@ -3741,6 +3821,15 @@ function createButtonElement(app, element, ctx) {
 
     if (element.button.hasOwnProperty('clientFunction')) {
         onClick = () => element.button.clientFunction();
+    } else if (element.button.hasOwnProperty('timer')) {
+        const timerName = element.button.timer;
+        onClick = () => {
+            try {
+                startTimer(app, timerName);
+            } catch (error) {
+                console.error('Button timer error:', error);
+            }
+        };
     } else{
         onClick = () => {
             try {

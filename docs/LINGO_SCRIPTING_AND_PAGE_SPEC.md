@@ -9,6 +9,7 @@
    - [state](#state) 
    - [ops](#ops)
    - [output](#output)
+   - [timers](#timers)
 1. [Example Script](#example-script)
 1. [Example Page](#example-page)
 1. [Examples](#examples)
@@ -24,6 +25,9 @@ Both page types consists of four main sections:
 - **state**: Application state variables that can be updated
 - **ops**: Reusable operations with a JSON-based scripting language
 - **output**: The output of the program, different depending on type of spec
+
+Additionally, `page-beta-1` supports:
+- **timers**: Background functions that run at a configurable interval
 
 As explained below, these specs can contain lingo expressions, those are defined in [this document](./LINGO_FUNCTIONS.md).
 
@@ -184,8 +188,63 @@ For the `page-beta-1` spec, the output is a list of elements similar to HTML for
 
 When a page is loaded the first the time, the client will iterate though the output and execute all lingo expressions. These expressions will all return 
 elements suitable for display in a buffer. `{"lingo": {"state": {"counter": {}}}}` above is a references to the `counter` variable stored in state. 
-To display this to a user we will return it as text, when we render this expression it will be replaced ini the buffer with `{"text": "0"}`. The client 
+To display this to a user we will return it as text, when we render this expression it will be replaced in the buffer with `{"text": "0"}`. The client 
 then takes the buffer and uses it to drive their rendering process. If the user interacts with a form or button the buffer will be regenerated from the same elements defined in `output` but if the state has been modified the output will be different.
+
+### timers
+
+Defines background functions (only supported in `page-beta-1`) that run at a configurable interval. Each timer has a `func` expression to execute, an `interval` in seconds, and an optional `auto_start` flag.
+
+On page load, any timer with `auto_start: true` will start automatically. Other timers can be started from a button using `{"button": {"timer": "timer_name"}}`.
+
+Each time a timer fires it executes `func` and then evaluates `interval` to decide when (or whether) to run again:
+
+- **`interval < 0`** — the timer stops and will not re-run
+- **`interval == 0`** — the timer re-runs immediately on the next event loop tick
+- **`interval > 0`** — the timer re-runs after this many seconds
+
+`interval` can be a plain number or a lingo expression that returns a number, allowing timers to disable themselves dynamically.
+
+```json
+{
+  "timers": {
+    "update_clock": {
+      "func": {
+        "set": {"state": {"current_time": {}}},
+        "to": {"call": "datetime.now", "args": {}}
+      },
+      "interval": 1,
+      "auto_start": true
+    },
+    "countdown": {
+      "func": {
+        "set": {"state": {"countdown_value": {}}},
+        "to": {
+          "branch": [
+            {"if": {"call": "eq", "args": {"a": {"state": {"countdown_value": {}}}, "b": -1}}, "then": 5},
+            {"else": {"call": "sub", "args": {"a": {"state": {"countdown_value": {}}}, "b": 1}}}
+          ]
+        }
+      },
+      "interval": {
+        "branch": [
+          {"if": {"call": "gt", "args": {"a": {"state": {"countdown_value": {}}}, "b": -1}}, "then": 1},
+          {"else": -1}
+        ]
+      },
+      "auto_start": false
+    }
+  }
+}
+```
+
+A button can start a timer using the `timer` key:
+
+```json
+{"button": {"timer": "countdown"}, "text": "start countdown"}
+```
+
+The `disabled` field on a button still works as normal and can be used to prevent re-starting an already-running timer.
 
 ## Example Script
 
