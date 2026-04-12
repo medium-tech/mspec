@@ -1,8 +1,9 @@
 import random
-import struct
-import zlib
+import io
 import datetime
 import argparse
+
+from PIL import Image, ImageDraw
 
 from mapp.context import spec_from_env, get_context_from_env
 from mapp.types import new_model_class, new_model, new_op_classes, new_op_params
@@ -161,14 +162,22 @@ _MEDIA_INGEST_TABLES = {'file', 'image', 'master_image'}
 
 
 def _make_minimal_png() -> bytes:
-    """Create a minimal valid 1x1 white PNG for seeding."""
-    def _chunk(name: bytes, data: bytes) -> bytes:
-        payload = name + data
-        return struct.pack('>I', len(data)) + payload + struct.pack('>I', zlib.crc32(payload) & 0xffffffff)
-    ihdr = _chunk(b'IHDR', struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0))
-    idat = _chunk(b'IDAT', zlib.compress(b'\x00\xff\xff\xff'))
-    iend = _chunk(b'IEND', b'')
-    return b'\x89PNG\r\n\x1a\n' + ihdr + idat + iend
+    """Create a 500x500 PNG with random text placed at random positions."""
+    if random.choice([True, False]):
+        bg_color = (255, 255, 255)
+        text_color = (0, 0, 0)
+    else:
+        bg_color = (0, 0, 0)
+        text_color = (255, 255, 255)
+    img = Image.new('RGB', (500, 500), color=bg_color)
+    draw = ImageDraw.Draw(img)
+    for word in random_list('str'):
+        x = random.randint(0, 480)
+        y = random.randint(0, 480)
+        draw.text((x, y), word, fill=text_color)
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    return buf.getvalue()
 
 
 def _random_field_value(field: dict):
