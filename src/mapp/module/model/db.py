@@ -1,4 +1,5 @@
 from datetime import datetime
+import sqlite3
 
 from mapp.auth import current_user
 from mapp.context import MappContext
@@ -45,7 +46,10 @@ def db_model_create_table(ctx:MappContext, model_class: type) -> Acknowledgment:
                 col_def = f"'{field_name}' INTEGER REFERENCES {ref_table}({ref_field})"
             case _:
                 raise ValueError(f'Unsupported field type: {field_type}')
-            
+
+        if field.get('unique') is True and field_type != 'foreign_key':
+            col_def += ' UNIQUE'
+
         columns.append(col_def)
 
         if field_type == 'foreign_key':
@@ -115,6 +119,17 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
             if existing_count >= max_models:
                 raise MappUserError('MAX_MODELS_EXCEEDED', f'Maximum number of models ({max_models}) for user exceeded.')
 
+        for field_name, max_count in model_spec['auth']['max_models_by_field'].items():
+            if max_count >= 0:
+                field_value = getattr(obj, field_name)
+                count = ctx.db.cursor.execute(
+                    f'SELECT COUNT(*) FROM {model_snake_case} WHERE user_id = ? AND "{field_name}" = ?',
+                    (user['value']['id'], field_value)
+                ).fetchone()[0]
+                if count >= max_count:
+                    raise MappUserError('MAX_MODELS_BY_FIELD_EXCEEDED',
+                        f'Maximum models ({max_count}) for field {field_name} exceeded.')
+
     # non list sql #
     
     fields = []
@@ -144,7 +159,10 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
 
     # call db #
 
-    result = ctx.db.cursor.execute(non_list_sql, values)
+    try:
+        result = ctx.db.cursor.execute(non_list_sql, values)
+    except sqlite3.IntegrityError as e:
+        raise MappUserError('UNIQUE_CONSTRAINT_VIOLATED', f'A record with that value already exists: {e}')
     assert result.rowcount == 1
     assert result.lastrowid is not None
     obj = obj._replace(id=str(result.lastrowid))

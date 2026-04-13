@@ -328,6 +328,57 @@ modules:
               - "example1"
               - "example2"
 
+      limit_d:
+        name:
+          lower_case: 'limit d'
+
+        description: 'A model to test max_models_by_field limit of 1 per my_field value'
+
+        auth:
+          require_login: true
+          max_models_by_field:
+            my_field: 1
+
+        fields:
+
+          user_id:
+            name:
+              lower_case: 'user id'
+            type: foreign_key
+            references:
+              module: 'auth'
+              table: 'user'
+              field: 'id'
+            examples:
+              - "1"
+              - "2"
+              - "3"
+
+          my_field:
+            name:
+              lower_case: 'my field'
+            type: str
+            examples:
+              - "example1"
+              - "example2"
+
+      unique_test:
+        name:
+          lower_case: 'unique test'
+
+        description: 'A model to test the unique field constraint'
+
+        fields:
+
+          unique_string:
+            name:
+              lower_case: 'unique string'
+            type: str
+            unique: true
+            examples:
+              - "unique_val_1"
+              - "unique_val_2"
+
       single_choice_fk:
         name:
           lower_case: 'single choice fk'

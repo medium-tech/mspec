@@ -109,6 +109,25 @@ models:
 - `name.lower_case`: The model name in lowercase with spaces, see [Name block](#name-block) for more information
 - `fields`: A collection of [field](#fields) definitions
 
+**Optional subfields:**
+- `auth`: Authentication and access-control settings for the model
+
+#### auth
+
+The `auth` block controls login requirements and creation limits:
+
+```yaml
+auth:
+  require_login: true
+  max_models_per_user: 5
+  max_models_by_field:
+    post_id: 1
+```
+
+- `require_login` (bool): When `true`, the user must be authenticated to create, read, update, or delete models. Requires a `user_id` foreign-key field on the model.
+- `max_models_per_user` (int, default `-1`): Maximum number of models a single user may create. `-1` means unlimited.
+- `max_models_by_field` (dict, default `{}`): Per-field creation limits. Each key is a field name and the value is the maximum number of models a user may create where that field has the same value. For example, `post_id: 1` allows only one model per unique `post_id` value per user. Returns `MAX_MODELS_BY_FIELD_EXCEEDED` (HTTP 400) when the limit is reached.
+
 ### fields
 
 Each [model](#models) must contain one or more fields that define the data structure:
@@ -129,6 +148,7 @@ fields:
 
 **Optional subfields:**
 - `random`: Custom random generator name (overrides the default generator for the field type)
+- `unique` (bool): When `true`, the database enforces that every row in the table has a distinct value for this column. Attempting to insert a duplicate value returns `UNIQUE_CONSTRAINT_VIOLATED` (HTTP 400). Only applies to non-list fields.
 
 ## Field Types and Examples
 

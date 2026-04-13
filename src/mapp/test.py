@@ -350,6 +350,18 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
         # remaining tests not applicable
         return
 
+    max_models_by_field = model['auth'].get('max_models_by_field', {})
+    if max_models_by_field and not hidden and require_login:
+        by_field_status, by_field_model = request(ctx, *create_args)
+        assert by_field_status == 400, f'Create {model_name} beyond max_models_by_field did not return 400 Bad Request, response: {by_field_model}'
+        assert by_field_model.get('error', {}).get('code') == 'MAX_MODELS_BY_FIELD_EXCEEDED', f'Expected MAX_MODELS_BY_FIELD_EXCEEDED error code, got: {by_field_model}'
+
+    has_unique_fields = any(f.get('unique') for f in model.get('fields', {}).values())
+    if has_unique_fields and not hidden:
+        unique_status, unique_model = request(ctx, *create_args)
+        assert unique_status == 400, f'Create {model_name} with duplicate unique field did not return 400 Bad Request, response: {unique_model}'
+        assert unique_model.get('error', {}).get('code') == 'UNIQUE_CONSTRAINT_VIOLATED', f'Expected UNIQUE_CONSTRAINT_VIOLATED error code, got: {unique_model}'
+
     #
     # read
     #
