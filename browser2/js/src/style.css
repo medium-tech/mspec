@@ -257,7 +257,10 @@ table td {
     body { padding: 12px; }
 
     input[type="text"],
-    input[type="password"] {
+    input[type="password"],
+    input[type="email"],
+    select,
+    textarea {
         max-width: 300px;
     }
 }
