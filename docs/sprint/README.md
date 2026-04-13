@@ -18,6 +18,7 @@ This document is the index for the final production sprint tickets for sosh-net.
 | 05 | Custom Account page with profile create/edit | [TICKET_05_account_page_profile.md](TICKET_05_account_page_profile.md) | 01, 04 |
 | 06 | Custom Forum instance page | [TICKET_06_forum_instance_page.md](TICKET_06_forum_instance_page.md) | 02, 03 |
 | 07 | Custom Chatter page | [TICKET_07_chatter_page.md](TICKET_07_chatter_page.md) | 02, 03, 06 |
+| 08 | Responsive CSS: mobile and desktop support | [TICKET_08_responsive_css.md](TICKET_08_responsive_css.md) | — |
 
 ---
 
@@ -53,7 +54,7 @@ New `db.*` functions in the Python lingo interpreter:
 
 - **`sosh_net.get_post_and_reactions`** — already defined in `sosh-net.yaml`; returns a post and its reaction type counts. Requires Ticket 02.
 
-### Custom Pages (Tickets 04–07)
+### Custom Pages (Tickets 04–08)
 
 | Page | URL | Purpose |
 |------|-----|---------|
@@ -61,6 +62,7 @@ New `db.*` functions in the Python lingo interpreter:
 | Account | `/sosh-net/account` | Auth + create/edit user profile |
 | Forum instance | `/sosh-net/forum/<id>` | Forum metadata, pageable posts, nested replies, add post/reply |
 | Chatter | `/sosh-net/chatter` | Open feed of non-forum posts, newest first, nested replies |
+| All pages | — | Responsive CSS: mobile and desktop breakpoints |
 
 ---
 
@@ -68,8 +70,9 @@ New `db.*` functions in the Python lingo interpreter:
 
 1. **Ticket 01** — Model spec constraints (no dependencies; unblocks the account page and data integrity)
 2. **Ticket 02** — DB lingo functions (no dependencies; unblocks the op and all custom pages)
-3. **Ticket 03** — Backend op (depends on 02)
-4. **Ticket 04** — Profiles page (no dependencies; simple)
-5. **Ticket 05** — Account page (depends on 01, 04)
-6. **Ticket 06** — Forum instance page (depends on 02, 03)
-7. **Ticket 07** — Chatter page (depends on 02, 03, 06 for shared patterns)
+3. **Ticket 08** — Responsive CSS (no dependencies; can be done in parallel with 01/02)
+4. **Ticket 03** — Backend op (depends on 02)
+5. **Ticket 04** — Profiles page (no dependencies; simple)
+6. **Ticket 05** — Account page (depends on 01, 04)
+7. **Ticket 06** — Forum instance page (depends on 02, 03)
+8. **Ticket 07** — Chatter page (depends on 02, 03, 06 for shared patterns)
