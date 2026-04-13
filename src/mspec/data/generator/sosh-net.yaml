@@ -388,9 +388,9 @@ modules:
               - '👍'
 
     ops:
-      get_post:
+      get_post_and_reactions:
         name:
-          lower_case: 'get post'
+          lower_case: 'get post and reactions'
 
         description: 'Get a post and its reactions by id'
         func: 
