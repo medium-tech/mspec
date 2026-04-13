@@ -69,8 +69,7 @@ Wrap `db_model_read` from `src/mapp/module/model/db.py`.
 
 **Steps:**
 
-1. **`src/mspec/lingo.py`** — Add a new `db_model_read_by_type` helper that accepts a `model_type` string (e.g. `'sosh_net.post'`) and calls `db_model_read`
-2. **`src/mspec/lingo.py`** — Add a `db` function group to the `LINGO_BUILTIN_FUNCTIONS` dict:
+1. **`src/mspec/lingo.py`** — Add a `db` function group to the `LINGO_BUILTIN_FUNCTIONS` dict:
    ```python
    'db': {
        'read': {'func': db_read, 'create_args': _db_read_function_args},
@@ -78,8 +77,8 @@ Wrap `db_model_read` from `src/mapp/module/model/db.py`.
        'query': {'func': db_query, 'create_args': _db_query_function_args},
    }
    ```
-3. Add argument builders (`_db_read_function_args`, `_db_unique_counts_function_args`) following the pattern of existing builders (e.g. `_current_user_function_args`)
-4. The argument builds have access to the function defintions in `app.spec` 
+1. Add argument builders (`_db_read_function_args`, `_db_unique_counts_function_args`) following the pattern of existing builders (e.g. `_current_user_function_args`)
+1. May need a new `db_model_read_by_type` helper that accepts a `model_type` string (e.g. `'sosh_net.post'`) and calls `db_model_read`. The argument builders have access to the function defintions in `app.spec` which has the model definitions and can lookup the `model_type`, from the args for `db_model_read` can be created w/ functions/classes in `src/mapp/types.py`.
 
 ### `db.unique_counts`
 
@@ -113,15 +112,11 @@ Execute a `SELECT * FROM {table} WHERE field1 = val1 AND field2 = val2 ...` quer
    - Validates that each key in `fields` is a `str` or `foreign_key` column on `model_class`; raises `ValueError` for any unsupported field type
    - Builds a `WHERE` clause with `AND`-joined equality conditions
    - Returns all matching rows as a list of dicts (consistent with `db_model_list` item format)
-2. **`src/mspec/lingo.py`** — Add arg builder `_db_query_function_args` and register `'query': {'func': db_query, 'create_args': _db_query_function_args}` in the `db` function group
+1. **`src/mspec/lingo.py`** — Add arg builder `_db_query_function_args` and register `'query': {'func': db_query, 'create_args': _db_query_function_args}` in the `db` function group
+1. The argument builders have access to the function defintions in `app.spec` which has the model definitions
 
 **Scope limitation:** Only `str` and `foreign_key` fields are supported. Filtering on `int`, `float`, `bool`, or `list` fields is out of scope for this ticket and should raise a `ValueError` with a descriptive message.
 
-### Model registry access
-
-The lingo interpreter needs access to the running server's model class registry to resolve `model_type` strings like `'sosh_net.post'`. Options:
-- Pass the registry via the `LingoApp` or `ctx` parameter
-- Access via the `MappContext` which is available in all lingo function calls
 
 ## Tests
 
