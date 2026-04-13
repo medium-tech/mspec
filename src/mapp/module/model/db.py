@@ -495,7 +495,7 @@ def db_model_query(ctx:MappContext, model_class: type, fields: dict) -> list:
             raise ValueError(f'db_model_query - field not found on model: {field_name}')
 
         field_type = field_map[field_name]['type']
-        if field_type not in ('str', 'foreign_key', 'enum'):
+        if field_type not in ('str', 'foreign_key'):
             raise ValueError(
                 f'db_model_query - unsupported field type "{field_type}" for field "{field_name}". '
                 f'Only str and foreign_key fields are supported.'

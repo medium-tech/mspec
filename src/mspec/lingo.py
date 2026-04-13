@@ -397,8 +397,9 @@ def _db_unique_counts_function_args(app:LingoApp, expression: dict, ctx:Optional
             raw = filters_result['value']
         else:
             raw = filters_result
-        if isinstance(raw, dict):
-            filters = {k: unwrap_primitive(v) for k, v in raw.items()}
+        if not isinstance(raw, dict):
+            raise ValueError('db.unique_counts - filters arg must be a struct')
+        filters = {k: unwrap_primitive(v) for k, v in raw.items()}
 
     return (ctx, model_class, group_by), {'filters': filters}
 
