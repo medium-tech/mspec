@@ -47,6 +47,8 @@ def db_model_create_table(ctx:MappContext, model_class: type) -> Acknowledgment:
             case _:
                 raise ValueError(f'Unsupported field type: {field_type}')
 
+        # unique constraint: foreign_key columns use quoted identifiers and REFERENCES syntax
+        # which does not require a separate UNIQUE clause (use a unique index instead if needed)
         if field.get('unique') is True and field_type != 'foreign_key':
             col_def += ' UNIQUE'
 
@@ -161,8 +163,8 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
 
     try:
         result = ctx.db.cursor.execute(non_list_sql, values)
-    except sqlite3.IntegrityError as e:
-        raise MappUserError('UNIQUE_CONSTRAINT_VIOLATED', f'A record with that value already exists: {e}')
+    except sqlite3.IntegrityError:
+        raise MappUserError('UNIQUE_CONSTRAINT_VIOLATED', 'A record with that value already exists.')
     assert result.rowcount == 1
     assert result.lastrowid is not None
     obj = obj._replace(id=str(result.lastrowid))
