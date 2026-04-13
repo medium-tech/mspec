@@ -445,16 +445,19 @@ modules:
         func: 
           type: struct
           value:
-            call: 'db.read'
+            call: 'db.query'
             args:
               model_type: 'sosh_net.profile'
-              model_id: 
-                call: 'key'
-                args:
-                  key: 'id'
-                  object:
-                    call: 'auth.current_user'
-                    args: {}
+              fields: 
+                type: struct
+                value:
+                  user_id:
+                    call: 'key'
+                    args:
+                      key: 'id'
+                      object:
+                        call: 'auth.current_user'
+                        args: {}
               
 
         params: {}

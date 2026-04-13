@@ -59,7 +59,7 @@ Wrap `db_model_read` from `src/mapp/module/model/db.py`.
    }
    ```
 3. Add argument builders (`_db_read_function_args`, `_db_unique_counts_function_args`) following the pattern of existing builders (e.g. `_current_user_function_args`)
-4. The lingo functions must receive the `MappContext` (passed as `ctx` in `lingo_execute`) to access the DB and model registry
+4. The argument builds have access to the function defintions in `app.spec` 
 
 ### `db.unique_counts`
 
