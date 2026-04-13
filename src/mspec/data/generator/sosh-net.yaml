@@ -245,7 +245,6 @@ modules:
               - ["12"]
               - []
 
-
           related_posts:
             name:
               lower_case: 'related posts'
@@ -426,25 +425,47 @@ modules:
               - "3"
         
         result:
-          name:
-            lower_case: 'get post result'
+          type: struct
+          fields:
+            post:
+              name: 
+                lower_case: 'post'
+              type: struct
+            reaction_counts:
+              name:
+                lower_case: 'reaction counts'
+              description: 'Keys are the reaction type and values are the count of each reaction for the post'
+              type: struct
+
+      get_current_user_profile:
+        name:
+          lower_case: 'get current user profile'
+
+        description: 'Get the profile of the currently logged in user'
+        func: 
           type: struct
           value:
-            post:
+            call: 'db.query'
+            args:
+              model_type: 'sosh_net.profile'
+              fields: 
+                type: struct
+                value:
+                  user_id:
+                    call: 'key'
+                    args:
+                      key: 'id'
+                      object:
+                        call: 'auth.current_user'
+                        args: {}
+              
+
+        params: {}
+        
+        result:
+          type: struct
+          fields:
+            profile:
+              name: 
+                lower_case: 'profile'
               type: struct
-              value:
-                id: int
-                user_id: int
-                forum_id: int
-                reply_to: int
-                message: str
-                attachments: list
-                web_images: list
-                raw_images: list
-                related_posts: list
-            reactions:
-              type: list
-              element_type: struct
-              value:
-                reaction_type: str
-                count: int
