@@ -11,7 +11,8 @@ from functools import reduce
 from mapp.auth import create_user, login_user, is_logged_in, current_user, logout_user, delete_user, drop_sessions
 from mapp.file_system import get_file_content, ingest_start, list_files, get_part_content, list_parts, process_file
 from mapp.media import create_image, get_image, get_master_image, get_media_file_content, ingest_master_image, list_images, list_master_images
-from mapp.types import get_python_type_for_field
+from mapp.module.model.db import db_model_read, db_model_unique_counts, db_model_query
+from mapp.types import get_python_type_for_field, new_model_class
 
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
 
@@ -342,8 +343,99 @@ def _media_list_master_images_function_args(app:LingoApp, expression: dict, ctx:
     return (ctx, offset, size, master_image_id, user_id), {}
 
 #
-# other
+# db
 #
+
+def _get_model_class_from_type(app:LingoApp, model_type:str) -> type:
+    parts = model_type.split('.')
+    if len(parts) != 2:
+        raise ValueError(f'db - invalid model_type format: {model_type} (expected module.model)')
+    module_key, model_key = parts
+    try:
+        modules = app.spec['modules']
+    except KeyError:
+        raise ValueError('db - app.spec does not contain modules; ensure op spec is loaded with module context')
+    try:
+        module_spec = modules[module_key]
+    except KeyError:
+        raise ValueError(f'db - module not found: {module_key}')
+    try:
+        model_spec = module_spec['models'][model_key]
+    except KeyError:
+        raise ValueError(f'db - model not found: {model_key} in module {module_key}')
+    return new_model_class(model_spec, module_spec)
+
+def _db_read_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        model_type_expr = expression['args']['model_type']
+        model_id_expr = expression['args']['model_id']
+    except KeyError as e:
+        raise ValueError(f'db.read - missing arg: {e}')
+
+    model_type = unwrap_primitive(lingo_execute(app, model_type_expr, ctx))
+    model_id = unwrap_primitive(lingo_execute(app, model_id_expr, ctx))
+    model_class = _get_model_class_from_type(app, model_type)
+
+    return (ctx, model_class, str(model_id)), {}
+
+def _db_unique_counts_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        model_type_expr = expression['args']['model_type']
+        group_by_expr = expression['args']['group_by']
+    except KeyError as e:
+        raise ValueError(f'db.unique_counts - missing arg: {e}')
+
+    model_type = unwrap_primitive(lingo_execute(app, model_type_expr, ctx))
+    group_by = unwrap_primitive(lingo_execute(app, group_by_expr, ctx))
+    model_class = _get_model_class_from_type(app, model_type)
+
+    filters_expr = expression['args'].get('filters')
+    filters = None
+    if filters_expr is not None:
+        filters_result = lingo_execute(app, filters_expr, ctx)
+        if isinstance(filters_result, dict) and 'value' in filters_result:
+            raw = filters_result['value']
+        else:
+            raw = filters_result
+        if isinstance(raw, dict):
+            filters = {k: unwrap_primitive(v) for k, v in raw.items()}
+
+    return (ctx, model_class, group_by), {'filters': filters}
+
+def _db_query_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        model_type_expr = expression['args']['model_type']
+        fields_expr = expression['args']['fields']
+    except KeyError as e:
+        raise ValueError(f'db.query - missing arg: {e}')
+
+    model_type = unwrap_primitive(lingo_execute(app, model_type_expr, ctx))
+    model_class = _get_model_class_from_type(app, model_type)
+
+    fields_result = lingo_execute(app, fields_expr, ctx)
+    if isinstance(fields_result, dict) and 'value' in fields_result:
+        raw = fields_result['value']
+    else:
+        raw = fields_result
+
+    if not isinstance(raw, dict):
+        raise ValueError('db.query - fields arg must be a struct')
+
+    fields = {k: unwrap_primitive(v) for k, v in raw.items()}
+
+    return (ctx, model_class, fields), {}
+
+def db_read(ctx, model_class, model_id:str) -> dict:
+    model = db_model_read(ctx, model_class, model_id)
+    return {'type': 'struct', 'value': model._asdict()}
+
+def db_unique_counts(ctx, model_class, group_by:str, filters=None) -> list:
+    rows = db_model_unique_counts(ctx, model_class, group_by, filters)
+    return [{'type': 'struct', 'value': row} for row in rows]
+
+def db_query(ctx, model_class, fields:dict) -> list:
+    models = db_model_query(ctx, model_class, fields)
+    return [{'type': 'struct', 'value': m._asdict()} for m in models]
 
 def str_convert(object:Any) -> str:
     if object is True:
@@ -521,6 +613,14 @@ lingo_function_lookup = {
         'ingest_master_image': {'func': ingest_master_image, 'create_args': _media_ingest_master_image_function_args},
         'list_images': {'func': list_images, 'create_args': _media_list_images_function_args},
         'list_master_images': {'func': list_master_images, 'create_args': _media_list_master_images_function_args}
+    },
+
+    # db #
+
+    'db': {
+        'read': {'func': db_read, 'create_args': _db_read_function_args},
+        'unique_counts': {'func': db_unique_counts, 'create_args': _db_unique_counts_function_args},
+        'query': {'func': db_query, 'create_args': _db_query_function_args},
     }
 }
 

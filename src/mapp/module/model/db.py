@@ -12,7 +12,9 @@ __all__ = [
     'db_model_read',
     'db_model_update',
     'db_model_delete',
-    'db_model_list'
+    'db_model_list',
+    'db_model_unique_counts',
+    'db_model_query'
 ]
 
 
@@ -427,3 +429,130 @@ def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int
         items=models, 
         total=total_items
     )
+
+def db_model_unique_counts(ctx:MappContext, model_class: type, group_by: str, filters: dict = None) -> list:
+
+    # init #
+
+    model_spec = model_class._model_spec
+    model_snake_case = model_spec['name']['snake_case']
+
+    # auth #
+
+    if model_class._model_spec['auth']['require_login'] is True:
+        current_user(ctx)
+
+    # validate group_by field #
+
+    field_names = [f['name']['snake_case'] for f in model_spec['non_list_fields']]
+    if group_by not in field_names:
+        raise ValueError(f'db_model_unique_counts - group_by field not found: {group_by}')
+
+    # build where clause #
+
+    where_parts = []
+    where_values = []
+
+    if filters:
+        for field_name, value in filters.items():
+            if field_name not in field_names:
+                raise ValueError(f'db_model_unique_counts - filter field not found: {field_name}')
+            where_parts.append(f'{field_name} = ?')
+            where_values.append(value)
+
+    where_clause = f" WHERE {' AND '.join(where_parts)}" if where_parts else ''
+
+    # query #
+
+    sql = f'SELECT {group_by}, COUNT(*) FROM {model_snake_case}{where_clause} GROUP BY {group_by}'
+    rows = ctx.db.cursor.execute(sql, where_values).fetchall()
+
+    # convert results #
+
+    return [{group_by: str(row[0]) if row[0] is not None else None, 'count': row[1]} for row in rows]
+
+def db_model_query(ctx:MappContext, model_class: type, fields: dict) -> list:
+
+    # init #
+
+    model_spec = model_class._model_spec
+    model_snake_case = model_spec['name']['snake_case']
+
+    # auth #
+
+    if model_class._model_spec['auth']['require_login'] is True:
+        current_user(ctx)
+
+    # validate fields - only str and foreign_key supported #
+
+    field_map = {f['name']['snake_case']: f for f in model_spec['non_list_fields']}
+
+    where_parts = []
+    where_values = []
+
+    for field_name, value in fields.items():
+        if field_name not in field_map:
+            raise ValueError(f'db_model_query - field not found on model: {field_name}')
+
+        field_type = field_map[field_name]['type']
+        if field_type not in ('str', 'foreign_key', 'enum'):
+            raise ValueError(
+                f'db_model_query - unsupported field type "{field_type}" for field "{field_name}". '
+                f'Only str and foreign_key fields are supported.'
+            )
+
+        where_parts.append(f'{field_name} = ?')
+        where_values.append(str(value))
+
+    # query #
+
+    where_clause = f" WHERE {' AND '.join(where_parts)}" if where_parts else ''
+    sql = f'SELECT * FROM {model_snake_case}{where_clause}'
+    rows = ctx.db.cursor.execute(sql, where_values).fetchall()
+
+    # convert results #
+
+    models = []
+
+    for row in rows:
+        data = {'id': str(row[0])}
+
+        for index, field in enumerate(model_spec['non_list_fields'], start=1):
+            field_name = field['name']['snake_case']
+            match field['type']:
+                case 'bool':
+                    value = bool(row[index])
+                case 'datetime' if row[index] is not None:
+                    value = datetime.strptime(row[index], DATETIME_FORMAT_STR).replace(microsecond=0)
+                case 'foreign_key':
+                    value = str(row[index])
+                case _:
+                    value = row[index]
+
+            data[field_name] = value
+
+        for index, field in enumerate(model_spec['list_fields'], start=1):
+
+            field_name = field['name']['snake_case']
+            list_table_name = f'{model_snake_case}_{field_name}'
+
+            cursor = ctx.db.cursor.execute(
+                f'SELECT value FROM {list_table_name} WHERE {model_snake_case}_id = ? ORDER BY position ASC',
+                (data['id'],)
+            )
+
+            match field['element_type']:
+                case 'bool':
+                    convert_element = bool
+                case 'datetime':
+                    convert_element = lambda x: datetime.strptime(x, DATETIME_FORMAT_STR).replace(microsecond=0)
+                case 'foreign_key':
+                    convert_element = str
+                case _:
+                    convert_element = lambda x: x
+
+            data[field_name] = [convert_element(row[0]) for row in cursor.fetchall()]
+
+        models.append(model_class(**data))
+
+    return models

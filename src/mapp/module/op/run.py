@@ -50,7 +50,15 @@ def op_create_callable(param_class:type, output_class:type) -> object:
 		raise MappError('INVALID_OP_SPEC', f'Op {op_snake_case} missing lingo func in op spec.')
 
 	def op_callable(ctx: MappContext, params:object) -> object:
-		spec = {'params': param_class._op_spec['params']}
+		module_spec = param_class._module_spec
+		if module_spec is not None:
+			module_name = module_spec['name']['snake_case']
+			spec = {
+				'params': param_class._op_spec['params'],
+				'modules': {module_name: module_spec}
+			}
+		else:
+			spec = {'params': param_class._op_spec['params']}
 		validate_op_params(param_class, params)
 		lingo_app = LingoApp(
 			spec,
