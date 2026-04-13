@@ -26,7 +26,7 @@ Use `builtin-mapp-page-account.yaml` as the reference pattern for the auth check
 
 ## Part A — Finish the `get_current_user_profile` op in `sosh-net.yaml`
 
-The op is partially defined. It currently tries to use `db.read` with `model_id = auth.current_user.id`, which is incorrect — the profile is looked up by its `user_id` field, not by its own `id`.
+The op is partially defined. It currently tries to use `db.read` with `model_id = auth.current_user.id`, which is incorrect — the profile is looked up by its `user_id` field, not by its own `id`. Update the op to use `db.query` (from Ticket 02) with a `fields` dict that filters by `user_id`:
 
 ```yaml
 get_current_user_profile:
@@ -39,16 +39,16 @@ get_current_user_profile:
       call: 'db.query'
       args:
         model_type: 'sosh_net.profile'
-        filters:
-          user_id:
-            call: 'key'
-            args:
-              key: 'id'
-              object:
-                call: 'auth.current_user'
-                args: {}
-        limit: 1
-        offset: 0
+        fields:
+          type: struct
+          value:
+            user_id:
+              call: 'key'
+              args:
+                key: 'id'
+                object:
+                  call: 'auth.current_user'
+                  args: {}
   params: {}
   result:
     type: struct
@@ -228,7 +228,7 @@ Playwright tests (`templates/sosh-net/tests/`):
 ## Dependencies
 
 - Ticket 01 — `unique: true` on `username`; `max_models_per_user: 1` enforcement
-- Ticket 02 — `db.list` lingo function (needed by the fixed op)
+- Ticket 02 — `db.query` lingo function (needed by the `get_current_user_profile` op)
 - ~~Ticket 05~~ — profile management is now handled entirely on this page (Ticket 05 scope changed; see Ticket 05)
 
 ## References
