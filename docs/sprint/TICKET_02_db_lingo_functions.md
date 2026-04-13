@@ -50,7 +50,7 @@ Wrap `db_model_read` from `src/mapp/module/model/db.py`.
 
 **Steps:**
 
-1. **`src/mapp/module/model/db.py`** — Add a new `db_model_read_by_type` helper (or use the existing `db_model_read`) that accepts a `model_type` string (e.g. `'sosh_net.post'`) and resolves the model class from the running server's module registry
+1. **`src/mspec/lingo.py`** — Add a new `db_model_read_by_type` helper that accepts a `model_type` string (e.g. `'sosh_net.post'`) and calls `db_model_read`
 2. **`src/mspec/lingo.py`** — Add a `db` function group to the `LINGO_BUILTIN_FUNCTIONS` dict:
    ```python
    'db': {

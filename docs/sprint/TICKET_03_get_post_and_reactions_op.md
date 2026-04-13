@@ -47,28 +47,36 @@ ops:
           - "2"
           - "3"
     result:
-      name:
-        lower_case: 'get post result'
       type: struct
-      value:
+      fields:
         post:
+          name: 
+            lower_case: 'post'
           type: struct
-          value:
-            id: int
-            user_id: int
-            forum_id: int
-            reply_to: int
-            message: str
-            attachments: list
-            web_images: list
-            raw_images: list
-            related_posts: list
-        reactions:
-          type: list
-          element_type: struct
-          value:
-            reaction_type: str
-            count: int
+        reaction_counts:
+          name:
+            lower_case: 'reaction counts'
+          description: 'Keys are the reaction type and values are the count of each reaction for the post'
+          type: struct
+```
+
+The resulting object should look like:
+
+```json
+{
+  "post": {
+    "id": "1",
+    "user_id": "123456789",
+    "forum_id": "1",
+    ...truncated...
+  },
+  "reaction_counts": {
+    "🙂": 42,
+    "❤️": 0,
+    "😂": 13,
+    ...truncated...
+  }
+}
 ```
 
 ## Implementation
@@ -77,14 +85,12 @@ ops:
 
 1. **`src/mapp/module/op/run.py`** — Ensure the lingo op runner passes the `MappContext` (including model registry) through to the `lingo_execute` call so that `db.read` and `db.unique_counts` can resolve model types
 2. **`src/mspec/core.py`** — In `load_generator_spec`, validate and normalise `ops` definitions (params, result type shapes) if not already done
-3. **`src/mapp/module/op/server.py`** — Verify that the op HTTP endpoint is registered and returns the correct JSON structure matching the `result` spec
-4. **`src/mtemplate/core.py`** — If the mtemplate cache step processes ops, ensure `get_post_and_reactions` is handled; otherwise the op is registered dynamically at server start time
 
 ## Tests
 
 - Write an integration test in `src/mapp/test.py` (or a dedicated test module) that:
   1. Seeds a post and several reactions of different types
-  2. Calls `GET /api/sosh-net/get-post-and-reactions?post_id=<id>`
+  2. Calls `POST /api/sosh-net/get-post-and-reactions` with body `{"post_id": "<id>"}`
   3. Verifies the response contains the post fields and a `reactions` list with correct counts per `reaction_type`
 - Test that a missing `post_id` param returns 400
 - Test that an invalid `post_id` returns 404

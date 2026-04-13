@@ -15,54 +15,15 @@ Currently `sosh-profile.yaml` (at `src/mspec/data/lingo/pages/sosh-profile.yaml`
 
 ## Implementation
 
-1. **`src/mspec/data/lingo/pages/sosh-profile.yaml`** — Rewrite as a full page that:
-   - Shows a heading and breadcrumbs for `sosh-net > profile`
-   - Has a `state` entry that calls `db.list` (or the existing model list endpoint) to fetch profiles with pagination
-   - Renders a paginated table of profiles (username, bio, profile picture)
-   - Does **not** include an inline create/edit widget; links or buttons on each row can navigate to the profile instance page
-   - Shows a pagination widget (prev/next page controls)
+1. **`src/mspec/data/lingo/pages/sosh-profile.yaml`** — Rewrite as follows:
+   - Use `src/mspec/data/lingo/pages/builtin-mapp-model.json` as a starting point
+   - instead of being dynamic like `builtin-mapp-model.json` should be hardcoded for the profile page
+   - have `model` widget for pagination
+   - do not have `model` widget for create
 
 2. **`src/mspec/data/generator/sosh-net.yaml`** — Confirm (or update) the `profile.page` reference points to the updated `sosh-profile.yaml`
 
 3. **Browser JS client** (`templates/mapp-py/` or the sosh-net front-end) — Ensure the profile page route uses the custom page YAML instead of the builtin model page
-
-## Page Structure (YAML outline)
-
-```yaml
-lingo:
-  version: page-beta-1
-  title: 'sosh net :: profiles'
-
-params:
-  page:
-    type: int
-    default: 0
-
-state:
-  profiles:
-    type: struct
-    calc:
-      call: db.list           # or equivalent API call
-      args:
-        model_type: 'sosh_net.profile'
-        offset:
-          call: mul
-          args:
-            a: {params: {page: {}}}
-            b: 20
-        size: 20
-
-output:
-  - heading: 'sosh net'
-    level: 1
-  - heading: ':: profiles'
-    level: 2
-  - breadcrumbs: [home, sosh-net, profiles]
-  - break: 1
-  - list display (table) of profiles from state.profiles
-  - break: 1
-  - pagination widget (prev/next using page param)
-```
 
 ## Tests
 
@@ -71,11 +32,6 @@ output:
   - No create/edit form is present on this page
   - Pagination controls are visible (if there are enough profiles)
   - Clicking a profile navigates to the instance page
-
-## Documentation
-
-- Update `src/mspec/data/lingo/pages/sosh-profile.yaml` inline comments to explain the page structure
-- Note in `docs/LINGO_MAPP_SPEC.md` or a sosh-net usage doc that the profiles page is view-only; profile creation is on the account page
 
 ## References
 

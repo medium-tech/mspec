@@ -34,11 +34,7 @@ username:
 
 1. **`src/mspec/core.py`** — In `load_generator_spec`, initialise `max_models_by_field` to `{}` in the auth block alongside `max_models_per_user`
 
-2. **`src/mtemplate/core.py`** — Add validation:
-   - `max_models_by_field` must be a `dict` of `{field_name: int}`
-   - If any limit is >= 0, `require_login: true` must be set
-
-3. **`src/mapp/module/model/db.py` — `db_model_create`** — After the existing `max_models_per_user` check, iterate `max_models_by_field`:
+1. **`src/mapp/module/model/db.py` — `db_model_create`** — After the existing `max_models_per_user` check, iterate `max_models_by_field`:
    ```python
    for field_name, max_count in model_spec['auth']['max_models_by_field'].items():
        if max_count >= 0:
