@@ -64,6 +64,7 @@ modules:
               - "bob_the_builder"
               - "charlie_brown"
             random: random_user_name
+            unique: true
 
           bio:
             name:
@@ -385,3 +386,65 @@ modules:
               - '❤️'
               - '😂'
               - '👍'
+
+    ops:
+      get_post:
+        name:
+          lower_case: 'get post'
+
+        description: 'Get a post and its reactions by id'
+        func: 
+          type: struct
+          value:
+            post:
+              call: 'db.read'
+              args:
+                model_id:
+                  params: {post_id: {}}
+                model_type: 'sosh_net.post'
+            reactions:
+              call: 'db.unique_counts'
+              args:
+                model_type: 'sosh_net.reaction'
+                group_by: 'reaction_type'
+                filters:
+                  post_id:
+                    params: {post_id: {}}
+
+        params:
+          post_id:
+            name:
+              lower_case: 'post id'
+            type: foreign_key
+            references:
+              module: 'sosh_net'
+              table: 'post'
+              field: 'id'
+            examples:
+              - "1"
+              - "2"
+              - "3"
+        
+        result:
+          name:
+            lower_case: 'get post result'
+          type: struct
+          value:
+            post:
+              type: struct
+              value:
+                id: int
+                user_id: int
+                forum_id: int
+                reply_to: int
+                message: str
+                attachments: list
+                web_images: list
+                raw_images: list
+                related_posts: list
+            reactions:
+              type: list
+              element_type: struct
+              value:
+                reaction_type: str
+                count: int
