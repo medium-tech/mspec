@@ -1,99 +1,59 @@
-# Ticket 05 — Custom Account Page with Profile Create/Edit
+# Ticket 05 — Account Page: Keep Generic (No Profile Coupling)
 
 **Branch:** `improve-sosh-net-ui`
 
+> **Note:** The original scope of this ticket (adding profile create/edit to the account page) has been superseded. Profile management is now handled entirely on the profile page (Ticket 04). This ticket now covers ensuring the account page remains clean and reusable.
+
 ## Overview
 
-Update the sosh-net account page to allow logged-in users to create or edit their profile (username, bio, profile picture). The existing account page handles login/logout/register; extend it to also manage the user's profile.
+Verify that `builtin-mapp-page-account.yaml` (the sosh-net account page) contains no profile-specific logic, so it can be reused in other projects. Make any needed cleanup and confirm the page spec only handles auth (login, logout, register, current-user display).
 
 ## Background
 
-Currently `builtin-mapp-page-account.yaml` (at `src/mspec/data/lingo/pages/builtin-mapp-page-account.yaml`) handles auth only.
+`builtin-mapp-page-account.yaml` (at `src/mspec/data/lingo/pages/builtin-mapp-page-account.yaml`) currently handles:
+- Login/logout/register via `auth.*` ops
+- Displaying current-user details when logged in
 
-The `profile` model:
-- Has `max_models_per_user: 1` (one profile per user)
-- Has a `unique: true` constraint on `username`
-- Is linked to the logged-in user via `user_id`
-
-The account page should:
-1. If the user has no profile → show a create-profile form
-2. If the user has a profile → show the profile fields with an edit form
+**There should be no profile-specific state, ops, or output blocks on this page.** Profile management lives on the profile page (`sosh-profile.yaml`), so users navigate there after logging in.
 
 ## Implementation
 
-1. **`src/mspec/data/lingo/pages/builtin-mapp-page-account.yaml`** (or a new `sosh-net-account.yaml`) — Extend the page spec:
-   - Add a state entry that fetches the current user's profile (call `db.list` with filter `user_id = current_user.id`, or use a dedicated op if available)
-   - Branch on whether `state.my_profile` is empty:
-     - **No profile** — render an inline create form for `sosh_net.profile` (username, bio, profile picture fields), wired to `POST /api/sosh-net/profile`
-     - **Has profile** — render the profile data as a table, with an edit form (or edit-in-place) wired to `PUT /api/sosh-net/profile/<id>`
+1. **Audit `builtin-mapp-page-account.yaml`** — confirm there are no references to `sosh_net.profile`, `get_current_user_profile`, or any profile fields.
 
-2. **`src/mspec/data/generator/sosh-net.yaml`** — Confirm the `sosh_net.pages.account` key points to the updated page YAML
+2. **Add a "manage profile" link** (optional but recommended) — when the user is logged in, show a navigable link to `/sosh-net/profile` so they can reach their profile management page without hunting for it:
 
-3. Consider whether the existing `op` widget in the page YAML can drive the profile create/edit forms or whether a dedicated lingo `op` must be defined in the spec
+   ```yaml
+   - branch:
+     - if:
+         state: {is_logged_in: {}}
+       then:
+         - text: 'manage your profile: '
+         - link:
+             text: 'go to profile page'
+             url: '/sosh-net/profile'
+   ```
 
-## Page Structure (YAML outline)
+3. **`src/mspec/data/generator/sosh-net.yaml`** — confirm `sosh_net.pages.account` still points to `builtin-mapp-page-account.yaml` (unchanged).
 
-```yaml
-# Under the existing logged-in branch of the account page output:
-- branch:
-  - if:
-      call: eq
-      args:
-        a:
-          call: len
-          args: {iterable: {state: {my_profile: {}}}}
-        b: 0
-    then:
-      - heading: ':: create your profile'
-        level: 4
-      - op:
-          bind:
-            state: {create_profile: {}}
-          interactive: true
-          http: '/api/sosh-net/profile'
-          method: POST
-          definition: 'sosh_net.profile'
-          submit_button_text: create profile
-  - else:
-      - heading: ':: your profile'
-        level: 4
-      - type: list
-        display:
-          format: table
-        value: <profile fields from state.my_profile[0]>
-      - op:
-          bind:
-            state: {edit_profile: {}}
-          interactive: true
-          http:
-            call: str_concat
-            args:
-              items:
-                - '/api/sosh-net/profile/'
-                - <profile id>
-          method: PUT
-          definition: 'sosh_net.profile'
-          submit_button_text: update profile
-```
+## Files Changed
+
+| File | Change |
+|------|--------|
+| `src/mspec/data/lingo/pages/builtin-mapp-page-account.yaml` | Audit; add profile link if not already present; remove any profile-specific state |
 
 ## Tests
 
 - Playwright test (`templates/sosh-net/tests/`):
-  - Log in as a user with no profile → verify create-profile form appears
-  - Submit the create-profile form → verify profile is created and page shows edit form
-  - Edit the profile → verify profile is updated
-  - Log in as a different user with an existing profile → verify edit form shows correct values
-- Verify that `unique: true` on `username` causes a 400 if the same username is submitted
+  - Navigate to `/sosh-net/account` — verify no profile fields (username, bio, profile picture) appear
+  - When logged in, verify a link or pointer to the profile page is present
+  - Existing login/logout/register tests must still pass
 
-## Documentation
+## Dependencies
 
-- Update the `builtin-mapp-page-account.yaml` header comment to reflect the sosh-net-specific profile section
-- Add a note in `docs/LINGO_MAPP_SPEC.md` on how the account page integrates with the profile model
+- Ticket 04 — Profile page (provides the destination for the profile link)
 
 ## References
 
-- `src/mspec/data/lingo/pages/builtin-mapp-page-account.yaml` — current account page
-- `src/mspec/data/generator/sosh-net.yaml` — `sosh_net.modules.pages.account`
-- `src/mapp/module/model/db.py` — `db_model_create`, `db_model_update`
-- Ticket 01 — `unique` constraint on username
-- Ticket 04 — Profiles page (read-only)
+- `src/mspec/data/lingo/pages/builtin-mapp-page-account.yaml` — account page to audit
+- `src/mspec/data/generator/sosh-net.yaml` — page wiring
+- Ticket 04 — where profile create/edit now lives
