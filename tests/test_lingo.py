@@ -633,6 +633,9 @@ class TestLingoDbFunctions(unittest.TestCase):
         db_model_create(self.ctx, self.reaction_class, r2)
         db_model_create(self.ctx, self.reaction_class, r3)
 
+    def tearDown(self):
+        self.ctx.db.connection.close()
+
     def _make_app(self):
         return LingoApp(spec=self.lingo_spec, params={}, state={}, buffer=[])
 
@@ -821,6 +824,9 @@ class TestDbModelFunctions(unittest.TestCase):
         db_model_create(self.ctx, self.reaction_class, r1)
         db_model_create(self.ctx, self.reaction_class, r2)
         db_model_create(self.ctx, self.reaction_class, r3)
+
+    def tearDown(self):
+        self.ctx.db.connection.close()
 
     def test_unique_counts_no_filter(self):
         result = db_model_unique_counts(self.ctx, self.reaction_class, 'reaction_type')
