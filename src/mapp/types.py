@@ -368,7 +368,7 @@ class OpResult(NamedTuple):
 
 # conversion #
 
-def _convert_incoming_value(field_type:str, raw_value:Any, strict=False) -> Any:
+def _convert_incoming_value(field_type:str, raw_value:Any, strict=True) -> Any:
     """
     Converts a raw value to the specified field type.
     Args:
@@ -377,7 +377,7 @@ def _convert_incoming_value(field_type:str, raw_value:Any, strict=False) -> Any:
         strict (bool): Whether to enforce strict conversion for booleans.
             If strict is false, the following strings will be converted to bool:
             - True values: 'true', 't', '1', 'yes', 'on'
-            - False values: 'false', 'f', '0', 'no', 'off
+            - False values: 'false', 'f', '0', 'no', 'off'
     Returns:
         Any: The converted value.
     Raises:
@@ -393,8 +393,11 @@ def _convert_incoming_value(field_type:str, raw_value:Any, strict=False) -> Any:
                     return False
                 else:
                     raise ValueError(f'Cannot convert string "{raw_value}" to bool')
+            elif strict and not isinstance(raw_value, bool):
+                raise ValueError(f'Expected a boolean value, got "{raw_value}" of type {type(raw_value)}')
             else:
-                return bool(raw_value)
+                return raw_value
+
         case 'int':
             return int(raw_value)
         case 'float':
@@ -416,6 +419,8 @@ def _convert_incoming_value(field_type:str, raw_value:Any, strict=False) -> Any:
 def _convert_incoming_fields(data_spec:dict, data:object) -> dict:
 
     converted_data = {}
+    errors = {}
+    total_errors = 0
 
     for field in data_spec.values():
 
@@ -438,7 +443,11 @@ def _convert_incoming_fields(data_spec:dict, data:object) -> dict:
                 converted_data[field_name] = _convert_incoming_value(field_type, raw_value)
 
         except (ValueError, TypeError) as e:
-            raise ValueError(f'Error converting field "{field_name}" to type "{field_type}": {e}')
+            total_errors += 1
+            errors[field_name] = f'Error converting field "{field_name}" to type "{field_type}": {e}'
+    
+    if total_errors > 0:
+        raise MappValidationError('Data conversion failed', errors)
 
     return converted_data
      

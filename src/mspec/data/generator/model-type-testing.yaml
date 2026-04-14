@@ -39,6 +39,17 @@ modules:
             examples:
               - false
               - true
+            validation_errors:
+              - 0
+              - 1.2
+              - "true"
+              - "false"
+              - "yes"
+              - ""
+              - []
+              - {}
+              - null
+              - [false]
 
           x_int:
             name:
@@ -48,6 +59,17 @@ modules:
               - 101
               - 202
               - 3
+            validation_errors:
+              - true
+              - false
+              - 1.5
+              - "123"
+              - "abc"
+              - ""
+              - []
+              - {}
+              - null
+              - [1, 2]
 
           x_float:
             name:
@@ -57,6 +79,18 @@ modules:
               - 21.99
               - 0.99
               - 1.01
+            validation_errors:
+              - true
+              - false
+              - 0
+              - 2
+              - "123.45"
+              - "abc"
+              - ""
+              - []
+              - {}
+              - null
+              - [2.3]
 
           x_string:
             name:
@@ -67,6 +101,16 @@ modules:
               - "guitar"
               - "drum"
               - "saxophone"
+            
+            validation_errors:
+              - true
+              - false
+              - 123
+              - 45.67
+              - []
+              - {}
+              - null
+              - ["valid string"] # lists should not be valid for string fields
 
           x_enum:
             name:
@@ -81,6 +125,18 @@ modules:
             examples:
               - tlayuda
               - taco
+            
+            validation_errors:
+              - true
+              - false
+              - 123
+              - 45.67
+              - "burrito"
+              - ""
+              - []
+              - {}
+              - null
+              - ["taco"]
 
           x_datetime:
             name:
@@ -89,6 +145,19 @@ modules:
             examples:
               - "2000-01-11T12:34:56"
               - "2020-10-02T15:30:00"
+            
+            validation_errors:
+              - true
+              - false
+              - 123
+              - 45.67
+              - "2020-64-01T00:00:00"
+              - "not a datetime"
+              - ""
+              - []
+              - {}
+              - null
+              - ["2020-11-01T00:00:00"]
 
       multi_choice_fields:
         name:
@@ -106,6 +175,20 @@ modules:
             examples:
               - [true, false]
               - [false, true, true]
+            validation_errors:
+              - true
+              - false
+              - 1.5
+              - "true"
+              - "false"
+              - "yes"
+              - ""
+              - []
+              - {}
+              - null
+              - [0, 1]
+              - ["true", "false"]
+              - [true, 0]
 
           x_list_int:
             name:
@@ -115,6 +198,17 @@ modules:
             examples:
               - [7, 11]
               - [42, 16, 109, 4]
+            validation_errors:
+              - true
+              - false
+              - 1.5
+              - "abc"
+              - ""
+              - []
+              - {}
+              - null
+              - ["123", "456"]
+              - [[1, 2], [3, 4]]
 
           x_list_float:
             name:
@@ -124,6 +218,17 @@ modules:
             examples:
               - [3.14, 2.718]
               - [1.618, 0.577]
+            validation_errors:
+              - true
+              - false
+              - 1.5
+              - "abc"
+              - ""
+              - []
+              - {}
+              - null
+              - ["123.45", "67.89"]
+              - [[1.1, 2.2], [3.3, 4.4]]
 
           x_list_string:
             name:
@@ -134,6 +239,15 @@ modules:
               - ["banana"]
               - ["extravagantly long string"]
               - ["amplitude", "hello world"]
+            validation_errors:
+              - true
+              - 123
+              - 45.67
+              - ""
+              - []
+              - {}
+              - null
+              - [["valid string"]]
 
           x_list_enum:
             name:
@@ -149,6 +263,19 @@ modules:
             examples:
               - ["chorizo", "al pastor"]
               - ["carne"]
+            
+            validation_errors:
+              - true
+              - 123
+              - 45.67
+              - "burrito"
+              - ""
+              - []
+              - {}
+              - null
+              - ['barbacoa', 'chorizo'] # barbacoa is not in the enum
+              - [["chorizo"]]
+              - [["burrito"]]
 
           x_list_datetime:
             name:
@@ -158,6 +285,18 @@ modules:
             examples:
               - ["2000-01-11T12:34:56"]
               - ["2020-10-02T15:30:00", "2021-01-01T00:00:00"]
+            
+            validation_errors:
+              - true
+              - 123
+              - 45.67
+              - "not a datetime"
+              - ""
+              - []
+              - {}
+              - null
+              - ["2020-64-01T00:00:00"] # invalid datetime
+              - [["2020-10-02T15:30:00"]] # lists should not be valid for datetime fields
 
       # rando_model:
       #   name:

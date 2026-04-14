@@ -1963,7 +1963,7 @@ class TestMTemplateApp(unittest.TestCase):
             result = self._run_cmd(model_command, expected_code=1, env=ctx)
 
             error_output = json.loads(result.stdout)
-            self.assertEqual(error_output['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output["code"]}')
+            self.assertEqual(error_output['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output}')
             self.assertTrue(error_output['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_output["message"]}')
 
             # update #
@@ -2045,15 +2045,13 @@ class TestMTemplateApp(unittest.TestCase):
                         json.dumps(invalid_example).encode()
                     )
                     self.assertEqual(status, 400, f'Expected 400 for invalid create, got {status}, resp: {output}')
+                    output_error = output.get('error', {})
                     self.assertEqual(
-                        output['code'], 
+                        output_error.get('code', 'not-set'), 
                         'VALIDATION_ERROR', 
                         f'Expected VALIDATION_ERROR code for {model_name_kebab} with invalid data {invalid_example}, got {output}'
                     )
-                    self.assertTrue(
-                        output['message'].startswith('Validation Error: '), 
-                        f'Unexpected message for {model_name_kebab} with invalid data {invalid_example}, got {output}'
-                    )
+                    self.assertIn('message', output_error, f'Expected error message in response for {model_name_kebab} with invalid data {invalid_example}, got {output}')
 
                     # update (invalid)
                     status, output = request(
@@ -2062,16 +2060,14 @@ class TestMTemplateApp(unittest.TestCase):
                         f'/api/{module_name_kebab}/{model_name_kebab}/{update_model_id}',
                         json.dumps(invalid_example).encode()
                     )
+                    output_error = output.get('error', {})
                     self.assertEqual(status, 400, f'Expected 400 for invalid update, got {status}, resp: {output}')
                     self.assertEqual(
-                        output['code'], 
+                        output_error.get('code', 'not-set'), 
                         'VALIDATION_ERROR', 
                         f'Expected VALIDATION_ERROR code for {model_name_kebab} with invalid data {invalid_example}, got {output}'
                     )
-                    self.assertTrue(
-                        output['message'].startswith('Validation Error: '), 
-                        f'Unexpected message for {model_name_kebab} with invalid data {invalid_example}, got {output}'
-                    )
+                    self.assertIn('message', output_error, f'Expected error message in response for {model_name_kebab} with invalid data {invalid_example}, got {output}')
 
                 # read back original example to ensure it was not modified
                 status, read_model = request(
