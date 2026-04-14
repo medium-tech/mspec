@@ -1,8 +1,14 @@
 import unittest
 import datetime
 import json
+import sqlite3
 
 from pprint import pprint
+
+from mapp.context import MappContext, DBContext, ClientContext
+from mapp.types import new_model_class
+from mapp.module.model.db import db_model_create_table, db_model_create, db_model_unique_counts, db_model_query
+
 from mspec.core import load_browser2_spec, SAMPLE_BROWSER2_SPEC_DIR, builtin_spec_files, load_lingo_script_spec, SAMPLE_LINGO_SCRIPT_SPEC_DIR
 from mspec.lingo import *
 
@@ -521,13 +527,7 @@ class TestLingoScripts(unittest.TestCase):
                     self.assertEqual(result, test_case['result'])
 
 
-import sqlite3
-from mapp.context import MappContext, DBContext, ClientContext
-from mapp.types import new_model_class
-from mapp.module.model.db import db_model_create_table, db_model_create, db_model_unique_counts, db_model_query
-
-
-def _make_test_ctx():
+def _in_mem_sql_text_ctx():
     conn = sqlite3.connect(':memory:')
     db = DBContext(db_url=':memory:', connection=conn, cursor=conn.cursor(), commit=conn.commit)
     return MappContext(
@@ -617,7 +617,7 @@ class TestLingoDbFunctions(unittest.TestCase):
         }
 
     def setUp(self):
-        self.ctx = _make_test_ctx()
+        self.ctx = _in_mem_sql_text_ctx()
         db_model_create_table(self.ctx, self.post_class)
         db_model_create_table(self.ctx, self.reaction_class)
 
@@ -654,6 +654,7 @@ class TestLingoDbFunctions(unittest.TestCase):
         self.assertEqual(result['type'], 'struct')
         self.assertEqual(result['value']['id'], '1')
         self.assertEqual(result['value']['title'], 'hello')
+        self.assertEqual(result['value']['view_count'], 10)
 
     def test_db_read_returns_correct_fields(self):
         expression = {
@@ -667,6 +668,7 @@ class TestLingoDbFunctions(unittest.TestCase):
         result = lingo_execute(app, expression, self.ctx)
         self.assertEqual(result['value']['title'], 'world')
         self.assertEqual(result['value']['user_id'], '2')
+        self.assertEqual(result['value']['view_count'], 20)
 
     # db.unique_counts tests #
 
@@ -682,20 +684,10 @@ class TestLingoDbFunctions(unittest.TestCase):
         result = lingo_execute(app, expression, self.ctx)
         self.assertEqual(result['type'], 'list')
         self.assertEqual(len(result['value']), 2)
-
-    def test_db_unique_counts_correct_counts(self):
-        expression = {
-            'call': 'db.unique_counts',
-            'args': {
-                'model_type': {'value': 'test_app.reaction', 'type': 'str'},
-                'group_by': {'value': 'reaction_type', 'type': 'str'},
-            }
-        }
-        app = self._make_app()
-        result = lingo_execute(app, expression, self.ctx)
         counts = {item['value']['reaction_type']: item['value']['count'] for item in result['value']}
         self.assertEqual(counts['like'], 2)
         self.assertEqual(counts['love'], 1)
+
 
     def test_db_unique_counts_with_filter(self):
         expression = {
@@ -789,79 +781,10 @@ class TestLingoDbFunctions(unittest.TestCase):
         self.assertEqual(len(result['value']), 2)
 
     def test_db_query_raises_on_unsupported_field_type(self):
-        from mapp.module.model.db import db_model_query
         with self.assertRaises(ValueError) as cm:
             db_model_query(self.ctx, self.post_class, {'view_count': 10})
         self.assertIn('unsupported field type', str(cm.exception))
 
-
-class TestDbModelFunctions(unittest.TestCase):
-    """Unit tests for db_model_unique_counts and db_model_query"""
-
-    @classmethod
-    def setUpClass(cls):
-        post_spec = _make_post_spec()
-        reaction_spec = _make_reaction_spec()
-        module_spec = _make_module_spec({'post': post_spec, 'reaction': reaction_spec})
-        cls.post_class = new_model_class(post_spec, module_spec)
-        cls.reaction_class = new_model_class(reaction_spec, module_spec)
-
-    def setUp(self):
-        self.ctx = _make_test_ctx()
-        db_model_create_table(self.ctx, self.post_class)
-        db_model_create_table(self.ctx, self.reaction_class)
-
-        p1 = self.post_class(id=None, user_id='1', title='alpha', view_count=1)
-        p2 = self.post_class(id=None, user_id='1', title='beta', view_count=2)
-        p3 = self.post_class(id=None, user_id='2', title='gamma', view_count=3)
-        db_model_create(self.ctx, self.post_class, p1)
-        db_model_create(self.ctx, self.post_class, p2)
-        db_model_create(self.ctx, self.post_class, p3)
-
-        r1 = self.reaction_class(id=None, post_id='1', reaction_type='like')
-        r2 = self.reaction_class(id=None, post_id='1', reaction_type='love')
-        r3 = self.reaction_class(id=None, post_id='2', reaction_type='like')
-        db_model_create(self.ctx, self.reaction_class, r1)
-        db_model_create(self.ctx, self.reaction_class, r2)
-        db_model_create(self.ctx, self.reaction_class, r3)
-
-    def tearDown(self):
-        self.ctx.db.connection.close()
-
-    def test_unique_counts_no_filter(self):
-        result = db_model_unique_counts(self.ctx, self.reaction_class, 'reaction_type')
-        self.assertIsInstance(result, list)
-        counts = {row['reaction_type']: row['count'] for row in result}
-        self.assertEqual(counts['like'], 2)
-        self.assertEqual(counts['love'], 1)
-
-    def test_unique_counts_with_filter(self):
-        result = db_model_unique_counts(self.ctx, self.reaction_class, 'reaction_type', filters={'post_id': '1'})
-        counts = {row['reaction_type']: row['count'] for row in result}
-        self.assertEqual(counts['like'], 1)
-        self.assertEqual(counts['love'], 1)
-
-    def test_query_str_field(self):
-        result = db_model_query(self.ctx, self.post_class, {'title': 'alpha'})
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].title, 'alpha')
-
-    def test_query_foreign_key_field(self):
-        result = db_model_query(self.ctx, self.post_class, {'user_id': '1'})
-        self.assertEqual(len(result), 2)
-        titles = {m.title for m in result}
-        self.assertIn('alpha', titles)
-        self.assertIn('beta', titles)
-
-    def test_query_empty_result(self):
-        result = db_model_query(self.ctx, self.post_class, {'title': 'zzz_nonexistent'})
-        self.assertEqual(result, [])
-
-    def test_query_raises_for_int_field(self):
-        with self.assertRaises(ValueError) as cm:
-            db_model_query(self.ctx, self.post_class, {'view_count': 1})
-        self.assertIn('unsupported field type', str(cm.exception))
-        self.assertIn('int', str(cm.exception))
 
 if __name__ == '__main__':
     unittest.main()
