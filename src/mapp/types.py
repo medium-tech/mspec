@@ -438,6 +438,9 @@ def _convert_incoming_fields(data_spec:dict, data:object) -> dict:
 
         try:
             if isinstance(raw_value, list):
+                if field_type != 'list':
+                    raise ValueError(f'Expected a list for field "{field_name}", got {type(raw_value)}')
+                
                 converted_data[field_name] = [_convert_incoming_value(field['element_type'], v) for v in raw_value]
             else:
                 converted_data[field_name] = _convert_incoming_value(field_type, raw_value)
@@ -611,6 +614,10 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
             for i, element in enumerate(value):
                 if not isinstance(element, python_type):
                     errors[field_name] = f'Element {i} of field "{field_name}" is not "{element_type}".'
+                    total_errors += 1
+                    break
+                elif element_type == 'str' and 'enum' in field and element not in field['enum']:
+                    errors[field_name] = f'Element {i} of field "{field_name}" has value "{element}" which is not in the allowed enum values: {field["enum"]}.'
                     total_errors += 1
                     break
 

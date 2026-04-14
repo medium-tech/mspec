@@ -183,7 +183,6 @@ modules:
               - "false"
               - "yes"
               - ""
-              - []
               - {}
               - null
               - [0, 1]
@@ -204,7 +203,6 @@ modules:
               - 1.5
               - "abc"
               - ""
-              - []
               - {}
               - null
               - ["123", "456"]
@@ -224,7 +222,6 @@ modules:
               - 1.5
               - "abc"
               - ""
-              - []
               - {}
               - null
               - ["123.45", "67.89"]
@@ -244,7 +241,6 @@ modules:
               - 123
               - 45.67
               - ""
-              - []
               - {}
               - null
               - [["valid string"]]
@@ -270,7 +266,6 @@ modules:
               - 45.67
               - "burrito"
               - ""
-              - []
               - {}
               - null
               - ['barbacoa', 'chorizo'] # barbacoa is not in the enum
@@ -292,7 +287,6 @@ modules:
               - 45.67
               - "not a datetime"
               - ""
-              - []
               - {}
               - null
               - ["2020-64-01T00:00:00"] # invalid datetime
