@@ -342,8 +342,8 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
         for (let seedNum = 0; seedNum < 2; seedNum++) {
           // Navigate to create a pre-seeded record for this referenced model
           await page.goto(crudEnv.host);
-          await page.getByRole('link', { name: refSpecModule.name.kebab_case }).click();
-          await page.getByRole('link', { name: refSpecModel.name.kebab_case }).click();
+          await page.getByRole('link', { name: refSpecModule.name.kebab_case, exact: true }).click();
+          await page.getByRole('link', { name: refSpecModel.name.kebab_case, exact: true }).click();
 
           // Fill form with example data (preSeedMode=true skips FK fields to avoid cycles)
           const seedExample = getExampleFromModel(refSpecModel, 0);
@@ -395,7 +395,7 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
       }
 
       // Click model link
-      await page.getByRole('link', { name: modelKebab }).click();
+      await page.getByRole('link', { name: modelKebab, exact: true }).click();
       await expect(page.locator('h1')).toContainText(`:: ${modelKebab}`);
 
       // Get example data for create (index 0)
@@ -489,12 +489,12 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
       await expect(page.locator('#lingo-app')).toContainText('error:');
 
       // Click breadcrumb back to module
-      await page.getByRole('link', { name: moduleKebab }).click();
+      await page.getByRole('link', { name: moduleKebab, exact: true }).click();
       await expect(page.locator('h1')).toContainText(`:: ${moduleKebab}`);
     }
 
     // Click breadcrumb back to index
-    await page.getByRole('link', { name: crudEnv.spec.project.name.lower_case }).click();
+    await page.getByRole('link', { name: crudEnv.spec.project.name.lower_case, exact: true }).click();
     await expect(page.locator('h1')).toContainText('::');
   }
 });
