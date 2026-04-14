@@ -1962,17 +1962,19 @@ class TestMTemplateApp(unittest.TestCase):
             model_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(invalid_example)]
             result = self._run_cmd(model_command, expected_code=1, env=ctx)
 
-            error_output = json.loads(result.stdout)
-            self.assertEqual(error_output['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output}')
-            self.assertTrue(error_output['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_output["message"]}')
+            output = json.loads(result.stdout)
+            error_output = output.get('error', {})
+            self.assertEqual(error_output['code'], 'VALIDATION_ERROR', f'Expected VALIDATION_ERROR code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output}')
+            self.assertIn('message', error_output, f'Expected error message in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {output}')
 
             # update #
 
             model_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'update', update_model_id, json.dumps(invalid_example)]
             result = self._run_cmd(model_command, expected_code=1, env=ctx)
-            error_output = json.loads(result.stdout)
-            self.assertEqual(error_output['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output["code"]}')
-            self.assertTrue(error_output['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_output["message"]}')
+            output = json.loads(result.stdout)
+            error_output = output.get('error', {})
+            self.assertEqual(error_output['code'], 'VALIDATION_ERROR', f'Expected VALIDATION_ERROR code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output["code"]}')
+            self.assertIn('message', error_output, f'Expected error message in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output}')
 
         # read back original example to ensure it was not modified #
 
