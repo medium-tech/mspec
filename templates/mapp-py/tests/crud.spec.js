@@ -590,6 +590,11 @@ test('test validation errors are displayed in form', async ({ browser, crudEnv, 
   await page.getByRole('link', { name: 'view item' }).click();
   await expect(page.locator('h1')).toContainText(`:: ${targetModelKebab}`);
 
+  // Extract the item ID from the current page URL
+  const itemUrl = page.url();
+  const itemId = itemUrl.split('/').pop();
+  const itemApiUrl = `${crudEnv.host}/api/${targetModuleKebab}/${targetModelKebab}/${itemId}`;
+
   // Load the item and enter edit mode
   await page.getByRole('button', { name: 'load', exact: true }).click();
   await expect(page.locator('#lingo-app')).toContainText('loaded');
@@ -598,7 +603,7 @@ test('test validation errors are displayed in form', async ({ browser, crudEnv, 
 
   // Mock PUT to return a VALIDATION_ERROR
   const editFieldErrorMessage = 'This field failed validation during edit';
-  await page.route(/\/api\//, async route => {
+  await page.route(itemApiUrl, async route => {
     if (route.request().method() === 'PUT') {
       await route.fulfill({
         status: 400,
