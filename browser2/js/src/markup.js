@@ -4006,6 +4006,8 @@ function createFormElement(app, element, ctx = null) {
                         case 'str':
                             formData[fieldKey] = '';
                             break;
+                        case 'foreign_key':
+                            formData[fieldKey] = '-1'; // using -1 to indicate no selection for FK fields
                         case 'datetime':
                             formData[fieldKey] = new Date().toISOString();
                             break;
