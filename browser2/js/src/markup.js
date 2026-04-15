@@ -2553,6 +2553,10 @@ function _renderModelRead(app, element, ctx = null) {
     if (!state.hasOwnProperty('data')) state.data = null;
     if (!state.hasOwnProperty('state')) state.state = 'pending';
     if (!state.hasOwnProperty('error')) state.error = '';
+    if (!state.hasOwnProperty('field_errors')) state.field_errors = {};
+
+    // true when a validation error was returned during an edit operation
+    const isEditError = state.state === 'error' && state.field_errors && Object.keys(state.field_errors).length > 0;
 
     //
     // buttons
@@ -2577,7 +2581,7 @@ function _renderModelRead(app, element, ctx = null) {
     elements.push({
         button: loadScript,
         text: 'load',
-        disabled: state.state === 'editing' || state.state === 'loading'
+        disabled: state.state === 'editing' || state.state === 'loading' || isEditError
     });
 
     // edit //
@@ -2596,14 +2600,14 @@ function _renderModelRead(app, element, ctx = null) {
     // cancel //
 
     const cancelScript = {
-        set: {state: {[stateField]: {state: {}}}},
-        to: 'loaded'
+        set: {state: {[stateField]: {}}},
+        to: {state: 'loaded', field_errors: {}}
     };
 
     elements.push({
         button: cancelScript,
         text: 'cancel',
-        disabled: state.state !== 'editing'
+        disabled: state.state !== 'editing' && !isEditError
     });
 
     // status //
@@ -2657,7 +2661,7 @@ function _renderModelRead(app, element, ctx = null) {
     // view item
     //
 
-    if (state.state === 'editing') {
+    if (state.state === 'editing' || isEditError) {
         // view editable form
         elements.push({
             form: {
