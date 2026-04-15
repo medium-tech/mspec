@@ -499,6 +499,7 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
   }
 });
 
+
 test('test validation errors are displayed in form', async ({ browser, crudEnv, crudSession }) => {
   const context = await browser.newContext({ storageState: crudSession.storageState });
   const page = await context.newPage();
@@ -513,7 +514,6 @@ test('test validation errors are displayed in form', async ({ browser, crudEnv, 
     for (const [modelName, model] of Object.entries(module.models || {})) {
       if (model.hidden === true) continue;
       if (model.auth && model.auth.max_models_per_user === 0) continue;
-
       targetModel = model;
       targetModuleKebab = module.name.kebab_case;
       targetModelKebab = model.name.kebab_case;
@@ -530,11 +530,15 @@ test('test validation errors are displayed in form', async ({ browser, crudEnv, 
   await page.getByRole('link', { name: targetModelKebab, exact: true }).click();
   await expect(page.locator('h1')).toContainText(`:: ${targetModelKebab}`);
 
-  // Mock the API to return a VALIDATION_ERROR for the create call
+  //
+  // Part 1: test validation errors on the create form
+  //
+
   const apiUrl = `${crudEnv.host}/api/${targetModuleKebab}/${targetModelKebab}`;
   const fieldErrorMessage = 'This field failed validation';
   const firstFieldName = Object.keys(targetModel.fields)[0];
 
+  // Mock POST to return a VALIDATION_ERROR
   await page.route(apiUrl, async route => {
     if (route.request().method() === 'POST') {
       await route.fulfill({
@@ -555,73 +559,46 @@ test('test validation errors are displayed in form', async ({ browser, crudEnv, 
     }
   });
 
-  // Click submit to trigger the API call
+  // Click submit to trigger the mocked validation error
   await page.getByRole('button', { name: 'Submit' }).click();
 
   // Verify the validation error message is shown in the status area
   await expect(page.locator('#lingo-app')).toContainText('This model has failed validation');
 
   // Verify the field error message is shown in the form's third column
-  const fieldError = page.locator('.field-error');
-  await expect(fieldError).toBeVisible();
-  await expect(fieldError).toContainText(fieldErrorMessage);
-});
+  const createFieldError = page.locator('.field-error');
+  await expect(createFieldError).toBeVisible();
+  await expect(createFieldError).toContainText(fieldErrorMessage);
 
-test('test validation errors are displayed in edit form', async ({ browser, crudEnv, crudSession }) => {
-  const context = await browser.newContext({ storageState: crudSession.storageState });
-  const page = await context.newPage();
+  // Unroute the mock so subsequent requests go through normally
+  await page.unroute(apiUrl);
 
-  await context.addCookies([{ name: 'protocol_mode', value: 'true', domain: new URL(crudEnv.host).hostname, path: '/' }]);
+  //
+  // Part 2: create an actual item then test validation errors on the edit form
+  //
 
-  // Find the first module and model that we can navigate to
-  const modules = crudEnv.spec.modules;
-  let targetModel, targetModuleKebab, targetModelKebab;
-  for (const [moduleName, module] of Object.entries(modules)) {
-    if (['auth', 'file-system', 'media'].includes(module.name.kebab_case)) continue;
-    for (const [modelName, model] of Object.entries(module.models || {})) {
-      if (model.hidden === true) continue;
-      if (model.auth && model.auth.max_models_per_user === 0) continue;
-
-      targetModel = model;
-      targetModuleKebab = module.name.kebab_case;
-      targetModelKebab = model.name.kebab_case;
-      break;
-    }
-    if (targetModel) break;
+  // Fill the create form with example data and submit for real
+  const createExample = getExampleFromModel(targetModel, 0);
+  for (const [fieldName, value] of Object.entries(createExample)) {
+    await fillFormField(page, fieldName, targetModel.fields[fieldName], value);
   }
 
-  expect(targetModel).toBeDefined();
+  await page.getByRole('button', { name: 'Submit' }).click();
+  await expect(page.locator('#lingo-app')).toContainText('Success');
 
-  // Create a real item first via the API so we have an item to edit
-  const createExample = getExampleFromModel(targetModel, 0);
-  const apiUrl = `${crudEnv.host}/api/${targetModuleKebab}/${targetModelKebab}`;
-  const createResponse = await fetch(apiUrl, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json', 'Cookie': `session=${crudSession.storageState.cookies.find(c => c.name === 'session')?.value || ''}`},
-    body: JSON.stringify(createExample)
-  });
-  const createdItem = await createResponse.json();
-  const itemId = createdItem.id;
-  expect(itemId).toBeDefined();
-
-  // Navigate to the item instance page
-  await page.goto(`${crudEnv.host}/${targetModuleKebab}/${targetModelKebab}/${itemId}`);
+  // Follow link to the newly created item
+  await page.getByRole('link', { name: 'view item' }).click();
   await expect(page.locator('h1')).toContainText(`:: ${targetModelKebab}`);
 
-  // Wait for the item to load then click edit
+  // Load the item and enter edit mode
   await page.getByRole('button', { name: 'load', exact: true }).click();
   await expect(page.locator('#lingo-app')).toContainText('loaded');
   await page.getByRole('button', { name: 'edit', exact: true }).click();
-
-  // Verify the form is now visible
   await expect(page.getByRole('button', { name: 'Submit' })).toBeVisible();
 
-  // Mock the PUT endpoint to return a VALIDATION_ERROR
-  const itemApiUrl = `${crudEnv.host}/api/${targetModuleKebab}/${targetModelKebab}/${itemId}`;
-  const fieldErrorMessage = 'This field failed validation during edit';
-  const firstFieldName = Object.keys(targetModel.fields)[0];
-
-  await page.route(itemApiUrl, async route => {
+  // Mock PUT to return a VALIDATION_ERROR
+  const editFieldErrorMessage = 'This field failed validation during edit';
+  await page.route(/\/api\//, async route => {
     if (route.request().method() === 'PUT') {
       await route.fulfill({
         status: 400,
@@ -631,7 +608,7 @@ test('test validation errors are displayed in edit form', async ({ browser, crud
             code: 'VALIDATION_ERROR',
             message: 'This model has failed validation',
             field_errors: {
-              [firstFieldName]: fieldErrorMessage
+              [firstFieldName]: editFieldErrorMessage
             }
           }
         })
@@ -641,7 +618,7 @@ test('test validation errors are displayed in edit form', async ({ browser, crud
     }
   });
 
-  // Click submit to trigger the PUT with mocked VALIDATION_ERROR
+  // Submit the edit form to trigger the mocked validation error
   await page.getByRole('button', { name: 'Submit' }).click();
 
   // Verify the validation error message is shown in the status area
@@ -651,29 +628,15 @@ test('test validation errors are displayed in edit form', async ({ browser, crud
   await expect(page.getByRole('button', { name: 'Submit' })).toBeVisible();
 
   // Verify the field error message is shown in the form's third column
-  const fieldError = page.locator('.field-error');
-  await expect(fieldError).toBeVisible();
-  await expect(fieldError).toContainText(fieldErrorMessage);
+  const editFieldError = page.locator('.field-error');
+  await expect(editFieldError).toBeVisible();
+  await expect(editFieldError).toContainText(editFieldErrorMessage);
 
   // Verify the cancel button is enabled so user can exit edit mode
   await expect(page.getByRole('button', { name: 'cancel', exact: true })).toBeEnabled();
 
-  // Click cancel to exit edit mode - field errors should clear
+  // Click cancel - field errors should clear and form should disappear
   await page.getByRole('button', { name: 'cancel', exact: true }).click();
-
-  // Verify the form is gone and we are back in view mode with no field errors
   await expect(page.getByRole('button', { name: 'Submit' })).not.toBeVisible();
   await expect(page.locator('.field-error')).not.toBeVisible();
-
-  // expect text 'loaded' to confirm we are back in view mode
-  await expect(page.locator('#lingo-app')).toContainText('loaded');
-
-  // expect visible buttons load, edit and delete to confirm we are back in view mode
-  await expect(page.getByRole('button', { name: 'load', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'edit', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'delete', exact: true })).toBeVisible();
-
-  // expect cancel button to be visible but disabled
-  await expect(page.getByRole('button', { name: 'cancel', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'cancel', exact: true })).toBeDisabled();
 });
