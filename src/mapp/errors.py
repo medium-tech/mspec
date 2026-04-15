@@ -74,6 +74,9 @@ class ResponseError(MappError):
                 return AuthenticationError(message)
             case 'FORBIDDEN_ERROR':
                 return ForbiddenError(message)
+            case 'VALIDATION_ERROR':
+                field_errors = data['error'].get('field_errors', {})
+                return MappValidationError(message, field_errors)
             case _:
                 return ResponseError(message)
 
