@@ -664,4 +664,16 @@ test('test validation errors are displayed in edit form', async ({ browser, crud
   // Verify the form is gone and we are back in view mode with no field errors
   await expect(page.getByRole('button', { name: 'Submit' })).not.toBeVisible();
   await expect(page.locator('.field-error')).not.toBeVisible();
+
+  // expect text 'loaded' to confirm we are back in view mode
+  await expect(page.locator('#lingo-app')).toContainText('loaded');
+
+  // expect visible buttons load, edit and delete to confirm we are back in view mode
+  await expect(page.getByRole('button', { name: 'load', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'edit', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'delete', exact: true })).toBeVisible();
+
+  // expect cancel button to be visible but disabled
+  await expect(page.getByRole('button', { name: 'cancel', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'cancel', exact: true })).toBeDisabled();
 });

@@ -2600,9 +2600,18 @@ function _renderModelRead(app, element, ctx = null) {
     // cancel //
 
     const cancelScript = {
-        set: {state: {[stateField]: {}}},
-        to: {state: 'loaded', field_errors: {}}
-    };
+        call: 'and',
+        args: {
+            a: {
+                set: {state: {[stateField]: {state: {}}}},
+                to: 'loaded'
+            },
+            b: {
+                set: {state: {[stateField]: {field_errors: {}}}},
+                to: {}
+            }
+        }
+    }
 
     elements.push({
         button: cancelScript,
