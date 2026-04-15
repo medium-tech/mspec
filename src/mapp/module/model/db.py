@@ -24,7 +24,7 @@ def db_model_create_table(ctx:MappContext, model_class: type) -> Acknowledgment:
 
     # non list fields #
     
-    columns = ['id INTEGER PRIMARY KEY']
+    columns = ['id INTEGER PRIMARY KEY AUTOINCREMENT']
     indexes = []
     for field in model_spec['non_list_fields']:
         field_name = field['name']['snake_case']
