@@ -107,7 +107,8 @@
             "default": {
                 "state": "pending",
                 "error": "",
-                "data": {}
+                "data": {},
+                "field_errors": {}
             }
         },
         "header": {

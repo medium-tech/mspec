@@ -82,7 +82,8 @@
                 "state": "initial",
                 "error": "",
                 "item_id": "",
-                "data": {}
+                "data": {},
+                "field_errors": {}
             }
         },
         "model_list": {

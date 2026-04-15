@@ -924,19 +924,23 @@ const lingoFunctionLookup = {
                     if (response.ok) {
                         const responseData = await response.json();
                         // console.log('crud.create - responseData:', responseData);
-                        return {state: 'success', item_id: responseData.id};
+                        return {state: 'success', item_id: responseData.id, field_errors: {}};
                     } else {
                         const errorData = await response.json();
                         let errorMessage = `${response.status} ${response.statusText}`;
+                        let fieldErrors = {};
                         if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
                             errorMessage = errorData.error.message;
                         }
+                        if (errorData.hasOwnProperty('error') && errorData.error.code === 'VALIDATION_ERROR' && errorData.error.hasOwnProperty('field_errors')) {
+                            fieldErrors = errorData.error.field_errors;
+                        }
                         console.error('crud.create - HTTP error:', response.status, response.statusText);
-                        return {state: 'error', error: errorMessage};
+                        return {state: 'error', error: errorMessage, field_errors: fieldErrors};
                     }
                 } catch (error) {
                     console.error('crud.create - network error:', error);
-                    return {state: 'error', error: `Network error: ${error.message}`};
+                    return {state: 'error', error: `Network error: ${error.message}`, field_errors: {}};
                 }
             },
             createArgs: _crudCreateArgs
@@ -980,19 +984,23 @@ const lingoFunctionLookup = {
                     if (response.ok) {
                         const responseData = await response.json();
                         // console.log('crud.update - responseData:', responseData);
-                        return {state: 'edited', data: responseData};
+                        return {state: 'edited', data: responseData, field_errors: {}};
                     } else {
                         const errorData = await response.json();
                         let errorMessage = `${response.status} ${response.statusText}`;
+                        let fieldErrors = {};
                         if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
                             errorMessage = errorData.error.message;
                         }
+                        if (errorData.hasOwnProperty('error') && errorData.error.code === 'VALIDATION_ERROR' && errorData.error.hasOwnProperty('field_errors')) {
+                            fieldErrors = errorData.error.field_errors;
+                        }
                         console.error('crud.update - HTTP error:', response.status, response.statusText);
-                        return {state: 'error', error: errorMessage};
+                        return {state: 'error', error: errorMessage, field_errors: fieldErrors};
                     }
                 } catch (error) {
                     console.error('crud.update - network error:', error);
-                    return {state: 'error', error: `Network error: ${error.message}`};
+                    return {state: 'error', error: `Network error: ${error.message}`, field_errors: {}};
                 }
             },
             createArgs: _crudUpdateArgs
@@ -4557,6 +4565,17 @@ function createFormElement(app, element, ctx = null) {
             // Description for non-list fields
             thirdCell.className = 'form-description';
             thirdCell.textContent = fieldSpec.description || '';
+        }
+
+        // Show field validation error if present
+        const fieldErrors = currentState.field_errors;
+        if (fieldErrors && fieldErrors[fieldKey]) {
+            const errorSpan = document.createElement('span');
+            errorSpan.textContent = fieldErrors[fieldKey];
+            errorSpan.style.color = 'red';
+            errorSpan.style.fontWeight = 'bold';
+            errorSpan.className = 'field-error';
+            thirdCell.appendChild(errorSpan);
         }
         
         row.appendChild(thirdCell);

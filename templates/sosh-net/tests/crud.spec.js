@@ -498,3 +498,70 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
     await expect(page.locator('h1')).toContainText('::');
   }
 });
+test('test validation errors are displayed in form', async ({ browser, crudEnv, crudSession }) => {
+  const context = await browser.newContext({ storageState: crudSession.storageState });
+  const page = await context.newPage();
+
+  await context.addCookies([{ name: 'protocol_mode', value: 'true', domain: new URL(crudEnv.host).hostname, path: '/' }]);
+
+  // Find the first module and model that we can navigate to
+  const modules = crudEnv.spec.modules;
+  let targetModule, targetModel, targetModuleKebab, targetModelKebab;
+  for (const [moduleName, module] of Object.entries(modules)) {
+    if (['auth', 'file-system', 'media'].includes(module.name.kebab_case)) continue;
+    for (const [modelName, model] of Object.entries(module.models || {})) {
+      if (model.hidden === true) continue;
+      if (model.auth && model.auth.max_models_per_user === 0) continue;
+      targetModule = module;
+      targetModel = model;
+      targetModuleKebab = module.name.kebab_case;
+      targetModelKebab = model.name.kebab_case;
+      break;
+    }
+    if (targetModel) break;
+  }
+
+  expect(targetModel).toBeDefined();
+
+  // Navigate to the model create page
+  await page.goto(crudEnv.host);
+  await page.getByRole('link', { name: targetModuleKebab, exact: true }).click();
+  await page.getByRole('link', { name: targetModelKebab, exact: true }).click();
+  await expect(page.locator('h1')).toContainText(`:: ${targetModelKebab}`);
+
+  // Mock the API to return a VALIDATION_ERROR for the create call
+  const apiUrl = `${crudEnv.host}/api/${targetModuleKebab}/${targetModelKebab}`;
+  const fieldErrorMessage = 'This field failed validation';
+  const firstFieldName = Object.keys(targetModel.fields)[0];
+
+  await page.route(apiUrl, async route => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'This model has failed validation',
+            field_errors: {
+              [firstFieldName]: fieldErrorMessage
+            }
+          }
+        })
+      });
+    } else {
+      await route.continue();
+    }
+  });
+
+  // Click submit to trigger the API call
+  await page.getByRole('button', { name: 'Submit' }).click();
+
+  // Verify the validation error message is shown in the status area
+  await expect(page.locator('#lingo-app')).toContainText('This model has failed validation');
+
+  // Verify the field error message is shown in the form's third column
+  const fieldError = page.locator('.field-error');
+  await expect(fieldError).toBeVisible();
+  await expect(fieldError).toContainText(fieldErrorMessage);
+});
