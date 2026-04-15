@@ -399,11 +399,24 @@ def _convert_incoming_value(field_type:str, raw_value:Any, strict=True) -> Any:
                 return raw_value
 
         case 'int':
-            return int(raw_value)
+            if isinstance(raw_value, int) and not isinstance(raw_value, bool):
+                return raw_value
+            elif not strict and isinstance(raw_value, str):
+                return int(raw_value)
+            else:
+                raise ValueError(f'Cannot convert type "{type(raw_value)}" to int')
+            
         case 'float':
-            return float(raw_value)
+            if isinstance(raw_value, float):
+                return raw_value
+            elif not strict and isinstance(raw_value, str):
+                return float(raw_value)
+            else:
+                raise ValueError(f'Cannot convert type "{type(raw_value)}" to float')
+            
         case 'str':
-            return str(raw_value)
+            return raw_value
+        
         case 'datetime':
             if isinstance(raw_value, datetime):
                 return raw_value
@@ -412,7 +425,10 @@ def _convert_incoming_value(field_type:str, raw_value:Any, strict=True) -> Any:
             else:
                 raise ValueError(f'Cannot convert type "{type(raw_value)}" to datetime')
         case 'foreign_key':
-            return str(raw_value)
+            if isinstance(raw_value, (str, int)):
+                return str(raw_value)
+            else:
+                raise ValueError(f'Cannot convert type "{type(raw_value)}" to foreign_key (str)')
         case _:
             raise ValueError(f'Unsupported field type: {field_type}')
 
@@ -589,6 +605,10 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
 
             if not isinstance(value, python_type):
                 errors[field_name] = f'Field "{field_name}" is not of type "{field_type}".'
+                total_errors += 1
+
+            if field_type == 'str' and 'enum' in field and value not in field['enum']:
+                errors[field_name] = f'Field "{field_name}" has value "{value}" which is not in the allowed enum values.'
                 total_errors += 1
 
         else:
