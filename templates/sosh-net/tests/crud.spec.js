@@ -506,13 +506,13 @@ test('test validation errors are displayed in form', async ({ browser, crudEnv, 
 
   // Find the first module and model that we can navigate to
   const modules = crudEnv.spec.modules;
-  let targetModule, targetModel, targetModuleKebab, targetModelKebab;
+  let targetModel, targetModuleKebab, targetModelKebab;
   for (const [moduleName, module] of Object.entries(modules)) {
     if (['auth', 'file-system', 'media'].includes(module.name.kebab_case)) continue;
     for (const [modelName, model] of Object.entries(module.models || {})) {
       if (model.hidden === true) continue;
       if (model.auth && model.auth.max_models_per_user === 0) continue;
-      targetModule = module;
+
       targetModel = model;
       targetModuleKebab = module.name.kebab_case;
       targetModelKebab = model.name.kebab_case;
@@ -574,13 +574,13 @@ test('test validation errors are displayed in edit form', async ({ browser, crud
 
   // Find the first module and model that we can navigate to
   const modules = crudEnv.spec.modules;
-  let targetModule, targetModel, targetModuleKebab, targetModelKebab;
+  let targetModel, targetModuleKebab, targetModelKebab;
   for (const [moduleName, module] of Object.entries(modules)) {
     if (['auth', 'file-system', 'media'].includes(module.name.kebab_case)) continue;
     for (const [modelName, model] of Object.entries(module.models || {})) {
       if (model.hidden === true) continue;
       if (model.auth && model.auth.max_models_per_user === 0) continue;
-      targetModule = module;
+
       targetModel = model;
       targetModuleKebab = module.name.kebab_case;
       targetModelKebab = model.name.kebab_case;
