@@ -4564,7 +4564,9 @@ function createFormElement(app, element, ctx = null) {
         } else {
             // Description for non-list fields
             thirdCell.className = 'form-description';
-            thirdCell.textContent = fieldSpec.description || '';
+            if (fieldSpec.description) {
+                thirdCell.appendChild(document.createTextNode(fieldSpec.description));
+            }
         }
 
         // Show field validation error if present
@@ -4572,8 +4574,6 @@ function createFormElement(app, element, ctx = null) {
         if (fieldErrors && fieldErrors[fieldKey]) {
             const errorSpan = document.createElement('span');
             errorSpan.textContent = fieldErrors[fieldKey];
-            errorSpan.style.color = 'red';
-            errorSpan.style.fontWeight = 'bold';
             errorSpan.className = 'field-error';
             thirdCell.appendChild(errorSpan);
         }
