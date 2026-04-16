@@ -924,19 +924,23 @@ const lingoFunctionLookup = {
                     if (response.ok) {
                         const responseData = await response.json();
                         // console.log('crud.create - responseData:', responseData);
-                        return {state: 'success', item_id: responseData.id};
+                        return {state: 'success', item_id: responseData.id, field_errors: {}};
                     } else {
                         const errorData = await response.json();
                         let errorMessage = `${response.status} ${response.statusText}`;
+                        let fieldErrors = {};
                         if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
                             errorMessage = errorData.error.message;
                         }
+                        if (errorData.hasOwnProperty('error') && errorData.error.code === 'VALIDATION_ERROR' && errorData.error.hasOwnProperty('field_errors')) {
+                            fieldErrors = errorData.error.field_errors;
+                        }
                         console.error('crud.create - HTTP error:', response.status, response.statusText);
-                        return {state: 'error', error: errorMessage};
+                        return {state: 'error', error: errorMessage, field_errors: fieldErrors};
                     }
                 } catch (error) {
                     console.error('crud.create - network error:', error);
-                    return {state: 'error', error: `Network error: ${error.message}`};
+                    return {state: 'error', error: `Network error: ${error.message}`, field_errors: {}};
                 }
             },
             createArgs: _crudCreateArgs
@@ -980,19 +984,23 @@ const lingoFunctionLookup = {
                     if (response.ok) {
                         const responseData = await response.json();
                         // console.log('crud.update - responseData:', responseData);
-                        return {state: 'edited', data: responseData};
+                        return {state: 'edited', data: responseData, field_errors: {}};
                     } else {
                         const errorData = await response.json();
                         let errorMessage = `${response.status} ${response.statusText}`;
+                        let fieldErrors = {};
                         if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
                             errorMessage = errorData.error.message;
                         }
+                        if (errorData.hasOwnProperty('error') && errorData.error.code === 'VALIDATION_ERROR' && errorData.error.hasOwnProperty('field_errors')) {
+                            fieldErrors = errorData.error.field_errors;
+                        }
                         console.error('crud.update - HTTP error:', response.status, response.statusText);
-                        return {state: 'error', error: errorMessage};
+                        return {state: 'error', error: errorMessage, field_errors: fieldErrors};
                     }
                 } catch (error) {
                     console.error('crud.update - network error:', error);
-                    return {state: 'error', error: `Network error: ${error.message}`};
+                    return {state: 'error', error: `Network error: ${error.message}`, field_errors: {}};
                 }
             },
             createArgs: _crudUpdateArgs
@@ -2551,6 +2559,10 @@ function _renderModelRead(app, element, ctx = null) {
     if (!state.hasOwnProperty('data')) state.data = null;
     if (!state.hasOwnProperty('state')) state.state = 'pending';
     if (!state.hasOwnProperty('error')) state.error = '';
+    if (!state.hasOwnProperty('field_errors')) state.field_errors = {};
+
+    // true when a validation error was returned during an edit operation
+    const isEditError = state.state === 'error' && state.field_errors && Object.keys(state.field_errors).length > 0;
 
     //
     // buttons
@@ -2575,7 +2587,7 @@ function _renderModelRead(app, element, ctx = null) {
     elements.push({
         button: loadScript,
         text: 'load',
-        disabled: state.state === 'editing' || state.state === 'loading'
+        disabled: state.state === 'editing' || state.state === 'loading' || isEditError
     });
 
     // edit //
@@ -2594,14 +2606,23 @@ function _renderModelRead(app, element, ctx = null) {
     // cancel //
 
     const cancelScript = {
-        set: {state: {[stateField]: {state: {}}}},
-        to: 'loaded'
-    };
+        call: 'and',
+        args: {
+            a: {
+                set: {state: {[stateField]: {state: {}}}},
+                to: 'loaded'
+            },
+            b: {
+                set: {state: {[stateField]: {field_errors: {}}}},
+                to: {}
+            }
+        }
+    }
 
     elements.push({
         button: cancelScript,
         text: 'cancel',
-        disabled: state.state !== 'editing'
+        disabled: state.state !== 'editing' && !isEditError
     });
 
     // status //
@@ -2655,7 +2676,7 @@ function _renderModelRead(app, element, ctx = null) {
     // view item
     //
 
-    if (state.state === 'editing') {
+    if (state.state === 'editing' || isEditError) {
         // view editable form
         elements.push({
             form: {
@@ -4012,6 +4033,8 @@ function createFormElement(app, element, ctx = null) {
                         case 'str':
                             formData[fieldKey] = '';
                             break;
+                        case 'foreign_key':
+                            formData[fieldKey] = '-1'; // using -1 to indicate no selection for FK fields
                         case 'datetime':
                             formData[fieldKey] = new Date().toISOString();
                             break;
@@ -4560,7 +4583,18 @@ function createFormElement(app, element, ctx = null) {
         } else {
             // Description for non-list fields
             thirdCell.className = 'form-description';
-            thirdCell.textContent = fieldSpec.description || '';
+            if (fieldSpec.description) {
+                thirdCell.appendChild(document.createTextNode(fieldSpec.description));
+            }
+        }
+
+        // Show field validation error if present
+        const fieldErrors = currentState.field_errors;
+        if (fieldErrors && fieldErrors[fieldKey]) {
+            const errorSpan = document.createElement('span');
+            errorSpan.textContent = fieldErrors[fieldKey];
+            errorSpan.className = 'field-error';
+            thirdCell.appendChild(errorSpan);
         }
         
         row.appendChild(thirdCell);

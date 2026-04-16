@@ -16,6 +16,7 @@
   - [Client](#client-functions)
   - [File System](#file-system-functions)
   - [Media](#media-functions)
+  - [Database](#database-functions)
 - [Control Flow](#control-flow)
 - [UI Elements](#ui-elements)
 - [Expressions](#expressions)
@@ -405,6 +406,27 @@
     - **file_id** `str` (optional)
     - **user_id** `str` (optional)
   - **return:** struct with `items`, `total`
+
+### Database Functions
+`db.read` - Read a single model instance by ID
+  - **args:**
+    - **model_type** `str` - dot-notation module.model (e.g. `sosh_net.post`)
+    - **model_id** `str` - the record ID
+  - **return:** struct with all model fields
+
+`db.unique_counts` - Return counts of unique values for a model field
+  - **args:**
+    - **model_type** `str` - dot-notation module.model
+    - **group_by** `str` - field name to group by
+    - **filters** `struct` (optional) - `{field_name: value}` pairs for WHERE clause
+  - **return:** list of structs `[{<group_by_field>: value, count: int}, ...]`
+
+`db.query` - Return all rows matching a set of field equality filters
+  - **args:**
+    - **model_type** `str` - dot-notation module.model (e.g. `sosh_net.profile`)
+    - **fields** `struct` - `{field_name: value}` equality filters; only `str` and `foreign_key` field types are supported
+  - **return:** list of matching model structs (same format as `db.read`)
+  - **note:** Raises a `ValueError` if a filter key is an unsupported field type (e.g. `int`, `bool`)
 
 ## Control Flow
 

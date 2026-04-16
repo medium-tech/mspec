@@ -342,8 +342,8 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
         for (let seedNum = 0; seedNum < 2; seedNum++) {
           // Navigate to create a pre-seeded record for this referenced model
           await page.goto(crudEnv.host);
-          await page.getByRole('link', { name: refSpecModule.name.kebab_case }).click();
-          await page.getByRole('link', { name: refSpecModel.name.kebab_case }).click();
+          await page.getByRole('link', { name: refSpecModule.name.kebab_case, exact: true }).click();
+          await page.getByRole('link', { name: refSpecModel.name.kebab_case, exact: true }).click();
 
           // Fill form with example data (preSeedMode=true skips FK fields to avoid cycles)
           const seedExample = getExampleFromModel(refSpecModel, 0);
@@ -395,7 +395,7 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
       }
 
       // Click model link
-      await page.getByRole('link', { name: modelKebab }).click();
+      await page.getByRole('link', { name: modelKebab, exact: true }).click();
       await expect(page.locator('h1')).toContainText(`:: ${modelKebab}`);
 
       // Get example data for create (index 0)
@@ -489,12 +489,159 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
       await expect(page.locator('#lingo-app')).toContainText('error:');
 
       // Click breadcrumb back to module
-      await page.getByRole('link', { name: moduleKebab }).click();
+      await page.getByRole('link', { name: moduleKebab, exact: true }).click();
       await expect(page.locator('h1')).toContainText(`:: ${moduleKebab}`);
     }
 
     // Click breadcrumb back to index
-    await page.getByRole('link', { name: crudEnv.spec.project.name.lower_case }).click();
+    await page.getByRole('link', { name: crudEnv.spec.project.name.lower_case, exact: true }).click();
     await expect(page.locator('h1')).toContainText('::');
   }
+});
+
+
+test('test validation errors are displayed in form', async ({ browser, crudEnv, crudSession }) => {
+  const context = await browser.newContext({ storageState: crudSession.storageState });
+  const page = await context.newPage();
+
+  await context.addCookies([{ name: 'protocol_mode', value: 'true', domain: new URL(crudEnv.host).hostname, path: '/' }]);
+
+  // Find the first module and model that we can navigate to
+  const modules = crudEnv.spec.modules;
+  let targetModel, targetModuleKebab, targetModelKebab;
+  for (const [moduleName, module] of Object.entries(modules)) {
+    if (['auth', 'file-system', 'media'].includes(module.name.kebab_case)) continue;
+    for (const [modelName, model] of Object.entries(module.models || {})) {
+      if (model.hidden === true) continue;
+      if (model.auth && model.auth.max_models_per_user !== -1) continue;
+      targetModel = model;
+      targetModuleKebab = module.name.kebab_case;
+      targetModelKebab = model.name.kebab_case;
+      break;
+    }
+    if (targetModel) break;
+  }
+
+  expect(targetModel).toBeDefined();
+
+  // Navigate to the model create page
+  await page.goto(crudEnv.host);
+  await page.getByRole('link', { name: targetModuleKebab, exact: true }).click();
+  await page.getByRole('link', { name: targetModelKebab, exact: true }).click();
+  await expect(page.locator('h1')).toContainText(`:: ${targetModelKebab}`);
+
+  //
+  // Part 1: test validation errors on the create form
+  //
+
+  const apiUrl = `${crudEnv.host}/api/${targetModuleKebab}/${targetModelKebab}`;
+  const fieldErrorMessage = 'This field failed validation';
+  const firstFieldName = Object.keys(targetModel.fields)[0];
+
+  // Mock POST to return a VALIDATION_ERROR
+  await page.route(apiUrl, async route => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'This model has failed validation',
+            field_errors: {
+              [firstFieldName]: fieldErrorMessage
+            }
+          }
+        })
+      });
+    } else {
+      await route.continue();
+    }
+  });
+
+  // Click submit to trigger the mocked validation error
+  await page.getByRole('button', { name: 'Submit' }).click();
+
+  // Verify the validation error message is shown in the status area
+  await expect(page.locator('#lingo-app')).toContainText('This model has failed validation');
+
+  // Verify the field error message is shown in the form's third column
+  const createFieldError = page.locator('.field-error');
+  await expect(createFieldError).toBeVisible();
+  await expect(createFieldError).toContainText(fieldErrorMessage);
+
+  // Unroute the mock so subsequent requests go through normally
+  await page.unroute(apiUrl);
+
+  //
+  // Part 2: create an actual item then test validation errors on the edit form
+  //
+
+  // Fill the create form with example data and submit for real
+  const createExample = getExampleFromModel(targetModel, 0);
+  for (const [fieldName, value] of Object.entries(createExample)) {
+    await fillFormField(page, fieldName, targetModel.fields[fieldName], value);
+  }
+
+  await page.getByRole('button', { name: 'Submit' }).click();
+  await expect(page.locator('#lingo-app')).toContainText('Success');
+
+  // Follow link to the newly created item
+  await page.getByRole('link', { name: 'view item' }).click();
+  await expect(page.locator('h1')).toContainText(`:: ${targetModelKebab}`);
+
+  // Extract the item ID from the current page URL
+  const itemUrl = page.url();
+  const itemId = itemUrl.split('/').pop();
+  const itemApiUrl = `${crudEnv.host}/api/${targetModuleKebab}/${targetModelKebab}/${itemId}`;
+
+  // Load the item and enter edit mode
+  await page.getByRole('button', { name: 'load', exact: true }).click();
+  await expect(page.locator('#lingo-app')).toContainText('loaded');
+  await page.getByRole('button', { name: 'edit', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Submit' })).toBeVisible();
+
+  // Mock PUT to return a VALIDATION_ERROR
+  const editFieldErrorMessage = 'This field failed validation during edit';
+  await page.route(itemApiUrl, async route => {
+    if (route.request().method() === 'PUT') {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'This model has failed validation',
+            field_errors: {
+              [firstFieldName]: editFieldErrorMessage
+            }
+          }
+        })
+      });
+    } else {
+      await route.continue();
+    }
+  });
+
+  // Submit the edit form to trigger the mocked validation error
+  await page.getByRole('button', { name: 'Submit' }).click();
+
+  // Verify the validation error message is shown in the status area
+  await expect(page.locator('#lingo-app')).toContainText('This model has failed validation');
+
+  // Verify the edit form is still visible (not reverted to view mode)
+  await expect(page.getByRole('button', { name: 'Submit' })).toBeVisible();
+
+  // Verify the field error message is shown in the form's third column
+  const editFieldError = page.locator('.field-error');
+  await expect(editFieldError).toBeVisible();
+  await expect(editFieldError).toContainText(editFieldErrorMessage);
+
+  // Verify the cancel button is enabled so user can exit edit mode
+  await expect(page.getByRole('button', { name: 'cancel', exact: true })).toBeEnabled();
+
+  // Click cancel - field errors should clear and form should disappear
+  await page.getByRole('button', { name: 'cancel', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Submit' })).not.toBeVisible();
+  await expect(page.locator('.field-error')).not.toBeVisible();
 });

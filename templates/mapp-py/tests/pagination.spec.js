@@ -43,7 +43,7 @@ test('test pagination for all models', async ({ browser, paginationEnv, paginati
       const modelKebab = model.name.kebab_case;
 
       // Click link on module page with model name (kebab case)
-      await page.getByRole('link', { name: modelKebab }).click();
+      await page.getByRole('link', { name: modelKebab, exact: true }).click();
       await expect(page.locator('h1')).toContainText(`:: ${modelKebab}`);
 
       // Ensure there are 5 items displayed in list
@@ -95,12 +95,12 @@ test('test pagination for all models', async ({ browser, paginationEnv, paginati
       expect(finalRows).toBe(pageSize);
 
       // Click breadcrumb to go back to module page
-      await page.getByRole('link', { name: moduleKebab }).click();
+      await page.getByRole('link', { name: moduleKebab, exact: true }).click();
       await expect(page.locator('h1')).toContainText(`:: ${moduleKebab}`);
     }
 
     // Click breadcrumb to go back to index page
-    await page.getByRole('link', { name: spec.project.name.lower_case }).click();
+    await page.getByRole('link', { name: spec.project.name.lower_case, exact: true }).click();
     await expect(page.locator('#lingo-app')).toContainText(':: available modules');
   }
 });
