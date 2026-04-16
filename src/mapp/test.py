@@ -9,6 +9,7 @@ import multiprocessing
 import hashlib
 import shutil
 import jwt
+import uuid
 
 from pathlib import Path
 from copy import deepcopy
@@ -85,7 +86,10 @@ def example_from_model(model:dict, index=0) -> dict:
         except (IndexError, KeyError):
             raise ValueError(f'No example for field "{model["name"]["pascal_case"]}.{field_name}" at index {index}')
         
-        data[field_name] = value
+        if field['unique'] is True:
+            data[field_name] = f'unique string - {uuid.uuid4()}'
+        else:
+            data[field_name] = value
 
     return data
 
