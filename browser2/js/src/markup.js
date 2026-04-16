@@ -53,6 +53,10 @@ function normalizeDateTimeValue(value) {
     return asString;
 }
 
+function isUnsetFormFieldValue(value) {
+    return value === null || typeof value === 'undefined' || value === '';
+}
+
 // Helper function for lingo int conversion
 function lingoInt(number = null, string = null, base = 10) {
     if (number !== null && number !== undefined) {
@@ -4051,7 +4055,7 @@ function createFormElement(app, element, ctx = null) {
                                 formData[fieldKey] = '';
                                 break;
                             case 'foreign_key':
-                                formData[fieldKey] = null;
+                                formData[fieldKey] = '-1';
                                 break;
                             default:
                                 formData[fieldKey] = null;
@@ -4320,7 +4324,7 @@ function createFormElement(app, element, ctx = null) {
                 const emptyOption = document.createElement('option');
                 emptyOption.value = '';
                 emptyOption.textContent = 'none selected';
-                emptyOption.selected = !formData[fieldKey];
+                emptyOption.selected = isUnsetFormFieldValue(formData[fieldKey]);
                 inputElement.appendChild(emptyOption);
             }
             for (const option of fieldSpec.enum) {
@@ -4639,9 +4643,7 @@ function createFormElement(app, element, ctx = null) {
             if (typeof defaultValue !== 'undefined') {
                 continue;
             }
-            if (fieldSpec.enum && (fieldValue === null || typeof fieldValue === 'undefined' || fieldValue === '')) {
-                clientFieldErrors[fieldKey] = 'Please select something';
-            } else if (fieldType === 'datetime' && (fieldValue === null || typeof fieldValue === 'undefined' || fieldValue === '')) {
+            if ((fieldSpec.enum || fieldType === 'datetime') && isUnsetFormFieldValue(fieldValue)) {
                 clientFieldErrors[fieldKey] = 'Please select something';
             }
         }
