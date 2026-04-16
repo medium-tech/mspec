@@ -3621,7 +3621,10 @@ function createValueElement(app, element, ctx = null) {
         }
         table.appendChild(tbody);
         
-        return table;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-scroll-wrapper';
+        wrapper.appendChild(table);
+        return wrapper;
 
     } else if(element.type == 'list') {
         const listFormat = (element.display && element.display.format) ? element.display.format : 'bullets';
@@ -3778,7 +3781,10 @@ function createValueElement(app, element, ctx = null) {
             }
             table.appendChild(tbody);
             
-            return table;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'table-scroll-wrapper';
+            wrapper.appendChild(table);
+            return wrapper;
         }else if(listFormat == 'bullets' || listFormat == 'numbers') {
 
             let elementType;
