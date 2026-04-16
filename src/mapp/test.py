@@ -9,6 +9,7 @@ import multiprocessing
 import hashlib
 import shutil
 import jwt
+import uuid
 
 from pathlib import Path
 from copy import deepcopy
@@ -85,7 +86,10 @@ def example_from_model(model:dict, index=0) -> dict:
         except (IndexError, KeyError):
             raise ValueError(f'No example for field "{model["name"]["pascal_case"]}.{field_name}" at index {index}')
         
-        data[field_name] = value
+        if field['unique'] is True:
+            data[field_name] = f'unique string - {uuid.uuid4()}'
+        else:
+            data[field_name] = value
 
     return data
 
@@ -305,7 +309,7 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
         assert create_user['id'] != other_user['id'], 'Alice and Bob users have the same ID, test setup error'
         assert create_user_env['MAPP_CLI_ACCESS_TOKEN'] != other_user_env['MAPP_CLI_ACCESS_TOKEN'], 'Alice and Bob have the same access token, test setup error'
 
-def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, logged_out_ctx, alice_ctx, bob_ctx, alice_user, bob_user):
+def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, logged_out_ctx, alice_ctx, bob_ctx, charlie_ctx, alice_user, bob_user, charlie_user):
 
     hidden = model['hidden']
     require_login = model['auth']['require_login']
@@ -353,6 +357,20 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
     if max_models == 0:
         # remaining tests not applicable
         return
+
+    max_models_by_field = model['auth'].get('max_models_by_field', {})
+    if max_models_by_field and not hidden and require_login:
+        by_field_status, by_field_model = request(ctx, *create_args)
+        assert by_field_status == 400, f'Create {model_name} beyond max_models_by_field did not return 400 Bad Request, response: {by_field_model}'
+        assert by_field_model.get('error', {}).get('code') == 'MAX_MODELS_BY_FIELD_EXCEEDED', f'Expected MAX_MODELS_BY_FIELD_EXCEEDED error code, got: {by_field_model}'
+
+    has_unique_fields = any(f.get('unique') for f in model.get('fields', {}).values())
+    if has_unique_fields and not hidden:
+        # use charlie ctx because in the event that max_models_per_user is 1, alice and bob have already created one
+        # in these tests so the following call would fail with a different error
+        unique_status, unique_model = request(charlie_ctx, *create_args)
+        assert unique_status == 400, f'Create {model_name} with duplicate unique field did not return 400 Bad Request, response: {unique_model}'
+        assert unique_model.get('error', {}).get('code') == 'UNIQUE_CONSTRAINT_VIOLATED', f'Expected UNIQUE_CONSTRAINT_VIOLATED error code, got: {unique_model}'
 
     #
     # read
@@ -1762,12 +1780,15 @@ class TestMTemplateApp(unittest.TestCase):
         bob_user = self.crud_users[1]['user']
         bob_ctx = deepcopy(base_ctx)
         bob_ctx['headers']['Authorization'] = self.crud_users[1]['env']['Authorization']
+        charlie_user = self.crud_users[2]['user']
+        charlie_ctx = deepcopy(base_ctx)
+        charlie_ctx['headers']['Authorization'] = self.crud_users[2]['env']['Authorization']
 
         jobs = []
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
-                jobs.append((module_name_kebab, model_name, model, base_ctx, logged_out_ctx, alice_ctx, bob_ctx, alice_user, bob_user))
+                jobs.append((module_name_kebab, model_name, model, base_ctx, logged_out_ctx, alice_ctx, bob_ctx, charlie_ctx, alice_user, bob_user, charlie_user))
 
         #
         # parallel process tests
