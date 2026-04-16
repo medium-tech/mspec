@@ -1100,7 +1100,7 @@ const lingoFunctionLookup = {
                         }
                         console.error('op.http - HTTP error:', response.status, response.statusText);
 
-                        if(url == '/api/auth/logout-user' || url == '/api/auth/current-user') {
+                        if(url == '/api/auth/logout-user') {
                             localStorage.removeItem('access_token');
                             window.location.reload();
                         }
