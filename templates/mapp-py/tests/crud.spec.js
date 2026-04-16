@@ -53,6 +53,34 @@ function getExampleFromModel(model, index = 0) {
   return data;
 }
 
+function getMaxPreSeedRecordsForModel(model, fallback = 2) {
+  const maxModelsPerUser = model.auth?.max_models_per_user;
+  if (typeof maxModelsPerUser === 'number' && maxModelsPerUser >= 0) {
+    return Math.min(fallback, maxModelsPerUser);
+  }
+  return fallback;
+}
+
+function uniquifyPreSeedValue(value, field, seedAttempt) {
+  if (field.unique !== true) return value;
+  if (typeof value === 'string') return `${value}-seed-${seedAttempt}`;
+  if (typeof value === 'number') return value + seedAttempt;
+  return value;
+}
+
+function getPreSeedExample(model, index, seedAttempt) {
+  let example = getExampleFromModel(model, index);
+  if (Object.values(example).some(value => value === undefined)) {
+    example = getExampleFromModel(model, 0);
+  }
+  const seeded = {};
+  for (const [fieldName, value] of Object.entries(example)) {
+    const field = model.fields[fieldName];
+    seeded[fieldName] = uniquifyPreSeedValue(value, field, seedAttempt);
+  }
+  return seeded;
+}
+
 async function checkViewField(page, fieldName, field, value) {
 
   // Skip user_id field as it's set automatically
@@ -283,6 +311,27 @@ async function fillFormField(page, fieldName, field, value, preSeedMode = false)
   }
 }
 
+test('pre-seed helpers respect model limits and unique fields', async () => {
+  expect(getMaxPreSeedRecordsForModel({ auth: { max_models_per_user: 1 } })).toBe(1);
+  expect(getMaxPreSeedRecordsForModel({ auth: { max_models_per_user: 0 } })).toBe(0);
+  expect(getMaxPreSeedRecordsForModel({})).toBe(2);
+
+  const refModel = {
+    name: { pascal_case: 'Tag' },
+    fields: {
+      name: { unique: true, examples: ['tag-1'] },
+      slug: { unique: true, examples: ['tag-slug-1'] },
+      description: { examples: ['desc'] }
+    }
+  };
+
+  const seed1 = getPreSeedExample(refModel, 0, 1);
+  const seed2 = getPreSeedExample(refModel, 0, 2);
+  expect(seed1.name).not.toBe(seed2.name);
+  expect(seed1.slug).not.toBe(seed2.slug);
+  expect(seed1.description).toBe(seed2.description);
+});
+
 //
 // crud test
 //
@@ -338,21 +387,31 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
         const refSpecModel = refSpecModule.models[refs.table];
         if (!refSpecModel) continue;
 
-        // Create 2 pre-seeded records so that list FK fields can select 2 distinct items
-        for (let seedNum = 0; seedNum < 2; seedNum++) {
+        const seedTarget = getMaxPreSeedRecordsForModel(refSpecModel);
+        let seededCount = 0;
+
+        // Create pre-seeded records so FK popup fields can select referenced items.
+        // Respect max_models_per_user and use unique-safe values when needed.
+        for (let seedNum = 0; seedNum < seedTarget; seedNum++) {
           // Navigate to create a pre-seeded record for this referenced model
           await page.goto(crudEnv.host);
           await page.getByRole('link', { name: refSpecModule.name.kebab_case, exact: true }).click();
           await page.getByRole('link', { name: refSpecModel.name.kebab_case, exact: true }).click();
 
           // Fill form with example data (preSeedMode=true skips FK fields to avoid cycles)
-          const seedExample = getExampleFromModel(refSpecModel, 0);
+          // Use distinct examples for repeated seeds to avoid unique constraint collisions.
+          const seedExample = getPreSeedExample(refSpecModel, seedNum, seedNum + 1);
           for (const [fn, val] of Object.entries(seedExample)) {
             await fillFormField(page, fn, refSpecModel.fields[fn], val, true);
           }
 
           await page.getByRole('button', { name: 'Submit' }).click();
           await expect(page.locator('#lingo-app')).toContainText('Success');
+          seededCount++;
+        }
+
+        if (seedTarget > 0 && seededCount === 0) {
+          throw new Error(`Failed to pre-seed any records for FK target ${seedKey}`);
         }
 
         preSeeded.add(seedKey);
