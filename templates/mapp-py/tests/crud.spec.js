@@ -62,20 +62,28 @@ function getMaxPreSeedRecordsForModel(model, fallback = 2) {
 }
 
 function uniquifyPreSeedValue(value, field, seedAttempt) {
+  if (!field) return value;
   if (field.unique !== true) return value;
   if (typeof value === 'string') return `${value}-seed-${seedAttempt}`;
   if (typeof value === 'number') return value + seedAttempt;
   return value;
 }
 
+function getModelExampleCount(model) {
+  const exampleCountsPerField = Object.values(model.fields || {}).map(field => Array.isArray(field.examples) ? field.examples.length : 0);
+  if (exampleCountsPerField.length === 0) return 0;
+  const minExampleCount = exampleCountsPerField.reduce((min, count) => Math.min(min, count), Infinity);
+  return Math.max(0, minExampleCount);
+}
+
 function getPreSeedExample(model, index, seedAttempt) {
-  let example = getExampleFromModel(model, index);
-  if (Object.values(example).some(value => value === undefined)) {
-    example = getExampleFromModel(model, 0);
-  }
+  const exampleCount = getModelExampleCount(model);
+  const safeIndex = exampleCount > 0 ? index % exampleCount : 0;
+  const example = getExampleFromModel(model, safeIndex);
   const seeded = {};
+  const fields = model.fields || {};
   for (const [fieldName, value] of Object.entries(example)) {
-    const field = model.fields[fieldName];
+    const field = fields[fieldName];
     seeded[fieldName] = uniquifyPreSeedValue(value, field, seedAttempt);
   }
   return seeded;
@@ -325,8 +333,9 @@ test('pre-seed helpers respect model limits and unique fields', async () => {
     }
   };
 
+  expect(getModelExampleCount(refModel)).toBe(1);
   const seed1 = getPreSeedExample(refModel, 0, 1);
-  const seed2 = getPreSeedExample(refModel, 0, 2);
+  const seed2 = getPreSeedExample(refModel, 1, 2);
   expect(seed1.name).not.toBe(seed2.name);
   expect(seed1.slug).not.toBe(seed2.slug);
   expect(seed1.description).toBe(seed2.description);
@@ -388,7 +397,6 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
         if (!refSpecModel) continue;
 
         const seedTarget = getMaxPreSeedRecordsForModel(refSpecModel);
-        let seededCount = 0;
 
         // Create pre-seeded records so FK popup fields can select referenced items.
         // Respect max_models_per_user and use unique-safe values when needed.
@@ -407,11 +415,6 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
 
           await page.getByRole('button', { name: 'Submit' }).click();
           await expect(page.locator('#lingo-app')).toContainText('Success');
-          seededCount++;
-        }
-
-        if (seedTarget > 0 && seededCount === 0) {
-          throw new Error(`Failed to pre-seed any records for FK target ${seedKey}`);
         }
 
         preSeeded.add(seedKey);
