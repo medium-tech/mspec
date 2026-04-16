@@ -305,7 +305,7 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
         assert create_user['id'] != other_user['id'], 'Alice and Bob users have the same ID, test setup error'
         assert create_user_env['MAPP_CLI_ACCESS_TOKEN'] != other_user_env['MAPP_CLI_ACCESS_TOKEN'], 'Alice and Bob have the same access token, test setup error'
 
-def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, logged_out_ctx, alice_ctx, bob_ctx, alice_user, bob_user):
+def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, logged_out_ctx, alice_ctx, bob_ctx, charlie_ctx, alice_user, bob_user, charlie_user):
 
     hidden = model['hidden']
     require_login = model['auth']['require_login']
@@ -362,7 +362,9 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
 
     has_unique_fields = any(f.get('unique') for f in model.get('fields', {}).values())
     if has_unique_fields and not hidden:
-        unique_status, unique_model = request(ctx, *create_args)
+        # use charlie ctx because in the event that max_models_per_user is 1, alice and bob have already created one
+        # in these tests so the following call would fail with a different error
+        unique_status, unique_model = request(charlie_ctx, *create_args)
         assert unique_status == 400, f'Create {model_name} with duplicate unique field did not return 400 Bad Request, response: {unique_model}'
         assert unique_model.get('error', {}).get('code') == 'UNIQUE_CONSTRAINT_VIOLATED', f'Expected UNIQUE_CONSTRAINT_VIOLATED error code, got: {unique_model}'
 
@@ -1702,12 +1704,15 @@ class TestMTemplateApp(unittest.TestCase):
         bob_user = self.crud_users[1]['user']
         bob_ctx = deepcopy(base_ctx)
         bob_ctx['headers']['Authorization'] = self.crud_users[1]['env']['Authorization']
+        charlie_user = self.crud_users[2]['user']
+        charlie_ctx = deepcopy(base_ctx)
+        charlie_ctx['headers']['Authorization'] = self.crud_users[2]['env']['Authorization']
 
         jobs = []
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
-                jobs.append((module_name_kebab, model_name, model, base_ctx, logged_out_ctx, alice_ctx, bob_ctx, alice_user, bob_user))
+                jobs.append((module_name_kebab, model_name, model, base_ctx, logged_out_ctx, alice_ctx, bob_ctx, charlie_ctx, alice_user, bob_user, charlie_user))
 
         #
         # parallel process tests
