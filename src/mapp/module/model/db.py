@@ -163,8 +163,9 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
 
     try:
         result = ctx.db.cursor.execute(non_list_sql, values)
-    except sqlite3.IntegrityError:
-        raise MappUserError('UNIQUE_CONSTRAINT_VIOLATED', 'A record with that value already exists.')
+    except sqlite3.IntegrityError as e:
+        msg = f'Another record with the same value exists, check field(s): ' + ', '.join(model_spec['unique_model_fields'])
+        raise MappUserError('UNIQUE_CONSTRAINT_VIOLATED', msg)
     assert result.rowcount == 1
     assert result.lastrowid is not None
     obj = obj._replace(id=str(result.lastrowid))

@@ -124,7 +124,7 @@ auth:
     post_id: 1
 ```
 
-- `require_login` (bool): When `true`, the user must be authenticated to create, read, update, or delete models. Requires a `user_id` foreign-key field on the model.
+- `require_login` (bool): When `true`, the user must be authenticated to create, read, update, or delete models. Requires a `user_id` foreign-key field on the model. During creation the server automatically adds the `user_id` of the logged in session to the model. Any logged in user may read any model from any table (except `auth` models), only the owner may edit or delete.
 - `max_models_per_user` (int, default `-1`): Maximum number of models a single user may create. `-1` means unlimited.
 - `max_models_by_field` (dict, default `{}`): Per-field creation limits. Each key is a field name and the value is the maximum number of models a user may create where that field has the same value. For example, `post_id: 1` allows only one model per unique `post_id` value per user. Returns `MAX_MODELS_BY_FIELD_EXCEEDED` (HTTP 400) when the limit is reached.
 

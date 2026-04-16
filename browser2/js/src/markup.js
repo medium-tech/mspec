@@ -1099,6 +1099,12 @@ const lingoFunctionLookup = {
                             errorMessage = errorData.error.message;
                         }
                         console.error('op.http - HTTP error:', response.status, response.statusText);
+
+                        if(url == '/api/auth/logout-user' || url == '/api/auth/current-user') {
+                            localStorage.removeItem('access_token');
+                            window.location.reload();
+                        }
+
                         return {state: 'error', error: errorMessage};
                     }
                 } catch (error) {

@@ -279,6 +279,7 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
             list_fields = []
             sorted_fields = []
             enum_fields = []
+            unique_model_fields = []
 
             for field_name, field in fields.items():
                 try:
@@ -312,6 +313,15 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
                     field_type = field['type']
                 except KeyError:
                     raise ValueError(f'No type defined for field {field_name} in model {model_path}')
+                
+                if 'unique' not in field:
+                    field['unique'] = False
+                
+                if field['unique'] is True:
+                    if field_type != 'str':
+                        raise ValueError(f'field {field_name} in model {model_path} is marked unique but is not of type str, only str fields can be unique')
+                    else:
+                        unique_model_fields.append(field_name)
 
                 if field_type == 'foreign_key':
                     try:
@@ -350,6 +360,7 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
             model['list_fields'] = sorted(list_fields, key=lambda x: x['name']['snake_case'])
             model['enum_fields'] = sorted(enum_fields, key=lambda x: x['name']['snake_case'])
             model['sorted_fields'] = sorted(sorted_fields, key=lambda x: x['name']['snake_case'])
+            model['unique_model_fields'] = unique_model_fields
             model['total_fields'] = total_fields
 
             if total_fields == 0:
@@ -392,6 +403,22 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
 
             if model['auth']['max_models_by_field'] and model['auth']['require_login'] is False:
                 raise ValueError(f'model {model_path} has auth.max_models_by_field, auth.require_login must be true')
+            
+            max_models_by_field_keys = list(model['auth']['max_models_by_field'].keys())
+            if len(max_models_by_field_keys) > 1:
+                # TODO: add testing, in theory this should work w/ multiple fields
+                # but won't be enabled until there is test coverage
+                raise ValueError(f'model {model_path} has multiple max_models_by_field fields defined, this feature currently only supports one field')
+
+            try:
+                key = max_models_by_field_keys[0]
+                max_value = model['auth']['max_models_by_field'][key]
+                if max_value != 1:
+                     # TODO: add testing, in theory this should work w/ multiple fields
+                    # but won't be enabled until there is test coverage
+                    raise ValueError(f'model {model_path} has auth.max_models_by_field.{key}={max_value}, this feature currently only supports a max value of value of 1')
+            except IndexError:
+                pass
         
         #
         # ops
