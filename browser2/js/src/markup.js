@@ -39,6 +39,20 @@ function initDateTimeFromInput(value) {
     }
 }
 
+function normalizeDateTimeValue(value) {
+    if (value === null || typeof value === 'undefined' || value === '') {
+        return null;
+    }
+    const asString = String(value).trim();
+    if (asString.length === 16) {
+        return asString + ':00';
+    }
+    if (asString.length > 19) {
+        return asString.substring(0, 19);
+    }
+    return asString;
+}
+
 // Helper function for lingo int conversion
 function lingoInt(number = null, string = null, base = 10) {
     if (number !== null && number !== undefined) {
@@ -4019,30 +4033,36 @@ function createFormElement(app, element, ctx = null) {
                 formData[fieldKey] = Array.isArray(defaultValue) ? [...defaultValue] : [];
             } else {
                 if (typeof defaultValue === 'undefined') {
-                    // switch fieldtype to set sensible defaults
-                    switch (fieldType) {
-                        case 'bool':
-                            formData[fieldKey] = false;
-                            break;
-                        case 'int':
-                            formData[fieldKey] = 0;
-                            break;
-                        case 'float':
-                            formData[fieldKey] = 0.0;
-                            break;
-                        case 'str':
-                            formData[fieldKey] = '';
-                            break;
-                        case 'foreign_key':
-                            formData[fieldKey] = '-1'; // using -1 to indicate no selection for FK fields
-                        case 'datetime':
-                            formData[fieldKey] = new Date().toISOString();
-                            break;
-                        default:
-                            formData[fieldKey] = null;
+                    if (fieldSpec.enum || fieldType === 'datetime') {
+                        formData[fieldKey] = null;
+                    } else {
+                        // switch fieldtype to set sensible defaults
+                        switch (fieldType) {
+                            case 'bool':
+                                formData[fieldKey] = false;
+                                break;
+                            case 'int':
+                                formData[fieldKey] = 0;
+                                break;
+                            case 'float':
+                                formData[fieldKey] = 0.0;
+                                break;
+                            case 'str':
+                                formData[fieldKey] = '';
+                                break;
+                            case 'foreign_key':
+                                formData[fieldKey] = null;
+                                break;
+                            default:
+                                formData[fieldKey] = null;
+                        }
                     }
                 }else{
-                    formData[fieldKey] = defaultValue;
+                    if (fieldType === 'datetime') {
+                        formData[fieldKey] = normalizeDateTimeValue(defaultValue);
+                    } else {
+                        formData[fieldKey] = defaultValue;
+                    }
                 }
             }
         }
@@ -4267,7 +4287,7 @@ function createFormElement(app, element, ctx = null) {
             const datetimeValue = formData[fieldKey] ? String(formData[fieldKey]).substring(0, 16) : '';
             inputElement.value = datetimeValue;
             inputElement.addEventListener('input', () => {
-                formData[fieldKey] = inputElement.value ? initDateTimeFromInput(inputElement.value) : '';
+                formData[fieldKey] = inputElement.value ? initDateTimeFromInput(inputElement.value) : null;
             });
 
         } else if (fieldType === 'foreign_key') {
@@ -4296,6 +4316,13 @@ function createFormElement(app, element, ctx = null) {
         } else if (fieldSpec.enum) {
             inputElement = document.createElement('select');
             inputElement.name = fieldKey;
+            if (typeof defaultValue === 'undefined') {
+                const emptyOption = document.createElement('option');
+                emptyOption.value = '';
+                emptyOption.textContent = 'none selected';
+                emptyOption.selected = !formData[fieldKey];
+                inputElement.appendChild(emptyOption);
+            }
             for (const option of fieldSpec.enum) {
                 const opt = document.createElement('option');
                 opt.value = option;
@@ -4304,7 +4331,7 @@ function createFormElement(app, element, ctx = null) {
                 inputElement.appendChild(opt);
             }
             inputElement.addEventListener('change', () => {
-                formData[fieldKey] = inputElement.value;
+                formData[fieldKey] = inputElement.value === '' ? null : inputElement.value;
             });
 
         } else {
@@ -4604,6 +4631,31 @@ function createFormElement(app, element, ctx = null) {
      // submit action
 
     const submitAction = () => {
+        const clientFieldErrors = {};
+        for (const [fieldKey, fieldSpec] of Object.entries(fields)) {
+            const fieldType = fieldSpec.type;
+            const defaultValue = fieldSpec.default;
+            const fieldValue = formData[fieldKey];
+            if (typeof defaultValue !== 'undefined') {
+                continue;
+            }
+            if (fieldSpec.enum && (fieldValue === null || typeof fieldValue === 'undefined' || fieldValue === '')) {
+                clientFieldErrors[fieldKey] = 'Please select something';
+            } else if (fieldType === 'datetime' && (fieldValue === null || typeof fieldValue === 'undefined' || fieldValue === '')) {
+                clientFieldErrors[fieldKey] = 'Please select something';
+            }
+        }
+        if (Object.keys(clientFieldErrors).length > 0) {
+            currentState.state = 'error';
+            currentState.error = 'Please fix field errors';
+            currentState.field_errors = clientFieldErrors;
+            renderLingoApp(app, document.getElementById('lingo-app'), true);
+            return;
+        }
+        currentState.field_errors = {};
+        if (currentState.error === 'Please fix field errors') {
+            currentState.error = null;
+        }
         // console.log('Submitting form with data:', formData);
         const result = lingoExecute(app, element.form.action, {});
         // console.log('Form submission result:', result);
