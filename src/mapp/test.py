@@ -9,6 +9,7 @@ import multiprocessing
 import hashlib
 import shutil
 import jwt
+import uuid
 
 from pathlib import Path
 from copy import deepcopy
@@ -85,18 +86,25 @@ def example_from_model(model:dict, index=0) -> dict:
         except (IndexError, KeyError):
             raise ValueError(f'No example for field "{model["name"]["pascal_case"]}.{field_name}" at index {index}')
         
-        data[field_name] = value
+        if field['unique'] is True:
+            data[field_name] = f'unique string - {uuid.uuid4()}'
+        else:
+            data[field_name] = value
 
     return data
 
-def model_validation_errors(model:dict) -> Generator[dict, None, None]:
+def model_validation_errors(model:dict) -> Generator[tuple[dict, str], None, None]:
+    """
+    Generate invalid examples for a model based on its field validation errors.
+    Yields tuples of (invalid_example_dict, field_name) for each validation error.
+    """
     example = example_from_model(model)
 
     for field_name, field in model.get('fields', {}).items():
         for invalid_value in field.get('validation_errors', []):
-            example[field_name] = invalid_value
-
-            yield example | {field_name: invalid_value}
+            invalid_example = deepcopy(example)
+            invalid_example[field_name] = invalid_value
+            yield invalid_example, field_name
 
 def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None, decode_json=True) -> tuple[int, dict]:
     """send request and returnn status code and response body as dict"""
@@ -301,7 +309,7 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
         assert create_user['id'] != other_user['id'], 'Alice and Bob users have the same ID, test setup error'
         assert create_user_env['MAPP_CLI_ACCESS_TOKEN'] != other_user_env['MAPP_CLI_ACCESS_TOKEN'], 'Alice and Bob have the same access token, test setup error'
 
-def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, logged_out_ctx, alice_ctx, bob_ctx, alice_user, bob_user):
+def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, logged_out_ctx, alice_ctx, bob_ctx, charlie_ctx, alice_user, bob_user, charlie_user):
 
     hidden = model['hidden']
     require_login = model['auth']['require_login']
@@ -349,6 +357,20 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
     if max_models == 0:
         # remaining tests not applicable
         return
+
+    max_models_by_field = model['auth'].get('max_models_by_field', {})
+    if max_models_by_field and not hidden and require_login:
+        by_field_status, by_field_model = request(ctx, *create_args)
+        assert by_field_status == 400, f'Create {model_name} beyond max_models_by_field did not return 400 Bad Request, response: {by_field_model}'
+        assert by_field_model.get('error', {}).get('code') == 'MAX_MODELS_BY_FIELD_EXCEEDED', f'Expected MAX_MODELS_BY_FIELD_EXCEEDED error code, got: {by_field_model}'
+
+    has_unique_fields = any(f.get('unique') for f in model.get('fields', {}).values())
+    if has_unique_fields and not hidden:
+        # use charlie ctx because in the event that max_models_per_user is 1, alice and bob have already created one
+        # in these tests so the following call would fail with a different error
+        unique_status, unique_model = request(charlie_ctx, *create_args)
+        assert unique_status == 400, f'Create {model_name} with duplicate unique field did not return 400 Bad Request, response: {unique_model}'
+        assert unique_model.get('error', {}).get('code') == 'UNIQUE_CONSTRAINT_VIOLATED', f'Expected UNIQUE_CONSTRAINT_VIOLATED error code, got: {unique_model}'
 
     #
     # read
@@ -524,6 +546,78 @@ def login_cached_user(cmd:list[str], ctx:dict, user_name:str, email:str, passwor
     user_env['Authorization'] = f'Bearer {access_token}'
     
     return {'user': user_data, 'env': user_env}
+
+def run_cli_validation_error_for_model(module_name_kebab, model, command_type, user_index, cmd, crud_users, crud_ctx):
+
+    def _run_cmd(cmd:list[str], expected_code=0, env:Optional[dict[str, str]] = None) -> subprocess.CompletedProcess:
+        result = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=10)
+        msg = f'expected {expected_code} got {result.returncode} for command "{' '.join(cmd)}" output: {result.stdout + result.stderr}'
+        assert result.returncode == expected_code, msg
+        return result
+
+    # Skip models that do not allow any data
+    if model['auth']['max_models_per_user'] == 0:
+        return
+    
+    if model['hidden'] is True:
+        return
+    
+    example_to_update = example_from_model(model)
+
+    user_id = crud_users[user_index]['user']['id']
+    if model['auth']['require_login']:
+        ctx = deepcopy(crud_users[user_index]['env'])
+        example_to_update['user_id'] = user_id
+    else:
+        ctx = deepcopy(crud_ctx)
+
+    model_name_kebab = model['name']['kebab_case']
+
+    # seed valid model #
+
+    args = cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(example_to_update)]
+    seed_result = _run_cmd(args, env=ctx)
+    update_model_id = str(json.loads(seed_result.stdout)['id'])
+
+    for invalid_example, invalid_field_name in model_validation_errors(model):
+        model_name_kebab = model['name']['kebab_case']
+
+        # attempt to create with invalid data #
+
+        model_command = cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(invalid_example)]
+        try:
+            create_result = _run_cmd(model_command, expected_code=1, env=ctx)
+        except AssertionError as e:
+            raise AssertionError(str(e) + f'\nfor field "{invalid_field_name}" in model "{model["name"]["pascal_case"]}"')
+        create_error = json.loads(create_result.stdout).get('error', {})
+        assert create_error['code'] == 'VALIDATION_ERROR', f'Expected VALIDATION_ERROR code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
+        assert 'message' in create_error, f'Expected error message in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
+        assert 'field_errors' in create_error, f'Expected field_errors in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
+        assert isinstance(create_error['field_errors'], dict), f'Expected field_errors to be a dict in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
+        assert len(create_error['field_errors']) == 1, f'Expected one field error in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
+
+        # attempt to update (pre-seeded model) with invalid data #
+
+        model_command = cmd + [module_name_kebab, model_name_kebab, command_type, 'update', update_model_id, json.dumps(invalid_example)]
+        try:
+            update_result = _run_cmd(model_command, expected_code=1, env=ctx)
+        except AssertionError as e:
+            raise AssertionError(str(e) + f'\nfor field "{invalid_field_name}" in model "{model["name"]["pascal_case"]}"')
+        update_error = json.loads(update_result.stdout).get('error', {})
+        assert update_error['code'] == 'VALIDATION_ERROR', f'Expected VALIDATION_ERROR code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error.get("code", update_error)} for field {invalid_field_name}'
+        assert 'message' in update_error, f'Expected error message in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
+        assert 'field_errors' in update_error, f'Expected field_errors in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
+        assert isinstance(update_error['field_errors'], dict), f'Expected field_errors to be a dict in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
+        assert len(update_error['field_errors']) == 1, f'Expected one field error in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
+
+    # read back original example to ensure it was not modified
+    read_back_result = _run_cmd(cmd + [module_name_kebab, model_name_kebab, command_type, 'read', update_model_id], env=ctx)
+    read_model = json.loads(read_back_result.stdout)
+    del read_model['id']
+    if model['auth']['require_login']:
+        example_to_update['user_id'] = user_id
+
+    assert read_model == example_to_update, f'Read {model["name"]["pascal_case"]} does not match original example data after validation error tests'
 
 
 class TestMTemplateApp(unittest.TestCase):
@@ -1686,12 +1780,15 @@ class TestMTemplateApp(unittest.TestCase):
         bob_user = self.crud_users[1]['user']
         bob_ctx = deepcopy(base_ctx)
         bob_ctx['headers']['Authorization'] = self.crud_users[1]['env']['Authorization']
+        charlie_user = self.crud_users[2]['user']
+        charlie_ctx = deepcopy(base_ctx)
+        charlie_ctx['headers']['Authorization'] = self.crud_users[2]['env']['Authorization']
 
         jobs = []
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
-                jobs.append((module_name_kebab, model_name, model, base_ctx, logged_out_ctx, alice_ctx, bob_ctx, alice_user, bob_user))
+                jobs.append((module_name_kebab, model_name, model, base_ctx, logged_out_ctx, alice_ctx, bob_ctx, charlie_ctx, alice_user, bob_user, charlie_user))
 
         #
         # parallel process tests
@@ -1929,73 +2026,20 @@ class TestMTemplateApp(unittest.TestCase):
 
     # validation tests #
 
-    def _test_cli_validation_error(self, module_name_kebab:str, model:dict, command_type:str, user_index:int):
-        if model['auth']['max_models_per_user'] == 0:
-            return  # skip models that do not allow any data
-        
-        example_to_update = example_from_model(model)
-
-        if model['hidden'] is True:
-            return
-        
-        user_id = self.crud_users[user_index]['user']['id']
-        
-        if model['auth']['require_login']:
-            ctx = self.crud_users[user_index]['env']
-            example_to_update['user_id'] = user_id
-        else:
-            ctx = self.crud_ctx
-
-        model_name_kebab = model['name']['kebab_case']
-
-        # create model to attempt to update with invalid data #
-
-        args = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(example_to_update)]
-        result = self._run_cmd(args, env=ctx)
-        update_model_id = str(json.loads(result.stdout)['id'])
-
-        for invalid_example in model_validation_errors(model):
-            model_name_kebab = model['name']['kebab_case']
-
-            # create #
-
-            model_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(invalid_example)]
-            result = self._run_cmd(model_command, expected_code=1, env=ctx)
-
-            error_output = json.loads(result.stdout)
-            self.assertEqual(error_output['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output["code"]}')
-            self.assertTrue(error_output['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_output["message"]}')
-
-            # update #
-
-            model_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'update', update_model_id, json.dumps(invalid_example)]
-            result = self._run_cmd(model_command, expected_code=1, env=ctx)
-            error_output = json.loads(result.stdout)
-            self.assertEqual(error_output['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output["code"]}')
-            self.assertTrue(error_output['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_output["message"]}')
-
-        # read back original example to ensure it was not modified #
-
-        result = self._run_cmd(self.cmd + [module_name_kebab, model_name_kebab, command_type, 'read', update_model_id], env=ctx)
-        read_model = json.loads(result.stdout)
-        del read_model['id']
-        if model['auth']['require_login']:
-            example_to_update['user_id'] = user_id
-        self.assertEqual(read_model, example_to_update, f'Read {model["name"]["pascal_case"]} does not match original example data after validation error tests')
+    def _test_cli_validation_error(self, command_type:str, user_index:int):
+        jobs = []
+        for module in self.spec['modules'].values():
+            module_name_kebab = module['name']['kebab_case']
+            for model in module['models'].values():
+                jobs.append((module_name_kebab, model, command_type, user_index, self.cmd, self.crud_users, self.crud_ctx))
+        self.pool.starmap(run_cli_validation_error_for_model, jobs)
 
     def test_cli_db_validation_error(self):
-        for module in self.spec['modules'].values():
-            module_name_kebab = module['name']['kebab_case']
+        self._test_cli_validation_error('db', 3)
 
-            for model in module['models'].values():
-                self._test_cli_validation_error(module_name_kebab, model, 'db', 3)
 
     def test_cli_http_validation_error(self):
-        for module in self.spec['modules'].values():
-            module_name_kebab = module['name']['kebab_case']
-
-            for model in module['models'].values():
-                self._test_cli_validation_error(module_name_kebab, model, 'http', 4)
+        self._test_cli_validation_error('http', 4)
 
     def test_server_validation_error(self):
         self._check_servers_running()
@@ -2036,7 +2080,7 @@ class TestMTemplateApp(unittest.TestCase):
                 self.assertEqual(create_status, 200, f'Create for validation error test failed: {create_resp}')
                 update_model_id = str(create_resp['id'])
 
-                for invalid_example in model_validation_errors(model):
+                for invalid_example, invalid_field_name in model_validation_errors(model):
                     # create (invalid)
                     status, output = request(
                         ctx,
@@ -2044,16 +2088,14 @@ class TestMTemplateApp(unittest.TestCase):
                         f'/api/{module_name_kebab}/{model_name_kebab}',
                         json.dumps(invalid_example).encode()
                     )
-                    self.assertEqual(status, 400, f'Expected 400 for invalid create, got {status}, resp: {output}')
+                    self.assertEqual(status, 400, f'Expected 400 for invalid create, got {status}, resp: {output} for field {invalid_field_name}')
+                    output_error = output.get('error', {})
                     self.assertEqual(
-                        output['code'], 
+                        output_error.get('code', 'not-set'), 
                         'VALIDATION_ERROR', 
-                        f'Expected VALIDATION_ERROR code for {model_name_kebab} with invalid data {invalid_example}, got {output}'
+                        f'Expected VALIDATION_ERROR code for {model_name_kebab} with invalid data {invalid_example}, got {output} for field {invalid_field_name}'
                     )
-                    self.assertTrue(
-                        output['message'].startswith('Validation Error: '), 
-                        f'Unexpected message for {model_name_kebab} with invalid data {invalid_example}, got {output}'
-                    )
+                    self.assertIn('message', output_error, f'Expected error message in response for {model_name_kebab} with invalid data {invalid_example}, got {output} for field {invalid_field_name}')
 
                     # update (invalid)
                     status, output = request(
@@ -2062,16 +2104,14 @@ class TestMTemplateApp(unittest.TestCase):
                         f'/api/{module_name_kebab}/{model_name_kebab}/{update_model_id}',
                         json.dumps(invalid_example).encode()
                     )
-                    self.assertEqual(status, 400, f'Expected 400 for invalid update, got {status}, resp: {output}')
+                    output_error = output.get('error', {})
+                    self.assertEqual(status, 400, f'Expected 400 for invalid update, got {status}, resp: {output} for field {invalid_field_name}')
                     self.assertEqual(
-                        output['code'], 
+                        output_error.get('code', 'not-set'), 
                         'VALIDATION_ERROR', 
-                        f'Expected VALIDATION_ERROR code for {model_name_kebab} with invalid data {invalid_example}, got {output}'
+                        f'Expected VALIDATION_ERROR code for {model_name_kebab} with invalid data {invalid_example}, got {output} for field {invalid_field_name}'
                     )
-                    self.assertTrue(
-                        output['message'].startswith('Validation Error: '), 
-                        f'Unexpected message for {model_name_kebab} with invalid data {invalid_example}, got {output}'
-                    )
+                    self.assertIn('message', output_error, f'Expected error message in response for {model_name_kebab} with invalid data {invalid_example}, got {output} for field {invalid_field_name}')
 
                 # read back original example to ensure it was not modified
                 status, read_model = request(
@@ -2086,7 +2126,7 @@ class TestMTemplateApp(unittest.TestCase):
                 if model['auth']['require_login']:
                     example_to_update['user_id'] = self.crud_users[0]['user']['id']
                 
-                self.assertEqual(read_model, example_to_update, f'Read after validation error for {model["name"]["pascal_case"]} does not match original example data')
+                self.assertEqual(read_model, example_to_update, f'Read after validation error for {model["name"]["pascal_case"]} does not match original example data, expected: {example_to_update} got: {read_model}')
 
     # other tests #
 

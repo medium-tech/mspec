@@ -1,8 +1,14 @@
 import unittest
 import datetime
 import json
+import sqlite3
 
 from pprint import pprint
+
+from mapp.context import MappContext, DBContext, ClientContext
+from mapp.types import new_model_class
+from mapp.module.model.db import db_model_create_table, db_model_create, db_model_unique_counts, db_model_query
+
 from mspec.core import load_browser2_spec, SAMPLE_BROWSER2_SPEC_DIR, builtin_spec_files, load_lingo_script_spec, SAMPLE_LINGO_SCRIPT_SPEC_DIR
 from mspec.lingo import *
 
@@ -114,7 +120,7 @@ class TestLingoPages(unittest.TestCase):
                 expected_functions.add(key)
             elif isinstance(value, dict):
                 # Nested functions like current.weekday, datetime.now, random.randint
-                if key in ['auth', 'file_system', 'media']:
+                if key in ['auth', 'file_system', 'media', 'db']:
                     continue  # Skip built-in functions which have coverage elsewhere
                 for subkey in value.keys():
                     expected_functions.add(f"{key}.{subkey}")
@@ -519,6 +525,266 @@ class TestLingoScripts(unittest.TestCase):
                     result = lingo_execute(test_case_app, lingo_script['output'])
 
                     self.assertEqual(result, test_case['result'])
+
+
+def _in_mem_sql_text_ctx():
+    conn = sqlite3.connect(':memory:')
+    db = DBContext(db_url=':memory:', connection=conn, cursor=conn.cursor(), commit=conn.commit)
+    return MappContext(
+        server_port=8000,
+        client=ClientContext(host='http://localhost:8000', headers={}),
+        db=db,
+        log=lambda msg: None,
+    )
+
+
+def _make_post_spec():
+    return {
+        'name': {'lower_case': 'post', 'snake_case': 'post', 'pascal_case': 'Post', 'kebab_case': 'post'},
+        'auth': {'require_login': False, 'max_models_per_user': -1},
+        'fields': {
+            'user_id': {
+                'name': {'lower_case': 'user id', 'snake_case': 'user_id'},
+                'type': 'foreign_key',
+                'references': {'module': 'auth', 'table': 'user', 'field': 'id'},
+            },
+            'title': {
+                'name': {'lower_case': 'title', 'snake_case': 'title'},
+                'type': 'str',
+            },
+            'view_count': {
+                'name': {'lower_case': 'view count', 'snake_case': 'view_count'},
+                'type': 'int',
+            },
+        },
+        'non_list_fields': [
+            {'name': {'lower_case': 'user id', 'snake_case': 'user_id'}, 'type': 'foreign_key', 'references': {'module': 'auth', 'table': 'user', 'field': 'id'}},
+            {'name': {'lower_case': 'title', 'snake_case': 'title'}, 'type': 'str'},
+            {'name': {'lower_case': 'view count', 'snake_case': 'view_count'}, 'type': 'int'},
+        ],
+        'list_fields': [],
+    }
+
+
+def _make_reaction_spec():
+    return {
+        'name': {'lower_case': 'reaction', 'snake_case': 'reaction', 'pascal_case': 'Reaction', 'kebab_case': 'reaction'},
+        'auth': {'require_login': False, 'max_models_per_user': -1},
+        'fields': {
+            'post_id': {
+                'name': {'lower_case': 'post id', 'snake_case': 'post_id'},
+                'type': 'foreign_key',
+                'references': {'module': 'app', 'table': 'post', 'field': 'id'},
+            },
+            'reaction_type': {
+                'name': {'lower_case': 'reaction type', 'snake_case': 'reaction_type'},
+                'type': 'str',
+            },
+        },
+        'non_list_fields': [
+            {'name': {'lower_case': 'post id', 'snake_case': 'post_id'}, 'type': 'foreign_key', 'references': {'module': 'app', 'table': 'post', 'field': 'id'}},
+            {'name': {'lower_case': 'reaction type', 'snake_case': 'reaction_type'}, 'type': 'str'},
+        ],
+        'list_fields': [],
+    }
+
+
+def _make_module_spec(models_dict):
+    return {
+        'name': {'lower_case': 'test app', 'snake_case': 'test_app', 'pascal_case': 'TestApp', 'kebab_case': 'test-app'},
+        'models': models_dict,
+    }
+
+
+class TestLingoDbFunctions(unittest.TestCase):
+    """Tests for db.read, db.unique_counts, and db.query lingo functions"""
+
+    @classmethod
+    def setUpClass(cls):
+        post_spec = _make_post_spec()
+        reaction_spec = _make_reaction_spec()
+
+        module_spec = _make_module_spec({'post': post_spec, 'reaction': reaction_spec})
+
+        cls.post_class = new_model_class(post_spec, module_spec)
+        cls.reaction_class = new_model_class(reaction_spec, module_spec)
+        cls.module_spec = module_spec
+
+        cls.lingo_spec = {
+            'params': {},
+            'state': {},
+            'modules': {'test_app': module_spec},
+        }
+
+    def setUp(self):
+        self.ctx = _in_mem_sql_text_ctx()
+        db_model_create_table(self.ctx, self.post_class)
+        db_model_create_table(self.ctx, self.reaction_class)
+
+        post1 = self.post_class(id=None, user_id='1', title='hello', view_count=10)
+        post2 = self.post_class(id=None, user_id='2', title='world', view_count=20)
+        db_model_create(self.ctx, self.post_class, post1)
+        db_model_create(self.ctx, self.post_class, post2)
+
+        r1 = self.reaction_class(id=None, post_id='1', reaction_type='like')
+        r2 = self.reaction_class(id=None, post_id='1', reaction_type='like')
+        r3 = self.reaction_class(id=None, post_id='1', reaction_type='love')
+        db_model_create(self.ctx, self.reaction_class, r1)
+        db_model_create(self.ctx, self.reaction_class, r2)
+        db_model_create(self.ctx, self.reaction_class, r3)
+
+    def tearDown(self):
+        self.ctx.db.connection.close()
+
+    def _make_app(self):
+        return LingoApp(spec=self.lingo_spec, params={}, state={}, buffer=[])
+
+    # db.read tests #
+
+    def test_db_read_returns_struct(self):
+        expression = {
+            'call': 'db.read',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': '1', 'type': 'str'},
+            }
+        }
+        app = self._make_app()
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['type'], 'struct')
+        self.assertEqual(result['value']['id'], '1')
+        self.assertEqual(result['value']['title'], 'hello')
+        self.assertEqual(result['value']['view_count'], 10)
+
+    def test_db_read_returns_correct_fields(self):
+        expression = {
+            'call': 'db.read',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': '2', 'type': 'str'},
+            }
+        }
+        app = self._make_app()
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['value']['title'], 'world')
+        self.assertEqual(result['value']['user_id'], '2')
+        self.assertEqual(result['value']['view_count'], 20)
+
+    # db.unique_counts tests #
+
+    def test_db_unique_counts_returns_list(self):
+        expression = {
+            'call': 'db.unique_counts',
+            'args': {
+                'model_type': {'value': 'test_app.reaction', 'type': 'str'},
+                'group_by': {'value': 'reaction_type', 'type': 'str'},
+            }
+        }
+        app = self._make_app()
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['type'], 'list')
+        self.assertEqual(len(result['value']), 2)
+        counts = {item['value']['reaction_type']: item['value']['count'] for item in result['value']}
+        self.assertEqual(counts['like'], 2)
+        self.assertEqual(counts['love'], 1)
+
+
+    def test_db_unique_counts_with_filter(self):
+        expression = {
+            'call': 'db.unique_counts',
+            'args': {
+                'model_type': {'value': 'test_app.reaction', 'type': 'str'},
+                'group_by': {'value': 'reaction_type', 'type': 'str'},
+                'filters': {
+                    'type': 'struct',
+                    'value': {'post_id': {'value': '1', 'type': 'str'}},
+                },
+            }
+        }
+        app = self._make_app()
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['type'], 'list')
+        counts = {item['value']['reaction_type']: item['value']['count'] for item in result['value']}
+        self.assertEqual(counts['like'], 2)
+        self.assertEqual(counts['love'], 1)
+
+    # db.query tests #
+
+    def test_db_query_returns_matching_str_field(self):
+        expression = {
+            'call': 'db.query',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'fields': {
+                    'type': 'struct',
+                    'value': {'title': {'value': 'hello', 'type': 'str'}},
+                },
+            }
+        }
+        app = self._make_app()
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['type'], 'list')
+        self.assertEqual(len(result['value']), 1)
+        self.assertEqual(result['value'][0]['value']['title'], 'hello')
+
+    def test_db_query_returns_matching_foreign_key_field(self):
+        expression = {
+            'call': 'db.query',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'fields': {
+                    'type': 'struct',
+                    'value': {'user_id': {'value': '2', 'type': 'str'}},
+                },
+            }
+        }
+        app = self._make_app()
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['type'], 'list')
+        self.assertEqual(len(result['value']), 1)
+        self.assertEqual(result['value'][0]['value']['user_id'], '2')
+
+    def test_db_query_returns_empty_list_when_no_match(self):
+        expression = {
+            'call': 'db.query',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'fields': {
+                    'type': 'struct',
+                    'value': {'title': {'value': 'nonexistent', 'type': 'str'}},
+                },
+            }
+        }
+        app = self._make_app()
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['type'], 'list')
+        self.assertEqual(result['value'], [])
+
+    def test_db_query_returns_multiple_matching_rows(self):
+        # Add a second post for user_id '1'
+        extra = self.post_class(id=None, user_id='1', title='another post', view_count=5)
+        db_model_create(self.ctx, self.post_class, extra)
+
+        expression = {
+            'call': 'db.query',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'fields': {
+                    'type': 'struct',
+                    'value': {'user_id': {'value': '1', 'type': 'str'}},
+                },
+            }
+        }
+        app = self._make_app()
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['type'], 'list')
+        self.assertEqual(len(result['value']), 2)
+
+    def test_db_query_raises_on_unsupported_field_type(self):
+        with self.assertRaises(ValueError) as cm:
+            db_model_query(self.ctx, self.post_class, {'view_count': 10})
+        self.assertIn('unsupported field type', str(cm.exception))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -2,8 +2,8 @@ import re
 
 from urllib.parse import parse_qs
 
-from mapp.errors import NotFoundError, RequestError
-from mapp.context import MappContext, RequestContext, ModelRouteContext, OpRouteContext
+from mapp.errors import NotFoundError
+from mapp.context import MappContext, RequestContext, ModelRouteContext
 from mapp.types import JSONResponse, new_model_class, json_to_model_w_convert
 from mapp.module.model.db import *
 

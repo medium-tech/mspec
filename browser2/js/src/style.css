@@ -264,3 +264,8 @@ table td {
         max-width: 300px;
     }
 }
+/* Field validation error styles */
+.field-error {
+    color: red;
+    font-weight: bold;
+}
