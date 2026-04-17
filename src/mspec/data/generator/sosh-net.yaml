@@ -405,10 +405,14 @@ modules:
               call: 'db.unique_counts'
               args:
                 model_type: 'sosh_net.reaction'
-                group_by: 'reaction_type'
+                group_by:
+                  type: str
+                  value: 'reaction_type'
                 filters:
-                  post_id:
-                    params: {post_id: {}}
+                  type: struct
+                  value:
+                    post_id:
+                      params: {post_id: {}}
 
         params:
           post_id:

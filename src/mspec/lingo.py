@@ -10,6 +10,7 @@ from functools import reduce
 
 from mapp.auth import create_user, login_user, is_logged_in, current_user, logout_user, delete_user, drop_sessions
 from mapp.file_system import get_file_content, ingest_start, list_files, get_part_content, list_parts, process_file
+from mapp.errors import NotFoundError
 from mapp.media import create_image, get_image, get_master_image, get_media_file_content, ingest_master_image, list_images, list_master_images
 from mapp.module.model.db import db_model_read, db_model_unique_counts, db_model_query
 from mapp.types import get_python_type_for_field, new_model_class
@@ -427,8 +428,16 @@ def _db_query_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=N
     return (ctx, model_class, fields), {}
 
 def db_read(ctx, model_class, model_id:str) -> dict:
-    model = db_model_read(ctx, model_class, model_id)
-    return {'type': 'struct', 'value': model._asdict()}
+    try:
+        model = db_model_read(ctx, model_class, model_id)
+        return {'type': 'struct', 'value': model._asdict()}
+    except NotFoundError as e:
+        return {
+            'error': {
+                'code': 'MODEL_NOT_FOUND',
+                'message': str(e)
+            }
+        }
 
 def db_unique_counts(ctx, model_class, group_by:str, filters=None) -> list:
     rows = db_model_unique_counts(ctx, model_class, group_by, filters)

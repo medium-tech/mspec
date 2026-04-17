@@ -486,11 +486,12 @@ def db_model_unique_counts(ctx:MappContext, model_class: type, group_by: str, fi
     # query #
 
     sql = f'SELECT {group_by}, COUNT(*) FROM {model_snake_case}{where_clause} GROUP BY {group_by}'
+    ctx.log(f'Executing SQL: {sql} with values {where_values}')
     rows = ctx.db.cursor.execute(sql, where_values).fetchall()
 
     # convert results #
 
-    return [{group_by: str(row[0]) if row[0] is not None else None, 'count': row[1]} for row in rows]
+    return [{'group': str(row[0]) if row[0] is not None else None, 'count': row[1]} for row in rows]
 
 def db_model_query(ctx:MappContext, model_class: type, fields: dict) -> list:
 

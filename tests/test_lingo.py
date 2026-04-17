@@ -684,10 +684,9 @@ class TestLingoDbFunctions(unittest.TestCase):
         result = lingo_execute(app, expression, self.ctx)
         self.assertEqual(result['type'], 'list')
         self.assertEqual(len(result['value']), 2)
-        counts = {item['value']['reaction_type']: item['value']['count'] for item in result['value']}
+        counts = {item['value']['group']: item['value']['count'] for item in result['value']}
         self.assertEqual(counts['like'], 2)
         self.assertEqual(counts['love'], 1)
-
 
     def test_db_unique_counts_with_filter(self):
         expression = {
@@ -704,7 +703,7 @@ class TestLingoDbFunctions(unittest.TestCase):
         app = self._make_app()
         result = lingo_execute(app, expression, self.ctx)
         self.assertEqual(result['type'], 'list')
-        counts = {item['value']['reaction_type']: item['value']['count'] for item in result['value']}
+        counts = {item['value']['group']: item['value']['count'] for item in result['value']}
         self.assertEqual(counts['like'], 2)
         self.assertEqual(counts['love'], 1)
 
