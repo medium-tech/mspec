@@ -722,6 +722,38 @@ test('test - forms page', async ({ page }) => {
   await page.getByRole('button', { name: 'Submit' }).click();
 });
 
+test('test - forms required enum and datetime fields', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/forms-required-fields.json');
+
+  await expect(page.locator('h1')).toContainText('Forms Required Fields');
+
+  const categorySelect = page.locator('table select').first();
+  await expect(categorySelect).toHaveValue('');
+
+  const releaseDateInput = page.locator('input[type="datetime-local"]').first();
+  await expect(releaseDateInput).toHaveValue('');
+
+  let requestCount = 0;
+  page.on('request', request => {
+    if (request.url().includes('/api/should-not-be-called')) {
+      requestCount += 1;
+    }
+  });
+
+  await page.getByRole('button', { name: 'Submit' }).click();
+
+  await expect(page.locator('.field-error')).toHaveCount(2);
+  await expect(page.locator('.field-error').first()).toContainText('(required field)');
+  await expect.poll(() => requestCount).toBe(0);
+
+  await categorySelect.selectOption('electronics');
+  await releaseDateInput.fill('2026-04-16T04:25');
+  await page.getByRole('button', { name: 'Submit' }).click();
+
+  await expect.poll(() => requestCount).toBe(1);
+});
+
 test('test - formatting page', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
   await page.locator('#spec-select').selectOption('data/lingo/pages/formatting.json');

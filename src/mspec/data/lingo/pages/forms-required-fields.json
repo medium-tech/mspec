@@ -1,0 +1,68 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+    "state": {
+        "required_form": {
+            "type": "struct",
+            "default": {
+                "state": "idle",
+                "error": null,
+                "field_errors": {},
+                "data": {}
+            }
+        }
+    },
+    "ops": {},
+    "output": [
+        {
+            "heading": "Forms Required Fields",
+            "level": 1
+        },
+        {
+            "form": {
+                "bind": {
+                    "state": {
+                        "required_form": {}
+                    }
+                },
+                "fields": {
+                    "category": {
+                        "name": {
+                            "lower_case": "category"
+                        },
+                        "type": "str",
+                        "enum": [
+                            "electronics",
+                            "clothing",
+                            "food"
+                        ],
+                        "description": "Required enum field with no default"
+                    },
+                    "release_date": {
+                        "name": {
+                            "lower_case": "release date"
+                        },
+                        "type": "datetime",
+                        "description": "Required datetime field with no default"
+                    }
+                },
+                "action": {
+                    "call": "crud.read",
+                    "args": {
+                        "http": {
+                            "type": "str",
+                            "value": "/api/should-not-be-called"
+                        },
+                        "bind": {
+                            "state": {
+                                "required_form": {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}

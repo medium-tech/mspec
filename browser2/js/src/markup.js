@@ -39,6 +39,24 @@ function initDateTimeFromInput(value) {
     }
 }
 
+function normalizeDateTimeValue(value) {
+    if (value === null || typeof value === 'undefined' || value === '') {
+        return null;
+    }
+    const asString = String(value).trim();
+    if (asString.length === 16) {
+        return asString + ':00';
+    }
+    if (asString.length > 19) {
+        return asString.substring(0, 19);
+    }
+    return asString;
+}
+
+function isUnsetFormFieldValue(value) {
+    return value === null || typeof value === 'undefined' || value === '';
+}
+
 // Helper function for lingo int conversion
 function lingoInt(number = null, string = null, base = 10) {
     if (number !== null && number !== undefined) {
@@ -1446,13 +1464,13 @@ function getTypeName(value) {
     if (typeof value === 'object' && value !== null && 'type' in value && 'value' in value) {
         return value.type;
     }
-    if (typeof value === 'object' && 'fields' in value && 'name' in value) {
+    if (typeof value === 'object' && value !== null && 'fields' in value && 'name' in value) {
         return 'model';
     }
-    if (typeof value === 'object' && 'params' in value && 'result' in value && 'func' in value) {
+    if (typeof value === 'object' && value !== null && 'params' in value && 'result' in value && 'func' in value) {
         return 'op';
     }
-    if (typeof value === 'object') return 'struct';
+    if (typeof value === 'object' && value !== null) return 'struct';
     return typeof value;
 }
 
@@ -1920,6 +1938,7 @@ function renderSet(app, expression, ctx = null) {
                         const newStructType = getTypeName(origStructValue);
                         const structFieldValueType = getTypeName(structFieldValue);
                         if (!typesMatch(structFieldValueType, newStructType)) {
+                            console.error(`Type mismatch for struct field ${fieldDisplayName}.${structFieldName}: current ${origStructValue}, got ${structFieldValueType}`, structFieldValue);
                             throw new Error(`set - type mismatch: ${newStructType} != ${structFieldValueType} - ${fieldDisplayName}.${structFieldName}`);
                         }
 
@@ -4000,7 +4019,7 @@ function createFormElement(app, element, ctx = null) {
         let ingestState;    // ingest state is for tracking file uploads
                             // or finding items for foreign_key fields
         if (app.clientState.forms.hasOwnProperty(formKeyId)) {
-            console.log(`Found existing form state for ${formKeyId}:`, app.clientState.forms[formKeyId]);
+            // console.log(`Found existing form state for ${formKeyId}:`, app.clientState.forms[formKeyId]);
             ingestState = app.clientState.forms[formKeyId];
         } else {
             ingestState = {status: 'idle', error: null, popup: null, showSecureFields: {}};
@@ -4025,30 +4044,36 @@ function createFormElement(app, element, ctx = null) {
                 formData[fieldKey] = Array.isArray(defaultValue) ? [...defaultValue] : [];
             } else {
                 if (typeof defaultValue === 'undefined') {
-                    // switch fieldtype to set sensible defaults
-                    switch (fieldType) {
-                        case 'bool':
-                            formData[fieldKey] = false;
-                            break;
-                        case 'int':
-                            formData[fieldKey] = 0;
-                            break;
-                        case 'float':
-                            formData[fieldKey] = 0.0;
-                            break;
-                        case 'str':
-                            formData[fieldKey] = '';
-                            break;
-                        case 'foreign_key':
-                            formData[fieldKey] = '-1'; // using -1 to indicate no selection for FK fields
-                        case 'datetime':
-                            formData[fieldKey] = new Date().toISOString();
-                            break;
-                        default:
-                            formData[fieldKey] = null;
+                    if (fieldSpec.enum || fieldType === 'datetime') {
+                        formData[fieldKey] = null;
+                    } else {
+                        // switch fieldtype to set sensible defaults
+                        switch (fieldType) {
+                            case 'bool':
+                                formData[fieldKey] = false;
+                                break;
+                            case 'int':
+                                formData[fieldKey] = 0;
+                                break;
+                            case 'float':
+                                formData[fieldKey] = 0.0;
+                                break;
+                            case 'str':
+                                formData[fieldKey] = '';
+                                break;
+                            case 'foreign_key':
+                                formData[fieldKey] = '-1';
+                                break;
+                            default:
+                                formData[fieldKey] = null;
+                        }
                     }
                 }else{
-                    formData[fieldKey] = defaultValue;
+                    if (fieldType === 'datetime') {
+                        formData[fieldKey] = normalizeDateTimeValue(defaultValue);
+                    } else {
+                        formData[fieldKey] = defaultValue;
+                    }
                 }
             }
         }
@@ -4273,7 +4298,7 @@ function createFormElement(app, element, ctx = null) {
             const datetimeValue = formData[fieldKey] ? String(formData[fieldKey]).substring(0, 16) : '';
             inputElement.value = datetimeValue;
             inputElement.addEventListener('input', () => {
-                formData[fieldKey] = inputElement.value ? initDateTimeFromInput(inputElement.value) : '';
+                formData[fieldKey] = inputElement.value ? initDateTimeFromInput(inputElement.value) : null;
             });
 
         } else if (fieldType === 'foreign_key') {
@@ -4302,6 +4327,13 @@ function createFormElement(app, element, ctx = null) {
         } else if (fieldSpec.enum) {
             inputElement = document.createElement('select');
             inputElement.name = fieldKey;
+            if (typeof defaultValue === 'undefined') {
+                const emptyOption = document.createElement('option');
+                emptyOption.value = '';
+                emptyOption.textContent = '(select option below)';
+                emptyOption.selected = isUnsetFormFieldValue(formData[fieldKey]);
+                inputElement.appendChild(emptyOption);
+            }
             for (const option of fieldSpec.enum) {
                 const opt = document.createElement('option');
                 opt.value = option;
@@ -4310,7 +4342,7 @@ function createFormElement(app, element, ctx = null) {
                 inputElement.appendChild(opt);
             }
             inputElement.addEventListener('change', () => {
-                formData[fieldKey] = inputElement.value;
+                formData[fieldKey] = inputElement.value === '' ? null : inputElement.value;
             });
 
         } else {
@@ -4598,7 +4630,7 @@ function createFormElement(app, element, ctx = null) {
         const fieldErrors = currentState.field_errors;
         if (fieldErrors && fieldErrors[fieldKey]) {
             const errorSpan = document.createElement('span');
-            errorSpan.textContent = fieldErrors[fieldKey];
+            errorSpan.textContent = ' ' + fieldErrors[fieldKey];
             errorSpan.className = 'field-error';
             thirdCell.appendChild(errorSpan);
         }
@@ -4610,6 +4642,29 @@ function createFormElement(app, element, ctx = null) {
      // submit action
 
     const submitAction = () => {
+        const clientFieldErrors = {};
+        for (const [fieldKey, fieldSpec] of Object.entries(fields)) {
+            const fieldType = fieldSpec.type;
+            const defaultValue = fieldSpec.default;
+            const fieldValue = formData[fieldKey];
+            if (typeof defaultValue !== 'undefined') {
+                continue;
+            }
+            if ((fieldSpec.enum || fieldType === 'datetime') && isUnsetFormFieldValue(fieldValue)) {
+                clientFieldErrors[fieldKey] = '(required field)';
+            }
+        }
+        if (Object.keys(clientFieldErrors).length > 0) {
+            currentState.state = 'error';
+            currentState.error = 'Please fix field errors';
+            currentState.field_errors = clientFieldErrors;
+            renderLingoApp(app, document.getElementById('lingo-app'), true);
+            return;
+        }
+        currentState.field_errors = {};
+        if (currentState.error === 'Please fix field errors') {
+            currentState.error = '';
+        }
         // console.log('Submitting form with data:', formData);
         const result = lingoExecute(app, element.form.action, {});
         // console.log('Form submission result:', result);
