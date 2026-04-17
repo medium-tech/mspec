@@ -496,6 +496,8 @@ modules:
                     forum_id:
                       eq:
                         params: {forum_id: {}}
+                    reply_to:
+                      eq: "-1" # only get top level posts for the forum
                     
 
         params:
