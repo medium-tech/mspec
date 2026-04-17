@@ -1464,13 +1464,13 @@ function getTypeName(value) {
     if (typeof value === 'object' && value !== null && 'type' in value && 'value' in value) {
         return value.type;
     }
-    if (typeof value === 'object' && 'fields' in value && 'name' in value) {
+    if (typeof value === 'object' && value !== null && 'fields' in value && 'name' in value) {
         return 'model';
     }
-    if (typeof value === 'object' && 'params' in value && 'result' in value && 'func' in value) {
+    if (typeof value === 'object' && value !== null && 'params' in value && 'result' in value && 'func' in value) {
         return 'op';
     }
-    if (typeof value === 'object') return 'struct';
+    if (typeof value === 'object' && value !== null) return 'struct';
     return typeof value;
 }
 
@@ -1938,6 +1938,7 @@ function renderSet(app, expression, ctx = null) {
                         const newStructType = getTypeName(origStructValue);
                         const structFieldValueType = getTypeName(structFieldValue);
                         if (!typesMatch(structFieldValueType, newStructType)) {
+                            console.error(`Type mismatch for struct field ${fieldDisplayName}.${structFieldName}: current ${origStructValue}, got ${structFieldValueType}`, structFieldValue);
                             throw new Error(`set - type mismatch: ${newStructType} != ${structFieldValueType} - ${fieldDisplayName}.${structFieldName}`);
                         }
 
@@ -4012,7 +4013,7 @@ function createFormElement(app, element, ctx = null) {
         let ingestState;    // ingest state is for tracking file uploads
                             // or finding items for foreign_key fields
         if (app.clientState.forms.hasOwnProperty(formKeyId)) {
-            console.log(`Found existing form state for ${formKeyId}:`, app.clientState.forms[formKeyId]);
+            // console.log(`Found existing form state for ${formKeyId}:`, app.clientState.forms[formKeyId]);
             ingestState = app.clientState.forms[formKeyId];
         } else {
             ingestState = {status: 'idle', error: null, popup: null, showSecureFields: {}};
@@ -4323,7 +4324,7 @@ function createFormElement(app, element, ctx = null) {
             if (typeof defaultValue === 'undefined') {
                 const emptyOption = document.createElement('option');
                 emptyOption.value = '';
-                emptyOption.textContent = 'none selected';
+                emptyOption.textContent = '(select option below)';
                 emptyOption.selected = isUnsetFormFieldValue(formData[fieldKey]);
                 inputElement.appendChild(emptyOption);
             }
@@ -4656,7 +4657,7 @@ function createFormElement(app, element, ctx = null) {
         }
         currentState.field_errors = {};
         if (currentState.error === 'Please fix field errors') {
-            currentState.error = null;
+            currentState.error = '';
         }
         // console.log('Submitting form with data:', formData);
         const result = lingoExecute(app, element.form.action, {});
