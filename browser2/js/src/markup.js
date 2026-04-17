@@ -4624,7 +4624,7 @@ function createFormElement(app, element, ctx = null) {
         const fieldErrors = currentState.field_errors;
         if (fieldErrors && fieldErrors[fieldKey]) {
             const errorSpan = document.createElement('span');
-            errorSpan.textContent = fieldErrors[fieldKey];
+            errorSpan.textContent = ' ' + fieldErrors[fieldKey];
             errorSpan.className = 'field-error';
             thirdCell.appendChild(errorSpan);
         }
@@ -4645,7 +4645,7 @@ function createFormElement(app, element, ctx = null) {
                 continue;
             }
             if ((fieldSpec.enum || fieldType === 'datetime') && isUnsetFormFieldValue(fieldValue)) {
-                clientFieldErrors[fieldKey] = 'Please select something';
+                clientFieldErrors[fieldKey] = '(required field)';
             }
         }
         if (Object.keys(clientFieldErrors).length > 0) {

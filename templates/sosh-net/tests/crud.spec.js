@@ -559,6 +559,12 @@ test('test validation errors are displayed in form', async ({ browser, crudEnv, 
     }
   });
 
+  // fill form (it needs to be valid to pass client side validation to trigger mocked server validation error)
+  const createExample = getExampleFromModel(targetModel, 0);
+  for (const [fieldName, value] of Object.entries(createExample)) {
+    await fillFormField(page, fieldName, targetModel.fields[fieldName], value);
+  }
+
   // Click submit to trigger the mocked validation error
   await page.getByRole('button', { name: 'Submit' }).click();
 
@@ -577,12 +583,7 @@ test('test validation errors are displayed in form', async ({ browser, crudEnv, 
   // Part 2: create an actual item then test validation errors on the edit form
   //
 
-  // Fill the create form with example data and submit for real
-  const createExample = getExampleFromModel(targetModel, 0);
-  for (const [fieldName, value] of Object.entries(createExample)) {
-    await fillFormField(page, fieldName, targetModel.fields[fieldName], value);
-  }
-
+  // form is already filled, now that we've removed the mock, submit should succeed and create an item we can edit
   await page.getByRole('button', { name: 'Submit' }).click();
   await expect(page.locator('#lingo-app')).toContainText('Success');
 
