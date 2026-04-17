@@ -414,18 +414,44 @@ def _db_query_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=N
     model_type = unwrap_primitive(lingo_execute(app, model_type_expr, ctx))
     model_class = _get_model_class_from_type(app, model_type)
 
-    fields_result = lingo_execute(app, fields_expr, ctx)
-    if isinstance(fields_result, dict) and 'value' in fields_result:
-        raw = fields_result['value']
-    else:
-        raw = fields_result
+    """
+    a fields expression is a struct where each key contains an operator and then a value
+    the operator must be a support query operator and the value may be executed as a lingo expression or primitive
 
-    if not isinstance(raw, dict):
-        raise ValueError('db.query - fields arg must be a struct')
+    currently support operators:
+        eq = equal
+        ne = not equal
 
-    fields = {k: unwrap_primitive(v) for k, v in raw.items()}
+    example:
 
-    return (ctx, model_class, fields), {}
+        type: struct
+        value:
+            forum_id:
+                eq:
+                    params: {forum_id: {}}
+            reply_to:
+                ne: '-1'
+    """
+
+    try:
+        condition_items = fields_expr['value'].items()
+    except (KeyError, AttributeError, TypeError):
+        raise ValueError('db.query - fields expression must be a struct with value key containing conditions')
+    
+    conditions = {}
+
+    for field_name, condition in condition_items:
+        if not isinstance(condition, dict) or len(condition) != 1:
+            raise ValueError(f'db.query - each field condition must be a struct with a single operator: {field_name}')
+        
+        operator, operand_expr = next(iter(condition.items()))
+        if operator not in ('eq', 'ne'):
+            raise ValueError(f'db.query - unsupported operator: {operator} in field condition for field {field_name}')
+        
+        operand_value = lingo_execute(app, operand_expr, ctx)
+        conditions[field_name] = {operator: unwrap_primitive(operand_value)}
+
+    return (ctx, model_class, conditions), {}
 
 def db_read(ctx, model_class, model_id:str) -> dict:
     try:

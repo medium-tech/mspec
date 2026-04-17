@@ -1,4 +1,5 @@
-from mapp import auth
+from copy import deepcopy
+
 from mapp.context import MappContext
 from mapp.errors import MappError
 from mapp.types import validate_op_params, validate_op_output, OpResult
@@ -66,8 +67,7 @@ def op_create_callable(param_class:type, output_class:type) -> object:
 			dict(),
 			list()
 		)
-
-		op_output = lingo_execute(lingo_app, lingo_func, ctx)
+		op_output = lingo_execute(lingo_app, deepcopy(lingo_func), ctx)
 		return validate_op_output(output_class, OpResult(unwrap_primitive(op_output)))
 		
 	# create application wrapper #

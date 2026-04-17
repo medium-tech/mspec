@@ -486,7 +486,6 @@ def db_model_unique_counts(ctx:MappContext, model_class: type, group_by: str, fi
     # query #
 
     sql = f'SELECT {group_by}, COUNT(*) FROM {model_snake_case}{where_clause} GROUP BY {group_by}'
-    ctx.log(f'Executing SQL: {sql} with values {where_values}')
     rows = ctx.db.cursor.execute(sql, where_values).fetchall()
 
     # convert results #
@@ -512,7 +511,16 @@ def db_model_query(ctx:MappContext, model_class: type, fields: dict) -> list:
     where_parts = []
     where_values = []
 
-    for field_name, value in fields.items():
+    """
+    fields is a dict like this:
+    {
+        "field_a": {"eq": "value"},
+        "field_b": {"ne": "value"}
+    }
+    """
+
+    for field_name, condition in fields.items():
+
         if field_name not in field_map:
             raise ValueError(f'db_model_query - field not found on model: {field_name}')
 
@@ -522,15 +530,24 @@ def db_model_query(ctx:MappContext, model_class: type, fields: dict) -> list:
                 f'db_model_query - unsupported field type "{field_type}" for field "{field_name}". '
                 f'Only str and foreign_key fields are supported.'
             )
+        
+        operator = next(iter(condition.keys()))
+        value = condition[operator]
 
-        where_parts.append(f'{field_name} = ?')
+        if operator == 'eq':
+            where_parts.append(f'{field_name} = ?')
+        elif operator == 'ne':
+            where_parts.append(f'{field_name} != ?')
+        else:
+            raise ValueError(f'db_model_query - unsupported operator: {operator}')
+        
         where_values.append(str(value))
 
     # query #
 
     where_clause = f" WHERE {' AND '.join(where_parts)}" if where_parts else ''
     sql = f'SELECT * FROM {model_snake_case}{where_clause}'
-    rows = ctx.db.cursor.execute(sql, where_values).fetchall()
+    rows = ctx.db.cursor.execute(sql, tuple(where_values)).fetchall()
 
     # convert results #
 

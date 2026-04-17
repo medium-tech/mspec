@@ -61,6 +61,7 @@ class OpRouteContext:
     module_kebab_case: str
     api_op_regex: str
     run_op: callable
+    run_op_args: tuple
 
 
 @dataclass

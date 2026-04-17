@@ -130,7 +130,6 @@
     },
     "ops": {},
     "output": [
-        {"text": "!!!!"},
         {"heading": {"state": {"header": {}}},  "level": 1},
         {"breadcrumbs": [
             {"params": {"project_name": {}}},
@@ -146,11 +145,8 @@
             "model_id": {"params": {"model_id": {}}},
             "definition": {"params": {"model_definition": {}}}
         }},
-        {"model":{
-            "bind": {"state": {"model_delete_state": {}}},
-            "display": "delete",
-            "http": {"state": {"base_url": {}}},
-            "model_id": {"params": {"model_id": {}}}
-        }}
+        {"break": 1},
+        {"text": "!!!!"}
+        {""}
     ]
 }

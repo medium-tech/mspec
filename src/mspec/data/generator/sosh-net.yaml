@@ -451,19 +451,21 @@ modules:
         func: 
           type: struct
           value:
-            call: 'db.query'
-            args:
-              model_type: 'sosh_net.profile'
-              fields: 
-                type: struct
-                value:
-                  user_id:
-                    call: 'key'
-                    args:
-                      key: 'id'
-                      object:
-                        call: 'auth.current_user'
-                        args: {}
+            profile:
+              call: 'db.query'
+              args:
+                model_type: 'sosh_net.profile'
+                fields: 
+                  type: struct
+                  value:
+                    user_id:
+                      eq:
+                        call: 'key'
+                        args:
+                          key: 'id'
+                          object:
+                            call: 'auth.current_user'
+                            args: {}
               
 
         params: {}
@@ -475,3 +477,46 @@ modules:
               name: 
                 lower_case: 'profile'
               type: struct
+      
+      get_posts_for_forum:
+        name:
+          lower_case: 'get posts for forum'
+
+        description: 'Get all posts for a forum by forum id'
+        func: 
+          type: struct
+          value:
+            posts:
+              call: 'db.query'
+              args:
+                model_type: 'sosh_net.post'
+                fields:
+                  type: struct
+                  value:
+                    forum_id:
+                      eq:
+                        params: {forum_id: {}}
+                    
+
+        params:
+          forum_id:
+            name:
+              lower_case: 'forum id'
+            type: foreign_key
+            references:
+              module: 'sosh_net'
+              table: 'forum'
+              field: 'id'
+            examples:
+              - "1"
+              - "2"
+              - "3"
+        
+        result:
+          type: struct
+          fields:
+            posts:
+              name: 
+                lower_case: 'posts'
+              type: list
+              element_type: struct
