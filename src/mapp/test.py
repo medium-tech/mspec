@@ -1,4 +1,5 @@
 import os
+import sys
 import unittest
 import fnmatch
 import json
@@ -798,8 +799,13 @@ class TestMTemplateApp(unittest.TestCase):
 
         # create crud tables in cache db #
 
+        if needs_crud_rebuild or needs_pagination_rebuild:
+            sys.stdout.write(':: rebuilding caches')
+            sys.stdout.flush()
+
         if needs_crud_rebuild:
-            print(f':: creating tables for crud environment')
+            sys.stdout.write('\n  :: crud: tables')
+            sys.stdout.flush()
             crud_create_tables_cmd = cls.cmd + ['create-tables']
             crud_result = subprocess.run(crud_create_tables_cmd, capture_output=True, text=True, env=cls.crud_ctx)
             if crud_result.returncode != 0:
@@ -820,7 +826,8 @@ class TestMTemplateApp(unittest.TestCase):
 
         if needs_crud_rebuild and cls.spec['project']['use_builtin_modules']:
             crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn']
-            print(':: creating crud users')
+            sys.stdout.write(', users')
+            sys.stdout.flush()
             for user_name in crud_users:
 
                 # logout #
@@ -844,10 +851,14 @@ class TestMTemplateApp(unittest.TestCase):
                     raise RuntimeError(f'Error creating crud user {user_name}:\n{result.stdout + result.stderr}')
             
             shutil.copy2(str(cls.crud_db_file), str(cls.crud_db_cache_file))
+            sys.stdout.write(f', cached db file')
 
         # create pagination tables and seed data in cache db #
 
         if needs_pagination_rebuild:
+
+            sys.stdout.write('\n  :: pagination: tables')
+            sys.stdout.flush()
 
             # setup tables in cache db #
 
@@ -884,7 +895,9 @@ class TestMTemplateApp(unittest.TestCase):
 
             # seed pagination cache db #
 
-            print(f':: seeding pagination db')
+            sys.stdout.write(', seeding')
+            sys.stdout.flush()
+
             seed_jobs = []
             for module in cls.spec['modules'].values():
                 module_name_kebab = module['name']['kebab_case']
@@ -917,7 +930,8 @@ class TestMTemplateApp(unittest.TestCase):
             # create pagination user #
 
             if cls.spec['project']['use_builtin_modules']:
-                print(':: creating pagination test user')
+                sys.stdout.write(', user')
+                sys.stdout.flush()
 
                 user_data = {
                     'name': 'pagination_tester',
@@ -931,8 +945,8 @@ class TestMTemplateApp(unittest.TestCase):
                 if create_result.returncode != 0:
                     raise RuntimeError(f'Error creating pagination test user: {create_result.stdout + create_result.stderr}')
             
-            # print(f':: caching db file to {cls.pagination_db_cache_file}')
             shutil.copy2(str(cls.pagination_db_file), str(cls.pagination_db_cache_file))
+            sys.stdout.write(f', cached db file\n')
         
         else:
             print(f':: copying cached pagination db to working db ::')

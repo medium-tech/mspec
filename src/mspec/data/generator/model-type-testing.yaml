@@ -79,11 +79,10 @@ modules:
               - 21.99
               - 0.99
               - 1.01
+              - 2   # have to support this bc of JS - should drop support in future
             validation_errors:
               - true
               - false
-              - 0
-              - 2
               - "123.45"
               - "abc"
               - ""
@@ -216,6 +215,7 @@ modules:
             examples:
               - [3.14, 2.718]
               - [1.618, 0.577]
+              - [0, 1, 2]       # have to support this bc of JS - should drop support in future w/ a js update
             validation_errors:
               - true
               - false

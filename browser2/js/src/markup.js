@@ -1436,7 +1436,7 @@ function lingoUpdateState(app, ctx = null) {
 
                 app.state[key] = defaultValue;
 
-                console.log(`state.${key} - setting default value:`, defaultValue, 'type:', typeName);
+                // console.log(`state.${key} - setting default value:`, defaultValue, 'type:', typeName);
             }
         }
     }
@@ -3764,7 +3764,7 @@ function createValueElement(app, element, ctx = null) {
                                 td.appendChild(domElement);
                             });
                         } else {
-                            console.log('createValueElement - cellValue is array but not all items are HTMLElements, converting to string:', cellValue);
+                            // console.log('createValueElement - cellValue is array but not all items are HTMLElements, converting to string:', cellValue);
                             td.textContent = cellValue.join(', ');
                         }
                     // else if is a Date object
@@ -4056,7 +4056,7 @@ function createFormElement(app, element, ctx = null) {
                                 formData[fieldKey] = 0;
                                 break;
                             case 'float':
-                                formData[fieldKey] = 0.0;
+                                formData[fieldKey] = 0.1;
                                 break;
                             case 'str':
                                 formData[fieldKey] = '';
@@ -4149,7 +4149,7 @@ function createFormElement(app, element, ctx = null) {
             } else if (elementType === 'float') {
                 listInput = document.createElement('input');
                 listInput.type = 'number';
-                listInput.step = 'any';
+                listInput.step = '0.1';
                 listInput.placeholder = 'Enter number';
             } else if (elementType === 'datetime') {
                 listInput = document.createElement('input');
@@ -4233,7 +4233,11 @@ function createFormElement(app, element, ctx = null) {
                         value = parseInt(listInput.value, 10);
                         if (isNaN(value)) return;
                     } else if (elementType === 'float') {
-                        value = parseFloat(listInput.value);
+                        // add .0 if string value does not have .
+                        const floatValue = (listInput.value.includes('.')) ? listInput.value : listInput.value + '.0';
+                        console.log('Adding to float list with value:', floatValue);
+                        value = parseFloat(floatValue);
+                        console.log('Parsed float value:', value);
                         if (isNaN(value)) return;
                     } else if (elementType === 'datetime') {
                         if (!listInput.value) return;
@@ -4286,7 +4290,7 @@ function createFormElement(app, element, ctx = null) {
         } else if (fieldType === 'float') {
             inputElement = document.createElement('input');
             inputElement.type = 'number';
-            inputElement.step = 'any';
+            inputElement.step = '0.1';
             inputElement.value = typeof formData[fieldKey] !== 'undefined' ? formData[fieldKey] : '';
             inputElement.addEventListener('input', () => {
                 formData[fieldKey] = parseFloat(inputElement.value) || 0.0;

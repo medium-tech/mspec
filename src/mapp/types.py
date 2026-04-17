@@ -409,6 +409,8 @@ def _convert_incoming_value(field_type:str, raw_value:Any, strict=True) -> Any:
         case 'float':
             if isinstance(raw_value, float):
                 return raw_value
+            elif isinstance(raw_value, int) and not isinstance(raw_value, bool):
+                return float(raw_value)                     # supporting this for JS, should drop in future when we can update JS side to not send ints for floats
             elif not strict and isinstance(raw_value, str):
                 return float(raw_value)
             else:
