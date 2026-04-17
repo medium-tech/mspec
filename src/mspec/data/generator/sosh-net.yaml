@@ -522,3 +522,45 @@ modules:
                 lower_case: 'posts'
               type: list
               element_type: struct
+      
+      get_replies_for_post:
+        name:
+          lower_case: 'get replies for post'
+        
+        description: 'Get all replies for a post by post id'
+        func:
+          type: struct
+          value:
+            replies:
+              call: 'db.query'
+              args:
+                model_type: 'sosh_net.post'
+                fields:
+                  type: struct
+                  value:
+                    reply_to:
+                      eq:
+                        params: {post_id: {}}
+        
+        params:
+          post_id:
+            name:
+              lower_case: 'post id'
+            type: foreign_key
+            references:
+              module: 'sosh_net'
+              table: 'post'
+              field: 'id'
+            examples:
+              - "1"
+              - "2"
+              - "3"
+        
+        result:
+          type: struct
+          fields:
+            replies:
+              name: 
+                lower_case: 'replies'
+              type: list
+              element_type: struct
