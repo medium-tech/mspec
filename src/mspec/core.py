@@ -261,6 +261,9 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
             if 'pages' not in model:
                 model['pages'] = {}
 
+            if 'instance_page' not in model:
+                model['instance_page'] = None
+
             model_snake = model['name']['snake_case']
 
             model_path = f'{module_snake}.{model_snake}'

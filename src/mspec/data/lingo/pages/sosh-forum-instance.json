@@ -1,0 +1,156 @@
+{
+    "lingo": {
+        "version": "page-beta-1",
+        "parent_url": "/api/spec",
+        "title": "sosh net :: forum"
+    },
+    "params": {
+        "project_name": {
+            "name": {
+                "lower_case": "project name"
+            },
+            "type": "str",
+            "default": "My Lingo Project",
+            "description": "Name of the Lingo project"
+        },
+        "module_name": {
+            "name": {
+                "lower_case": "module name"
+            },
+            "type": "str",
+            "default": "my-module-a",
+            "description": "Name of the module"
+        },
+        "model_name": {
+            "name": {
+                "lower_case": "model name"
+            },
+            "type": "str",
+            "default": "my-model-a",
+            "description": "Name of the model"
+        },
+        "model_id": {
+            "name": {
+                "lower_case": "model id"
+            },
+            "type": "str",
+            "description": "ID of the model instance"
+        },
+        "model_definition": {
+            "name": {
+                "lower_case": "model definition"
+            },
+            "type": "model",
+            "value": {
+                "name": {
+                    "lower_case": "my model a"
+                },
+                "fields": {
+                    "user_id": {
+                        "name": {
+                            "lower_case": "user id"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "auth",
+                            "table": "user",
+                            "field": "id"
+                        }
+                    },
+                    "topic": {
+                        "name": {
+                            "lower_case": "topic"
+                        },
+                        "type": "str",
+                        "description": "The topic of the forum post"
+                    },
+                    "description": {
+                        "name": {
+                            "lower_case": "description"
+                        },
+                        "type": "str",
+                        "description": "The description of the forum post"
+                    },
+                    "tags": {
+                        "name": {
+                            "lower_case": "tags"
+                        },
+                        "type": "list",
+                        "element_type": "str",
+                        "description": "List of tags associated with the forum"
+                    }
+                }
+            },
+            "description": "Definition of the model"
+        }
+    },
+    "state": {
+        "base_url": {
+            "type": "str",
+            "calc": {
+                "call": "concat",
+                "args": {
+                    "items": [
+                        "/api/",
+                        {"params": {"module_name": {}}},
+                        "/",
+                        {"params": {"model_name": {}}},
+                        "/",
+                        {"params": {"model_id": {}}}
+                    ]
+                }
+            }
+        },
+        "model_delete_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": ""
+            }
+        },
+        "model_instance": {
+            "type": "struct",
+            "default": {
+                "state": "pending",
+                "error": "",
+                "data": {},
+                "field_errors": {}
+            }
+        },
+        "header": {
+            "type": "str",
+            "calc": {
+                "call": "join",
+                "args": {
+                    "separator": "",
+                    "items": [":: ", {"params": {"model_name": {}}}, " :: ", {"params": {"model_id": {}}}]
+                }
+            }
+        }
+    },
+    "ops": {},
+    "output": [
+        {"text": "!!!!"},
+        {"heading": {"state": {"header": {}}},  "level": 1},
+        {"breadcrumbs": [
+            {"params": {"project_name": {}}},
+            {"params": {"module_name": {}}},
+            {"params": {"model_name": {}}},
+            {"params": {"model_id": {}}}
+        ]},
+        {"break": 1},
+        {"model": {
+            "bind": {"state": {"model_instance": {}}},
+            "display": "read",
+            "http": {"state": {"base_url": {}}},
+            "model_id": {"params": {"model_id": {}}},
+            "definition": {"params": {"model_definition": {}}}
+        }},
+        {"model":{
+            "bind": {"state": {"model_delete_state": {}}},
+            "display": "delete",
+            "http": {"state": {"base_url": {}}},
+            "model_id": {"params": {"model_id": {}}}
+        }}
+    ]
+}

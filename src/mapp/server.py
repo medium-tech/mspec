@@ -439,14 +439,12 @@ def generate_op_html(spec: dict, module_key: str, op_key: str) -> bytes:
     
     return html.encode('utf-8')
 
-def generate_model_instance_html(spec: dict, module_key: str, model_key: str, url: str) -> bytes:
+def generate_model_instance_html(server: MappContext, request: RequestContext, spec: dict, module_key: str, model_key: str) -> bytes:
     """
     Generate the model instance page with embedded Lingo JSON spec.
     """
 
     # init spec #
-    
-    lingo_model_instance_page = load_browser2_spec('builtin-mapp-model-instance.json')
     
     project_name = spec['project']['name']['lower_case']
     module = spec['modules'][module_key]
@@ -454,7 +452,7 @@ def generate_model_instance_html(spec: dict, module_key: str, model_key: str, ur
     model = module['models'][model_key]
     model_name = model['name']['kebab_case']
 
-    url_split = url.strip('/').split('/')
+    url_split = request.env['PATH_INFO'].strip('/').split('/')
     model_id = url_split[-1]
     
     lingo_params = {
@@ -466,6 +464,17 @@ def generate_model_instance_html(spec: dict, module_key: str, model_key: str, ur
     }
     
     # generate html and embed spec #
+
+    protocol_mode = request.env.get('HTTP_COOKIE', '').find('protocol_mode=true') != -1
+
+    if not protocol_mode and model['instance_page'] is not None:
+        spec_path = model['instance_page']
+    else:
+        spec_path = 'builtin-mapp-model-instance.json'
+
+    lingo_model_instance_page = load_browser2_spec(spec_path)
+
+    server.log(f'    -> model instance page spec path: {spec_path} ({not protocol_mode}) {model["instance_page"] is not None=}')
 
     lingo_spec_json = json.dumps(lingo_model_instance_page, indent=4)
     lingo_params_json = json.dumps(lingo_params, indent=4)
@@ -785,7 +794,7 @@ def dynamic_file_routes(server: MappContext, request: RequestContext):
         if pattern.match(request.env['PATH_INFO']):
             mapp_spec, module_key, model_key = gen_args
     
-            html_content:bytes = generator_func(mapp_spec, module_key, model_key, request.env['PATH_INFO'])
+            html_content:bytes = generator_func(server, request, mapp_spec, module_key, model_key)
             raise StaticFileResponse(
                 '200 OK',
                 content=html_content,

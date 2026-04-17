@@ -96,6 +96,8 @@ modules:
         auth:
           require_login: true
 
+        instance_page: 'sosh-forum-instance.json'
+
         fields:
 
           user_id:
