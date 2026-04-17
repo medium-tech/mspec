@@ -198,7 +198,7 @@ async function fillFormField(page, fieldName, field, value, preSeedMode = false)
         const values = Array.isArray(value) ? value : [];
         for (let i = 0; i < Math.max(values.length, 1); i++) {
           await row.getByRole('button', { name: `Find ${refs.table}` }).click();
-          await page.locator('.popup-content > table > tbody > tr').nth(i).click();
+          await page.locator('.popup-content > div > table > tbody > tr').nth(i).click();
           await expect(row.locator('button.remove-button')).toHaveCount(i + 1);
         }
       }
@@ -273,7 +273,11 @@ async function fillFormField(page, fieldName, field, value, preSeedMode = false)
       // Non-file FK with non-default value: use the popup to find a pre-seeded record
       const row = page.getByRole('row', { name: pattern });
       await row.getByRole('button', { name: `Find ${refs.table}` }).click();
-      await page.locator('.popup-content > table > tbody > tr').first().click();
+
+      // wait for page not to have text 'pending'
+      await expect(page.locator('#lingo-app')).not.toContainText('pending');
+
+      await page.locator('.popup-content > div > table > tbody > tr').first().click();
     }
   } else {
     // For str and fallback, use input[type="text"]
