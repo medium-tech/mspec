@@ -1,4 +1,5 @@
 {
+    "_": " vars :: {'http://localhost:3003': 'client.default_host'}",
     "name": "mapp-py-ui-tests",
     "version": "0.0.1",
     "type": "module",

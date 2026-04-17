@@ -432,6 +432,7 @@ def db_read(ctx, model_class, model_id:str) -> dict:
         model = db_model_read(ctx, model_class, model_id)
         return {'type': 'struct', 'value': model._asdict()}
     except NotFoundError as e:
+        raise
         return {
             'error': {
                 'code': 'MODEL_NOT_FOUND',
@@ -1191,6 +1192,8 @@ def render_value(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
                 if isinstance(field_value, dict):
                     try:
                         result_struct[field_name] = lingo_execute(app, field_value, ctx)
+                    except NotFoundError as e:
+                        raise e
                     except Exception as e:
                         raise ValueError(f'value - error processing struct field {field_name}') from e
                 else:
