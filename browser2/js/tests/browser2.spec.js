@@ -744,7 +744,7 @@ test('test - forms required enum and datetime fields', async ({ page }) => {
   await page.getByRole('button', { name: 'Submit' }).click();
 
   await expect(page.locator('.field-error')).toHaveCount(2);
-  await expect(page.locator('.field-error').first()).toContainText('Please select something');
+  await expect(page.locator('.field-error').first()).toContainText('(required field)');
   await expect.poll(() => requestCount).toBe(0);
 
   await categorySelect.selectOption('electronics');
