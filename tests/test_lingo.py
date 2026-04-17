@@ -716,7 +716,11 @@ class TestLingoDbFunctions(unittest.TestCase):
                 'model_type': {'value': 'test_app.post', 'type': 'str'},
                 'fields': {
                     'type': 'struct',
-                    'value': {'title': {'value': 'hello', 'type': 'str'}},
+                    'value': {
+                        'title': {
+                            'eq': 'hello'
+                        }
+                    }
                 },
             }
         }
@@ -733,8 +737,12 @@ class TestLingoDbFunctions(unittest.TestCase):
                 'model_type': {'value': 'test_app.post', 'type': 'str'},
                 'fields': {
                     'type': 'struct',
-                    'value': {'user_id': {'value': '2', 'type': 'str'}},
-                },
+                    'value': {
+                        'user_id': {
+                            'eq': '2'
+                        }
+                    }
+                }
             }
         }
         app = self._make_app()
@@ -750,7 +758,11 @@ class TestLingoDbFunctions(unittest.TestCase):
                 'model_type': {'value': 'test_app.post', 'type': 'str'},
                 'fields': {
                     'type': 'struct',
-                    'value': {'title': {'value': 'nonexistent', 'type': 'str'}},
+                    'value': {
+                        'title': {
+                            'eq': 'nonexistent'
+                        }
+                    }
                 },
             }
         }
@@ -770,8 +782,15 @@ class TestLingoDbFunctions(unittest.TestCase):
                 'model_type': {'value': 'test_app.post', 'type': 'str'},
                 'fields': {
                     'type': 'struct',
-                    'value': {'user_id': {'value': '1', 'type': 'str'}},
-                },
+                    'value': {
+                        'user_id': {
+                            'eq': {
+                                'type': 'str',
+                                'value': '1',
+                            }
+                        }
+                    }
+                }
             }
         }
         app = self._make_app()
