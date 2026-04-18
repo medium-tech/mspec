@@ -92,11 +92,23 @@
                 "args": {
                     "items": [
                         "/api/",
-                        {"params": {"module_name": {}}},
+                        {
+                            "params": {
+                                "module_name": {}
+                            }
+                        },
                         "/",
-                        {"params": {"model_name": {}}},
+                        {
+                            "params": {
+                                "model_name": {}
+                            }
+                        },
                         "/",
-                        {"params": {"model_id": {}}}
+                        {
+                            "params": {
+                                "model_id": {}
+                            }
+                        }
                     ]
                 }
             }
@@ -123,67 +135,220 @@
                 "call": "join",
                 "args": {
                     "separator": "",
-                    "items": [":: ", {"params": {"model_name": {}}}, " :: ", {"params": {"model_id": {}}}]
+                    "items": [
+                        ":: ",
+                        {
+                            "params": {
+                                "model_name": {}
+                            }
+                        },
+                        " :: ",
+                        {
+                            "params": {
+                                "model_id": {}
+                            }
+                        }
+                    ]
                 }
             }
         },
-        "forum_topic": {
-            "type": "str",
+        "forum": {
+            "type": "struct",
             "calc": {
                 "branch": [
-                    {   
+                    {
                         "if": {
                             "call": "eq",
                             "args": {
                                 "a": {
                                     "call": "key",
                                     "args": {
-                                        "object": {"state": {"model_instance": {}}},
+                                        "object": {
+                                            "state": {
+                                                "op_view_state": {}
+                                            }
+                                        },
                                         "key": "state"
                                     }
                                 },
-                                "b": "loaded"
+                                "b": "result"
                             }
                         },
                         "then": {
                             "call": "key",
                             "args": {
-                                "object": {"state": {"model_instance": {"data": {}}}},
-                                "key": "topic"
+                                "object": {
+                                    "state": {
+                                        "op_view_state": {
+                                            "result": {}
+                                        }
+                                    }
+                                },
+                                "key": "forum"
                             }
                         }
                     },
                     {
-                        "else": "..."
+                        "else": {
+                            "type": "struct",
+                            "value": {
+                                "user_id": "-1",
+                                "topic": "...",
+                                "description": "...",
+                                "tags": []
+                            }
+                        }
                     }
                 ]
+            }
+        },
+        "op_name": {
+            "name": {
+                "lower_case": "op name"
+            },
+            "type": "str",
+            "default": "my-op-a",
+            "description": "Name of the model"
+        },
+        "op_definition": {
+            "name": {
+                "lower_case": "op definition"
+            },
+            "type": "op",
+            "default": {
+                "type": "op",
+                "value": {
+                    "name": {
+                        "lower_case": "get posts for forum"
+                    },
+                    "description": "Return posts for a forum",
+                    "func": {},
+                    "params": {
+                        "forum_id": {
+                            "name": {
+                                "lower_case": "forum id"
+                            },
+                            "type": "str",
+                            "default": "-1",
+                            "description": "ID of the forum to get posts for"
+                        },
+                        "offset": {
+                            "name": {
+                                "lower_case": "offset"
+                            },
+                            "type": "int",
+                            "default": 0,
+                            "description": "Pagination offset for posts"
+                        },
+                        "size": {
+                            "name": {
+                                "lower_case": "size"
+                            },
+                            "type": "int",
+                            "default": 25,
+                            "description": "Page size for posts"
+                        }
+                    },
+                    "result": {
+                        "type": "struct",
+                        "value": {
+                            "forum": {
+                                "type": "struct",
+                                "value": {}
+                            },
+                            "posts": {
+                                "type": "list",
+                                "value": []
+                            }
+                        },
+                        "tests": {
+                            "test_cases": []
+                        }
+                    }
+                }
+            }
+        },
+        "op_view_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {"type": "any", "value": null}
             }
         }
     },
     "ops": {},
     "output": [
-        {"heading": {"state": {"header": {}}},  "level": 1},
-        {"breadcrumbs": [
-            {"params": {"project_name": {}}},
-            {"params": {"module_name": {}}},
-            {"params": {"model_name": {}}},
-            {"params": {"model_id": {}}}
-        ]},
-        {"break": 1},
-        {"model": {
-            "bind": {"state": {"model_instance": {}}},
-            "display": {
-                "mode": "read",
-                "allow_edit": false,
-                "show_data": false,
-                "load_button_text": "refresh"
+        {
+            "heading": {
+                "state": {
+                    "header": {}
+                }
             },
-            "http": {"state": {"base_url": {}}},
-            "model_id": {"params": {"model_id": {}}},
-            "definition": {"params": {"model_definition": {}}}
-        }},
-        {"break": 1},
-        {"text": "topic: "},
-        {"lingo": {"state": {"forum_topic": {}}}}
+            "level": 1
+        },
+        {
+            "breadcrumbs": [
+                {
+                    "params": {
+                        "project_name": {}
+                    }
+                },
+                {
+                    "params": {
+                        "module_name": {}
+                    }
+                },
+                {
+                    "params": {
+                        "model_name": {}
+                    }
+                },
+                {
+                    "params": {
+                        "model_id": {}
+                    }
+                }
+            ]
+        },
+        {
+            "heading": { "state": {"forum": {"topic": {}}}},
+            "level": 3
+        },
+        {
+            "lingo": { "state": {"forum": {"description": {}}}}
+        },
+        {
+            "break": 1
+        },
+        {
+            "op": {
+                "bind": {
+                    "state": {
+                        "op_view_state": {}
+                    }
+                },
+                "auto_submit": true,
+                "submit_button_text": "load",
+                "display": {
+                    "show_result": false
+                },
+                "interactive": true,
+                "http": "/api/sosh-net/get-posts-for-forum",
+                "params": {
+                    "forum_id": {
+                        "params": {
+                            "model_id": {}
+                        }
+                    }
+                },
+                "definition": {
+                    "state": {
+                        "op_definition": {}
+                    }
+                }
+            }
+        }
     ]
 }

@@ -562,6 +562,10 @@ modules:
         result:
           type: struct
           fields:
+            forum:
+              name: 
+                lower_case: 'forum'
+              type: struct
             posts:
               name: 
                 lower_case: 'posts'

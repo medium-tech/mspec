@@ -1400,45 +1400,60 @@ function lingoApp(spec, params = {}, options = {}) {
  * Update state values - equivalent to Python lingo_update_state()
  */
 function lingoUpdateState(app, ctx = null) {
+    let defaultFields = {};
+    let calculatedFields = {};
+
+    /*
+    we set non calculated fields first, so that calculated fields can reference them during calculation if needed,
+    useful on initial render when not all fields have been set
+    */
+
     for (const [key, value] of Object.entries(app.spec.state)) {
         if ('calc' in value) {
-            // This is a calculated value
-            const newValue = lingoExecute(app, value.calc, ctx);
-            
-            // Extract actual value if wrapped
-            const actualValue = (typeof newValue === 'object' && newValue !== null && 'value' in newValue)
-                ? newValue.value
-                : newValue;
-            
-            const actualType = (typeof newValue === 'object' && newValue !== null && 'type' in newValue)
-                ? newValue.type
-                : getTypeName(actualValue);
-            
-            if (!typesMatch(actualType, value.type)) {
-                throw new Error(`state.${key} - expression returned type mismatch: ${actualType}, expected: ${value.type}`);
-            }
-            app.state[key] = actualValue;
-        } else {
-            // Non-calculated value, set to default if not already set
-            if (!(key in app.state)) {
-                if (!('default' in value)) {
-                    throw new Error(`state.${key} - missing default value`);
-                }
-                let defaultValue = value.default;
-                const typeName = getTypeName(defaultValue);
-                
-                if (value.type === 'datetime' && typeName === 'str') {
-                    console.log(`state.${key} - parsing datetime default value:`, defaultValue);
-                    defaultValue = new Date(defaultValue);
-                }else if (!typesMatch(typeName, value.type)) {
-                    throw new Error(`state.${key} - default value type mismatch : ${typeName} != ${value.type}`);
-                }
-
-                app.state[key] = defaultValue;
-
-                // console.log(`state.${key} - setting default value:`, defaultValue, 'type:', typeName);
-            }
+            calculatedFields[key] = value;
+        }else{
+            defaultFields[key] = value;
         }
+    }
+
+    for (const [key, value] of Object.entries(defaultFields)) {
+        // Non-calculated value, set to default if not already set
+        if (!(key in app.state)) {
+            if (!('default' in value)) {
+                throw new Error(`state.${key} - missing default value`);
+            }
+            let defaultValue = value.default;
+            const typeName = getTypeName(defaultValue);
+            
+            if (value.type === 'datetime' && typeName === 'str') {
+                console.log(`state.${key} - parsing datetime default value:`, defaultValue);
+                defaultValue = new Date(defaultValue);
+            }else if (!typesMatch(typeName, value.type)) {
+                throw new Error(`state.${key} - default value type mismatch : ${typeName} != ${value.type}`);
+            }
+
+            app.state[key] = defaultValue;
+
+            // console.log(`state.${key} - setting default value:`, defaultValue, 'type:', typeName);
+        }
+    }
+
+    for (const [key, value] of Object.entries(calculatedFields)) {
+        const newValue = lingoExecute(app, value.calc, ctx);
+        
+        // Extract actual value if wrapped
+        const actualValue = (typeof newValue === 'object' && newValue !== null && 'value' in newValue)
+            ? newValue.value
+            : newValue;
+        
+        const actualType = (typeof newValue === 'object' && newValue !== null && 'type' in newValue)
+            ? newValue.type
+            : getTypeName(actualValue);
+        
+        if (!typesMatch(actualType, value.type)) {
+            throw new Error(`state.${key} - expression returned type mismatch: ${actualType}, expected: ${value.type}`);
+        }
+        app.state[key] = actualValue;
     }
 
     // Call afterUpdate callback if defined
@@ -2111,9 +2126,31 @@ function renderOp(app, expression, ctx = null) {
             "definition": {"params": {"op_definition": {}}}
         }}
 
+        In this case a form will be rendered with all
+        param fields defined in the op definition
+    
+    Optionally override params:
+
+        {"op": {
+            "bind": {"state": {"op_view_state": {}}},
+            "interactive": true,
+            "http": {"state": {"op_api_url": {}}},
+            "definition": {"params": {"op_definition": {}}},
+            "params": {
+                "field_1: "value_1",
+            }
+        }}
+
+        In this case params.field_1 will be set to the
+        value provided, which may be a scripted value.
+        All other params in the op definition will have
+        a form displayed
+
     Non-interactive op example:
 
         {"op": {"randomize_number": {"max": 100}}}
+
+        useful for running a local op defined in page spec
 
         NOTE: do not supply interactive=false, to use
         this syntax there must be only one key which is
@@ -2132,11 +2169,15 @@ function renderOp(app, expression, ctx = null) {
     }
 
     if(isInteractive){
-
-        // interactive op //
+        
+        //
+        // interactive op
+        //
 
         const op = expression.op;
         // console.log('renderOp() - interactive op', op);
+
+        // definintion //
 
         if(!op.hasOwnProperty('definition')){
             throw new Error('op - missing definition for interactive op');
@@ -2199,6 +2240,13 @@ function renderOp(app, expression, ctx = null) {
             throw new Error('op - missing http for interactive op');
         }
 
+        //
+        // display options
+        //
+
+        const display = expression.op.display || {};
+        const showResult = display.hasOwnProperty('show_result') ? unwrapValue(lingoExecute(app, display.show_result, ctx)) : true;
+        
         // render op.auto_submit if provided, otherwise default to false
         let autoSubmit;
         if (expression.op.hasOwnProperty('auto_submit')) {
@@ -2207,9 +2255,56 @@ function renderOp(app, expression, ctx = null) {
             autoSubmit = false;
         }
 
-        // console.log('renderOp() - autoSubmit:', autoSubmit, expression.op);
+        //
+        // params
+        //
 
-        // bind state //
+        let paramOverrides = {};
+
+        if(op.hasOwnProperty('params')){
+
+            const params = expression.op.params;
+
+            for(const [paramKey, paramValueExpr] of Object.entries(params)){
+
+                if(!definition.params.hasOwnProperty(paramKey)){
+                    throw new Error(`op - param not found in definition: ${paramKey}`);
+                }
+
+                const paramDef = definition.params[paramKey];
+                const paramValue = lingoExecute(app, paramValueExpr, ctx);
+                const paramValueType = getTypeName(paramValue);
+
+                if(!typesMatch(paramValueType, paramDef.type)){
+                    throw new Error(`op - param value type mismatch for ${paramKey}: ${paramDef.type} != ${paramValueType}`);
+                }
+
+                // set the value in definition.params so that it can be used in form rendering
+                paramOverrides[paramKey] = unwrapValue(paramValue);
+            }
+        }
+
+        console.log('renderOp() - interactive op param overrides', paramOverrides);
+
+        //
+        // fields
+        //
+
+        // add fields from definition if they don't have a matching param set in extraData from op.params
+
+        const formFields = {};
+
+        for(const [paramKey, paramDef] of Object.entries(definition.params)){
+            if(!paramOverrides.hasOwnProperty(paramKey)){
+                formFields[paramKey] = paramDef;
+            }
+        }
+
+        console.log('renderOp() - interactive op fields', formFields);
+
+        //
+        // bind state
+        //
 
         const stateKeys = Object.keys(op.bind.state);
         if(stateKeys.length !== 1){
@@ -2228,9 +2323,15 @@ function renderOp(app, expression, ctx = null) {
 
         const submitButtonText = expression.op.submit_button_text ? unwrapValue(lingoExecute(app, expression.op.submit_button_text, ctx)) : 'Submit';
 
+        // merge app.state[stateField].data and paramOverrides to create request body, with paramOverrides taking precedence
+        const requestBody = {
+            ...app.state[stateField].data,
+            ...paramOverrides
+        };
+
         const formElement = {
             form: {
-                fields: definition.params,
+                fields: formFields,
                 bind: op.bind,
                 submit_button_text: submitButtonText,
                 auto_submit: autoSubmit,
@@ -2240,7 +2341,7 @@ function renderOp(app, expression, ctx = null) {
                         call: 'op.http',
                         args: {
                             url: url,
-                            data: app.state[stateField].data,
+                            data: requestBody,
                             bind: op.bind
                         }
                     }
@@ -2274,35 +2375,40 @@ function renderOp(app, expression, ctx = null) {
         let resultDisplayElements;
 
         if (currentOpState.state === 'result') {
-            resultDisplayElements = [{text: 'success ', style: {color: 'green', bold: true}}];
-            const unwrapped = unwrapValue(currentOpState.result);
+            if(showResult) {
+                resultDisplayElements = [{text: 'success ', style: {color: 'green', bold: true}}];
+                const unwrapped = unwrapValue(currentOpState.result);
 
-            if (Object.keys(secureResultFields).length > 0 && typeof unwrapped === 'object' && unwrapped !== null) {
-                const redactedValue = {};
-                for (const [key, value] of Object.entries(unwrapped)) {
-                    if (secureResultFields.hasOwnProperty(key) && !currentOpState.showSecureResultFields[key]) {
-                        redactedValue[key] = 'REDACTED';
-                    } else {
-                        redactedValue[key] = value;
+                if (Object.keys(secureResultFields).length > 0 && typeof unwrapped === 'object' && unwrapped !== null) {
+                    const redactedValue = {};
+                    for (const [key, value] of Object.entries(unwrapped)) {
+                        if (secureResultFields.hasOwnProperty(key) && !currentOpState.showSecureResultFields[key]) {
+                            redactedValue[key] = 'REDACTED';
+                        } else {
+                            redactedValue[key] = value;
+                        }
                     }
-                }
-                
-                resultDisplayElements.push({type: 'struct', value: redactedValue});
+                    
+                    resultDisplayElements.push({type: 'struct', value: redactedValue});
 
-                for (const fieldKey of Object.keys(secureResultFields)) {
-                    const showSecureResultFields = currentOpState.showSecureResultFields;
-                    resultDisplayElements.push({
-                        button: {
-                            clientFunction: () => {
-                                showSecureResultFields[fieldKey] = !showSecureResultFields[fieldKey];
-                                renderLingoApp(app, document.getElementById('lingo-app'), true);
-                            }
-                        },
-                        text: showSecureResultFields[fieldKey] ? `hide ${fieldKey}` : `show ${fieldKey}`
-                    });
+                    for (const fieldKey of Object.keys(secureResultFields)) {
+                        const showSecureResultFields = currentOpState.showSecureResultFields;
+                        resultDisplayElements.push({
+                            button: {
+                                clientFunction: () => {
+                                    showSecureResultFields[fieldKey] = !showSecureResultFields[fieldKey];
+                                    renderLingoApp(app, document.getElementById('lingo-app'), true);
+                                }
+                            },
+                            text: showSecureResultFields[fieldKey] ? `hide ${fieldKey}` : `show ${fieldKey}`
+                        });
+                    }
+                } else {
+                    resultDisplayElements.push(currentOpState.result);
                 }
-            } else {
-                resultDisplayElements.push(currentOpState.result);
+            }else{
+                resultDisplayElements = [];
+                // console.debug('renderOp() - result ready but showResult is false, not displaying result', currentOpState.result);
             }
         } else if (currentOpState.state === 'error') {
             resultDisplayElements = [
