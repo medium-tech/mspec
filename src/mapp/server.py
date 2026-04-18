@@ -472,7 +472,12 @@ def generate_model_instance_html(server: MappContext, request: RequestContext, s
     else:
         spec_path = 'builtin-mapp-model-instance.json'
 
-    lingo_model_instance_page = load_browser2_spec(spec_path)
+    try:
+        lingo_model_instance_page = load_browser2_spec(spec_path)
+    except Exception as e:
+        server.log(f'  :: ERROR :: Error loading model instance page spec from {spec_path}: {e} :: {request.request_id}')
+        server.log(f'    :: TRACEBACK :: {format_exc()}')
+        raise ServerError(f'Error generating model instance page') from None
 
     server.log(f'    -> model instance page spec path: {spec_path} ({not protocol_mode}) {model["instance_page"] is not None=}')
 

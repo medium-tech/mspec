@@ -408,7 +408,7 @@ function _crudReadArgs(app, expression, ctx) {
             if (!app.state.hasOwnProperty(stateField)) {
                 throw new Error(`crud.read - state field not found: ${stateField}`);
             }
-            app.state[stateField].state = 'loading...';
+            app.state[stateField].state = 'loading';
         }
     }
     return [url];
@@ -2531,8 +2531,40 @@ function renderSelf(app, expression, ctx = null) {
  */
 
 function renderModel(app, element, ctx = null) {
-    // console.log('renderModel()', element);
-    switch (element.model.display) {
+    /*
+        model display modes:
+            - create: display form to create new item
+            - read: display item with option to edit
+            - delete: display item with option to delete
+            - list: display list of items with option to view each item and paginate
+        
+        model can be provided in 2 ways:
+        as a string on the display field
+            {
+                "model": {
+                    "display": "read",
+                    "model_id": "123",
+                    ...
+                }
+            }
+        or display can be an object with a mode field (and possibly other options)
+            {
+                "model": {
+                    "display": {
+                        "mode": "read",
+                        ...
+                    },
+                    "model_id": "123",
+                    ...
+                }
+            }
+    */
+
+    // set mode
+
+    const displayMode = typeof element.model.display === 'string' ? element.model.display : element.model.display.mode;
+
+    switch (displayMode) {
         case 'create':
             return _renderModelCreate(app, element, ctx);
         case 'read':
@@ -2542,7 +2574,7 @@ function renderModel(app, element, ctx = null) {
         case 'list':
             return _renderModelList(app, element, ctx);
         default:
-            throw new Error(`renderModel - unknown display type: ${element.model.display}`);
+            throw new Error(`renderModel - unknown display type: ${displayMode}`);
     }
 }
 
@@ -2584,6 +2616,20 @@ function _renderModelRead(app, element, ctx = null) {
     const isEditError = state.state === 'error' && state.field_errors && Object.keys(state.field_errors).length > 0;
 
     //
+    // display options
+    //
+
+    // element.model.display.allow_edit                             - allow editing of item (default: true)
+    // element.model.display.show_data                              - show data when in editing mode (default: true)
+    // element.model.display.load_button_text                       - text for the load button (default: 'load')
+
+    // element.model.display can be a string or object, if string set defaults, if field doesnt exist in object also set default
+
+    const allowEdit = typeof element.model.display === 'string' ? true : (element.model.display.allow_edit !== false);
+    const showData = typeof element.model.display === 'string' ? true : (element.model.display.show_data !== false);
+    const loadButtonText = typeof element.model.display === 'string' ? 'load' : (element.model.display.load_button_text || 'load');
+
+    //
     // buttons
     //
 
@@ -2605,44 +2651,47 @@ function _renderModelRead(app, element, ctx = null) {
 
     elements.push({
         button: loadScript,
-        text: 'load',
+        text: loadButtonText,
         disabled: state.state === 'editing' || state.state === 'loading' || isEditError
     });
 
     // edit //
 
-    const editScript = {
-        set: {state: {[stateField]: {state: {}}}},
-        to: 'editing'
-    };
+    if(allowEdit){
 
-    elements.push({
-        button: editScript,
-        text: 'edit',
-        disabled: state.state !== 'loaded' && state.state !== 'edited'
-    });
+        const editScript = {
+            set: {state: {[stateField]: {state: {}}}},
+            to: 'editing'
+        };
 
-    // cancel //
+        elements.push({
+            button: editScript,
+            text: 'edit',
+            disabled: state.state !== 'loaded' && state.state !== 'edited'
+        });
 
-    const cancelScript = {
-        call: 'and',
-        args: {
-            a: {
-                set: {state: {[stateField]: {state: {}}}},
-                to: 'loaded'
-            },
-            b: {
-                set: {state: {[stateField]: {field_errors: {}}}},
-                to: {}
+        // cancel //
+
+        const cancelScript = {
+            call: 'and',
+            args: {
+                a: {
+                    set: {state: {[stateField]: {state: {}}}},
+                    to: 'loaded'
+                },
+                b: {
+                    set: {state: {[stateField]: {field_errors: {}}}},
+                    to: {}
+                }
             }
         }
-    }
 
-    elements.push({
-        button: cancelScript,
-        text: 'cancel',
-        disabled: state.state !== 'editing' && !isEditError
-    });
+        elements.push({
+            button: cancelScript,
+            text: 'cancel',
+            disabled: state.state !== 'editing' && !isEditError
+        });
+    }
 
     // status //
 
@@ -2715,7 +2764,7 @@ function _renderModelRead(app, element, ctx = null) {
             }
         });
 
-    }else if(state.state === 'pending'){
+    }else if((state.state === 'pending' || state.state === 'loading') && showData){
         // view loading placeholder
         const placeholder = {};
 
@@ -2728,7 +2777,7 @@ function _renderModelRead(app, element, ctx = null) {
             value: placeholder,
         });
         
-    }else{
+    }else if (state.state === 'loaded' && showData) {
         // view loaded data as struct key/value table
         // iterate over each key/value in state.data
         // and convert to list of arrays where each array is [key, value]

@@ -486,6 +486,27 @@ modules:
         func: 
           type: struct
           value:
+            forum:
+              branch:
+                - if: 
+                    call: 'eq'
+                    args:
+                      a: {params: {forum_id: {}}}
+                      b: "-1"
+                  then:
+                    type: struct
+                    value:
+                      id: "-1"
+                      user_id: "-1"
+                      topic: "Chatter"
+                      description: "A place for posts not tied to a specific forum"
+                      tags: []
+                - else:
+                    call: 'db.read'
+                    args:
+                      model_id:
+                        params: {forum_id: {}}
+                      model_type: 'sosh_net.forum'
             posts:
               call: 'db.query'
               args:

@@ -464,19 +464,22 @@ def db_read(ctx, model_class, model_id:str) -> dict:
         return {'type': 'struct', 'value': model._asdict()}
     except NotFoundError as e:
         raise
-        return {
-            'error': {
-                'code': 'MODEL_NOT_FOUND',
-                'message': str(e)
-            }
-        }
 
 def db_unique_counts(ctx, model_class, group_by:str, filters=None) -> list:
     rows = db_model_unique_counts(ctx, model_class, group_by, filters)
     return [{'type': 'struct', 'value': row} for row in rows]
 
 def db_query(ctx, model_class, where:dict, offset:int=0, size:int=25) -> list:
-    return db_model_query(ctx, model_class, where, offset, size)
+    query_result = db_model_query(ctx, model_class, where, offset, size)
+    import pprint
+    ctx.log(f'db_query - raw query result: {pprint.pformat(query_result)}')
+    return {
+        'type': 'struct',
+        'value': {
+            'items': [item._asdict() for item in query_result['items']],
+            'total': query_result['total']
+        }
+    }
 
 def str_convert(object:Any) -> str:
     if object is True:

@@ -126,6 +126,38 @@
                     "items": [":: ", {"params": {"model_name": {}}}, " :: ", {"params": {"model_id": {}}}]
                 }
             }
+        },
+        "forum_topic": {
+            "type": "str",
+            "calc": {
+                "branch": [
+                    {   
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {"state": {"model_instance": {}}},
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "loaded"
+                            }
+                        },
+                        "then": {
+                            "call": "key",
+                            "args": {
+                                "object": {"state": {"model_instance": {"data": {}}}},
+                                "key": "topic"
+                            }
+                        }
+                    },
+                    {
+                        "else": "..."
+                    }
+                ]
+            }
         }
     },
     "ops": {},
@@ -140,13 +172,18 @@
         {"break": 1},
         {"model": {
             "bind": {"state": {"model_instance": {}}},
-            "display": "read",
+            "display": {
+                "mode": "read",
+                "allow_edit": false,
+                "show_data": false,
+                "load_button_text": "refresh"
+            },
             "http": {"state": {"base_url": {}}},
             "model_id": {"params": {"model_id": {}}},
             "definition": {"params": {"model_definition": {}}}
         }},
         {"break": 1},
-        {"text": "!!!!"}
-        {""}
+        {"text": "topic: "},
+        {"lingo": {"state": {"forum_topic": {}}}}
     ]
 }
