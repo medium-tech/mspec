@@ -21,7 +21,7 @@ This document is the index for the final production sprint tickets for sosh-net.
 | 03 | `sosh_net.get_post_and_reactions` backend op | [TICKET_03_get_post_and_reactions_op.md](TICKET_03_get_post_and_reactions_op.md) | 02 | 🟢 | 
 | 04 | Custom Profiles page (list + create/edit for current user via `get_current_user_profile`) | [TICKET_04_profiles_page.md](TICKET_04_profiles_page.md) | 01, 02 | 🔴 | 
 | 05 | Account page: keep generic, no profile coupling | [TICKET_05_account_page_profile.md](TICKET_05_account_page_profile.md) | 04 | 🔴 | 
-| 06 | Custom Forum instance page | [TICKET_06_forum_instance_page.md](TICKET_06_forum_instance_page.md) | 02, 03 | 🔴 | 
+| 06 | Custom Forum instance page | [TICKET_06_forum_instance_page.md](TICKET_06_forum_instance_page.md) | 02, 03 | 🟡 | 
 | 07 | Custom Chatter page | [TICKET_07_chatter_page.md](TICKET_07_chatter_page.md) | 02, 03, 06 | 🔴 | 
 | 08 | Responsive CSS: mobile and desktop support | [TICKET_08_responsive_css.md](TICKET_08_responsive_css.md) | — | 🟢 | 
 
