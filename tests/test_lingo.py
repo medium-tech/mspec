@@ -727,10 +727,17 @@ class TestLingoDbFunctions(unittest.TestCase):
         app = self._make_app()
         result = lingo_execute(app, expression, self.ctx)
         self.assertIsInstance(result, dict)
-        self.assertIsInstance(result.get('items'), list)
-        self.assertIsInstance(result.get('total'), int)
-        self.assertEqual(result['total'], 1)
-        self.assertEqual(result['items'][0].title, 'hello')
+        self.assertEqual(result['type'], 'struct')
+        self.assertIsInstance(result['value'], dict)
+        self.assertIsInstance(result['value'].get('items'), list)
+        self.assertIsInstance(result['value'].get('total'), int)
+        self.assertEqual(result['value']['total'], 1)
+        self.assertEqual(len(result['value']['items']), 1)
+        first_item = result['value']['items'][0]
+        self.assertEqual(first_item['id'], '1')
+        self.assertEqual(first_item['user_id'], '1')
+        self.assertEqual(first_item['title'], 'hello')
+        self.assertEqual(first_item['view_count'], 10)
 
     def test_db_query_returns_matching_foreign_key_field(self):
         expression = {
@@ -750,10 +757,10 @@ class TestLingoDbFunctions(unittest.TestCase):
         app = self._make_app()
         result = lingo_execute(app, expression, self.ctx)
         self.assertIsInstance(result, dict)
-        self.assertIsInstance(result.get('items'), list)
-        self.assertIsInstance(result.get('total'), int)
-        self.assertEqual(result['total'], 1)
-        self.assertEqual(result['items'][0].user_id, '2')
+        self.assertIsInstance(result['value'].get('items'), list)
+        self.assertIsInstance(result['value'].get('total'), int)
+        self.assertEqual(result['value']['total'], 1)
+        self.assertEqual(result['value']['items'][0]['user_id'], '2')
 
     def test_db_query_returns_empty_list_when_no_match(self):
         expression = {
@@ -770,10 +777,9 @@ class TestLingoDbFunctions(unittest.TestCase):
         app = self._make_app()
         result = lingo_execute(app, expression, self.ctx)
         self.assertIsInstance(result, dict)
-        self.assertIsInstance(result.get('items'), list)
-        self.assertIsInstance(result.get('total'), int)
-        self.assertEqual(result['total'], 0)
-        self.assertEqual(result['items'], [])
+        self.assertIsInstance(result['value'].get('total'), int)
+        self.assertEqual(result['value']['total'], 0)
+        self.assertEqual(result['value']['items'], [])
 
     def test_db_query_returns_multiple_matching_rows(self):
         # Add a second post for user_id '1'
@@ -797,10 +803,10 @@ class TestLingoDbFunctions(unittest.TestCase):
         app = self._make_app()
         result = lingo_execute(app, expression, self.ctx)
         self.assertIsInstance(result, dict)
-        self.assertIsInstance(result.get('items'), list)
-        self.assertIsInstance(result.get('total'), int)
-        self.assertEqual(result['total'], 2)
-        titles = {item.title for item in result['items']}
+        self.assertIsInstance(result['value'].get('items'), list)
+        self.assertIsInstance(result['value'].get('total'), int)
+        self.assertEqual(result['value']['total'], 2)
+        titles = {item['title'] for item in result['value']['items']}
         self.assertEqual(titles, {'hello', 'another post'})
 
     def test_db_query_raises_on_unsupported_field_type(self):
