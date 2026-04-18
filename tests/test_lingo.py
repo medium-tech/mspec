@@ -714,7 +714,7 @@ class TestLingoDbFunctions(unittest.TestCase):
             'call': 'db.query',
             'args': {
                 'model_type': {'value': 'test_app.post', 'type': 'str'},
-                'fields': {
+                'where': {
                     'type': 'struct',
                     'value': {
                         'title': {
@@ -726,16 +726,18 @@ class TestLingoDbFunctions(unittest.TestCase):
         }
         app = self._make_app()
         result = lingo_execute(app, expression, self.ctx)
-        self.assertEqual(result['type'], 'list')
-        self.assertEqual(len(result['value']), 1)
-        self.assertEqual(result['value'][0]['value']['title'], 'hello')
+        self.assertIsInstance(result, dict)
+        self.assertIsInstance(result.get('items'), list)
+        self.assertIsInstance(result.get('total'), int)
+        self.assertEqual(result['total'], 1)
+        self.assertEqual(result['items'][0].title, 'hello')
 
     def test_db_query_returns_matching_foreign_key_field(self):
         expression = {
             'call': 'db.query',
             'args': {
                 'model_type': {'value': 'test_app.post', 'type': 'str'},
-                'fields': {
+                'where': {
                     'type': 'struct',
                     'value': {
                         'user_id': {
@@ -747,29 +749,31 @@ class TestLingoDbFunctions(unittest.TestCase):
         }
         app = self._make_app()
         result = lingo_execute(app, expression, self.ctx)
-        self.assertEqual(result['type'], 'list')
-        self.assertEqual(len(result['value']), 1)
-        self.assertEqual(result['value'][0]['value']['user_id'], '2')
+        self.assertIsInstance(result, dict)
+        self.assertIsInstance(result.get('items'), list)
+        self.assertIsInstance(result.get('total'), int)
+        self.assertEqual(result['total'], 1)
+        self.assertEqual(result['items'][0].user_id, '2')
 
     def test_db_query_returns_empty_list_when_no_match(self):
         expression = {
             'call': 'db.query',
             'args': {
                 'model_type': {'value': 'test_app.post', 'type': 'str'},
-                'fields': {
-                    'type': 'struct',
-                    'value': {
-                        'title': {
-                            'eq': 'nonexistent'
-                        }
+                'where': {
+                    'title': {
+                        'eq': 'nonexistent'
                     }
                 },
             }
         }
         app = self._make_app()
         result = lingo_execute(app, expression, self.ctx)
-        self.assertEqual(result['type'], 'list')
-        self.assertEqual(result['value'], [])
+        self.assertIsInstance(result, dict)
+        self.assertIsInstance(result.get('items'), list)
+        self.assertIsInstance(result.get('total'), int)
+        self.assertEqual(result['total'], 0)
+        self.assertEqual(result['items'], [])
 
     def test_db_query_returns_multiple_matching_rows(self):
         # Add a second post for user_id '1'
@@ -780,14 +784,11 @@ class TestLingoDbFunctions(unittest.TestCase):
             'call': 'db.query',
             'args': {
                 'model_type': {'value': 'test_app.post', 'type': 'str'},
-                'fields': {
-                    'type': 'struct',
-                    'value': {
-                        'user_id': {
-                            'eq': {
-                                'type': 'str',
-                                'value': '1',
-                            }
+                'where': {
+                    'user_id': {
+                        'eq': {
+                            'type': 'str',
+                            'value': '1',
                         }
                     }
                 }
@@ -795,8 +796,12 @@ class TestLingoDbFunctions(unittest.TestCase):
         }
         app = self._make_app()
         result = lingo_execute(app, expression, self.ctx)
-        self.assertEqual(result['type'], 'list')
-        self.assertEqual(len(result['value']), 2)
+        self.assertIsInstance(result, dict)
+        self.assertIsInstance(result.get('items'), list)
+        self.assertIsInstance(result.get('total'), int)
+        self.assertEqual(result['total'], 2)
+        titles = {item.title for item in result['items']}
+        self.assertEqual(titles, {'hello', 'another post'})
 
     def test_db_query_raises_on_unsupported_field_type(self):
         with self.assertRaises(ValueError) as cm:

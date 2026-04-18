@@ -490,7 +490,11 @@ modules:
               call: 'db.query'
               args:
                 model_type: 'sosh_net.post'
-                fields:
+                offset:
+                  params: {offset: {}}
+                size:
+                  params: {size: {}}
+                where:
                   type: struct
                   value:
                     forum_id:
@@ -513,6 +517,26 @@ modules:
               - "1"
               - "2"
               - "3"
+          
+          offset:
+            name:
+              lower_case: 'offset'
+            type: int
+            default: 0
+            examples:
+              - "0"
+              - "10"
+              - "20"
+          
+          size:
+            name:
+              lower_case: 'size'
+            type: int
+            default: 25
+            examples:
+              - "10"
+              - "20"
+              - "50"
         
         result:
           type: struct
@@ -522,7 +546,12 @@ modules:
                 lower_case: 'posts'
               type: list
               element_type: struct
-      
+
+            total:
+              name:
+                lower_case: 'total'
+              type: int
+
       get_replies_for_post:
         name:
           lower_case: 'get replies for post'
@@ -535,10 +564,12 @@ modules:
               call: 'db.query'
               args:
                 model_type: 'sosh_net.post'
-                fields:
-                  type: struct
-                  value:
-                    reply_to:
+                offset:
+                  params: {offset: {}}
+                size:
+                  params: {size: {}}
+                where:
+                  reply_to:
                       eq:
                         params: {post_id: {}}
         
@@ -555,6 +586,26 @@ modules:
               - "1"
               - "2"
               - "3"
+          
+          offset:
+            name:
+              lower_case: 'offset'
+            type: int
+            default: 0
+            examples:
+              - "0"
+              - "10"
+              - "20"
+          
+          size:
+            name:
+              lower_case: 'size'
+            type: int
+            default: 25
+            examples:
+              - "10"
+              - "20"
+              - "50"
         
         result:
           type: struct
@@ -564,3 +615,8 @@ modules:
                 lower_case: 'replies'
               type: list
               element_type: struct
+
+            total:
+              name:
+                lower_case: 'total'
+              type: int

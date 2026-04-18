@@ -492,7 +492,15 @@ def db_model_unique_counts(ctx:MappContext, model_class: type, group_by: str, fi
 
     return [{'group': str(row[0]) if row[0] is not None else None, 'count': row[1]} for row in rows]
 
-def db_model_query(ctx:MappContext, model_class: type, fields: dict) -> list:
+def db_model_query(ctx:MappContext, model_class: type, where: dict, offset: int=0, size: int=25) -> dict:
+
+    """
+    where is a dict like this:
+    {
+        "field_a": {"eq": "value"},
+        "field_b": {"ne": "value"}
+    }
+    """
 
     # init #
 
@@ -511,15 +519,7 @@ def db_model_query(ctx:MappContext, model_class: type, fields: dict) -> list:
     where_parts = []
     where_values = []
 
-    """
-    fields is a dict like this:
-    {
-        "field_a": {"eq": "value"},
-        "field_b": {"ne": "value"}
-    }
-    """
-
-    for field_name, condition in fields.items():
+    for field_name, condition in where.items():
 
         if field_name not in field_map:
             raise ValueError(f'db_model_query - field not found on model: {field_name}')
@@ -546,8 +546,15 @@ def db_model_query(ctx:MappContext, model_class: type, fields: dict) -> list:
     # query #
 
     where_clause = f" WHERE {' AND '.join(where_parts)}" if where_parts else ''
-    sql = f'SELECT * FROM {model_snake_case}{where_clause}'
-    rows = ctx.db.cursor.execute(sql, tuple(where_values)).fetchall()
+    query_values = tuple(where_values) + (size, offset)
+    sql = f'SELECT * FROM {model_snake_case}{where_clause} LIMIT ? OFFSET ?'
+    rows = ctx.db.cursor.execute(sql, query_values).fetchall()
+
+    # total count #
+    count_sql = f'SELECT COUNT(*) FROM {model_snake_case}{where_clause}'
+    total = ctx.db.cursor.execute(count_sql, where_values).fetchone()[0]
+
+    ctx.log(f'db_model_query - sql: {sql}, values: {query_values}, total: {total} where: {where}')
 
     # convert results #
 
@@ -594,4 +601,4 @@ def db_model_query(ctx:MappContext, model_class: type, fields: dict) -> list:
 
         models.append(model_class(**data))
 
-    return models
+    return {'items': models, 'total': total}

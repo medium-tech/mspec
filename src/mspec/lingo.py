@@ -407,12 +407,17 @@ def _db_unique_counts_function_args(app:LingoApp, expression: dict, ctx:Optional
 def _db_query_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     try:
         model_type_expr = expression['args']['model_type']
-        fields_expr = expression['args']['fields']
+        where_expr = expression['args']['where']
     except KeyError as e:
         raise ValueError(f'db.query - missing arg: {e}')
 
     model_type = unwrap_primitive(lingo_execute(app, model_type_expr, ctx))
     model_class = _get_model_class_from_type(app, model_type)
+    where = unwrap_primitive(lingo_execute(app, where_expr, ctx))
+
+    offset = unwrap_primitive(lingo_execute(app, expression['args']['offset'], ctx)) if 'offset' in expression['args'] else 0
+    size = unwrap_primitive(lingo_execute(app, expression['args']['size'], ctx)) if 'size' in expression['args'] else 25
+
 
     """
     a fields expression is a struct where each key contains an operator and then a value
@@ -434,9 +439,9 @@ def _db_query_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=N
     """
 
     try:
-        condition_items = fields_expr['value'].items()
+        condition_items = where.items()
     except (KeyError, AttributeError, TypeError):
-        raise ValueError('db.query - fields expression must be a struct with value key containing conditions')
+        raise ValueError('db.query - where expression must be a struct with value key containing conditions')
     
     conditions = {}
 
@@ -451,7 +456,7 @@ def _db_query_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=N
         operand_value = lingo_execute(app, operand_expr, ctx)
         conditions[field_name] = {operator: unwrap_primitive(operand_value)}
 
-    return (ctx, model_class, conditions), {}
+    return (ctx, model_class, conditions, offset, size), {}
 
 def db_read(ctx, model_class, model_id:str) -> dict:
     try:
@@ -470,9 +475,8 @@ def db_unique_counts(ctx, model_class, group_by:str, filters=None) -> list:
     rows = db_model_unique_counts(ctx, model_class, group_by, filters)
     return [{'type': 'struct', 'value': row} for row in rows]
 
-def db_query(ctx, model_class, fields:dict) -> list:
-    models = db_model_query(ctx, model_class, fields)
-    return [{'type': 'struct', 'value': m._asdict()} for m in models]
+def db_query(ctx, model_class, where:dict, offset:int=0, size:int=25) -> list:
+    return db_model_query(ctx, model_class, where, offset, size)
 
 def str_convert(object:Any) -> str:
     if object is True:
