@@ -408,6 +408,12 @@
   - **return:** struct with `items`, `total`
 
 ### Database Functions
+`db.create` - Create a model instance and return the new ID
+  - **args:**
+    - **model_type** `str` - dot-notation module.model (e.g. `sosh_net.thread`)
+    - **data** `struct` - model field values
+  - **return:** `str` model ID
+
 `db.read` - Read a single model instance by ID
   - **args:**
     - **model_type** `str` - dot-notation module.model (e.g. `sosh_net.post`)

@@ -12,8 +12,8 @@ from mapp.auth import create_user, login_user, is_logged_in, current_user, logou
 from mapp.file_system import get_file_content, ingest_start, list_files, get_part_content, list_parts, process_file
 from mapp.errors import NotFoundError
 from mapp.media import create_image, get_image, get_master_image, get_media_file_content, ingest_master_image, list_images, list_master_images
-from mapp.module.model.db import db_model_read, db_model_unique_counts, db_model_query
-from mapp.types import get_python_type_for_field, new_model_class
+from mapp.module.model.db import db_model_create, db_model_read, db_model_unique_counts, db_model_query
+from mapp.types import get_python_type_for_field, new_model_class, convert_dict_to_model
 
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
 
@@ -379,6 +379,40 @@ def _db_read_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=No
 
     return (ctx, model_class, str(model_id)), {}
 
+def _db_create_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        model_type_expr = expression['args']['model_type']
+        data_expr = expression['args']['data']
+    except KeyError as e:
+        raise ValueError(f'db.create - missing arg: {e}')
+
+    model_type = unwrap_primitive(lingo_execute(app, model_type_expr, ctx))
+    model_class = _get_model_class_from_type(app, model_type)
+
+    raw_data = lingo_execute(app, data_expr, ctx)
+    if isinstance(raw_data, dict) and raw_data.get('type') == 'struct':
+        input_data = raw_data['value']
+    elif isinstance(raw_data, dict):
+        input_data = raw_data
+    else:
+        raise ValueError('db.create - data expression must evaluate to a struct')
+
+    data = {}
+    for field_name, field_expression in input_data.items():
+        field_value = lingo_execute(app, field_expression, ctx)
+
+        if isinstance(field_value, list):
+            items = []
+            for item in field_value:
+                if isinstance(item, dict) and not ('type' in item and 'value' in item):
+                    item = lingo_execute(app, item, ctx)
+                items.append(unwrap_primitive(item))
+            data[field_name] = items
+        else:
+            data[field_name] = unwrap_primitive(field_value)
+
+    return (ctx, model_class, data), {}
+
 def _db_unique_counts_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     try:
         model_type_expr = expression['args']['model_type']
@@ -464,6 +498,11 @@ def db_read(ctx, model_class, model_id:str) -> dict:
         return {'type': 'struct', 'value': model._asdict()}
     except NotFoundError as e:
         raise
+
+def db_create(ctx, model_class, data:dict) -> str:
+    model = convert_dict_to_model(model_class, data)
+    model = db_model_create(ctx, model_class, model)
+    return str(model.id)
 
 def db_unique_counts(ctx, model_class, group_by:str, filters=None) -> list:
     rows = db_model_unique_counts(ctx, model_class, group_by, filters)
@@ -662,6 +701,7 @@ lingo_function_lookup = {
     # db #
 
     'db': {
+        'create': {'func': db_create, 'create_args': _db_create_function_args},
         'read': {'func': db_read, 'create_args': _db_read_function_args},
         'unique_counts': {'func': db_unique_counts, 'create_args': _db_unique_counts_function_args},
         'query': {'func': db_query, 'create_args': _db_query_function_args},

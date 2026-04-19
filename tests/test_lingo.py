@@ -6,6 +6,7 @@ import sqlite3
 from pprint import pprint
 
 from mapp.context import MappContext, DBContext, ClientContext
+from mapp.errors import MappValidationError
 from mapp.types import new_model_class
 from mapp.module.model.db import db_model_create_table, db_model_create, db_model_unique_counts, db_model_query
 
@@ -597,7 +598,7 @@ def _make_module_spec(models_dict):
 
 
 class TestLingoDbFunctions(unittest.TestCase):
-    """Tests for db.read, db.unique_counts, and db.query lingo functions"""
+    """Tests for db.create, db.read, db.unique_counts, and db.query lingo functions"""
 
     @classmethod
     def setUpClass(cls):
@@ -638,6 +639,85 @@ class TestLingoDbFunctions(unittest.TestCase):
 
     def _make_app(self):
         return LingoApp(spec=self.lingo_spec, params={}, state={}, buffer=[])
+
+    # db.create tests #
+
+    def test_db_create_returns_new_id_string(self):
+        expression = {
+            'call': 'db.create',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'data': {
+                    'type': 'struct',
+                    'value': {
+						'user_id': {'value': '3', 'type': 'str'},
+						'title': {'value': 'new post', 'type': 'str'},
+						'view_count': {'value': 30, 'type': 'int'},
+					}
+				},
+            }
+        }
+        app = self._make_app()
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['type'], 'str')
+        self.assertIsInstance(result['value'], str)
+        self.assertTrue(result['value'])
+
+        read_result = lingo_execute(app, {
+            'call': 'db.read',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': result['value'], 'type': 'str'},
+            }
+        }, self.ctx)
+        self.assertEqual(read_result['value']['title'], 'new post')
+        self.assertEqual(read_result['value']['view_count'], 30)
+        self.assertEqual(read_result['value']['user_id'], '3')
+        
+    def test_db_create_with_primitive_struct(self):
+        expression = {
+            'call': 'db.create',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'data': {
+                    'user_id': '3',
+                    'title': 'new post',
+                    'view_count': 30,
+                },
+            }
+        }
+        app = self._make_app()
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['type'], 'str')
+        self.assertIsInstance(result['value'], str)
+        self.assertTrue(result['value'])
+
+        read_result = lingo_execute(app, {
+            'call': 'db.read',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': result['value'], 'type': 'str'},
+            }
+        }, self.ctx)
+        self.assertEqual(read_result['value']['title'], 'new post')
+        self.assertEqual(read_result['value']['view_count'], 30)
+        self.assertEqual(read_result['value']['user_id'], '3')
+
+    def test_db_create_validates_data(self):
+        expression = {
+            'call': 'db.create',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'data': {
+                    'user_id': {'value': '4', 'type': 'str'},
+                    'title': {'value': 'bad post', 'type': 'str'},
+                    'view_count': {'value': 'not an int', 'type': 'str'},
+                },
+            }
+        }
+        app = self._make_app()
+        with self.assertRaises(MappValidationError):
+            lingo_execute(app, expression, self.ctx)
 
     # db.read tests #
 
