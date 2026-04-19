@@ -648,9 +648,41 @@ class TestLingoDbFunctions(unittest.TestCase):
             'args': {
                 'model_type': {'value': 'test_app.post', 'type': 'str'},
                 'data': {
-                    'user_id': {'value': '3', 'type': 'str'},
-                    'title': {'value': 'new post', 'type': 'str'},
-                    'view_count': {'value': 30, 'type': 'int'},
+                    'type': 'struct',
+                    'value': {
+						'user_id': {'value': '3', 'type': 'str'},
+						'title': {'value': 'new post', 'type': 'str'},
+						'view_count': {'value': 30, 'type': 'int'},
+					}
+				},
+            }
+        }
+        app = self._make_app()
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['type'], 'str')
+        self.assertIsInstance(result['value'], str)
+        self.assertTrue(result['value'])
+
+        read_result = lingo_execute(app, {
+            'call': 'db.read',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': result['value'], 'type': 'str'},
+            }
+        }, self.ctx)
+        self.assertEqual(read_result['value']['title'], 'new post')
+        self.assertEqual(read_result['value']['view_count'], 30)
+        self.assertEqual(read_result['value']['user_id'], '3')
+        
+    def test_db_create_with_primitive_struct(self):
+        expression = {
+            'call': 'db.create',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'data': {
+                    'user_id': '3',
+                    'title': 'new post',
+                    'view_count': 30,
                 },
             }
         }

@@ -391,13 +391,14 @@ def _db_create_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=
 
     raw_data = lingo_execute(app, data_expr, ctx)
     if isinstance(raw_data, dict) and raw_data.get('type') == 'struct':
-        raw_data = raw_data['value']
-
-    if not isinstance(raw_data, dict):
+        input_data = raw_data['value']
+    elif isinstance(raw_data, dict):
+        input_data = raw_data
+    else:
         raise ValueError('db.create - data expression must evaluate to a struct')
 
     data = {}
-    for field_name, field_expression in raw_data.items():
+    for field_name, field_expression in input_data.items():
         field_value = lingo_execute(app, field_expression, ctx)
 
         if isinstance(field_value, list):
