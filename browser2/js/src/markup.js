@@ -2324,10 +2324,10 @@ function renderOp(app, expression, ctx = null) {
         const submitButtonText = expression.op.submit_button_text ? unwrapValue(lingoExecute(app, expression.op.submit_button_text, ctx)) : 'Submit';
 
         // merge app.state[stateField].data and paramOverrides to create request body, with paramOverrides taking precedence
-        const requestBody = {
-            ...app.state[stateField].data,
-            ...paramOverrides
-        };
+        let requestBody = app.state[stateField].data
+        for (const [key, value] of Object.entries(paramOverrides)) {
+            requestBody[key] = value;
+        }
 
         const formElement = {
             form: {
