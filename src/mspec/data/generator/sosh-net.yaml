@@ -784,3 +784,13 @@ modules:
                             - [ "10", "11" ]
                             - [ "12" ]
                             - []
+                
+                result:
+                    type: struct
+                    fields:
+                        thread_id:
+                            type: foreign_key
+                            references:
+                                module: 'sosh_net'
+                                table: 'thread'
+                                field: 'id'
