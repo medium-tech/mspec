@@ -5,208 +5,208 @@ lingo:
 
 params: {}
 
-state: 
-  is_logged_in:
-    type: bool
-    calc: 
-      call: key
-      args:
-        object: 
-          call: auth.is_logged_in
-          args: {}
-        key: logged_in
-  
-  fetch_user:
-    type: struct
-    default:
-      state: initial
-      error: ''
-      data: {}
-      result:
-        type: any
-        value: null
-  
-  login_user:
-    type: struct
-    default:
-      state: initial
-      error: ''
-      data: {}
-      result:
-        type: any
-        value: null
-  
-  create_user:
-    type: struct
-    default:
-      state: initial
-      error: ''
-      data: {}
-      result:
-        type: any
-        value: null
-  
-  logout_state:
-    type: struct
-    default:
-      state: initial
-      error: ''
-      data: {}
-      result:
-        type: any
-        value: null
+state:
+    is_logged_in:
+        type: bool
+        calc:
+            call: key
+            args:
+                object:
+                    call: auth.is_logged_in
+                    args: {}
+                key: logged_in
+
+    fetch_user:
+        type: struct
+        default:
+            state: initial
+            error: ''
+            data: {}
+            result:
+                type: any
+                value: null
+
+    login_user:
+        type: struct
+        default:
+            state: initial
+            error: ''
+            data: {}
+            result:
+                type: any
+                value: null
+
+    create_user:
+        type: struct
+        default:
+            state: initial
+            error: ''
+            data: {}
+            result:
+                type: any
+                value: null
+
+    logout_state:
+        type: struct
+        default:
+            state: initial
+            error: ''
+            data: {}
+            result:
+                type: any
+                value: null
 
 ops: {}
 
 output:
-- heading: 'shosh net'
-  level: 1
+    - heading: 'shosh net'
+      level: 1
 
-- heading: ":: account"
-  level: 2
+    - heading: ":: account"
+      level: 2
 
-- breadcrumbs:
-  - "home"
-  - "sosh-net"
-  - "account"
+    - breadcrumbs:
+          - "home"
+          - "sosh-net"
+          - "account"
 
-- break: 1
+    - break: 1
 
-- type: list
-  display:
-    format: table
-    columns:
-      - column1
-      - column2
-      - column3
-  value:
-    - type: struct
-      value: 
-        column1: 
-          text: 'are you logged in?'
-          style:
-            bold: true
-        column2: 
-          branch:
-            - if:
-                state: {is_logged_in: {}}
-              then:
-                text: 'yes'
-                style:
-                  bold: true
-                  color: 'green'
-            - else:
-                text: ''
-        column3:
-          branch:
-            - if:
-                state: {is_logged_in: {}}
-              then:
-                text: ''
-            - else:
-                text: 'no'
-                style:
-                  bold: true
-                  color: 'red'
-    - type: struct
-      value: 
-        column1: 
-          text: 'do you want to be?'
-          style:
-            bold: true
-        column2:
-          branch:
-            - if:
-                state: {is_logged_in: {}}
-              then:
-                text: 'yes'
-                style:
-                  bold: true
-            - else:
-                text: 'yes'
-                style:
-                  bold: true
-        column3: 
-          branch:
-            - if:
-                state: {is_logged_in: {}}
-              then:
-                text: "then don't log out"
-                style:
-                  italic: true
-            - else:
-                text: 'see below'
-                style:
-                  italic: true
-    - type: struct
+    - type: list
+      display:
+          format: table
+          columns:
+              - column1
+              - column2
+              - column3
       value:
-        column1:
-          text: ''
-        column2:
-          branch:
-            - if:
-                state: {is_logged_in: {}}
-              then:
-                text: 'no'
-                style:
-                  bold: true
-            - else:
-                text: 'no'
-                style:
-                  bold: true
-        column3:
-          branch:
-            - if:
-                state: {is_logged_in: {}}
-              then:
-                op:
-                  bind:
-                    state: {logout_state: {}}
-                  interactive: true
-                  http: '/api/auth/logout-user'
-                  submit_button_text: logout
-                  instruction: ''
-                  definition: 'auth.logout_user'
-            - else:
-                text: 'do nothing'
-                style:
-                  italic: true
-- break: 1
+          - type: struct
+            value:
+                column1:
+                    text: 'are you logged in?'
+                    style:
+                        bold: true
+                column2:
+                    branch:
+                        - if:
+                              state: { is_logged_in: {} }
+                          then:
+                              text: 'yes'
+                              style:
+                                  bold: true
+                                  color: 'green'
+                        - else:
+                              text: ''
+                column3:
+                    branch:
+                        - if:
+                              state: { is_logged_in: {} }
+                          then:
+                              text: ''
+                        - else:
+                              text: 'no'
+                              style:
+                                  bold: true
+                                  color: 'red'
+          - type: struct
+            value:
+                column1:
+                    text: 'do you want to be?'
+                    style:
+                        bold: true
+                column2:
+                    branch:
+                        - if:
+                              state: { is_logged_in: {} }
+                          then:
+                              text: 'yes'
+                              style:
+                                  bold: true
+                        - else:
+                              text: 'yes'
+                              style:
+                                  bold: true
+                column3:
+                    branch:
+                        - if:
+                              state: { is_logged_in: {} }
+                          then:
+                              text: "then don't log out"
+                              style:
+                                  italic: true
+                        - else:
+                              text: 'see below'
+                              style:
+                                  italic: true
+          - type: struct
+            value:
+                column1:
+                    text: ''
+                column2:
+                    branch:
+                        - if:
+                              state: { is_logged_in: {} }
+                          then:
+                              text: 'no'
+                              style:
+                                  bold: true
+                        - else:
+                              text: 'no'
+                              style:
+                                  bold: true
+                column3:
+                    branch:
+                        - if:
+                              state: { is_logged_in: {} }
+                          then:
+                              op:
+                                  bind:
+                                      state: { logout_state: {} }
+                                  interactive: true
+                                  http: '/api/auth/logout-user'
+                                  submit_button_text: logout
+                                  instruction: ''
+                                  definition: 'auth.logout_user'
+                        - else:
+                              text: 'do nothing'
+                              style:
+                                  italic: true
+    - break: 1
 
-- branch:
-  - if:
-      state: {is_logged_in: {}}
-    then:
-      - heading: ':: account details'
-        level: 4
-      - op: 
-          bind:
-            state: {fetch_user: {}}
-          interactive: true
-          http: '/api/auth/current-user'
-          definition: 'auth.current_user'
-          submit_button_text: refresh
-          instruction: ''
-          auto_submit: true
+    - branch:
+          - if:
+                state: { is_logged_in: {} }
+            then:
+                - heading: ':: account details'
+                  level: 4
+                - op:
+                      bind:
+                          state: { fetch_user: {} }
+                      interactive: true
+                      http: '/api/auth/current-user'
+                      definition: 'auth.current_user'
+                      submit_button_text: refresh
+                      instruction: ''
+                      auto_submit: true
 
-  - else:
-      - heading: ':: login'
-        level: 4
-      - op:
-          bind:
-            state: {login_user: {}}
-          interactive: true
-          http: '/api/auth/login-user'
-          definition: 'auth.login_user'
-          submit_button_text: login
+          - else:
+                - heading: ':: login'
+                  level: 4
+                - op:
+                      bind:
+                          state: { login_user: {} }
+                      interactive: true
+                      http: '/api/auth/login-user'
+                      definition: 'auth.login_user'
+                      submit_button_text: login
 
-      - heading: ':: create account'
-        level: 4
-      - op:
-          bind:
-            state: {create_user: {}}
-          interactive: true
-          http: '/api/auth/create-user'
-          definition: 'auth.create_user'
-          instruction: 'create a new account to access all features of sosh net'
-          submit_button_text: create account
+                - heading: ':: create account'
+                  level: 4
+                - op:
+                      bind:
+                          state: { create_user: {} }
+                      interactive: true
+                      http: '/api/auth/create-user'
+                      definition: 'auth.create_user'
+                      instruction: 'create a new account to access all features of sosh net'
+                      submit_button_text: create account

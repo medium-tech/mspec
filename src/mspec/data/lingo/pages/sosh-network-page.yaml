@@ -4,46 +4,45 @@ lingo:
 
 params: {}
 
-state: 
-  is_logged_in:
-    type: bool
-    calc: 
-      call: key
-      args:
-        object: 
-          call: auth.is_logged_in
-          args: {}
-        key: logged_in
-  
+state:
+    is_logged_in:
+        type: bool
+        calc:
+            call: key
+            args:
+                object:
+                    call: auth.is_logged_in
+                    args: {}
+                key: logged_in
 
 ops: {}
 
 output:
-- heading: 'shosh net'
-  level: 1
+    - heading: 'shosh net'
+      level: 1
 
-- heading: ":: the network"
-  level: 2
+    - heading: ":: the network"
+      level: 2
 
-- breadcrumbs:
-  - "home"
-  - "sosh-net"
+    - breadcrumbs:
+          - "home"
+          - "sosh-net"
 
-- break: 1
-
-- block:
-    - text: ' ● '
-    - link: '/'
-      text: 'front page'
-    - text: ' ● '
-    - link: '/sosh-net/profile'
-      text: 'profiles'
-    - text: ' ● '
-    - link: '/sosh-net/forum'
-      text: 'forums'
-    - text: ' ● '
-    - link: '/sosh-net/account'
-      text: 'account'
-    - text: ' ● '
     - break: 1
-    - text: this is sosh net.
+
+    - block:
+          - text: ' ● '
+          - link: '/'
+            text: 'front page'
+          - text: ' ● '
+          - link: '/sosh-net/profile'
+            text: 'profiles'
+          - text: ' ● '
+          - link: '/sosh-net/forum'
+            text: 'forums'
+          - text: ' ● '
+          - link: '/sosh-net/account'
+            text: 'account'
+          - text: ' ● '
+          - break: 1
+          - text: this is sosh net.

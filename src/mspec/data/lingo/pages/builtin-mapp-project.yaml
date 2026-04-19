@@ -1,7 +1,7 @@
 lingo:
     version: page-beta-1
 
-params: 
+params:
     project_name:
         name:
             lower_case: "project name"
@@ -13,38 +13,37 @@ params:
         name:
             lower_case: "module names"
         type: list
-        default: ["my-module-a", "my-module-b"]
+        default: [ "my-module-a", "my-module-b" ]
         description: "List of module names in the Lingo project"
         item_type: str
 
-state: 
+state:
     header:
         type: str
-        calc: 
+        calc:
             call: "join"
             args:
                 separator: ""
                 items:
                     - ":: "
-                    - {params: {project_name: {}}}
+                    - { params: { project_name: {} } }
 
 ops: {}
 
 output:
-- heading: {state: {header: {}}}
-  level: 1
-- heading: ":: available modules"
-  level: 2
-- break: 1
-- call: "map"
-  args:
-    iterable: {params: {module_names: {}}}
-    function:
-        link:
-            call: "concat"
-            args:
-                items:
-                    - "/"
-                    - {self: item}
-        text: {self: item}
-
+    - heading: { state: { header: {} } }
+      level: 1
+    - heading: ":: available modules"
+      level: 2
+    - break: 1
+    - call: "map"
+      args:
+          iterable: { params: { module_names: {} } }
+          function:
+              link:
+                  call: "concat"
+                  args:
+                      items:
+                          - "/"
+                          - { self: item }
+              text: { self: item }

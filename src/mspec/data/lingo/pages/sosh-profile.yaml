@@ -4,34 +4,33 @@ lingo:
 
 params: {}
 
-state: 
-  is_logged_in:
-    type: bool
-    calc: 
-      call: key
-      args:
-        object: 
-          call: auth.is_logged_in
-          args: {}
-        key: logged_in
-  
+state:
+    is_logged_in:
+        type: bool
+        calc:
+            call: key
+            args:
+                object:
+                    call: auth.is_logged_in
+                    args: {}
+                key: logged_in
 
 ops: {}
 
 output:
-- heading: "sosh.net"
-  level: 1
+    - heading: "sosh.net"
+      level: 1
 
-- heading: ":: profile"
-  level: 2
+    - heading: ":: profile"
+      level: 2
 
-- breadcrumbs:
-  - "home"
-  - "sosh-net"
-  - "profile"
+    - breadcrumbs:
+          - "home"
+          - "sosh-net"
+          - "profile"
 
-- break: 1
+    - break: 1
 
-- block:
-    - text: 'are you logged in: '
-    - lingo: {state: {is_logged_in: {}}}
+    - block:
+          - text: 'are you logged in: '
+          - lingo: { state: { is_logged_in: {} } }

@@ -4,37 +4,36 @@ lingo:
 
 params: {}
 
-state: 
-  is_logged_in:
-    type: bool
-    calc: 
-      call: key
-      args:
-        object: 
-          call: auth.is_logged_in
-          args: {}
-        key: logged_in
-  
+state:
+    is_logged_in:
+        type: bool
+        calc:
+            call: key
+            args:
+                object:
+                    call: auth.is_logged_in
+                    args: {}
+                key: logged_in
 
 ops: {}
 
 output:
-- heading: 'shosh net'
-  level: 1
+    - heading: 'shosh net'
+      level: 1
 
-- heading: ':: welcome to sosh net'
-  level: 2
+    - heading: ':: welcome to sosh net'
+      level: 2
 
-- text: ':: '
+    - text: ':: '
 
-- link: '/sosh-net'
-  text: 'enter the network'
+    - link: '/sosh-net'
+      text: 'enter the network'
 
-- break: 1
+    - break: 1
 
-- text: 'here are some interesting things:'
-- type: list
-  value:
-  - text: 'placeholder for cool stuff'
-    style:
-      italic: true
+    - text: 'here are some interesting things:'
+    - type: list
+      value:
+          - text: 'placeholder for cool stuff'
+            style:
+                italic: true
