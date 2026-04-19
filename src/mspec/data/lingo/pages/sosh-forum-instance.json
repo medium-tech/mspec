@@ -152,6 +152,41 @@
                 }
             }
         },
+		"total_forums": {
+			"type": "int",
+			"calc": {
+				"branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {"state": {"op_view_state": {}}},
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": {
+                            "call": "key",
+                            "args": {
+                                "object": {"state": {"op_view_state": {}}},
+                                "key": "result.value.threads.value.total"
+                            }
+                        }
+                    },
+					{
+						"else": {
+							"type": "int",
+                            "value": -1
+                        }
+					}
+				]
+			}
+		},
         "forum": {
             "type": "struct",
             "calc": {
@@ -163,11 +198,7 @@
                                 "a": {
                                     "call": "key",
                                     "args": {
-                                        "object": {
-                                            "state": {
-                                                "op_view_state": {}
-                                            }
-                                        },
+                                        "object": {"state": {"op_view_state": {}}},
                                         "key": "state"
                                     }
                                 },
@@ -219,9 +250,9 @@
                 "type": "op",
                 "value": {
                     "name": {
-                        "lower_case": "get posts for forum"
+                        "lower_case": "get threads for forum"
                     },
-                    "description": "Return posts for a forum",
+                    "description": "Return threads for a forum",
                     "func": {},
                     "params": {
                         "forum_id": {
@@ -230,7 +261,7 @@
                             },
                             "type": "str",
                             "default": "-1",
-                            "description": "ID of the forum to get posts for"
+                            "description": "ID of the forum to get threads for"
                         },
                         "offset": {
                             "name": {
@@ -238,7 +269,7 @@
                             },
                             "type": "int",
                             "default": 0,
-                            "description": "Pagination offset for posts"
+                            "description": "Pagination offset for threads"
                         },
                         "size": {
                             "name": {
@@ -246,7 +277,7 @@
                             },
                             "type": "int",
                             "default": 25,
-                            "description": "Page size for posts"
+                            "description": "Page size for threads"
                         }
                     },
                     "result": {
@@ -256,7 +287,7 @@
                                 "type": "struct",
                                 "value": {}
                             },
-                            "posts": {
+                            "threads": {
                                 "type": "list",
                                 "value": []
                             }
@@ -278,7 +309,34 @@
             }
         }
     },
-    "ops": {},
+    "ops": {
+		"is_loaded": {
+			"args": {},
+			"func": {
+				"branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {"state": {"op_view_state": {}}},
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": true
+                    },
+					{
+						"else": false
+					}
+				]
+			}
+		}
+	},
     "output": [
         {
             "heading": {
@@ -335,7 +393,7 @@
                     "show_result": false
                 },
                 "interactive": true,
-                "http": "/api/sosh-net/get-posts-for-forum",
+                "http": "/api/sosh-net/get-threads-for-forum",
                 "params": {
                     "forum_id": {
                         "params": {
@@ -349,6 +407,18 @@
                     }
                 }
             }
-        }
+        },
+		{"break": 1},
+		{
+			"branch": [
+				{
+					"if": {"op": {"is_loaded": {}}},
+					"then": {"text": "we loaded!"}
+				},
+				{
+					"else": {"text": "not yet"}
+				}
+			]
+		}
     ]
 }

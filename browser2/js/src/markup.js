@@ -78,6 +78,58 @@ function strConcat(items) {
     return items.map(item => String(item)).join('');
 }
 
+function structKey(object, key) {
+	/*
+	Return the key of a struct
+
+	Args:
+		object: The struct object to retrieve the key from
+		key: The key to retrieve from the struct.
+		
+		Key may access nested properties using dot notation.
+			A max of 10 dot-separated levels is supported.
+
+	Return:
+		The value associated with the specified key in the struct object.
+	
+	Raises:
+		- If the key does not exist in the object, an error is thrown.
+		- if key starts or ends with a dot, an error is thrown.
+
+	*/
+
+	if (typeof key !== 'string' || key.startsWith('.') || key.endsWith('.')) {
+		console.error('lingo function key - invalid key format:', key);
+		throw new Error(`lingo function key - keys may not start or end with a dot: '${key}'`);
+	}
+
+	const keySplit = key.split('.');
+	const numKeys = keySplit.length;
+	if (numKeys > 10) {
+		console.error('lingo function key - key has too many levels:', key);
+		throw new Error(`lingo function key - keys may have a maximum of 10 dot-separated levels: '${key}'`);
+	}
+
+	// recursively access nested properties if needed
+	let current = object;
+	for (let i = 0; i < numKeys; i++) {
+		try{
+			if (current && typeof current === 'object' && keySplit[i] in current) {
+				current = current[keySplit[i]];
+			} else {
+				console.error('lingo function key - key not found in object:', key, 'object:', object);
+				throw new Error(`lingo function key - key '${key}' not found in object`);
+			}
+		} catch (error) {
+			const msg = `lingo function key - count not access: ${keySplit[i]} in ${key}`;
+			console.error(msg, 'object:', object, 'error:', error);
+			throw new Error(msg);
+		}
+	}
+	return current;
+
+}
+
 function getRequestHeaders() {
     // check localStorage for access_token
     const headers = {
@@ -696,14 +748,7 @@ const lingoFunctionLookup = {
     // struct //
     
     'key': {
-        func: (object, key) => {
-            if (object && typeof object === 'object' && key in object) {
-                return object[key];
-            } else {
-                console.error('lingo function key - key not found in object:', key, 'object:', object);
-                throw new Error(`lingo function key - key '${key}' not found in object`);
-            }
-        },
+        func: structKey,
         args: {
             'object': {'type': 'struct'},
             'key': {'type': 'str'}
@@ -2036,7 +2081,7 @@ function renderLingo(app, element, ctx = null) {
         return String(x);
     };
 
-    console.log('lingo - renderLingo result', element, result);
+    // console.log('lingo - renderLingo result', element, result);
     
     // Handle wrapped format {type: ..., value: ...}
     if (typeof result === 'object' && result !== null && 'value' in result) {
@@ -2284,7 +2329,7 @@ function renderOp(app, expression, ctx = null) {
             }
         }
 
-        console.log('renderOp() - interactive op param overrides', paramOverrides);
+        // console.log('renderOp() - interactive op param overrides', paramOverrides);
 
         //
         // fields
@@ -2300,7 +2345,7 @@ function renderOp(app, expression, ctx = null) {
             }
         }
 
-        console.log('renderOp() - interactive op fields', formFields);
+        // console.log('renderOp() - interactive op fields', formFields);
 
         //
         // bind state

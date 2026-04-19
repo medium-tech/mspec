@@ -1,6 +1,6 @@
 lingo:
     version: 'generator-beta-1'
-    
+
 project:
     name:
         lower_case: 'sosh net'
@@ -143,6 +143,67 @@ modules:
                             - [ 'coffee', 'cafe', 'drinks' ]
                             - [ 'tech', 'gadgets', 'innovation' ]
 
+            thread:
+                name:
+                    lower_case: 'thread'
+
+                auth:
+                    require_login: true
+
+                fields:
+                    user_id:
+                        name:
+                            lower_case: 'user id'
+                        type: foreign_key
+                        references:
+                            module: 'auth'
+                            table: 'user'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+                    
+                    forum_id:
+                        name:
+                            lower_case: 'forum id'
+                        type: foreign_key
+                        default: "-1"
+                        references:
+                            module: 'sosh_net'
+                            table: 'forum'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+                    
+                    title:
+                        name:
+                            lower_case: 'title'
+                        type: str
+                        examples:
+                            - 'My favorite PNW hiking trails'
+                            - 'Favorite programming languages'
+                            - 'Tips for cooking'
+                    
+                    main_post_id:
+                        name:
+                            lower_case: 'main post id'
+                        description: 'The main post of the thread, always shown at the top'
+                        type: foreign_key
+                        references:
+                            module: 'sosh_net'
+                            table: 'post'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+
+
+
+
             post:
                 name:
                     lower_case: 'post'
@@ -220,9 +281,9 @@ modules:
                             - [ "3" ]
                             - []
 
-                    web_images:
+                    images:
                         name:
-                            lower_case: 'web images'
+                            lower_case: 'images'
                         type: list
                         default: []
                         element_type: foreign_key
@@ -233,21 +294,6 @@ modules:
                         examples:
                             - [ "4", "5" ]
                             - [ "6" ]
-                            - []
-
-                    raw_images:
-                        name:
-                            lower_case: 'raw images'
-                        type: list
-                        default: []
-                        element_type: foreign_key
-                        references:
-                            module: 'media'
-                            table: 'image'
-                            field: 'id'
-                        examples:
-                            - [ "10", "11" ]
-                            - [ "12" ]
                             - []
 
                     related_posts:
@@ -481,11 +527,11 @@ modules:
                                 lower_case: 'profile'
                             type: struct
 
-            get_posts_for_forum:
+            get_threads_for_forum:
                 name:
-                    lower_case: 'get posts for forum'
+                    lower_case: 'get threads for forum'
 
-                description: 'Get all posts for a forum by forum id'
+                description: 'Get all threads for a forum by forum id'
                 func:
                     type: struct
                     value:
@@ -502,7 +548,7 @@ modules:
                                           id: "-1"
                                           user_id: "-1"
                                           topic: "Chatter"
-                                          description: "A place for posts not tied to a specific forum"
+                                          description: "A place for off topic threads"
                                           tags: []
                                 - else:
                                       call: 'db.read'
@@ -510,10 +556,10 @@ modules:
                                           model_id:
                                               params: { forum_id: {} }
                                           model_type: 'sosh_net.forum'
-                        posts:
+                        threads:
                             call: 'db.query'
                             args:
-                                model_type: 'sosh_net.post'
+                                model_type: 'sosh_net.thread'
                                 offset:
                                     params: { offset: {} }
                                 size:
@@ -524,8 +570,6 @@ modules:
                                         forum_id:
                                             eq:
                                                 params: { forum_id: {} }
-                                        reply_to:
-                                            eq: "-1" # only get top level posts for the forum
 
                 params:
                     forum_id:
@@ -568,9 +612,9 @@ modules:
                             name:
                                 lower_case: 'forum'
                             type: struct
-                        posts:
+                        threads:
                             name:
-                                lower_case: 'posts'
+                                lower_case: 'threads'
                             type: list
                             element_type: struct
 
@@ -647,3 +691,96 @@ modules:
                             name:
                                 lower_case: 'total'
                             type: int
+
+            create_thread:
+                name:
+                    lower_case: 'create thread'
+                description: 'Create a new thread and main post in a forum'
+                func:
+                    type: struct
+                    value:
+                        thread_id:
+                            call: 'db.create'
+                            args:
+                                model_type: 'sosh_net.thread'
+                                data:
+                                    forum_id:
+                                        params: { forum_id: {} }
+
+                                    title:
+                                        params: { title: {} }
+                                    
+                                    main_post_id:
+                                        call: 'db.create'
+                                        args:
+                                            model_type: 'sosh_net.post'
+                                            data:
+                                                forum_id:
+                                                    params: { forum_id: {} }
+                                                reply_to: '-1'
+                                                message:
+                                                    params: { message: {} }
+                                                attachments:
+                                                    params: { attachments: {} }
+                                                images:
+                                                    params: { images: {} }
+
+                params:
+                    forum_id:
+                        name:
+                            lower_case: 'forum id'
+                        type: foreign_key
+                        references:
+                            module: 'sosh_net'
+                            table: 'forum'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+
+                    title:
+                        name:
+                            lower_case: 'title'
+                        type: str
+                        examples:
+                            - "General Discussion"
+                            - "Announcements"
+                            - "Feedback"
+
+                    message:
+                        name:
+                            lower_case: 'message'
+                        type: str
+                        examples:
+                            - "Welcome to the general discussion forum!"
+                            - "Here are the latest announcements."
+                            - "We value your feedback and suggestions."
+                    
+                    attachments:
+                        name:
+                            lower_case: 'attachments'
+                        type: list
+                        element_type: foreign_key
+                        references:
+                            module: 'file_system'
+                            table: 'file'
+                            field: 'id'
+                        examples:
+                            - [ "20", "21" ]
+                            - [ "22" ]
+                            - []
+
+                    images:
+                        name:
+                            lower_case: 'images'
+                        type: list
+                        element_type: foreign_key
+                        references:
+                            module: 'media'
+                            table: 'master_image'
+                            field: 'id'
+                        examples:
+                            - [ "10", "11" ]
+                            - [ "12" ]
+                            - []
