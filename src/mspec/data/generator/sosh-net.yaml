@@ -97,6 +97,7 @@ modules:
                 auth:
                     require_login: true
 
+                page: 'sosh-forums.json'
                 instance_page: 'sosh-forum-instance.json'
 
                 fields:
@@ -709,6 +710,8 @@ modules:
 
                                     title:
                                         params: { title: {} }
+
+                                    user_id: '-1'
                                     
                                     main_post_id:
                                         call: 'db.create'
@@ -724,6 +727,7 @@ modules:
                                                     params: { attachments: {} }
                                                 images:
                                                     params: { images: {} }
+                                                user_id: '-1'
 
                 params:
                     forum_id:

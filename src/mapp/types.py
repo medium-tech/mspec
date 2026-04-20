@@ -553,6 +553,8 @@ def get_python_type_for_field(field_type:str) -> type:
             return str
         case 'struct':
             return dict
+        case 'list':
+            return list
         case _:
             raise ValueError(f'Unsupported field type: {field_type}')
 

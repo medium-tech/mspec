@@ -3284,7 +3284,6 @@ function _renderModelList(app, element, ctx = null) {
         throw new Error('renderModelList - model bind definition must bind to state or clientState');
     }
 
-   
     //
     // default state
     //

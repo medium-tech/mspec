@@ -287,14 +287,14 @@ def generate_module_html(spec: dict, module_key: str) -> bytes:
     
     return html.encode('utf-8')
 
-def generate_model_html(spec: dict, module_key: str, model_key: str) -> bytes:
+def generate_model_html(spec: dict, module_key: str, model_key: str, page_spec:str='builtin-mapp-model.json') -> bytes:
     """
     Generate the model page with embedded Lingo JSON spec.
     """
 
     # init spec #
     
-    lingo_model_page = load_browser2_spec('builtin-mapp-model.json')
+    lingo_model_page = load_browser2_spec(page_spec)
     
     project_name = spec['project']['name']['lower_case']
     module = spec['modules'][module_key]
@@ -722,7 +722,7 @@ for module_key, module in mapp_spec['modules'].items():
         if model['page'] is None:
             model_html_content = model_protocol_html_content
         else:
-            model_html_content = generate_page_spec_html(model['page'])
+            model_html_content = generate_model_html(mapp_spec, module_key, model_key, model['page'])
         static_files[f'{module_kebab}/{model_kebab}'] = StaticFileData(
             content=model_html_content,
             content_type='text/html'
