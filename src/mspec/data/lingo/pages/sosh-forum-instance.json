@@ -413,10 +413,67 @@
 			"branch": [
 				{
 					"if": {"op": {"is_loaded": {}}},
-					"then": {"text": "we loaded!"}
+					"then": {
+						"type": "list",
+						"display": {
+							"format": "table",
+							"headers": [
+								{"text": "Id", "field": "id"},
+								{"text": "Thread Title", "field": "title"}
+							]
+						},
+						"value": {
+							"call": "map",
+							"args": {
+								"function": {
+									"type": "struct",
+									"value": {
+										"id": {
+											"call": "key",
+											"args": {
+												"object": {"self": "item"},
+												"key": "id"
+											}
+										},
+										"title": {
+											"link": {
+												"call": "concat",
+												"args": {
+													"items": [
+														"/sosh-net/thread/",
+														{
+															"call": "key",
+															"args": {
+																"object": {"self": "item"},
+																"key": "id"
+															}
+														}
+													]
+												}
+											},
+											"text": {
+												"call": "key",
+												"args": {
+													"object": {"self": "item"},
+													"key": "title"
+												}
+											}
+										}
+									}
+								},
+								"iterable": {
+									"call": "key",
+									"args": {
+										"object": {"state": {"op_view_state": {}}},
+                                		"key": "result.value.threads.value.items"
+									}
+								}
+							}
+						}
+					}
 				},
 				{
-					"else": {"text": "not yet"}
+					"else": {"text": "..."}
 				}
 			]
 		}

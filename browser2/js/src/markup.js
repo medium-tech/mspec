@@ -342,7 +342,39 @@ function _mapFunctionArgs(app, expression, ctx) {
         newCtx.self = {item};
         const result = lingoExecute(app, args.function, newCtx);
         if (typeof result === 'object' && result !== null && 'value' in result) {
-            return result.value;
+
+			if(typeof result.value !== 'object' && !Array.isArray(result.value)) {
+				console.log('MAP RESULT PRIMITIVE', result.value);
+				return result.value;
+			}
+			
+			// for every key in object, if is not a primitive, evaluate it
+			let evaluatedResult = {};
+            for (const [key, value] of Object.entries(result.value)) {
+                if(typeof value === 'object' && value !== null) {
+                    const evaluated = lingoExecute(app, value, newCtx);
+                    
+					// hack solution to get links to render correctly
+					// need to update interpreter to be able to recursively evaluate nested objects
+					if (typeof evaluated === 'object' && evaluated !== null && 'link' in evaluated) {
+						console.log('MAP RESULT LINK', evaluated);
+                        evaluatedResult[key] = {
+							link: lingoExecute(app, evaluated.link, newCtx),
+							text: lingoExecute(app, evaluated.text, newCtx)
+						}
+                    } else {
+						console.log('MAP RESULT EVALUATED', evaluated);
+                        evaluatedResult[key] = evaluated;
+                    }
+
+                } else {
+					console.log('MAP RESULT VALUE', value);
+                    evaluatedResult[key] = value;
+                }
+            }
+			console.log('MAP RESULT', evaluatedResult, result);
+            return evaluatedResult;
+
         } else if (typeof result === 'object' && result !== null && !Array.isArray(result)) {
             const evaluatedResult = {};
             for (const [key, value] of Object.entries(result)) {
@@ -2673,6 +2705,7 @@ function renderSelf(app, expression, ctx = null) {
     try {
         return ctx.self[expression.self];
     } catch (error) {
+		// console.error('renderSelf - missing self context:', expression, ctx);
         throw new Error('self - missing self context');
     }
 }
@@ -3807,7 +3840,7 @@ function createValueElement(app, element, ctx = null) {
                 } else if('call' in value || 'lingo' in value) {
                     // Scripted expression - need to evaluate it
                     try {
-                        const result = lingoExecute(app, value);
+                        const result = lingoExecute(app, value, ctx);
                         if(typeof result === 'object' && result !== null && 'value' in result) {
                             cellValue = result.value;
                         } else {
@@ -3880,12 +3913,25 @@ function createValueElement(app, element, ctx = null) {
             }else{
                 columnNames = element.display.columns;
             }
-            
+
+			let items;
+			if(!Array.isArray(element.value)) {
+                // if element.value is not it array, must be an object that when executed returns an array
+				// executed returns an array
+				items = unwrapValue(lingoExecute(app, element.value, ctx));
+            } else {
+				items = element.value;
+            }
+
+			console.log('createValueElement', element, items);
+
             // Add data rows
             const tbody = document.createElement('tbody');
-            for(const item of element.value) {
-                // Validate that item is a struct
-                if(!item || item.type !== 'struct' || !item.value) {
+            for(const item of items) {
+                
+				const unwrappedStruct = unwrapValue(item);
+                if(typeof unwrappedStruct !== 'object' || unwrappedStruct === null) {
+					console.error('createValueElement - table item is not a struct:', unwrappedStruct);
                     throw new Error('createValueElement - table format list items must be structs');
                 }
                 
@@ -3901,9 +3947,9 @@ function createValueElement(app, element, ctx = null) {
                 for(const columnName of columnNames) {
                     const td = document.createElement('td');
                     
-                    const fieldValue = item.value[columnName];
+                    const fieldValue = unwrappedStruct[columnName];
 
-                    // console.log('createValueElement - ', columnName, fieldValue, typeof fieldValue);
+                    console.log('createValueElement - ', columnName, fieldValue, typeof fieldValue);
                     
                     // Evaluate the value if it's an expression
                     let cellValue = fieldValue;
@@ -3924,9 +3970,10 @@ function createValueElement(app, element, ctx = null) {
                                 }
                             } catch(error) {
                                 console.error('Error evaluating struct field value:', error);
-                                cellValue = '[Error]';
+                                throw new Error('Error evaluating struct field value');
                             }
                         }else if('link' in fieldValue){
+							// console.log('createValueElement - LINK', fieldValue);
                             cellValue = createLinkElement(app, fieldValue);
                         }else if('button' in fieldValue){
                             cellValue = createButtonElement(app, fieldValue);
@@ -4146,10 +4193,26 @@ function createInputElement(app, element, ctx = null) {
  * Create link element
  */
 function createLinkElement(app, element, ctx = null) {
-    const link = document.createElement('a');
-    link.href = element.link;
-    link.textContent = element.text || element.link;
-    return link;
+
+	// if element.link or element.text are not strings, then evaluate them using lingoExecute
+	// let link;
+	// let text;
+    // if (typeof element.link !== 'string') {
+    //     link = unwrapValue(lingoExecute(app, element.link, ctx));
+    // }else{
+    //     link = element.link;
+    // }
+    // if (typeof element.text !== 'string') {
+    //     text = unwrapValue(lingoExecute(app, element.text, ctx));
+    // }else{
+    //     text = element.text;
+    // }
+
+
+    const linkElement = document.createElement('a');
+    linkElement.href = unwrapValue(element.link);
+    linkElement.textContent = unwrapValue(element.text || element.link);
+    return linkElement;
 }
 
 /**
