@@ -1570,9 +1570,14 @@ function typesMatch(a, b, allowAny = true) {
     /*
     Check if two type names match, with option to allow 'any' type
     */
+   	const types = [a, b];
+	console.log('typesMatch()', a, b, types, 'str' in types);
     if(a === b){
         return true;
     }else if (allowAny && (a === 'any' || b === 'any')) {
+        return true;
+	}else if (types.includes('foreign_key') && types.includes('str')) {
+		// allow foreign_key to be treated as str
         return true;
     }else{
         return false;
@@ -2339,6 +2344,9 @@ function renderOp(app, expression, ctx = null) {
         let paramOverrides = {};
 
         if(op.hasOwnProperty('params')){
+			// fields set on op.params will be used in the api request instead of displaying
+			// those inputs to the user, this allows them to be generated dynamically
+			// instead of via user input
 
             const params = expression.op.params;
 
@@ -2367,7 +2375,7 @@ function renderOp(app, expression, ctx = null) {
         // fields
         //
 
-        // add fields from definition if they don't have a matching param set in extraData from op.params
+        // add fields from definition if they don't have a matching param set in paramOverrides from op.params
 
         const formFields = {};
 
@@ -3528,6 +3536,56 @@ function _renderModelCreate(app, element, ctx = null) {
 
     const instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
 
+	//
+	// params
+	//
+
+	let paramOverrides = {};
+
+	if(element.model.hasOwnProperty('params')){
+		// fields set on op.params will be used in the api request instead of displaying
+		// those inputs to the user, this allows them to be generated dynamically
+		// instead of via user input
+
+		const params = element.model.params;
+
+		for(const [paramKey, paramValueExpr] of Object.entries(params)){
+			console.log('DEFINITION', definition);
+			if(!definition.fields.hasOwnProperty(paramKey)){
+				throw new Error(`model - field not found in definition: ${paramKey}`);
+			}
+
+			const paramDef = definition.fields[paramKey];
+			const paramValue = lingoExecute(app, paramValueExpr, ctx);
+			const paramValueType = getTypeName(paramValue);
+
+			if(!typesMatch(paramValueType, paramDef.type)){
+				throw new Error(`model - field value type mismatch for ${paramKey}: ${paramDef.type} != ${paramValueType}`);
+			}
+
+			// set the value in definition.fields so that it can be used in form rendering
+			paramOverrides[paramKey] = unwrapValue(paramValue);
+		}
+	}
+
+	//
+	// form fields
+	//
+
+	// add fields from definition if they don't have a matching param set in paramOverrides from element.model.params
+
+	const formFields = {};
+
+	for(const [paramKey, paramDef] of Object.entries(definition.fields)){
+		if(!paramOverrides.hasOwnProperty(paramKey)){
+			formFields[paramKey] = paramDef;
+		}
+	}
+
+	//
+	// state
+	//
+
     const stateKeys = Object.keys(element.model.bind.state);
     if( stateKeys.length !== 1 ) {
         throw new Error('renderModelCreate - model bind.state must have exactly one field');
@@ -3539,9 +3597,15 @@ function _renderModelCreate(app, element, ctx = null) {
         throw new Error(`renderModelCreate - state field not found: ${stateField}`);
     }
 
+	// merge app.state[stateField].data and paramOverrides to create request body, with paramOverrides taking precedence
+	let requestBody = app.state[stateField].data
+	for (const [key, value] of Object.entries(paramOverrides)) {
+		requestBody[key] = value;
+	}
+
     const formElement = {
         form: {
-            fields: definition.fields,
+            fields: formFields,
             bind: element.model.bind,
             action: {
                 set: {state: {[stateField]: {}}},
@@ -3550,7 +3614,7 @@ function _renderModelCreate(app, element, ctx = null) {
                     args: {
                         http: element.model.http,
                         bind: element.model.bind,
-                        data: app.state[stateField].data
+                        data: requestBody
                     }
                 }
             }
