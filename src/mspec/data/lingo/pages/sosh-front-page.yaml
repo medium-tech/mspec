@@ -18,22 +18,10 @@ state:
 ops: {}
 
 output:
-    - heading: 'shosh net'
+    - heading: 'medium tech'
       level: 1
 
-    - heading: ':: welcome to sosh net'
-      level: 2
-
-    - text: ':: '
+    - text: ' --> '
 
     - link: '/sosh-net'
-      text: 'enter the network'
-
-    - break: 1
-
-    - text: 'here are some interesting things:'
-    - type: list
-      value:
-          - text: 'placeholder for cool stuff'
-            style:
-                italic: true
+      text: 'enter sosh net'

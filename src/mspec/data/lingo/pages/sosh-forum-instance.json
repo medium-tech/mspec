@@ -152,7 +152,7 @@
                 }
             }
         },
-		"total_forums": {
+		"total_threads": {
 			"type": "int",
 			"calc": {
 				"branch": [
@@ -307,7 +307,17 @@
                 "data": {},
                 "result": {"type": "any", "value": null}
             }
-        }
+        },
+		"page_size": {
+			"type": "int",
+			"default": 1,
+			"description": "Number of items per page"
+		},
+		"page_number": {
+			"type": "int",
+			"default": 1,
+			"description": "Current page number"
+		}
     },
     "ops": {
 		"is_loaded": {
@@ -335,6 +345,65 @@
 					}
 				]
 			}
+		},
+		"prev_page": {
+			"args": {},
+			"func": {
+				"call": "all",
+				"args": {
+					"iterable": [
+						{
+							"set": {"state": {"page_number": {}}},
+							"to": {"call": "sub", "args": {"a": {"state": {"page_number": {}}}, "b": 1}}
+						},
+						{
+							"set": {"state": {"op_view_state": {"state": {}}}},
+							"to": "triggered"
+						}
+					]
+				}
+			}
+		},
+		"next_page": {
+			"args": {},
+			"func": {
+				"call": "all",
+				"args": {
+					"iterable": [
+						{
+							"set": {"state": {"page_number": {}}},
+							"to": {"call": "add", "args": {"a": {"state": {"page_number": {}}}, "b": 1}}
+						},
+						{
+							"set": {"state": {"op_view_state": {"state": {}}}},
+							"to": "triggered"
+						}
+					]
+				}
+			}
+		},
+		"last_page": {
+			"args": {},
+			"func": {
+				"call": "max",
+				"args": {
+					"a": {
+						"call": "floordiv",
+						"args": {
+							"a": {"state": {"total_threads": {}}},
+							"b": {"state": {"page_size": {}}}
+						}
+					},
+					"b": 1
+				}
+			}
+		},
+		"refresh": {
+			"args": {},
+			"func": {
+				"set": {"state": {"op_view_state": {"state": {}}}},
+				"to": "triggered"
+			}
 		}
 	},
     "output": [
@@ -348,11 +417,7 @@
         },
         {
             "breadcrumbs": [
-                {
-                    "params": {
-                        "project_name": {}
-                    }
-                },
+                "mtech",
                 {
                     "params": {
                         "module_name": {}
@@ -380,6 +445,43 @@
         {
             "break": 1
         },
+		{
+			"button": {"op": {"toggle_create_view": {}}},
+			"text": "create thread"
+		},
+		{"text": " ● "},
+		{
+			"button": {"op": {"prev_page": {}}}, 
+			"text": "prev",
+			"disabled": {"call": "eq", "args": {"a": {"state": {"page_number": {}}}, "b": 1}}
+		},
+		{
+			"button": {"op": {"next_page": {}}}, 
+			"text": "next",
+			"disabled": {"call": "ge", "args": {"a": {"state": {"page_number": {}}}, "b": {"op": {"last_page": {}}}}}
+        },
+		{"text": " ● "},
+		{
+			"button": {"op": {"refresh": {}}}, 
+			"text": "refresh"
+		},
+		{"text": " "},
+		{
+			"switch": {
+				"expression": {
+					"call": "key",
+					"args": {
+						"object": {"state": {"op_view_state": {}}},
+						"key": "state"
+					}
+				},
+				"cases": [
+					{"case": "result", "then": {"text": "🟢"}},
+					{"case": "error", "then": [{"text": "🔴 "}, {"text": {"state": {"op_view_state": {"error": {}}}}, "style": {"color": "red"}}]}
+				],
+				"default": {"text": "🟡"}
+			}
+		},
         {
             "op": {
                 "bind": {
@@ -388,9 +490,11 @@
                     }
                 },
                 "auto_submit": true,
-                "submit_button_text": "load",
+                "submit_button_text": "refresh",
                 "display": {
-                    "show_result": false
+                    "show_result": false,
+					"show_submit_button": false,
+					"show_status_display": false
                 },
                 "interactive": true,
                 "http": "/api/sosh-net/get-threads-for-forum",
@@ -399,7 +503,16 @@
                         "params": {
                             "model_id": {}
                         }
-                    }
+                    },
+					"size": {"state": {"page_size": {}}},
+					"offset": {
+						"call": "mul",
+						"args": {
+							"a": {"state": {"page_size": {}}},
+							"b": {"call": "sub", "args": {"a": {"state": {"page_number": {}}}, "b": 1}}
+						}
+					}
+
                 },
                 "definition": {
                     "state": {
@@ -408,56 +521,63 @@
                 }
             }
         },
-		{"break": 1},
 		{
 			"branch": [
 				{
 					"if": {"op": {"is_loaded": {}}},
-					"then": {
-						"type": "list",
-						"display": {
-							"format": "table",
-							"headers": [
-								{"text": "Id", "field": "id"},
-								{"text": "Thread Title", "field": "title"}
-							],
-							"instance_url": "/sosh-net/thread/"
-						},
-						"value": {
-							"call": "map",
-							"args": {
-								"function": {
-									"type": "struct",
-									"value": {
-										"id": {
-											"call": "key",
-											"args": {
-												"object": {"self": "item"},
-												"key": "id"
-											}
-										},
-										"title": {
-											"call": "key",
-											"args": {
-												"object": {"self": "item"},
-												"key": "title"
+					"then": [
+						{"text": "total threads: ", "style": {"bold": true}},
+						{"lingo": {"state": {"total_threads": {}}}},
+						{"text": " ● page: ", "style": {"bold": true}},
+						{"lingo": {"state": {"page_number": {}}}},
+						{"text": " of "},
+						{"op": {"last_page": {}}},
+						{
+							"type": "list",
+							"display": {
+								"format": "table",
+								"headers": [
+									{"text": "Id", "field": "id"},
+									{"text": "Thread Title", "field": "title"}
+								],
+								"instance_url": "/sosh-net/thread/"
+							},
+							"value": {
+								"call": "map",
+								"args": {
+									"function": {
+										"type": "struct",
+										"value": {
+											"id": {
+												"call": "key",
+												"args": {
+													"object": {"self": "item"},
+													"key": "id"
+												}
+											},
+											"title": {
+												"call": "key",
+												"args": {
+													"object": {"self": "item"},
+													"key": "title"
+												}
 											}
 										}
-									}
-								},
-								"iterable": {
-									"call": "key",
-									"args": {
-										"object": {"state": {"op_view_state": {}}},
-                                		"key": "result.value.threads.value.items"
+									},
+									"iterable": {
+										"call": "key",
+										"args": {
+											"object": {"state": {"op_view_state": {}}},
+											"key": "result.value.threads.value.items"
+										}
 									}
 								}
 							}
 						}
-					}
+					]
 				},
 				{
-					"else": {"text": "..."}
+					"else": {"text": ""}
 				}
 			]
 		}

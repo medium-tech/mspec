@@ -151,7 +151,7 @@
     "output": [
         {"heading": {"state": {"header": {}}},  "level": 1},
         {"breadcrumbs": [
-            {"params": {"project_name": {}}},
+            "mtech",
             {"params": {"module_name": {}}},
             {"params": {"model_name": {}}}
         ]},

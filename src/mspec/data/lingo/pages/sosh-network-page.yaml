@@ -21,12 +21,12 @@ output:
     - heading: 'shosh net'
       level: 1
 
+    - breadcrumbs:
+          - "mtech"
+          - "sosh-net"
+
     - heading: ":: the network"
       level: 2
-
-    - breadcrumbs:
-          - "home"
-          - "sosh-net"
 
     - break: 1
 

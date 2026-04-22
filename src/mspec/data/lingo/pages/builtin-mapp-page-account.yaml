@@ -62,13 +62,13 @@ output:
     - heading: 'shosh net'
       level: 1
 
-    - heading: ":: account"
-      level: 2
-
     - breadcrumbs:
-          - "home"
+          - "mtech"
           - "sosh-net"
           - "account"
+
+    - heading: ":: account"
+      level: 2
 
     - break: 1
 

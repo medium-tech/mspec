@@ -344,7 +344,7 @@ function _mapFunctionArgs(app, expression, ctx) {
         if (typeof result === 'object' && result !== null && 'value' in result) {
 
 			if(typeof result.value !== 'object' && !Array.isArray(result.value)) {
-				console.log('MAP RESULT PRIMITIVE', result.value);
+				// console.log('MAP RESULT PRIMITIVE', result.value);
 				return result.value;
 			}
 			
@@ -357,22 +357,22 @@ function _mapFunctionArgs(app, expression, ctx) {
 					// hack solution to get links to render correctly
 					// need to update interpreter to be able to recursively evaluate nested objects
 					if (typeof evaluated === 'object' && evaluated !== null && 'link' in evaluated) {
-						console.log('MAP RESULT LINK', evaluated);
+						// console.log('MAP RESULT LINK', evaluated);
                         evaluatedResult[key] = {
 							link: lingoExecute(app, evaluated.link, newCtx),
 							text: lingoExecute(app, evaluated.text, newCtx)
 						}
                     } else {
-						console.log('MAP RESULT EVALUATED', evaluated);
+						// console.log('MAP RESULT EVALUATED', evaluated);
                         evaluatedResult[key] = evaluated;
                     }
 
                 } else {
-					console.log('MAP RESULT VALUE', value);
+					// console.log('MAP RESULT VALUE', value);
                     evaluatedResult[key] = value;
                 }
             }
-			console.log('MAP RESULT', evaluatedResult, result);
+			// console.log('MAP RESULT', evaluatedResult, result);
             return evaluatedResult;
 
         } else if (typeof result === 'object' && result !== null && !Array.isArray(result)) {
@@ -1571,7 +1571,7 @@ function typesMatch(a, b, allowAny = true) {
     Check if two type names match, with option to allow 'any' type
     */
    	const types = [a, b];
-	console.log('typesMatch()', a, b, types, 'str' in types);
+	// console.log('typesMatch()', a, b, types, 'str' in types);
     if(a === b){
         return true;
     }else if (allowAny && (a === 'any' || b === 'any')) {
@@ -2328,6 +2328,8 @@ function renderOp(app, expression, ctx = null) {
 
         const display = expression.op.display || {};
         const showResult = display.hasOwnProperty('show_result') ? unwrapValue(lingoExecute(app, display.show_result, ctx)) : true;
+        const showSubmitButton = display.hasOwnProperty('show_submit_button') ? unwrapValue(lingoExecute(app, display.show_submit_button, ctx)) : true;
+        const showStatusDisplay = display.hasOwnProperty('show_status_display') ? unwrapValue(lingoExecute(app, display.show_status_display, ctx)) : true;
         
         // render op.auto_submit if provided, otherwise default to false
         let autoSubmit;
@@ -2420,6 +2422,8 @@ function renderOp(app, expression, ctx = null) {
                 bind: op.bind,
                 submit_button_text: submitButtonText,
                 auto_submit: autoSubmit,
+				show_submit_button: showSubmitButton,
+				show_status_display: showStatusDisplay,
                 action: {
                     set: {state: {[stateField]: {}}},
                     to: {
@@ -2510,7 +2514,9 @@ function renderOp(app, expression, ctx = null) {
 
         let elements = [];
         elements.push(formElement);
-        elements.push(...resultDisplayElements);
+		if(showStatusDisplay) {
+        	elements.push(...resultDisplayElements);
+        }
         return elements;
 
     }else{
@@ -2536,8 +2542,11 @@ function renderOp(app, expression, ctx = null) {
         }
 
         // run op function
+		console.log(`Running op ${opName}`, opDef)
         
-        return lingoExecute(app, opDef.func, opArgs);
+        const result = lingoExecute(app, opDef.func, opArgs);
+		console.log('Op result', result);
+		return result;
     }
 }
 
@@ -3820,8 +3829,17 @@ function createHeadingElement(app, element, ctx = null) {
 function createTextElement(app, element, ctx = null) {
     // console.debug('createTextElement()', element);
 
+	let textToDisplay;
+	if (typeof element.text === 'string') {
+		textToDisplay = element.text;
+	} else if(typeof element.text === 'object' && element.text !== null) {
+		textToDisplay = unwrapValue(lingoExecute(app, element.text, ctx));
+	}else{
+		throw new Error('createTextElement - unknown text type: ' + JSON.stringify(element.text));
+	}
+
     const span = document.createElement('span');
-    span.textContent = element.text;
+    span.textContent = textToDisplay;
     
     // Apply styles if present
     if (element.style) {
@@ -4005,7 +4023,7 @@ function createValueElement(app, element, ctx = null) {
 				items = element.value;
             }
 
-			console.log('createValueElement', element, items);
+			// console.log('createValueElement', element, items);
 
             // Add data rows
             const tbody = document.createElement('tbody');
@@ -5025,7 +5043,7 @@ function createFormElement(app, element, ctx = null) {
         renderLingoApp(app, document.getElementById('lingo-app'));
     };
 
-    if (autoSubmit === true && currentState.state === 'initial') {
+    if ((autoSubmit === true && currentState.state === 'initial') || currentState.state === 'triggered') {
         setTimeout(() => {
             // console.log('Auto-submitting form on initial render');
             currentState.state = 'loading';
@@ -5036,6 +5054,14 @@ function createFormElement(app, element, ctx = null) {
     
     // submit button //
 
+	let showSubmitButton;
+	if (element.form.hasOwnProperty('show_submit_button')) {
+		showSubmitButton = element.form.show_submit_button;
+	} else {
+		showSubmitButton = true;
+	}
+
+
     const submitButtonText = element.form.submit_button_text || 'Submit';
     const submitButton = document.createElement('button');
     submitButton.disabled = currentState.state === 'loading';
@@ -5043,6 +5069,14 @@ function createFormElement(app, element, ctx = null) {
     submitButton.addEventListener('click', submitAction);
 
     // status display //
+
+	let showStatusDisplay;
+	if (element.form.hasOwnProperty('show_status_display')) {
+		showStatusDisplay = element.form.show_status_display;
+	} else {
+		showStatusDisplay = true;
+	}
+
     let stateColor;
     switch(currentState.state) {
         case 'success':
@@ -5063,7 +5097,7 @@ function createFormElement(app, element, ctx = null) {
     let commentText;
     if (element.hasOwnProperty('comment')) {
         commentText = element.comment;
-    } else if (currentState.state === 'error') {
+    } else if (currentState.state === 'error' && showStatusDisplay) {
         commentText = {text: currentState.error || 'An error occurred', style: {italic: true, color: 'red'}};
     }else{
         commentText = {text: ''}
@@ -5084,11 +5118,14 @@ function createFormElement(app, element, ctx = null) {
     const buttonCell = document.createElement('td');
     // buttonCell.colSpan = 3;
     // buttonCell.className = 'form-submit-cell';
-    buttonCell.appendChild(submitButton);
+    if (showSubmitButton) {
+		buttonCell.appendChild(submitButton);
+    }
 
     const statusCell = document.createElement('td');
-    statusCell.appendChild(statusElement);
-    
+    if (showStatusDisplay) {
+        statusCell.appendChild(statusElement);
+    }
     const additionalCell = document.createElement('td');
     additionalCell.appendChild(additionalElement);
 
