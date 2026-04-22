@@ -3466,26 +3466,28 @@ function _renderModelList(app, element, ctx = null) {
 
     // iterate over app.state[stateField].items and convert id to link
 
-    let itemsForTable = [];
+    // let itemsForTable = [];
+	// let instanceUrl = null;
     
-    if(element.model.hasOwnProperty('instance_url')) {
-        const instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
+    // if(element.model.hasOwnProperty('instance_url')) {
+    //     instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
 
-        for (let item of state.items) {
-            // console.log('renderModelList - pre processing:', item);
+    //     for (let item of state.items) {
+    //         // console.log('renderModelList - pre processing:', item);
 
-            let copyOfItem = JSON.parse(JSON.stringify(item));
-            copyOfItem.value.id = {
-                link: `${instanceUrl}${item.value.id}`,
-                text: String(item.value.id)
-            };
-            itemsForTable.push(copyOfItem);
+    //         let copyOfItem = JSON.parse(JSON.stringify(item));
+    //         copyOfItem.value.id = {
+    //             link: `${instanceUrl}${item.value.id}`,
+    //             text: String(item.value.id)
+    //         };
+    //         itemsForTable.push(copyOfItem);
 
-            // console.log('renderModelList - post processing:', copyOfItem);
-        }
-    }else{
-        itemsForTable = state.items;
-    }
+    //         // console.log('renderModelList - post processing:', copyOfItem);
+    //     }
+    // }else{
+    //     instanceUrl = null;
+    //     itemsForTable = state.items;
+    // }
 
     elements.push({
         type: 'list',
@@ -3493,9 +3495,10 @@ function _renderModelList(app, element, ctx = null) {
             format: 'table',
             headers: headers,
             selecting: selecting,
-            onSelect: onSelect
+            onSelect: onSelect,
+			instance_url: element.model.instance_url || null
         },
-        value: itemsForTable
+        value: state.items
     });
 
     if (state.state === 'pending') {
@@ -3953,6 +3956,11 @@ function createValueElement(app, element, ctx = null) {
             if(element.display.hasOwnProperty('headers') && element.display.hasOwnProperty('columns')) {
                 throw new Error('createValueElement - table format list cannot have both headers and columns definition');
             }
+			if(element.display.hasOwnProperty('selecting') && element.display.hasOwnProperty('instance_url')) {
+				if (element.display.selecting > 0 && element.display.instance_url.length > 0) {
+					throw new Error('createValueElement - table format list cannot have both selecting and instance_url defined with values');
+				}
+			}
 
             /// init table
 
@@ -3989,6 +3997,11 @@ function createValueElement(app, element, ctx = null) {
 
 			console.log('createValueElement', element, items);
 
+			let instanceUrl = null;
+			if(element.display.instance_url) {
+				instanceUrl = unwrapValue(lingoExecute(app, element.display.instance_url, ctx));
+			}
+
             // Add data rows
             const tbody = document.createElement('tbody');
             for(const item of items) {
@@ -4000,12 +4013,18 @@ function createValueElement(app, element, ctx = null) {
                 }
                 
                 const row = document.createElement('tr');
-                if (element.display.selecting === 1) {
+                if (element.display.selecting === 1 || element.display.instance_url) {
                     row.className = 'list-selecting';
                 }
 
                 if (element.display.onSelect) {
                     row.onclick = () => element.display.onSelect(item);
+                }else if (instanceUrl !== null) {
+					if(!unwrappedStruct.hasOwnProperty('id')) {
+						throw new Error('createValueElement - table item is missing id for instance_url navigation');
+                    }
+					const unwrappedId = unwrapValue(unwrappedStruct.id);
+                    row.onclick = () => window.location.href = instanceUrl + unwrappedId;
                 }
                 
                 for(const columnName of columnNames) {
@@ -4013,7 +4032,7 @@ function createValueElement(app, element, ctx = null) {
                     
                     const fieldValue = unwrappedStruct[columnName];
 
-                    console.log('createValueElement - ', columnName, fieldValue, typeof fieldValue);
+                    // console.log('createValueElement - ', columnName, fieldValue, typeof fieldValue);
                     
                     // Evaluate the value if it's an expression
                     let cellValue = fieldValue;
