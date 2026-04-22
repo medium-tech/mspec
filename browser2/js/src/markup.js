@@ -3861,6 +3861,16 @@ function createTextElement(app, element, ctx = null) {
 function createValueElement(app, element, ctx = null) {
 
     // console.log('createValueElement()', element);
+	// element.display.selecting or default -1
+	const selecting = (element.display && element.display.selecting) ? element.display.selecting : -1;
+
+	// element.display.instance_url or default empty string
+	let instanceUrl;
+	if (element.display && element.display.instance_url) {
+		instanceUrl = unwrapValue(lingoExecute(app, element.display.instance_url, ctx));
+	}else{
+		instanceUrl = '';
+	}
 
     if(element.type == 'struct') {
         // Render individual struct as a table
@@ -3956,11 +3966,11 @@ function createValueElement(app, element, ctx = null) {
             if(element.display.hasOwnProperty('headers') && element.display.hasOwnProperty('columns')) {
                 throw new Error('createValueElement - table format list cannot have both headers and columns definition');
             }
-			if(element.display.hasOwnProperty('selecting') && element.display.hasOwnProperty('instance_url')) {
-				if (element.display.selecting > 0 && element.display.instance_url.length > 0) {
-					throw new Error('createValueElement - table format list cannot have both selecting and instance_url defined with values');
-				}
+			
+			if (selecting > 0 && instanceUrl.length > 0) {
+				throw new Error('createValueElement - table format list cannot have both selecting and instance_url defined with values');
 			}
+			
 
             /// init table
 
@@ -3997,11 +4007,6 @@ function createValueElement(app, element, ctx = null) {
 
 			console.log('createValueElement', element, items);
 
-			let instanceUrl = null;
-			if(element.display.instance_url) {
-				instanceUrl = unwrapValue(lingoExecute(app, element.display.instance_url, ctx));
-			}
-
             // Add data rows
             const tbody = document.createElement('tbody');
             for(const item of items) {
@@ -4013,13 +4018,13 @@ function createValueElement(app, element, ctx = null) {
                 }
                 
                 const row = document.createElement('tr');
-                if (element.display.selecting === 1 || element.display.instance_url) {
+                if (selecting === 1 || instanceUrl) {
                     row.className = 'list-selecting';
                 }
 
                 if (element.display.onSelect) {
                     row.onclick = () => element.display.onSelect(item);
-                }else if (instanceUrl !== null) {
+                }else if (instanceUrl !== '') {
 					if(!unwrappedStruct.hasOwnProperty('id')) {
 						throw new Error('createValueElement - table item is missing id for instance_url navigation');
                     }
