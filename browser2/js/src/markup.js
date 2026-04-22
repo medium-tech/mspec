@@ -3835,7 +3835,8 @@ function createTextElement(app, element, ctx = null) {
 	} else if(typeof element.text === 'object' && element.text !== null) {
 		textToDisplay = unwrapValue(lingoExecute(app, element.text, ctx));
 	}else{
-		throw new Error('createTextElement - unknown text type: ' + JSON.stringify(element.text));
+		console.error('createTextElement - unknown text type:', element);
+		throw new Error('createTextElement - unknown text type');
 	}
 
     const span = document.createElement('span');
@@ -5091,6 +5092,7 @@ function createFormElement(app, element, ctx = null) {
 
     const statusDisplay = {text: currentState.state, style: {bold: true, color: stateColor}};
     const statusElement = createTextElement(app, statusDisplay, ctx);
+	console.debug('createFormElement - statusDisplay:', statusDisplay)
     
     // additional comment //
 
