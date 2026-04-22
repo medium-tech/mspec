@@ -420,7 +420,8 @@
 							"headers": [
 								{"text": "Id", "field": "id"},
 								{"text": "Thread Title", "field": "title"}
-							]
+							],
+							"instance_url": "/sosh-net/thread/"
 						},
 						"value": {
 							"call": "map",
@@ -436,27 +437,10 @@
 											}
 										},
 										"title": {
-											"link": {
-												"call": "concat",
-												"args": {
-													"items": [
-														"/sosh-net/thread/",
-														{
-															"call": "key",
-															"args": {
-																"object": {"self": "item"},
-																"key": "id"
-															}
-														}
-													]
-												}
-											},
-											"text": {
-												"call": "key",
-												"args": {
-													"object": {"self": "item"},
-													"key": "title"
-												}
+											"call": "key",
+											"args": {
+												"object": {"self": "item"},
+												"key": "title"
 											}
 										}
 									}
