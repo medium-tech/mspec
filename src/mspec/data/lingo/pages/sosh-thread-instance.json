@@ -631,7 +631,10 @@
             "level": 2
         },
         {
-            "text": "forum: "
+            "text": "forum: ",
+			"style": {
+				"bold": true
+			}
         },
         {
             "lingo": {
@@ -644,10 +647,6 @@
         },
         {
             "break": 1
-        },
-        {
-            "heading": "main post",
-            "level": 3
         },
         {
             "lingo": {

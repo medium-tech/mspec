@@ -2542,10 +2542,10 @@ function renderOp(app, expression, ctx = null) {
         }
 
         // run op function
-		console.log(`Running op ${opName}`, opDef)
+		// console.log(`Running op ${opName}`, opDef)
         
         const result = lingoExecute(app, opDef.func, opArgs);
-		console.log('Op result', result);
+		// console.log('Op result', result);
 		return result;
     }
 }
@@ -5045,9 +5045,9 @@ function createFormElement(app, element, ctx = null) {
     };
 
     if ((autoSubmit === true && currentState.state === 'initial') || currentState.state === 'triggered') {
+		currentState.state = 'loading';
         setTimeout(() => {
-            // console.log('Auto-submitting form on initial render');
-            currentState.state = 'loading';
+            console.log(`Submitting form - state: ${currentState.state}, autoSubmit: ${autoSubmit}`);
             submitAction();
             renderLingoApp(app, document.getElementById('lingo-app'), true);
         }, 0);
@@ -5092,7 +5092,7 @@ function createFormElement(app, element, ctx = null) {
 
     const statusDisplay = {text: currentState.state, style: {bold: true, color: stateColor}};
     const statusElement = createTextElement(app, statusDisplay, ctx);
-	console.debug('createFormElement - statusDisplay:', statusDisplay)
+	// console.debug('createFormElement - statusDisplay:', statusDisplay)
     
     // additional comment //
 

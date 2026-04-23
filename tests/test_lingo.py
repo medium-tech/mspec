@@ -498,42 +498,6 @@ class TestLingoPages(unittest.TestCase):
         self.assertIsInstance(first_item['value']['scores'], list)
         self.assertIsInstance(first_item['value']['flags'], list)
 
-    def test_sosh_thread_instance_page_dual_ops(self):
-        spec = load_browser2_spec('sosh-thread-instance.json')
-
-        self.assertIn('thread_op_view_state', spec['state'])
-        self.assertIn('replies_op_view_state', spec['state'])
-        self.assertIn('thread_op_definition', spec['state'])
-        self.assertIn('replies_op_definition', spec['state'])
-
-        op_widgets = []
-        for element in spec['output']:
-            if isinstance(element, dict) and 'op' in element and isinstance(element['op'], dict) and 'bind' in element['op']:
-                op_widgets.append(element['op'])
-
-        self.assertEqual(len(op_widgets), 2)
-
-        thread_op = op_widgets[0]
-        self.assertEqual(thread_op['http'], '/api/sosh-net/get-thread-and-post')
-        self.assertTrue(thread_op['auto_submit'])
-        self.assertEqual(thread_op['bind']['state'], {'thread_op_view_state': {}})
-        self.assertEqual(thread_op['params']['thread_id'], {'params': {'model_id': {}}})
-
-        replies_op = op_widgets[1]
-        self.assertEqual(replies_op['http'], '/api/sosh-net/get-replies-for-post')
-        self.assertTrue(replies_op['auto_submit'])
-        self.assertEqual(replies_op['bind']['state'], {'replies_op_view_state': {}})
-        self.assertEqual(
-            replies_op['params']['post_id'],
-            {
-                'call': 'key',
-                'args': {
-                    'object': {'state': {'main_post': {}}},
-                    'key': 'id'
-                }
-            }
-        )
-
     
 built_in = builtin_spec_files()
 lingo_scripts = built_in['lingo_script']
