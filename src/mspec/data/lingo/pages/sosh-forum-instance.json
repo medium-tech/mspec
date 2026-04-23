@@ -310,7 +310,7 @@
         },
 		"page_size": {
 			"type": "int",
-			"default": 1,
+			"default": 20,
 			"description": "Number of items per page"
 		},
 		"page_number": {

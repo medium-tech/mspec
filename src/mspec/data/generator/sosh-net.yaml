@@ -151,6 +151,8 @@ modules:
                 auth:
                     require_login: true
 
+                instance_page: 'sosh-thread-instance.json'
+
                 fields:
                     user_id:
                         name:
@@ -798,3 +800,55 @@ modules:
                                 module: 'sosh_net'
                                 table: 'thread'
                                 field: 'id'
+            
+            get_thread_and_post:
+                name:
+                    lower_case: 'get thread and post'
+                description: 'Get a thread and its main post by thread id'
+                func:
+                    type: struct
+                    self:
+                        thread:
+                            call: 'db.read'
+                            args:
+                                model_id:
+                                    params: { thread_id: {} }
+                                model_type: 'sosh_net.thread'
+                    value:
+                        thread: {self: thread}
+                        main_post:
+                            call: 'db.read'
+                            args:
+                                model_id:
+                                    call: 'key'
+                                    args:
+                                        key: 'main_post_id'
+                                        object:
+                                            self: thread
+                                model_type: 'sosh_net.post'
+
+                params:
+                    thread_id:
+                        name:
+                            lower_case: 'thread id'
+                        type: foreign_key
+                        references:
+                            module: 'sosh_net'
+                            table: 'thread'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+
+                result:
+                    type: struct
+                    fields:
+                        thread:
+                            name:
+                                lower_case: 'thread'
+                            type: struct
+                        main_post:
+                            name:
+                                lower_case: 'main post'
+                            type: struct

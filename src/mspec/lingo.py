@@ -781,10 +781,10 @@ def lingo_execute(app:LingoApp, expression:Any, ctx:Optional[dict]=None) -> Any:
             result = render_heading(app, expression, ctx)
         elif 'args' in expression:
             result = render_args(app, expression, ctx)
-        elif 'self' in expression:
-            result = render_self(app, expression, ctx)
         elif 'value' in expression:
             result = render_value(app, expression, ctx)
+        elif 'self' in expression:
+            result = render_self(app, expression, ctx)
         else:
             result = expression
     else:
@@ -927,10 +927,17 @@ def render_switch(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
 #
 
 def render_self(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
+    self_key = expression['self']
+    if not isinstance(self_key, str):
+        raise ValueError('self - self key must be a string')
+
     try:
-        return ctx['self'][expression['self']]
-    except (KeyError, TypeError):
-        raise ValueError('self - missing self context')
+        return ctx.self[self_key]
+    except AttributeError:
+        try:
+            return ctx['self'][self_key]
+        except KeyError:
+            raise ValueError(f'self - self key not found in context: {self_key}')
 
 def render_params(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
     # parse expression #
@@ -1228,15 +1235,28 @@ def render_value(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
     except KeyError:
         raise ValueError('value - missing type key')
     
+	# optional self key to create local state downstream #
+    self_keys = []
+    if 'self' in expression:
+        try:
+            for self_key, self_expr in expression['self'].items():
+                ctx.self[self_key] = lingo_execute(app, self_expr, ctx)
+                self_keys.append(self_key)
+        except Exception as e:
+            raise ValueError(f'value - error processing self expression for key: {self_key}') from e
+        
+    
+	# execute based on type #
+    
     match _type:
         case 'bool' | 'int' | 'float' | 'str' | 'datetime':
             if isinstance(expression['value'], dict):
                 try:
-                    return lingo_execute(app, expression['value'], ctx)
+                    result = lingo_execute(app, expression['value'], ctx)
                 except Exception as e:
                     raise ValueError('value - error processing expression') from e
             else:
-                return expression
+                result = expression
         
         case 'list':
             if not isinstance(expression['value'], list):
@@ -1254,7 +1274,7 @@ def render_value(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
             
             expression['value'] = result_list
 
-            return expression
+            result = expression
         
         case 'struct':
             if not isinstance(expression['value'], dict):
@@ -1273,7 +1293,12 @@ def render_value(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
                     result_struct[field_name] = field_value
             
             expression['value'] = result_struct
-            return expression
+            result = expression
         
         case _:
             raise ValueError(f'value - unsupported type: {_type}')
+
+    for self_key in self_keys:
+        del ctx.self[self_key]
+
+    return result
