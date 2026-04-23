@@ -107,6 +107,101 @@
                 }
             }
         },
+        "create_reply_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "item_id": "",
+                "data": {},
+                "field_errors": {}
+            }
+        },
+        "post_model_definition": {
+            "type": "model",
+            "default": {
+                "name": {
+                    "lower_case": "post"
+                },
+                "fields": {
+                    "user_id": {
+                        "name": {
+                            "lower_case": "user id"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "auth",
+                            "table": "user",
+                            "field": "id"
+                        }
+                    },
+                    "forum_id": {
+                        "name": {
+                            "lower_case": "forum id"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "sosh_net",
+                            "table": "forum",
+                            "field": "id"
+                        }
+                    },
+                    "reply_to": {
+                        "name": {
+                            "lower_case": "reply to"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "sosh_net",
+                            "table": "post",
+                            "field": "id"
+                        }
+                    },
+                    "message": {
+                        "name": {
+                            "lower_case": "message"
+                        },
+                        "type": "str"
+                    },
+                    "attachments": {
+                        "name": {
+                            "lower_case": "attachments"
+                        },
+                        "type": "list",
+                        "element_type": "foreign_key",
+                        "references": {
+                            "module": "file_system",
+                            "table": "file",
+                            "field": "id"
+                        }
+                    },
+                    "images": {
+                        "name": {
+                            "lower_case": "images"
+                        },
+                        "type": "list",
+                        "element_type": "foreign_key",
+                        "references": {
+                            "module": "media",
+                            "table": "master_image",
+                            "field": "id"
+                        }
+                    },
+                    "related_posts": {
+                        "name": {
+                            "lower_case": "related posts"
+                        },
+                        "type": "list",
+                        "element_type": "foreign_key",
+                        "references": {
+                            "module": "sosh_net",
+                            "table": "post",
+                            "field": "id"
+                        }
+                    }
+                }
+            }
+        },
         "thread_op_definition": {
             "name": {
                 "lower_case": "thread op definition"
@@ -637,10 +732,37 @@
 			}
         },
         {
-            "lingo": {
-                "state": {
-                    "forum": {
-                        "topic": {}
+            "call": "map",
+            "args": {
+                "iterable": [
+                    0
+                ],
+                "function": {
+                    "link": {
+                        "call": "concat",
+                        "args": {
+                            "items": [
+                                "/sosh-net/forum/",
+                                {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "forum": {}
+                                            }
+                                        },
+                                        "key": "id"
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "text": {
+                        "state": {
+                            "forum": {
+                                "topic": {}
+                            }
+                        }
                     }
                 }
             }
@@ -759,6 +881,54 @@
                 ],
                 "default": {
                     "text": "🟡"
+                }
+            }
+        },
+        {
+            "break": 1
+        },
+        {
+            "model": {
+                "bind": {
+                    "state": {
+                        "create_reply_state": {}
+                    }
+                },
+                "display": "create",
+                "http": "/api/sosh-net/post",
+                "instance_url": "/sosh-net/post/",
+                "definition": {
+                    "state": {
+                        "post_model_definition": {}
+                    }
+                },
+                "params": {
+                    "user_id": "-1",
+                    "forum_id": {
+                        "call": "key",
+                        "args": {
+                            "object": {
+                                "state": {
+                                    "forum": {}
+                                }
+                            },
+                            "key": "id"
+                        }
+                    },
+                    "reply_to": {
+                        "call": "key",
+                        "args": {
+                            "object": {
+                                "state": {
+                                    "main_post": {}
+                                }
+                            },
+                            "key": "id"
+                        }
+                    },
+                    "attachments": [],
+                    "images": [],
+                    "related_posts": []
                 }
             }
         },
