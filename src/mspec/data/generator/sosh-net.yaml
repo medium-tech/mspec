@@ -826,6 +826,36 @@ modules:
                                         object:
                                             self: thread
                                 model_type: 'sosh_net.post'
+                        forum:
+                            branch:
+                                - if:
+                                    call: 'eq'
+                                    args:
+                                        a: 
+                                            call: 'key'
+                                            args:
+                                                key: 'forum_id'
+                                                object:
+                                                    self: thread
+                                        b: "-1"
+                                  then:
+                                    type: struct
+                                    value:
+                                        id: "-1"
+                                        user_id: "-1"
+                                        topic: "Chatter"
+                                        description: "A place for off topic threads"
+                                        tags: []
+                                - else:
+                                      call: 'db.read'
+                                      args:
+                                          model_id:
+                                            call: 'key'
+                                            args:
+                                                key: 'forum_id'
+                                                object:
+                                                    self: thread
+                                          model_type: 'sosh_net.forum'
 
                 params:
                     thread_id:
