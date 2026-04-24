@@ -342,9 +342,6 @@ function _aAndBArgs(app, expression, ctx) {
 
 	const a = unwrapValue(lingoExecute(app, expression.args.a, ctx));
 	const b = unwrapValue(lingoExecute(app, expression.args.b, ctx));
-
-	console.log('_aAndBArgs', 'a:', a, 'b:', b, 'source:', expression.args);
-
 	return [a, b];
 }
 
@@ -1414,7 +1411,7 @@ function startTimer(app, timerName) {
         throw new Error(`timer '${timerName}' not defined in spec`);
     }
 
-	console.log(`Starting timer '${timerName}' with spec:`, timerSpec);
+	// console.log(`Starting timer '${timerName}' with spec:`, timerSpec);
 
     function runTimer() {
 		console.log(`Running timer '${timerName}'...`);
@@ -1425,7 +1422,7 @@ function startTimer(app, timerName) {
             console.error(`Timer '${timerName}' func error:`, error);
         }
 
-		console.log(`Timer '${timerName}' func result`, funcResult);
+		// console.log(`Timer '${timerName}' func result`, funcResult);
 
         let interval;
 		const ctx = {self: {func_result: funcResult}};
@@ -1440,7 +1437,7 @@ function startTimer(app, timerName) {
             }
         }
 
-		console.log(`Timer '${timerName}' interval:`, interval);
+		// console.log(`Timer '${timerName}' interval:`, interval);
 
 		const container = document.getElementById('lingo-app');
         if (container) {
@@ -3573,6 +3570,16 @@ function _renderModelCreate(app, element, ctx = null) {
         throw new Error('renderModelCreate - missing instance_url definition');
     }
 
+	let showModelState;
+	if(element.model.hasOwnProperty('display') && element.model.display.hasOwnProperty('show_model_state')){
+		// show_model_state is to display the state of the model form, including link after
+		// creating a model, this is separate from the form's state which will still be displayed
+		showModelState = unwrapValue(lingoExecute(app, element.model.display.show_model_state, ctx));
+	}else{
+		showModelState = true;
+	}
+
+
     const instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
 
 	//
@@ -3641,7 +3648,7 @@ function _renderModelCreate(app, element, ctx = null) {
 		requestBody[key] = value;
 	}
 
-    const formElement = {
+    let formElement = {
         form: {
             fields: formFields,
             bind: element.model.bind,
@@ -3658,6 +3665,10 @@ function _renderModelCreate(app, element, ctx = null) {
             }
         }
     };
+
+	if(element.hasOwnProperty('comment')) {
+		formElement.comment = element.comment;
+	}
 
     const stateSwitch = {
         switch: {
@@ -3696,7 +3707,9 @@ function _renderModelCreate(app, element, ctx = null) {
 
     let elements = [];
     elements.push(formElement);
-    elements.push(...renderSwitch(app, stateSwitch, ctx));
+	if(showModelState) {
+    	elements.push(...renderSwitch(app, stateSwitch, ctx));
+    }
     return elements;
 }
 
@@ -4330,7 +4343,7 @@ function createLinkElement(app, element, ctx = null) {
 	//if element.link or element.text are not strings, then evaluate them using lingoExecute
 	let link;
 	let text;
-	console.log('createLinkElement()', element);
+	//console.log('createLinkElement()', element);
     if (typeof element.link !== 'string') {
         link = unwrapValue(lingoExecute(app, element.link, ctx));
     }else{
@@ -5074,7 +5087,7 @@ function createFormElement(app, element, ctx = null) {
     if ((autoSubmit === true && currentState.state === 'initial') || currentState.state === 'triggered') {
 		currentState.state = 'loading';
         setTimeout(() => {
-            console.log(`Submitting form - state: ${currentState.state}, autoSubmit: ${autoSubmit}`);
+            // console.log(`Submitting form - state: ${currentState.state}, autoSubmit: ${autoSubmit}`);
             submitAction();
             renderLingoApp(app, document.getElementById('lingo-app'), true);
         }, 0);
@@ -5123,18 +5136,24 @@ function createFormElement(app, element, ctx = null) {
     
     // additional comment //
 
-    let commentText;
+    let comment;
     if (element.hasOwnProperty('comment')) {
-        commentText = element.comment;
+		if(typeof element.comment === 'string') {
+        	comment = {text: element.comment};
+		}else if (typeof element.comment === 'object' && !Array.isArray(element.comment) && element.comment !== null) {
+			comment = lingoExecute(app, element.comment, ctx);
+		}else{
+			throw new Error('Invalid comment property on form element - must be string or button element');
+		}
     } else if (currentState.state === 'error' && showStatusDisplay) {
-        commentText = {text: currentState.error || 'An error occurred', style: {italic: true, color: 'red'}};
+        comment = {text: currentState.error || 'An error occurred', style: {italic: true, color: 'red'}};
     }else{
-        commentText = {text: ''}
+        comment = {text: ''}
     }
 
     let additionalElement;
     try{
-        additionalElement = createTextElement(app, commentText, ctx);
+        additionalElement = createDOMElement(app, comment, ctx);
     }catch(error) {
         console.error('Error creating additionalElement for form comment:', error);
         throw `Error creating form comment element must be a text element: ${error}`;

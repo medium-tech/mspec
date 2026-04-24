@@ -754,7 +754,7 @@
                     }
                 }
             },
-            "level": 2
+            "level": 3
         },
         {
             "text": "forum: ",
@@ -803,7 +803,8 @@
             }
         },
         {
-            "break": 1
+            "heading": ":: replies",
+			"level": 3
         },
         {
             "button": {
@@ -904,54 +905,6 @@
                 ],
                 "default": {
                     "text": "🟡"
-                }
-            }
-        },
-        {
-            "break": 1
-        },
-        {
-            "model": {
-                "bind": {
-                    "state": {
-                        "create_reply_state": {}
-                    }
-                },
-                "display": "create",
-                "http": "/api/sosh-net/post",
-                "instance_url": "/sosh-net/post/",
-                "definition": {
-                    "state": {
-                        "post_model_definition": {}
-                    }
-                },
-                "params": {
-                    "user_id": "-1",
-                    "forum_id": {
-                        "call": "key",
-                        "args": {
-                            "object": {
-                                "state": {
-                                    "forum": {}
-                                }
-                            },
-                            "key": "id"
-                        }
-                    },
-                    "reply_to": {
-                        "call": "key",
-                        "args": {
-                            "object": {
-                                "state": {
-                                    "main_post": {}
-                                }
-                            },
-                            "key": "id"
-                        }
-                    },
-                    "attachments": [],
-                    "images": [],
-                    "related_posts": []
                 }
             }
         },
@@ -1167,6 +1120,87 @@
                     }
                 }
             ]
+        },
+		{"break": 1},
+		{"heading": ":: add reply", "level": 5},
+		{
+            "model": {
+                "bind": {
+                    "state": {
+                        "create_reply_state": {}
+                    }
+                },
+                "display": {
+					"mode": "create",
+					"show_model_state": false
+				},
+                "http": "/api/sosh-net/post",
+                "instance_url": "/sosh-net/post/",
+                "definition": {
+                    "state": {
+                        "post_model_definition": {}
+                    }
+                },
+                "params": {
+                    "user_id": "-1",
+                    "forum_id": {
+                        "call": "key",
+                        "args": {
+                            "object": {
+                                "state": {
+                                    "forum": {}
+                                }
+                            },
+                            "key": "id"
+                        }
+                    },
+                    "reply_to": {
+                        "call": "key",
+                        "args": {
+                            "object": {
+                                "state": {
+                                    "main_post": {}
+                                }
+                            },
+                            "key": "id"
+                        }
+                    },
+                    "attachments": [],
+                    "images": [],
+                    "related_posts": []
+                }
+            },
+			"comment": {
+				"branch": [
+					{
+						"if": {
+							"call": "eq",
+							"args": {
+								"a": {
+									"call": "key",
+									"args": {
+										"object": {
+											"state": {
+												"create_reply_state": {}
+											}
+										},
+										"key": "state"
+									}
+								},
+								"b": "success"
+							}
+						},
+						"then": {
+							"button": {"op": {"refresh": {}}},
+							"text": "refresh"
+						}
+					},
+					{
+						"else": {"text": ""}
+					}
+				]
+			}
         }
     ]
 }
+
