@@ -129,6 +129,20 @@
                 "field_errors": {}
             }
         },
+        "display_create": {
+            "type": "bool",
+            "default": false
+        },
+        "create_thread_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "item_id": "",
+                "data": {},
+                "field_errors": {}
+            }
+        },
         "header": {
             "type": "str",
             "calc": {
@@ -299,6 +313,55 @@
                 }
             }
         },
+        "thread_model_definition": {
+            "type": "model",
+            "default": {
+                "name": {
+                    "lower_case": "thread"
+                },
+                "fields": {
+                    "user_id": {
+                        "name": {
+                            "lower_case": "user id"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "auth",
+                            "table": "user",
+                            "field": "id"
+                        }
+                    },
+                    "forum_id": {
+                        "name": {
+                            "lower_case": "forum id"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "sosh_net",
+                            "table": "forum",
+                            "field": "id"
+                        }
+                    },
+                    "title": {
+                        "name": {
+                            "lower_case": "title"
+                        },
+                        "type": "str"
+                    },
+                    "main_post_id": {
+                        "name": {
+                            "lower_case": "main post id"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "sosh_net",
+                            "table": "post",
+                            "field": "id"
+                        }
+                    }
+                }
+            }
+        },
         "op_view_state": {
             "type": "struct",
             "default": {
@@ -404,6 +467,26 @@
 				"set": {"state": {"op_view_state": {"state": {}}}},
 				"to": "triggered"
 			}
+		},
+        "toggle_create_view": {
+            "args": {},
+            "func": {
+                "set": {
+                    "state": {
+                        "display_create": {}
+                    }
+                },
+                "to": {
+                    "call": "not",
+                    "args": {
+                        "object": {
+                            "state": {
+                                "display_create": {}
+                            }
+                        }
+                    }
+                }
+            }
 		}
 	},
     "output": [
@@ -445,141 +528,332 @@
         {
             "break": 1
         },
-		{
-			"button": {"op": {"toggle_create_view": {}}},
-			"text": "create thread"
-		},
-		{"text": " ● "},
-		{
-			"button": {"op": {"prev_page": {}}}, 
-			"text": "prev",
-			"disabled": {"call": "eq", "args": {"a": {"state": {"page_number": {}}}, "b": 1}}
-		},
-		{
-			"button": {"op": {"next_page": {}}}, 
-			"text": "next",
-			"disabled": {"call": "ge", "args": {"a": {"state": {"page_number": {}}}, "b": {"op": {"last_page": {}}}}}
-        },
-		{"text": " ● "},
-		{
-			"button": {"op": {"refresh": {}}}, 
-			"text": "refresh"
-		},
-		{"text": " "},
-		{
-			"switch": {
-				"expression": {
-					"call": "key",
-					"args": {
-						"object": {"state": {"op_view_state": {}}},
-						"key": "state"
-					}
-				},
-				"cases": [
-					{"case": "result", "then": {"text": "🟢"}},
-					{"case": "error", "then": [{"text": "🔴 "}, {"text": {"state": {"op_view_state": {"error": {}}}}, "style": {"color": "red"}}]}
-				],
-				"default": {"text": "🟡"}
-			}
-		},
         {
-            "op": {
-                "bind": {
-                    "state": {
-                        "op_view_state": {}
-                    }
-                },
-                "auto_submit": true,
-                "submit_button_text": "refresh",
-                "display": {
-                    "show_result": false,
-					"show_submit_button": false,
-					"show_status_display": false
-                },
-                "interactive": true,
-                "http": "/api/sosh-net/get-threads-for-forum",
-                "params": {
-                    "forum_id": {
-                        "params": {
-                            "model_id": {}
+            "branch": [
+                {
+                    "if": {
+                        "state": {
+                            "display_create": {}
                         }
                     },
-					"size": {"state": {"page_size": {}}},
-					"offset": {
-						"call": "mul",
-						"args": {
-							"a": {"state": {"page_size": {}}},
-							"b": {"call": "sub", "args": {"a": {"state": {"page_number": {}}}, "b": 1}}
-						}
-					}
-
+                    "then": [
+                        {
+                            "button": {
+                                "op": {
+                                    "toggle_create_view": {}
+                                }
+                            },
+                            "text": "back"
+                        },
+                        {
+                            "model": {
+                                "bind": {
+                                    "state": {
+                                        "create_thread_state": {}
+                                    }
+                                },
+                                "display": "create",
+                                "http": "/api/sosh-net/thread",
+                                "instance_url": "/sosh-net/thread/",
+                                "definition": {
+                                    "state": {
+                                        "thread_model_definition": {}
+                                    }
+                                },
+                                "params": {
+                                    "user_id": "-1",
+                                    "forum_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ]
                 },
-                "definition": {
-                    "state": {
-                        "op_definition": {}
-                    }
+                {
+                    "else": [
+                        {
+                            "button": {
+                                "op": {
+                                    "toggle_create_view": {}
+                                }
+                            },
+                            "text": "create thread"
+                        },
+                        {
+                            "text": " ● "
+                        },
+                        {
+                            "button": {
+                                "op": {
+                                    "prev_page": {}
+                                }
+                            },
+                            "text": "prev",
+                            "disabled": {
+                                "call": "eq",
+                                "args": {
+                                    "a": {
+                                        "state": {
+                                            "page_number": {}
+                                        }
+                                    },
+                                    "b": 1
+                                }
+                            }
+                        },
+                        {
+                            "button": {
+                                "op": {
+                                    "next_page": {}
+                                }
+                            },
+                            "text": "next",
+                            "disabled": {
+                                "call": "ge",
+                                "args": {
+                                    "a": {
+                                        "state": {
+                                            "page_number": {}
+                                        }
+                                    },
+                                    "b": {
+                                        "op": {
+                                            "last_page": {}
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "text": " ● "
+                        },
+                        {
+                            "button": {
+                                "op": {
+                                    "refresh": {}
+                                }
+                            },
+                            "text": "refresh"
+                        },
+                        {
+                            "text": " "
+                        },
+                        {
+                            "switch": {
+                                "expression": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "op_view_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "cases": [
+                                    {
+                                        "case": "result",
+                                        "then": {
+                                            "text": "🟢"
+                                        }
+                                    },
+                                    {
+                                        "case": "error",
+                                        "then": [
+                                            {
+                                                "text": "🔴 "
+                                            },
+                                            {
+                                                "text": {
+                                                    "state": {
+                                                        "op_view_state": {
+                                                            "error": {}
+                                                        }
+                                                    }
+                                                },
+                                                "style": {
+                                                    "color": "red"
+                                                }
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "default": {
+                                    "text": "🟡"
+                                }
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "op_view_state": {}
+                                    }
+                                },
+                                "auto_submit": true,
+                                "submit_button_text": "refresh",
+                                "display": {
+                                    "show_result": false,
+                                    "show_submit_button": false,
+                                    "show_status_display": false
+                                },
+                                "interactive": true,
+                                "http": "/api/sosh-net/get-threads-for-forum",
+                                "params": {
+                                    "forum_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "size": {
+                                        "state": {
+                                            "page_size": {}
+                                        }
+                                    },
+                                    "offset": {
+                                        "call": "mul",
+                                        "args": {
+                                            "a": {
+                                                "state": {
+                                                    "page_size": {}
+                                                }
+                                            },
+                                            "b": {
+                                                "call": "sub",
+                                                "args": {
+                                                    "a": {
+                                                        "state": {
+                                                            "page_number": {}
+                                                        }
+                                                    },
+                                                    "b": 1
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "definition": {
+                                    "state": {
+                                        "op_definition": {}
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "branch": [
+                                {
+                                    "if": {
+                                        "op": {
+                                            "is_loaded": {}
+                                        }
+                                    },
+                                    "then": [
+                                        {
+                                            "text": "total threads: ",
+                                            "style": {
+                                                "bold": true
+                                            }
+                                        },
+                                        {
+                                            "lingo": {
+                                                "state": {
+                                                    "total_threads": {}
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "text": " ● page: ",
+                                            "style": {
+                                                "bold": true
+                                            }
+                                        },
+                                        {
+                                            "lingo": {
+                                                "state": {
+                                                    "page_number": {}
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "text": " of "
+                                        },
+                                        {
+                                            "op": {
+                                                "last_page": {}
+                                            }
+                                        },
+                                        {
+                                            "type": "list",
+                                            "display": {
+                                                "format": "table",
+                                                "headers": [
+                                                    {
+                                                        "text": "Id",
+                                                        "field": "id"
+                                                    },
+                                                    {
+                                                        "text": "Thread Title",
+                                                        "field": "title"
+                                                    }
+                                                ],
+                                                "instance_url": "/sosh-net/thread/"
+                                            },
+                                            "value": {
+                                                "call": "map",
+                                                "args": {
+                                                    "function": {
+                                                        "type": "struct",
+                                                        "value": {
+                                                            "id": {
+                                                                "call": "key",
+                                                                "args": {
+                                                                    "object": {
+                                                                        "self": "item"
+                                                                    },
+                                                                    "key": "id"
+                                                                }
+                                                            },
+                                                            "title": {
+                                                                "call": "key",
+                                                                "args": {
+                                                                    "object": {
+                                                                        "self": "item"
+                                                                    },
+                                                                    "key": "title"
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "iterable": {
+                                                        "call": "key",
+                                                        "args": {
+                                                            "object": {
+                                                                "state": {
+                                                                    "op_view_state": {}
+                                                                }
+                                                            },
+                                                            "key": "result.value.threads.value.items"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "else": {
+                                        "text": ""
+                                    }
+                                }
+                            ]
+                        }
+                    ]
                 }
-            }
-        },
-		{
-			"branch": [
-				{
-					"if": {"op": {"is_loaded": {}}},
-					"then": [
-						{"text": "total threads: ", "style": {"bold": true}},
-						{"lingo": {"state": {"total_threads": {}}}},
-						{"text": " ● page: ", "style": {"bold": true}},
-						{"lingo": {"state": {"page_number": {}}}},
-						{"text": " of "},
-						{"op": {"last_page": {}}},
-						{
-							"type": "list",
-							"display": {
-								"format": "table",
-								"headers": [
-									{"text": "Id", "field": "id"},
-									{"text": "Thread Title", "field": "title"}
-								],
-								"instance_url": "/sosh-net/thread/"
-							},
-							"value": {
-								"call": "map",
-								"args": {
-									"function": {
-										"type": "struct",
-										"value": {
-											"id": {
-												"call": "key",
-												"args": {
-													"object": {"self": "item"},
-													"key": "id"
-												}
-											},
-											"title": {
-												"call": "key",
-												"args": {
-													"object": {"self": "item"},
-													"key": "title"
-												}
-											}
-										}
-									},
-									"iterable": {
-										"call": "key",
-										"args": {
-											"object": {"state": {"op_view_state": {}}},
-											"key": "result.value.threads.value.items"
-										}
-									}
-								}
-							}
-						}
-					]
-				},
-				{
-					"else": {"text": ""}
-				}
-			]
-		}
+            ]
+        }
     ]
 }

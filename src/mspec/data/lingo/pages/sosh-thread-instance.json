@@ -107,6 +107,101 @@
                 }
             }
         },
+        "create_reply_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "item_id": "",
+                "data": {},
+                "field_errors": {}
+            }
+        },
+        "post_model_definition": {
+            "type": "model",
+            "default": {
+                "name": {
+                    "lower_case": "post"
+                },
+                "fields": {
+                    "user_id": {
+                        "name": {
+                            "lower_case": "user id"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "auth",
+                            "table": "user",
+                            "field": "id"
+                        }
+                    },
+                    "forum_id": {
+                        "name": {
+                            "lower_case": "forum id"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "sosh_net",
+                            "table": "forum",
+                            "field": "id"
+                        }
+                    },
+                    "reply_to": {
+                        "name": {
+                            "lower_case": "reply to"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "sosh_net",
+                            "table": "post",
+                            "field": "id"
+                        }
+                    },
+                    "message": {
+                        "name": {
+                            "lower_case": "message"
+                        },
+                        "type": "str"
+                    },
+                    "attachments": {
+                        "name": {
+                            "lower_case": "attachments"
+                        },
+                        "type": "list",
+                        "element_type": "foreign_key",
+                        "references": {
+                            "module": "file_system",
+                            "table": "file",
+                            "field": "id"
+                        }
+                    },
+                    "images": {
+                        "name": {
+                            "lower_case": "images"
+                        },
+                        "type": "list",
+                        "element_type": "foreign_key",
+                        "references": {
+                            "module": "media",
+                            "table": "master_image",
+                            "field": "id"
+                        }
+                    },
+                    "related_posts": {
+                        "name": {
+                            "lower_case": "related posts"
+                        },
+                        "type": "list",
+                        "element_type": "foreign_key",
+                        "references": {
+                            "module": "sosh_net",
+                            "table": "post",
+                            "field": "id"
+                        }
+                    }
+                }
+            }
+        },
         "thread_op_definition": {
             "name": {
                 "lower_case": "thread op definition"
@@ -563,34 +658,65 @@
         "refresh": {
             "args": {},
             "func": {
-                "call": "all",
-                "args": {
-                    "iterable": [
-                        {
-                            "set": {
-                                "state": {
-                                    "thread_op_view_state": {
-                                        "state": {}
-                                    }
-                                }
-                            },
-                            "to": "triggered"
-                        },
-                        {
-                            "set": {
-                                "state": {
-                                    "replies_op_view_state": {
-                                        "state": {}
-                                    }
-                                }
-                            },
-                            "to": "triggered"
-                        }
-                    ]
-                }
-            }
+				"set": {
+					"state": {
+						"replies_op_view_state": {
+							"state": {}
+						}
+					}
+				},
+				"to": "triggered"
+			}
         }
     },
+	"timers": {
+		"auto_load_replies": {
+			"description": "Auto load main post's replies after loading the main post",
+			"auto_start": true,
+			"func": {
+				"branch": [
+					{
+						"if": {
+							"op": {
+								"is_loaded": {}
+							}
+						},
+						"then": {
+							"set": {
+								"state": {
+									"replies_op_view_state": {
+										"state": {}
+									}
+								}
+							},
+							"to": "triggered"
+						}
+					},
+					{
+						"else": {"type": "str", "value": "post_not_loaded"}
+					}
+				]
+			},
+
+			"interval": {
+				"branch": [
+					{
+						"if": {
+							"call": "eq",
+							"args": {
+								"a": {"self": "func_result"},
+								"b": "triggered"
+							}
+						},
+						"then": -1
+					},
+					{
+						"else": 0.01
+					}
+				]
+			}
+		}
+	},
     "output": [
         {
             "heading": {
@@ -628,7 +754,7 @@
                     }
                 }
             },
-            "level": 2
+            "level": 3
         },
         {
             "text": "forum: ",
@@ -637,14 +763,33 @@
 			}
         },
         {
-            "lingo": {
-                "state": {
-                    "forum": {
-                        "topic": {}
-                    }
-                }
-            }
-        },
+			"link": {
+				"call": "concat",
+				"args": {
+					"items": [
+						"/sosh-net/forum/",
+						{
+							"call": "key",
+							"args": {
+								"object": {
+									"state": {
+										"forum": {}
+									}
+								},
+								"key": "id"
+							}
+						}
+					]
+				}
+			},
+			"text": {
+				"state": {
+					"forum": {
+						"topic": {}
+					}
+				}
+			}
+		},
         {
             "break": 1
         },
@@ -658,7 +803,8 @@
             }
         },
         {
-            "break": 1
+            "heading": ":: replies",
+			"level": 3
         },
         {
             "button": {
@@ -791,67 +937,66 @@
                 }
             }
         },
-        {
-            "op": {
-                "bind": {
-                    "state": {
-                        "replies_op_view_state": {}
-                    }
-                },
-                "auto_submit": true,
-                "display": {
-                    "show_result": false,
-                    "show_submit_button": false,
-                    "show_status_display": false
-                },
-                "interactive": true,
-                "http": "/api/sosh-net/get-replies-for-post",
-                "params": {
-                    "post_id": {
-                        "call": "key",
-                        "args": {
-                            "object": {
-                                "state": {
-                                    "main_post": {}
-                                }
-                            },
-                            "key": "id"
-                        }
-                    },
-                    "size": {
-                        "state": {
-                            "page_size": {}
-                        }
-                    },
-                    "offset": {
-                        "call": "mul",
-                        "args": {
-                            "a": {
-                                "state": {
-                                    "page_size": {}
-                                }
-                            },
-                            "b": {
-                                "call": "sub",
-                                "args": {
-                                    "a": {
-                                        "state": {
-                                            "page_number": {}
-                                        }
-                                    },
-                                    "b": 1
-                                }
-                            }
-                        }
-                    }
-                },
-                "definition": {
-                    "state": {
-                        "replies_op_definition": {}
-                    }
-                }
-            }
-        },
+		{
+			"op": {
+				"bind": {
+					"state": {
+						"replies_op_view_state": {}
+					}
+				},
+				"display": {
+					"show_result": false,
+					"show_submit_button": false,
+					"show_status_display": false
+				},
+				"interactive": true,
+				"http": "/api/sosh-net/get-replies-for-post",
+				"params": {
+					"post_id": {
+						"call": "key",
+						"args": {
+							"object": {
+								"state": {
+									"main_post": {}
+								}
+							},
+							"key": "id"
+						}
+					},
+					"size": {
+						"state": {
+							"page_size": {}
+						}
+					},
+					"offset": {
+						"call": "mul",
+						"args": {
+							"a": {
+								"state": {
+									"page_size": {}
+								}
+							},
+							"b": {
+								"call": "sub",
+								"args": {
+									"a": {
+										"state": {
+											"page_number": {}
+										}
+									},
+									"b": 1
+								}
+							}
+						}
+					}
+				},
+				"definition": {
+					"state": {
+						"replies_op_definition": {}
+					}
+				}
+			}
+		},
         {
             "branch": [
                 {
@@ -975,6 +1120,87 @@
                     }
                 }
             ]
+        },
+		{"break": 1},
+		{"heading": ":: add reply", "level": 5},
+		{
+            "model": {
+                "bind": {
+                    "state": {
+                        "create_reply_state": {}
+                    }
+                },
+                "display": {
+					"mode": "create",
+					"show_model_state": false
+				},
+                "http": "/api/sosh-net/post",
+                "instance_url": "/sosh-net/post/",
+                "definition": {
+                    "state": {
+                        "post_model_definition": {}
+                    }
+                },
+                "params": {
+                    "user_id": "-1",
+                    "forum_id": {
+                        "call": "key",
+                        "args": {
+                            "object": {
+                                "state": {
+                                    "forum": {}
+                                }
+                            },
+                            "key": "id"
+                        }
+                    },
+                    "reply_to": {
+                        "call": "key",
+                        "args": {
+                            "object": {
+                                "state": {
+                                    "main_post": {}
+                                }
+                            },
+                            "key": "id"
+                        }
+                    },
+                    "attachments": [],
+                    "images": [],
+                    "related_posts": []
+                }
+            },
+			"comment": {
+				"branch": [
+					{
+						"if": {
+							"call": "eq",
+							"args": {
+								"a": {
+									"call": "key",
+									"args": {
+										"object": {
+											"state": {
+												"create_reply_state": {}
+											}
+										},
+										"key": "state"
+									}
+								},
+								"b": "success"
+							}
+						},
+						"then": {
+							"button": {"op": {"refresh": {}}},
+							"text": "refresh"
+						}
+					},
+					{
+						"else": {"text": ""}
+					}
+				]
+			}
         }
     ]
 }
+

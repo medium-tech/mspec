@@ -331,6 +331,21 @@ const placeholderImage = (width, height, text) => {
 //
 // // // // //
 
+function _aAndBArgs(app, expression, ctx) {
+	// helper for functions that take two main arguments 'a' and 'b'
+	// execute and unwrap both or throw error if either are not provided
+	
+	if(!expression.args || !expression.args.hasOwnProperty('a') || !expression.args.hasOwnProperty('b')) {
+		console.error('missing required arguments a and b in expression.args:', expression);
+		throw new Error('missing required arguments a and b');
+	}
+
+	const a = unwrapValue(lingoExecute(app, expression.args.a, ctx));
+	const b = unwrapValue(lingoExecute(app, expression.args.b, ctx));
+	return [a, b];
+}
+
+
 // sequence ops //
 
 function _mapFunctionArgs(app, expression, ctx) {
@@ -680,27 +695,27 @@ const lingoFunctionLookup = {
     
     'eq': {
         func: (a, b) => a === b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     'ne': {
         func: (a, b) => a !== b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     'lt': {
         func: (a, b) => a < b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     'le': {
         func: (a, b) => a <= b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+		createArgs: _aAndBArgs,
     },
     'gt': {
         func: (a, b) => a > b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     'ge': {
         func: (a, b) => a >= b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+		createArgs: _aAndBArgs,
     },
     
     // bool //
@@ -715,11 +730,11 @@ const lingoFunctionLookup = {
     },
     'and': {
         func: (a, b) => a && b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     'or': {
         func: (a, b) => a || b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     
     // int //
@@ -1396,28 +1411,37 @@ function startTimer(app, timerName) {
         throw new Error(`timer '${timerName}' not defined in spec`);
     }
 
+	// console.log(`Starting timer '${timerName}' with spec:`, timerSpec);
+
     function runTimer() {
+		console.log(`Running timer '${timerName}'...`);
+        let funcResult;
         try {
-            lingoExecute(app, timerSpec.func);
+            funcResult = lingoExecute(app, timerSpec.func);
         } catch (error) {
             console.error(`Timer '${timerName}' func error:`, error);
         }
 
-        const container = document.getElementById('lingo-app');
-        if (container) {
-            renderLingoApp(app, container);
-        }
+		// console.log(`Timer '${timerName}' func result`, funcResult);
 
         let interval;
+		const ctx = {self: {func_result: funcResult}};
         if (typeof timerSpec.interval === 'number') {
             interval = timerSpec.interval;
         } else {
             try {
-                interval = unwrapValue(lingoExecute(app, timerSpec.interval));
+                interval = unwrapValue(lingoExecute(app, timerSpec.interval, ctx));
             } catch (error) {
                 console.error(`Timer '${timerName}' interval error:`, error);
                 interval = -1;
             }
+        }
+
+		// console.log(`Timer '${timerName}' interval:`, interval);
+
+		const container = document.getElementById('lingo-app');
+        if (container) {
+            renderLingoApp(app, container);
         }
 
         if (interval >= 0) {
@@ -3546,6 +3570,16 @@ function _renderModelCreate(app, element, ctx = null) {
         throw new Error('renderModelCreate - missing instance_url definition');
     }
 
+	let showModelState;
+	if(element.model.hasOwnProperty('display') && element.model.display.hasOwnProperty('show_model_state')){
+		// show_model_state is to display the state of the model form, including link after
+		// creating a model, this is separate from the form's state which will still be displayed
+		showModelState = unwrapValue(lingoExecute(app, element.model.display.show_model_state, ctx));
+	}else{
+		showModelState = true;
+	}
+
+
     const instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
 
 	//
@@ -3562,7 +3596,6 @@ function _renderModelCreate(app, element, ctx = null) {
 		const params = element.model.params;
 
 		for(const [paramKey, paramValueExpr] of Object.entries(params)){
-			console.log('DEFINITION', definition);
 			if(!definition.fields.hasOwnProperty(paramKey)){
 				throw new Error(`model - field not found in definition: ${paramKey}`);
 			}
@@ -3615,7 +3648,7 @@ function _renderModelCreate(app, element, ctx = null) {
 		requestBody[key] = value;
 	}
 
-    const formElement = {
+    let formElement = {
         form: {
             fields: formFields,
             bind: element.model.bind,
@@ -3632,6 +3665,10 @@ function _renderModelCreate(app, element, ctx = null) {
             }
         }
     };
+
+	if(element.hasOwnProperty('comment')) {
+		formElement.comment = element.comment;
+	}
 
     const stateSwitch = {
         switch: {
@@ -3670,7 +3707,9 @@ function _renderModelCreate(app, element, ctx = null) {
 
     let elements = [];
     elements.push(formElement);
-    elements.push(...renderSwitch(app, stateSwitch, ctx));
+	if(showModelState) {
+    	elements.push(...renderSwitch(app, stateSwitch, ctx));
+    }
     return elements;
 }
 
@@ -4301,24 +4340,25 @@ function createInputElement(app, element, ctx = null) {
  */
 function createLinkElement(app, element, ctx = null) {
 
-	// if element.link or element.text are not strings, then evaluate them using lingoExecute
-	// let link;
-	// let text;
-    // if (typeof element.link !== 'string') {
-    //     link = unwrapValue(lingoExecute(app, element.link, ctx));
-    // }else{
-    //     link = element.link;
-    // }
-    // if (typeof element.text !== 'string') {
-    //     text = unwrapValue(lingoExecute(app, element.text, ctx));
-    // }else{
-    //     text = element.text;
-    // }
+	//if element.link or element.text are not strings, then evaluate them using lingoExecute
+	let link;
+	let text;
+	//console.log('createLinkElement()', element);
+    if (typeof element.link !== 'string') {
+        link = unwrapValue(lingoExecute(app, element.link, ctx));
+    }else{
+        link = element.link;
+    }
+    if (typeof element.text !== 'string' && typeof element.text !== 'undefined') {
+        text = unwrapValue(lingoExecute(app, element.text, ctx));
+    }else{
+        text = element.text;
+    }
 
 
     const linkElement = document.createElement('a');
-    linkElement.href = unwrapValue(element.link);
-    linkElement.textContent = unwrapValue(element.text || element.link);
+    linkElement.href = unwrapValue(link);
+    linkElement.textContent = unwrapValue(text || link);
     return linkElement;
 }
 
@@ -5047,7 +5087,7 @@ function createFormElement(app, element, ctx = null) {
     if ((autoSubmit === true && currentState.state === 'initial') || currentState.state === 'triggered') {
 		currentState.state = 'loading';
         setTimeout(() => {
-            console.log(`Submitting form - state: ${currentState.state}, autoSubmit: ${autoSubmit}`);
+            // console.log(`Submitting form - state: ${currentState.state}, autoSubmit: ${autoSubmit}`);
             submitAction();
             renderLingoApp(app, document.getElementById('lingo-app'), true);
         }, 0);
@@ -5096,18 +5136,24 @@ function createFormElement(app, element, ctx = null) {
     
     // additional comment //
 
-    let commentText;
+    let comment;
     if (element.hasOwnProperty('comment')) {
-        commentText = element.comment;
+		if(typeof element.comment === 'string') {
+        	comment = {text: element.comment};
+		}else if (typeof element.comment === 'object' && !Array.isArray(element.comment) && element.comment !== null) {
+			comment = lingoExecute(app, element.comment, ctx);
+		}else{
+			throw new Error('Invalid comment property on form element - must be string or button element');
+		}
     } else if (currentState.state === 'error' && showStatusDisplay) {
-        commentText = {text: currentState.error || 'An error occurred', style: {italic: true, color: 'red'}};
+        comment = {text: currentState.error || 'An error occurred', style: {italic: true, color: 'red'}};
     }else{
-        commentText = {text: ''}
+        comment = {text: ''}
     }
 
     let additionalElement;
     try{
-        additionalElement = createTextElement(app, commentText, ctx);
+        additionalElement = createDOMElement(app, comment, ctx);
     }catch(error) {
         console.error('Error creating additionalElement for form comment:', error);
         throw `Error creating form comment element must be a text element: ${error}`;
