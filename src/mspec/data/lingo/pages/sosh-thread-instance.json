@@ -658,34 +658,65 @@
         "refresh": {
             "args": {},
             "func": {
-                "call": "all",
-                "args": {
-                    "iterable": [
-                        {
-                            "set": {
-                                "state": {
-                                    "thread_op_view_state": {
-                                        "state": {}
-                                    }
-                                }
-                            },
-                            "to": "triggered"
-                        },
-                        {
-                            "set": {
-                                "state": {
-                                    "replies_op_view_state": {
-                                        "state": {}
-                                    }
-                                }
-                            },
-                            "to": "triggered"
-                        }
-                    ]
-                }
-            }
+				"set": {
+					"state": {
+						"replies_op_view_state": {
+							"state": {}
+						}
+					}
+				},
+				"to": "triggered"
+			}
         }
     },
+	"timers": {
+		"auto_load_replies": {
+			"description": "Auto load main post's replies after loading the main post",
+			"auto_start": true,
+			"func": {
+				"branch": [
+					{
+						"if": {
+							"op": {
+								"is_loaded": {}
+							}
+						},
+						"then": {
+							"set": {
+								"state": {
+									"replies_op_view_state": {
+										"state": {}
+									}
+								}
+							},
+							"to": "triggered"
+						}
+					},
+					{
+						"else": {"type": "str", "value": "post_not_loaded"}
+					}
+				]
+			},
+
+			"interval": {
+				"branch": [
+					{
+						"if": {
+							"call": "eq",
+							"args": {
+								"a": {"self": "func_result"},
+								"b": "triggered"
+							}
+						},
+						"then": -1
+					},
+					{
+						"else": 0.01
+					}
+				]
+			}
+		}
+	},
     "output": [
         {
             "heading": {
@@ -732,41 +763,33 @@
 			}
         },
         {
-            "call": "map",
-            "args": {
-                "iterable": [
-                    0
-                ],
-                "function": {
-                    "link": {
-                        "call": "concat",
-                        "args": {
-                            "items": [
-                                "/sosh-net/forum/",
-                                {
-                                    "call": "key",
-                                    "args": {
-                                        "object": {
-                                            "state": {
-                                                "forum": {}
-                                            }
-                                        },
-                                        "key": "id"
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "text": {
-                        "state": {
-                            "forum": {
-                                "topic": {}
-                            }
-                        }
-                    }
-                }
-            }
-        },
+			"link": {
+				"call": "concat",
+				"args": {
+					"items": [
+						"/sosh-net/forum/",
+						{
+							"call": "key",
+							"args": {
+								"object": {
+									"state": {
+										"forum": {}
+									}
+								},
+								"key": "id"
+							}
+						}
+					]
+				}
+			},
+			"text": {
+				"state": {
+					"forum": {
+						"topic": {}
+					}
+				}
+			}
+		},
         {
             "break": 1
         },
@@ -961,67 +984,66 @@
                 }
             }
         },
-        {
-            "op": {
-                "bind": {
-                    "state": {
-                        "replies_op_view_state": {}
-                    }
-                },
-                "auto_submit": true,
-                "display": {
-                    "show_result": false,
-                    "show_submit_button": false,
-                    "show_status_display": false
-                },
-                "interactive": true,
-                "http": "/api/sosh-net/get-replies-for-post",
-                "params": {
-                    "post_id": {
-                        "call": "key",
-                        "args": {
-                            "object": {
-                                "state": {
-                                    "main_post": {}
-                                }
-                            },
-                            "key": "id"
-                        }
-                    },
-                    "size": {
-                        "state": {
-                            "page_size": {}
-                        }
-                    },
-                    "offset": {
-                        "call": "mul",
-                        "args": {
-                            "a": {
-                                "state": {
-                                    "page_size": {}
-                                }
-                            },
-                            "b": {
-                                "call": "sub",
-                                "args": {
-                                    "a": {
-                                        "state": {
-                                            "page_number": {}
-                                        }
-                                    },
-                                    "b": 1
-                                }
-                            }
-                        }
-                    }
-                },
-                "definition": {
-                    "state": {
-                        "replies_op_definition": {}
-                    }
-                }
-            }
-        },
+		{
+			"op": {
+				"bind": {
+					"state": {
+						"replies_op_view_state": {}
+					}
+				},
+				"display": {
+					"show_result": false,
+					"show_submit_button": false,
+					"show_status_display": false
+				},
+				"interactive": true,
+				"http": "/api/sosh-net/get-replies-for-post",
+				"params": {
+					"post_id": {
+						"call": "key",
+						"args": {
+							"object": {
+								"state": {
+									"main_post": {}
+								}
+							},
+							"key": "id"
+						}
+					},
+					"size": {
+						"state": {
+							"page_size": {}
+						}
+					},
+					"offset": {
+						"call": "mul",
+						"args": {
+							"a": {
+								"state": {
+									"page_size": {}
+								}
+							},
+							"b": {
+								"call": "sub",
+								"args": {
+									"a": {
+										"state": {
+											"page_number": {}
+										}
+									},
+									"b": 1
+								}
+							}
+						}
+					}
+				},
+				"definition": {
+					"state": {
+						"replies_op_definition": {}
+					}
+				}
+			}
+		},
         {
             "branch": [
                 {

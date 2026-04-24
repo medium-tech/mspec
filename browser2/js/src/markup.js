@@ -331,6 +331,24 @@ const placeholderImage = (width, height, text) => {
 //
 // // // // //
 
+function _aAndBArgs(app, expression, ctx) {
+	// helper for functions that take two main arguments 'a' and 'b'
+	// execute and unwrap both or throw error if either are not provided
+	
+	if(!expression.args || !expression.args.hasOwnProperty('a') || !expression.args.hasOwnProperty('b')) {
+		console.error('missing required arguments a and b in expression.args:', expression);
+		throw new Error('missing required arguments a and b');
+	}
+
+	const a = unwrapValue(lingoExecute(app, expression.args.a, ctx));
+	const b = unwrapValue(lingoExecute(app, expression.args.b, ctx));
+
+	console.log('_aAndBArgs', 'a:', a, 'b:', b, 'source:', expression.args);
+
+	return [a, b];
+}
+
+
 // sequence ops //
 
 function _mapFunctionArgs(app, expression, ctx) {
@@ -680,27 +698,27 @@ const lingoFunctionLookup = {
     
     'eq': {
         func: (a, b) => a === b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     'ne': {
         func: (a, b) => a !== b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     'lt': {
         func: (a, b) => a < b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     'le': {
         func: (a, b) => a <= b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+		createArgs: _aAndBArgs,
     },
     'gt': {
         func: (a, b) => a > b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     'ge': {
         func: (a, b) => a >= b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+		createArgs: _aAndBArgs,
     },
     
     // bool //
@@ -715,11 +733,11 @@ const lingoFunctionLookup = {
     },
     'and': {
         func: (a, b) => a && b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     'or': {
         func: (a, b) => a || b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     
     // int //
@@ -1396,28 +1414,37 @@ function startTimer(app, timerName) {
         throw new Error(`timer '${timerName}' not defined in spec`);
     }
 
+	console.log(`Starting timer '${timerName}' with spec:`, timerSpec);
+
     function runTimer() {
+		console.log(`Running timer '${timerName}'...`);
+        let funcResult;
         try {
-            lingoExecute(app, timerSpec.func);
+            funcResult = lingoExecute(app, timerSpec.func);
         } catch (error) {
             console.error(`Timer '${timerName}' func error:`, error);
         }
 
-        const container = document.getElementById('lingo-app');
-        if (container) {
-            renderLingoApp(app, container);
-        }
+		console.log(`Timer '${timerName}' func result`, funcResult);
 
         let interval;
+		const ctx = {self: {func_result: funcResult}};
         if (typeof timerSpec.interval === 'number') {
             interval = timerSpec.interval;
         } else {
             try {
-                interval = unwrapValue(lingoExecute(app, timerSpec.interval));
+                interval = unwrapValue(lingoExecute(app, timerSpec.interval, ctx));
             } catch (error) {
                 console.error(`Timer '${timerName}' interval error:`, error);
                 interval = -1;
             }
+        }
+
+		console.log(`Timer '${timerName}' interval:`, interval);
+
+		const container = document.getElementById('lingo-app');
+        if (container) {
+            renderLingoApp(app, container);
         }
 
         if (interval >= 0) {
@@ -3562,7 +3589,6 @@ function _renderModelCreate(app, element, ctx = null) {
 		const params = element.model.params;
 
 		for(const [paramKey, paramValueExpr] of Object.entries(params)){
-			console.log('DEFINITION', definition);
 			if(!definition.fields.hasOwnProperty(paramKey)){
 				throw new Error(`model - field not found in definition: ${paramKey}`);
 			}
@@ -4301,24 +4327,25 @@ function createInputElement(app, element, ctx = null) {
  */
 function createLinkElement(app, element, ctx = null) {
 
-	// if element.link or element.text are not strings, then evaluate them using lingoExecute
-	// let link;
-	// let text;
-    // if (typeof element.link !== 'string') {
-    //     link = unwrapValue(lingoExecute(app, element.link, ctx));
-    // }else{
-    //     link = element.link;
-    // }
-    // if (typeof element.text !== 'string') {
-    //     text = unwrapValue(lingoExecute(app, element.text, ctx));
-    // }else{
-    //     text = element.text;
-    // }
+	//if element.link or element.text are not strings, then evaluate them using lingoExecute
+	let link;
+	let text;
+	console.log('createLinkElement()', element);
+    if (typeof element.link !== 'string') {
+        link = unwrapValue(lingoExecute(app, element.link, ctx));
+    }else{
+        link = element.link;
+    }
+    if (typeof element.text !== 'string' && typeof element.text !== 'undefined') {
+        text = unwrapValue(lingoExecute(app, element.text, ctx));
+    }else{
+        text = element.text;
+    }
 
 
     const linkElement = document.createElement('a');
-    linkElement.href = unwrapValue(element.link);
-    linkElement.textContent = unwrapValue(element.text || element.link);
+    linkElement.href = unwrapValue(link);
+    linkElement.textContent = unwrapValue(text || link);
     return linkElement;
 }
 
