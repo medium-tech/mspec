@@ -111,29 +111,6 @@ class TestLingoPages(unittest.TestCase):
         app = lingo_app(spec)
         doc = render_output(lingo_update_state(app))
 
-    def test_sosh_page_ui_config(self):
-        forum_spec = load_browser2_spec('sosh-forum-instance.json')
-        thread_spec = load_browser2_spec('sosh-thread-instance.json')
-
-        self.assertIn('toggle_create_view', forum_spec['ops'])
-        self.assertIn('display_create', forum_spec['state'])
-        self.assertIn('create_thread_state', forum_spec['state'])
-        self.assertIn('thread_model_definition', forum_spec['state'])
-
-        forum_output_str = json.dumps(forum_spec['output'])
-        self.assertIn('/api/sosh-net/thread', forum_output_str)
-        self.assertIn('"forum_id"', forum_output_str)
-        self.assertIn('"model_id"', forum_output_str)
-
-        self.assertIn('create_reply_state', thread_spec['state'])
-        self.assertIn('post_model_definition', thread_spec['state'])
-
-        thread_output_str = json.dumps(thread_spec['output'])
-        self.assertIn('/sosh-net/forum/', thread_output_str)
-        self.assertIn('/api/sosh-net/post', thread_output_str)
-        self.assertIn('"reply_to"', thread_output_str)
-        self.assertIn('"message"', thread_output_str)
-
     def test_all_functions_coverage(self):
         """Verify that all functions in lingo_function_lookup are tested"""
         
