@@ -1,58 +1,94 @@
 lingo:
     version: page-beta-1
+    parent_url: '/api/spec'
     title: "sosh net :: profiles"
 
-params: 
+params:
     project_name:
         name:
             lower_case: 'project name'
         type: str
-        default: 'My Lingo Project'
+        default: 'sosh-net'
 
     module_name:
         name:
             lower_case: 'module name'
         type: str
-        default: 'My Lingo Module'
-    
+        default: 'sosh-net'
+
+    model_name:
+        name:
+            lower_case: 'model name'
+        type: str
+        default: 'profile'
+
     model_definition:
         name:
             lower_case: 'model definition'
         type: model
         value:
             name:
-                lower_case: 'my model a'
+                lower_case: 'profile'
             fields:
                 user_id:
                     name:
                         lower_case: 'user id'
+                    type: foreign_key
+                    references:
+                        module: auth
+                        table: user
+                        field: id
+                username:
+                    name:
+                        lower_case: 'username'
                     type: str
-                    description: 'the id of the user'
-
-    model_id:
-        name:
-            lower_case: 'model id'
-        type: str
-        default: '-1'
-        description: 'the id of the model to display'
-    
-    model_name:
-        name:
-            lower_case: 'model name'
-        type: str
-        default: 'my model a'
-        description: 'the name of the model to display'
+                bio:
+                    name:
+                        lower_case: 'bio'
+                    type: str
+                profile_picture:
+                    name:
+                        lower_case: 'profile picture'
+                    type: foreign_key
+                    references:
+                        module: media
+                        table: master_image
+                        field: id
 
 state:
-    is_logged_in:
-        type: bool
+    model_list:
+        type: struct
+        default:
+            items: []
+            total: 0
+            showing: 0
+            offset: 0
+            size: 25
+            state: pending
+            error: ''
+
+    model_item_api_url:
+        type: str
         calc:
-            call: key
+            call: concat
             args:
-                object:
-                    call: auth.is_logged_in
-                    args: {}
-                key: logged_in
+                items:
+                    - '/api/'
+                    - params: {module_name: {}}
+                    - '/'
+                    - params: {model_name: {}}
+
+    model_item_url:
+        type: str
+        calc:
+            call: concat
+            args:
+                items:
+                    - '/'
+                    - params: {module_name: {}}
+                    - '/'
+                    - params: {model_name: {}}
+                    - '/'
 
 ops: {}
 
@@ -67,3 +103,17 @@ output:
           - "home"
           - "sosh-net"
           - "profile"
+
+    - break: 1
+
+    - link: '/sosh-net/profile/user'
+      text: 'your profile'
+
+    - break: 1
+
+    - model:
+          bind: {state: {model_list: {}}}
+          display: list
+          http: {state: {model_item_api_url: {}}}
+          definition: {params: {model_definition: {}}}
+          instance_url: {state: {model_item_url: {}}}
