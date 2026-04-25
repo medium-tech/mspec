@@ -508,7 +508,7 @@ modules:
                             call: 'db.query'
                             args:
                                 model_type: 'sosh_net.profile'
-                                fields:
+                                where:
                                     type: struct
                                     value:
                                         user_id:
