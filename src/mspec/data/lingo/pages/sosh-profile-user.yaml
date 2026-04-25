@@ -26,7 +26,7 @@ params:
         name:
             lower_case: 'model definition'
         type: model
-        value:
+        default:
             name:
                 lower_case: 'profile'
             fields:
@@ -138,6 +138,19 @@ state:
                     - params: {module_name: {}}
                     - '/'
                     - params: {model_name: {}}
+    
+    model_item_ui_url:
+        type: str
+        calc:
+            call: concat
+            args:
+                items:
+                    - '/'
+                    - params: {module_name: {}}
+                    - '/'
+                    - params: {model_name: {}}
+                    - '/'
+                    - state: {user_profile_id: {}}
 
     profile_base_url:
         type: str
@@ -193,7 +206,8 @@ output:
     - breadcrumbs:
           - "home"
           - "sosh-net"
-          - "your profile"
+          - "profile"
+          - "yours"
 
     - break: 1
 
@@ -230,14 +244,16 @@ output:
                                                 a: {state: {profile_total: {}}}
                                                 b: 0
                                     then:
-                                        - heading: ":: your profile"
-                                          level: 3
                                         - model:
                                               bind: {state: {model_instance: {}}}
                                               display: read
                                               http: {state: {profile_base_url: {}}}
                                               model_id: {state: {user_profile_id: {}}}
                                               definition: {params: {model_definition: {}}}
+                                        - break: 1
+                                        - text: ':: '
+                                        - link: {state: {model_item_ui_url: {}}}
+                                          text: 'view public profile'
                                   - else:
                                         - heading: ":: create profile"
                                           level: 3

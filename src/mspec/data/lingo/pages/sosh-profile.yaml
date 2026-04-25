@@ -106,7 +106,9 @@ output:
 
     - break: 1
 
-    - link: '/sosh-net/profile/user'
+    - text: ':: '
+
+    - link: '/sosh-net/profile/yours'
       text: 'your profile'
 
     - break: 1
