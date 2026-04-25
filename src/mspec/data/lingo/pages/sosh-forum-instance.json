@@ -634,6 +634,9 @@
                                 },
                                 "interactive": true,
                                 "http": "/api/sosh-net/create-thread",
+                                "display": {
+                                    "show_result": false
+                                },
                                 "definition": {
                                     "state": {
                                         "create_thread_op_definition": {}
@@ -644,9 +647,51 @@
                                         "params": {
                                             "model_id": {}
                                         }
-                                    }
+                                    },
+                                    "attachments": [],
+                                    "images": []
                                 }
                             }
+                        },
+                        {
+                            "branch": [
+                                {
+                                    "if": {
+                                        "call": "eq",
+                                        "args": {
+                                            "a": {
+                                                "call": "key",
+                                                "args": {
+                                                    "object": {"state": {"create_thread_op_state": {}}},
+                                                    "key": "state"
+                                                }
+                                            },
+                                            "b": "result"
+                                        }
+                                    },
+                                    "then": {
+                                        "link": {
+                                            "call": "concat",
+                                            "args": {
+                                                "items": [
+                                                    "/sosh-net/thread/",
+                                                    {
+                                                        "call": "key",
+                                                        "args": {
+                                                            "object": {"state": {"create_thread_op_state": {"result": {}}}},
+                                                            "key": "thread_id"
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "text": "view thread"
+                                    }
+                                },
+                                {
+                                    "else": {"text": ""}
+                                }
+                            ]
                         }
                     ]
                 },
