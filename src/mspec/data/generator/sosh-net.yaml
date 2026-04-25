@@ -35,7 +35,7 @@ modules:
 
                 page: 'sosh-profile.yaml'
                 pages:
-                    user: 'sosh-profile-user.yaml'
+                    yours: 'sosh-profile-user.yaml'
 
                 auth:
                     require_login: true
