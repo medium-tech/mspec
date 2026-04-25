@@ -1,6 +1,6 @@
 lingo:
     version: page-beta-1
-    title: "sosh net :: profiles"
+    title: "sosh net :: your profile"
 
 params: 
     project_name:
@@ -60,10 +60,16 @@ output:
     - heading: "sosh.net"
       level: 1
 
-    - heading: ":: profiles"
+    - heading: ":: your profile"
       level: 2
 
     - breadcrumbs:
           - "home"
           - "sosh-net"
-          - "profile"
+          - "your profile"
+
+    - break: 1
+
+    - block:
+          - text: 'are you logged in: '
+          - lingo: { state: { is_logged_in: {} } }

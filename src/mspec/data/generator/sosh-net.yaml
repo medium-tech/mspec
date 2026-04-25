@@ -35,7 +35,7 @@ modules:
 
                 page: 'sosh-profile.yaml'
                 pages:
-                    hello: 'hello-world-page.yaml'
+                    user: 'sosh-profile-user.yaml'
 
                 auth:
                     require_login: true
