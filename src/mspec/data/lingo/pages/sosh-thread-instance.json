@@ -107,6 +107,173 @@
                 }
             }
         },
+		"overall_op_view_state": {
+			"type": "str",
+			"description": "state is either 'default', 'result' or 'error'. If thread_op_view_state and replies_op_view_state are result this will return result, if either are error it will return error, otherwise default",
+			"calc": {
+				"branch": [
+					{
+						"if": {
+							"call": "and",
+							"args": {
+								"a": {
+									"call": "eq",
+									"args": {
+										"a": {
+											"call": "key",
+											"args": {
+												"object": {
+													"state": {
+														"thread_op_view_state": {}
+													}
+												},
+												"key": "state"
+											}
+										},
+										"b": "result"
+									}
+								},
+								"b": {
+									"call": "eq",
+									"args": {
+										"a": {
+											"call": "key",
+											"args": {
+												"object": {
+													"state": {
+														"replies_op_view_state": {}
+													}
+												},
+												"key": "state"
+											}
+										},
+										"b": "result"
+									}
+								}
+							}
+						},
+						"then": "result"
+					},
+					{
+						"elif": {
+							"call": "or",
+							"args": {
+								"a": {
+									"call": "eq",
+									"args": {
+										"a": {
+											"call": "key",
+											"args": {
+												"object": {
+													"state": {
+														"thread_op_view_state": {}
+													}
+												},
+												"key": "state"
+											}
+										},
+										"b": "error"
+									}
+								},
+								"b": {
+									"call": "eq",
+									"args": {
+										"a": {
+											"call": "key",
+											"args": {
+												"object": {
+													"state": {
+														"replies_op_view_state": {}
+													}
+												},
+												"key": "state"
+											}
+										},
+										"b": "error"
+									}
+								}
+							}
+						},
+						"then": "error"
+					},
+					{
+						"else": "default"
+					}
+				]
+			}
+		},
+		"error_message": {
+			"type": "str",
+			"description": "if state.overall_op_view_state is error, this will return the error message from either thread_op_view_state or replies_op_view_state",
+			"default": "",
+			"calc": {
+				"branch": [
+					{
+						"if": {
+							"call": "eq",
+							"args": {
+								"a": {
+									"call": "key",
+									"args": {
+										"object": {
+											"state": {
+												"thread_op_view_state": {}
+											}
+										},
+										"key": "state"
+									}
+								},
+								"b": "error"
+							}
+						},
+						"then": {
+							"call": "key",
+							"args": {
+								"object": {
+									"state": {
+										"thread_op_view_state": {}
+									}
+								},
+								"key": "error"
+							}
+						}
+					},
+					{
+						"elif": {
+							"call": "eq",
+							"args": {
+								"a": {
+									"call": "key",
+									"args": {
+										"object": {
+											"state": {
+												"replies_op_view_state": {}
+											}
+										},
+										"key": "state"
+									}
+								},
+								"b": "error"
+							}
+						},
+						"then": {
+							"call": "key",
+							"args": {
+								"object": {
+									"state": {
+										"replies_op_view_state": {}
+									}
+								},
+								"key": "error"
+							}
+						}
+					},
+					{
+						"else": "no error"
+					}
+				]
+			}
+		},
         "create_reply_state": {
             "type": "struct",
             "default": {
@@ -495,7 +662,7 @@
         }
     },
     "ops": {
-        "is_loaded": {
+        "main_post_is_loaded": {
             "args": {},
             "func": {
                 "branch": [
@@ -678,7 +845,7 @@
 					{
 						"if": {
 							"op": {
-								"is_loaded": {}
+								"main_post_is_loaded": {}
 							}
 						},
 						"then": {
@@ -702,10 +869,32 @@
 				"branch": [
 					{
 						"if": {
-							"call": "eq",
+							"call": "or",
 							"args": {
-								"a": {"self": "func_result"},
-								"b": "triggered"
+								"a": {
+									"call": "eq",
+									"args": {
+										"a": {"self": "func_result"},
+										"b": "triggered"
+									}
+								},
+								"b": {
+									"call": "eq",
+									"args": {
+										"a": {
+											"call": "key",
+											"args": {
+												"object": {
+													"state": {
+														"thread_op_view_state": {}
+													}
+												},
+												"key": "state"
+											}
+										},
+										"b": "error"
+									}
+								}
 							}
 						},
 						"then": -1
@@ -865,15 +1054,9 @@
         {
             "switch": {
                 "expression": {
-                    "call": "key",
-                    "args": {
-                        "object": {
-                            "state": {
-                                "replies_op_view_state": {}
-                            }
-                        },
-                        "key": "state"
-                    }
+                    "state": {
+						"overall_op_view_state": {}
+					}
                 },
                 "cases": [
                     {
@@ -891,10 +1074,8 @@
                             {
                                 "text": {
                                     "state": {
-                                        "replies_op_view_state": {
-                                            "error": {}
-                                        }
-                                    }
+										"error_message": {}
+									}
                                 },
                                 "style": {
                                     "color": "red"
@@ -1002,7 +1183,7 @@
                 {
                     "if": {
                         "op": {
-                            "is_loaded": {}
+                            "main_post_is_loaded": {}
                         }
                     },
                     "then": [

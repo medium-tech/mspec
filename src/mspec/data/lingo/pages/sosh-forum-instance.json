@@ -133,14 +133,94 @@
             "type": "bool",
             "default": false
         },
-        "create_thread_state": {
+        "create_thread_op_definition": {
+            "name": {
+                "lower_case": "create thread op definition"
+            },
+            "type": "op",
+            "default": {
+                "type": "op",
+                "value": {
+                    "name": {
+                        "lower_case": "create thread"
+                    },
+                    "description": "Create a new thread and main post in a forum",
+                    "func": {},
+                    "params": {
+                        "forum_id": {
+                            "name": {
+                                "lower_case": "forum id"
+                            },
+                            "type": "foreign_key",
+                            "references": {
+                                "module": "sosh_net",
+                                "table": "forum",
+                                "field": "id"
+                            },
+                            "default": "-1",
+                            "description": "ID of the forum to create the thread in"
+                        },
+                        "title": {
+                            "name": {
+                                "lower_case": "title"
+                            },
+                            "type": "str",
+                            "description": "Title of the thread"
+                        },
+                        "message": {
+                            "name": {
+                                "lower_case": "message"
+                            },
+                            "type": "str",
+                            "description": "Main post message for the thread"
+                        },
+                        "attachments": {
+                            "name": {
+                                "lower_case": "attachments"
+                            },
+                            "type": "list",
+                            "element_type": "foreign_key",
+                            "references": {
+                                "module": "file_system",
+                                "table": "file",
+                                "field": "id"
+                            }
+                        },
+                        "images": {
+                            "name": {
+                                "lower_case": "images"
+                            },
+                            "type": "list",
+                            "element_type": "foreign_key",
+                            "references": {
+                                "module": "media",
+                                "table": "master_image",
+                                "field": "id"
+                            }
+                        }
+                    },
+                    "result": {
+                        "type": "struct",
+                        "value": {
+                            "thread_id": {
+                                "type": "str",
+                                "value": "-1"
+                            }
+                        },
+                        "tests": {
+                            "test_cases": []
+                        }
+                    }
+                }
+            }
+        },
+        "create_thread_op_state": {
             "type": "struct",
             "default": {
                 "state": "initial",
                 "error": "",
-                "item_id": "",
                 "data": {},
-                "field_errors": {}
+                "result": {"type": "any", "value": null}
             }
         },
         "header": {
@@ -546,29 +626,72 @@
                             "text": "back"
                         },
                         {
-                            "model": {
+                            "op": {
                                 "bind": {
                                     "state": {
-                                        "create_thread_state": {}
+                                        "create_thread_op_state": {}
                                     }
                                 },
-                                "display": "create",
-                                "http": "/api/sosh-net/thread",
-                                "instance_url": "/sosh-net/thread/",
+                                "interactive": true,
+                                "http": "/api/sosh-net/create-thread",
+                                "display": {
+                                    "show_result": false
+                                },
                                 "definition": {
                                     "state": {
-                                        "thread_model_definition": {}
+                                        "create_thread_op_definition": {}
                                     }
                                 },
                                 "params": {
-                                    "user_id": "-1",
                                     "forum_id": {
                                         "params": {
                                             "model_id": {}
                                         }
-                                    }
+                                    },
+                                    "attachments": [],
+                                    "images": []
                                 }
                             }
+                        },
+                        {
+                            "branch": [
+                                {
+                                    "if": {
+                                        "call": "eq",
+                                        "args": {
+                                            "a": {
+                                                "call": "key",
+                                                "args": {
+                                                    "object": {"state": {"create_thread_op_state": {}}},
+                                                    "key": "state"
+                                                }
+                                            },
+                                            "b": "result"
+                                        }
+                                    },
+                                    "then": {
+                                        "link": {
+                                            "call": "concat",
+                                            "args": {
+                                                "items": [
+                                                    "/sosh-net/thread/",
+                                                    {
+                                                        "call": "key",
+                                                        "args": {
+                                                            "object": {"state": {"create_thread_op_state": {"result": {}}}},
+                                                            "key": "thread_id"
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "text": "view thread"
+                                    }
+                                },
+                                {
+                                    "else": {"text": ""}
+                                }
+                            ]
                         }
                     ]
                 },
