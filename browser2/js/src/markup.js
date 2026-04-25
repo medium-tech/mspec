@@ -342,6 +342,7 @@ function _aAndBArgs(app, expression, ctx) {
 
 	const a = unwrapValue(lingoExecute(app, expression.args.a, ctx));
 	const b = unwrapValue(lingoExecute(app, expression.args.b, ctx));
+
 	return [a, b];
 }
 
@@ -1414,7 +1415,7 @@ function startTimer(app, timerName) {
 	// console.log(`Starting timer '${timerName}' with spec:`, timerSpec);
 
     function runTimer() {
-		console.log(`Running timer '${timerName}'...`);
+		// console.log(`Running timer '${timerName}'...`);
         let funcResult;
         try {
             funcResult = lingoExecute(app, timerSpec.func);
