@@ -188,6 +188,11 @@ output:
                       submit_button_text: refresh
                       instruction: ''
                       auto_submit: true
+                - heading: ':: your profile'
+                  level: 4
+                - link: '/sosh-net/profile/yours'
+                  text: 'create or edit'
+
 
           - else:
                 - heading: ':: login'
