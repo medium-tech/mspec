@@ -11,7 +11,7 @@ async function createAccount(page, host, uniqueId) {
 
 	await page.goto(host);
 	await page.getByRole('link', { name: 'enter sosh net' }).click();
-    await page.getByRole('link', { name: 'account' }).click();
+	await page.getByRole('link', { name: 'account' }).click();
 	await page.waitForSelector('#lingo-app');
 
 	// create account form appears after the login form on this page
@@ -32,7 +32,7 @@ async function createAccount(page, host, uniqueId) {
 async function loginUser(page, host, email, password) {
 	await page.goto(host);
 	await page.getByRole('link', { name: 'enter sosh net' }).click();
-    await page.getByRole('link', { name: 'account' }).click();
+	await page.getByRole('link', { name: 'account' }).click();
 	await page.waitForSelector('#lingo-app');
 
 	// login form is first on the page (before the create account form)
@@ -46,8 +46,8 @@ async function loginUser(page, host, email, password) {
 async function createProfile(page, host, uniqueId) {
 	await page.goto(host);
 	await page.getByRole('link', { name: 'enter sosh net' }).click();
-    await page.getByRole('link', { name: 'profiles' }).click();
-    await page.getByRole('link', { name: 'your profile' }).click();
+	await page.getByRole('link', { name: 'profiles' }).click();
+	await page.getByRole('link', { name: 'your profile' }).click();
 	await expect(page.getByRole('heading', { name: ':: create profile' })).toBeVisible({ timeout: 10000 });
 
 	await page.getByRole('row', { name: 'username:' }).getByRole('textbox').fill(`user_${uniqueId}`);
@@ -65,7 +65,7 @@ async function createProfile(page, host, uniqueId) {
 async function createForumAndThread(page, host, uniqueId) {
 	await page.goto(host);
 	await page.getByRole('link', { name: 'enter sosh net' }).click();
-    await page.getByRole('link', { name: 'forums' }).click();
+	await page.getByRole('link', { name: 'forums' }).click();
 	await page.waitForSelector('#lingo-app');
 
 	// create a forum
@@ -91,7 +91,7 @@ async function createForumAndThread(page, host, uniqueId) {
 async function logoutUser(page, host) {
 	await page.goto(host);
 	await page.getByRole('link', { name: 'enter sosh net' }).click();
-    await page.getByRole('link', { name: 'account' }).click();
+	await page.getByRole('link', { name: 'account' }).click();
 	await page.waitForSelector('#lingo-app');
 	await page.getByRole('button', { name: 'logout' }).click();
 	// after logout the login section becomes visible again
@@ -225,3 +225,133 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 	}
 });
 
+test('test navigation links', async ({ page, crudEnv }) => {
+	const host = crudEnv.host;
+
+	//
+	// main pages
+	//
+
+	// index page - links to sosh net
+	await page.goto(host);
+	await expect(page.getByRole('heading')).toContainText('medium tech');
+	await page.getByRole('link', { name: 'enter sosh net' }).click();
+
+	// sosh net main page - breadcrumbs and links back to main
+	await expect(page.locator('h1')).toContainText('shosh net');
+	await expect(page.locator('h2')).toContainText(':: the network');
+	await expect(page.locator('#lingo-app')).toContainText('this is sosh net.');
+	await page.getByRole('link', { name: 'sosh-net' }).click();
+	await expect(page.locator('h1')).toContainText('shosh net');
+	await page.getByRole('link', { name: 'mtech' }).click();
+	await expect(page.getByRole('heading')).toContainText('medium tech');
+	await page.getByRole('link', { name: 'enter sosh net' }).click();
+	await expect(page.locator('h1')).toContainText('shosh net');
+	await page.getByRole('link', { name: 'front page' }).click();
+	await expect(page.getByRole('heading')).toContainText('medium tech');
+	await page.getByRole('link', { name: 'enter sosh net' }).click();
+
+	// profiles
+	await page.getByRole('link', { name: 'profiles' }).click();
+	await expect(page.locator('h2')).toContainText(':: profiles');
+
+	// your profile - breadcrumbs to main
+	await page.getByRole('link', { name: 'your profile' }).click();
+	await expect(page.locator('h2')).toContainText(':: your profile');
+	await page.getByRole('link', { name: 'yours' }).click();
+	await expect(page.locator('h2')).toContainText(':: your profile');
+	await page.getByRole('link', { name: 'profile' }).click();
+	await expect(page.locator('h2')).toContainText(':: profiles');
+	await page.getByRole('link', { name: 'your profile' }).click();
+	await expect(page.locator('h2')).toContainText(':: your profile');
+	await page.getByRole('link', { name: 'sosh-net' }).click();
+	await expect(page.locator('h2')).toContainText(':: the network');
+	await page.getByRole('link', { name: 'profiles' }).click();
+	await page.getByRole('link', { name: 'your profile' }).click();
+	await page.getByRole('link', { name: 'home' }).click();
+	await expect(page.getByRole('heading')).toContainText('medium tech');
+	await page.getByRole('link', { name: 'enter sosh net' }).click();
+	await page.getByRole('link', { name: 'profiles' }).click();
+
+	// profile main page - breadcrumbs
+	await page.getByRole('link', { name: 'profile', exact: true }).click();
+	await expect(page.locator('h2')).toContainText(':: profiles');
+	await page.getByRole('link', { name: 'sosh-net' }).click();
+	await expect(page.locator('h2')).toContainText(':: the network');
+	await page.getByRole('link', { name: 'profiles' }).click();
+	await expect(page.locator('h2')).toContainText(':: profiles');
+	await page.getByRole('link', { name: 'home' }).click();
+	await expect(page.getByRole('heading')).toContainText('medium tech');
+	await page.getByRole('link', { name: 'enter sosh net' }).click();
+
+	// forum list breadcrumbs
+	await page.getByRole('link', { name: 'forums' }).click();
+	await page.getByRole('link', { name: 'forum' }).click();
+	await expect(page.locator('h2')).toContainText(':: forums');
+	await page.getByRole('link', { name: 'sosh-net' }).click();
+	await expect(page.locator('h2')).toContainText(':: the network');
+	await page.getByRole('link', { name: 'forums' }).click();
+	await expect(page.locator('h2')).toContainText(':: forums');
+	await page.getByRole('link', { name: 'mtech' }).click();
+	await expect(page.getByRole('heading')).toContainText('medium tech');
+	await page.getByRole('link', { name: 'enter sosh net' }).click();
+
+	// view forum breadcrumbs
+	await page.goto(`${host}/sosh-net/forum/1`);			// it doesnt matter if
+	await expect(page.locator('h1')).toContainText(':: forum :: 1');	// forum 1 exists, breadcrumbs
+	await page.getByRole('link', { name: '1' }).click();				// should still work
+	await expect(page.locator('h1')).toContainText(':: forum :: 1');
+	await page.getByRole('link', { name: 'forum' }).click();
+	await expect(page.locator('h2')).toContainText(':: forums');
+	await page.goto(`${host}/sosh-net/forum/1`);
+	await expect(page.locator('h1')).toContainText(':: forum :: 1');
+	await page.getByRole('link', { name: 'sosh-net' }).click();
+	await expect(page.locator('h2')).toContainText(':: the network');
+	await page.goto(`${host}/sosh-net/forum/1`);
+	await expect(page.locator('h1')).toContainText(':: forum :: 1');
+	await page.getByRole('link', { name: 'mtech' }).click();
+	await expect(page.getByRole('heading')).toContainText('medium tech');
+
+	// view thread breadcrumbs
+	await page.goto(`${host}/sosh-net/thread/1`);
+	await expect(page.locator('h1')).toContainText(':: thread :: 1');
+	await page.getByRole('link', { name: '1' }).click();
+	await expect(page.locator('h1')).toContainText(':: thread :: 1');
+	await page.getByRole('link', { name: 'thread' }).click();
+	await expect(page.locator('h1')).toContainText(':: thread');
+	await page.goto(`${host}/sosh-net/thread/1`);
+	await expect(page.locator('h1')).toContainText(':: thread :: 1');
+	await page.getByRole('link', { name: 'sosh-net' }).click();
+	await expect(page.locator('h2')).toContainText(':: the network');
+	await page.goto(`${host}/sosh-net/thread/1`);
+	await expect(page.locator('h1')).toContainText(':: thread :: 1');
+	await page.getByRole('link', { name: 'mtech' }).click();
+	await expect(page.getByRole('heading')).toContainText('medium tech');
+
+	// post breadcrumbs
+	await page.goto(`${host}/sosh-net/post/1`);
+	await expect(page.getByRole('heading')).toContainText(':: post :: 1');
+	await page.getByRole('link', { name: '1' }).click();
+	await expect(page.getByRole('heading')).toContainText(':: post :: 1');
+	await page.getByRole('link', { name: 'post' }).click();
+	await expect(page.locator('h1')).toContainText(':: post');
+	await page.goto(`${host}/sosh-net/post/1`);
+	await expect(page.getByRole('heading')).toContainText(':: post :: 1');
+	await page.getByRole('link', { name: 'sosh-net' }).click();
+	await expect(page.locator('h2')).toContainText(':: the network');
+	await page.goto(`${host}/sosh-net/post/1`);
+	await expect(page.getByRole('heading')).toContainText(':: post :: 1');
+	await page.getByRole('link', { name: 'sosh net' }).click();
+	await expect(page.getByRole('heading')).toContainText('medium tech');
+
+	// account page breadcrumbs
+	await page.getByRole('link', { name: 'enter sosh net' }).click();
+	await page.getByRole('link', { name: 'account' }).click();
+	await expect(page.locator('h2')).toContainText(':: account');
+	await page.getByRole('link', { name: 'sosh-net' }).click();
+	await expect(page.locator('h2')).toContainText(':: the network');
+	await page.getByRole('link', { name: 'account' }).click();
+	await expect(page.locator('h2')).toContainText(':: account');
+	await page.getByRole('link', { name: 'mtech' }).click();
+	await expect(page.getByRole('heading')).toContainText('medium tech');
+});
