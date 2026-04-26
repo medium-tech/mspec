@@ -74,9 +74,9 @@ state:
             args:
                 items:
                     - '/api/'
-                    - params: {module_name: {}}
+                    - params: { module_name: {} }
                     - '/'
-                    - params: {model_name: {}}
+                    - params: { model_name: {} }
 
     model_item_url:
         type: str
@@ -85,9 +85,9 @@ state:
             args:
                 items:
                     - '/'
-                    - params: {module_name: {}}
+                    - params: { module_name: {} }
                     - '/'
-                    - params: {model_name: {}}
+                    - params: { model_name: {} }
                     - '/'
 
 ops: {}
@@ -114,8 +114,8 @@ output:
     - break: 1
 
     - model:
-          bind: {state: {model_list: {}}}
+          bind: { state: { model_list: {} } }
           display: list
-          http: {state: {model_item_api_url: {}}}
-          definition: {params: {model_definition: {}}}
-          instance_url: {state: {model_item_url: {}}}
+          http: { state: { model_item_api_url: {} } }
+          definition: { params: { model_definition: {} } }
+          instance_url: { state: { model_item_url: {} } }
