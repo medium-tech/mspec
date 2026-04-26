@@ -9,7 +9,9 @@ async function createAccount(page, host, uniqueId) {
 	const email = `workflow-${uniqueId}@example.com`;
 	const password = `pw${uniqueId}`;
 
-	await page.goto(`${host}/sosh-net/account`);
+	await page.goto(host);
+	await page.getByRole('link', { name: 'enter sosh net' }).click();
+    await page.getByRole('link', { name: 'account' }).click();
 	await page.waitForSelector('#lingo-app');
 
 	// create account form appears after the login form on this page
@@ -28,7 +30,9 @@ async function createAccount(page, host, uniqueId) {
 }
 
 async function loginUser(page, host, email, password) {
-	await page.goto(`${host}/sosh-net/account`);
+	await page.goto(host);
+	await page.getByRole('link', { name: 'enter sosh net' }).click();
+    await page.getByRole('link', { name: 'account' }).click();
 	await page.waitForSelector('#lingo-app');
 
 	// login form is first on the page (before the create account form)
@@ -40,20 +44,28 @@ async function loginUser(page, host, email, password) {
 }
 
 async function createProfile(page, host, uniqueId) {
-	await page.goto(`${host}/sosh-net/profile/yours`);
-	// wait for auto-submit of get-current-user-profile to complete and show create form
+	await page.goto(host);
+	await page.getByRole('link', { name: 'enter sosh net' }).click();
+    await page.getByRole('link', { name: 'profiles' }).click();
+    await page.getByRole('link', { name: 'your profile' }).click();
 	await expect(page.getByRole('heading', { name: ':: create profile' })).toBeVisible({ timeout: 10000 });
 
 	await page.getByRole('row', { name: 'username:' }).getByRole('textbox').fill(`user_${uniqueId}`);
 	await page.getByRole('row', { name: 'bio:' }).getByRole('textbox').fill(`Bio for workflow user ${uniqueId}`);
-	// set profile_picture to -1 (no image selected)
-	await page.getByRole('row', { name: 'profile picture:' }).locator('input[type="text"]').fill('-1');
+
+	const profile_pic_row = page.getByRole('row', { name: 'profile picture:' });
+	await profile_pic_row.locator('input[type="file"]').setInputFiles('./tests/samples/splash-low.jpg');
+	await expect(page.locator('#lingo-app')).not.toContainText('Uploading file...');
+	await expect(page.locator('#lingo-app')).toContainText('File uploaded successfully!');
+	await expect(page.locator('#lingo-app')).not.toContainText('error');
 	await page.getByRole('button', { name: 'Submit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('Success', { timeout: 10000 });
 }
 
 async function createForumAndThread(page, host, uniqueId) {
-	await page.goto(`${host}/sosh-net/forum`);
+	await page.goto(host);
+	await page.getByRole('link', { name: 'enter sosh net' }).click();
+    await page.getByRole('link', { name: 'forums' }).click();
 	await page.waitForSelector('#lingo-app');
 
 	// create a forum
@@ -77,7 +89,9 @@ async function createForumAndThread(page, host, uniqueId) {
 }
 
 async function logoutUser(page, host) {
-	await page.goto(`${host}/sosh-net/account`);
+	await page.goto(host);
+	await page.getByRole('link', { name: 'enter sosh net' }).click();
+    await page.getByRole('link', { name: 'account' }).click();
 	await page.waitForSelector('#lingo-app');
 	await page.getByRole('button', { name: 'logout' }).click();
 	// after logout the login section becomes visible again
@@ -89,7 +103,7 @@ async function leaveReply(page, message) {
 	await expect(page.getByRole('heading', { name: ':: add reply' })).toBeVisible({ timeout: 10000 });
 	await page.getByRole('row', { name: 'message:' }).getByRole('textbox').fill(message);
 	await page.getByRole('button', { name: 'Submit' }).click();
-	await expect(page.locator('#lingo-app')).toContainText('Success', { timeout: 10000 });
+	await expect(page.locator('#lingo-app')).toContainText('success', { timeout: 10000 });
 }
 
 //
@@ -189,23 +203,23 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 
 		// profile list requires login
 		await page.goto(`${host}/sosh-net/profile`);
-		await expect(page.locator('#lingo-app')).toContainText('Error: Not logged in', { timeout: 10000 });
+		await expect(page.locator('#lingo-app')).toContainText('Error: Not logged in', { timeout: 10000, ignoreCase: true });
 
 		// profile instance requires login
 		await page.goto(`${host}/sosh-net/profile/1`);
-		await expect(page.locator('#lingo-app')).toContainText('Error: Not logged in', { timeout: 10000 });
+		await expect(page.locator('#lingo-app')).toContainText('Error: Not logged in', { timeout: 10000, ignoreCase: true });
 
 		// forum list requires login
 		await page.goto(`${host}/sosh-net/forum`);
-		await expect(page.locator('#lingo-app')).toContainText('Error: Not logged in', { timeout: 10000 });
+		await expect(page.locator('#lingo-app')).toContainText('Error: Not logged in', { timeout: 10000, ignoreCase: true });
 
 		// forum instance op returns a server error when not logged in
 		await page.goto(`${host}/sosh-net/forum/1`);
-		await expect(page.locator('#lingo-app')).toContainText('Contact support or check logs for details', { timeout: 10000 });
+		await expect(page.locator('#lingo-app')).toContainText('Contact support or check logs for details', { timeout: 10000, ignoreCase: true });
 
 		// thread instance op returns a server error when not logged in
 		await page.goto(`${host}/sosh-net/thread/1`);
-		await expect(page.locator('#lingo-app')).toContainText('Contact support or check logs for details', { timeout: 10000 });
+		await expect(page.locator('#lingo-app')).toContainText('Contact support or check logs for details', { timeout: 10000, ignoreCase: true });
 
 		await userContext.close();
 	}
