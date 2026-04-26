@@ -72,7 +72,8 @@ async function createForumAndThread(page, host, uniqueId) {
 	await page.getByRole('row', { name: 'title:' }).getByRole('textbox').fill(`Workflow Thread ${uniqueId}`);
 	await page.getByRole('row', { name: 'message:' }).getByRole('textbox').fill(`Thread message for workflow test ${uniqueId}`);
 	await page.getByRole('button', { name: 'Submit' }).click();
-	await expect(page.locator('#lingo-app')).toContainText('success', { timeout: 10000 });
+	// create-thread op shows 'view thread' link on success (not the generic 'success' text)
+	await expect(page.getByRole('link', { name: 'view thread' })).toBeVisible({ timeout: 10000 });
 }
 
 async function logoutUser(page, host) {
