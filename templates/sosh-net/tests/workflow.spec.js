@@ -189,8 +189,7 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 
 		// navigate to first form
 		await expect(page.locator('h1')).toContainText(':: forum ::', { timeout: 10000 });
-		await page.waitForSelector('tr.list-selecting', { timeout: 10000 });
-		
+
 		// click on the first thread in the forum
 		await page.locator('tr.list-selecting').first().click();
 
