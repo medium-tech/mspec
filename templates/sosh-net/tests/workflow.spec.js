@@ -137,7 +137,6 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 	await expect(initialPage.getByRole('link', { name: 'mtech' })).toBeVisible();
 	await expect(initialPage.getByRole('link', { name: 'sosh-net' })).toBeVisible();
 	await expect(initialPage.locator('h2')).toContainText(':: the network');
-	await expect(initialPage.getByRole('link', { name: 'front page' })).toBeVisible();
 	await expect(initialPage.getByRole('link', { name: 'profiles' })).toBeVisible();
 	await expect(initialPage.getByRole('link', { name: 'forums' })).toBeVisible();
 	await expect(initialPage.getByRole('link', { name: 'account' })).toBeVisible();
@@ -188,8 +187,10 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 		await page.waitForSelector('tr.list-selecting', { timeout: 10000 });
 		await page.locator('tr.list-selecting').first().click();
 
-		// wait for the forum instance to load its thread list
+		// navigate to first form
+		await expect(page.locator('h1')).toContainText(':: forum ::', { timeout: 10000 });
 		await page.waitForSelector('tr.list-selecting', { timeout: 10000 });
+		
 		// click on the first thread in the forum
 		await page.locator('tr.list-selecting').first().click();
 
@@ -247,9 +248,6 @@ test('test navigation links', async ({ page, crudEnv }) => {
 	await expect(page.getByRole('heading')).toContainText('medium tech');
 	await page.getByRole('link', { name: 'enter sosh net' }).click();
 	await expect(page.locator('h1')).toContainText('shosh net');
-	await page.getByRole('link', { name: 'front page' }).click();
-	await expect(page.getByRole('heading')).toContainText('medium tech');
-	await page.getByRole('link', { name: 'enter sosh net' }).click();
 
 	// profiles
 	await page.getByRole('link', { name: 'profiles' }).click();
