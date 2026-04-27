@@ -200,16 +200,14 @@ output:
     - heading: "sosh.net"
       level: 1
 
+    - breadcrumbs:
+        - "home"
+        - "sosh-net"
+        - "profile"
+        - "yours"
+
     - heading: ":: your profile"
       level: 2
-
-    - breadcrumbs:
-          - "home"
-          - "sosh-net"
-          - "profile"
-          - "yours"
-
-    - break: 1
 
     - branch:
           - if: {state: {is_logged_in: {}}}

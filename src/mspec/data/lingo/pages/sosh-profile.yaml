@@ -96,16 +96,14 @@ output:
     - heading: "sosh.net"
       level: 1
 
+    - breadcrumbs:
+        - "home"
+        - "sosh-net"
+        - "profile"
+
     - heading: ":: profiles"
       level: 2
-
-    - breadcrumbs:
-          - "home"
-          - "sosh-net"
-          - "profile"
-
-    - break: 1
-
+      
     - text: ':: '
 
     - link: '/sosh-net/profile/yours'

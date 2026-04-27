@@ -27,22 +27,16 @@ output:
 
     - heading: ":: the network"
       level: 2
-
+      
+    - text: ' ● '
+    - link: '/sosh-net/profile'
+      text: 'profiles'
+    - text: ' ● '
+    - link: '/sosh-net/forum'
+      text: 'forums'
+    - text: ' ● '
+    - link: '/sosh-net/account'
+      text: 'account'
+    - text: ' ● '
     - break: 1
-
-    - block:
-          - text: ' ● '
-          - link: '/'
-            text: 'front page'
-          - text: ' ● '
-          - link: '/sosh-net/profile'
-            text: 'profiles'
-          - text: ' ● '
-          - link: '/sosh-net/forum'
-            text: 'forums'
-          - text: ' ● '
-          - link: '/sosh-net/account'
-            text: 'account'
-          - text: ' ● '
-          - break: 1
-          - text: this is sosh net.
+    - text: this is sosh net.
