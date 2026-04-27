@@ -47,10 +47,14 @@
     * 🟢 ui
 * 🟡 split social media off from dev app
     * 🟢 custom pages
-	* 🔴 css update on all pages
+	* 🟡 css update on all pages
     * 🔴 deploy to web
 * 🟢 implement max_models_by_field - ie. limit 1 reaction per post_id
 * 🟢 add unique constraint to str fields - ie. only 1 profile with a specific username can exist
+* 🔴 add lingo format spec
+	* 🔴 sub protocol for rich text formating
+	* 🔴 update field def's to support this as an option on str fields
+	* 🔴 add max len to all strings
 * 🟡 update testing
     * 🟢 split functions.json apart
         * 🔴 create matching specs for script spec
@@ -82,6 +86,8 @@
 		* 🔴 ensure all nested ops get executed
 			* 🔴 js
 			* 🔴 python
+* 🔴 add field validation to model spec
+* 🔴 allow models to override crud ops with a defined op
 
 ## mapp framework
 * 🟢 create tests for auth via cli
