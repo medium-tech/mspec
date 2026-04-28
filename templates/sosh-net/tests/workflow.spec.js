@@ -184,16 +184,17 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 
 		// navigate to forums and click on the first forum
 		await page.goto(`${host}/sosh-net/forum`);
-		await page.waitForSelector('tr.list-selecting', { timeout: 10000 });
-		await page.locator('tr.list-selecting').first().click();
-
-		// navigate to first form
-		await expect(page.locator('h1')).toContainText(':: forum ::', { timeout: 10000 });
+		await page.locator('tr').filter({ hasText: 'Workflow Forum' }).first().click();			// this could have race confitions w/ parallel tests
+																								// if the first Workflow Forum is not on page 1
+		// navigate to first forum																// but we need to wait for a Workflow Forum/Thread to ensure
+		await expect(page.locator('h1')).toContainText(':: forum ::', { timeout: 10000 });		// the crud test hasn't deleted the thread
 
 		// click on the first thread in the forum
-		await page.locator('tr.list-selecting').first().click();
-
-		// leave a reply on the thread
+		// await page.locator('tr.list-selecting').first().click();
+		await page.locator('tr').filter({ hasText: 'Workflow Thread' }).first().click();		// this could have race conditions w/ parallel tests
+																								// if the first Workflow Thread is not on page 1
+																								// but we need to wait for a Workflow Forum/Thread to ensure
+		// leave a reply on the thread															// the crud test hasn't deleted the thread
 		await leaveReply(page, `Reply from workflow user ${user.email}`);
 
 		// logout
