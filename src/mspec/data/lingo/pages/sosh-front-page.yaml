@@ -1,0 +1,27 @@
+lingo:
+    version: page-beta-1
+    title: "sosh net :: front page"
+
+params: {}
+
+state:
+    is_logged_in:
+        type: bool
+        calc:
+            call: key
+            args:
+                object:
+                    call: auth.is_logged_in
+                    args: {}
+                key: logged_in
+
+ops: {}
+
+output:
+    - heading: 'medium tech'
+      level: 1
+
+    - text: ' --> '
+
+    - link: '/sosh-net'
+      text: 'enter sosh net'

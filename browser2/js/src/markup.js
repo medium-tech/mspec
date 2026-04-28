@@ -3,6 +3,19 @@
  * This is equivalent to the Python markup.py module
  */
 
+function enableProtocol() {
+    document.cookie = "protocol_mode=true; path=/";
+    return 'refresh to enable protocol mode'
+}
+
+function disableProtocol() {
+    document.cookie = "protocol_mode=false; path=/";
+    return 'refresh to disable protocol mode'
+}
+
+window.enableProtocol = enableProtocol;
+window.disableProtocol = disableProtocol;
+
 // // // // //
 //
 // helper functions
@@ -26,6 +39,24 @@ function initDateTimeFromInput(value) {
     }
 }
 
+function normalizeDateTimeValue(value) {
+    if (value === null || typeof value === 'undefined' || value === '') {
+        return null;
+    }
+    const asString = String(value).trim();
+    if (asString.length === 16) {
+        return asString + ':00';
+    }
+    if (asString.length > 19) {
+        return asString.substring(0, 19);
+    }
+    return asString;
+}
+
+function isUnsetFormFieldValue(value) {
+    return value === null || typeof value === 'undefined' || value === '';
+}
+
 // Helper function for lingo int conversion
 function lingoInt(number = null, string = null, base = 10) {
     if (number !== null && number !== undefined) {
@@ -45,6 +76,58 @@ function strJoin(separator, items) {
 // Helper function for str concat
 function strConcat(items) {
     return items.map(item => String(item)).join('');
+}
+
+function structKey(object, key) {
+	/*
+	Return the key of a struct
+
+	Args:
+		object: The struct object to retrieve the key from
+		key: The key to retrieve from the struct.
+		
+		Key may access nested properties using dot notation.
+			A max of 10 dot-separated levels is supported.
+
+	Return:
+		The value associated with the specified key in the struct object.
+	
+	Raises:
+		- If the key does not exist in the object, an error is thrown.
+		- if key starts or ends with a dot, an error is thrown.
+
+	*/
+
+	if (typeof key !== 'string' || key.startsWith('.') || key.endsWith('.')) {
+		console.error('lingo function key - invalid key format:', key);
+		throw new Error(`lingo function key - keys may not start or end with a dot: '${key}'`);
+	}
+
+	const keySplit = key.split('.');
+	const numKeys = keySplit.length;
+	if (numKeys > 10) {
+		console.error('lingo function key - key has too many levels:', key);
+		throw new Error(`lingo function key - keys may have a maximum of 10 dot-separated levels: '${key}'`);
+	}
+
+	// recursively access nested properties if needed
+	let current = object;
+	for (let i = 0; i < numKeys; i++) {
+		try{
+			if (current && typeof current === 'object' && keySplit[i] in current) {
+				current = current[keySplit[i]];
+			} else {
+				console.error('lingo function key - key not found in object:', key, 'object:', object);
+				throw new Error(`lingo function key - key '${key}' not found in object`);
+			}
+		} catch (error) {
+			const msg = `lingo function key - count not access: ${keySplit[i]} in ${key}`;
+			console.error(msg, 'object:', object, 'error:', error);
+			throw new Error(msg);
+		}
+	}
+	return current;
+
 }
 
 function getRequestHeaders() {
@@ -248,6 +331,22 @@ const placeholderImage = (width, height, text) => {
 //
 // // // // //
 
+function _aAndBArgs(app, expression, ctx) {
+	// helper for functions that take two main arguments 'a' and 'b'
+	// execute and unwrap both or throw error if either are not provided
+	
+	if(!expression.args || !expression.args.hasOwnProperty('a') || !expression.args.hasOwnProperty('b')) {
+		console.error('missing required arguments a and b in expression.args:', expression);
+		throw new Error('missing required arguments a and b');
+	}
+
+	const a = unwrapValue(lingoExecute(app, expression.args.a, ctx));
+	const b = unwrapValue(lingoExecute(app, expression.args.b, ctx));
+
+	return [a, b];
+}
+
+
 // sequence ops //
 
 function _mapFunctionArgs(app, expression, ctx) {
@@ -259,7 +358,39 @@ function _mapFunctionArgs(app, expression, ctx) {
         newCtx.self = {item};
         const result = lingoExecute(app, args.function, newCtx);
         if (typeof result === 'object' && result !== null && 'value' in result) {
-            return result.value;
+
+			if(typeof result.value !== 'object' && !Array.isArray(result.value)) {
+				// console.log('MAP RESULT PRIMITIVE', result.value);
+				return result.value;
+			}
+			
+			// for every key in object, if is not a primitive, evaluate it
+			let evaluatedResult = {};
+            for (const [key, value] of Object.entries(result.value)) {
+                if(typeof value === 'object' && value !== null) {
+                    const evaluated = lingoExecute(app, value, newCtx);
+                    
+					// hack solution to get links to render correctly
+					// need to update interpreter to be able to recursively evaluate nested objects
+					if (typeof evaluated === 'object' && evaluated !== null && 'link' in evaluated) {
+						// console.log('MAP RESULT LINK', evaluated);
+                        evaluatedResult[key] = {
+							link: lingoExecute(app, evaluated.link, newCtx),
+							text: lingoExecute(app, evaluated.text, newCtx)
+						}
+                    } else {
+						// console.log('MAP RESULT EVALUATED', evaluated);
+                        evaluatedResult[key] = evaluated;
+                    }
+
+                } else {
+					// console.log('MAP RESULT VALUE', value);
+                    evaluatedResult[key] = value;
+                }
+            }
+			// console.log('MAP RESULT', evaluatedResult, result);
+            return evaluatedResult;
+
         } else if (typeof result === 'object' && result !== null && !Array.isArray(result)) {
             const evaluatedResult = {};
             for (const [key, value] of Object.entries(result)) {
@@ -318,6 +449,19 @@ function _reduceFunctionArgs(app, expression, ctx) {
     return [reduceFunc, iterableValue, initialValue];
 }
 
+// auth //
+
+function _authIsLoggedInArgs(app, expression, ctx) {
+    const args = expression.args || {};
+    if(args.hasOwnProperty('confirm')) {
+        const confirm = unwrapValue(lingoExecute(app, args.confirm, ctx));
+        return [confirm];
+    }else{
+        return [false];
+    }
+}
+
+
 // crud //
 
 function _crudCreateArgs(app, expression, ctx) {
@@ -364,7 +508,7 @@ function _crudReadArgs(app, expression, ctx) {
             if (!app.state.hasOwnProperty(stateField)) {
                 throw new Error(`crud.read - state field not found: ${stateField}`);
             }
-            app.state[stateField].state = 'loading...';
+            app.state[stateField].state = 'loading';
         }
     }
     return [url];
@@ -421,7 +565,7 @@ function _opHttpArgs(app, expression, ctx) {
             app.state[stateField].state = 'loading';
         }
     }
-    console.log('op.http - url:', expression, url, 'params:', params);
+    // console.log('op.http - url:', expression, url, 'params:', params);
     return [url, params];
 }
 
@@ -552,27 +696,27 @@ const lingoFunctionLookup = {
     
     'eq': {
         func: (a, b) => a === b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     'ne': {
         func: (a, b) => a !== b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     'lt': {
         func: (a, b) => a < b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     'le': {
         func: (a, b) => a <= b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+		createArgs: _aAndBArgs,
     },
     'gt': {
         func: (a, b) => a > b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     'ge': {
         func: (a, b) => a >= b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+		createArgs: _aAndBArgs,
     },
     
     // bool //
@@ -585,17 +729,13 @@ const lingoFunctionLookup = {
         func: (obj) => !obj,
         args: {'object': {'type': 'any'}}
     },
-    'neg': {
-        func: (obj) => -obj,
-        args: {'object': {'type': 'any'}}
-    },
     'and': {
         func: (a, b) => a && b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     'or': {
         func: (a, b) => a || b,
-        args: {'a': {'type': 'any'}, 'b': {'type': 'any'}}
+        createArgs: _aAndBArgs,
     },
     
     // int //
@@ -607,6 +747,10 @@ const lingoFunctionLookup = {
             'string': {'type': 'str', 'default': null},
             'base': {'type': 'int', 'default': 10}
         }
+    },
+    'neg': {
+        func: (obj) => -obj,
+        args: {'object': {'type': 'any'}}
     },
     
     // float //
@@ -646,6 +790,16 @@ const lingoFunctionLookup = {
         func: strConcat,
         args: {
             'items': {'type': 'list'}
+        }
+    },
+
+    // struct //
+    
+    'key': {
+        func: structKey,
+        args: {
+            'object': {'type': 'struct'},
+            'key': {'type': 'str'}
         }
     },
     
@@ -854,6 +1008,19 @@ const lingoFunctionLookup = {
         }
     },
 
+    // client //
+
+    'client': {
+        'reload': {
+            func: () => {
+                window.location.reload();
+                return {acknowledged: true, message: 'reload triggered'};
+            },
+            args: {},
+            sig: 'kwargs'
+        }
+    },
+
     // crud //
 
     'crud': {
@@ -868,19 +1035,23 @@ const lingoFunctionLookup = {
                     if (response.ok) {
                         const responseData = await response.json();
                         // console.log('crud.create - responseData:', responseData);
-                        return {state: 'success', item_id: responseData.id};
+                        return {state: 'success', item_id: responseData.id, field_errors: {}};
                     } else {
                         const errorData = await response.json();
                         let errorMessage = `${response.status} ${response.statusText}`;
+                        let fieldErrors = {};
                         if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
                             errorMessage = errorData.error.message;
                         }
+                        if (errorData.hasOwnProperty('error') && errorData.error.code === 'VALIDATION_ERROR' && errorData.error.hasOwnProperty('field_errors')) {
+                            fieldErrors = errorData.error.field_errors;
+                        }
                         console.error('crud.create - HTTP error:', response.status, response.statusText);
-                        return {state: 'error', error: errorMessage};
+                        return {state: 'error', error: errorMessage, field_errors: fieldErrors};
                     }
                 } catch (error) {
                     console.error('crud.create - network error:', error);
-                    return {state: 'error', error: `Network error: ${error.message}`};
+                    return {state: 'error', error: `Network error: ${error.message}`, field_errors: {}};
                 }
             },
             createArgs: _crudCreateArgs
@@ -924,19 +1095,23 @@ const lingoFunctionLookup = {
                     if (response.ok) {
                         const responseData = await response.json();
                         // console.log('crud.update - responseData:', responseData);
-                        return {state: 'edited', data: responseData};
+                        return {state: 'edited', data: responseData, field_errors: {}};
                     } else {
                         const errorData = await response.json();
                         let errorMessage = `${response.status} ${response.statusText}`;
+                        let fieldErrors = {};
                         if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
                             errorMessage = errorData.error.message;
                         }
+                        if (errorData.hasOwnProperty('error') && errorData.error.code === 'VALIDATION_ERROR' && errorData.error.hasOwnProperty('field_errors')) {
+                            fieldErrors = errorData.error.field_errors;
+                        }
                         console.error('crud.update - HTTP error:', response.status, response.statusText);
-                        return {state: 'error', error: errorMessage};
+                        return {state: 'error', error: errorMessage, field_errors: fieldErrors};
                     }
                 } catch (error) {
                     console.error('crud.update - network error:', error);
-                    return {state: 'error', error: `Network error: ${error.message}`};
+                    return {state: 'error', error: `Network error: ${error.message}`, field_errors: {}};
                 }
             },
             createArgs: _crudUpdateArgs
@@ -1017,24 +1192,25 @@ const lingoFunctionLookup = {
                     });
                     if (response.ok) {
                         const responseData = await response.json();
-                        console.log('op.http - responseData:', responseData);
+                        // console.log('op.http - responseData:', responseData);
                         if (responseData.hasOwnProperty('result')) {
                             const wrappedResult = wrapValue(responseData.result);
-                            console.log('op.http - wrappedResult:', wrappedResult);
+                            // console.log('op.http - wrappedResult:', wrappedResult);
                             if (url === '/api/auth/login-user') {
                                 const accessToken = responseData.result.access_token;
                                 if (accessToken) {
                                     localStorage.setItem('access_token', accessToken);
-                                    console.log('op.http - stored access_token in localStorage');
+                                    // console.log('op.http - stored access_token in localStorage');
                                 }
                             } else if (url === '/api/auth/logout-user' && params.mode !== 'others') {
                                 localStorage.removeItem('access_token');
-                                console.log('op.http - removed access_token from localStorage');
+                                // window.location.reload();
                             }
                             return {state: 'result', result: wrappedResult};
                         } else {
                             return {state: 'error', error: 'Response missing result field'};
                         }
+
                     } else {
                         const errorData = await response.json();
                         let errorMessage = `${response.status} ${response.statusText}`;
@@ -1042,6 +1218,12 @@ const lingoFunctionLookup = {
                             errorMessage = errorData.error.message;
                         }
                         console.error('op.http - HTTP error:', response.status, response.statusText);
+
+                        if(url == '/api/auth/logout-user') {
+                            localStorage.removeItem('access_token');
+                            window.location.reload();
+                        }
+
                         return {state: 'error', error: errorMessage};
                     }
                 } catch (error) {
@@ -1050,6 +1232,24 @@ const lingoFunctionLookup = {
                 }
             },
             createArgs: _opHttpArgs
+        }
+    },
+
+    // auth //
+
+    'auth': {
+        'is_logged_in': {
+            func: () => {
+                // console.log('auth.is_logged_in - checking login status');
+                try {
+                    const accessToken = localStorage.getItem('access_token');
+                    return {logged_in: !!accessToken, message: 'Logged in, not confirmed with server'};
+                } catch (error) {
+                    console.error('auth.is_logged_in - error:', error);
+                    return {logged_in: false, message: `Error checking login status: ${error.message}`};
+                }
+            },
+            createArgs: _authIsLoggedInArgs
         }
     },
 
@@ -1198,6 +1398,75 @@ class LingoApp {
             forms: {},
             media: {}
         };
+
+        this.timers = {}; // { [timerName]: timeoutId | null }
+    }
+}
+
+/**
+ * Start a timer by name - runs func, then schedules itself based on interval
+ */
+function startTimer(app, timerName) {
+    const timerSpec = app.spec.timers[timerName];
+    if (!timerSpec) {
+        throw new Error(`timer '${timerName}' not defined in spec`);
+    }
+
+	// console.log(`Starting timer '${timerName}' with spec:`, timerSpec);
+
+    function runTimer() {
+		// console.log(`Running timer '${timerName}'...`);
+        let funcResult;
+        try {
+            funcResult = lingoExecute(app, timerSpec.func);
+        } catch (error) {
+            console.error(`Timer '${timerName}' func error:`, error);
+        }
+
+		// console.log(`Timer '${timerName}' func result`, funcResult);
+
+        let interval;
+		const ctx = {self: {func_result: funcResult}};
+        if (typeof timerSpec.interval === 'number') {
+            interval = timerSpec.interval;
+        } else {
+            try {
+                interval = unwrapValue(lingoExecute(app, timerSpec.interval, ctx));
+            } catch (error) {
+                console.error(`Timer '${timerName}' interval error:`, error);
+                interval = -1;
+            }
+        }
+
+		// console.log(`Timer '${timerName}' interval:`, interval);
+
+		const container = document.getElementById('lingo-app');
+        if (container) {
+            renderLingoApp(app, container);
+        }
+
+        if (interval >= 0) {
+            // interval == 0: re-run on the next event loop tick (setTimeout delay of 0)
+            // interval > 0: re-run after interval seconds
+            app.timers[timerName] = setTimeout(runTimer, interval * 1000);
+        } else {
+            // interval < 0: timer self-disabled, will not re-run
+            app.timers[timerName] = null;
+        }
+    }
+
+    runTimer();
+}
+
+/**
+ * Stop all running timers on an app
+ */
+function stopAllTimers(app) {
+    for (const timerName in app.timers) {
+        if (app.timers[timerName] !== null) {
+            clearTimeout(app.timers[timerName]);
+            app.timers[timerName] = null;
+        }
     }
 }
 
@@ -1215,44 +1484,78 @@ function lingoApp(spec, params = {}, options = {}) {
         }
     }
     
-    return lingoUpdateState(instance);
+    lingoUpdateState(instance);
+
+    // Auto-start timers
+    if (instance.spec.timers) {
+        for (const [timerName, timerSpec] of Object.entries(instance.spec.timers)) {
+            if (timerSpec.auto_start) {
+                startTimer(instance, timerName);
+            }
+        }
+    }
+
+    return instance;
 }
 
 /**
  * Update state values - equivalent to Python lingo_update_state()
  */
 function lingoUpdateState(app, ctx = null) {
+    let defaultFields = {};
+    let calculatedFields = {};
+
+    /*
+    we set non calculated fields first, so that calculated fields can reference them during calculation if needed,
+    useful on initial render when not all fields have been set
+    */
+
     for (const [key, value] of Object.entries(app.spec.state)) {
         if ('calc' in value) {
-            // This is a calculated value
-            const newValue = lingoExecute(app, value.calc, ctx);
-            
-            // Extract actual value if wrapped
-            const actualValue = (typeof newValue === 'object' && newValue !== null && 'value' in newValue)
-                ? newValue.value
-                : newValue;
-            
-            const actualType = (typeof newValue === 'object' && newValue !== null && 'type' in newValue)
-                ? newValue.type
-                : getTypeName(actualValue);
-            
-            if (!typesMatch(actualType, value.type)) {
-                throw new Error(`state.${key} - expression returned type mismatch: ${actualType}, expected: ${value.type}`);
-            }
-            app.state[key] = actualValue;
-        } else {
-            // Non-calculated value, set to default if not already set
-            if (!(key in app.state)) {
-                if (!('default' in value)) {
-                    throw new Error(`state.${key} - missing default value`);
-                }
-                const typeName = getTypeName(value.default);
-                if (!typesMatch(typeName, value.type)) {
-                    throw new Error(`state.${key} - default value type mismatch : ${typeName} != ${value.type}`);
-                }
-                app.state[key] = value.default;
-            }
+            calculatedFields[key] = value;
+        }else{
+            defaultFields[key] = value;
         }
+    }
+
+    for (const [key, value] of Object.entries(defaultFields)) {
+        // Non-calculated value, set to default if not already set
+        if (!(key in app.state)) {
+            if (!('default' in value)) {
+                throw new Error(`state.${key} - missing default value`);
+            }
+            let defaultValue = value.default;
+            const typeName = getTypeName(defaultValue);
+            
+            if (value.type === 'datetime' && typeName === 'str') {
+                console.log(`state.${key} - parsing datetime default value:`, defaultValue);
+                defaultValue = new Date(defaultValue);
+            }else if (!typesMatch(typeName, value.type)) {
+                throw new Error(`state.${key} - default value type mismatch : ${typeName} != ${value.type}`);
+            }
+
+            app.state[key] = defaultValue;
+
+            // console.log(`state.${key} - setting default value:`, defaultValue, 'type:', typeName);
+        }
+    }
+
+    for (const [key, value] of Object.entries(calculatedFields)) {
+        const newValue = lingoExecute(app, value.calc, ctx);
+        
+        // Extract actual value if wrapped
+        const actualValue = (typeof newValue === 'object' && newValue !== null && 'value' in newValue)
+            ? newValue.value
+            : newValue;
+        
+        const actualType = (typeof newValue === 'object' && newValue !== null && 'type' in newValue)
+            ? newValue.type
+            : getTypeName(actualValue);
+        
+        if (!typesMatch(actualType, value.type)) {
+            throw new Error(`state.${key} - expression returned type mismatch: ${actualType}, expected: ${value.type}`);
+        }
+        app.state[key] = actualValue;
     }
 
     // Call afterUpdate callback if defined
@@ -1278,13 +1581,13 @@ function getTypeName(value) {
     if (typeof value === 'object' && value !== null && 'type' in value && 'value' in value) {
         return value.type;
     }
-    if (typeof value === 'object' && 'fields' in value && 'name' in value) {
+    if (typeof value === 'object' && value !== null && 'fields' in value && 'name' in value) {
         return 'model';
     }
-    if (typeof value === 'object' && 'params' in value && 'result' in value && 'func' in value) {
+    if (typeof value === 'object' && value !== null && 'params' in value && 'result' in value && 'func' in value) {
         return 'op';
     }
-    if (typeof value === 'object') return 'struct';
+    if (typeof value === 'object' && value !== null) return 'struct';
     return typeof value;
 }
 
@@ -1292,9 +1595,14 @@ function typesMatch(a, b, allowAny = true) {
     /*
     Check if two type names match, with option to allow 'any' type
     */
+   	const types = [a, b];
+	// console.log('typesMatch()', a, b, types, 'str' in types);
     if(a === b){
         return true;
     }else if (allowAny && (a === 'any' || b === 'any')) {
+        return true;
+	}else if (types.includes('foreign_key') && types.includes('str')) {
+		// allow foreign_key to be treated as str
         return true;
     }else{
         return false;
@@ -1342,6 +1650,8 @@ function formatDateTime(date) {
 function lingoExecute(app, expression, ctx = null) {
     // Calculate expression
     let result;
+
+    // console.log('lingoExecute()', expression, ctx);
     
     if (typeof expression === 'object' && expression !== null && !Array.isArray(expression)) {
         if ('set' in expression) {
@@ -1388,6 +1698,18 @@ function lingoExecute(app, expression, ctx = null) {
         // Primitive types - wrap with type info
         // console.log('lingo - wrapping primitive result', expression, result);
         return {type: getTypeName(result), value: result};
+    } else if (Array.isArray(result)) {
+        // Array - return as list type
+        let returnList;
+        
+        // if item is object call lingoExecute and append the result, otherwise append the item as is
+        if (result.every(item => typeof item === 'object' && item !== null)) {
+            returnList = result.map(item => lingoExecute(app, item, ctx));
+        } else {
+            returnList = result;
+        }
+        return returnList;
+
     }else if (typeof result === 'object' && result !== null) {
         // Already an object or array, return as is
         // console.log('lingo - returning object result', expression, result, result instanceof Date);
@@ -1417,12 +1739,11 @@ function renderOutput(app, ctx = null) {
                     if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
                         app.buffer.push(item);
                     } else {
-                        console.error('Rendered output item is not an object:', typeof item, element, rendered, item);
-                        throw new Error(`Rendered output item is not an object: ${typeof item} - output ${n}`);
+                        app.buffer.push(...item);
                     }
                 }
             } else {
-                throw new Error(`Rendered output is not an object or array: ${typeof rendered} - output ${n}`);
+                throw new Error(`Rendered output is not an object or array: ${typeof rendered} - ${n}`);
             }
         } catch (error) {
             console.error(`Error rendering output element ${n}:`, error, element);
@@ -1508,7 +1829,10 @@ function renderBranch(app, element, ctx = null) {
             
             if (condition) {
                 try {
-                    return lingoExecute(app, then, ctx);
+                    // console.log(`branch then condition matched`, then);
+                    const thenResult = lingoExecute(app, then, ctx);
+                    // console.log(`branch then result`, thenResult);
+                    return thenResult;
                 } catch (error) {
                     throw new Error(`branch ${n} - error processing then expression: ${error.message}`);
                 }
@@ -1736,6 +2060,7 @@ function renderSet(app, expression, ctx = null) {
                         const newStructType = getTypeName(origStructValue);
                         const structFieldValueType = getTypeName(structFieldValue);
                         if (!typesMatch(structFieldValueType, newStructType)) {
+                            console.error(`Type mismatch for struct field ${fieldDisplayName}.${structFieldName}: current ${origStructValue}, got ${structFieldValueType}`, structFieldValue);
                             throw new Error(`set - type mismatch: ${newStructType} != ${structFieldValueType} - ${fieldDisplayName}.${structFieldName}`);
                         }
 
@@ -1780,6 +2105,7 @@ function renderSet(app, expression, ctx = null) {
 function renderState(app, expression, ctx = null) {
     const fieldNames = Object.keys(expression.state);
     if (fieldNames.length !== 1) {
+        console.error('state - invalid expression, must have exactly one state field', expression);
         throw new Error('state - must have exactly one state field');
     }
     const fieldName = fieldNames[0];
@@ -1787,8 +2113,21 @@ function renderState(app, expression, ctx = null) {
     if (!(fieldName in app.state)) {
         throw new Error(`state - field not found: ${fieldName}`);
     }
-    
+
+    // check if expression.state.fieldName is an object with a field
+    if (typeof expression.state[fieldName] === 'object' && expression.state[fieldName] !== null) {
+        // check for exactly one key
+        const keys = Object.keys(expression.state[fieldName]);
+        if (keys.length === 1) {
+            const structFieldName = keys[0];
+            return app.state[fieldName][structFieldName];
+        }else if(keys.length > 1){
+            throw new Error('state - cannot access struct field, multiple fields found in expression');
+        }
+    }
+
     return app.state[fieldName];
+    
 }
 
 /**
@@ -1804,7 +2143,7 @@ function renderLingo(app, element, ctx = null) {
         return String(x);
     };
 
-    console.log('lingo - renderLingo result', element, result);
+    // console.log('lingo - renderLingo result', element, result);
     
     // Handle wrapped format {type: ..., value: ...}
     if (typeof result === 'object' && result !== null && 'value' in result) {
@@ -1881,7 +2220,9 @@ function renderOp(app, expression, ctx = null) {
 
     There are two ways to use an op, interactively with 
     a form and a call button, or non-interactively and
-    return the result directly.
+    return the result directly. The interactive form
+    will call the server to handle the op, but the non-interactive form
+    will locally execute the op defined in the page spec's op field.
 
     Interactive op example:
 
@@ -1892,9 +2233,31 @@ function renderOp(app, expression, ctx = null) {
             "definition": {"params": {"op_definition": {}}}
         }}
 
+        In this case a form will be rendered with all
+        param fields defined in the op definition
+    
+    Optionally override params:
+
+        {"op": {
+            "bind": {"state": {"op_view_state": {}}},
+            "interactive": true,
+            "http": {"state": {"op_api_url": {}}},
+            "definition": {"params": {"op_definition": {}}},
+            "params": {
+                "field_1: "value_1",
+            }
+        }}
+
+        In this case params.field_1 will be set to the
+        value provided, which may be a scripted value.
+        All other params in the op definition will have
+        a form displayed
+
     Non-interactive op example:
 
         {"op": {"randomize_number": {"max": 100}}}
+
+        useful for running a local op defined in page spec
 
         NOTE: do not supply interactive=false, to use
         this syntax there must be only one key which is
@@ -1913,18 +2276,58 @@ function renderOp(app, expression, ctx = null) {
     }
 
     if(isInteractive){
-
-        // interactive op //
+        
+        //
+        // interactive op
+        //
 
         const op = expression.op;
         // console.log('renderOp() - interactive op', op);
+
+        // definintion //
 
         if(!op.hasOwnProperty('definition')){
             throw new Error('op - missing definition for interactive op');
         }
 
-        const definition = lingoExecute(app, op.definition, ctx);
+        const definitioResult = lingoExecute(app, op.definition, ctx);
+
+        if(typeof definitioResult === 'object' && definitioResult !== null && 'value' in definitioResult){
+            if(definitioResult.type === 'str'){
+                // split value by dot and confirrm it has 2 parts, module and op name
+                const parts = definitioResult.value.split('.');
+                if(parts.length !== 2){
+                    console.error('op - definition as string reference must be in format "module.op_name"', definitioResult.value);
+                    throw new Error('op - definition as string reference must be in format "module.op_name"');
+                }
+                const [moduleName, opName] = parts;
+
+                // get from app.parentSpec.modules or throw error if not found
+                if(!app.parentSpec || !app.parentSpec.modules || !app.parentSpec.modules.hasOwnProperty(moduleName)){
+                    console.error('op - definition module not found in parent spec modules', moduleName, app.parentSpec.modules);
+                    throw new Error(`op - definition module not found in parent spec modules: ${moduleName}`);
+                }
+                const module = app.parentSpec.modules[moduleName];
+                if(!module.hasOwnProperty('ops') || !module.ops.hasOwnProperty(opName)){
+                    console.error('op - definition op not found in parent spec module ops', opName, module.ops);
+                    throw new Error(`op - definition op not found in parent spec module ops: ${opName}`);
+                }
+                definition = module.ops[opName];
+
+
+            }else if(definitioResult.type === 'op'){
+                definition = definitioResult.value;
+            }else{
+                console.error('op - definition expression must return type op', definitioResult);
+                throw new Error('op - definition expression must return type op');
+            }
+            
+        }else{
+            definition = definitioResult;
+        }
+
         if(!definition.hasOwnProperty('params')){
+            console.error('op - definition missing params field for interactive op', definition);
             throw new Error('op - missing params in definition for interactive op');
         }
 
@@ -1944,7 +2347,76 @@ function renderOp(app, expression, ctx = null) {
             throw new Error('op - missing http for interactive op');
         }
 
-        // bind state //
+        //
+        // display options
+        //
+
+        const display = expression.op.display || {};
+        const showResult = display.hasOwnProperty('show_result') ? unwrapValue(lingoExecute(app, display.show_result, ctx)) : true;
+        const showSubmitButton = display.hasOwnProperty('show_submit_button') ? unwrapValue(lingoExecute(app, display.show_submit_button, ctx)) : true;
+        const showStatusDisplay = display.hasOwnProperty('show_status_display') ? unwrapValue(lingoExecute(app, display.show_status_display, ctx)) : true;
+        
+        // render op.auto_submit if provided, otherwise default to false
+        let autoSubmit;
+        if (expression.op.hasOwnProperty('auto_submit')) {
+            autoSubmit = unwrapValue(lingoExecute(app, expression.op.auto_submit, ctx));
+        }else{
+            autoSubmit = false;
+        }
+
+        //
+        // params
+        //
+
+        let paramOverrides = {};
+
+        if(op.hasOwnProperty('params')){
+			// fields set on op.params will be used in the api request instead of displaying
+			// those inputs to the user, this allows them to be generated dynamically
+			// instead of via user input
+
+            const params = expression.op.params;
+
+            for(const [paramKey, paramValueExpr] of Object.entries(params)){
+
+                if(!definition.params.hasOwnProperty(paramKey)){
+                    throw new Error(`op - param not found in definition: ${paramKey}`);
+                }
+
+                const paramDef = definition.params[paramKey];
+                const paramValue = lingoExecute(app, paramValueExpr, ctx);
+                const paramValueType = getTypeName(paramValue);
+
+                if(!typesMatch(paramValueType, paramDef.type)){
+                    throw new Error(`op - param value type mismatch for ${paramKey}: ${paramDef.type} != ${paramValueType}`);
+                }
+
+                // set the value in definition.params so that it can be used in form rendering
+                paramOverrides[paramKey] = unwrapValue(paramValue);
+            }
+        }
+
+        // console.log('renderOp() - interactive op param overrides', paramOverrides);
+
+        //
+        // fields
+        //
+
+        // add fields from definition if they don't have a matching param set in paramOverrides from op.params
+
+        const formFields = {};
+
+        for(const [paramKey, paramDef] of Object.entries(definition.params)){
+            if(!paramOverrides.hasOwnProperty(paramKey)){
+                formFields[paramKey] = paramDef;
+            }
+        }
+
+        // console.log('renderOp() - interactive op fields', formFields);
+
+        //
+        // bind state
+        //
 
         const stateKeys = Object.keys(op.bind.state);
         if(stateKeys.length !== 1){
@@ -1961,17 +2433,29 @@ function renderOp(app, expression, ctx = null) {
 
         const url = unwrapValue(lingoExecute(app, op.http, ctx));
 
+        const submitButtonText = expression.op.submit_button_text ? unwrapValue(lingoExecute(app, expression.op.submit_button_text, ctx)) : 'Submit';
+
+        // merge app.state[stateField].data and paramOverrides to create request body, with paramOverrides taking precedence
+        let requestBody = app.state[stateField].data
+        for (const [key, value] of Object.entries(paramOverrides)) {
+            requestBody[key] = value;
+        }
+
         const formElement = {
             form: {
-                fields: definition.params,
+                fields: formFields,
                 bind: op.bind,
+                submit_button_text: submitButtonText,
+                auto_submit: autoSubmit,
+				show_submit_button: showSubmitButton,
+				show_status_display: showStatusDisplay,
                 action: {
                     set: {state: {[stateField]: {}}},
                     to: {
                         call: 'op.http',
                         args: {
                             url: url,
-                            data: app.state[stateField].data,
+                            data: requestBody,
                             bind: op.bind
                         }
                     }
@@ -1979,48 +2463,84 @@ function renderOp(app, expression, ctx = null) {
             }
         };
 
-        const stateSwitch = {
-            switch: {
-                expression: { type: 'str', value: app.state[stateField].state },
-                cases: [
-                    {
-                        case: 'result',
-                        then: {
-                            block: [
-                                {text: 'success: ', style: {color: 'green', bold: true}},
-                                app.state[stateField].result
-                            ]
-                        }
-                    },
-                    {
-                        case: 'error',
-                        then: {
-                            block: [
-                                {text: 'error: ', style: {color: 'red', bold: true}},
-                                {text: app.state[stateField].error}
-                            ]
-                        }
-                    },
-                    {
-                        case: 'loading',
-                        then: {
-                            text: 'Loading...', style: {italic: true}
-                        }
+        // initialize showSecureResultFields in bound state //
+
+        if (!app.state[stateField].hasOwnProperty('showSecureResultFields')) {
+            app.state[stateField].showSecureResultFields = {};
+        }
+
+        // collect secure fields from result definition //
+
+        const secureResultFields = {};
+        if (definition.result && definition.result.fields) {
+            for (const [fieldKey, fieldSpec] of Object.entries(definition.result.fields)) {
+                if (fieldSpec.secure) {
+                    secureResultFields[fieldKey] = fieldSpec;
+                    if (!(fieldKey in app.state[stateField].showSecureResultFields)) {
+                        app.state[stateField].showSecureResultFields[fieldKey] = false;
                     }
-                ],
-                default: {
-                    text: 'Please fill out the form and submit.', style: {italic: true}
                 }
             }
-        };
+        }
+
+        // build result display based on current op state //
+
+        const currentOpState = app.state[stateField];
+        let resultDisplayElements;
+
+        if (currentOpState.state === 'result') {
+            if(showResult) {
+                resultDisplayElements = [{text: 'success ', style: {color: 'green', bold: true}}];
+                const unwrapped = unwrapValue(currentOpState.result);
+
+                if (Object.keys(secureResultFields).length > 0 && typeof unwrapped === 'object' && unwrapped !== null) {
+                    const redactedValue = {};
+                    for (const [key, value] of Object.entries(unwrapped)) {
+                        if (secureResultFields.hasOwnProperty(key) && !currentOpState.showSecureResultFields[key]) {
+                            redactedValue[key] = 'REDACTED';
+                        } else {
+                            redactedValue[key] = value;
+                        }
+                    }
+                    
+                    resultDisplayElements.push({type: 'struct', value: redactedValue});
+
+                    for (const fieldKey of Object.keys(secureResultFields)) {
+                        const showSecureResultFields = currentOpState.showSecureResultFields;
+                        resultDisplayElements.push({
+                            button: {
+                                clientFunction: () => {
+                                    showSecureResultFields[fieldKey] = !showSecureResultFields[fieldKey];
+                                    renderLingoApp(app, document.getElementById('lingo-app'), true);
+                                }
+                            },
+                            text: showSecureResultFields[fieldKey] ? `hide ${fieldKey}` : `show ${fieldKey}`
+                        });
+                    }
+                } else {
+                    resultDisplayElements.push(currentOpState.result);
+                }
+            }else{
+                resultDisplayElements = [];
+                // console.debug('renderOp() - result ready but showResult is false, not displaying result', currentOpState.result);
+            }
+        } else if (currentOpState.state === 'error') {
+            resultDisplayElements = [
+                {text: 'error: ', style: {color: 'red', bold: true}},
+                {text: currentOpState.error}
+            ];
+        } else if (currentOpState.state === 'loading') {
+            resultDisplayElements = [{text: 'Loading...', style: {italic: true}}];
+        } else {
+            const defaultInstruction = 'Please fill out the form and submit.';
+            const instruction = expression.op.hasOwnProperty('instruction') ? unwrapValue(lingoExecute(app, expression.op.instruction, ctx)) : defaultInstruction;
+            resultDisplayElements = [{text: instruction, style: {italic: true}}];
+        }
 
         let elements = [];
         elements.push(formElement);
-        const renderedSwitch = renderSwitch(app, stateSwitch, ctx);
-        if(Array.isArray(renderedSwitch)){
-            elements.push(...renderedSwitch);
-        }else{
-            elements.push(renderedSwitch);
+		if(showStatusDisplay) {
+        	elements.push(...resultDisplayElements);
         }
         return elements;
 
@@ -2047,8 +2567,11 @@ function renderOp(app, expression, ctx = null) {
         }
 
         // run op function
+		// console.log(`Running op ${opName}`, opDef)
         
-        return lingoExecute(app, opDef.func, opArgs);
+        const result = lingoExecute(app, opDef.func, opArgs);
+		// console.log('Op result', result);
+		return result;
     }
 }
 
@@ -2224,6 +2747,7 @@ function renderSelf(app, expression, ctx = null) {
     try {
         return ctx.self[expression.self];
     } catch (error) {
+		// console.error('renderSelf - missing self context:', expression, ctx);
         throw new Error('self - missing self context');
     }
 }
@@ -2233,8 +2757,40 @@ function renderSelf(app, expression, ctx = null) {
  */
 
 function renderModel(app, element, ctx = null) {
-    // console.log('renderModel()', element);
-    switch (element.model.display) {
+    /*
+        model display modes:
+            - create: display form to create new item
+            - read: display item with option to edit
+            - delete: display item with option to delete
+            - list: display list of items with option to view each item and paginate
+        
+        model can be provided in 2 ways:
+        as a string on the display field
+            {
+                "model": {
+                    "display": "read",
+                    "model_id": "123",
+                    ...
+                }
+            }
+        or display can be an object with a mode field (and possibly other options)
+            {
+                "model": {
+                    "display": {
+                        "mode": "read",
+                        ...
+                    },
+                    "model_id": "123",
+                    ...
+                }
+            }
+    */
+
+    // set mode
+
+    const displayMode = typeof element.model.display === 'string' ? element.model.display : element.model.display.mode;
+
+    switch (displayMode) {
         case 'create':
             return _renderModelCreate(app, element, ctx);
         case 'read':
@@ -2244,7 +2800,7 @@ function renderModel(app, element, ctx = null) {
         case 'list':
             return _renderModelList(app, element, ctx);
         default:
-            throw new Error(`renderModel - unknown display type: ${element.model.display}`);
+            throw new Error(`renderModel - unknown display type: ${displayMode}`);
     }
 }
 
@@ -2280,6 +2836,24 @@ function _renderModelRead(app, element, ctx = null) {
     if (!state.hasOwnProperty('data')) state.data = null;
     if (!state.hasOwnProperty('state')) state.state = 'pending';
     if (!state.hasOwnProperty('error')) state.error = '';
+    if (!state.hasOwnProperty('field_errors')) state.field_errors = {};
+
+    // true when a validation error was returned during an edit operation
+    const isEditError = state.state === 'error' && state.field_errors && Object.keys(state.field_errors).length > 0;
+
+    //
+    // display options
+    //
+
+    // element.model.display.allow_edit                             - allow editing of item (default: true)
+    // element.model.display.show_data                              - show data when in editing mode (default: true)
+    // element.model.display.load_button_text                       - text for the load button (default: 'load')
+
+    // element.model.display can be a string or object, if string set defaults, if field doesnt exist in object also set default
+
+    const allowEdit = typeof element.model.display === 'string' ? true : (element.model.display.allow_edit !== false);
+    const showData = typeof element.model.display === 'string' ? true : (element.model.display.show_data !== false);
+    const loadButtonText = typeof element.model.display === 'string' ? 'load' : (element.model.display.load_button_text || 'load');
 
     //
     // buttons
@@ -2303,35 +2877,47 @@ function _renderModelRead(app, element, ctx = null) {
 
     elements.push({
         button: loadScript,
-        text: 'load',
-        disabled: state.state === 'editing' || state.state === 'loading'
+        text: loadButtonText,
+        disabled: state.state === 'editing' || state.state === 'loading' || isEditError
     });
 
     // edit //
 
-    const editScript = {
-        set: {state: {[stateField]: {state: {}}}},
-        to: 'editing'
-    };
+    if(allowEdit){
 
-    elements.push({
-        button: editScript,
-        text: 'edit',
-        disabled: state.state !== 'loaded' && state.state !== 'edited'
-    });
+        const editScript = {
+            set: {state: {[stateField]: {state: {}}}},
+            to: 'editing'
+        };
 
-    // cancel //
+        elements.push({
+            button: editScript,
+            text: 'edit',
+            disabled: state.state !== 'loaded' && state.state !== 'edited'
+        });
 
-    const cancelScript = {
-        set: {state: {[stateField]: {state: {}}}},
-        to: 'loaded'
-    };
+        // cancel //
 
-    elements.push({
-        button: cancelScript,
-        text: 'cancel',
-        disabled: state.state !== 'editing'
-    });
+        const cancelScript = {
+            call: 'and',
+            args: {
+                a: {
+                    set: {state: {[stateField]: {state: {}}}},
+                    to: 'loaded'
+                },
+                b: {
+                    set: {state: {[stateField]: {field_errors: {}}}},
+                    to: {}
+                }
+            }
+        }
+
+        elements.push({
+            button: cancelScript,
+            text: 'cancel',
+            disabled: state.state !== 'editing' && !isEditError
+        });
+    }
 
     // status //
 
@@ -2384,7 +2970,7 @@ function _renderModelRead(app, element, ctx = null) {
     // view item
     //
 
-    if (state.state === 'editing') {
+    if (state.state === 'editing' || isEditError) {
         // view editable form
         elements.push({
             form: {
@@ -2404,7 +2990,7 @@ function _renderModelRead(app, element, ctx = null) {
             }
         });
 
-    }else if(state.state === 'pending'){
+    }else if((state.state === 'pending' || state.state === 'loading') && showData){
         // view loading placeholder
         const placeholder = {};
 
@@ -2417,7 +3003,7 @@ function _renderModelRead(app, element, ctx = null) {
             value: placeholder,
         });
         
-    }else{
+    }else if (state.state === 'loaded' && showData) {
         // view loaded data as struct key/value table
         // iterate over each key/value in state.data
         // and convert to list of arrays where each array is [key, value]
@@ -2434,7 +3020,7 @@ function _renderModelRead(app, element, ctx = null) {
             
             if(fieldDef.type === 'list' && fieldDef.element_type === 'foreign_key'){
 
-                const table = fieldDef.references.table;
+                const table = fieldDef.references.table.replaceAll('_', '-');
                 const refModule = fieldDef.references.module.replaceAll('_', '-');
                 const ids = state.data[field] || [];
 
@@ -2490,7 +3076,7 @@ function _renderModelRead(app, element, ctx = null) {
                     additional = {
                         viewer: {image_ids: ids}
                     };
-                }else if(table === 'master_image'){
+                }else if(table === 'master-image'){
                     additional = {
                         viewer: {master_image_ids: ids}
                     };
@@ -2505,9 +3091,9 @@ function _renderModelRead(app, element, ctx = null) {
                     };
                 }
             }else if(fieldDef.type === 'foreign_key'){
-                const table = fieldDef.references.table;
+                const table = fieldDef.references.table.replaceAll('_', '-');
                 const refModule = fieldDef.references.module.replaceAll('_', '-');
-                const refField = fieldDef.references.field;
+                const refField = fieldDef.references.field.replaceAll('_', '-');
 
                 if(refField === 'id' && state.data[field] === '-1') {
                     additional = '-1 indicates no id was set'
@@ -2557,7 +3143,7 @@ function _renderModelRead(app, element, ctx = null) {
                             image_id: state.data[field]
                         },
                     }
-                }else if((table === 'master_image') && refField === 'id'){
+                }else if((table === 'master-image') && refField === 'id'){
                     additional = {
                         viewer: {
                             master_image_id: state.data[field]
@@ -2773,7 +3359,6 @@ function _renderModelList(app, element, ctx = null) {
         throw new Error('renderModelList - model bind definition must bind to state or clientState');
     }
 
-   
     //
     // default state
     //
@@ -2915,26 +3500,28 @@ function _renderModelList(app, element, ctx = null) {
 
     // iterate over app.state[stateField].items and convert id to link
 
-    let itemsForTable = [];
+    // let itemsForTable = [];
+	// let instanceUrl = null;
     
-    if(element.model.hasOwnProperty('instance_url')) {
-        const instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
+    // if(element.model.hasOwnProperty('instance_url')) {
+    //     instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
 
-        for (let item of state.items) {
-            // console.log('renderModelList - pre processing:', item);
+    //     for (let item of state.items) {
+    //         // console.log('renderModelList - pre processing:', item);
 
-            let copyOfItem = JSON.parse(JSON.stringify(item));
-            copyOfItem.value.id = {
-                link: `${instanceUrl}${item.value.id}`,
-                text: String(item.value.id)
-            };
-            itemsForTable.push(copyOfItem);
+    //         let copyOfItem = JSON.parse(JSON.stringify(item));
+    //         copyOfItem.value.id = {
+    //             link: `${instanceUrl}${item.value.id}`,
+    //             text: String(item.value.id)
+    //         };
+    //         itemsForTable.push(copyOfItem);
 
-            // console.log('renderModelList - post processing:', copyOfItem);
-        }
-    }else{
-        itemsForTable = state.items;
-    }
+    //         // console.log('renderModelList - post processing:', copyOfItem);
+    //     }
+    // }else{
+    //     instanceUrl = null;
+    //     itemsForTable = state.items;
+    // }
 
     elements.push({
         type: 'list',
@@ -2942,9 +3529,10 @@ function _renderModelList(app, element, ctx = null) {
             format: 'table',
             headers: headers,
             selecting: selecting,
-            onSelect: onSelect
+            onSelect: onSelect,
+			instance_url: element.model.instance_url || null
         },
-        value: itemsForTable
+        value: state.items
     });
 
     if (state.state === 'pending') {
@@ -2983,7 +3571,66 @@ function _renderModelCreate(app, element, ctx = null) {
         throw new Error('renderModelCreate - missing instance_url definition');
     }
 
+	let showModelState;
+	if(element.model.hasOwnProperty('display') && element.model.display.hasOwnProperty('show_model_state')){
+		// show_model_state is to display the state of the model form, including link after
+		// creating a model, this is separate from the form's state which will still be displayed
+		showModelState = unwrapValue(lingoExecute(app, element.model.display.show_model_state, ctx));
+	}else{
+		showModelState = true;
+	}
+
+
     const instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
+
+	//
+	// params
+	//
+
+	let paramOverrides = {};
+
+	if(element.model.hasOwnProperty('params')){
+		// fields set on op.params will be used in the api request instead of displaying
+		// those inputs to the user, this allows them to be generated dynamically
+		// instead of via user input
+
+		const params = element.model.params;
+
+		for(const [paramKey, paramValueExpr] of Object.entries(params)){
+			if(!definition.fields.hasOwnProperty(paramKey)){
+				throw new Error(`model - field not found in definition: ${paramKey}`);
+			}
+
+			const paramDef = definition.fields[paramKey];
+			const paramValue = lingoExecute(app, paramValueExpr, ctx);
+			const paramValueType = getTypeName(paramValue);
+
+			if(!typesMatch(paramValueType, paramDef.type)){
+				throw new Error(`model - field value type mismatch for ${paramKey}: ${paramDef.type} != ${paramValueType}`);
+			}
+
+			// set the value in definition.fields so that it can be used in form rendering
+			paramOverrides[paramKey] = unwrapValue(paramValue);
+		}
+	}
+
+	//
+	// form fields
+	//
+
+	// add fields from definition if they don't have a matching param set in paramOverrides from element.model.params
+
+	const formFields = {};
+
+	for(const [paramKey, paramDef] of Object.entries(definition.fields)){
+		if(!paramOverrides.hasOwnProperty(paramKey)){
+			formFields[paramKey] = paramDef;
+		}
+	}
+
+	//
+	// state
+	//
 
     const stateKeys = Object.keys(element.model.bind.state);
     if( stateKeys.length !== 1 ) {
@@ -2996,9 +3643,15 @@ function _renderModelCreate(app, element, ctx = null) {
         throw new Error(`renderModelCreate - state field not found: ${stateField}`);
     }
 
-    const formElement = {
+	// merge app.state[stateField].data and paramOverrides to create request body, with paramOverrides taking precedence
+	let requestBody = app.state[stateField].data
+	for (const [key, value] of Object.entries(paramOverrides)) {
+		requestBody[key] = value;
+	}
+
+    let formElement = {
         form: {
-            fields: definition.fields,
+            fields: formFields,
             bind: element.model.bind,
             action: {
                 set: {state: {[stateField]: {}}},
@@ -3007,12 +3660,16 @@ function _renderModelCreate(app, element, ctx = null) {
                     args: {
                         http: element.model.http,
                         bind: element.model.bind,
-                        data: app.state[stateField].data
+                        data: requestBody
                     }
                 }
             }
         }
     };
+
+	if(element.hasOwnProperty('comment')) {
+		formElement.comment = element.comment;
+	}
 
     const stateSwitch = {
         switch: {
@@ -3051,7 +3708,9 @@ function _renderModelCreate(app, element, ctx = null) {
 
     let elements = [];
     elements.push(formElement);
-    elements.push(...renderSwitch(app, stateSwitch, ctx));
+	if(showModelState) {
+    	elements.push(...renderSwitch(app, stateSwitch, ctx));
+    }
     return elements;
 }
 
@@ -3177,6 +3836,18 @@ function createDOMElement(app, element, ctx = null) {
         return createFormElement(app, element);
     } else if ('viewer' in element) {
         return createViewerElement(app, element);
+    } else if (Array.isArray(element)) {
+        // If the element is an array, render each item and wrap in a div
+        const container = document.createElement('div');
+        for (const subElement of element) {
+            // call createDomElement recursively for each subElement
+            const childDom = createDOMElement(app, subElement, ctx);
+            if (childDom) {
+                container.appendChild(childDom);
+            }
+        }
+        return container;
+
     } else {
         throw new Error('createDOMElement - unknown element type: ' + JSON.stringify(element));
     }
@@ -3196,8 +3867,20 @@ function createHeadingElement(app, element, ctx = null) {
  * Create text element
  */
 function createTextElement(app, element, ctx = null) {
+    // console.debug('createTextElement()', element);
+
+	let textToDisplay;
+	if (typeof element.text === 'string') {
+		textToDisplay = element.text;
+	} else if(typeof element.text === 'object' && element.text !== null) {
+		textToDisplay = unwrapValue(lingoExecute(app, element.text, ctx));
+	}else{
+		console.error('createTextElement - unknown text type:', element);
+		throw new Error('createTextElement - unknown text type');
+	}
+
     const span = document.createElement('span');
-    span.textContent = element.text;
+    span.textContent = textToDisplay;
     
     // Apply styles if present
     if (element.style) {
@@ -3237,6 +3920,16 @@ function createTextElement(app, element, ctx = null) {
 function createValueElement(app, element, ctx = null) {
 
     // console.log('createValueElement()', element);
+	// element.display.selecting or default -1
+	const selecting = (element.display && element.display.selecting) ? element.display.selecting : -1;
+
+	// element.display.instance_url or default empty string
+	let instanceUrl;
+	if (element.display && element.display.instance_url) {
+		instanceUrl = unwrapValue(lingoExecute(app, element.display.instance_url, ctx));
+	}else{
+		instanceUrl = '';
+	}
 
     if(element.type == 'struct') {
         // Render individual struct as a table
@@ -3283,7 +3976,7 @@ function createValueElement(app, element, ctx = null) {
                 } else if('call' in value || 'lingo' in value) {
                     // Scripted expression - need to evaluate it
                     try {
-                        const result = lingoExecute(app, value);
+                        const result = lingoExecute(app, value, ctx);
                         if(typeof result === 'object' && result !== null && 'value' in result) {
                             cellValue = result.value;
                         } else {
@@ -3315,7 +4008,10 @@ function createValueElement(app, element, ctx = null) {
         }
         table.appendChild(tbody);
         
-        return table;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-scroll-wrapper';
+        wrapper.appendChild(table);
+        return wrapper;
 
     } else if(element.type == 'list') {
         const listFormat = (element.display && element.display.format) ? element.display.format : 'bullets';
@@ -3323,49 +4019,84 @@ function createValueElement(app, element, ctx = null) {
         // Check if this is a table format list
         if(listFormat == 'table') {
             // Render list of structs as a table
-            if(!element.display.headers) {
-                throw new Error('createValueElement - table format list requires headers definition');
+            if(!element.display.headers && !element.display.columns) {
+                throw new Error('createValueElement - table format list requires headers or columns definition');
             }
-            
+            if(element.display.hasOwnProperty('headers') && element.display.hasOwnProperty('columns')) {
+                throw new Error('createValueElement - table format list cannot have both headers and columns definition');
+            }
+			
+			if (selecting > 0 && instanceUrl.length > 0) {
+				throw new Error('createValueElement - table format list cannot have both selecting and instance_url defined with values');
+			}
+			
+
+            /// init table
+
             const table = document.createElement('table');
+            let columnNames = [];
+
+            if(element.display.headers) {
             
-            // Add header row
-            const thead = document.createElement('thead');
-            const headerRow = document.createElement('tr');
-            
-            for(const headerDef of element.display.headers) {
-                const th = document.createElement('th');
-                th.textContent = headerDef.text;
-                headerRow.appendChild(th);
+                // Add header row
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+                
+                for(const headerDef of element.display.headers) {
+                    const th = document.createElement('th');
+                    th.textContent = headerDef.text;
+                    headerRow.appendChild(th);
+                    columnNames.push(headerDef.field);
+                }
+                
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+            }else{
+                columnNames = element.display.columns;
             }
-            
-            thead.appendChild(headerRow);
-            table.appendChild(thead);
-            
+
+			let items;
+			if(!Array.isArray(element.value)) {
+                // if element.value is not it array, must be an object that when executed returns an array
+				// executed returns an array
+				items = unwrapValue(lingoExecute(app, element.value, ctx));
+            } else {
+				items = element.value;
+            }
+
+			// console.log('createValueElement', element, items);
+
             // Add data rows
             const tbody = document.createElement('tbody');
-            for(const item of element.value) {
-                // Validate that item is a struct
-                if(!item || item.type !== 'struct' || !item.value) {
+            for(const item of items) {
+                
+				const unwrappedStruct = unwrapValue(item);
+                if(typeof unwrappedStruct !== 'object' || unwrappedStruct === null) {
+					console.error('createValueElement - table item is not a struct:', unwrappedStruct);
                     throw new Error('createValueElement - table format list items must be structs');
                 }
                 
                 const row = document.createElement('tr');
-                if (element.display.selecting === 1) {
+                if (selecting === 1 || instanceUrl) {
                     row.className = 'list-selecting';
                 }
 
                 if (element.display.onSelect) {
                     row.onclick = () => element.display.onSelect(item);
+                }else if (instanceUrl !== '') {
+					if(!unwrappedStruct.hasOwnProperty('id')) {
+						throw new Error('createValueElement - table item is missing id for instance_url navigation');
+                    }
+					const unwrappedId = unwrapValue(unwrappedStruct.id);
+                    row.onclick = () => window.location.href = instanceUrl + unwrappedId;
                 }
                 
-                for(const headerDef of element.display.headers) {
+                for(const columnName of columnNames) {
                     const td = document.createElement('td');
                     
-                    const fieldName = headerDef.field;
-                    const fieldValue = item.value[fieldName];
+                    const fieldValue = unwrappedStruct[columnName];
 
-                    // console.log('createValueElement - ', fieldName, fieldValue, typeof fieldValue);
+                    // console.log('createValueElement - ', columnName, fieldValue, typeof fieldValue);
                     
                     // Evaluate the value if it's an expression
                     let cellValue = fieldValue;
@@ -3373,10 +4104,12 @@ function createValueElement(app, element, ctx = null) {
                         if('value' in fieldValue && 'type' in fieldValue) {
                             // Typed value
                             cellValue = fieldValue.value;
-                        } else if('call' in fieldValue || 'lingo' in fieldValue) {
+                        } else if('call' in fieldValue || 'lingo' in fieldValue || 'branch' in fieldValue) {
                             // Scripted expression - need to evaluate it
+                            // console.log('createValueElement - evaluating scripted expression for table cell:', fieldValue);
                             try {
                                 const result = lingoExecute(app, fieldValue);
+                                // console.log('createValueElement - result of evaluating scripted expression for table cell:', result);
                                 if(typeof result === 'object' && result !== null && 'value' in result) {
                                     cellValue = result.value;
                                 } else {
@@ -3384,9 +4117,10 @@ function createValueElement(app, element, ctx = null) {
                                 }
                             } catch(error) {
                                 console.error('Error evaluating struct field value:', error);
-                                cellValue = '[Error]';
+                                throw new Error('Error evaluating struct field value');
                             }
                         }else if('link' in fieldValue){
+							// console.log('createValueElement - LINK', fieldValue);
                             cellValue = createLinkElement(app, fieldValue);
                         }else if('button' in fieldValue){
                             cellValue = createButtonElement(app, fieldValue);
@@ -3400,7 +4134,7 @@ function createValueElement(app, element, ctx = null) {
                                     blockContainer.push(domElement);
                                 }
                             }
-                            console.log('createValueElement - rendering block element in table cell:', fieldValue);
+                            //console.log('createValueElement - rendering block element in table cell:', fieldValue);
                             cellValue = blockContainer;
                         }else if('viewer' in fieldValue){
                             cellValue = createViewerElement(app, fieldValue);
@@ -3410,19 +4144,46 @@ function createValueElement(app, element, ctx = null) {
                     // Format the cell value for display
                     if(Array.isArray(cellValue)) {
                         // Format arrays as comma-separated values
-                        console.log('createValueElement - cellValue is array:', cellValue);
+                        //console.log('createValueElement - cellValue is array:', cellValue);
 
                         if (cellValue.every(item => item instanceof HTMLElement)) {
                             // td.appendChild for each item
                             cellValue.forEach(item => {
                                 td.appendChild(item);
                             });
+                        }else if (cellValue.every(item => typeof item === 'object' && item !== null)) {
+                            cellValue.forEach(item => {
+                                const domElement = createDOMElement(app, item);
+                                td.appendChild(domElement);
+                            });
                         } else {
+                            // console.log('createValueElement - cellValue is array but not all items are HTMLElements, converting to string:', cellValue);
                             td.textContent = cellValue.join(', ');
                         }
+                    // else if is a Date object
+                    } else if(cellValue instanceof Date) {
+                        td.textContent = formatDateTime(cellValue);
                     } else if(cellValue instanceof HTMLElement) {
                         td.appendChild(cellValue);
+
+                    // if is scripted expression, execute it
+                    } else if(typeof cellValue === 'object' && cellValue !== null) {
+                        // console.log('createValueElement - evaluating object value for table cell:', cellValue);
+                        try {
+                            const result = lingoExecute(app, cellValue);
+                            // console.log('createValueElement - result of evaluating object value for table cell:', result);
+                            if(typeof result === 'object' && result !== null) {
+                                td.appendChild(createDOMElement(app, result));
+                            } else {
+                                td.textContent = String(result);
+                            }
+                        } catch(error) {
+                            console.error('Error evaluating struct field value:', error);
+                            td.textContent = '[Error]';
+                        }
+
                     } else {
+                        // console.log('createValueElement - converting cellValue to string:', cellValue);
                         td.textContent = String(cellValue);
                     }
                     row.appendChild(td);
@@ -3432,7 +4193,10 @@ function createValueElement(app, element, ctx = null) {
             }
             table.appendChild(tbody);
             
-            return table;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'table-scroll-wrapper';
+            wrapper.appendChild(table);
+            return wrapper;
         }else if(listFormat == 'bullets' || listFormat == 'numbers') {
 
             let elementType;
@@ -3502,6 +4266,15 @@ function createButtonElement(app, element, ctx) {
 
     if (element.button.hasOwnProperty('clientFunction')) {
         onClick = () => element.button.clientFunction();
+    } else if (element.button.hasOwnProperty('timer')) {
+        const timerName = element.button.timer;
+        onClick = () => {
+            try {
+                startTimer(app, timerName);
+            } catch (error) {
+                console.error('Button timer error:', error);
+            }
+        };
     } else{
         onClick = () => {
             try {
@@ -3567,10 +4340,27 @@ function createInputElement(app, element, ctx = null) {
  * Create link element
  */
 function createLinkElement(app, element, ctx = null) {
-    const link = document.createElement('a');
-    link.href = element.link;
-    link.textContent = element.text || element.link;
-    return link;
+
+	//if element.link or element.text are not strings, then evaluate them using lingoExecute
+	let link;
+	let text;
+	//console.log('createLinkElement()', element);
+    if (typeof element.link !== 'string') {
+        link = unwrapValue(lingoExecute(app, element.link, ctx));
+    }else{
+        link = element.link;
+    }
+    if (typeof element.text !== 'string' && typeof element.text !== 'undefined') {
+        text = unwrapValue(lingoExecute(app, element.text, ctx));
+    }else{
+        text = element.text;
+    }
+
+
+    const linkElement = document.createElement('a');
+    linkElement.href = unwrapValue(link);
+    linkElement.textContent = unwrapValue(text || link);
+    return linkElement;
 }
 
 /**
@@ -3617,7 +4407,17 @@ function createFormElement(app, element, ctx = null) {
     }
     const currentState = app.state[formStateField];
     const formData = currentState.data || {};
-    // console.log('createFormElement - formData before:', formData);
+    // console.log('createFormElement - formData before:', formData); 
+    
+    // if element.form.auto_submit provided, execute and unwrap it, else set default false
+    let autoSubmit;
+    if (element.form.hasOwnProperty('auto_submit')) {
+        autoSubmit = unwrapValue(lingoExecute(app, element.form.auto_submit, ctx));
+    }else{
+        autoSubmit = false;
+    }
+
+    // console.log('createFormElement - autoSubmit:', autoSubmit, element.form);
     
     // create a row for each field //
 
@@ -3629,9 +4429,10 @@ function createFormElement(app, element, ctx = null) {
         let ingestState;    // ingest state is for tracking file uploads
                             // or finding items for foreign_key fields
         if (app.clientState.forms.hasOwnProperty(formKeyId)) {
+            // console.log(`Found existing form state for ${formKeyId}:`, app.clientState.forms[formKeyId]);
             ingestState = app.clientState.forms[formKeyId];
         } else {
-            ingestState = {status: 'idle', error: null, popup: null};
+            ingestState = {status: 'idle', error: null, popup: null, showSecureFields: {}};
             app.clientState.forms[formKeyId] = ingestState;
         }
 
@@ -3653,28 +4454,36 @@ function createFormElement(app, element, ctx = null) {
                 formData[fieldKey] = Array.isArray(defaultValue) ? [...defaultValue] : [];
             } else {
                 if (typeof defaultValue === 'undefined') {
-                    // switch fieldtype to set sensible defaults
-                    switch (fieldType) {
-                        case 'bool':
-                            formData[fieldKey] = false;
-                            break;
-                        case 'int':
-                            formData[fieldKey] = 0;
-                            break;
-                        case 'float':
-                            formData[fieldKey] = 0.0;
-                            break;
-                        case 'str':
-                            formData[fieldKey] = '';
-                            break;
-                        case 'datetime':
-                            formData[fieldKey] = new Date().toISOString();
-                            break;
-                        default:
-                            formData[fieldKey] = null;
+                    if (fieldSpec.enum || fieldType === 'datetime') {
+                        formData[fieldKey] = null;
+                    } else {
+                        // switch fieldtype to set sensible defaults
+                        switch (fieldType) {
+                            case 'bool':
+                                formData[fieldKey] = false;
+                                break;
+                            case 'int':
+                                formData[fieldKey] = 0;
+                                break;
+                            case 'float':
+                                formData[fieldKey] = 0.1;
+                                break;
+                            case 'str':
+                                formData[fieldKey] = '';
+                                break;
+                            case 'foreign_key':
+                                formData[fieldKey] = '-1';
+                                break;
+                            default:
+                                formData[fieldKey] = null;
+                        }
                     }
                 }else{
-                    formData[fieldKey] = defaultValue;
+                    if (fieldType === 'datetime') {
+                        formData[fieldKey] = normalizeDateTimeValue(defaultValue);
+                    } else {
+                        formData[fieldKey] = defaultValue;
+                    }
                 }
             }
         }
@@ -3750,7 +4559,7 @@ function createFormElement(app, element, ctx = null) {
             } else if (elementType === 'float') {
                 listInput = document.createElement('input');
                 listInput.type = 'number';
-                listInput.step = 'any';
+                listInput.step = '0.1';
                 listInput.placeholder = 'Enter number';
             } else if (elementType === 'datetime') {
                 listInput = document.createElement('input');
@@ -3765,7 +4574,7 @@ function createFormElement(app, element, ctx = null) {
                     listInput.addEventListener('change', async () => {
                         const file = listInput.files[0];
                         if (!file) return;
-                        fileIngestStatus.textContent = 'Uploading...';
+                        fileIngestStatus.textContent = 'Uploading file...';
                         let ingestFunction;
                         switch (tableRef) {
                             case 'file': ingestFunction = fileSystemIngestStart; break;
@@ -3834,7 +4643,11 @@ function createFormElement(app, element, ctx = null) {
                         value = parseInt(listInput.value, 10);
                         if (isNaN(value)) return;
                     } else if (elementType === 'float') {
-                        value = parseFloat(listInput.value);
+                        // add .0 if string value does not have .
+                        const floatValue = (listInput.value.includes('.')) ? listInput.value : listInput.value + '.0';
+                        console.log('Adding to float list with value:', floatValue);
+                        value = parseFloat(floatValue);
+                        console.log('Parsed float value:', value);
                         if (isNaN(value)) return;
                     } else if (elementType === 'datetime') {
                         if (!listInput.value) return;
@@ -3887,7 +4700,7 @@ function createFormElement(app, element, ctx = null) {
         } else if (fieldType === 'float') {
             inputElement = document.createElement('input');
             inputElement.type = 'number';
-            inputElement.step = 'any';
+            inputElement.step = '0.1';
             inputElement.value = typeof formData[fieldKey] !== 'undefined' ? formData[fieldKey] : '';
             inputElement.addEventListener('input', () => {
                 formData[fieldKey] = parseFloat(inputElement.value) || 0.0;
@@ -3899,7 +4712,7 @@ function createFormElement(app, element, ctx = null) {
             const datetimeValue = formData[fieldKey] ? String(formData[fieldKey]).substring(0, 16) : '';
             inputElement.value = datetimeValue;
             inputElement.addEventListener('input', () => {
-                formData[fieldKey] = inputElement.value ? initDateTimeFromInput(inputElement.value) : '';
+                formData[fieldKey] = inputElement.value ? initDateTimeFromInput(inputElement.value) : null;
             });
 
         } else if (fieldType === 'foreign_key') {
@@ -3928,6 +4741,13 @@ function createFormElement(app, element, ctx = null) {
         } else if (fieldSpec.enum) {
             inputElement = document.createElement('select');
             inputElement.name = fieldKey;
+            if (typeof defaultValue === 'undefined') {
+                const emptyOption = document.createElement('option');
+                emptyOption.value = '';
+                emptyOption.textContent = '(select option below)';
+                emptyOption.selected = isUnsetFormFieldValue(formData[fieldKey]);
+                inputElement.appendChild(emptyOption);
+            }
             for (const option of fieldSpec.enum) {
                 const opt = document.createElement('option');
                 opt.value = option;
@@ -3936,13 +4756,20 @@ function createFormElement(app, element, ctx = null) {
                 inputElement.appendChild(opt);
             }
             inputElement.addEventListener('change', () => {
-                formData[fieldKey] = inputElement.value;
+                formData[fieldKey] = inputElement.value === '' ? null : inputElement.value;
             });
 
         } else {
             inputElement = document.createElement('input');
             if(fieldSpec.secure || fieldSpec.secure_input) {
-                inputElement.type = 'password';
+                if(ingestState.showSecureFields[fieldKey] === undefined) {
+                    ingestState.showSecureFields[fieldKey] = false;
+                }
+                if(ingestState.showSecureFields[fieldKey] === true) {
+                    inputElement.type = 'text';
+                } else {
+                    inputElement.type = 'password';
+                }
             }else{
                 inputElement.type = 'text';
             }
@@ -4195,38 +5022,167 @@ function createFormElement(app, element, ctx = null) {
                     }
                 }
             }
+        
+        }else if(fieldSpec.secure || fieldSpec.secure_input) {
+            const toggleSecureFieldButton = document.createElement('button');
+                toggleSecureFieldButton.type = 'button';
+                toggleSecureFieldButton.textContent = ingestState.showSecureFields[fieldKey] ? 'hide' : 'show';
+                toggleSecureFieldButton.addEventListener('click', () => {
+                    ingestState.showSecureFields[fieldKey] = !ingestState.showSecureFields[fieldKey];
+                    renderLingoApp(app, document.getElementById('lingo-app'), true);
+                });
+                thirdCell.appendChild(toggleSecureFieldButton);
         } else {
             // Description for non-list fields
             thirdCell.className = 'form-description';
-            thirdCell.textContent = fieldSpec.description || '';
+            if (fieldSpec.description) {
+                thirdCell.appendChild(document.createTextNode(fieldSpec.description));
+            }
+        }
+
+        // Show field validation error if present
+        const fieldErrors = currentState.field_errors;
+        if (fieldErrors && fieldErrors[fieldKey]) {
+            const errorSpan = document.createElement('span');
+            errorSpan.textContent = ' ' + fieldErrors[fieldKey];
+            errorSpan.className = 'field-error';
+            thirdCell.appendChild(errorSpan);
         }
         
         row.appendChild(thirdCell);
         table.appendChild(row);
     }
-    
-    // add submit button //
 
-    const submitRow = document.createElement('tr');
-    const submitCell = document.createElement('td');
-    submitCell.colSpan = 3;
-    submitCell.className = 'form-submit-cell';
-    
-    const submitButton = document.createElement('button');
-    submitButton.disabled = currentState.state === 'submitting';
-    submitButton.textContent = 'Submit';
-    submitButton.addEventListener('click', () => {
+     // submit action
+
+    const submitAction = () => {
+        const clientFieldErrors = {};
+        for (const [fieldKey, fieldSpec] of Object.entries(fields)) {
+            const fieldType = fieldSpec.type;
+            const defaultValue = fieldSpec.default;
+            const fieldValue = formData[fieldKey];
+            if (typeof defaultValue !== 'undefined') {
+                continue;
+            }
+            if ((fieldSpec.enum || fieldType === 'datetime') && isUnsetFormFieldValue(fieldValue)) {
+                clientFieldErrors[fieldKey] = '(required field)';
+            }
+        }
+        if (Object.keys(clientFieldErrors).length > 0) {
+            currentState.state = 'error';
+            currentState.error = 'Please fix field errors';
+            currentState.field_errors = clientFieldErrors;
+            renderLingoApp(app, document.getElementById('lingo-app'), true);
+            return;
+        }
+        currentState.field_errors = {};
+        if (currentState.error === 'Please fix field errors') {
+            currentState.error = '';
+        }
+        // console.log('Submitting form with data:', formData);
         const result = lingoExecute(app, element.form.action, {});
         // console.log('Form submission result:', result);
         renderLingoApp(app, document.getElementById('lingo-app'));
-    });
+    };
+
+    if ((autoSubmit === true && currentState.state === 'initial') || currentState.state === 'triggered') {
+		currentState.state = 'loading';
+        setTimeout(() => {
+            // console.log(`Submitting form - state: ${currentState.state}, autoSubmit: ${autoSubmit}`);
+            submitAction();
+            renderLingoApp(app, document.getElementById('lingo-app'), true);
+        }, 0);
+    }
+    
+    // submit button //
+
+	let showSubmitButton;
+	if (element.form.hasOwnProperty('show_submit_button')) {
+		showSubmitButton = element.form.show_submit_button;
+	} else {
+		showSubmitButton = true;
+	}
+
+
+    const submitButtonText = element.form.submit_button_text || 'Submit';
+    const submitButton = document.createElement('button');
+    submitButton.disabled = currentState.state === 'loading';
+    submitButton.textContent = submitButtonText;
+    submitButton.addEventListener('click', submitAction);
+
+    // status display //
+
+	let showStatusDisplay;
+	if (element.form.hasOwnProperty('show_status_display')) {
+		showStatusDisplay = element.form.show_status_display;
+	} else {
+		showStatusDisplay = true;
+	}
+
+    let stateColor;
+    switch(currentState.state) {
+        case 'success':
+            stateColor = 'green';
+            break;
+        case 'error':
+            stateColor = 'red';
+            break;
+        default:
+            stateColor = 'blue';
+    }
+
+    const statusDisplay = {text: currentState.state, style: {bold: true, color: stateColor}};
+    const statusElement = createTextElement(app, statusDisplay, ctx);
+	// console.debug('createFormElement - statusDisplay:', statusDisplay)
+    
+    // additional comment //
+
+    let comment;
+    if (element.hasOwnProperty('comment')) {
+		if(typeof element.comment === 'string') {
+        	comment = {text: element.comment};
+		}else if (typeof element.comment === 'object' && !Array.isArray(element.comment) && element.comment !== null) {
+			comment = lingoExecute(app, element.comment, ctx);
+		}else{
+			throw new Error('Invalid comment property on form element - must be string or button element');
+		}
+    } else if (currentState.state === 'error' && showStatusDisplay) {
+        comment = {text: currentState.error || 'An error occurred', style: {italic: true, color: 'red'}};
+    }else{
+        comment = {text: ''}
+    }
+
+    let additionalElement;
+    try{
+        additionalElement = createDOMElement(app, comment, ctx);
+    }catch(error) {
+        console.error('Error creating additionalElement for form comment:', error);
+        throw `Error creating form comment element must be a text element: ${error}`;
+    }
 
     // final assembly //
-    
-    submitCell.appendChild(submitButton);
-    submitRow.appendChild(submitCell);
+    // console.log('createFormElement - adding button', {autoSubmit, currentState: currentState.state});
+    const submitRow = document.createElement('tr');
+    submitRow.className = 'form-submit-row';
+    const buttonCell = document.createElement('td');
+    // buttonCell.colSpan = 3;
+    // buttonCell.className = 'form-submit-cell';
+    if (showSubmitButton) {
+		buttonCell.appendChild(submitButton);
+    }
+
+    const statusCell = document.createElement('td');
+    if (showStatusDisplay) {
+        statusCell.appendChild(statusElement);
+    }
+    const additionalCell = document.createElement('td');
+    additionalCell.appendChild(additionalElement);
+
+    submitRow.appendChild(buttonCell);
+    submitRow.appendChild(statusCell);
+    submitRow.appendChild(additionalCell);
+
     table.appendChild(submitRow);
-    
     formContainer.appendChild(table);
 
     // console.log('createFormElement - formData after:', formData);

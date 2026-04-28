@@ -1,0 +1,65 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+    "state": {
+        "login_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {"type": "any", "value": null}
+            }
+        },
+        "login_url": {
+            "type": "str",
+            "default": "/api/auth/login-user"
+        },
+        "login_definition": {
+            "type": "struct",
+            "default": {
+                "params": {
+                    "email": {
+                        "name": {"lower_case": "email"},
+                        "type": "str",
+                        "description": "Email address"
+                    },
+                    "password": {
+                        "name": {"lower_case": "password"},
+                        "type": "str",
+                        "secure_input": true,
+                        "description": "Password"
+                    }
+                },
+                "result": {
+                    "type": "struct",
+                    "fields": {
+                        "access_token": {
+                            "name": {"lower_case": "access token"},
+                            "type": "str",
+                            "secure": true,
+                            "description": "Access token"
+                        },
+                        "token_type": {
+                            "name": {"lower_case": "token type"},
+                            "type": "str",
+                            "description": "Token type"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "ops": {},
+    "output": [
+        {"heading": "Login", "level": 1},
+        {"op": {
+            "bind": {"state": {"login_state": {}}},
+            "interactive": true,
+            "http": {"state": {"login_url": {}}},
+            "definition": {"state": {"login_definition": {}}}
+        }}
+    ]
+}

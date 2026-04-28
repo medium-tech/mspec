@@ -1,91 +1,91 @@
 lingo:
-  version: 'generator-beta-1'
+    version: 'generator-beta-1'
 project:
-  name:
-    lower_case: 'my sample store'
+    name:
+        lower_case: 'my sample store'
 
-  description: 'A sample project for mspec-alpha python app generator'
+    description: 'A sample project for mspec-alpha python app generator'
 
-  author:
-    name: 'B rad C'
-    email: 'sample@email.com'
+    author:
+        name: 'B rad C'
+        email: 'sample@email.com'
 
 server:
-  port: 7007
+    port: 7007
 
 client:
-  default_host: 'http://localhost:7007'
+    default_host: 'http://localhost:7007'
 
 modules:
-  store:
-    name:
-      lower_case: 'store'
-
-    models:
-      products:
+    store:
         name:
-          lower_case: 'products'
+            lower_case: 'store'
 
-        fields:
+        models:
+            products:
+                name:
+                    lower_case: 'products'
 
-          product_name:
-            name:
-              lower_case: 'product name'
-            type: str
-            examples:
-              - 'Laptop'
-              - 'Smartphone'
-              - 'Tablet'
+                fields:
 
-            random: random_thing_name
+                    product_name:
+                        name:
+                            lower_case: 'product name'
+                        type: str
+                        examples:
+                            - 'Laptop'
+                            - 'Smartphone'
+                            - 'Tablet'
 
-          price:
-            name:
-              lower_case: 'price'
-            type: float
-            examples:
-              - 999.99
-              - 499.99
-              - 299.99
+                        random: random_thing_name
 
-          in_stock:
-            name:
-              lower_case: 'in stock'
-            type: bool
-            examples:
-              - true
-              - false
-      
-      customers:
-        name:
-          lower_case: 'customers'
+                    price:
+                        name:
+                            lower_case: 'price'
+                        type: float
+                        examples:
+                            - 999.99
+                            - 499.99
+                            - 299.99
 
-        fields:
+                    in_stock:
+                        name:
+                            lower_case: 'in stock'
+                        type: bool
+                        examples:
+                            - true
+                            - false
 
-          customer_name:
-            name:
-              lower_case: 'customer name'
-            type: str
-            examples:
-              - 'Alice'
-              - 'Bob'
-              - 'Charlie'
-            random: random_person_name
+            customers:
+                name:
+                    lower_case: 'customers'
 
-          email:
-            name:
-              lower_case: 'email'
-            type: str
-            examples:
-              - 'alice@email.com'
-              - 'bob@email.com'
-            random: random_email
+                fields:
 
-          phone_number:
-            name:
-              lower_case: 'phone number'
-            type: str
-            examples:
-              - '+1 (123) 456-7890'
-              - '+1 (987) 654-3210'
-            random: random_phone_number
+                    customer_name:
+                        name:
+                            lower_case: 'customer name'
+                        type: str
+                        examples:
+                            - 'Alice'
+                            - 'Bob'
+                            - 'Charlie'
+                        random: random_person_name
+
+                    email:
+                        name:
+                            lower_case: 'email'
+                        type: str
+                        examples:
+                            - 'alice@email.com'
+                            - 'bob@email.com'
+                        random: random_email
+
+                    phone_number:
+                        name:
+                            lower_case: 'phone number'
+                        type: str
+                        examples:
+                            - '+1 (123) 456-7890'
+                            - '+1 (987) 654-3210'
+                        random: random_phone_number

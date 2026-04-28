@@ -368,7 +368,7 @@ class OpResult(NamedTuple):
 
 # conversion #
 
-def _convert_incoming_value(field_type:str, raw_value:Any, strict=False) -> Any:
+def _convert_incoming_value(field_type:str, raw_value:Any, strict=True) -> Any:
     """
     Converts a raw value to the specified field type.
     Args:
@@ -377,7 +377,7 @@ def _convert_incoming_value(field_type:str, raw_value:Any, strict=False) -> Any:
         strict (bool): Whether to enforce strict conversion for booleans.
             If strict is false, the following strings will be converted to bool:
             - True values: 'true', 't', '1', 'yes', 'on'
-            - False values: 'false', 'f', '0', 'no', 'off
+            - False values: 'false', 'f', '0', 'no', 'off'
     Returns:
         Any: The converted value.
     Raises:
@@ -393,14 +393,32 @@ def _convert_incoming_value(field_type:str, raw_value:Any, strict=False) -> Any:
                     return False
                 else:
                     raise ValueError(f'Cannot convert string "{raw_value}" to bool')
+            elif strict and not isinstance(raw_value, bool):
+                raise ValueError(f'Expected a boolean value, got "{raw_value}" of type {type(raw_value)}')
             else:
-                return bool(raw_value)
+                return raw_value
+
         case 'int':
-            return int(raw_value)
+            if isinstance(raw_value, int) and not isinstance(raw_value, bool):
+                return raw_value
+            elif not strict and isinstance(raw_value, str):
+                return int(raw_value)
+            else:
+                raise ValueError(f'Cannot convert type "{type(raw_value)}" to int')
+            
         case 'float':
-            return float(raw_value)
+            if isinstance(raw_value, float):
+                return raw_value
+            elif isinstance(raw_value, int) and not isinstance(raw_value, bool):
+                return float(raw_value)                     # supporting this for JS, should drop in future when we can update JS side to not send ints for floats
+            elif not strict and isinstance(raw_value, str):
+                return float(raw_value)
+            else:
+                raise ValueError(f'Cannot convert type "{type(raw_value)}" to float')
+            
         case 'str':
-            return str(raw_value)
+            return raw_value
+        
         case 'datetime':
             if isinstance(raw_value, datetime):
                 return raw_value
@@ -409,13 +427,18 @@ def _convert_incoming_value(field_type:str, raw_value:Any, strict=False) -> Any:
             else:
                 raise ValueError(f'Cannot convert type "{type(raw_value)}" to datetime')
         case 'foreign_key':
-            return str(raw_value)
+            if isinstance(raw_value, (str, int)):
+                return str(raw_value)
+            else:
+                raise ValueError(f'Cannot convert type "{type(raw_value)}" to foreign_key (str)')
         case _:
             raise ValueError(f'Unsupported field type: {field_type}')
 
 def _convert_incoming_fields(data_spec:dict, data:object) -> dict:
 
     converted_data = {}
+    errors = {}
+    total_errors = 0
 
     for field in data_spec.values():
 
@@ -433,12 +456,19 @@ def _convert_incoming_fields(data_spec:dict, data:object) -> dict:
 
         try:
             if isinstance(raw_value, list):
+                if field_type != 'list':
+                    raise ValueError(f'Expected a list for field "{field_name}", got {type(raw_value)}')
+                
                 converted_data[field_name] = [_convert_incoming_value(field['element_type'], v) for v in raw_value]
             else:
                 converted_data[field_name] = _convert_incoming_value(field_type, raw_value)
 
         except (ValueError, TypeError) as e:
-            raise ValueError(f'Error converting field "{field_name}" to type "{field_type}": {e}')
+            total_errors += 1
+            errors[field_name] = f'Error converting field "{field_name}" to type "{field_type}": {e}'
+    
+    if total_errors > 0:
+        raise MappValidationError('Data conversion failed', errors)
 
     return converted_data
      
@@ -523,6 +553,8 @@ def get_python_type_for_field(field_type:str) -> type:
             return str
         case 'struct':
             return dict
+        case 'list':
+            return list
         case _:
             raise ValueError(f'Unsupported field type: {field_type}')
 
@@ -579,6 +611,10 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
                 errors[field_name] = f'Field "{field_name}" is not of type "{field_type}".'
                 total_errors += 1
 
+            if field_type == 'str' and 'enum' in field and value not in field['enum']:
+                errors[field_name] = f'Field "{field_name}" has value "{value}" which is not in the allowed enum values.'
+                total_errors += 1
+
         else:
             
             # confirm is list type #
@@ -602,6 +638,10 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
             for i, element in enumerate(value):
                 if not isinstance(element, python_type):
                     errors[field_name] = f'Element {i} of field "{field_name}" is not "{element_type}".'
+                    total_errors += 1
+                    break
+                elif element_type == 'str' and 'enum' in field and element not in field['enum']:
+                    errors[field_name] = f'Element {i} of field "{field_name}" has value "{element}" which is not in the allowed enum values: {field["enum"]}.'
                     total_errors += 1
                     break
 
@@ -808,10 +848,19 @@ def redact_secure_fields(spec:dict, obj:object) -> object:
 
     replacements = {}
 
-    for field in spec.values():
+    for field_name, field in spec.items():
 
-        field_name = field['name']['snake_case']
-        if field['secure']:
+        if field['type'] == 'struct':
+            nested_spec = field['fields']
+            nested_obj = getattr(obj, field_name)
+            replacements[field_name] = redact_secure_fields(nested_spec, nested_obj)
+
+        if field.get('secure', False):
             replacements[field_name] = 'REDACTED'
-
-    return obj._replace(**replacements)
+    
+    if isinstance(obj, dict):
+        for k, v in replacements.items():
+            obj[k] = v
+        return obj
+    else:
+        return obj._replace(**replacements)

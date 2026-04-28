@@ -1,0 +1,1387 @@
+{
+    "lingo": {
+        "version": "page-beta-1",
+        "parent_url": "/api/spec",
+        "title": "sosh net :: thread"
+    },
+    "params": {
+        "project_name": {
+            "name": {
+                "lower_case": "project name"
+            },
+            "type": "str",
+            "default": "My Lingo Project",
+            "description": "Name of the Lingo project"
+        },
+        "module_name": {
+            "name": {
+                "lower_case": "module name"
+            },
+            "type": "str",
+            "default": "my-module-a",
+            "description": "Name of the module"
+        },
+        "model_definition": {
+            "name": {
+                "lower_case": "model definition"
+            },
+            "type": "model",
+            "value": {
+                "name": {
+                    "lower_case": "my model a"
+                },
+                "fields": {
+                    "user_id": {
+                        "name": {
+                            "lower_case": "user id"
+                        },
+                        "type": "str",
+                        "description": "ID of the user who created the thread"
+                    }
+                }
+            },
+            "description": "placeholder"
+        },
+        "model_id": {
+            "name": {
+                "lower_case": "model id"
+            },
+            "type": "str",
+            "default": "my-model-a",
+            "description": "ID of the model to use for the thread"
+        },
+        "model_name": {
+            "name": {
+                "lower_case": "model name"
+            },
+            "type": "str",
+            "default": "my-model-a",
+            "description": "Name of the model"
+        }
+    },
+    "state": {
+        "header": {
+            "type": "str",
+            "calc": {
+                "call": "join",
+                "args": {
+                    "separator": "",
+                    "items": [
+                        ":: ",
+                        {
+                            "params": {
+                                "model_name": {}
+                            }
+                        },
+                        " :: ",
+                        {
+                            "params": {
+                                "model_id": {}
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        "thread_op_view_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "replies_op_view_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+		"overall_op_view_state": {
+			"type": "str",
+			"description": "state is either 'default', 'result' or 'error'. If thread_op_view_state and replies_op_view_state are result this will return result, if either are error it will return error, otherwise default",
+			"calc": {
+				"branch": [
+					{
+						"if": {
+							"call": "and",
+							"args": {
+								"a": {
+									"call": "eq",
+									"args": {
+										"a": {
+											"call": "key",
+											"args": {
+												"object": {
+													"state": {
+														"thread_op_view_state": {}
+													}
+												},
+												"key": "state"
+											}
+										},
+										"b": "result"
+									}
+								},
+								"b": {
+									"call": "eq",
+									"args": {
+										"a": {
+											"call": "key",
+											"args": {
+												"object": {
+													"state": {
+														"replies_op_view_state": {}
+													}
+												},
+												"key": "state"
+											}
+										},
+										"b": "result"
+									}
+								}
+							}
+						},
+						"then": "result"
+					},
+					{
+						"elif": {
+							"call": "or",
+							"args": {
+								"a": {
+									"call": "eq",
+									"args": {
+										"a": {
+											"call": "key",
+											"args": {
+												"object": {
+													"state": {
+														"thread_op_view_state": {}
+													}
+												},
+												"key": "state"
+											}
+										},
+										"b": "error"
+									}
+								},
+								"b": {
+									"call": "eq",
+									"args": {
+										"a": {
+											"call": "key",
+											"args": {
+												"object": {
+													"state": {
+														"replies_op_view_state": {}
+													}
+												},
+												"key": "state"
+											}
+										},
+										"b": "error"
+									}
+								}
+							}
+						},
+						"then": "error"
+					},
+					{
+						"else": "default"
+					}
+				]
+			}
+		},
+		"error_message": {
+			"type": "str",
+			"description": "if state.overall_op_view_state is error, this will return the error message from either thread_op_view_state or replies_op_view_state",
+			"default": "",
+			"calc": {
+				"branch": [
+					{
+						"if": {
+							"call": "eq",
+							"args": {
+								"a": {
+									"call": "key",
+									"args": {
+										"object": {
+											"state": {
+												"thread_op_view_state": {}
+											}
+										},
+										"key": "state"
+									}
+								},
+								"b": "error"
+							}
+						},
+						"then": {
+							"call": "key",
+							"args": {
+								"object": {
+									"state": {
+										"thread_op_view_state": {}
+									}
+								},
+								"key": "error"
+							}
+						}
+					},
+					{
+						"elif": {
+							"call": "eq",
+							"args": {
+								"a": {
+									"call": "key",
+									"args": {
+										"object": {
+											"state": {
+												"replies_op_view_state": {}
+											}
+										},
+										"key": "state"
+									}
+								},
+								"b": "error"
+							}
+						},
+						"then": {
+							"call": "key",
+							"args": {
+								"object": {
+									"state": {
+										"replies_op_view_state": {}
+									}
+								},
+								"key": "error"
+							}
+						}
+					},
+					{
+						"else": "no error"
+					}
+				]
+			}
+		},
+        "create_reply_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "item_id": "",
+                "data": {},
+                "field_errors": {}
+            }
+        },
+        "post_model_definition": {
+            "type": "model",
+            "default": {
+                "name": {
+                    "lower_case": "post"
+                },
+                "fields": {
+                    "user_id": {
+                        "name": {
+                            "lower_case": "user id"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "auth",
+                            "table": "user",
+                            "field": "id"
+                        }
+                    },
+                    "forum_id": {
+                        "name": {
+                            "lower_case": "forum id"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "sosh_net",
+                            "table": "forum",
+                            "field": "id"
+                        }
+                    },
+                    "reply_to": {
+                        "name": {
+                            "lower_case": "reply to"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "sosh_net",
+                            "table": "post",
+                            "field": "id"
+                        }
+                    },
+                    "message": {
+                        "name": {
+                            "lower_case": "message"
+                        },
+                        "type": "str"
+                    },
+                    "attachments": {
+                        "name": {
+                            "lower_case": "attachments"
+                        },
+                        "type": "list",
+                        "element_type": "foreign_key",
+                        "references": {
+                            "module": "file_system",
+                            "table": "file",
+                            "field": "id"
+                        }
+                    },
+                    "images": {
+                        "name": {
+                            "lower_case": "images"
+                        },
+                        "type": "list",
+                        "element_type": "foreign_key",
+                        "references": {
+                            "module": "media",
+                            "table": "master_image",
+                            "field": "id"
+                        }
+                    },
+                    "related_posts": {
+                        "name": {
+                            "lower_case": "related posts"
+                        },
+                        "type": "list",
+                        "element_type": "foreign_key",
+                        "references": {
+                            "module": "sosh_net",
+                            "table": "post",
+                            "field": "id"
+                        }
+                    }
+                }
+            }
+        },
+        "thread_op_definition": {
+            "name": {
+                "lower_case": "thread op definition"
+            },
+            "type": "op",
+            "default": {
+                "type": "op",
+                "value": {
+                    "name": {
+                        "lower_case": "get thread and post"
+                    },
+                    "description": "Get a thread and its main post by thread id",
+                    "func": {},
+                    "params": {
+                        "thread_id": {
+                            "name": {
+                                "lower_case": "thread id"
+                            },
+                            "type": "str",
+                            "default": "-1",
+                            "description": "ID of the thread to get"
+                        }
+                    },
+                    "result": {
+                        "type": "struct",
+                        "value": {
+                            "thread": {
+                                "type": "struct",
+                                "value": {}
+                            },
+                            "main_post": {
+                                "type": "struct",
+                                "value": {}
+                            },
+                            "forum": {
+                                "type": "struct",
+                                "value": {}
+                            }
+                        },
+                        "tests": {
+                            "test_cases": []
+                        }
+                    }
+                }
+            }
+        },
+        "replies_op_definition": {
+            "name": {
+                "lower_case": "replies op definition"
+            },
+            "type": "op",
+            "default": {
+                "type": "op",
+                "value": {
+                    "name": {
+                        "lower_case": "get replies for post"
+                    },
+                    "description": "Get all replies for a post by post id",
+                    "func": {},
+                    "params": {
+                        "post_id": {
+                            "name": {
+                                "lower_case": "post id"
+                            },
+                            "type": "str",
+                            "default": "-1",
+                            "description": "ID of the post to get replies for"
+                        },
+                        "offset": {
+                            "name": {
+                                "lower_case": "offset"
+                            },
+                            "type": "int",
+                            "default": 0,
+                            "description": "Pagination offset for replies"
+                        },
+                        "size": {
+                            "name": {
+                                "lower_case": "size"
+                            },
+                            "type": "int",
+                            "default": 25,
+                            "description": "Page size for replies"
+                        }
+                    },
+                    "result": {
+                        "type": "struct",
+                        "value": {
+                            "replies": {
+                                "type": "list",
+                                "value": []
+                            }
+                        },
+                        "tests": {
+                            "test_cases": []
+                        }
+                    }
+                }
+            }
+        },
+        "thread": {
+            "type": "struct",
+            "calc": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "thread_op_view_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "thread_op_view_state": {}
+                                    }
+                                },
+                                "key": "result.value.thread.value"
+                            }
+                        }
+                    },
+                    {
+                        "else": {
+                            "type": "struct",
+                            "value": {
+                                "id": "-1",
+                                "title": "..."
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "main_post": {
+            "type": "struct",
+            "calc": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "thread_op_view_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "thread_op_view_state": {}
+                                    }
+                                },
+                                "key": "result.value.main_post.value"
+                            }
+                        }
+                    },
+                    {
+                        "else": {
+                            "type": "struct",
+                            "value": {
+                                "id": "-1",
+                                "message": "..."
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "forum": {
+            "type": "struct",
+            "calc": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "thread_op_view_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "thread_op_view_state": {}
+                                    }
+                                },
+                                "key": "result.value.forum.value"
+                            }
+                        }
+                    },
+                    {
+                        "else": {
+                            "type": "struct",
+                            "value": {
+                                "id": "-1",
+                                "topic": "..."
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "total_replies": {
+            "type": "int",
+            "calc": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "replies_op_view_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "replies_op_view_state": {}
+                                    }
+                                },
+                                "key": "result.value.replies.value.total"
+                            }
+                        }
+                    },
+                    {
+                        "else": {
+                            "type": "int",
+                            "value": 0
+                        }
+                    }
+                ]
+            }
+        },
+        "page_size": {
+            "type": "int",
+            "default": 20,
+            "description": "Number of items per page"
+        },
+        "page_number": {
+            "type": "int",
+            "default": 1,
+            "description": "Current page number"
+        }
+    },
+    "ops": {
+        "main_post_is_loaded": {
+            "args": {},
+            "func": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "thread_op_view_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": true
+                    },
+                    {
+                        "else": false
+                    }
+                ]
+            }
+        },
+        "is_replies_loaded": {
+            "args": {},
+            "func": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "replies_op_view_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": true
+                    },
+                    {
+                        "else": false
+                    }
+                ]
+            }
+        },
+        "prev_page": {
+            "args": {},
+            "func": {
+                "call": "all",
+                "args": {
+                    "iterable": [
+                        {
+                            "set": {
+                                "state": {
+                                    "page_number": {}
+                                }
+                            },
+                            "to": {
+                                "call": "sub",
+                                "args": {
+                                    "a": {
+                                        "state": {
+                                            "page_number": {}
+                                        }
+                                    },
+                                    "b": 1
+                                }
+                            }
+                        },
+                        {
+                            "set": {
+                                "state": {
+                                    "replies_op_view_state": {
+                                        "state": {}
+                                    }
+                                }
+                            },
+                            "to": "triggered"
+                        }
+                    ]
+                }
+            }
+        },
+        "next_page": {
+            "args": {},
+            "func": {
+                "call": "all",
+                "args": {
+                    "iterable": [
+                        {
+                            "set": {
+                                "state": {
+                                    "page_number": {}
+                                }
+                            },
+                            "to": {
+                                "call": "add",
+                                "args": {
+                                    "a": {
+                                        "state": {
+                                            "page_number": {}
+                                        }
+                                    },
+                                    "b": 1
+                                }
+                            }
+                        },
+                        {
+                            "set": {
+                                "state": {
+                                    "replies_op_view_state": {
+                                        "state": {}
+                                    }
+                                }
+                            },
+                            "to": "triggered"
+                        }
+                    ]
+                }
+            }
+        },
+        "last_page": {
+            "args": {},
+            "func": {
+                "call": "max",
+                "args": {
+                    "a": {
+                        "call": "floordiv",
+                        "args": {
+                            "a": {
+                                "state": {
+                                    "total_replies": {}
+                                }
+                            },
+                            "b": {
+                                "state": {
+                                    "page_size": {}
+                                }
+                            }
+                        }
+                    },
+                    "b": 1
+                }
+            }
+        },
+        "refresh": {
+            "args": {},
+            "func": {
+				"set": {
+					"state": {
+						"replies_op_view_state": {
+							"state": {}
+						}
+					}
+				},
+				"to": "triggered"
+			}
+        }
+    },
+	"timers": {
+		"auto_load_replies": {
+			"description": "Auto load main post's replies after loading the main post",
+			"auto_start": true,
+			"func": {
+				"branch": [
+					{
+						"if": {
+							"op": {
+								"main_post_is_loaded": {}
+							}
+						},
+						"then": {
+							"set": {
+								"state": {
+									"replies_op_view_state": {
+										"state": {}
+									}
+								}
+							},
+							"to": "triggered"
+						}
+					},
+					{
+						"else": {"type": "str", "value": "post_not_loaded"}
+					}
+				]
+			},
+
+			"interval": {
+				"branch": [
+					{
+						"if": {
+							"call": "or",
+							"args": {
+								"a": {
+									"call": "eq",
+									"args": {
+										"a": {"self": "func_result"},
+										"b": "triggered"
+									}
+								},
+								"b": {
+									"call": "eq",
+									"args": {
+										"a": {
+											"call": "key",
+											"args": {
+												"object": {
+													"state": {
+														"thread_op_view_state": {}
+													}
+												},
+												"key": "state"
+											}
+										},
+										"b": "error"
+									}
+								}
+							}
+						},
+						"then": -1
+					},
+					{
+						"else": 0.01
+					}
+				]
+			}
+		}
+	},
+    "output": [
+        {
+            "heading": {
+                "state": {
+                    "header": {}
+                }
+            },
+            "level": 1
+        },
+        {
+            "breadcrumbs": [
+                "mtech",
+                {
+                    "params": {
+                        "module_name": {}
+                    }
+                },
+                {
+                    "params": {
+                        "model_name": {}
+                    }
+                },
+                {
+                    "params": {
+                        "model_id": {}
+                    }
+                }
+            ]
+        },
+        {
+            "heading": {
+                "state": {
+                    "thread": {
+                        "title": {}
+                    }
+                }
+            },
+            "level": 3
+        },
+        {
+            "text": "forum: ",
+			"style": {
+				"bold": true
+			}
+        },
+        {
+			"link": {
+				"call": "concat",
+				"args": {
+					"items": [
+						"/sosh-net/forum/",
+						{
+							"call": "key",
+							"args": {
+								"object": {
+									"state": {
+										"forum": {}
+									}
+								},
+								"key": "id"
+							}
+						}
+					]
+				}
+			},
+			"text": {
+				"state": {
+					"forum": {
+						"topic": {}
+					}
+				}
+			}
+		},
+        {
+            "break": 1
+        },
+        {
+            "lingo": {
+                "state": {
+                    "main_post": {
+                        "message": {}
+                    }
+                }
+            }
+        },
+        {
+            "heading": ":: replies",
+			"level": 3
+        },
+        {
+            "button": {
+                "op": {
+                    "prev_page": {}
+                }
+            },
+            "text": "prev",
+            "disabled": {
+                "call": "eq",
+                "args": {
+                    "a": {
+                        "state": {
+                            "page_number": {}
+                        }
+                    },
+                    "b": 1
+                }
+            }
+        },
+        {
+            "button": {
+                "op": {
+                    "next_page": {}
+                }
+            },
+            "text": "next",
+            "disabled": {
+                "call": "ge",
+                "args": {
+                    "a": {
+                        "state": {
+                            "page_number": {}
+                        }
+                    },
+                    "b": {
+                        "op": {
+                            "last_page": {}
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "text": " ● "
+        },
+        {
+            "button": {
+                "op": {
+                    "refresh": {}
+                }
+            },
+            "text": "refresh"
+        },
+        {
+            "text": " "
+        },
+        {
+            "switch": {
+                "expression": {
+                    "state": {
+						"overall_op_view_state": {}
+					}
+                },
+                "cases": [
+                    {
+                        "case": "result",
+                        "then": {
+                            "text": "🟢"
+                        }
+                    },
+                    {
+                        "case": "error",
+                        "then": [
+                            {
+                                "text": "🔴 "
+                            },
+                            {
+                                "text": {
+                                    "state": {
+										"error_message": {}
+									}
+                                },
+                                "style": {
+                                    "color": "red"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "default": {
+                    "text": "🟡"
+                }
+            }
+        },
+        {
+            "op": {
+                "bind": {
+                    "state": {
+                        "thread_op_view_state": {}
+                    }
+                },
+                "auto_submit": true,
+                "display": {
+                    "show_result": false,
+                    "show_submit_button": false,
+                    "show_status_display": false
+                },
+                "interactive": true,
+                "http": "/api/sosh-net/get-thread-and-post",
+                "params": {
+                    "thread_id": {
+                        "params": {
+                            "model_id": {}
+                        }
+                    }
+                },
+                "definition": {
+                    "state": {
+                        "thread_op_definition": {}
+                    }
+                }
+            }
+        },
+		{
+			"op": {
+				"bind": {
+					"state": {
+						"replies_op_view_state": {}
+					}
+				},
+				"display": {
+					"show_result": false,
+					"show_submit_button": false,
+					"show_status_display": false
+				},
+				"interactive": true,
+				"http": "/api/sosh-net/get-replies-for-post",
+				"params": {
+					"post_id": {
+						"call": "key",
+						"args": {
+							"object": {
+								"state": {
+									"main_post": {}
+								}
+							},
+							"key": "id"
+						}
+					},
+					"size": {
+						"state": {
+							"page_size": {}
+						}
+					},
+					"offset": {
+						"call": "mul",
+						"args": {
+							"a": {
+								"state": {
+									"page_size": {}
+								}
+							},
+							"b": {
+								"call": "sub",
+								"args": {
+									"a": {
+										"state": {
+											"page_number": {}
+										}
+									},
+									"b": 1
+								}
+							}
+						}
+					}
+				},
+				"definition": {
+					"state": {
+						"replies_op_definition": {}
+					}
+				}
+			}
+		},
+        {
+            "branch": [
+                {
+                    "if": {
+                        "op": {
+                            "main_post_is_loaded": {}
+                        }
+                    },
+                    "then": [
+                        {
+                            "text": "total replies: ",
+                            "style": {
+                                "bold": true
+                            }
+                        },
+                        {
+                            "lingo": {
+                                "state": {
+                                    "total_replies": {}
+                                }
+                            }
+                        },
+                        {
+                            "text": " ● page: ",
+                            "style": {
+                                "bold": true
+                            }
+                        },
+                        {
+                            "lingo": {
+                                "state": {
+                                    "page_number": {}
+                                }
+                            }
+                        },
+                        {
+                            "text": " of "
+                        },
+                        {
+                            "op": {
+                                "last_page": {}
+                            }
+                        },
+                        {
+                            "branch": [
+                                {
+                                    "if": {
+                                        "op": {
+                                            "is_replies_loaded": {}
+                                        }
+                                    },
+                                    "then": {
+                                        "type": "list",
+                                        "display": {
+                                            "format": "table",
+                                            "headers": [
+                                                {
+                                                    "text": "Id",
+                                                    "field": "id"
+                                                },
+                                                {
+                                                    "text": "Reply",
+                                                    "field": "message"
+                                                }
+                                            ],
+                                            "instance_url": "/sosh-net/post/"
+                                        },
+                                        "value": {
+                                            "call": "map",
+                                            "args": {
+                                                "function": {
+                                                    "type": "struct",
+                                                    "value": {
+                                                        "id": {
+                                                            "call": "key",
+                                                            "args": {
+                                                                "object": {
+                                                                    "self": "item"
+                                                                },
+                                                                "key": "id"
+                                                            }
+                                                        },
+                                                        "message": {
+                                                            "call": "key",
+                                                            "args": {
+                                                                "object": {
+                                                                    "self": "item"
+                                                                },
+                                                                "key": "message"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "iterable": {
+                                                    "call": "key",
+                                                    "args": {
+                                                        "object": {
+                                                            "state": {
+                                                                "replies_op_view_state": {}
+                                                            }
+                                                        },
+                                                        "key": "result.value.replies.value.items"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "else": {
+                                        "text": "loading replies..."
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "else": {
+                        "text": "loading thread..."
+                    }
+                }
+            ]
+        },
+		{"break": 1},
+		{"heading": ":: add reply", "level": 5},
+		{
+            "model": {
+                "bind": {
+                    "state": {
+                        "create_reply_state": {}
+                    }
+                },
+                "display": {
+					"mode": "create",
+					"show_model_state": false
+				},
+                "http": "/api/sosh-net/post",
+                "instance_url": "/sosh-net/post/",
+                "definition": {
+                    "state": {
+                        "post_model_definition": {}
+                    }
+                },
+                "params": {
+                    "user_id": "-1",
+                    "forum_id": {
+                        "call": "key",
+                        "args": {
+                            "object": {
+                                "state": {
+                                    "forum": {}
+                                }
+                            },
+                            "key": "id"
+                        }
+                    },
+                    "reply_to": {
+                        "call": "key",
+                        "args": {
+                            "object": {
+                                "state": {
+                                    "main_post": {}
+                                }
+                            },
+                            "key": "id"
+                        }
+                    },
+                    "attachments": [],
+                    "images": [],
+                    "related_posts": []
+                }
+            },
+			"comment": {
+				"branch": [
+					{
+						"if": {
+							"call": "eq",
+							"args": {
+								"a": {
+									"call": "key",
+									"args": {
+										"object": {
+											"state": {
+												"create_reply_state": {}
+											}
+										},
+										"key": "state"
+									}
+								},
+								"b": "success"
+							}
+						},
+						"then": {
+							"button": {"op": {"refresh": {}}},
+							"text": "refresh"
+						}
+					},
+					{
+						"else": {"text": ""}
+					}
+				]
+			}
+        }
+    ]
+}
+

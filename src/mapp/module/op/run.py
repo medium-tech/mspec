@@ -1,4 +1,5 @@
-from mapp import auth
+from copy import deepcopy
+
 from mapp.context import MappContext
 from mapp.errors import MappError
 from mapp.types import validate_op_params, validate_op_output, OpResult
@@ -50,7 +51,15 @@ def op_create_callable(param_class:type, output_class:type) -> object:
 		raise MappError('INVALID_OP_SPEC', f'Op {op_snake_case} missing lingo func in op spec.')
 
 	def op_callable(ctx: MappContext, params:object) -> object:
-		spec = {'params': param_class._op_spec['params']}
+		module_spec = param_class._module_spec
+		if module_spec is not None:
+			module_name = module_spec['name']['snake_case']
+			spec = {
+				'params': param_class._op_spec['params'],
+				'modules': {module_name: module_spec}
+			}
+		else:
+			spec = {'params': param_class._op_spec['params']}
 		validate_op_params(param_class, params)
 		lingo_app = LingoApp(
 			spec,
@@ -58,8 +67,7 @@ def op_create_callable(param_class:type, output_class:type) -> object:
 			dict(),
 			list()
 		)
-
-		op_output = lingo_execute(lingo_app, lingo_func, ctx)
+		op_output = lingo_execute(lingo_app, deepcopy(lingo_func), ctx)
 		return validate_op_output(output_class, OpResult(unwrap_primitive(op_output)))
 		
 	# create application wrapper #

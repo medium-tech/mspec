@@ -1,0 +1,42 @@
+lingo:
+    version: page-beta-1
+    title: "sosh net :: the network"
+
+params: {}
+
+state:
+    is_logged_in:
+        type: bool
+        calc:
+            call: key
+            args:
+                object:
+                    call: auth.is_logged_in
+                    args: {}
+                key: logged_in
+
+ops: {}
+
+output:
+    - heading: 'shosh net'
+      level: 1
+
+    - breadcrumbs:
+          - "mtech"
+          - "sosh-net"
+
+    - heading: ":: the network"
+      level: 2
+      
+    - text: ' ● '
+    - link: '/sosh-net/profile'
+      text: 'profiles'
+    - text: ' ● '
+    - link: '/sosh-net/forum'
+      text: 'forums'
+    - text: ' ● '
+    - link: '/sosh-net/account'
+      text: 'account'
+    - text: ' ● '
+    - break: 1
+    - text: this is sosh net.

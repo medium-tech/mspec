@@ -208,7 +208,11 @@ The mapp framework is used to run an application defined in the [application spe
 
 The `mapp` python framework code is in `src/mapp`. It uses the mapp spec to define an app.
 
-The example implementation of a `mapp` app is in `templates/mapp-py`, use this for testing the framework.
+The development implementation of a `mapp` app is in `templates/mapp-py`, use this for testing the framework. It is also used by the [mtemplate](#mtemplate) module as a template for boostrapping new mapp framework apps. Use the following command for bootstrapping:
+
+    python -m mtemplate render --output <output dir> --spec <spec file>
+
+`--spec` can be a built in spec file or path to any spec file.
 
 The UI for a mapp app is defined by lingo page files in `src/mspec/data/lingo/pages`, specifically the files in this dir starting with `builtin-mapp`.
 
@@ -218,11 +222,10 @@ To test develop and test the JS lingo interpreter use the dev lingo server `brow
 
 Use `./build.sh` to sync the files in `browser2/js` to the python mapp app in `src/mspec/data/mapp-ui/src`. These are the lingo interpreter files that the template app `templates/mapp-py` will use for it's UI. For development testing you can run the `mapp-py` server like this to force it to use the development js interpreter without needing to use `build.sh` to sync your chages.
 
-    ./server.sh --ui-src ../../browser2/js/src/
 
-### running the mapp test app
+### running the mapp dev app
 
-Eventually this spec will be able to generate an app including python, html, shell scripts, etc. The template is still being finished so that's not available yet. For now the test app can be run against the test spec as follows.
+The mapp development app is used to test the mapp python framework and javascript lingo front end. It is also used by [mtemplate](#mtemplate) to bootstrap an app using the mapp framework.
 
 Change to mapp directory:
 
@@ -254,6 +257,35 @@ Tests will run their own servers, with own sqlite file, on different ports that 
 		* tests with gui: `./test.sh --npm-run test-ui`
         * test generator: `./test.sh --npm-run test-gen`
     * use cached test data: `./test.sh --use-cache --npm-run`
+
+### sosh net app
+The sosh net app is an implementation of the mapp framework to build a social media network. It is generated with this command:
+
+    python -m mtemplate render --output templates/sosh-net --spec sosh-net.yaml --as-builtin --no-cache
+
+For development you can run the build script form the roots of the repo which does the above command plus sync the ui files:
+
+    ./build.sh
+
+To setup
+
+    cd sosh-net
+    npm install
+
+**env file**
+
+The template generator will attempt to set sensible defaults based on your environment, 
+but you should check the following env variables to confirm they are correct.
+
+* `MAPP_AUTH_SECRET_KEY` - a cryptographic key will be generated using python's secrets library
+* `MAPP_CLI_SESSION_FILE` - set this so that this app uses a different session file than the dev app
+* `UWSGI_STATIC_SAFE` - confirm this is set to the parent directory of the app
+* `VIRTUAL_ENV` - ensure this is set to a python venv w/ dependencies installed
+* `MAPP_CLI_SESSION_FILE` - should be a file in `<output>/app`
+* `MAPP_MEDIA_INFO_PATH` - ensure media info is installed and available at this path
+* `MAPP_FFMPEG_PATH` - ensure ffmpeg is installed and available at this path
+
+**running and testing** - is the same as for the dev mapp app
 
 # Development
 
@@ -342,10 +374,10 @@ Testing framework to automate gui testing across languages
 ## mtemplate
 A templating project to embed templating commands into real code. 
 
-⚠️ Currently in refactoring state ⚠️
+⚠️ Currently in refactoring state, docs may be out of date ⚠️
 
 Templates in `./templates`:
-* `mapp-py` - incomplete - for the [mapp framework](#mapp-framework) once the framework stabilizes.
+* `mapp-py` - used to bootstrap a [mapp framework](#mapp-framework) app
 * `go` - deprecated
 * `py` - deprecated
 * `browser1` - deprecated

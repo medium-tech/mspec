@@ -35,37 +35,46 @@
     * 🟢 tests
 * 🟢 mega app for testing (merge modules from multiple files)
 * 🟢 master image ingest operation
-* 🔴 define custom pages
-    * 🔴 project index page
-    * 🔴 module index page
-    * 🔴 model index page
-    * 🔴 model instance page
+* 🟡 define custom pages
+    * 🟢 project index page
+    * 🟢 module index page
+    * 🟢 model index page
+    * 🟢 model instance page
+    * 🟢 arbitrary pages
     * 🔴 op page
 * 🟢 support for list of foreign keys
     * 🟢 backend
     * 🟢 ui
-* 🔴 split social media off from dev app
-    * 🔴 custom pages
-    * 🔴 deploy to web
-* 🔴 implement max_models_by_field - ie. limit 1 reaction per post_id
-* 🔴 add unique constraint to str fields - ie. only 1 profile with a specific username can exist
+* 🟡 split social media off from dev app
+    * 🟢 custom pages
+	* 🟢 css update on all pages
+    * 🟡 deploy to web
+* 🟢 implement max_models_by_field - ie. limit 1 reaction per post_id
+* 🟢 add unique constraint to str fields - ie. only 1 profile with a specific username can exist
+* 🔴 add lingo rich text format
+	* 🔴 define sub protocol for rich text formating
+	* 🔴 update field def's to support this as an option on str fields
+	* 🔴 add max len to all strings
 * 🟡 update testing
     * 🟢 split functions.json apart
         * 🔴 create matching specs for script spec
     * 🔴 implement testing data for page spec
-* 🔴 merge js dev lingo server into mapp template
-* 🔴 create features table for different clients
-* 🔴 mspec dev blender extension
-    * 🔴 update nodes for new functions
-    * 🔴 spec creators
-    * 🔴 cms extension
-        * 🔴 file backup
-        * 🔴 metadata logging
+* 🔴 blender
+	* 🔴 mspec dev extension
+    	* 🔴 update nodes for new functions
+    	* 🔴 export specs from nodes
+    	* 🔴 cms extension
+        	* 🔴 file backup
+        	* 🔴 metadata logging
+	* 🔴 browser2
+		* 🔴 standardize test page specs (test parity for all uis)
+		* 🔴 add support for new spec
+* 🔴 update lingo docs - specifically model, op and form widgets
 * 🔴 refactor
-    * 🔴 js parity to py for lingo function arg mapping
+    * 🟢 js parity to py for lingo function arg mapping
     * 🔴 internal naming conventions
         * 🔴 py - in lingo.py; rename `render_*` functions --> `execute_<name>`
-        * 🔴 js - same as above for python
+        * 🔴 js - same as above for python, separate execution and rendering dom elements 
     * 🔴 remove plain objects (parity w/ future go implementation)
         * 🔴 create context types (remove plain objects)
             * 🔴 py
@@ -73,6 +82,12 @@
         * 🔴 create value type, no passing around primitives
             * 🔴 py
             * 🔴 js
+	* 🔴 improve interpreter
+		* 🔴 ensure all nested ops get executed
+			* 🔴 js
+			* 🔴 python
+* 🔴 add field validation to model spec
+* 🔴 allow models to override crud ops with a defined op
 
 ## mapp framework
 * 🟢 create tests for auth via cli

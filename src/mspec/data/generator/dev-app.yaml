@@ -1,25 +1,24 @@
 lingo:
-  version: 'generator-beta-1'
-  
+    version: 'generator-beta-1'
+
 project:
-  
-  name:
-    lower_case: 'dev app'
 
-  description: 'A test project for developing the mapp framework'
+    name:
+        lower_case: 'dev app'
 
-  author:
-    name: 'B rad C'
-    email: 'sample@email.com'
+    description: 'A test project for developing the mapp framework'
+
+    author:
+        name: 'B rad C'
+        email: 'sample@email.com'
 
 server:
-  port: 2002
+    port: 2002
 
 client:
-  default_host: 'http://localhost:2002'
+    default_host: 'http://localhost:2002'
 
 import:
-  modules:
-    - ./simple-social-network.yaml
-    - ./model-type-testing.yaml
-    - ./op-testing.yaml
+    modules:
+        - ./model-type-testing.yaml
+        - ./op-testing.yaml

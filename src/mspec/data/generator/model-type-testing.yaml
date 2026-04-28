@@ -1,329 +1,638 @@
 lingo:
-  version: 'generator-beta-1'
-  
+    version: 'generator-beta-1'
+
 project:
-  
-  name:
-    lower_case: 'model type testing'
 
-  description: 'A test project for testing various data types in the mapp framework'
+    name:
+        lower_case: 'model type testing'
 
-  author:
-    name: 'B rad C'
-    email: 'sample@email.com'
+    description: 'A test project for testing various data types in the mapp framework'
+
+    author:
+        name: 'B rad C'
+        email: 'sample@email.com'
 
 server:
-  port: 2002
+    port: 2002
 
 client:
-  default_host: 'http://localhost:2002'
+    default_host: 'http://localhost:2002'
 
 modules:
-  model_type_tests:
-    name:
-      lower_case: 'model type tests'
-
-    models:
-      single_choice_fields:
+    model_type_tests:
         name:
-          lower_case: 'single choice fields'
+            lower_case: 'model type tests'
 
-        description: 'A model with various single choice field types for testing purposes'
+        models:
+            single_choice_fields:
+                name:
+                    lower_case: 'single choice fields'
 
-        fields:
+                description: 'A model with various single choice field types for testing
+                    purposes'
 
-          x_bool:
-            name:
-              lower_case: 'x bool'
-            type: bool
-            examples:
-              - false
-              - true
+                fields:
 
-          x_int:
-            name:
-              lower_case: 'x int'
-            type: int
-            examples:
-              - 101
-              - 202
-              - 3
+                    x_bool:
+                        name:
+                            lower_case: 'x bool'
+                        type: bool
+                        examples:
+                            - false
+                            - true
+                        validation_errors:
+                            - 0
+                            - 1.2
+                            - "true"
+                            - "false"
+                            - "yes"
+                            - ""
+                            - []
+                            - {}
+                            - null
+                            - [ false ]
 
-          x_float:
-            name:
-              lower_case: 'x float'
-            type: float
-            examples:
-              - 21.99
-              - 0.99
-              - 1.01
+                    x_int:
+                        name:
+                            lower_case: 'x int'
+                        type: int
+                        examples:
+                            - 101
+                            - 202
+                            - 3
+                        validation_errors:
+                            - true
+                            - false
+                            - 1.5
+                            - "123"
+                            - "abc"
+                            - ""
+                            - []
+                            - {}
+                            - null
+                            - [ 1, 2 ]
 
-          x_string:
-            name:
-              lower_case: 'x string'
-            type: str
-            examples:
-              - "piano"
-              - "guitar"
-              - "drum"
-              - "saxophone"
+                    x_float:
+                        name:
+                            lower_case: 'x float'
+                        type: float
+                        examples:
+                            - 21.99
+                            - 0.99
+                            - 1.01
+                            - 2 # have to support this bc of JS - should drop support in future
+                        validation_errors:
+                            - true
+                            - false
+                            - "123.45"
+                            - "abc"
+                            - ""
+                            - []
+                            - {}
+                            - null
+                            - [ 2.3 ]
 
-          x_enum:
-            name:
-              lower_case: 'x enum'
-            type: str
-            enum:
-              - taco
-              - tlayuda
-              - chilaquiles
-              - tamales
+                    x_string:
+                        name:
+                            lower_case: 'x string'
+                        type: str
+                        examples:
+                            - "piano"
+                            - "guitar"
+                            - "drum"
+                            - "saxophone"
 
-            examples:
-              - tlayuda
-              - taco
+                        validation_errors:
+                            - true
+                            - false
+                            - 123
+                            - 45.67
+                            - []
+                            - {}
+                            - null
+                            - [ "valid string" ] # lists should not be valid for string fields
 
-          x_datetime:
-            name:
-              lower_case: 'x datetime'
-            type: datetime
-            examples:
-              - "2000-01-11T12:34:56"
-              - "2020-10-02T15:30:00"
+                    x_enum:
+                        name:
+                            lower_case: 'x enum'
+                        type: str
+                        enum:
+                            - taco
+                            - tlayuda
+                            - chilaquiles
+                            - tamales
 
-      multi_choice_fields:
-        name:
-          lower_case: 'multi choice fields'
+                        examples:
+                            - tlayuda
+                            - taco
 
-        description: 'A model with various multi choice field types for testing purposes'
+                        validation_errors:
+                            - true
+                            - false
+                            - 123
+                            - 45.67
+                            - "burrito"
+                            - ""
+                            - []
+                            - {}
+                            - null
+                            - [ "taco" ]
 
-        fields:
+                    x_datetime:
+                        name:
+                            lower_case: 'x datetime'
+                        type: datetime
+                        examples:
+                            - "2000-01-11T12:34:56"
+                            - "2020-10-02T15:30:00"
 
-          x_list_bool:
-            name:
-              lower_case: 'x list bool'
-            type: list
-            element_type: bool
-            examples:
-              - [true, false]
-              - [false, true, true]
+                        validation_errors:
+                            - true
+                            - false
+                            - 123
+                            - 45.67
+                            - "2020-64-01T00:00:00"
+                            - "not a datetime"
+                            - ""
+                            - []
+                            - {}
+                            - null
+                            - [ "2020-11-01T00:00:00" ]
 
-          x_list_int:
-            name:
-              lower_case: 'x list int'
-            type: list
-            element_type: int
-            examples:
-              - [7, 11]
-              - [42, 16, 109, 4]
+            multi_choice_fields:
+                name:
+                    lower_case: 'multi choice fields'
 
-          x_list_float:
-            name:
-              lower_case: 'x list float'
-            type: list
-            element_type: float
-            examples:
-              - [3.14, 2.718]
-              - [1.618, 0.577]
+                description: 'A model with various multi choice field types for testing
+                    purposes'
 
-          x_list_string:
-            name:
-              lower_case: 'x list string'
-            type: list
-            element_type: str
-            examples:
-              - ["banana"]
-              - ["extravagantly long string"]
-              - ["amplitude", "hello world"]
+                fields:
 
-          x_list_enum:
-            name:
-              lower_case: 'x list enum'
-            type: list
-            element_type: str
-            enum:
-              - chorizo
-              - carne
-              - al pastor
-              - pollo
+                    x_list_bool:
+                        name:
+                            lower_case: 'x list bool'
+                        type: list
+                        element_type: bool
+                        examples:
+                            - [ true, false ]
+                            - [ false, true, true ]
+                        validation_errors:
+                            - true
+                            - false
+                            - 1.5
+                            - "true"
+                            - "false"
+                            - "yes"
+                            - ""
+                            - {}
+                            - null
+                            - [ 0, 1 ]
+                            - [ "true", "false" ]
+                            - [ true, 0 ]
 
-            examples:
-              - ["chorizo", "al pastor"]
-              - ["carne"]
+                    x_list_int:
+                        name:
+                            lower_case: 'x list int'
+                        type: list
+                        element_type: int
+                        examples:
+                            - [ 7, 11 ]
+                            - [ 42, 16, 109, 4 ]
+                        validation_errors:
+                            - true
+                            - false
+                            - 1.5
+                            - "abc"
+                            - ""
+                            - {}
+                            - null
+                            - [ "123", "456" ]
+                            - [ [ 1, 2 ], [ 3, 4 ] ]
 
-          x_list_datetime:
-            name:
-              lower_case: 'x list datetime'
-            type: list
-            element_type: datetime
-            examples:
-              - ["2000-01-11T12:34:56"]
-              - ["2020-10-02T15:30:00", "2021-01-01T00:00:00"]
+                    x_list_float:
+                        name:
+                            lower_case: 'x list float'
+                        type: list
+                        element_type: float
+                        examples:
+                            - [ 3.14, 2.718 ]
+                            - [ 1.618, 0.577 ]
+                            - [ 0, 1, 2 ] # have to support this bc of JS - should drop support in future w/ a js update
+                        validation_errors:
+                            - true
+                            - false
+                            - 1.5
+                            - "abc"
+                            - ""
+                            - {}
+                            - null
+                            - [ "123.45", "67.89" ]
+                            - [ [ 1.1, 2.2 ], [ 3.3, 4.4 ] ]
 
-      rando_model:
-        name:
-          lower_case: 'rando model'
+                    x_list_string:
+                        name:
+                            lower_case: 'x list string'
+                        type: list
+                        element_type: str
+                        examples:
+                            - [ "banana" ]
+                            - [ "extravagantly long string" ]
+                            - [ "amplitude", "hello world" ]
+                        validation_errors:
+                            - true
+                            - 123
+                            - 45.67
+                            - ""
+                            - {}
+                            - null
+                            - [ [ "valid string" ] ]
 
-        description: 'A model to test random data generator functions for various field types'
+                    x_list_enum:
+                        name:
+                            lower_case: 'x list enum'
+                        type: list
+                        element_type: str
+                        enum:
+                            - chorizo
+                            - carne
+                            - al pastor
+                            - pollo
 
-        auth:
-          require_login: true
+                        examples:
+                            - [ "chorizo", "al pastor" ]
+                            - [ "carne" ]
 
-        fields:
+                        validation_errors:
+                            - true
+                            - 123
+                            - 45.67
+                            - "burrito"
+                            - ""
+                            - {}
+                            - null
+                            - [ 'barbacoa', 'chorizo' ] # barbacoa is not in the enum
+                            - [ [ "chorizo" ] ]
+                            - [ [ "burrito" ] ]
 
-          user_id:
-            name:
-              lower_case: 'user id'
-            type: foreign_key
-            references:
-              module: 'auth'
-              table: 'user'
-              field: 'id'
-            examples:
-              - "1"
-              - "2"
-              - "3"
+                    x_list_datetime:
+                        name:
+                            lower_case: 'x list datetime'
+                        type: list
+                        element_type: datetime
+                        examples:
+                            - [ "2000-01-11T12:34:56" ]
+                            - [ "2020-10-02T15:30:00", "2021-01-01T00:00:00" ]
 
-          name:
-            name:
-              lower_case: 'name'
-            type: str
-            examples:
-              - "Alice"
-              - "Bob"
-              - "Charlie"
-            random: random_person_name
-          
-          user_name:
-            name:
-              lower_case: 'user name'
-            type: str
-            examples:
-              - "alice123"
-              - "bob_the_builder"
-              - "charlie_brown"
-            random: random_user_name
-          
-          favorite_thing:
-            name:
-              lower_case: 'favorite thing'
-            type: str
-            examples:
-              - "pizza"
-              - "sushi"
-              - "tacos"
-            random: random_thing_name
-          
-          email:
-            name:
-              lower_case: 'email'
-            type: str
-            examples:
-              - "my@email.com"
-              - "my-other@email.com"
-            random: random_email
-          
-          phone_number:
-            name:
-              lower_case: 'phone number'
-            type: str
-            examples:
-              - "+1 (123) 456-7890"
-              - "+1 (987) 654-3210"
-            random: random_phone_number
+                        validation_errors:
+                            - true
+                            - 123
+                            - 45.67
+                            - "not a datetime"
+                            - ""
+                            - {}
+                            - null
+                            - [ "2020-64-01T00:00:00" ] # invalid datetime
+                            - [ [ "2020-10-02T15:30:00" ] ] # lists should not be valid for datetime fields
 
-      limit_a:
-        name:
-          lower_case: 'limit a'
+            # rando_model:
+            #   name:
+            #     lower_case: 'rando model'
 
-        description: 'A model to test max_models_per_user limit of 0 (cannot create models)'
+            #   description: 'A model to test random data generator functions for various field types'
 
-        auth:
-          require_login: true
-          max_models_per_user: 0
+            #   auth:
+            #     require_login: true
 
-        fields:
-          user_id:
-            name:
-              lower_case: 'user id'
-            type: foreign_key
-            references:
-              module: 'auth'
-              table: 'user'
-              field: 'id'
-            examples:
-              - "1"
-              - "2"
-              - "3"
-          my_field:
-            name:
-              lower_case: 'my field'
-            type: str
-            examples:
-              - "example1"
-              - "example2"
+            #   fields:
 
-      limit_b:
-        name:
-          lower_case: 'limit b'
+            #     user_id:
+            #       name:
+            #         lower_case: 'user id'
+            #       type: foreign_key
+            #       references:
+            #         module: 'auth'
+            #         table: 'user'
+            #         field: 'id'
+            #       examples:
+            #         - "1"
+            #         - "2"
+            #         - "3"
 
-        description: 'A model to test max_models_per_user limit of 1'
+            #     name:
+            #       name:
+            #         lower_case: 'name'
+            #       type: str
+            #       examples:
+            #         - "Alice"
+            #         - "Bob"
+            #         - "Charlie"
+            #       random: random_person_name
 
-        auth:
-          require_login: true
-          max_models_per_user: 1
+            #     user_name:
+            #       name:
+            #         lower_case: 'user name'
+            #       type: str
+            #       examples:
+            #         - "alice123"
+            #         - "bob_the_builder"
+            #         - "charlie_brown"
+            #       random: random_user_name
 
-        fields:
+            #     favorite_thing:
+            #       name:
+            #         lower_case: 'favorite thing'
+            #       type: str
+            #       examples:
+            #         - "pizza"
+            #         - "sushi"
+            #         - "tacos"
+            #       random: random_thing_name
 
-          user_id:
-            name:
-              lower_case: 'user id'
-            type: foreign_key
-            references:
-              module: 'auth'
-              table: 'user'
-              field: 'id'
-            examples:
-              - "1"
-              - "2"
-              - "3"
-              
-          my_field:
-            name:
-              lower_case: 'my field'
-            type: str
-            examples:
-              - "example1"
-              - "example2"
+            #     email:
+            #       name:
+            #         lower_case: 'email'
+            #       type: str
+            #       examples:
+            #         - "my@email.com"
+            #         - "my-other@email.com"
+            #       random: random_email
 
-      limit_c:
-        name:
-          lower_case: 'limit c'
+            #     phone_number:
+            #       name:
+            #         lower_case: 'phone number'
+            #       type: str
+            #       examples:
+            #         - "+1 (123) 456-7890"
+            #         - "+1 (987) 654-3210"
+            #       random: random_phone_number
 
-        description: 'A model to test max_models_per_user limit of 5'
+            limit_a:
+                name:
+                    lower_case: 'limit a'
 
-        auth:
-          require_login: true
-          max_models_per_user: 5
+                description: 'A model to test max_models_per_user limit of 0 (cannot create
+                    models)'
 
-        fields:
+                auth:
+                    require_login: true
+                    max_models_per_user: 0
 
-          user_id:
-            name:
-              lower_case: 'user id'
-            type: foreign_key
-            references:
-              module: 'auth'
-              table: 'user'
-              field: 'id'
-            examples:
-              - "1"
-              - "2"
-              - "3"
-              
-          my_field:
-            name:
-              lower_case: 'my field'
-            type: str
-            examples:
-              - "example1"
-              - "example2"
+                fields:
+                    user_id:
+                        name:
+                            lower_case: 'user id'
+                        type: foreign_key
+                        references:
+                            module: 'auth'
+                            table: 'user'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+                    my_field:
+                        name:
+                            lower_case: 'my field'
+                        type: str
+                        examples:
+                            - "example1"
+                            - "example2"
+
+            limit_b:
+                name:
+                    lower_case: 'limit b'
+
+                description: 'A model to test max_models_per_user limit of 1'
+
+                auth:
+                    require_login: true
+                    max_models_per_user: 1
+
+                fields:
+
+                    user_id:
+                        name:
+                            lower_case: 'user id'
+                        type: foreign_key
+                        references:
+                            module: 'auth'
+                            table: 'user'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+
+                    my_field:
+                        name:
+                            lower_case: 'my field'
+                        type: str
+                        examples:
+                            - "example1"
+                            - "example2"
+
+            limit_c:
+                name:
+                    lower_case: 'limit c'
+
+                description: 'A model to test max_models_per_user limit of 5'
+
+                auth:
+                    require_login: true
+                    max_models_per_user: 2
+
+                fields:
+
+                    user_id:
+                        name:
+                            lower_case: 'user id'
+                        type: foreign_key
+                        references:
+                            module: 'auth'
+                            table: 'user'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+
+                    my_field:
+                        name:
+                            lower_case: 'my field'
+                        type: str
+                        examples:
+                            - "example1"
+                            - "example2"
+
+            limit_d:
+                name:
+                    lower_case: 'limit d'
+
+                description: 'A model to test max_models_by_field limit of 1 per my_field value'
+
+                auth:
+                    require_login: true
+                    max_models_by_field:
+                        my_field: 1
+
+                fields:
+
+                    user_id:
+                        name:
+                            lower_case: 'user id'
+                        type: foreign_key
+                        references:
+                            module: 'auth'
+                            table: 'user'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+
+                    my_field:
+                        name:
+                            lower_case: 'my field'
+                        type: str
+                        examples:
+                            - "example1"
+                            - "example2"
+
+            unique_test:
+                name:
+                    lower_case: 'unique test'
+
+                description: 'A model to test the unique field constraint'
+
+                fields:
+
+                    unique_string:
+                        name:
+                            lower_case: 'unique string'
+                        type: str
+                        unique: true
+                        examples:
+                            - "unique_val_1"
+                            - "unique_val_2"
+
+            single_choice_fk:
+                name:
+                    lower_case: 'single choice fk'
+
+                description: 'A model with various single choice foreign key field types for
+                    testing purposes'
+
+                fields:
+
+                    x_fk_field:
+                        name:
+                            lower_case: 'x fk field'
+                        type: foreign_key
+                        references:
+                            module: 'model_type_tests'
+                            table: 'single_choice_fields'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+
+                    x_fk_file:
+                        name:
+                            lower_case: 'x fk file'
+                        type: foreign_key
+                        references:
+                            module: 'file_system'
+                            table: 'file'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+
+                    x_fk_image:
+                        name:
+                            lower_case: 'x fk image'
+                        type: foreign_key
+                        references:
+                            module: 'media'
+                            table: 'image'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+
+                    x_fk_master_image:
+                        name:
+                            lower_case: 'x fk master image'
+                        type: foreign_key
+                        references:
+                            module: 'media'
+                            table: 'master_image'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+
+            multi_choice_fk:
+                name:
+                    lower_case: 'multi choice fk'
+
+                description: 'A model with various multi choice foreign key field types for
+                    testing purposes'
+
+                fields:
+
+                    x_list_fk_field:
+                        name:
+                            lower_case: 'x list fk field'
+                        type: list
+                        element_type: foreign_key
+                        references:
+                            module: 'model_type_tests'
+                            table: 'single_choice_fields'
+                            field: 'id'
+                        default: []
+                        examples:
+                            - [ "1", "2" ]
+                            - [ "1", "2" ]
+
+                    x_list_fk_file:
+                        name:
+                            lower_case: 'x list fk file'
+                        type: list
+                        element_type: foreign_key
+                        references:
+                            module: 'file_system'
+                            table: 'file'
+                            field: 'id'
+                        default: []
+                        examples:
+                            - [ "1", "2" ]
+                            - [ "1", "2" ]
+
+                    x_list_fk_image:
+                        name:
+                            lower_case: 'x list fk image'
+                        type: list
+                        element_type: foreign_key
+                        references:
+                            module: 'media'
+                            table: 'image'
+                            field: 'id'
+                        default: []
+                        examples:
+                            - [ "1", "2" ]
+                            - [ "1", "2" ]
+
+                    x_list_fk_master_image:
+                        name:
+                            lower_case: 'x list fk master image'
+                        type: list
+                        element_type: foreign_key
+                        references:
+                            module: 'media'
+                            table: 'master_image'
+                            field: 'id'
+                        default: []
+                        examples:
+                            - [ "1", "2" ]
+                            - [ "1", "2" ]

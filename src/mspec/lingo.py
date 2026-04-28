@@ -8,10 +8,12 @@ from typing import Any, Optional
 from itertools import dropwhile, takewhile, islice, accumulate
 from functools import reduce
 
-from mapp.auth import create_user, login_user, current_user, logout_user, delete_user, drop_sessions
+from mapp.auth import create_user, login_user, is_logged_in, current_user, logout_user, delete_user, drop_sessions
 from mapp.file_system import get_file_content, ingest_start, list_files, get_part_content, list_parts, process_file
+from mapp.errors import NotFoundError
 from mapp.media import create_image, get_image, get_master_image, get_media_file_content, ingest_master_image, list_images, list_master_images
-from mapp.types import get_python_type_for_field
+from mapp.module.model.db import db_model_create, db_model_read, db_model_unique_counts, db_model_query
+from mapp.types import get_python_type_for_field, new_model_class, convert_dict_to_model
 
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
 
@@ -28,6 +30,13 @@ class LingoApp:
 # argument mappers | mapping python and lingo function signatures
 #
 # # # #
+
+def _struct_key_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    object = lingo_execute(app, expression['args']['object'], ctx)
+    key = lingo_execute(app, expression['args']['key'], ctx)
+    struct_value = object['value'] if isinstance(object, dict) and 'value' in object else object
+    key_value = key['value'] if isinstance(key, dict) and 'value' in key else key
+    return (struct_value, key_value), {}
 
 def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     
@@ -119,6 +128,11 @@ def _login_user_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]
     password = unwrap_primitive(lingo_execute(app, password_expr, ctx))
 
     return (ctx, email, password), {}
+
+def _is_logged_in_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    confirm_expr = expression['args'].get('confirm', False)
+    confirm = unwrap_primitive(lingo_execute(app, confirm_expr, ctx))
+    return (ctx,), {'confirm': confirm}
 
 def _current_user_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     # current_user takes no params, only ctx
@@ -330,8 +344,181 @@ def _media_list_master_images_function_args(app:LingoApp, expression: dict, ctx:
     return (ctx, offset, size, master_image_id, user_id), {}
 
 #
-# other
+# db
 #
+
+def _get_model_class_from_type(app:LingoApp, model_type:str) -> type:
+    parts = model_type.split('.')
+    if len(parts) != 2:
+        raise ValueError(f'db - invalid model_type format: {model_type} (expected module.model)')
+    module_key, model_key = parts
+    try:
+        modules = app.spec['modules']
+    except KeyError:
+        raise ValueError('db - app.spec does not contain modules; ensure op spec is loaded with module context')
+    try:
+        module_spec = modules[module_key]
+    except KeyError:
+        raise ValueError(f'db - module not found: {module_key}')
+    try:
+        model_spec = module_spec['models'][model_key]
+    except KeyError:
+        raise ValueError(f'db - model not found: {model_key} in module {module_key}')
+    return new_model_class(model_spec, module_spec)
+
+def _db_read_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        model_type_expr = expression['args']['model_type']
+        model_id_expr = expression['args']['model_id']
+    except KeyError as e:
+        raise ValueError(f'db.read - missing arg: {e}')
+
+    model_type = unwrap_primitive(lingo_execute(app, model_type_expr, ctx))
+    model_id = unwrap_primitive(lingo_execute(app, model_id_expr, ctx))
+    model_class = _get_model_class_from_type(app, model_type)
+
+    return (ctx, model_class, str(model_id)), {}
+
+def _db_create_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        model_type_expr = expression['args']['model_type']
+        data_expr = expression['args']['data']
+    except KeyError as e:
+        raise ValueError(f'db.create - missing arg: {e}')
+
+    model_type = unwrap_primitive(lingo_execute(app, model_type_expr, ctx))
+    model_class = _get_model_class_from_type(app, model_type)
+
+    raw_data = lingo_execute(app, data_expr, ctx)
+    if isinstance(raw_data, dict) and raw_data.get('type') == 'struct':
+        input_data = raw_data['value']
+    elif isinstance(raw_data, dict):
+        input_data = raw_data
+    else:
+        raise ValueError('db.create - data expression must evaluate to a struct')
+
+    data = {}
+    for field_name, field_expression in input_data.items():
+        field_value = lingo_execute(app, field_expression, ctx)
+
+        if isinstance(field_value, list):
+            items = []
+            for item in field_value:
+                if isinstance(item, dict) and not ('type' in item and 'value' in item):
+                    item = lingo_execute(app, item, ctx)
+                items.append(unwrap_primitive(item))
+            data[field_name] = items
+        else:
+            data[field_name] = unwrap_primitive(field_value)
+
+    return (ctx, model_class, data), {}
+
+def _db_unique_counts_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        model_type_expr = expression['args']['model_type']
+        group_by_expr = expression['args']['group_by']
+    except KeyError as e:
+        raise ValueError(f'db.unique_counts - missing arg: {e}')
+
+    model_type = unwrap_primitive(lingo_execute(app, model_type_expr, ctx))
+    group_by = unwrap_primitive(lingo_execute(app, group_by_expr, ctx))
+    model_class = _get_model_class_from_type(app, model_type)
+
+    filters_expr = expression['args'].get('filters')
+    filters = None
+    if filters_expr is not None:
+        filters_result = lingo_execute(app, filters_expr, ctx)
+        if isinstance(filters_result, dict) and 'value' in filters_result:
+            raw = filters_result['value']
+        else:
+            raw = filters_result
+        if not isinstance(raw, dict):
+            raise ValueError('db.unique_counts - filters arg must be a struct')
+        filters = {k: unwrap_primitive(v) for k, v in raw.items()}
+
+    return (ctx, model_class, group_by), {'filters': filters}
+
+def _db_query_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        model_type_expr = expression['args']['model_type']
+        where_expr = expression['args']['where']
+    except KeyError as e:
+        raise ValueError(f'db.query - missing arg: {e}')
+
+    model_type = unwrap_primitive(lingo_execute(app, model_type_expr, ctx))
+    model_class = _get_model_class_from_type(app, model_type)
+    where = unwrap_primitive(lingo_execute(app, where_expr, ctx))
+
+    offset = unwrap_primitive(lingo_execute(app, expression['args']['offset'], ctx)) if 'offset' in expression['args'] else 0
+    size = unwrap_primitive(lingo_execute(app, expression['args']['size'], ctx)) if 'size' in expression['args'] else 25
+
+
+    """
+    a fields expression is a struct where each key contains an operator and then a value
+    the operator must be a support query operator and the value may be executed as a lingo expression or primitive
+
+    currently support operators:
+        eq = equal
+        ne = not equal
+
+    example:
+
+        type: struct
+        value:
+            forum_id:
+                eq:
+                    params: {forum_id: {}}
+            reply_to:
+                ne: '-1'
+    """
+
+    try:
+        condition_items = where.items()
+    except (KeyError, AttributeError, TypeError):
+        raise ValueError('db.query - where expression must be a struct with value key containing conditions')
+    
+    conditions = {}
+
+    for field_name, condition in condition_items:
+        if not isinstance(condition, dict) or len(condition) != 1:
+            raise ValueError(f'db.query - each field condition must be a struct with a single operator: {field_name}')
+        
+        operator, operand_expr = next(iter(condition.items()))
+        if operator not in ('eq', 'ne'):
+            raise ValueError(f'db.query - unsupported operator: {operator} in field condition for field {field_name}')
+        
+        operand_value = lingo_execute(app, operand_expr, ctx)
+        conditions[field_name] = {operator: unwrap_primitive(operand_value)}
+
+    return (ctx, model_class, conditions, offset, size), {}
+
+def db_read(ctx, model_class, model_id:str) -> dict:
+    try:
+        model = db_model_read(ctx, model_class, model_id)
+        return {'type': 'struct', 'value': model._asdict()}
+    except NotFoundError as e:
+        raise
+
+def db_create(ctx, model_class, data:dict) -> str:
+    model = convert_dict_to_model(model_class, data)
+    model = db_model_create(ctx, model_class, model)
+    return str(model.id)
+
+def db_unique_counts(ctx, model_class, group_by:str, filters=None) -> list:
+    rows = db_model_unique_counts(ctx, model_class, group_by, filters)
+    return [{'type': 'struct', 'value': row} for row in rows]
+
+def db_query(ctx, model_class, where:dict, offset:int=0, size:int=25) -> list:
+    query_result = db_model_query(ctx, model_class, where, offset, size)
+    import pprint
+    ctx.log(f'db_query - raw query result: {pprint.pformat(query_result)}')
+    return {
+        'type': 'struct',
+        'value': {
+            'items': [item._asdict() for item in query_result['items']],
+            'total': query_result['total']
+        }
+    }
 
 def str_convert(object:Any) -> str:
     if object is True:
@@ -346,6 +533,12 @@ def str_join(separator:str, items:list) -> str:
 
 def str_concat(items:list) -> str:
     return ''.join(str(item) for item in items)
+
+def struct_key(object:dict, key_name:str) -> Any:
+    try:
+        return object[key_name]
+    except KeyError:
+        raise ValueError(f'struct_key - key not found in struct: {key_name}')
 
 def lingo_int(number:Any=None, string:str=None, base:int=10) -> int:
     if number is not None:
@@ -366,6 +559,22 @@ def unwrap_primitive(value:Any) -> Any:
     else:
         return value
 
+def lingo_type_from_py_obj(object:Any) -> str:
+    if isinstance(object, bool):
+        return 'bool'
+    elif isinstance(object, int):
+        return 'int'
+    elif isinstance(object, float):
+        return 'float'
+    elif isinstance(object, str):
+        return 'str'
+    elif isinstance(object, list):
+        return 'list'
+    elif isinstance(object, dict):
+        return 'struct'
+    else:
+        return 'any'
+
 
 lingo_function_lookup = {
 
@@ -382,13 +591,13 @@ lingo_function_lookup = {
 
     'bool': {'func': bool, 'args': {'object': {'type': 'any'}}},
     'not': {'func': operator.not_, 'args': {'object': {'type': 'any'}}},
-    'neg': {'func': operator.neg, 'args': {'object': {'type': 'any'}}},
     'and': {'func': operator.and_, 'args': {'a': {'type': 'any'}, 'b': {'type': 'any'}}},
     'or': {'func': operator.or_, 'args': {'a': {'type': 'any'}, 'b': {'type': 'any'}}},
 
     # int #
 
     'int': {'func': lingo_int, 'args': {'number': {'type': 'any', 'default': None}, 'string': {'type': 'str', 'default': None}, 'base': {'type': 'int', 'default': 10}}},
+    'neg': {'func': operator.neg, 'args': {'object': {'type': 'any'}}},
 
     # float #
 
@@ -400,6 +609,10 @@ lingo_function_lookup = {
     'str': {'func': str_convert, 'args': {'object': {'type': 'any'}}},
     'join': {'func': str_join, 'args': {'separator': {'type': 'str'}, 'items': {'type': 'list'}}},
     'concat': {'func': str_concat, 'args': {'items': {'type': 'list'}}},
+
+    # struct #
+
+    'key': {'func': struct_key, 'create_args': _struct_key_args},
 
     # math #
 
@@ -455,6 +668,7 @@ lingo_function_lookup = {
     'auth': {
         'create_user': {'func': create_user, 'create_args': _create_user_function_args},
         'login_user': {'func': login_user, 'create_args': _login_user_function_args},
+        'is_logged_in': {'func': is_logged_in, 'create_args': _is_logged_in_function_args},
         'current_user': {'func': current_user, 'create_args': _current_user_function_args},
         'logout_user': {'func': logout_user, 'create_args': _logout_user_function_args},
         'delete_user': {'func': delete_user, 'create_args': _delete_user_function_args},
@@ -482,6 +696,15 @@ lingo_function_lookup = {
         'ingest_master_image': {'func': ingest_master_image, 'create_args': _media_ingest_master_image_function_args},
         'list_images': {'func': list_images, 'create_args': _media_list_images_function_args},
         'list_master_images': {'func': list_master_images, 'create_args': _media_list_master_images_function_args}
+    },
+
+    # db #
+
+    'db': {
+        'create': {'func': db_create, 'create_args': _db_create_function_args},
+        'read': {'func': db_read, 'create_args': _db_read_function_args},
+        'unique_counts': {'func': db_unique_counts, 'create_args': _db_unique_counts_function_args},
+        'query': {'func': db_query, 'create_args': _db_query_function_args},
     }
 }
 
@@ -508,7 +731,7 @@ def lingo_update_state(app:LingoApp, ctx: Optional[dict]=None) -> LingoApp:
             # this is a non-calculated value, set state to default is not already set
             if key not in app.state:
                 try:
-                    if value['type'] != value['default'].__class__.__name__:
+                    if value['type'] != lingo_type_from_py_obj(value['default']):
                         raise ValueError(f'state - {key} - default value type mismatch')
                     app.state[key] = value['default']
                 except KeyError:
@@ -558,10 +781,10 @@ def lingo_execute(app:LingoApp, expression:Any, ctx:Optional[dict]=None) -> Any:
             result = render_heading(app, expression, ctx)
         elif 'args' in expression:
             result = render_args(app, expression, ctx)
-        elif 'self' in expression:
-            result = render_self(app, expression, ctx)
         elif 'value' in expression:
             result = render_value(app, expression, ctx)
+        elif 'self' in expression:
+            result = render_self(app, expression, ctx)
         else:
             result = expression
     else:
@@ -704,10 +927,17 @@ def render_switch(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
 #
 
 def render_self(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
+    self_key = expression['self']
+    if not isinstance(self_key, str):
+        raise ValueError('self - self key must be a string')
+
     try:
-        return ctx['self'][expression['self']]
-    except (KeyError, TypeError):
-        raise ValueError('self - missing self context')
+        return ctx.self[self_key]
+    except AttributeError:
+        try:
+            return ctx['self'][self_key]
+        except KeyError:
+            raise ValueError(f'self - self key not found in context: {self_key}')
 
 def render_params(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any:
     # parse expression #
@@ -1005,15 +1235,28 @@ def render_value(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
     except KeyError:
         raise ValueError('value - missing type key')
     
+	# optional self key to create local state downstream #
+    self_keys = []
+    if 'self' in expression:
+        try:
+            for self_key, self_expr in expression['self'].items():
+                ctx.self[self_key] = lingo_execute(app, self_expr, ctx)
+                self_keys.append(self_key)
+        except Exception as e:
+            raise ValueError(f'value - error processing self expression for key: {self_key}') from e
+        
+    
+	# execute based on type #
+    
     match _type:
         case 'bool' | 'int' | 'float' | 'str' | 'datetime':
             if isinstance(expression['value'], dict):
                 try:
-                    return lingo_execute(app, expression['value'], ctx)
+                    result = lingo_execute(app, expression['value'], ctx)
                 except Exception as e:
                     raise ValueError('value - error processing expression') from e
             else:
-                return expression
+                result = expression
         
         case 'list':
             if not isinstance(expression['value'], list):
@@ -1031,7 +1274,7 @@ def render_value(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
             
             expression['value'] = result_list
 
-            return expression
+            result = expression
         
         case 'struct':
             if not isinstance(expression['value'], dict):
@@ -1042,13 +1285,20 @@ def render_value(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
                 if isinstance(field_value, dict):
                     try:
                         result_struct[field_name] = lingo_execute(app, field_value, ctx)
+                    except NotFoundError as e:
+                        raise e
                     except Exception as e:
                         raise ValueError(f'value - error processing struct field {field_name}') from e
                 else:
                     result_struct[field_name] = field_value
             
             expression['value'] = result_struct
-            return expression
+            result = expression
         
         case _:
             raise ValueError(f'value - unsupported type: {_type}')
+
+    for self_key in self_keys:
+        del ctx.self[self_key]
+
+    return result

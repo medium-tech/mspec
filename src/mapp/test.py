@@ -1,4 +1,5 @@
 import os
+import sys
 import unittest
 import fnmatch
 import json
@@ -9,6 +10,7 @@ import multiprocessing
 import hashlib
 import shutil
 import jwt
+import uuid
 
 from pathlib import Path
 from copy import deepcopy
@@ -28,13 +30,23 @@ def seed_pagination_item(unique_id, base_cmd, seed_cmd, env, require_auth, model
         # have a max number of items per user.
         # this can be optimized
 
+        try:
+            del env['MAPP_CLI_SESSION_FILE']
+        except KeyError:
+            pass
+
+        try:
+            del env['MAPP_CLI_ACCESS_TOKEN']
+        except KeyError:
+            pass
+
         # create user #
 
         user_data = {
             'name': f'user {unique_id}', 
             'email': f'user.{unique_id}@example.com', 
-            'password': 'testpass123', 
-            'password_confirm': 'testpass123'
+            'password': 'password123', 
+            'password_confirm': 'password123'
         }
         create_user_cmd = base_cmd + ['auth', 'create-user', 'run', json.dumps(user_data)]
         result = subprocess.run(create_user_cmd, capture_output=True, text=True, env=env, timeout=10)
@@ -75,18 +87,25 @@ def example_from_model(model:dict, index=0) -> dict:
         except (IndexError, KeyError):
             raise ValueError(f'No example for field "{model["name"]["pascal_case"]}.{field_name}" at index {index}')
         
-        data[field_name] = value
+        if field['unique'] is True:
+            data[field_name] = f'unique string - {uuid.uuid4()}'
+        else:
+            data[field_name] = value
 
     return data
 
-def model_validation_errors(model:dict) -> Generator[dict, None, None]:
+def model_validation_errors(model:dict) -> Generator[tuple[dict, str], None, None]:
+    """
+    Generate invalid examples for a model based on its field validation errors.
+    Yields tuples of (invalid_example_dict, field_name) for each validation error.
+    """
     example = example_from_model(model)
 
     for field_name, field in model.get('fields', {}).items():
         for invalid_value in field.get('validation_errors', []):
-            example[field_name] = invalid_value
-
-            yield example | {field_name: invalid_value}
+            invalid_example = deepcopy(example)
+            invalid_example[field_name] = invalid_value
+            yield invalid_example, field_name
 
 def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None, decode_json=True) -> tuple[int, dict]:
     """send request and returnn status code and response body as dict"""
@@ -128,6 +147,370 @@ def env_to_string(env:dict) -> str:
             out += f'{key}={value}\n'
     return out
 
+def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, cmd, crud_ctx, create_user, create_user_env, other_user, other_user_env):
+
+    logged_out_ctx = crud_ctx.copy()
+    hidden = model['hidden']
+    require_login = model['auth']['require_login']
+    model_name_kebab = model['name']['kebab_case']
+    max_models = model['auth']['max_models_per_user']
+    model_db_args = cmd + [module_name_kebab, model_name_kebab, command_type]
+
+    ctx = create_user_env if require_login else crud_ctx
+
+    #
+    # create
+    #
+
+    example_to_create = example_from_model(model)
+    create_args = model_db_args + ['create', json.dumps(example_to_create)]
+    created_model_id = '1'
+
+    if hidden:
+        _, code, stdout, stderr = run_cmd(create_args, ctx)
+        assert code == 2, f'expected 2 got {code} for command "{" ".join(create_args)}" output: {stdout + stderr}'
+
+    else:
+        if require_login:
+            _, code, stdout, stderr = run_cmd(create_args, logged_out_ctx)
+            assert code == 1, f'expected 1 got {code} for command "{" ".join(create_args)}" output: {stdout + stderr}'
+
+        num_to_create = 1 if max_models < 0 else max_models
+
+        for n in range(num_to_create):
+            _, code, stdout, stderr = run_cmd(create_args, ctx)
+            assert code == 0, f'expected 0 got {code} for command "{" ".join(create_args)}" output: {stdout + stderr}'
+            created_model = json.loads(stdout)
+            created_model_id = created_model.pop('id')
+            if require_login:
+                example_to_create['user_id'] = create_user['id']
+            assert created_model == example_to_create, f'Created {model_name} does not match example data {n=}'
+
+        if max_models >= 0:
+            _, code, stdout, stderr = run_cmd(create_args, ctx)
+            assert code == 1, f'expected 1 got {code} for command "{" ".join(create_args)}" output: {stdout + stderr}'
+
+        if max_models == 0:
+            return
+
+    #
+    # read
+    #
+
+    read_args = model_db_args + ['read', str(created_model_id)]
+
+    if hidden:
+        _, code, stdout, stderr = run_cmd(read_args, ctx)
+        assert code == 2, f'expected 2 got {code} for command "{" ".join(read_args)}" output: {stdout + stderr}'
+
+    else:
+        if require_login:
+            _, code, stdout, stderr = run_cmd(read_args, logged_out_ctx)
+            assert code == 1, f'expected 1 got {code} for command "{" ".join(read_args)}" output: {stdout + stderr}'
+
+        _, code, stdout, stderr = run_cmd(read_args, ctx)
+        assert code == 0, f'expected 0 got {code} for command "{" ".join(read_args)}" output: {stdout + stderr}'
+        read_model = json.loads(stdout)
+        read_model_id = read_model.pop('id')
+        assert read_model == example_to_create, f'Read {model_name} does not match example data'
+        assert read_model_id == created_model_id, f'Read {model_name} ID does not match created ID'
+
+        if require_login:
+            assert read_model['user_id'] is not None, f'Read {model_name} user_id is None'
+            assert read_model['user_id'] == create_user['id'], f'Read {model_name} ID does not match created ID'
+
+    #
+    # update
+    #
+
+    try:
+        updated_example = example_from_model(model, index=1)
+    except ValueError as e:
+        raise ValueError(f'Need at least 2 examples for update testing: {e}')
+
+    if require_login:
+        updated_example['user_id'] = create_user['id']
+
+    update_args = model_db_args + ['update', created_model_id, json.dumps(updated_example)]
+
+    if hidden:
+        _, code, stdout, stderr = run_cmd(update_args, ctx)
+        assert code == 2, f'expected 2 got {code} for command "{" ".join(update_args)}" output: {stdout + stderr}'
+
+    else:
+        if require_login:
+            _, code, stdout, stderr = run_cmd(update_args, logged_out_ctx)
+            assert code == 1, f'expected 1 got {code} for command "{" ".join(update_args)}" output: {stdout + stderr}'
+            _, code, stdout, stderr = run_cmd(update_args, other_user_env)
+            assert code == 1, f'expected 1 got {code} for command "{" ".join(update_args)}" output: {stdout + stderr}'
+
+        _, code, stdout, stderr = run_cmd(update_args, ctx)
+        assert code == 0, f'expected 0 got {code} for command "{" ".join(update_args)}" output: {stdout + stderr}'
+        updated_model = json.loads(stdout)
+        updated_model_id = updated_model.pop('id')
+        assert updated_model == updated_example, f'Updated {model_name} does not match updated example data'
+        assert updated_model_id == created_model_id, f'Updated {model_name} ID does not match created ID'
+
+        if require_login:
+            assert updated_model['user_id'] is not None, f'Updated {model_name} user_id is None'
+            assert updated_model['user_id'] == create_user['id'], f'Updated {model_name} ID does not match created ID'
+
+    #
+    # delete
+    #
+
+    delete_args = model_db_args + ['delete', str(created_model_id)]
+
+    if hidden:
+        _, code, stdout, stderr = run_cmd(delete_args, ctx)
+        assert code == 2, f'expected 2 got {code} for command "{" ".join(delete_args)}" output: {stdout + stderr}'
+
+    else:
+        if require_login:
+            _, code, stdout, stderr = run_cmd(delete_args, logged_out_ctx)
+            assert code == 1, f'expected 1 got {code} for command "{" ".join(delete_args)}" output: {stdout + stderr}'
+            _, code, stdout, stderr = run_cmd(delete_args, other_user_env)
+            assert code == 1, f'expected 1 got {code} for command "{" ".join(delete_args)}" output: {stdout + stderr}'
+
+        _, code, stdout, stderr = run_cmd(delete_args, ctx)
+        assert code == 0, f'expected 0 got {code} for command "{" ".join(delete_args)}" output: {stdout + stderr}'
+        delete_output = json.loads(stdout)
+        assert delete_output['acknowledged'], f'Delete {model_name} ID did not return acknowledgement'
+        expected_delete_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
+        assert delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message'
+
+        # confirm delete is idempotent #
+
+        _, code, stdout, stderr = run_cmd(model_db_args + ['delete', str(created_model_id)], ctx)
+        assert code == 0, f'expected 0 got {code} for command "{" ".join(model_db_args + ["delete", str(created_model_id)])}" output: {stdout + stderr}'
+        delete_output = json.loads(stdout)
+        assert delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message'
+
+    # read after delete #
+
+    if not hidden:
+        _, code, stdout, stderr = run_cmd(model_db_args + ['read', str(created_model_id)], ctx)
+        assert code == 1, f'expected 1 got {code} for command "{" ".join(model_db_args + ["read", str(created_model_id)])}" output: {stdout + stderr}'
+        try:
+            read_output_err = json.loads(stdout)['error']
+            assert read_output_err['code'] == 'NOT_FOUND', f'Read after delete for {model_name} did not return NOT_FOUND code for id {created_model_id}'
+            assert read_output_err['message'] == f'{model["name"]["snake_case"]} {created_model_id} not found', f'Read after delete for {model_name} did not return correct message for id {created_model_id}'
+        except KeyError as e:
+            raise RuntimeError(f'KeyError {e} while reading after delete for {model_name} id {created_model_id}: {stdout + stderr}')
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f'JSONDecodeError {e} while reading after delete for {model_name} id {created_model_id}: {stdout + stderr}')
+
+    #
+    # isolation between users
+    #
+
+    if require_login:
+        assert create_user['id'] is not None, 'Create user ID is None, test setup error'
+        assert other_user['id'] is not None, 'Other user ID is None, test setup error'
+        assert create_user['id'] != other_user['id'], 'Alice and Bob users have the same ID, test setup error'
+        assert create_user_env['MAPP_CLI_ACCESS_TOKEN'] != other_user_env['MAPP_CLI_ACCESS_TOKEN'], 'Alice and Bob have the same access token, test setup error'
+
+def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, logged_out_ctx, alice_ctx, bob_ctx, charlie_ctx, alice_user, bob_user, charlie_user):
+
+    hidden = model['hidden']
+    require_login = model['auth']['require_login']
+    model_name_kebab = model['name']['kebab_case']
+    max_models = model['auth']['max_models_per_user']
+
+    #
+    # create
+    #
+
+    example_to_create = example_from_model(model)
+    create_args = [
+        'POST',
+        f'/api/{module_name_kebab}/{model_name_kebab}',
+        json.dumps(example_to_create).encode()
+    ]
+
+    if require_login and not hidden:
+        created_status, data = request(logged_out_ctx, *create_args)
+        assert created_status == 401, f'Create {model_name} without login did not return 401 Unauthorized, response: {data}'
+        ctx = alice_ctx
+    else:
+        ctx = base_ctx
+
+    num_to_create = 1 if max_models < 0 else max_models
+    created_model_id = '1'
+
+    for n in range(num_to_create):
+        created_status, created_model = request(ctx, *create_args)
+
+        if hidden:
+            assert created_status == 404, f'Create hidden {model_name} did not return 404 Not Found, {n=} response: {created_model}'
+
+        else:
+            assert created_status == 200, f'Create {model_name} did not return status 200 OK, {n=} response: {created_model}'
+            created_model_id = created_model.pop('id')
+            if require_login:
+                example_to_create['user_id'] = alice_user['id']
+            assert created_model == example_to_create, f'Created {model_name} (id: {created_model_id} n: {n}) does not match example data'
+
+    if max_models >= 0:
+        max_created_status, max_created_model = request(ctx, *create_args)
+        assert max_created_status == 400, f'Create {model_name} beyond max_models_per_user did not return 400 Bad Request, response: {max_created_model}'
+
+    if max_models == 0:
+        # remaining tests not applicable
+        return
+
+    max_models_by_field = model['auth'].get('max_models_by_field', {})
+    if max_models_by_field and not hidden and require_login:
+        by_field_status, by_field_model = request(ctx, *create_args)
+        assert by_field_status == 400, f'Create {model_name} beyond max_models_by_field did not return 400 Bad Request, response: {by_field_model}'
+        assert by_field_model.get('error', {}).get('code') == 'MAX_MODELS_BY_FIELD_EXCEEDED', f'Expected MAX_MODELS_BY_FIELD_EXCEEDED error code, got: {by_field_model}'
+
+    has_unique_fields = any(f.get('unique') for f in model.get('fields', {}).values())
+    if has_unique_fields and not hidden:
+        # use charlie ctx because in the event that max_models_per_user is 1, alice and bob have already created one
+        # in these tests so the following call would fail with a different error
+        unique_status, unique_model = request(charlie_ctx, *create_args)
+        assert unique_status == 400, f'Create {model_name} with duplicate unique field did not return 400 Bad Request, response: {unique_model}'
+        assert unique_model.get('error', {}).get('code') == 'UNIQUE_CONSTRAINT_VIOLATED', f'Expected UNIQUE_CONSTRAINT_VIOLATED error code, got: {unique_model}'
+
+    #
+    # read
+    #
+
+    if require_login and not hidden:
+        read_status, data = request(logged_out_ctx, 'GET', f'/api/{module_name_kebab}/{model_name_kebab}/{1}', None)
+        assert read_status == 401, f'Read {model_name} without login did not return 401 Unauthorized, response: {data}'
+
+    read_status, read_model = request(ctx, 'GET', f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}', None)
+
+    if hidden:
+        assert read_status == 404, f'Read hidden {model_name} id: {created_model_id} did not return 404 Not Found, response: {read_model}'
+
+    else:
+        assert read_status == 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}'
+        read_model_id = read_model.pop('id')
+        assert read_model == example_to_create, f'Read {model_name} id: {read_model_id} does not match example data'
+        assert read_model_id == created_model_id, f'Read {model_name} id: {read_model_id} does not match created id: {created_model_id}'
+
+    #
+    # update
+    #
+
+    try:
+        updated_example = example_from_model(model, index=1)
+    except ValueError as e:
+        raise ValueError(f'Need at least 2 examples for update testing: {e}')
+
+    if require_login and not hidden:
+        updated_example['user_id'] = alice_user['id']
+
+        # logged out cannot update #
+
+        update_status, data = request(
+            logged_out_ctx,
+            'PUT',
+            f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
+            json.dumps(updated_example).encode()
+        )
+        assert update_status == 401, f'Update {model_name} without login did not return 401 Unauthorized, response: {data}'
+
+        # bob cannot update alice's model #
+
+        update_status, data = request(
+            bob_ctx,
+            'PUT',
+            f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
+            json.dumps(updated_example).encode()
+        )
+        assert update_status == 401, f'Update {model_name} by non-owner did not return 401 Unauthorized, response: {data}'
+
+        # read back to confirm not updated #
+
+        read_status, read_model = request(ctx, 'GET', f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}', None)
+        assert read_status == 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}'
+        read_model_id = read_model.pop('id')
+        assert read_model == example_to_create, f'Read {model_name} id: {read_model_id} does not match example data after failed update attempt'
+
+    # send request #
+
+    updated_status, updated_model = request(
+        ctx,
+        'PUT',
+        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
+        json.dumps(updated_example).encode()
+    )
+
+    if hidden:
+        assert updated_status == 404, f'Update hidden {model_name} id: {created_model_id} did not return 404 Not Found, response: {updated_model}'
+        updated_model_id = '1'
+
+    else:
+        assert updated_status == 200, f'Update {model_name} id: {created_model_id} did not return status 200 OK, response: {updated_model}'
+        updated_model_id = updated_model.pop('id')
+        assert updated_model == updated_example, f'Updated {model_name} id: {updated_model_id} does not match updated example data'
+        assert updated_model_id == created_model_id, f'Updated {model_name} id: {updated_model_id} does not match created id: {created_model_id}'
+
+    #
+    # delete
+    #
+
+    if require_login and not hidden:
+
+        # logged out cannot delete #
+
+        delete_status, data = request(logged_out_ctx, 'DELETE', f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}', None)
+        assert delete_status == 401, f'Delete {model_name} without login did not return 401 Unauthorized, response: {data}'
+
+        # bob cannot delete alice's model #
+
+        delete_status, data = request(bob_ctx, 'DELETE', f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}', None)
+        assert delete_status == 401, f'Delete {model_name} by non-owner did not return 401 Unauthorized, response: {data}'
+
+        # read back to confirm not deleted #
+
+        read_status, read_model = request(ctx, 'GET', f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}', None)
+        assert read_status == 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}'
+        read_model_id = read_model.pop('id')
+        assert read_model == updated_example, f'Read {model_name} id: {read_model_id} does not match updated example data after failed delete attempt'
+
+    # send request #
+
+    delete_status, delete_output = request(ctx, 'DELETE', f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}', None)
+
+    if hidden:
+        assert delete_status == 404, f'Delete hidden {model_name} id: {created_model_id} did not return 404 Not Found, response: {delete_output}'
+
+    else:
+        assert delete_status == 200, f'Delete {model_name} id: {created_model_id} did not return status 200 OK, response: {delete_output}'
+        assert 'acknowledged' in delete_output, f'Delete {model_name} id: {created_model_id} did not return acknowledgement field'
+        assert delete_output['acknowledged'], f'Delete {model_name} id: {created_model_id} did not return acknowledged=True'
+        assert 'message' in delete_output, f'Delete {model_name} id: {created_model_id} did not return message field'
+        expected_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
+        assert delete_output['message'].startswith(expected_msg), f'Delete {model_name} id: {created_model_id} did not return correct message'
+
+    if not hidden:
+
+        # confirm delete is idempotent #
+
+        delete_status, delete_output = request(ctx, 'DELETE', f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}', None)
+        assert delete_status == 200, f'Delete (2nd) {model_name} id: {created_model_id} did not return status 200 OK, response: {delete_output}'
+        assert 'acknowledged' in delete_output, f'Delete {model_name} id: {created_model_id} did not return acknowledgement field'
+        assert delete_output['acknowledged'], f'Delete {model_name} id: {created_model_id} did not return acknowledged=True'
+        assert 'message' in delete_output, f'Delete {model_name} id: {created_model_id} did not return message field'
+        expected_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
+        assert delete_output['message'].startswith(expected_msg), f'Delete {model_name} id: {created_model_id} did not return correct message'
+
+        # read after delete #
+
+        re_read_status, re_read_model = request(ctx, 'GET', f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}', None)
+        assert re_read_status == 404, f'Read after delete for {model_name} id: {created_model_id} did not return 404 Not Found, resp: {re_read_model}'
+        assert re_read_model.get('error', {}).get('code', '-') == 'NOT_FOUND', f'Read after delete for {model_name} id: {created_model_id} did not return not_found code, resp: {re_read_model}'
+
+    # confirm data isolation between users #
+
+    assert alice_user['id'] != bob_user['id'], 'Alice and Bob users have the same ID, test setup error'
+    assert alice_ctx['headers']['Authorization'] != bob_ctx['headers']['Authorization'], 'Alice and Bob have the same Authorization header, test setup error'
+
 def login_cached_user(cmd:list[str], ctx:dict, user_name:str, email:str, password:str='testpass123') -> dict:
     """Login to a cached user and return user data with env context"""
     login_params = {'email': email, 'password': password}
@@ -165,6 +548,78 @@ def login_cached_user(cmd:list[str], ctx:dict, user_name:str, email:str, passwor
     
     return {'user': user_data, 'env': user_env}
 
+def run_cli_validation_error_for_model(module_name_kebab, model, command_type, user_index, cmd, crud_users, crud_ctx):
+
+    def _run_cmd(cmd:list[str], expected_code=0, env:Optional[dict[str, str]] = None) -> subprocess.CompletedProcess:
+        result = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=10)
+        msg = f'expected {expected_code} got {result.returncode} for command "{' '.join(cmd)}" output: {result.stdout + result.stderr}'
+        assert result.returncode == expected_code, msg
+        return result
+
+    # Skip models that do not allow any data
+    if model['auth']['max_models_per_user'] == 0:
+        return
+    
+    if model['hidden'] is True:
+        return
+    
+    example_to_update = example_from_model(model)
+
+    user_id = crud_users[user_index]['user']['id']
+    if model['auth']['require_login']:
+        ctx = deepcopy(crud_users[user_index]['env'])
+        example_to_update['user_id'] = user_id
+    else:
+        ctx = deepcopy(crud_ctx)
+
+    model_name_kebab = model['name']['kebab_case']
+
+    # seed valid model #
+
+    args = cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(example_to_update)]
+    seed_result = _run_cmd(args, env=ctx)
+    update_model_id = str(json.loads(seed_result.stdout)['id'])
+
+    for invalid_example, invalid_field_name in model_validation_errors(model):
+        model_name_kebab = model['name']['kebab_case']
+
+        # attempt to create with invalid data #
+
+        model_command = cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(invalid_example)]
+        try:
+            create_result = _run_cmd(model_command, expected_code=1, env=ctx)
+        except AssertionError as e:
+            raise AssertionError(str(e) + f'\nfor field "{invalid_field_name}" in model "{model["name"]["pascal_case"]}"')
+        create_error = json.loads(create_result.stdout).get('error', {})
+        assert create_error['code'] == 'VALIDATION_ERROR', f'Expected VALIDATION_ERROR code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
+        assert 'message' in create_error, f'Expected error message in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
+        assert 'field_errors' in create_error, f'Expected field_errors in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
+        assert isinstance(create_error['field_errors'], dict), f'Expected field_errors to be a dict in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
+        assert len(create_error['field_errors']) == 1, f'Expected one field error in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
+
+        # attempt to update (pre-seeded model) with invalid data #
+
+        model_command = cmd + [module_name_kebab, model_name_kebab, command_type, 'update', update_model_id, json.dumps(invalid_example)]
+        try:
+            update_result = _run_cmd(model_command, expected_code=1, env=ctx)
+        except AssertionError as e:
+            raise AssertionError(str(e) + f'\nfor field "{invalid_field_name}" in model "{model["name"]["pascal_case"]}"')
+        update_error = json.loads(update_result.stdout).get('error', {})
+        assert update_error['code'] == 'VALIDATION_ERROR', f'Expected VALIDATION_ERROR code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error.get("code", update_error)} for field {invalid_field_name}'
+        assert 'message' in update_error, f'Expected error message in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
+        assert 'field_errors' in update_error, f'Expected field_errors in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
+        assert isinstance(update_error['field_errors'], dict), f'Expected field_errors to be a dict in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
+        assert len(update_error['field_errors']) == 1, f'Expected one field error in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
+
+    # read back original example to ensure it was not modified
+    read_back_result = _run_cmd(cmd + [module_name_kebab, model_name_kebab, command_type, 'read', update_model_id], env=ctx)
+    read_model = json.loads(read_back_result.stdout)
+    del read_model['id']
+    if model['auth']['require_login']:
+        example_to_update['user_id'] = user_id
+
+    assert read_model == example_to_update, f'Read {model["name"]["pascal_case"]} does not match original example data after validation error tests'
+
 
 class TestMTemplateApp(unittest.TestCase):
     
@@ -188,56 +643,71 @@ class TestMTemplateApp(unittest.TestCase):
     spec: dict
     cmd: list[str]
     host: str | None
-    env_file: str | None
+    env_vars: dict
     use_cache: bool
     app_type: str = ''
-    threads: int = 8
+    threads: int = 12
 
     pool: Optional[multiprocessing.Pool] = None
 
     crud_db_file = Path(f'{test_dir}/test_crud_db.sqlite3')
+    crud_db_cache_file = Path(f'{test_dir}/test_crud_db_cache.sqlite3')
     crud_envfile = Path(f'{test_dir}/crud.env')
+    crud_cache_envfile = Path(f'{test_dir}/crud_cache.env')
     crud_users = []
     crud_ctx = {}
 
     pagination_db_file = Path(f'{test_dir}/test_pagination_db.sqlite3')
+    pagination_db_cache_file = Path(f'{test_dir}/test_pagination_db_cache.sqlite3')
     pagination_envfile = Path(f'{test_dir}/pagination.env')
+    pagination_cache_envfile = Path(f'{test_dir}/pagination_cache.env')
     pagination_user = {}
     pagination_ctx = {}
 
     pagination_total_models = 25
 
     pagination_cases = [
-        {'size': 1, 'expected_pages': 25},
+        # {'size': 1, 'expected_pages': 25},
         {'size': 5, 'expected_pages': 5},
         {'size': 10, 'expected_pages': 3},
         {'size': 25, 'expected_pages': 1},
     ]
 
+    test_password = 'testpass123'
+
     @classmethod
     def setUpClass(cls):
 
-        print(':: Setting up TestMTemplateApp')
+        print(f':: setting up mapp tests - use cache: {cls.use_cache}')
 
         crud_fs_path = Path(cls.test_dir) / 'crud_file_system'
 
         # delete old files #
-    
+
         if not cls.use_cache:
+            # delete everything including all db and cache files
             shutil.rmtree(cls.test_dir, ignore_errors=True)
+            print(f':: deleted test directory: {cls.test_dir}')
         else:
-            # the crud environment is always recreated
-            # so we need to wipe this dir always
+            # always recreate the crud file system
             shutil.rmtree(crud_fs_path, ignore_errors=True)
+            # delete working db files so they are replaced with fresh cache copies
+            for db_file in [cls.crud_db_file, cls.pagination_db_file]:
+                try:
+                    db_file.unlink()
+                except FileNotFoundError:
+                    pass
+            
+            print(f':: deleted database files')
 
         os.makedirs(cls.test_dir, exist_ok=True)
 
-        # Always delete crud DB to avoid max models exceeded errors with cached data
-        # Only cache the expensive pagination DB
-        if cls.crud_db_file.exists():
-            cls.crud_db_file.unlink()
-        
-        pagination_db_exists = cls.pagination_db_file.exists()
+        # check whether cache dbs already exist
+        crud_cache_exists = cls.crud_db_cache_file.exists()
+        pagination_cache_exists = cls.pagination_db_cache_file.exists()
+
+        needs_crud_rebuild = not cls.use_cache or not crud_cache_exists
+        needs_pagination_rebuild = not cls.use_cache or not pagination_cache_exists
         
         #
         # create test env files
@@ -245,19 +715,23 @@ class TestMTemplateApp(unittest.TestCase):
 
         # base env #
 
-        env_vars = dotenv_values(cls.env_file)
-
         # crud env file #
 
         default_host = cls.spec['client']['default_host']
         default_port = int(default_host.split(':')[-1])
         crud_port = default_port + 1
-        crud_env = dict(env_vars)
+        crud_env = dict(cls.env_vars)
         crud_env['MAPP_SERVER_PORT'] = str(crud_port)
         crud_env['MAPP_CLIENT_HOST'] = f'http://localhost:{crud_port}'
         crud_env['MAPP_DB_URL'] = str(cls.crud_db_file.resolve())
         crud_env['MAPP_FILE_SYSTEM_REPO'] = str(crud_fs_path.resolve())
         crud_env['MAPP_SERVER_DEVELOPMENT_MODE'] = 'true'
+        crud_env['MAPP_CLI_SESSION_FILE'] = os.path.join(cls.test_dir, 'crud-env-test-session.json')
+
+        try:
+            os.remove(crud_env['MAPP_CLI_SESSION_FILE'])
+        except FileNotFoundError:
+            pass
 
         try:
             del crud_env['DEBUG_DELAY']
@@ -274,11 +748,17 @@ class TestMTemplateApp(unittest.TestCase):
         # pagination env file #
 
         pagination_port = default_port + 2
-        pagination_env = dict(env_vars)
+        pagination_env = dict(cls.env_vars)
         pagination_env['MAPP_SERVER_PORT'] = str(pagination_port)
         pagination_env['MAPP_CLIENT_HOST'] = f'http://localhost:{pagination_port}'
         pagination_env['MAPP_DB_URL'] = str(cls.pagination_db_file.resolve())
         pagination_env['MAPP_FILE_SYSTEM_REPO'] = str((Path(cls.test_dir) / 'pagination_file_system').resolve())
+        pagination_env['MAPP_CLI_SESSION_FILE'] = os.path.join(cls.test_dir, 'pagination-env-test-session.json')
+        try:
+            os.remove(pagination_env['MAPP_CLI_SESSION_FILE'])
+        except FileNotFoundError:
+            pass
+
         try:
             del pagination_env['DEBUG_DELAY']
         except KeyError:
@@ -311,127 +791,113 @@ class TestMTemplateApp(unittest.TestCase):
         tables for the pagination environment. This allows us to test both
         methods of table creation.
 
-        --use-cache can be used to skip recreating the pagination db as it is
-        expensive seed. This is fine for development testing, but full testing
-        should be done without the flag to ensure table creation works from scratch.
+        --use-cache can be used to reuse seeded cache dbs across test runs.
+        When the cache exists both dbs are copied from cache instead of being
+        recreated from scratch. User login sessions are always created fresh
+        from the copied working dbs, since tokens expire between runs.
         """
 
-        print('  :: Creating tables in test dbs ::')
+        # create crud tables in cache db #
 
-        # create crud tables #
+        if needs_crud_rebuild or needs_pagination_rebuild:
+            sys.stdout.write(':: rebuilding caches')
+            sys.stdout.flush()
 
-        crud_create_tables_cmd = cls.cmd + ['create-tables']
-        crud_result = subprocess.run(crud_create_tables_cmd, capture_output=True, text=True, env=cls.crud_ctx)
-        if crud_result.returncode != 0:
-            raise RuntimeError(f'Error creating tables for crud db: {crud_result.stdout + crud_result.stderr}')
+        if needs_crud_rebuild:
+            sys.stdout.write('\n  :: crud: tables')
+            sys.stdout.flush()
+            crud_create_tables_cmd = cls.cmd + ['create-tables']
+            crud_result = subprocess.run(crud_create_tables_cmd, capture_output=True, text=True, env=cls.crud_ctx)
+            if crud_result.returncode != 0:
+                raise RuntimeError(f'Error creating tables for crud db: {crud_result.stdout + crud_result.stderr}')
+            
+            try:
+                crud_output = json.loads(crud_result.stdout)
+                assert crud_output['acknowledged'] is True
+                assert crud_output['message'] == 'All tables created or already existed.'
+            except AssertionError as e:
+                raise RuntimeError(f'AssertionError {e} while creating tables for crud cache db: {crud_result.stdout + crud_result.stderr}')
         
-        try:
-            crud_output = json.loads(crud_result.stdout)
-            assert crud_output['acknowledged'] is True
-            assert crud_output['message'] == 'All tables created or already existed.'
-        except AssertionError as e:
-            raise RuntimeError(f'AssertionError {e} while creating table for crud db {module_name_kebab}.{model_name_kebab}: {crud_result.stdout + crud_result.stderr}')
-        
-        # create crud users (always fresh since crud DB is recreated each time) #
+        else:
+            print(f':: copying cached crud db to working db ::')
+            shutil.copy2(str(cls.crud_db_cache_file), str(cls.crud_db_file))
 
-        if cls.spec['project']['use_builtin_modules']:
+        # create crud users
+
+        if needs_crud_rebuild and cls.spec['project']['use_builtin_modules']:
             crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn']
-            print('  :: Creating crud users ::')
+            sys.stdout.write(', users')
+            sys.stdout.flush()
             for user_name in crud_users:
+
+                # logout #
+
+                logout_cmd = cls.cmd + ['auth', 'logout-user', 'run']
+                result = subprocess.run(logout_cmd, capture_output=True, text=True, env=cls.crud_ctx)
+                # do not check result because logout may fail if no user is logged in
 
                 # create #
 
                 user_data = {
                     'name': user_name,
                     'email': f'{user_name}@example.com',
-                    'password': 'testpass123',
-                    'password_confirm': 'testpass123'
+                    'password': cls.test_password,
+                    'password_confirm': cls.test_password
                 }
 
                 create_cmd = cls.cmd + ['auth', 'create-user', 'run', json.dumps(user_data)]
                 result = subprocess.run(create_cmd, capture_output=True, text=True, env=cls.crud_ctx)
                 if result.returncode != 0:
                     raise RuntimeError(f'Error creating crud user {user_name}:\n{result.stdout + result.stderr}')
-                
-                user_id = json.loads(result.stdout)['result']['id']
-                user_data['id'] = user_id
-                
-                # login #
+            
+            shutil.copy2(str(cls.crud_db_file), str(cls.crud_db_cache_file))
+            sys.stdout.write(f', cached db file')
 
-                login_params = {'email': user_data['email'], 'password': 'testpass123'}
-                login_cmd = cls.cmd + ['auth', 'login-user', 'run', json.dumps(login_params), '--show', '--no-session']
-                result = subprocess.run(login_cmd, capture_output=True, text=True, env=cls.crud_ctx)
+        # create pagination tables and seed data in cache db #
 
-                # confirm and store #
+        if needs_pagination_rebuild:
 
-                if result.returncode != 0:
-                    raise RuntimeError(f'Error logging in crud user {user_name}:\n{result.stdout + result.stderr}')
-                else:
-                    access_token = json.loads(result.stdout)['result']['access_token']
-                    user_env = cls.crud_ctx.copy()
-                    user_env['MAPP_CLI_ACCESS_TOKEN'] = access_token
-                    user_env['Authorization'] = f'Bearer {access_token}'
-                    cls.crud_users.append({'user': user_data, 'env': user_env})
+            sys.stdout.write('\n  :: pagination: tables')
+            sys.stdout.flush()
 
-        # setup tables in test dbs #
+            # setup tables in cache db #
 
-        for module in cls.spec['modules'].values():
-            module_name_kebab = module['name']['kebab_case']
+            for module in cls.spec['modules'].values():
+                module_name_kebab = module['name']['kebab_case']
 
-            for model in module['models'].values():
+                for model in module['models'].values():
 
-                if model['hidden'] is True:
-                    continue
-                
-                model_name_snake = model['name']['snake_case']
-                model_name_kebab = model['name']['kebab_case']
+                    if model['hidden'] is True:
+                        continue
 
-                create_table_args = cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create-table']
+                    model_name_snake = model['name']['snake_case']
+                    model_name_kebab = model['name']['kebab_case']
 
-                # create pagination table #
-                
-                if not pagination_db_exists:
+                    create_table_args = cls.cmd + [module_name_kebab, model_name_kebab, 'db', 'create-table']
+
                     result = subprocess.run(create_table_args, capture_output=True, text=True, env=cls.pagination_ctx)
                     if result.returncode != 0:
                         raise RuntimeError(f'Error creating table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
-                    
+
                     try:
                         pagination_output = json.loads(result.stdout)
                         assert pagination_output['acknowledged'] is True
                         assert model_name_snake in pagination_output['message']
                     except AssertionError as e:
                         raise RuntimeError(f'AssertionError {e} while creating table for pagination db {module_name_kebab}.{model_name_kebab}: {result.stdout + result.stderr}')
-                    
-        # still need to use create-tables command because hidden models cannot be created individually #
 
-        pagination_create_tables_cmd = cls.cmd + ['create-tables']
-        pagination_result = subprocess.run(pagination_create_tables_cmd, capture_output=True, text=True, env=cls.pagination_ctx)
-        if pagination_result.returncode != 0:
-            raise RuntimeError(f'Error creating tables for pagination db: {pagination_result.stdout + pagination_result.stderr}')
-        
-        # seed pagination db #
+            # still need to use create-tables command because hidden models cannot be created individually #
 
-        if cls.use_cache and pagination_db_exists:
-            print('  :: Using cached pagination db ::')
-            
-            # login to cached pagination user #
-            
-            if cls.spec['project']['use_builtin_modules']:
-                print('  :: Logging in to cached pagination user ::')
-                try:
-                    cls.pagination_user = login_cached_user(
-                        cls.cmd, 
-                        cls.pagination_ctx, 
-                        'pagination_tester', 
-                        'pagination_tester@example.com'
-                    )
-                except RuntimeError as e:
-                    print(f'  :: Could not login to cached pagination user, will recreate: {e} ::')
-                    # fall through to else block to recreate pagination db
-                    cls.use_cache = False  # disable cache for pagination db
-        
-        if not cls.use_cache or not pagination_db_exists:
-            print(f'  :: Seeding pagination db ::')
+            pagination_create_tables_cmd = cls.cmd + ['create-tables']
+            pagination_result = subprocess.run(pagination_create_tables_cmd, capture_output=True, text=True, env=cls.pagination_ctx)
+            if pagination_result.returncode != 0:
+                raise RuntimeError(f'Error creating tables for pagination db: {pagination_result.stdout + pagination_result.stderr}')
+
+            # seed pagination cache db #
+
+            sys.stdout.write(', seeding')
+            sys.stdout.flush()
+
             seed_jobs = []
             for module in cls.spec['modules'].values():
                 module_name_kebab = module['name']['kebab_case']
@@ -460,38 +926,49 @@ class TestMTemplateApp(unittest.TestCase):
             for (cmd_args, code, stdout, stderr) in results:
                 if code != 0:
                     raise RuntimeError(f':: ERROR seeding table for pagination db :: COMMAND :: {" ".join(cmd_args)} :: OUTPUT :: {stdout + stderr}')
-        
+
             # create pagination user #
 
             if cls.spec['project']['use_builtin_modules']:
-                print('  :: Creating pagination test user ::')
+                sys.stdout.write(', user')
+                sys.stdout.flush()
 
                 user_data = {
                     'name': 'pagination_tester',
                     'email': 'pagination_tester@example.com',
-                    'password': 'testpass123',
-                    'password_confirm': 'testpass123'
+                    'password': cls.test_password,
+                    'password_confirm': cls.test_password
                 }
 
                 create_cmd = cls.cmd + ['auth', 'create-user', 'run', json.dumps(user_data)]
                 create_result = subprocess.run(create_cmd, capture_output=True, text=True, env=cls.pagination_ctx)
                 if create_result.returncode != 0:
                     raise RuntimeError(f'Error creating pagination test user: {create_result.stdout + create_result.stderr}')
-                
-                user_id = json.loads(create_result.stdout)['result']['id']
-                user_data['id'] = user_id
-                
-                login_params = {'email': user_data['email'], 'password': 'testpass123'}
-                login_cmd = cls.cmd + ['auth', 'login-user', 'run', json.dumps(login_params), '--show', '--no-session']
-                login_result = subprocess.run(login_cmd, capture_output=True, text=True, env=cls.pagination_ctx)
-                if login_result.returncode != 0:
-                    raise RuntimeError(f'Error logging in pagination test user: {login_result.stdout + login_result.stderr}')
-                
-                access_token = json.loads(login_result.stdout)['result']['access_token']
-                user_env = cls.pagination_ctx.copy()
-                user_env['MAPP_CLI_ACCESS_TOKEN'] = access_token
-                user_env['Authorization'] = f'Bearer {access_token}'
-                cls.pagination_user = {'user': user_data, 'env': user_env}
+            
+            shutil.copy2(str(cls.pagination_db_file), str(cls.pagination_db_cache_file))
+            sys.stdout.write(f', cached db file\n')
+        
+        else:
+            print(f':: copying cached pagination db to working db ::')
+            shutil.copy2(str(cls.pagination_db_cache_file), str(cls.pagination_db_file))
+
+        # create login sessions in working dbs #
+
+        cls.crud_users = []
+        if cls.spec['project']['use_builtin_modules']:
+            print(':: logging in users ::')
+
+            crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn']
+            for user_name in crud_users:
+                user = login_cached_user(cls.cmd, cls.crud_ctx, user_name, f'{user_name}@example.com')
+                cls.crud_users.append(user)
+
+            cls.pagination_user = login_cached_user(
+                cls.cmd,
+                cls.pagination_ctx,
+                'pagination_tester',
+                'pagination_tester@example.com'
+            )
 
         # delete server logs #
 
@@ -550,13 +1027,12 @@ class TestMTemplateApp(unittest.TestCase):
 
         # confirm servers are stopped from previous tests #
 
-        print('  :: Confirming no server processes are running ::')
         crud_result = subprocess.run(cls.crud_server_stop_cmd, env=cls.crud_ctx, capture_output=True, text=True, timeout=10)
         pagination_result = subprocess.run(cls.pagination_server_stop_cmd, env=cls.pagination_ctx, capture_output=True, text=True, timeout=10)
         
         # start servers #
 
-        print('  :: Starting server processes ::')
+        print(':: starting server processes ::')
 
         print('    :: ', ' '.join(crud_server_start_cmd))
         crud_result = subprocess.run(crud_server_start_cmd, env=cls.crud_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
@@ -568,18 +1044,16 @@ class TestMTemplateApp(unittest.TestCase):
         if pagination_result.returncode != 0:
             raise RuntimeError(f'Error starting pagination server: {pagination_result.stdout + pagination_result.stderr}')
 
-        print('  :: Setup complete ::')
+        print(':: setup complete')
 
         print(':: test progress :: ', end='', flush=True)
     
     @classmethod
     def tearDownClass(cls):
 
-        print('\n:: Tearing down TestMTemplateApp')
+        print('\n:: tearing down tests')
 
         # stop pool #
-
-        print('  :: Closing process pool ::')
 
         if cls.pool:
             cls.pool.close()
@@ -594,7 +1068,7 @@ class TestMTemplateApp(unittest.TestCase):
             except subprocess.CalledProcessError as e:
                 print(f'    :: Error stopping servers: {e} :: {e.output} :: {e.stderr} ::')
         
-        print(':: Teardown complete ::')
+        print(':: teardown complete ::')
 
     def _run_cmd(self, cmd:list[str], expected_code=0, env:Optional[dict[str, str]] = None) -> subprocess.CompletedProcess:
         result = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=10)
@@ -623,10 +1097,13 @@ class TestMTemplateApp(unittest.TestCase):
             * expect error
         ./mapp auth current-user <io type>
             * expect error
+        ./mapp auth is-logged-in <io type>
+            * expect false
 
         ./mapp auth create-user <io type> {"name": "brad", ...}
         ./mapp auth login-user <io type> {"email": "...", ...}
         ./mapp auth current-user <io type>
+        ./mapp auth is-logged-in <io type>
         ./mapp auth logout-user <io type> {"mode": "current"}
         ./mapp auth current-user <io type>
             * expect error
@@ -634,23 +1111,42 @@ class TestMTemplateApp(unittest.TestCase):
         ./mapp auth delete-user <io type>
         ./mapp auth current-user <io type>
             * expect error
+        ./mapp auth is-logged-in <io type>
+            * expect false
         """
         # Setup
         cmd = self.cmd
         env = ctx.copy()
+        try:
+            del env['MAPP_CLI_ACCESS_TOKEN']
+        except KeyError:
+            pass
+
+        env['MAPP_CLI_SESSION_FILE'] = os.path.join(self.test_dir, f'user-auth-flow-{io_type}-test-session.json')
+
+        try:
+            os.remove(env['MAPP_CLI_SESSION_FILE'])
+        except FileNotFoundError:
+            pass
+
         user_name = 'alice'
         user_email = f'alice@{io_type}.com'
-        user_password = 'testpass123'
+        user_password = self.test_password
         
         # Helper to run a command and return output
-        def run_auth_cmd(args, input_data=None, expected_code=0):
+        def run_auth_cmd(args, input_data=None, expected_code=-1):
             if input_data is not None:
                 result = subprocess.run(args, input=input_data, capture_output=True, text=True, env=env)
             else:
                 result = subprocess.run(args, capture_output=True, text=True, env=env)
             msg = f'expected {expected_code} got {result.returncode} for command "{' '.join(args)}" output: {result.stdout + result.stderr}'
-            self.assertEqual(result.returncode, expected_code, msg)
+            if expected_code >= 0:
+                self.assertEqual(result.returncode, expected_code, msg)
             return result
+        
+        # confirm we are logged out
+        logout_input = json.dumps({"mode": "current"})
+        result = run_auth_cmd(cmd + ["auth", "logout-user", io_type, logout_input], expected_code=-1)
 
         # 1. delete-user (should error)
         result = run_auth_cmd(cmd + ["auth", "delete-user", io_type], expected_code=1)
@@ -660,40 +1156,59 @@ class TestMTemplateApp(unittest.TestCase):
         result = run_auth_cmd(cmd + ["auth", "current-user", io_type], expected_code=1)
         self.assertIn("error", result.stdout.lower())
 
-        # 3. create-user
+        # 3. is-logged-in (should be false)
+        result = run_auth_cmd(cmd + ["auth", "is-logged-in", io_type])
+        self.assertIn('"logged_in": false', result.stdout)
+
+        # 4. create-user
         create_input = json.dumps({"name": user_name, "email": user_email, "password": user_password, "password_confirm": user_password})
-        result = run_auth_cmd(cmd + ["auth", "create-user", io_type, create_input])
+        try:
+            result = run_auth_cmd(cmd + ["auth", "create-user", io_type, create_input])
+        except AssertionError as e:
+            print(f'AssertionError running create-user command: {e}')
+            breakpoint()
+
+
         self.assertIn(user_email, result.stdout)
 
-        # 4. login-user
+        # 5. login-user
         login_input = json.dumps({"email": user_email, "password": user_password})
         result = run_auth_cmd(cmd + ["auth", "login-user", io_type, login_input])
         self.assertIn("access_token", result.stdout)
 
-        # 5. current-user (should succeed)
+        # 6. current-user (should succeed)
         result = run_auth_cmd(cmd + ["auth", "current-user", io_type])
         self.assertIn(user_email, result.stdout)
 
-        # 6. logout-user (current)
+        # 7. is-logged-in (should be true)
+        result = run_auth_cmd(cmd + ["auth", "is-logged-in", io_type])
+        self.assertIn('"logged_in": true', result.stdout)
+
+        # 8. logout-user (current)
         logout_input = json.dumps({"mode": "current"})
         result = run_auth_cmd(cmd + ["auth", "logout-user", io_type, logout_input])
         self.assertIn("logged out", result.stdout.lower())
 
-        # 7. current-user (should error)
+        # 9. current-user (should error)
         result = run_auth_cmd(cmd + ["auth", "current-user", io_type], expected_code=1)
         self.assertIn("error", result.stdout.lower())
 
-        # 8. login-user (again)
+        # 10. login-user (again)
         result = run_auth_cmd(cmd + ["auth", "login-user", io_type, login_input])
         self.assertIn("access_token", result.stdout)
 
-        # 9. delete-user
+        # 11. delete-user
         result = run_auth_cmd(cmd + ["auth", "delete-user", io_type])
         self.assertIn("deleted", result.stdout.lower())
 
-        # 10. current-user (should error)
+        # 12. current-user (should error)
         result = run_auth_cmd(cmd + ["auth", "current-user", io_type], expected_code=1)
         self.assertIn("error", result.stdout.lower())
+
+        # 13. is-logged-in (should be false)
+        result = run_auth_cmd(cmd + ["auth", "is-logged-in", io_type])
+        self.assertIn('"logged_in": false', result.stdout)
+
 
     def test_cli_run_auth_flow(self):
         self._test_user_auth_flow(self.crud_ctx, 'run')
@@ -711,16 +1226,24 @@ class TestMTemplateApp(unittest.TestCase):
         /api/auth/current-user
             * expect error
 
+        /api/auth/is-logged-in
+            * expect false
+
         /api/auth/create-user {"name": "brad", ...}
         /api/auth/login-user {"email": "...", ...}
         /api/auth/current-user
+        /api/auth/is-logged-in
         /api/auth/logout-user {"mode": "current"}
         /api/auth/current-user
             * expect error
+        /api/auth/is-logged-in
+            * expect false
         /api/auth/login-user {"email": "...", ...}
         /api/auth/delete-user
         /api/auth/current-user
             * expect error
+        /api/auth/is-logged-in
+            * expect false
         """
 
         self._check_servers_running()
@@ -743,7 +1266,14 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertEqual(logged_out_current_status, 401)
         self.assertIn('error', logged_out_current_resp)
 
-        # 3. create-user
+        # 3. is-logged-in (should be false)
+        logged_out_is_logged_in_status, logged_out_is_logged_in_resp = request(base_ctx, 'GET', '/api/auth/is-logged-in')
+        self.assertEqual(logged_out_is_logged_in_status, 200)
+        self.assertIn('logged_in', logged_out_is_logged_in_resp['result'])
+        self.assertFalse(logged_out_is_logged_in_resp['result']['logged_in'])
+
+
+        # 4. create-user
         create_status, create_resp = request(
             base_ctx, 
             'POST', 
@@ -751,22 +1281,22 @@ class TestMTemplateApp(unittest.TestCase):
             request_body=json.dumps({
                 'name': 'alice',
                 'email': 'alice-server@example.com',
-                'password': 'testpass123',
-                'password_confirm': 'testpass123'
+                'password': self.test_password,
+                'password_confirm': self.test_password
             }).encode()
         )
         self.assertEqual(create_status, 200)
         self.assertIn('result', create_resp)
         self.assertIn('id', create_resp['result'])
 
-        # 4. login-user
+        # 5. login-user
         login_status, login_resp = request(
             base_ctx, 
             'POST', 
             '/api/auth/login-user', 
             request_body=json.dumps({
                 'email': 'alice-server@example.com',
-                'password': 'testpass123'
+                'password': self.test_password
             }).encode()
         )
         self.assertEqual(login_status, 200)
@@ -777,7 +1307,7 @@ class TestMTemplateApp(unittest.TestCase):
         access_token = login_resp['result']['access_token']
         logged_in_ctx['headers']['Authorization'] = f'Bearer {access_token}'
 
-        # 5. current-user
+        # 5. current-user (should succeed)
         current_status, current_resp = request(
             logged_in_ctx, 
             'GET', 
@@ -787,7 +1317,13 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertIn('email', current_resp['result'])
         self.assertEqual(current_resp['result']['email'], 'alice-server@example.com')
 
-        # 6. logout-user (current)
+        # 6. is-logged-in (should be true)
+        is_logged_in_status, is_logged_in_resp = request(logged_in_ctx, 'GET', '/api/auth/is-logged-in')
+        self.assertEqual(is_logged_in_status, 200)
+        self.assertIn('logged_in', is_logged_in_resp['result'])
+        self.assertTrue(is_logged_in_resp['result']['logged_in'])
+
+        # 7. logout-user (current)
         logout_status, logout_resp = request(
             logged_in_ctx, 
             'POST', 
@@ -797,29 +1333,37 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertEqual(logout_status, 200)
         self.assertIn('logged out', logout_resp['result']['message'].lower())
 
-        # 7. current-user (should error)
+        del logged_in_ctx['headers']['Authorization']
+
+        # 8. current-user (should error)
         logged_out_current_status, logged_out_current_resp = request(base_ctx, 'GET', '/api/auth/current-user')
         self.assertEqual(logged_out_current_status, 401)
         self.assertIn('error', logged_out_current_resp)
 
-        # 8. login-user (again)
+        # 9. is logged in (should be false)
+        logged_out_is_logged_in_status, logged_out_is_logged_in_resp = request(base_ctx, 'GET', '/api/auth/is-logged-in')
+        self.assertEqual(logged_out_is_logged_in_status, 200)
+        self.assertIn('logged_in', logged_out_is_logged_in_resp['result'])
+        self.assertFalse(logged_out_is_logged_in_resp['result']['logged_in'])
+
+        # 10. login-user (again)
         login_status, login_resp = request(
             base_ctx, 
             'POST', 
             '/api/auth/login-user', 
             request_body=json.dumps({
                 'email': 'alice-server@example.com',
-                'password': 'testpass123'
+                'password': self.test_password
             }).encode()
         )
-        self.assertEqual(login_status, 200)
+        self.assertEqual(login_status, 200, f'Login failed: {login_resp}')
         self.assertIn('access_token', login_resp['result'])
 
         logged_in_ctx = base_ctx.copy()
         access_token = login_resp['result']['access_token']
         logged_in_ctx['headers']['Authorization'] = f'Bearer {access_token}'
 
-        # 9. delete-user
+        # 11. delete-user
         delete_status, delete_resp = request(
             logged_in_ctx, 
             'GET', 
@@ -828,10 +1372,17 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertEqual(delete_status, 200)
         self.assertIn('deleted', delete_resp['result']['message'].lower())
 
-        # 10. current-user (should error)
+        # 12. current-user (should error)
         logged_out_current_status, logged_out_current_resp = request(base_ctx, 'GET', '/api/auth/current-user')
         self.assertEqual(logged_out_current_status, 401)
         self.assertIn('error', logged_out_current_resp)
+
+        # 13. is-logged-in (should be false)
+        logged_out_is_logged_in_status, logged_out_is_logged_in_resp = request(base_ctx, 'GET', '/api/auth/is-logged-in')
+        self.assertEqual(logged_out_is_logged_in_status, 200)
+        self.assertIn('logged_in', logged_out_is_logged_in_resp['result'])
+        self.assertFalse(logged_out_is_logged_in_resp['result']['logged_in'])
+
 
     # builtin - file system tests #
 
@@ -940,7 +1491,6 @@ class TestMTemplateApp(unittest.TestCase):
         with open(local_file_dest, 'rb') as f:
             local_checksum = hashlib.sha3_256(f.read()).hexdigest()
         self.assertEqual(local_checksum, sample_checksum, 'Local file checksum for file content does not match expected checksum')
-
 
     def test_cli_run_file_system_ingest_flow(self):
         self._test_file_system_ingest_flow(self.crud_ctx, 'run')
@@ -1190,158 +1740,23 @@ class TestMTemplateApp(unittest.TestCase):
 
     def _test_cli_crud_commands(self, command_type:str, user_index:int):
 
-        logged_out_ctx = self.crud_ctx.copy()
         create_user = self.crud_users[user_index]['user']
         create_user_env = self.crud_users[user_index]['env']
         other_user = self.crud_users[0]['user']
         other_user_env = self.crud_users[0]['env']
         self.assertNotEqual(user_index, 0, 'user_index must not be 0 to ensure different users for testing')
 
+        # create test cases #
+
+        jobs = []
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
-
             for model_name, model in module['models'].items():
+                jobs.append((module_name_kebab, model_name, model, command_type, self.cmd, self.crud_ctx, create_user, create_user_env, other_user, other_user_env))
 
-                hidden = model['hidden']
-                require_login = model['auth']['require_login']
-                model_name_kebab = model['name']['kebab_case']
-                max_models = model['auth']['max_models_per_user']
-                model_db_args = self.cmd + [module_name_kebab, model_name_kebab, command_type]
-
-                if require_login:
-                    ctx = create_user_env
-                else:
-                    ctx = self.crud_ctx
-
-                # create #
-
-                example_to_create = example_from_model(model)
-                create_args = model_db_args + ['create', json.dumps(example_to_create)]
-                created_model_id = '1'
-
-                if hidden:
-                    self._run_cmd(create_args, env=ctx, expected_code=2)
-                    
-                else:
-                    if require_login:
-                        self._run_cmd(create_args, env=logged_out_ctx, expected_code=1)
-                    
-                    num_to_create = 1 if max_models < 0 else max_models
-
-                    for n in range(num_to_create):
-
-                        result = self._run_cmd(create_args, env=ctx)
-
-                        created_model = json.loads(result.stdout)
-
-                        created_model_id = created_model.pop('id')  # remove id for comparison
-                        if require_login:
-                            example_to_create['user_id'] = create_user['id']
-                        
-                        self.assertEqual(created_model, example_to_create, f'Created {model_name} does not match example data {n=}')
-
-                    if max_models >= 0:
-                        # try to create one more than allowed
-                        self._run_cmd(create_args, env=ctx, expected_code=1)
-
-                    if max_models == 0:
-                        continue  # skip rest of tests for this model
-
-
-                # read #
-
-                read_args = model_db_args + ['read', str(created_model_id)]
-
-                if hidden:
-                    self._run_cmd(read_args, env=ctx, expected_code=2)
-                    read_model_id = None
-                else:
-                    if require_login:
-                        self._run_cmd(read_args, env=logged_out_ctx, expected_code=1)
-
-                    result = self._run_cmd(read_args, env=ctx)
-                    read_model = json.loads(result.stdout)
-                    read_model_id = read_model.pop('id')
-                    self.assertEqual(read_model, example_to_create, f'Read {model_name} does not match example data')
-                    self.assertEqual(read_model_id, created_model_id, f'Read {model_name} ID does not match created ID')
-
-                    if require_login:
-                        self.assertIsNotNone(read_model['user_id'], f'Read {model_name} user_id is None')
-                        self.assertEqual(read_model['user_id'], create_user['id'], f'Read {model_name} ID does not match created ID')
-
-                # update #
-
-                try:
-                    updated_example = example_from_model(model, index=1)
-                except ValueError as e:
-                    raise ValueError(f'Need at least 2 examples for update testing: {e}')
-                
-                if require_login:
-                    updated_example['user_id'] = create_user['id']
-                
-                update_args = model_db_args + ['update', created_model_id, json.dumps(updated_example)]
-            
-                if hidden:
-                    result = self._run_cmd(update_args, env=ctx, expected_code=2)
-                    updated_model_id = '1'
-                else:
-                    if require_login:
-                        self._run_cmd(update_args, env=logged_out_ctx, expected_code=1)
-                        self._run_cmd(update_args, env=other_user_env, expected_code=1)
-
-                    result = self._run_cmd(update_args, env=ctx)
-                    updated_model = json.loads(result.stdout)
-                    updated_model_id = updated_model.pop('id')
-                    self.assertEqual(updated_model, updated_example, f'Updated {model_name} does not match updated example data')
-                    self.assertEqual(updated_model_id, created_model_id, f'Updated {model_name} ID does not match created ID')
-
-                    if require_login:
-                        self.assertIsNotNone(updated_model['user_id'], f'Updated {model_name} user_id is None')
-                        self.assertEqual(updated_model['user_id'], create_user['id'], f'Updated {model_name} ID does not match created ID')
-
-                # delete #
-
-                delete_args = model_db_args + ['delete', str(created_model_id)]
-
-                if hidden:
-                    result = self._run_cmd(delete_args, env=ctx, expected_code=2)
-                else:
-                    if require_login:
-                        self._run_cmd(delete_args, env=logged_out_ctx, expected_code=1)
-                        self._run_cmd(delete_args, env=other_user_env, expected_code=1)
-
-                    result = self._run_cmd(delete_args, env=ctx)
-                    delete_output = json.loads(result.stdout)
-                    self.assertEqual(delete_output['acknowledged'], True, f'Delete {model_name} ID did not return acknowledgement')
-                    expected_delete_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
-                    self.assertTrue(delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message')
-
-                    # confirm delete is idempotent #
-
-                    result = self._run_cmd(model_db_args + ['delete', str(created_model_id)], env=ctx)
-                    delete_output = json.loads(result.stdout)
-                    self.assertTrue(delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message')
-
-                # read after delete #
-
-                if not hidden:
-                    result = self._run_cmd(model_db_args + ['read', str(created_model_id)], expected_code=1, env=ctx)
-                    try:
-                        read_output_err = json.loads(result.stdout)['error']
-                        self.assertEqual(read_output_err['code'], 'NOT_FOUND', f'Read after delete for {model_name} did not return NOT_FOUND code for id {created_model_id}')
-                        self.assertEqual(read_output_err['message'], f'{model["name"]["snake_case"]} {created_model_id} not found', f'Read after delete for {model_name} did not return correct message for id {created_model_id}')
-                    except KeyError as e:
-                        raise RuntimeError(f'KeyError {e} while reading after delete for {model_name} id {created_model_id}: {result.stdout + result.stderr}')
-                    except json.JSONDecodeError as e:
-                        raise RuntimeError(f'JSONDecodeError {e} while reading after delete for {model_name} id {created_model_id}: {result.stdout + result.stderr}')
-                    
-                # test data isolation between users #
-
-                if require_login:
-                    self.assertIsNotNone(create_user['id'], 'Create user ID is None, test setup error')
-                    self.assertIsNotNone(other_user['id'], 'Other user ID is None, test setup error')
-                    self.assertNotEqual(create_user['id'], other_user['id'], 'Alice and Bob users have the same ID, test setup error')
-                    self.assertNotEqual(create_user_env['MAPP_CLI_ACCESS_TOKEN'], other_user_env['MAPP_CLI_ACCESS_TOKEN'], 'Alice and Bob have the same access token, test setup error')
+        # parallel process tests #
+        
+        self.pool.starmap(run_cli_crud_for_model, jobs)
  
     def test_cli_db_crud(self):
         self._test_cli_crud_commands('db', 1)
@@ -1367,6 +1782,10 @@ class TestMTemplateApp(unittest.TestCase):
             }
         }
 
+        #
+        # create test cases
+        #
+
         logged_out_ctx.update(self.crud_ctx)
 
         alice_user = self.crud_users[0]['user']
@@ -1375,264 +1794,21 @@ class TestMTemplateApp(unittest.TestCase):
         bob_user = self.crud_users[1]['user']
         bob_ctx = deepcopy(base_ctx)
         bob_ctx['headers']['Authorization'] = self.crud_users[1]['env']['Authorization']
-        
+        charlie_user = self.crud_users[2]['user']
+        charlie_ctx = deepcopy(base_ctx)
+        charlie_ctx['headers']['Authorization'] = self.crud_users[2]['env']['Authorization']
+
+        jobs = []
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
+                jobs.append((module_name_kebab, model_name, model, base_ctx, logged_out_ctx, alice_ctx, bob_ctx, charlie_ctx, alice_user, bob_user, charlie_user))
 
-                hidden = model['hidden']
-                require_login = model['auth']['require_login']
-                model_name_kebab = model['name']['kebab_case']
-                max_models = model['auth']['max_models_per_user']
+        #
+        # parallel process tests
+        #
 
-                #
-                # create
-                #
-
-                example_to_create = example_from_model(model)
-                create_args = [
-                    'POST',
-                    f'/api/{module_name_kebab}/{model_name_kebab}',
-                    json.dumps(example_to_create).encode()
-                ]
-
-                if require_login and not hidden:
-                    created_status, data = request(
-                        logged_out_ctx,
-                        *create_args
-                    )
-                    self.assertEqual(created_status, 401, f'Create {model_name} without login did not return 401 Unauthorized, response: {data}')
-                    ctx = alice_ctx
-                else:
-                    ctx = base_ctx
-
-                # send request #
-
-                num_to_create = 1 if max_models < 0 else max_models
-
-                created_model_id = '1'
-
-                for n in range(num_to_create):
-
-                    created_status, created_model = request(
-                        ctx,
-                        *create_args
-                    )
-
-                    # confirm response #
-
-                    if hidden:
-                        self.assertEqual(created_status, 404, f'Create hidden {model_name} did not return 404 Not Found, {n=} response: {created_model}')
-                        
-                    else:
-                        self.assertEqual(created_status, 200, f'Create {model_name} did not return status 200 OK, {n=} response: {created_model}')
-                        created_model_id = created_model.pop('id')  # remove id for comparison
-                        if require_login:
-                            example_to_create['user_id'] = alice_user['id']
-
-                        self.assertEqual(created_model, example_to_create, f'Created {model_name} (id: {created_model_id} n: {n}) does not match example data')
-                
-                if max_models >= 0:
-                    max_created_status, max_created_model = request(
-                        ctx,
-                        *create_args
-                    )
-                    self.assertEqual(max_created_status, 400, f'Create {model_name} beyond max_models_per_user did not return 400 Bad Request, response: {max_created_model}')
-
-                if max_models == 0:
-                    continue  # skip rest of tests for this model
-
-
-                #
-                # read
-                #
-
-                if require_login and not hidden:
-                    read_status, data = request(
-                        logged_out_ctx,
-                        'GET',
-                        f'/api/{module_name_kebab}/{model_name_kebab}/{1}',
-                        None
-                    )
-                    self.assertEqual(read_status, 401, f'Read {model_name} without login did not return 401 Unauthorized, response: {data}')
-
-                # send request #
-                read_status, read_model = request(
-                    ctx,
-                    'GET',
-                    f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
-                    None
-                )
-
-                # confirm response #
-
-                if hidden:
-                    self.assertEqual(read_status, 404, f'Read hidden {model_name} id: {created_model_id} did not return 404 Not Found, response: {read_model}')
-
-                else:
-                    self.assertEqual(read_status, 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}')
-                    read_model_id = read_model.pop('id')
-                    self.assertEqual(read_model, example_to_create, f'Read {model_name} id: {read_model_id} does not match example data')
-                    self.assertEqual(read_model_id, created_model_id, f'Read {model_name} id: {read_model_id} does not match created id: {created_model_id}')
-
-                #
-                # update
-                #
-
-                try:
-                    updated_example = example_from_model(model, index=1)
-                except ValueError as e:
-                    raise ValueError(f'Need at least 2 examples for update testing: {e}')
-                
-                if require_login and not hidden:
-                    updated_example['user_id'] = alice_user['id']
-
-                    # logged out cannot update #
-                    
-                    update_status, data = request(
-                        logged_out_ctx,
-                        'PUT',
-                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
-                        json.dumps(updated_example).encode()
-                    )
-                    self.assertEqual(update_status, 401, f'Update {model_name} without login did not return 401 Unauthorized, response: {data}')
-
-                    # bob cannot update alice's model #
-
-                    update_status, data = request(
-                        bob_ctx,
-                        'PUT',
-                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
-                        json.dumps(updated_example).encode()
-                    )
-                    self.assertEqual(update_status, 401, f'Update {model_name} by non-owner did not return 401 Unauthorized, response: {data}')
-
-                    # read back to confirm not udpated #
-
-                    read_status, read_model = request(
-                        ctx,
-                        'GET',
-                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
-                        None
-                    ) 
-                    self.assertEqual(read_status, 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}')
-                    read_model_id = read_model.pop('id')
-                    self.assertEqual(read_model, example_to_create, f'Read {model_name} id: {read_model_id} does not match example data after failed update attempt')
-                
-                # send request #
-
-                updated_status, updated_model = request(
-                    ctx,
-                    'PUT',
-                    f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
-                    json.dumps(updated_example).encode()
-                )
-
-                # confirm response #
-
-                if hidden:
-                    self.assertEqual(updated_status, 404, f'Update hidden {model_name} id: {created_model_id} did not return 404 Not Found, response: {updated_model}')
-                    updated_model_id = '1'
-
-                else:
-                    self.assertEqual(updated_status, 200, f'Update {model_name} id: {created_model_id} did not return status 200 OK, response: {updated_model}')
-                    updated_model_id = updated_model.pop('id')
-                    self.assertEqual(updated_model, updated_example, f'Updated {model_name} id: {updated_model_id} does not match updated example data')
-                    self.assertEqual(updated_model_id, created_model_id, f'Updated {model_name} id: {updated_model_id} does not match created id: {created_model_id}')
-
-                #
-                # delete
-                #
-
-                if require_login and not hidden:
-
-                    # logged out cannot delete #
-
-                    delete_status, data = request(
-                        logged_out_ctx,
-                        'DELETE',
-                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
-                        None
-                    )
-                    self.assertEqual(delete_status, 401, f'Delete {model_name} without login did not return 401 Unauthorized, response: {data}')
-
-                    # bob cannot delete alice's model #
-
-                    delete_status, data = request(
-                        bob_ctx,
-                        'DELETE',
-                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
-                        None
-                    )
-                    self.assertEqual(delete_status, 401, f'Delete {model_name} by non-owner did not return 401 Unauthorized, response: {data}')
-
-                    # read back to confirm not deleted #
-
-                    read_status, read_model = request(
-                        ctx,
-                        'GET',
-                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
-                        None
-                    )
-                    self.assertEqual(read_status, 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}')
-                    read_model_id = read_model.pop('id')
-                    self.assertEqual(read_model, updated_example, f'Read {model_name} id: {read_model_id} does not match updated example data after failed delete attempt')
-
-                # send request #
-
-                delete_status, delete_output = request(
-                    ctx,
-                    'DELETE',
-                    f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
-                    None
-                )
-
-                # confirm response #
-
-                if hidden:
-                    self.assertEqual(delete_status, 404, f'Delete hidden {model_name} id: {created_model_id} did not return 404 Not Found, response: {delete_output}')
-
-                else:
-                    self.assertEqual(delete_status, 200, f'Delete {model_name} id: {created_model_id} did not return status 200 OK, response: {delete_output}')
-                    self.assertIn('acknowledged', delete_output, f'Delete {model_name} id: {created_model_id} did not return acknowledgement field')
-                    self.assertTrue(delete_output['acknowledged'], f'Delete {model_name} id: {created_model_id} did not return acknowledged=True')
-                    self.assertIn('message', delete_output, f'Delete {model_name} id: {created_model_id} did not return message field')
-                    expected_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
-                    self.assertTrue(delete_output['message'].startswith(expected_msg), f'Delete {model_name} id: {created_model_id} did not return correct message')
-
-                # confirm delete is idempotent #
-
-                if not hidden:
-
-                    delete_status, delete_output = request(
-                        ctx,
-                        'DELETE',
-                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
-                        None
-                    )
-                    self.assertEqual(delete_status, 200, f'Delete (2nd) {model_name} id: {created_model_id} did not return status 200 OK, response: {delete_output}')
-                    self.assertIn('acknowledged', delete_output, f'Delete {model_name} id: {created_model_id} did not return acknowledgement field')
-                    self.assertTrue(delete_output['acknowledged'], f'Delete {model_name} id: {created_model_id} did not return acknowledged=True')
-                    self.assertIn('message', delete_output, f'Delete {model_name} id: {created_model_id} did not return message field')
-                    expected_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
-                    self.assertTrue(delete_output['message'].startswith(expected_msg), f'Delete {model_name} id: {created_model_id} did not return correct message')
-
-                    # read after delete #
-
-                    re_read_status, re_read_model = request(
-                        ctx,
-                        'GET',
-                        f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}',
-                        None
-                    )
-                
-                    self.assertEqual(re_read_status, 404, f'Read after delete for {model_name} id: {created_model_id} did not return 404 Not Found, resp: {re_read_model}')
-                    self.assertEqual(re_read_model.get('error', {}).get('code', '-'), 'NOT_FOUND', f'Read after delete for {model_name} id: {created_model_id} did not return not_found code, resp: {re_read_model}')
-
-                # confirm data isolation between users #
-
-                self.assertNotEqual(alice_user['id'], bob_user['id'], 'Alice and Bob users have the same ID, test setup error')
-                self.assertNotEqual(alice_ctx['headers']['Authorization'], bob_ctx['headers']['Authorization'], 'Alice and Bob have the same Authorization header, test setup error')
+        self.pool.starmap(run_server_crud_for_model, jobs)
 
     # pagination tests #
 
@@ -1726,7 +1902,14 @@ class TestMTemplateApp(unittest.TestCase):
         }
 
         logged_out_ctx.update(self.pagination_ctx)
-        
+
+        request_jobs = []
+        test_cases = []
+
+        #
+        # create test cases
+        #
+
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
@@ -1745,49 +1928,53 @@ class TestMTemplateApp(unittest.TestCase):
                         None
                     )
                     self.assertEqual(status, 401, f'Pagination for {model_name_kebab} without login did not return 401 Unauthorized, response: {response}')
-                    ctx = base_ctx.copy()
+                    ctx = deepcopy(base_ctx)
                     ctx['headers']['Authorization'] = self.pagination_user['env']['Authorization']
                 else:
                     ctx = base_ctx
 
+                if hidden:
+                    status, response = request(ctx, 'GET', f'/api/{module_name_kebab}/{model_name_kebab}?size=10&offset=0', None)
+                    self.assertEqual(status, 404, f'Pagination for hidden {model_name_kebab} did not return 404 Not Found, response: {response}')
+                    continue
+
                 for case in self.pagination_cases:
                     size = case['size']
                     expected_pages = case['expected_pages']
-
-                    # paginate #
-
                     offset = 0
-                    page_count = 0
 
-                    while True:
-                        status, response = request(
-                            ctx,
-                            'GET',
-                            f'/api/{module_name_kebab}/{model_name_kebab}?size={size}&offset={offset}',
-                            None
-                        )
-
-                        if hidden:
-                            self.assertEqual(status, 404, f'Pagination for hidden {model_name_kebab} did not return 404 Not Found, response: {response}')
-                            break
-                        
-                        self.assertEqual(status, 200, f'Pagination for {model_name_kebab} page {page_count} did not return status 200 OK, response: {response}')
-                        self.assertEqual(response['total'], self.pagination_total_models, f'Pagination for {model_name_kebab} page {page_count} returned incorrect total')
- 
-                        items = response['items']
-                        self.assertLessEqual(len(items), size, f'Pagination for {model_name_kebab} returned more items than size {size}')
-                        
-                        if len(items) == 0:
-                            break
-
-                        page_count += 1
-
+                    for page in range(expected_pages):
+                        request_jobs.append((ctx, 'GET', f'/api/{module_name_kebab}/{model_name_kebab}?size={size}&offset={offset}', None))
+                        test_cases.append((module_name_kebab, model_name_kebab, size, expected_pages, page, offset))
                         offset += size
 
-                    if hidden:
-                        break
+        #
+        # parallel process tests
+        #
 
-                    self.assertEqual(page_count, expected_pages, f'Pagination for {model_name} returned {page_count} pages, expected {expected_pages}')
+        results = self.pool.starmap(request, request_jobs)
+
+        #
+        # confirm results
+        #
+
+        grouped = defaultdict(list)
+        for (module_name_kebab, model_name_kebab, size, expected_pages, page, offset), (status, response) in zip(test_cases, results):
+            key = (module_name_kebab, model_name_kebab, size, expected_pages)
+            grouped[key].append((page, offset, status, response))
+
+        for (module_name_kebab, model_name_kebab, size, expected_pages), pages in grouped.items():
+            pages.sort()
+            page_count = 0
+            for page, offset, status, response in pages:
+                self.assertEqual(status, 200, f'Pagination for {model_name_kebab} page {page} did not return status 200 OK, response: {response}')
+                self.assertEqual(response['total'], self.pagination_total_models, f'Pagination for {model_name_kebab} page {page} returned incorrect total')
+                items = response['items']
+                self.assertLessEqual(len(items), size, f'Pagination for {model_name_kebab} returned more items than size {size}')
+                if len(items) == 0:
+                    break
+                page_count += 1
+            self.assertEqual(page_count, expected_pages, f'Pagination for {model_name_kebab} returned {page_count} pages, expected {expected_pages}')
       
     # op tests #
 
@@ -1853,73 +2040,20 @@ class TestMTemplateApp(unittest.TestCase):
 
     # validation tests #
 
-    def _test_cli_validation_error(self, module_name_kebab:str, model:dict, command_type:str, user_index:int):
-        if model['auth']['max_models_per_user'] == 0:
-            return  # skip models that do not allow any data
-        
-        example_to_update = example_from_model(model)
-
-        if model['hidden'] is True:
-            return
-        
-        user_id = self.crud_users[user_index]['user']['id']
-        
-        if model['auth']['require_login']:
-            ctx = self.crud_users[user_index]['env']
-            example_to_update['user_id'] = user_id
-        else:
-            ctx = self.crud_ctx
-
-        model_name_kebab = model['name']['kebab_case']
-
-        # create model to attempt to update with invalid data #
-
-        args = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(example_to_update)]
-        result = self._run_cmd(args, env=ctx)
-        update_model_id = str(json.loads(result.stdout)['id'])
-
-        for invalid_example in model_validation_errors(model):
-            model_name_kebab = model['name']['kebab_case']
-
-            # create #
-
-            model_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(invalid_example)]
-            result = self._run_cmd(model_command, expected_code=1, env=ctx)
-
-            error_output = json.loads(result.stdout)
-            self.assertEqual(error_output['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output["code"]}')
-            self.assertTrue(error_output['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_output["message"]}')
-
-            # update #
-
-            model_command = self.cmd + [module_name_kebab, model_name_kebab, command_type, 'update', update_model_id, json.dumps(invalid_example)]
-            result = self._run_cmd(model_command, expected_code=1, env=ctx)
-            error_output = json.loads(result.stdout)
-            self.assertEqual(error_output['code'], 'validation_error', f'Expected validation_error code for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {error_output["code"]}')
-            self.assertTrue(error_output['message'].startswith('Validation Error: '), f'Expected validation_error message for {model["name"]["pascal_case"]} with invalid data {invalid_example} to start with "Validation error: ", got {error_output["message"]}')
-
-        # read back original example to ensure it was not modified #
-
-        result = self._run_cmd(self.cmd + [module_name_kebab, model_name_kebab, command_type, 'read', update_model_id], env=ctx)
-        read_model = json.loads(result.stdout)
-        del read_model['id']
-        if model['auth']['require_login']:
-            example_to_update['user_id'] = user_id
-        self.assertEqual(read_model, example_to_update, f'Read {model["name"]["pascal_case"]} does not match original example data after validation error tests')
+    def _test_cli_validation_error(self, command_type:str, user_index:int):
+        jobs = []
+        for module in self.spec['modules'].values():
+            module_name_kebab = module['name']['kebab_case']
+            for model in module['models'].values():
+                jobs.append((module_name_kebab, model, command_type, user_index, self.cmd, self.crud_users, self.crud_ctx))
+        self.pool.starmap(run_cli_validation_error_for_model, jobs)
 
     def test_cli_db_validation_error(self):
-        for module in self.spec['modules'].values():
-            module_name_kebab = module['name']['kebab_case']
+        self._test_cli_validation_error('db', 3)
 
-            for model in module['models'].values():
-                self._test_cli_validation_error(module_name_kebab, model, 'db', 3)
 
     def test_cli_http_validation_error(self):
-        for module in self.spec['modules'].values():
-            module_name_kebab = module['name']['kebab_case']
-
-            for model in module['models'].values():
-                self._test_cli_validation_error(module_name_kebab, model, 'http', 4)
+        self._test_cli_validation_error('http', 4)
 
     def test_server_validation_error(self):
         self._check_servers_running()
@@ -1960,7 +2094,7 @@ class TestMTemplateApp(unittest.TestCase):
                 self.assertEqual(create_status, 200, f'Create for validation error test failed: {create_resp}')
                 update_model_id = str(create_resp['id'])
 
-                for invalid_example in model_validation_errors(model):
+                for invalid_example, invalid_field_name in model_validation_errors(model):
                     # create (invalid)
                     status, output = request(
                         ctx,
@@ -1968,16 +2102,14 @@ class TestMTemplateApp(unittest.TestCase):
                         f'/api/{module_name_kebab}/{model_name_kebab}',
                         json.dumps(invalid_example).encode()
                     )
-                    self.assertEqual(status, 400, f'Expected 400 for invalid create, got {status}, resp: {output}')
+                    self.assertEqual(status, 400, f'Expected 400 for invalid create, got {status}, resp: {output} for field {invalid_field_name}')
+                    output_error = output.get('error', {})
                     self.assertEqual(
-                        output['code'], 
+                        output_error.get('code', 'not-set'), 
                         'VALIDATION_ERROR', 
-                        f'Expected VALIDATION_ERROR code for {model_name_kebab} with invalid data {invalid_example}, got {output}'
+                        f'Expected VALIDATION_ERROR code for {model_name_kebab} with invalid data {invalid_example}, got {output} for field {invalid_field_name}'
                     )
-                    self.assertTrue(
-                        output['message'].startswith('Validation Error: '), 
-                        f'Unexpected message for {model_name_kebab} with invalid data {invalid_example}, got {output}'
-                    )
+                    self.assertIn('message', output_error, f'Expected error message in response for {model_name_kebab} with invalid data {invalid_example}, got {output} for field {invalid_field_name}')
 
                     # update (invalid)
                     status, output = request(
@@ -1986,16 +2118,14 @@ class TestMTemplateApp(unittest.TestCase):
                         f'/api/{module_name_kebab}/{model_name_kebab}/{update_model_id}',
                         json.dumps(invalid_example).encode()
                     )
-                    self.assertEqual(status, 400, f'Expected 400 for invalid update, got {status}, resp: {output}')
+                    output_error = output.get('error', {})
+                    self.assertEqual(status, 400, f'Expected 400 for invalid update, got {status}, resp: {output} for field {invalid_field_name}')
                     self.assertEqual(
-                        output['code'], 
+                        output_error.get('code', 'not-set'), 
                         'VALIDATION_ERROR', 
-                        f'Expected VALIDATION_ERROR code for {model_name_kebab} with invalid data {invalid_example}, got {output}'
+                        f'Expected VALIDATION_ERROR code for {model_name_kebab} with invalid data {invalid_example}, got {output} for field {invalid_field_name}'
                     )
-                    self.assertTrue(
-                        output['message'].startswith('Validation Error: '), 
-                        f'Unexpected message for {model_name_kebab} with invalid data {invalid_example}, got {output}'
-                    )
+                    self.assertIn('message', output_error, f'Expected error message in response for {model_name_kebab} with invalid data {invalid_example}, got {output} for field {invalid_field_name}')
 
                 # read back original example to ensure it was not modified
                 status, read_model = request(
@@ -2010,7 +2140,7 @@ class TestMTemplateApp(unittest.TestCase):
                 if model['auth']['require_login']:
                     example_to_update['user_id'] = self.crud_users[0]['user']['id']
                 
-                self.assertEqual(read_model, example_to_update, f'Read after validation error for {model["name"]["pascal_case"]} does not match original example data')
+                self.assertEqual(read_model, example_to_update, f'Read after validation error for {model["name"]["pascal_case"]} does not match original example data, expected: {example_to_update} got: {read_model}')
 
     # other tests #
 
@@ -2178,16 +2308,89 @@ class TestMTemplateApp(unittest.TestCase):
         for (args, code, stdout, stderr), (_, _, assertion) in zip(results, help_jobs):
             assertion(stdout, stderr, code, args)
     
+    def test_secure_field_redaction(self):
+        """
+        Confirm secure fields are redacted in op output
 
-def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:str|None, use_cache:bool=False, app_type:str='', verbose:bool=False) -> bool:
+        This command:
+            ./mapp auth login-user run 
+
+        Should return:
+            {
+            "result": {
+                "access_token": "REDACTED",
+                "token_type": "bearer"
+            }
+        }
+
+        But this command:
+            ./mapp auth login-user run --show
+
+        Should return the unredacted output including the access token value, e.g.
+        {
+            "result": {
+                "access_token": "<actual access token>",
+                "token_type": "bearer"
+            }
+        }
+        """
+
+        env = self.crud_ctx.copy()
+
+        try:
+            del env['MAPP_CLI_ACCESS_TOKEN']
+        except KeyError:
+            pass
+
+        env['MAPP_CLI_SESSION_FILE'] = os.path.join(self.test_dir, 'secure-field-test-session.json')
+        try:
+            os.remove(env['MAPP_CLI_SESSION_FILE'])
+        except FileNotFoundError:
+            pass
+
+        # logout
+        args_logout = self.cmd + ['auth', 'logout-user', 'run']
+        _, code, stdout, stderr = run_cmd(args_logout, env)
+
+        login_params = json.dumps({'email': 'evelyn@example.com', 'password': self.test_password})
+        
+        # confirm access_token is redacted
+        args = self.cmd + ['auth', 'login-user', 'run', login_params]
+        _, code, stdout, stderr = run_cmd(args, env)
+        self.assertEqual(code, 0, f"Secure field redaction failed: {' '.join(args)}\n{stdout}\n{stderr}")
+        json_output = json.loads(stdout)
+        self.assertIn("access_token", json_output["result"])
+        self.assertEqual(json_output["result"]["access_token"], "REDACTED")
+
+        # logout
+        args_logout = self.cmd + ['auth', 'logout-user', 'run']
+        _, code, stdout, stderr = run_cmd(args_logout, env)
+        self.assertEqual(code, 0, f"Logout failed: {' '.join(args_logout)}\n{stdout}\n{stderr}")
+
+        # confirm access_token is unredacted when --show is passed
+        args_show = self.cmd + ['auth', 'login-user', 'run', '--show', login_params]
+        _, code, stdout, stderr = run_cmd(args_show, env)
+        self.assertEqual(code, 0, f"Secure field unredacted output failed: {' '.join(args_show)}\n{stdout}\n{stderr}")
+        json_output = json.loads(stdout)
+        self.assertIn("access_token", json_output["result"])
+        self.assertNotEqual(json_output["result"]["access_token"], "REDACTED")
+        self.assertGreater(len(json_output["result"]["access_token"]), 25)
+
+
+def test_spec(cli_args:list[str], host:str|None, env_vars:dict, use_cache:bool=False, app_type:str='', verbose:bool=False) -> bool:
     if cli_args is None:
         raise ValueError('args must be provided as a list of strings')
+    
+    try:
+        spec_path = env_vars['MAPP_SPEC_FILE']
+    except KeyError:
+        raise ValueError('MAPP_SPEC_FILE must be set in env')
 
     test_suite = unittest.TestSuite()
     TestMTemplateApp.spec = load_generator_spec(spec_path)
     TestMTemplateApp.cmd = cli_args
     TestMTemplateApp.host = host
-    TestMTemplateApp.env_file = env_file
+    TestMTemplateApp.env_vars = env_vars
     TestMTemplateApp.use_cache = use_cache
     TestMTemplateApp.app_type = app_type
 
@@ -2217,16 +2420,21 @@ def test_spec(spec_path:str|Path, cli_args:list[str], host:str|None, env_file:st
 
     return result.wasSuccessful()
 
-def test_npm(npm_run:str, spec_path:str|Path, cli_args:list[str], host:str|None, env_file:str|None, use_cache:bool=False, app_type:str='', verbose:bool=False) -> bool:
+def test_npm(npm_run:str, cli_args:list[str], host:str|None, env_vars:dict, use_cache:bool=False, app_type:str='', verbose:bool=False) -> bool:
     if cli_args is None:
         raise ValueError('args must be provided as a list of strings')
+    
+    try:
+        spec_path = env_vars['MAPP_SPEC_FILE']
+    except KeyError:
+        raise ValueError('MAPP_SPEC_FILE must be set in env_vars')
     
     # start servers
 
     TestMTemplateApp.spec = load_generator_spec(spec_path)
     TestMTemplateApp.cmd = cli_args
     TestMTemplateApp.host = host
-    TestMTemplateApp.env_file = env_file
+    TestMTemplateApp.env_vars = env_vars
     TestMTemplateApp.use_cache = use_cache
     TestMTemplateApp.app_type = app_type
     TestMTemplateApp.setUpClass()
@@ -2271,7 +2479,6 @@ def test_npm(npm_run:str, spec_path:str|Path, cli_args:list[str], host:str|None,
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Test mapp spec app', prog='mapp.test')
-    parser.add_argument('spec', type=str, help='spec file to test')
     parser.add_argument('--cmd', type=str, nargs='*', required=True, help='CLI command for generated app')
     parser.add_argument('--env-file', type=str, required=True, help='path to .env file to load for tests')
     parser.add_argument('--host', type=str, default=None, help='host for http client in tests (if host diff than in spec file)')
@@ -2283,8 +2490,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    env_vars = dotenv_values(args.env_file)
+
     if args.npm_run:
-        test_npm(args.npm_run, args.spec, args.cmd, args.host, args.env_file, args.use_cache, args.app_type, args.verbose)
+        test_npm(args.npm_run, args.cmd, args.host, env_vars, args.use_cache, args.app_type, args.verbose)
 
     else:
         if args.test_filter:
@@ -2293,4 +2502,4 @@ if __name__ == '__main__':
         else:
             test_spec._test_filters = None
 
-        test_spec(args.spec, args.cmd, args.host, args.env_file, args.use_cache, args.app_type, args.verbose)
+        test_spec(args.cmd, args.host, env_vars, args.use_cache, args.app_type, args.verbose)

@@ -1,5 +1,6 @@
 lingo:
     version: page-beta-1
+    title: "Hello World"
 
 params: {}
 
@@ -8,8 +9,8 @@ state: {}
 ops: {}
 
 output:
-- heading: "Hello, World"
-  level: 1
+    - heading: "hello.world"
+      level: 1
 
-- block:
-    - text: I am a sample page!
+    - block:
+          - text: I am a sample page!

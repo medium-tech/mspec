@@ -11,7 +11,7 @@ import json
 
 import http.server
 
-from urllib.parse import unquote
+from urllib.parse import unquote, urlparse
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 SRC_DIR = os.path.join(CURRENT_DIR, 'src')
@@ -20,12 +20,14 @@ SPEC_DIR = os.path.abspath(os.path.join(CURRENT_DIR, '../../src/mspec/data'))
 
 class DevRequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
+        parsed = urlparse(self.path)
+        path = parsed.path
         
 		#
         # serve index
         #
         
-        if self.path == '/' or self.path == '/index.html':
+        if path == '/' or path == '/index.html':
             self.send_response(200)
             self.send_header('Content-type', 'text/html; charset=utf-8')
             self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
@@ -39,29 +41,29 @@ class DevRequestHandler(http.server.SimpleHTTPRequestHandler):
                 
             return
         
-        if self.path.endswith('.js'):
+        if path.endswith('.js'):
             self.send_response(200)
             self.send_header('Content-type', 'application/javascript; charset=utf-8')
             self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             self.end_headers()
             
-            js_path = os.path.join(SRC_DIR, self.path.lstrip('/'))
+            js_path = os.path.join(SRC_DIR, path.lstrip('/'))
             with open(js_path, 'rb') as f:
                 self.wfile.write(f.read())
             return
         
-        if self.path.endswith('.css'):
+        if path.endswith('.css'):
             self.send_response(200)
             self.send_header('Content-type', 'text/css; charset=utf-8')
             self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             self.end_headers()
             
-            css_path = os.path.join(SRC_DIR, self.path.lstrip('/'))
+            css_path = os.path.join(SRC_DIR, path.lstrip('/'))
             with open(css_path, 'rb') as f:
                 self.wfile.write(f.read())
             return
         
-        if self.path.startswith('/api/lingo-specs'):
+        if path.startswith('/api/lingo-specs'):
             self.send_response(200)
             self.send_header('Content-type', 'application/json; charset=utf-8')
             self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
@@ -87,8 +89,8 @@ class DevRequestHandler(http.server.SimpleHTTPRequestHandler):
         # serve lingo examples
         #
         
-        if self.path.startswith('/data/'):
-            rel_path = unquote(self.path[len('/data/'):])
+        if path.startswith('/data/'):
+            rel_path = unquote(path[len('/data/'):])
             abs_path = os.path.join(SPEC_DIR, rel_path)
             
             if os.path.commonpath([abs_path, SPEC_DIR]) != SPEC_DIR or not os.path.exists(abs_path):

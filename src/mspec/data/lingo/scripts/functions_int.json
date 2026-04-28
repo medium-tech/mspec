@@ -1,0 +1,19 @@
+{
+    "lingo": {
+        "version": "script-beta-1"
+    },
+    "params": {},
+    "state": {
+    },
+    "ops": {},
+    "output": {
+        "type": "list",
+        "element_type": "struct",
+        "value": [
+            {
+                "type": "struct",
+                "value": {"test_name": "test_neg", "result": {"call": "neg", "args": {"object": 5}}}
+            }
+        ]
+    }
+}

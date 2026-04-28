@@ -1,0 +1,96 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+    "state": {
+        "current_time": {
+            "type": "datetime",
+            "default": "1970-01-01T00:00:00"
+        },
+        "countdown_value": {
+            "type": "int",
+            "default": -1
+        }
+    },
+    "ops": {},
+    "timers": {
+        "update_clock": {
+            "func": {
+                "set": {"state": {"current_time": {}}},
+                "to": {
+                    "call": "datetime.now",
+                    "args": {}
+                }
+            },
+            "interval": 1,
+            "auto_start": true
+        },
+        "countdown": {
+            "func": {
+                "set": {"state": {"countdown_value": {}}},
+                "to": {
+                    "branch": [
+                        {
+                            "if": {
+                                "call": "eq",
+                                "args": {
+                                    "a": {"state": {"countdown_value": {}}},
+                                    "b": -1
+                                }
+                            },
+                            "then": 5
+                        },
+                        {
+                            "else": {
+                                "call": "sub",
+                                "args": {
+                                    "a": {"state": {"countdown_value": {}}},
+                                    "b": 1
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "interval": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "gt",
+                            "args": {
+                                "a": {"state": {"countdown_value": {}}},
+                                "b": -1
+                            }
+                        },
+                        "then": 1
+                    },
+                    {
+                        "else": -1
+                    }
+                ]
+            },
+            "auto_start": false
+        }
+    },
+    "output": [
+        {"heading": {"text": "Timers"}, "level": 1},
+        {"text": "Current time: ", "style": {"bold": true}},
+        {"lingo": {"state": {"current_time": {}}}},
+        {"break": 1},
+        {"text": "Countdown: ", "style": {"bold": true}},
+        {"lingo": {"state": {"countdown_value": {}}}},
+        {"break": 1},
+        {
+            "button": {"timer": "countdown"},
+            "text": "start countdown",
+            "disabled": {
+                "call": "gt",
+                "args": {
+                    "a": {"state": {"countdown_value": {}}},
+                    "b": -1
+                }
+            }
+        }
+    ]
+}

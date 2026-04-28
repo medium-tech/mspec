@@ -6,6 +6,10 @@
 
 set -e
 
+# build sosh template app
+echo 'Building sosh template app...'
+python -m mtemplate render --output templates/sosh-net --spec sosh-net.yaml --as-builtin --no-cache
+
 # Copy Browser2 UI files to data directory (excluding index.html)
 echo 'Copying Browser2 UI files...'
 mkdir -p src/mspec/data/mapp-ui/src

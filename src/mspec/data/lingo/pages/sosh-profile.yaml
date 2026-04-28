@@ -1,0 +1,119 @@
+lingo:
+    version: page-beta-1
+    parent_url: '/api/spec'
+    title: "sosh net :: profiles"
+
+params:
+    project_name:
+        name:
+            lower_case: 'project name'
+        type: str
+        default: 'sosh-net'
+
+    module_name:
+        name:
+            lower_case: 'module name'
+        type: str
+        default: 'sosh-net'
+
+    model_name:
+        name:
+            lower_case: 'model name'
+        type: str
+        default: 'profile'
+
+    model_definition:
+        name:
+            lower_case: 'model definition'
+        type: model
+        value:
+            name:
+                lower_case: 'profile'
+            fields:
+                user_id:
+                    name:
+                        lower_case: 'user id'
+                    type: foreign_key
+                    references:
+                        module: auth
+                        table: user
+                        field: id
+                username:
+                    name:
+                        lower_case: 'username'
+                    type: str
+                bio:
+                    name:
+                        lower_case: 'bio'
+                    type: str
+                profile_picture:
+                    name:
+                        lower_case: 'profile picture'
+                    type: foreign_key
+                    references:
+                        module: media
+                        table: master_image
+                        field: id
+
+state:
+    model_list:
+        type: struct
+        default:
+            items: []
+            total: 0
+            showing: 0
+            offset: 0
+            size: 25
+            state: pending
+            error: ''
+
+    model_item_api_url:
+        type: str
+        calc:
+            call: concat
+            args:
+                items:
+                    - '/api/'
+                    - params: { module_name: {} }
+                    - '/'
+                    - params: { model_name: {} }
+
+    model_item_url:
+        type: str
+        calc:
+            call: concat
+            args:
+                items:
+                    - '/'
+                    - params: { module_name: {} }
+                    - '/'
+                    - params: { model_name: {} }
+                    - '/'
+
+ops: {}
+
+output:
+    - heading: "sosh.net"
+      level: 1
+
+    - breadcrumbs:
+        - "home"
+        - "sosh-net"
+        - "profile"
+
+    - heading: ":: profiles"
+      level: 2
+      
+    - text: ':: '
+
+    - link: '/sosh-net/profile/yours'
+      text: 'your profile'
+
+    - break: 1
+
+    - model:
+          bind: { state: { model_list: {} } }
+          display: list
+          http: { state: { model_item_api_url: {} } }
+          definition: { params: { model_definition: {} } }
+          instance_url: { state: { model_item_url: {} } }

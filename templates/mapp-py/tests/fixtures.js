@@ -52,6 +52,16 @@ async function createAndLoginUser(host, browser, envName) {
   const context = await browser.newContext();
   const page = await context.newPage();
   await page.goto(host);
+  await context.addCookies([{ 
+    name: 'protocol_mode', 
+    value: 'true', 
+    path: '/',
+    domain: new URL(host).hostname,
+    secure: false,
+  }]);
+  await page.reload();
+  
+  await page.goto(host);
   await page.getByRole('link', { name: 'auth' }).click();
   await page.getByRole('link', { name: 'create-user' }).click();
   await page.getByRole('row', { name: /name:/ }).getByRole('textbox').fill('Test User');
@@ -60,7 +70,7 @@ async function createAndLoginUser(host, browser, envName) {
   await page.getByRole('row', { name: /password confirm:/ }).getByRole('textbox').fill(password);
   await page.getByRole('button', { name: 'Submit' }).click();
   await page.waitForSelector('#lingo-app');
-  await expect(page.locator('#lingo-app')).toContainText('success:');
+  await expect(page.locator('#lingo-app')).toContainText('success');
 
   // Login user via UI
   await page.getByRole('link', { name: 'auth' }).click();
@@ -69,7 +79,7 @@ async function createAndLoginUser(host, browser, envName) {
   await page.locator('input[type="password"]').fill(password);
   await page.getByRole('button', { name: 'Submit' }).click();
   await page.waitForSelector('#lingo-app');
-  await expect(page.locator('#lingo-app')).toContainText('success:');
+  await expect(page.locator('#lingo-app')).toContainText('success');
 
   // Save storage state
   const storageState = await context.storageState();

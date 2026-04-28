@@ -138,7 +138,7 @@ if MAPP_SERVER_DEVELOPMENT_MODE is True:
 # generate dynamic index.html
 #
 
-def generate_index_html(spec: dict) -> str:
+def generate_index_html(spec: dict) -> bytes:
     """
     Generate the index.html page with embedded Lingo JSON spec.
     """
@@ -167,7 +167,7 @@ def generate_index_html(spec: dict) -> str:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{project_name}</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
     <div id="lingo-app" class="lingo-container">
@@ -184,7 +184,7 @@ def generate_index_html(spec: dict) -> str:
 {lingo_params_json}
     </script>
     
-    <script src="markup.js"></script>
+    <script src="/markup.js"></script>
     
     <script>
         // Retrieve and parse the embedded spec and params
@@ -207,9 +207,9 @@ def generate_index_html(spec: dict) -> str:
 </body>
 </html>'''
     
-    return html
+    return html.encode('utf-8')
 
-def generate_module_html(spec: dict, module_key: str) -> str:
+def generate_module_html(spec: dict, module_key: str) -> bytes:
     """
     Generate the module page with embedded Lingo JSON spec.
     """
@@ -285,16 +285,16 @@ def generate_module_html(spec: dict, module_key: str) -> str:
 </body>
 </html>'''
     
-    return html
+    return html.encode('utf-8')
 
-def generate_model_html(spec: dict, module_key: str, model_key: str) -> str:
+def generate_model_html(spec: dict, module_key: str, model_key: str, page_spec:str='builtin-mapp-model.json') -> bytes:
     """
     Generate the model page with embedded Lingo JSON spec.
     """
 
     # init spec #
     
-    lingo_model_page = load_browser2_spec('builtin-mapp-model.json')
+    lingo_model_page = load_browser2_spec(page_spec)
     
     project_name = spec['project']['name']['lower_case']
     module = spec['modules'][module_key]
@@ -361,9 +361,9 @@ def generate_model_html(spec: dict, module_key: str, model_key: str) -> str:
 </body>
 </html>'''
     
-    return html
+    return html.encode('utf-8')
 
-def generate_op_html(spec: dict, module_key: str, op_key: str) -> str:
+def generate_op_html(spec: dict, module_key: str, op_key: str) -> bytes:
     """
     Generate the op page with embedded Lingo JSON spec.
     """
@@ -437,16 +437,14 @@ def generate_op_html(spec: dict, module_key: str, op_key: str) -> str:
 </body>
 </html>'''
     
-    return html
+    return html.encode('utf-8')
 
-def generate_model_instance_html(spec: dict, module_key: str, model_key: str, url: str) -> str:
+def generate_model_instance_html(server: MappContext, request: RequestContext, spec: dict, module_key: str, model_key: str) -> bytes:
     """
     Generate the model instance page with embedded Lingo JSON spec.
     """
 
     # init spec #
-    
-    lingo_model_instance_page = load_browser2_spec('builtin-mapp-model-instance.json')
     
     project_name = spec['project']['name']['lower_case']
     module = spec['modules'][module_key]
@@ -454,7 +452,7 @@ def generate_model_instance_html(spec: dict, module_key: str, model_key: str, ur
     model = module['models'][model_key]
     model_name = model['name']['kebab_case']
 
-    url_split = url.strip('/').split('/')
+    url_split = request.env['PATH_INFO'].strip('/').split('/')
     model_id = url_split[-1]
     
     lingo_params = {
@@ -466,6 +464,22 @@ def generate_model_instance_html(spec: dict, module_key: str, model_key: str, ur
     }
     
     # generate html and embed spec #
+
+    protocol_mode = request.env.get('HTTP_COOKIE', '').find('protocol_mode=true') != -1
+
+    if not protocol_mode and model['instance_page'] is not None:
+        spec_path = model['instance_page']
+    else:
+        spec_path = 'builtin-mapp-model-instance.json'
+
+    try:
+        lingo_model_instance_page = load_browser2_spec(spec_path)
+    except Exception as e:
+        server.log(f'  :: ERROR :: Error loading model instance page spec from {spec_path}: {e} :: {request.request_id}')
+        server.log(f'    :: TRACEBACK :: {format_exc()}')
+        raise ServerError(f'Error generating model instance page') from None
+
+    server.log(f'    -> model instance page spec path: {spec_path} ({not protocol_mode}) {model["instance_page"] is not None=}')
 
     lingo_spec_json = json.dumps(lingo_model_instance_page, indent=4)
     lingo_params_json = json.dumps(lingo_params, indent=4)
@@ -516,9 +530,74 @@ def generate_model_instance_html(spec: dict, module_key: str, model_key: str, ur
     </script>
 </body>
 </html>'''
-    
-    return html
+    return html.encode('utf-8')
 
+def generate_page_spec_html(spec_file:str, params:dict|None=None) -> bytes:
+    """
+    Generate the index.html page with embedded Lingo JSON spec.
+    """
+
+    # init spec #
+    
+    page_spec = load_browser2_spec(spec_file)
+    
+    try:
+        page_name = page_spec['lingo']['title']
+    except KeyError as e:
+        raise KeyError(f'Missing expected key {e} in in page spec: {page_spec}')
+    
+    # genereate html and embed spec #
+
+    lingo_spec_json = json.dumps(page_spec, indent=4)
+    lingo_params_json = json.dumps({} if params is None else params, indent=4)
+    
+
+    html = f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{page_name}</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div id="lingo-app" class="lingo-container">
+        <p>Loading...</p>
+    </div>
+    
+    <!-- Embedded Lingo spec -->
+    <script type="application/json" id="lingoSpec">
+{lingo_spec_json}
+    </script>
+    
+    <!-- Embedded Lingo params -->
+    <script type="application/json" id="lingoParams">
+{lingo_params_json}
+    </script>
+    
+    <script src="/markup.js"></script>
+    
+    <script>
+        // Retrieve and parse the embedded spec and params
+        const specText = document.getElementById('lingoSpec').textContent;
+        const paramsText = document.getElementById('lingoParams').textContent;
+        const lingoSpec = JSON.parse(specText);
+        const lingoParams = JSON.parse(paramsText);
+        
+        // Run the lingo app on load
+        window.addEventListener('load', () => {{
+            try {{
+                const app = lingoApp(lingoSpec, lingoParams, {{}});
+                renderLingoApp(app, document.getElementById('lingo-app'));
+            }} catch (error) {{
+                console.error('Failed to initialize Lingo app:', error);
+                document.getElementById('lingo-app').innerHTML = `<p style="color: red;">Error: ${{error.message}}</p>`;
+            }}
+        }});
+    </script>
+</body>
+</html>'''
+    return html.encode('utf-8')
 
 #
 # load static ui files
@@ -529,6 +608,7 @@ class StaticFileData(NamedTuple):
     content_type: str
 
 static_files = {}
+static_protocol_files = {}
 dynamic_files = []
 
 ui_src_dir = os.environ.get('MAPP_UI_FILE_SOURCE', None)
@@ -552,16 +632,49 @@ for file_path in get_mapp_ui_files(ui_src_dir):
         content_type=content_type
     )
 
-# add generated index.html to static files #
-index_html_content = generate_index_html(mapp_spec)
-static_files['index.html'] = StaticFileData(
-    content=index_html_content.encode('utf-8'),
-    content_type='text/html'
-)
 static_files['api/spec'] = StaticFileData(
     content=mapp_spec,                  # FUTURE OPTIMIZE: serialize only once at startup
     content_type='application/json'
 )
+
+#
+# index page
+#
+
+"""
+An app spec can override the index page by specifying an `index_page` entry in the spec.
+
+If `index_page` is specified in the app spec, the server will generate the index page
+from that spec file, otherwise it will generate the default index page. Users can
+override the custom page by supplying cookie protocol_mode=true and the server will 
+serve the protocol version which is the default index page generated from the protocol spec.
+"""
+
+index_protocol_html_content = generate_index_html(mapp_spec)
+
+if mapp_spec['index_page'] is None:
+    index_html_content = index_protocol_html_content
+else:
+    index_html_content = generate_page_spec_html( mapp_spec['index_page'])
+
+static_files['index.html'] = StaticFileData(
+    content=index_html_content,
+    content_type='text/html'
+)
+static_protocol_files['index.html'] = StaticFileData(
+    content=index_protocol_html_content,
+    content_type='text/html'
+)
+
+for page_key, page_spec_file in mapp_spec['pages'].items():
+    static_files[page_key] = StaticFileData(
+        content=generate_page_spec_html(page_spec_file),
+        content_type='text/html'
+    )
+
+#
+# module pages
+#
 
 # add generated module pages to static files #
 for module_key, module in mapp_spec['modules'].items():
@@ -569,23 +682,65 @@ for module_key, module in mapp_spec['modules'].items():
         continue
     
     module_kebab = module['name']['kebab_case']
-    module_html_content = generate_module_html(mapp_spec, module_key)
+    module_protocol_html_content = generate_module_html(mapp_spec, module_key)
+
+    # add default module page #
+
+    if module['page'] is None:
+        module_html_content = module_protocol_html_content
+    else:
+        module_html_content = generate_page_spec_html(module['page'])
+
     static_files[module_kebab] = StaticFileData(
-        content=module_html_content.encode('utf-8'),
+        content=module_html_content,
         content_type='text/html'
     )
+    static_protocol_files[module_kebab] = StaticFileData(
+        content=module_protocol_html_content,
+        content_type='text/html'
+    )
+
+    # additional optional module pages #
+
+    for page_key, page_spec_file in module['pages'].items():
+        static_files[f'{module_kebab}/{page_key}'] = StaticFileData(
+            content=generate_page_spec_html(page_spec_file),
+            content_type='text/html'
+        )
     
     # add dynamic and static model pages #
+
     for model_key, model in module.get('models', {}).items():
         if model.get('hidden', False) is True:
             continue
         
         model_kebab = model['name']['kebab_case']
-        model_html_content = generate_model_html(mapp_spec, module_key, model_key)
+
+        # add default model page #
+
+        model_protocol_html_content = generate_model_html(mapp_spec, module_key, model_key)
+        if model['page'] is None:
+            model_html_content = model_protocol_html_content
+        else:
+            model_html_content = generate_model_html(mapp_spec, module_key, model_key, model['page'])
         static_files[f'{module_kebab}/{model_kebab}'] = StaticFileData(
-            content=model_html_content.encode('utf-8'),
+            content=model_html_content,
             content_type='text/html'
         )
+        static_protocol_files[f'{module_kebab}/{model_kebab}'] = StaticFileData(
+            content=model_protocol_html_content,
+            content_type='text/html'
+        )
+
+        # add additional optional model pages #
+        
+        for page_key, page_spec_file in model.get('pages', {}).items():
+            static_files[f'{module_kebab}/{model_kebab}/{page_key}'] = StaticFileData(
+                content=generate_page_spec_html(page_spec_file),
+                content_type='text/html'
+            )
+
+        # model instance dynamic route #
 
         pattern = f'/{module_kebab}/{model_kebab}/[0-9a-zA-Z]+$'
 
@@ -606,7 +761,7 @@ for module_key, module in mapp_spec['modules'].items():
         op_kebab = op['name']['kebab_case']
         op_html_content = generate_op_html(mapp_spec, module_key, op_key)
         static_files[f'{module_kebab}/{op_kebab}'] = StaticFileData(
-            content=op_html_content.encode('utf-8'),
+            content=op_html_content,
             content_type='text/html'
         )
 
@@ -615,12 +770,26 @@ def static_routes(server: MappContext, request: RequestContext):
     
     path_stripped = request.env['PATH_INFO'].strip('/')
     path = 'index.html' if path_stripped == '' else path_stripped
-    
-    try:
-        file_data = static_files[path]
-    except KeyError:
-        server.log(f'Static file not found: {path}')
+
+    file_data = None
+
+    if request.env.get('HTTP_COOKIE', '').find('protocol_mode=true') != -1:
+        try:
+            file_data = static_protocol_files[path]
+            server.log(f'Serving protocol file for: {path}')
+        except KeyError:
+            try:
+                file_data = static_files[path]
+                server.log(f'Serving fallback static file for: {path}')
+            except KeyError:
+                pass
     else:
+        try:
+            file_data = static_files[path]
+        except KeyError:
+            server.log(f'Static file not found: {path}')
+
+    if file_data is not None:
         raise StaticFileResponse('200 OK', file_data.content, file_data.content_type)
     
 def dynamic_file_routes(server: MappContext, request: RequestContext):
@@ -630,10 +799,10 @@ def dynamic_file_routes(server: MappContext, request: RequestContext):
         if pattern.match(request.env['PATH_INFO']):
             mapp_spec, module_key, model_key = gen_args
     
-            html_content = generator_func(mapp_spec, module_key, model_key, request.env['PATH_INFO'])
+            html_content:bytes = generator_func(server, request, mapp_spec, module_key, model_key)
             raise StaticFileResponse(
                 '200 OK',
-                content=html_content.encode('utf-8'),
+                content=html_content,
                 content_type='text/html'
             )
 
@@ -653,7 +822,7 @@ def application(env, start_response):
         try:
             auth_header = env['HTTP_AUTHORIZATION']
         except KeyError:
-            raise AuthenticationError('Not logged in')
+            raise AuthenticationError('Not logged in (d)')
         
         if not auth_header.startswith('Bearer '):
             raise AuthenticationError('Invalid authorization header')
@@ -680,8 +849,8 @@ def application(env, start_response):
     # init request logging #
 
     request_id = f'{time.time_ns()}-{os.getpid()}'
-    request_start = time.time()
-    server_ctx.log(f':: REQ :: {request_id} :: {env["REQUEST_METHOD"]} - {env["PATH_INFO"]}')
+    server_ctx.log(f':: REQ :: {env["REQUEST_METHOD"]} {env["PATH_INFO"]} :: {request_id}')
+    uwsgi.set_logvar('request_id', request_id)
 
     request = RequestContext(
         env=env,
@@ -801,10 +970,6 @@ def application(env, start_response):
         body = {'code': 'NOT_FOUND', 'message': f'not found: ' + env['PATH_INFO']}
         status_code = '404 Not Found'
         content_type = JSONResponse.content_type
-
-    elapsed_time = time.time() - request_start
-
-    server_ctx.log(f'  :: RESP :: {request_id} :: {status_code} :: {elapsed_time:.4f}s')
 
     start_response(status_code, [('Content-Type', content_type)] + additional_headers)
 

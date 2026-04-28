@@ -67,8 +67,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 TF_ARGS=""
-if [[ ${#TEST_FILTERS[@]} -gt 0 ]]; then
-	TF_ARGS="--test-filter ${TEST_FILTERS[@]}"
+if [ "${TEST_FILTERS[*]}" != "" ]; then
+    TF_ARGS="--test-filter ${TEST_FILTERS[@]}"
 fi
 
-python -m mapp.test dev-app.yaml --cmd ./run.sh --env-file .env $TF_ARGS $USE_CACHE --app-type python $VERBOSE $NPM_RUN $NPM_CMD
+python -m mapp.test --cmd ./run.sh --env-file .env $TF_ARGS $USE_CACHE --app-type python $VERBOSE $NPM_RUN $NPM_CMD

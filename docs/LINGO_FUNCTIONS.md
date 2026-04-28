@@ -13,8 +13,10 @@
   - [Date and Time](#date-and-time-functions)
   - [Random](#random-functions)
   - [Auth](#auth-functions)
+  - [Client](#client-functions)
   - [File System](#file-system-functions)
   - [Media](#media-functions)
+  - [Database](#database-functions)
 - [Control Flow](#control-flow)
 - [UI Elements](#ui-elements)
 - [Expressions](#expressions)
@@ -83,11 +85,6 @@
     - **object** `any`
   - **return:** `bool`
 
-`neg` - arithmetic negation
-  - **args:**
-    - **object** `any`
-  - **return:** `int|float`
-
 `and` - bitwise AND
   - **args:**
     - **a** `any`
@@ -107,6 +104,11 @@
     - **string** `str` (optional)
     - **base** `int` (default: 10)
   - **return:** `int`
+
+`neg` - arithmetic negation
+  - **args:**
+    - **object** `any`
+  - **return:** `int|float`
 
 ### Float Functions
 `float` - convert to float
@@ -331,6 +333,11 @@
     - **root_password** `str` - Root password to authorize dropping all sessions
   - **return:** struct with `acknowledged`, `message`
 
+### Client Functions
+`client.reload` - Reload the client, currently only availble in the js browser interpreter which calls `window.location.reload`
+  - **args:** *(none)*
+  - **return:** struct with `acknowledged`, `message`
+
 ### File System Functions
 `file_system.ingest_start` - Start ingesting a file
   - **args:**
@@ -399,6 +406,33 @@
     - **file_id** `str` (optional)
     - **user_id** `str` (optional)
   - **return:** struct with `items`, `total`
+
+### Database Functions
+`db.create` - Create a model instance and return the new ID
+  - **args:**
+    - **model_type** `str` - dot-notation module.model (e.g. `sosh_net.thread`)
+    - **data** `struct` - model field values
+  - **return:** `str` model ID
+
+`db.read` - Read a single model instance by ID
+  - **args:**
+    - **model_type** `str` - dot-notation module.model (e.g. `sosh_net.post`)
+    - **model_id** `str` - the record ID
+  - **return:** struct with all model fields
+
+`db.unique_counts` - Return counts of unique values for a model field
+  - **args:**
+    - **model_type** `str` - dot-notation module.model
+    - **group_by** `str` - field name to group by
+    - **filters** `struct` (optional) - `{field_name: value}` pairs for WHERE clause
+  - **return:** list of structs `[{<group_by_field>: value, count: int}, ...]`
+
+`db.query` - Return all rows matching a set of field equality filters
+  - **args:**
+    - **model_type** `str` - dot-notation module.model (e.g. `sosh_net.profile`)
+    - **fields** `struct` - `{field_name: value}` equality filters; only `str` and `foreign_key` field types are supported
+  - **return:** list of matching model structs (same format as `db.read`)
+  - **note:** Raises a `ValueError` if a filter key is an unsupported field type (e.g. `int`, `bool`)
 
 ## Control Flow
 

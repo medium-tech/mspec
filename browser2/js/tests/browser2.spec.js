@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('test - hello world', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
-  await expect(page.locator('h1')).toContainText('Hello World');
+  await expect(page.locator('h1')).toContainText('hello.world');
   await expect(page.locator('span')).toContainText('I am a sample page.');
   await expect(page.locator('#debug-content')).toContainText('Lingo: page-beta-1');
 });
@@ -75,7 +75,6 @@ test('test - functions-bool', async ({ page }) => {
     'bool(0) = false',
     'not(true) = false',
     'not(false) = true',
-    'neg(5) = -5',
     'and(true, true) = true',
     'and(true, false) = false',
     'or(false, true) = true',
@@ -94,6 +93,7 @@ test('test - functions-int', async ({ page }) => {
   await expect(page.locator('h1')).toContainText('Int Functions');
 
   const expectedText = [
+    'neg(5) = -5',
     'int(42.7) = 42',
     'int(\'2A\', base=16) = 42',
   ];
@@ -136,6 +136,25 @@ test('test - functions-str', async ({ page }) => {
     await expect(page.locator('#lingo-app')).toContainText(text);
   }
 });
+
+test('test - functions-struct', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/functions-struct.json');
+
+  await expect(page.locator('h1')).toContainText('Struct Functions');
+
+  const expectedText = [
+    'key(state.source_struct, \'x_bool\') = true',
+    'key(state.source_struct, \'x_int\') = 42',
+    'key(state.source_struct, \'x_float\') = 3.14',
+    'key(state.source_struct, \'x_str\') = hello.world',
+  ];
+
+  for (const text of expectedText) {
+    await expect(page.locator('#lingo-app')).toContainText(text);
+  }
+});
+
 
 test('test - functions-math', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
@@ -237,6 +256,19 @@ test('test - functions-random', async ({ page }) => {
   await expect(page.locator('h1')).toContainText('Random Functions');
 
   await expect(page.locator('#lingo-app')).toContainText('random.randint(1, 10) = ');
+});
+
+test('test - functions-client', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/functions-client.json');
+
+  await expect(page.locator('h1')).toContainText('Client Functions');
+  await expect(page.locator('#lingo-app')).toContainText('client.reload()');
+
+  await Promise.all([
+    page.waitForEvent('load'),
+    page.getByRole('button', { name: 'Reload Page' }).click()
+  ]);
 });
 
 test('test - hello_world script', async ({ page }) => {
@@ -353,180 +385,257 @@ test('test - switch_example script', async ({ page }) => {
   }
 });
 
-test('test - builtin mapp project page', async ({ page }) => {
-  await page.goto('http://127.0.0.1:8000/');
-  await page.locator('#spec-select').selectOption('data/lingo/pages/builtin-mapp-project.json');
-
-  //
-  // default params
-  //
-
-  // Check that the heading contains the project name
-  await expect(page.locator('h1')).toContainText(':: My Lingo Project');
-  
-  // Check that the page says "Available Modules:"
-  await expect(page.locator('#lingo-app')).toContainText(':: available modules');
-  
-  // Check that links are generated for each module with concat working
-  await expect(page.locator('a[href="/my-module-a"]')).toContainText('my-module-a');
-  await expect(page.locator('a[href="/my-module-b"]')).toContainText('my-module-b');
-  
-  // 
-  // custom params
-  //
-
-  const params = {
-    "project_name": "My Social App",
-    "module_names": ["users", "posts", "comments"]
-  };
-  await page.locator('#lingo-app-params-textarea').fill(JSON.stringify(params, null, 4));
-  await page.getByRole('button', { name: 'Run' }).click();
-  
-  // Check that the heading contains the project name
-  await expect(page.locator('h1')).toContainText(':: My Social App');
-  
-  // Check that the page says "Available Modules:"
-  await expect(page.locator('#lingo-app')).toContainText(':: available modules');
-  
-  // Check that links are generated for each module with concat working
-  await expect(page.locator('a[href="/users"]')).toContainText('users');
-  await expect(page.locator('a[href="/posts"]')).toContainText('posts');
-  await expect(page.locator('a[href="/comments"]')).toContainText('comments');
-});
-
-test('test - builtin mapp module page', async ({ page }) => {
-  await page.goto('http://127.0.0.1:8000/');
-  await page.locator('#spec-select').selectOption('data/lingo/pages/builtin-mapp-module.json');
-
-  //
-  // default params
-  //
-
-  // Check that the heading contains the project name
-  await expect(page.locator('h1')).toContainText(':: my-module-a');
-  
-  // Check that the page says "Available Models:"
-  await expect(page.locator('#lingo-app')).toContainText(':: available models');
-  
-  // Check that links are generated for each model with concat working
-  await expect(page.locator('a[href="/my-module-a/my-model-a"]')).toContainText('my-model-a');
-  await expect(page.locator('a[href="/my-module-a/my-model-b"]')).toContainText('my-model-b');
-
-  // Check that the page says "Available Ops:"
-  await expect(page.locator('#lingo-app')).toContainText(':: available operations');
-  
-  // Check that links are generated for each op with concat working
-  await expect(page.locator('a[href="/my-module-a/my-op-a"]')).toContainText('my-op-a');
-  await expect(page.locator('a[href="/my-module-a/my-op-b"]')).toContainText('my-op-b');
-  
-  // 
-  // custom params
-  //
-
-  const params = {
-    "project_name": "My Social App",
-    "module_name": "users",
-    "model_names": ["user", "profile", "settings"],
-    "op_names": ["create_user", "delete_user", "update_profile"]
-  };
-  await page.locator('#lingo-app-params-textarea').fill(JSON.stringify(params, null, 4));
-  await page.getByRole('button', { name: 'Run' }).click();
-  
-  // Check that the heading contains the project name
-  await expect(page.locator('h1')).toContainText(':: users');
-  
-  // Check that the page says "Available Models:"
-  await expect(page.locator('#lingo-app')).toContainText(':: available models');
-  
-  // Check that links are generated for each model with concat working
-  await expect(page.locator('a[href="/users/user"]')).toContainText('user');
-  await expect(page.locator('a[href="/users/profile"]')).toContainText('profile');
-  await expect(page.locator('a[href="/users/settings"]')).toContainText('settings');
-
-  // Check that the page says "Available Ops:"
-  await expect(page.locator('#lingo-app')).toContainText(':: available operations');
-  
-  // Check that links are generated for each op with concat working
-  await expect(page.locator('a[href="/users/create_user"]')).toContainText('create_user');
-  await expect(page.locator('a[href="/users/delete_user"]')).toContainText('delete_user');
-  await expect(page.locator('a[href="/users/update_profile"]')).toContainText('update_profile');
-});
-
 test('test - structs page', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
   await page.locator('#spec-select').selectOption('data/lingo/pages/structs.json');
 
-  // Check for Individual Structs heading
-  await expect(page.locator('h1').first()).toContainText('Individual Structs');
+  // Check all section headings (scoped to #lingo-app to exclude static page elements)
+  const lingoApp = page.locator('#lingo-app');
+  await expect(lingoApp.locator('h1').nth(0)).toContainText('Individual Structs');
+  await expect(lingoApp.locator('h1').nth(1)).toContainText('List of Structs');
+  await expect(lingoApp.locator('h2').nth(0)).toContainText('Primitives: str, int, bool');
+  await expect(lingoApp.locator('h2').nth(1)).toContainText('Primitives: float, datetime');
+  await expect(lingoApp.locator('h2').nth(2)).toContainText('Lists of primitives');
+  await expect(lingoApp.locator('h2').nth(3)).toContainText('Lists with datetime elements');
+  await expect(lingoApp.locator('h2').nth(4)).toContainText('Mixed struct with all types');
+  await expect(lingoApp.locator('h2').nth(5)).toContainText('Basic types in table');
 
-  // Check for struct tables
+  // Check total table count: individual structs (12) + list tables (4) = 16
   const tables = page.locator('table');
-  // We should have many tables: individual structs (12) + list tables (3) = 15 total
-  await expect(tables).toHaveCount(15);
+  await expect(tables).toHaveCount(16);
 
-  // Check first struct table (primitives: str, int, bool - hardcoded)
-  const firstTable = tables.nth(0);
-  await expect(firstTable.locator('th').nth(0)).toContainText('key');
-  await expect(firstTable.locator('th').nth(1)).toContainText('value');
-  await expect(firstTable.locator('td').filter({ hasText: 'color' })).toBeVisible();
-  await expect(firstTable.locator('td').filter({ hasText: 'red' })).toBeVisible();
-  await expect(firstTable.locator('td').filter({ hasText: 'amount' })).toBeVisible();
-  await expect(firstTable.locator('td').filter({ hasText: '10' })).toBeVisible();
-  await expect(firstTable.locator('td').filter({ hasText: 'in_stock' })).toBeVisible();
-  await expect(firstTable.locator('td').filter({ hasText: 'true' })).toBeVisible();
+  //
+  // primitives: str, int, bool
+  //
 
-  // Check second struct table (primitives with typed values)
-  const secondTable = tables.nth(1);
-  await expect(secondTable.locator('td').filter({ hasText: 'green' })).toBeVisible();
-  await expect(secondTable.locator('td').filter({ hasText: '20' })).toBeVisible();
+  // Table 0: str/int/bool hardcoded - with key/value headers
+  const primitivesHardcodedTable = tables.nth(0);
+  await expect(primitivesHardcodedTable.locator('th').nth(0)).toContainText('key');
+  await expect(primitivesHardcodedTable.locator('th').nth(1)).toContainText('value');
+  await expect(primitivesHardcodedTable.locator('td').filter({ hasText: 'color' })).toBeVisible();
+  await expect(primitivesHardcodedTable.locator('td').filter({ hasText: 'red' })).toBeVisible();
+  await expect(primitivesHardcodedTable.locator('td').filter({ hasText: 'amount' })).toBeVisible();
+  await expect(primitivesHardcodedTable.locator('td').filter({ hasText: '10' })).toBeVisible();
+  await expect(primitivesHardcodedTable.locator('td').filter({ hasText: 'in_stock' })).toBeVisible();
+  await expect(primitivesHardcodedTable.locator('td').filter({ hasText: 'true' })).toBeVisible();
 
-  // Check third struct table (no headers, with scripted values)
-  const thirdTable = tables.nth(2);
-  // This table should NOT have header row
-  await expect(thirdTable.locator('th')).toHaveCount(0);
-  await expect(thirdTable.locator('td').filter({ hasText: 'blue' })).toBeVisible();
-  await expect(thirdTable.locator('td').filter({ hasText: '20' })).toBeVisible(); // 5 + 15 = 20
+  // Table 1: str/int/bool typed - with key/value headers
+  const primitiveTypedTable = tables.nth(1);
+  await expect(primitiveTypedTable.locator('th').nth(0)).toContainText('key');
+  await expect(primitiveTypedTable.locator('th').nth(1)).toContainText('value');
+  await expect(primitiveTypedTable.locator('td').filter({ hasText: 'color' })).toBeVisible();
+  await expect(primitiveTypedTable.locator('td').filter({ hasText: 'green' })).toBeVisible();
+  await expect(primitiveTypedTable.locator('td').filter({ hasText: 'amount' })).toBeVisible();
+  await expect(primitiveTypedTable.locator('td').filter({ hasText: '20' })).toBeVisible();
+  await expect(primitiveTypedTable.locator('td').filter({ hasText: 'in_stock' })).toBeVisible();
+  await expect(primitiveTypedTable.locator('td').filter({ hasText: 'true' })).toBeVisible();
 
-  // Check float/datetime struct (hardcoded)
-  const floatDatetimeTable = tables.nth(3);
-  await expect(floatDatetimeTable.locator('td').filter({ hasText: 'price' })).toBeVisible();
-  await expect(floatDatetimeTable.locator('td').filter({ hasText: '19.99' })).toBeVisible();
-  await expect(floatDatetimeTable.locator('td').filter({ hasText: 'created_at' })).toBeVisible();
-  await expect(floatDatetimeTable.locator('td').filter({ hasText: '2024-01-15T10:30:00' })).toBeVisible();
+  // Table 2: str/int/bool dynamic - NO headers
+  const primitiveDynamicTable = tables.nth(2);
+  await expect(primitiveDynamicTable.locator('th')).toHaveCount(0);
+  await expect(primitiveDynamicTable.locator('td').filter({ hasText: 'color' })).toBeVisible();
+  await expect(primitiveDynamicTable.locator('td').filter({ hasText: 'blue' })).toBeVisible();
+  await expect(primitiveDynamicTable.locator('td').filter({ hasText: 'amount' })).toBeVisible();
+  await expect(primitiveDynamicTable.locator('td').filter({ hasText: '20' })).toBeVisible(); // add(5, 15) = 20
+  await expect(primitiveDynamicTable.locator('td').filter({ hasText: 'in_stock' })).toBeVisible();
+  await expect(primitiveDynamicTable.locator('td').filter({ hasText: 'true' })).toBeVisible(); // eq(1, 1) = true
 
-  // Check list values struct
-  const listStruct = tables.nth(6);
-  await expect(listStruct.locator('td').filter({ hasText: 'tags' })).toBeVisible();
-  // Lists should be displayed as comma-separated strings
-  await expect(listStruct).toContainText('urgent');
+  //
+  // primitives: float, datetime
+  //
 
-  // Check for List of Structs heading
-  await expect(page.locator('h1').filter({ hasText: 'List of Structs' })).toBeVisible();
+  // Table 3: float/datetime hardcoded - with key/value headers
+  const floatDatetimeHardcodedTable = tables.nth(3);
+  await expect(floatDatetimeHardcodedTable.locator('th').nth(0)).toContainText('key');
+  await expect(floatDatetimeHardcodedTable.locator('th').nth(1)).toContainText('value');
+  await expect(floatDatetimeHardcodedTable.locator('td').filter({ hasText: 'price' })).toBeVisible();
+  await expect(floatDatetimeHardcodedTable.locator('td').filter({ hasText: '19.99' })).toBeVisible();
+  await expect(floatDatetimeHardcodedTable.locator('td').filter({ hasText: 'weight' })).toBeVisible();
+  await expect(floatDatetimeHardcodedTable.locator('td').filter({ hasText: '2.5' })).toBeVisible();
+  await expect(floatDatetimeHardcodedTable.locator('td').filter({ hasText: 'created_at' })).toBeVisible();
+  await expect(floatDatetimeHardcodedTable.locator('td').filter({ hasText: '2024-01-15T10:30:00' })).toBeVisible();
+  await expect(floatDatetimeHardcodedTable.locator('td').filter({ hasText: 'updated_at' })).toBeVisible();
+  await expect(floatDatetimeHardcodedTable.locator('td').filter({ hasText: '2024-06-20T14:45:30' })).toBeVisible();
 
-  // Check the first list table (basic types) - this is table index 12
-  const listTable = tables.nth(12);
-  await expect(listTable.locator('th').filter({ hasText: 'Color' })).toBeVisible();
-  await expect(listTable.locator('th').filter({ hasText: 'Amount' })).toBeVisible();
-  await expect(listTable.locator('th').filter({ hasText: 'In Stock' })).toBeVisible();
+  // Table 4: float/datetime typed - with key/value headers
+  const floatDatetimeTypedTable = tables.nth(4);
+  await expect(floatDatetimeTypedTable.locator('th').nth(0)).toContainText('key');
+  await expect(floatDatetimeTypedTable.locator('th').nth(1)).toContainText('value');
+  await expect(floatDatetimeTypedTable.locator('td').filter({ hasText: 'price' })).toBeVisible();
+  await expect(floatDatetimeTypedTable.locator('td').filter({ hasText: '29.99' })).toBeVisible();
+  await expect(floatDatetimeTypedTable.locator('td').filter({ hasText: 'weight' })).toBeVisible();
+  await expect(floatDatetimeTypedTable.locator('td').filter({ hasText: '3.75' })).toBeVisible();
+  await expect(floatDatetimeTypedTable.locator('td').filter({ hasText: 'created_at' })).toBeVisible();
+  await expect(floatDatetimeTypedTable.locator('td').filter({ hasText: '2023-12-01T08:00:00' })).toBeVisible();
+  await expect(floatDatetimeTypedTable.locator('td').filter({ hasText: 'updated_at' })).toBeVisible();
+  await expect(floatDatetimeTypedTable.locator('td').filter({ hasText: '2024-03-15T16:20:10' })).toBeVisible();
 
-  // Check rows in list table
-  const rows = listTable.locator('tbody tr');
-  await expect(rows).toHaveCount(3);
-  
-  // First row
-  await expect(rows.nth(0).locator('td').nth(0)).toContainText('red');
-  await expect(rows.nth(0).locator('td').nth(1)).toContainText('10');
-  await expect(rows.nth(0).locator('td').nth(2)).toContainText('true');
-  
-  // Second row
-  await expect(rows.nth(1).locator('td').nth(0)).toContainText('green');
-  await expect(rows.nth(1).locator('td').nth(1)).toContainText('20');
-  await expect(rows.nth(1).locator('td').nth(2)).toContainText('false');
-  
-  // Third row
-  await expect(rows.nth(2).locator('td').nth(0)).toContainText('blue');
-  await expect(rows.nth(2).locator('td').nth(1)).toContainText('20');
-  await expect(rows.nth(2).locator('td').nth(2)).toContainText('true');
+  // Table 5: float/datetime dynamic - NO headers
+  const floatDatetimeDynamicTable = tables.nth(5);
+  await expect(floatDatetimeDynamicTable.locator('th')).toHaveCount(0);
+  await expect(floatDatetimeDynamicTable.locator('td').filter({ hasText: 'price' })).toBeVisible();
+  await expect(floatDatetimeDynamicTable.locator('td').filter({ hasText: '19.99' })).toBeVisible(); // add(10.5, 9.49) = 19.99
+  await expect(floatDatetimeDynamicTable.locator('td').filter({ hasText: 'weight' })).toBeVisible();
+  await expect(floatDatetimeDynamicTable.locator('td').filter({ hasText: '2.5' })).toBeVisible(); // div(10.0, 4.0) = 2.5
+
+  //
+  // lists of primitives
+  //
+
+  // Table 6: lists of primitives hardcoded - with key/value headers
+  const listOfPrimitivesHardcoded = tables.nth(6);
+  await expect(listOfPrimitivesHardcoded.locator('th').nth(0)).toContainText('key');
+  await expect(listOfPrimitivesHardcoded.locator('th').nth(1)).toContainText('value');
+  await expect(listOfPrimitivesHardcoded.locator('td').filter({ hasText: 'tags' })).toBeVisible();
+  await expect(listOfPrimitivesHardcoded).toContainText('urgent');
+  await expect(listOfPrimitivesHardcoded).toContainText('important');
+  await expect(listOfPrimitivesHardcoded).toContainText('review');
+  await expect(listOfPrimitivesHardcoded.locator('td').filter({ hasText: 'scores' })).toBeVisible();
+  await expect(listOfPrimitivesHardcoded).toContainText('85');
+  await expect(listOfPrimitivesHardcoded).toContainText('92');
+  await expect(listOfPrimitivesHardcoded.locator('td').filter({ hasText: 'measurements' })).toBeVisible();
+  await expect(listOfPrimitivesHardcoded).toContainText('3.14');
+
+  // Table 7: lists of primitives typed - with key/value headers
+  const listOfPrimitivesTyped = tables.nth(7);
+  await expect(listOfPrimitivesTyped.locator('th').nth(0)).toContainText('key');
+  await expect(listOfPrimitivesTyped.locator('th').nth(1)).toContainText('value');
+  await expect(listOfPrimitivesTyped.locator('td').filter({ hasText: 'tags' })).toBeVisible();
+  await expect(listOfPrimitivesTyped).toContainText('electronics');
+  await expect(listOfPrimitivesTyped).toContainText('gadgets');
+  await expect(listOfPrimitivesTyped).toContainText('tech');
+  await expect(listOfPrimitivesTyped.locator('td').filter({ hasText: 'scores' })).toBeVisible();
+  await expect(listOfPrimitivesTyped).toContainText('88');
+  await expect(listOfPrimitivesTyped).toContainText('91');
+  await expect(listOfPrimitivesTyped).toContainText('79');
+  await expect(listOfPrimitivesTyped.locator('td').filter({ hasText: 'flags' })).toBeVisible();
+  await expect(listOfPrimitivesTyped.locator('td').filter({ hasText: 'measurements' })).toBeVisible();
+  await expect(listOfPrimitivesTyped).toContainText('2.5');
+  await expect(listOfPrimitivesTyped).toContainText('3.7');
+  await expect(listOfPrimitivesTyped).toContainText('1.2');
+
+  // Table 8: lists of primitives dynamic - NO headers
+  const listOfPrimitivesDynamic = tables.nth(8);
+  await expect(listOfPrimitivesDynamic.locator('th')).toHaveCount(0);
+  await expect(listOfPrimitivesDynamic.locator('td').filter({ hasText: 'tags' })).toBeVisible();
+  await expect(listOfPrimitivesDynamic.locator('td').filter({ hasText: 'total_score' })).toBeVisible();
+  await expect(listOfPrimitivesDynamic).toContainText('1');
+  await expect(listOfPrimitivesDynamic).toContainText('2');
+  await expect(listOfPrimitivesDynamic).toContainText('3');
+  await expect(listOfPrimitivesDynamic).toContainText('60'); // sum([10, 20, 30], start=0) = 60
+
+  //
+  // lists with datetime elements
+  //
+
+  // Table 9: datetime lists hardcoded - with key/value headers
+  const datetimeListsHardcoded = tables.nth(9);
+  await expect(datetimeListsHardcoded.locator('th').nth(0)).toContainText('key');
+  await expect(datetimeListsHardcoded.locator('th').nth(1)).toContainText('value');
+  await expect(datetimeListsHardcoded.locator('td').filter({ hasText: 'event_dates' })).toBeVisible();
+  await expect(datetimeListsHardcoded).toContainText('2024-01-01T00:00:00');
+  await expect(datetimeListsHardcoded).toContainText('2024-07-04T12:00:00');
+  await expect(datetimeListsHardcoded.locator('td').filter({ hasText: 'meeting_times' })).toBeVisible();
+  await expect(datetimeListsHardcoded).toContainText('2024-03-15T09:00:00');
+
+  // Table 10: datetime lists typed - with key/value headers
+  const datetimeListsTyped = tables.nth(10);
+  await expect(datetimeListsTyped.locator('th').nth(0)).toContainText('key');
+  await expect(datetimeListsTyped.locator('th').nth(1)).toContainText('value');
+  await expect(datetimeListsTyped.locator('td').filter({ hasText: 'event_dates' })).toBeVisible();
+  await expect(datetimeListsTyped).toContainText('2023-12-25T00:00:00');
+  await expect(datetimeListsTyped).toContainText('2024-01-01T00:00:00');
+  await expect(datetimeListsTyped.locator('td').filter({ hasText: 'deadlines' })).toBeVisible();
+  await expect(datetimeListsTyped).toContainText('2024-06-30T23:59:59');
+
+  //
+  // mixed struct with all types
+  //
+
+  // Table 11: mixed struct - with key/value headers
+  const mixedStructTable = tables.nth(11);
+  await expect(mixedStructTable.locator('th').nth(0)).toContainText('key');
+  await expect(mixedStructTable.locator('th').nth(1)).toContainText('value');
+  await expect(mixedStructTable.locator('td').filter({ hasText: 'name' })).toBeVisible();
+  await expect(mixedStructTable.locator('td').filter({ hasText: 'Product A' })).toBeVisible();
+  await expect(mixedStructTable.locator('td').filter({ hasText: 'quantity' })).toBeVisible();
+  await expect(mixedStructTable.locator('td').filter({ hasText: '42' })).toBeVisible();
+  await expect(mixedStructTable.locator('td').filter({ hasText: 'in_stock' })).toBeVisible();
+  await expect(mixedStructTable.locator('td').filter({ hasText: 'true' })).toBeVisible();
+  await expect(mixedStructTable.locator('td').filter({ hasText: 'price' })).toBeVisible();
+  await expect(mixedStructTable.locator('td').filter({ hasText: '99.95' })).toBeVisible();
+  await expect(mixedStructTable.locator('td').filter({ hasText: 'launch_date' })).toBeVisible();
+  await expect(mixedStructTable.locator('td').filter({ hasText: '2024-01-15T10:00:00' })).toBeVisible();
+
+  //
+  // list of structs
+  //
+
+  // Table 12: basic types table - with column headers
+  const listStructsBasicTypesTable = tables.nth(12);
+  await expect(listStructsBasicTypesTable.locator('th').filter({ hasText: 'Color' })).toBeVisible();
+  await expect(listStructsBasicTypesTable.locator('th').filter({ hasText: 'Amount' })).toBeVisible();
+  await expect(listStructsBasicTypesTable.locator('th').filter({ hasText: 'In Stock' })).toBeVisible();
+  const basicTypeRows = listStructsBasicTypesTable.locator('tbody tr');
+  await expect(basicTypeRows).toHaveCount(3);
+  await expect(basicTypeRows.nth(0).locator('td').nth(0)).toContainText('red');
+  await expect(basicTypeRows.nth(0).locator('td').nth(1)).toContainText('10');
+  await expect(basicTypeRows.nth(0).locator('td').nth(2)).toContainText('true');
+  await expect(basicTypeRows.nth(1).locator('td').nth(0)).toContainText('green');
+  await expect(basicTypeRows.nth(1).locator('td').nth(1)).toContainText('20');
+  await expect(basicTypeRows.nth(1).locator('td').nth(2)).toContainText('false');
+  await expect(basicTypeRows.nth(2).locator('td').nth(0)).toContainText('blue');
+  await expect(basicTypeRows.nth(2).locator('td').nth(1)).toContainText('20');
+  await expect(basicTypeRows.nth(2).locator('td').nth(2)).toContainText('true');
+
+  // Table 13: float/datetime table - with column headers
+  const floatDatetimeListTable = tables.nth(13);
+  await expect(floatDatetimeListTable.locator('th').filter({ hasText: 'Product' })).toBeVisible();
+  await expect(floatDatetimeListTable.locator('th').filter({ hasText: 'Price' })).toBeVisible();
+  await expect(floatDatetimeListTable.locator('th').filter({ hasText: 'Weight' })).toBeVisible();
+  await expect(floatDatetimeListTable.locator('th').filter({ hasText: 'Date Added' })).toBeVisible();
+  const floatDateRows = floatDatetimeListTable.locator('tbody tr');
+  await expect(floatDateRows).toHaveCount(3);
+  await expect(floatDateRows.nth(0).locator('td').nth(0)).toContainText('Widget A');
+  await expect(floatDateRows.nth(0).locator('td').nth(1)).toContainText('19.99');
+  await expect(floatDateRows.nth(0).locator('td').nth(2)).toContainText('1.5');
+  await expect(floatDateRows.nth(0).locator('td').nth(3)).toContainText('2024-01-10T08:00:00');
+  await expect(floatDateRows.nth(1).locator('td').nth(0)).toContainText('Widget B');
+  await expect(floatDateRows.nth(1).locator('td').nth(1)).toContainText('29.99');
+  await expect(floatDateRows.nth(1).locator('td').nth(2)).toContainText('2.75');
+  await expect(floatDateRows.nth(1).locator('td').nth(3)).toContainText('2024-02-15T10:30:00');
+  await expect(floatDateRows.nth(2).locator('td').nth(0)).toContainText('Widget C');
+  await expect(floatDateRows.nth(2).locator('td').nth(1)).toContainText('39.9'); // add(20.0, 19.99) renders as 39.989999999999995 due to JS float precision
+  await expect(floatDateRows.nth(2).locator('td').nth(2)).toContainText('2.5'); // div(10.0, 4.0) = 2.5
+
+  // Table 14: list-type columns table - with column headers
+  const listTypeColumnsTable = tables.nth(14);
+  await expect(listTypeColumnsTable.locator('th').filter({ hasText: 'Item' })).toBeVisible();
+  await expect(listTypeColumnsTable.locator('th').filter({ hasText: 'Tags' })).toBeVisible();
+  await expect(listTypeColumnsTable.locator('th').filter({ hasText: 'Scores' })).toBeVisible();
+  await expect(listTypeColumnsTable.locator('th').filter({ hasText: 'Flags' })).toBeVisible();
+  const listTypeRows = listTypeColumnsTable.locator('tbody tr');
+  await expect(listTypeRows).toHaveCount(3);
+  await expect(listTypeRows.nth(0).locator('td').nth(0)).toContainText('Item 1');
+  await expect(listTypeRows.nth(0).locator('td').nth(1)).toContainText('new');
+  await expect(listTypeRows.nth(0).locator('td').nth(1)).toContainText('featured');
+  await expect(listTypeRows.nth(0).locator('td').nth(2)).toContainText('90');
+  await expect(listTypeRows.nth(1).locator('td').nth(0)).toContainText('Item 2');
+  await expect(listTypeRows.nth(1).locator('td').nth(1)).toContainText('sale');
+  await expect(listTypeRows.nth(1).locator('td').nth(1)).toContainText('limited');
+  await expect(listTypeRows.nth(1).locator('td').nth(2)).toContainText('88');
+  await expect(listTypeRows.nth(2).locator('td').nth(0)).toContainText('Item 3');
+  await expect(listTypeRows.nth(2).locator('td').nth(2)).toContainText('75');
+
+  // Table 15: table without headers (uses columns, not headers)
+  const noHeadersTable = tables.nth(15);
+  await expect(noHeadersTable.locator('th')).toHaveCount(0);
+  const noHeaderRows = noHeadersTable.locator('tbody tr');
+  await expect(noHeaderRows).toHaveCount(2);
+  await expect(noHeaderRows.nth(0).locator('td').nth(0)).toContainText('Arbitrary informtion');
+  await expect(noHeaderRows.nth(0).locator('td').nth(1)).toContainText('More arbitrary information');
+  await expect(noHeaderRows.nth(1).locator('td').nth(0)).toContainText('Space astronaughts are cool');
+  await expect(noHeaderRows.nth(1).locator('td').nth(2)).toContainText('I like turtles');
 });
 
 test('test - forms page', async ({ page }) => {
@@ -611,6 +720,38 @@ test('test - forms page', async ({ page }) => {
   
   // Click submit button - this logs to console
   await page.getByRole('button', { name: 'Submit' }).click();
+});
+
+test('test - forms required enum and datetime fields', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/forms-required-fields.json');
+
+  await expect(page.locator('h1')).toContainText('Forms Required Fields');
+
+  const categorySelect = page.locator('table select').first();
+  await expect(categorySelect).toHaveValue('');
+
+  const releaseDateInput = page.locator('input[type="datetime-local"]').first();
+  await expect(releaseDateInput).toHaveValue('');
+
+  let requestCount = 0;
+  page.on('request', request => {
+    if (request.url().includes('/api/should-not-be-called')) {
+      requestCount += 1;
+    }
+  });
+
+  await page.getByRole('button', { name: 'Submit' }).click();
+
+  await expect(page.locator('.field-error')).toHaveCount(2);
+  await expect(page.locator('.field-error').first()).toContainText('(required field)');
+  await expect.poll(() => requestCount).toBe(0);
+
+  await categorySelect.selectOption('electronics');
+  await releaseDateInput.fill('2026-04-16T04:25');
+  await page.getByRole('button', { name: 'Submit' }).click();
+
+  await expect.poll(() => requestCount).toBe(1);
 });
 
 test('test - formatting page', async ({ page }) => {
@@ -701,4 +842,106 @@ test('test - viewer gallery page', async ({ page }) => {
   await expect(page.locator('.viewer-controls span')).toContainText('2 / 3');
   await expect(prevButton).toBeEnabled();
   await expect(nextButton).toBeEnabled();
+});
+
+test('test - secure field redaction', async ({ page }) => {
+  const fakeToken = 'test_access_token_value_abc123xyz_very_long';
+
+  // Mock the login API endpoint
+  await page.route('**/api/auth/login-user', route => {
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        result: {
+          access_token: fakeToken,
+          token_type: 'bearer'
+        }
+      })
+    });
+  });
+
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/test-secure-fields.json');
+
+  // Confirm the login form is shown with a password input
+  await expect(page.locator('input[type="password"]')).toBeVisible();
+
+  // Fill in the form and submit
+  await page.locator('input[type="text"]').fill('test@example.com');
+  await page.getByRole('button', { name: 'Submit' }).click();
+
+  // Wait for result
+  await expect(page.locator('#lingo-app')).toContainText('success');
+
+  // Confirm access_token is redacted
+  await expect(page.locator('#lingo-app')).toContainText('REDACTED');
+  await expect(page.locator('#lingo-app')).not.toContainText(fakeToken);
+
+  // Press show button for access_token (last 'show' button, after the form's password show button)
+  await page.getByRole('button', { name: 'show' }).last().click();
+
+  // Confirm access_token is not redacted
+  await expect(page.locator('#lingo-app')).not.toContainText('REDACTED');
+  await expect(page.locator('#lingo-app')).toContainText(fakeToken);
+
+  // Confirm password input is still visible in the form (auth/login-user form)
+  await expect(page.locator('input[type="password"]')).toBeVisible();
+
+  // Click show sensitive fields for the password input
+  await page.getByRole('button', { name: 'show' }).first().click();
+
+  // Confirm there are no password inputs
+  await expect(page.locator('input[type="password"]')).not.toBeVisible();
+});
+test('test - spec file loaded from url query param', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/?spec=data/lingo/pages/test-page.json');
+
+  await expect(page.locator('#spec-select')).toHaveValue('data/lingo/pages/test-page.json');
+  await expect(page.locator('h1')).toContainText('Example document');
+  await expect(page.locator('#lingo-app')).toContainText('Please tell us your name:');
+});
+
+test('test - spec file added to url on dropdown change', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+
+  await page.locator('#spec-select').selectOption('data/lingo/pages/test-page.json');
+
+  await expect(page).toHaveURL(/[?&]spec=data%2Flingo%2Fpages%2Ftest-page\.json/);
+  await expect(page.locator('h1')).toContainText('Example document');
+});
+
+test('test - timers', async ({ page }) => {
+  test.setTimeout(25000); // timers test needs extra time for countdown to complete
+
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/timers.json');
+
+  await expect(page.locator('h1')).toContainText('Timers');
+
+  // Auto-start: clock should be running - capture the time text and wait for it to change
+  const initialTime = await page.locator('#lingo-app').textContent();
+  await page.waitForTimeout(1500);
+  const updatedTime = await page.locator('#lingo-app').textContent();
+  expect(updatedTime).not.toEqual(initialTime);
+
+  // Initial countdown state is -1, button should be enabled
+  await expect(page.locator('#lingo-app')).toContainText('-1');
+  await expect(page.getByRole('button', { name: 'start countdown' })).toBeEnabled();
+
+  // Start the countdown from the button
+  await page.getByRole('button', { name: 'start countdown' }).click();
+
+  // -1 should disappear and countdown should start at 5
+  await expect(page.locator('#lingo-app')).not.toContainText('Countdown: -1');
+  await expect(page.locator('#lingo-app')).toContainText('5');
+
+  // Button should now be disabled since countdown is running
+  await expect(page.getByRole('button', { name: 'start countdown' })).toBeDisabled();
+
+  // Wait for the countdown to finish (it runs from 5 down to -1, 6 seconds max + buffer)
+  await expect(page.locator('#lingo-app')).toContainText('Countdown: -1', { timeout: 9000 });
+
+  // Timer has disabled itself - button should be enabled again
+  await expect(page.getByRole('button', { name: 'start countdown' })).toBeEnabled();
 });

@@ -7,7 +7,13 @@
     "state": {
         "my_test_form": {
             "type": "struct",
-            "default": {}
+            "default": {
+				"state": "initial",
+                "error": "",
+                "item_id": "",
+                "data": {},
+                "field_errors": {}
+			}
         }
     },
 

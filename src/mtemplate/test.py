@@ -12,6 +12,8 @@ from mspec.core import load_generator_spec
 
 from dotenv import dotenv_values
 
+raise RuntimeError('Is this used anywhere?')
+
 def example_from_model(model:dict, index=0) -> dict:
     data = {}
     for field_name, field in model.get('fields', {}).items():

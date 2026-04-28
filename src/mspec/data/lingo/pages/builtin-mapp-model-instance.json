@@ -1,6 +1,7 @@
 {
     "lingo": {
-        "version": "page-beta-1"
+        "version": "page-beta-1",
+        "parent_url": "/api/spec"
     },
     "params": {
         "project_name": {
@@ -106,7 +107,8 @@
             "default": {
                 "state": "pending",
                 "error": "",
-                "data": {}
+                "data": {},
+                "field_errors": {}
             }
         },
         "header": {
