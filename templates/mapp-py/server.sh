@@ -15,6 +15,7 @@ ENVFILE=".env"
 PID_FILE="app/server.pid"
 LOG_FILE="app/server.log"
 CONFIG_FILE="./uwsgi.yaml"
+UWSGI_STATS_SOCKET="app/stats.socket"
 TOUCH_RELOAD_FILE=app/touch-to-reload
 STOP=false
 TAIL_AFTER=false
@@ -34,6 +35,8 @@ usage() {
   echo "  restart                     Restart the uwsgi server"
   echo "  log                         Tail the uwsgi log file"
   echo "  status                      Check uwsgi server status"
+  echo "  stats                       Show uwsgi stats"
+  echo "                                wraps command: uwsgitop ${UWSGI_STATS_SOCKET}"
   echo ""
   echo "Options:"
   echo "  --log-file <path>           Path to uwsgi log file (default: app/server.log)"
@@ -280,6 +283,9 @@ case "$COMMAND" in
     printf "\n::\n:: tailing uwsgi log\n::\n\n"
     tail -f "$LOG_FILE"
     ;;
+  stats)
+    uwsgitop "$UWSGI_STATS_SOCKET"
+	;;
   *)
     usage "Invalid command: $COMMAND."
     ;;
