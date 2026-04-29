@@ -359,7 +359,8 @@ def current_user(ctx: MappContext) -> dict:
     access_token = ctx.current_access_token()
     
     if access_token is None or access_token == '':
-        raise AuthenticationError('Not logged in (a)')
+        ctx.log('Not logged in - (a) - no access token found')
+        raise AuthenticationError('Not logged in')
 
     user, _jti = _parse_access_token(ctx, access_token)
     
@@ -394,11 +395,12 @@ def logout_user(ctx: MappContext, mode: str) -> dict:
 
     access_token = ctx.current_access_token()
     if access_token is None:
+        ctx.log('Not logged in - (b) - already logged out')
         return {
             'type': 'struct',
             'value': {
                 'acknowledged': True,
-                'message': 'Not logged in (b)'
+                'message': 'Already logged out'
             }
 
         }
@@ -451,7 +453,8 @@ def delete_user(ctx: MappContext) -> dict:
 
     access_token = ctx.current_access_token()
     if access_token is None:
-        raise AuthenticationError('Not logged in (c)')
+        ctx.log('Not logged in - (c) - no access token found')
+        raise AuthenticationError('Not logged in')
 
     user, jti = _parse_access_token(ctx, access_token)
 
