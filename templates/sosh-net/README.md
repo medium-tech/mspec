@@ -4,7 +4,7 @@
 
 
 ## linux setup
-when install python deps, do not install as editable module
+when installing python deps, do not install as editable module
 
 On debian/ubuntu
 
