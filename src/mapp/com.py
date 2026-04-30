@@ -9,6 +9,7 @@ from email.mime.multipart import MIMEMultipart
 from mapp.auth import current_user, _get_password_hash, _verify_password
 from mapp.context import MappContext
 from mapp.errors import AuthenticationError, MappError
+from mapp.types import datetime_from_db, datetime_for_db
 
 __all__ = [
     'send_email',
@@ -21,8 +22,13 @@ __all__ = [
 #
 
 _CODE_DIGITS = 6
-_CODE_MIN = 10 ** (_CODE_DIGITS - 1)       # 100000
-_CODE_RANGE = (10 ** _CODE_DIGITS) - _CODE_MIN  # 900000  (ensures exactly 6 digits)
+_CODE_MAX = 10 ** _CODE_DIGITS
+
+MAPP_SMTP_MOCK = os.environ.get('MAPP_SMTP_MOCK', 'false').lower() == 'true'
+MAPP_SMTP_HOST = os.environ.get('MAPP_SMTP_HOST', 'localhost')
+MAPP_SMTP_PORT = int(os.environ.get('MAPP_SMTP_PORT', 587))
+MAPP_SMTP_SENDER = os.environ.get('MAPP_SMTP_SENDER', '')
+MAPP_EMAIL_VERIFICATION_EXPIRATION = int(os.environ.get('MAPP_EMAIL_VERIFICATION_EXPIRATION', 600))
 
 #
 # internal
@@ -30,7 +36,7 @@ _CODE_RANGE = (10 ** _CODE_DIGITS) - _CODE_MIN  # 900000  (ensures exactly 6 dig
 
 def _generate_verification_code() -> str:
     """Generate a 6-digit numeric verification code."""
-    return str(secrets.randbelow(_CODE_RANGE) + _CODE_MIN)
+    return str(secrets.randbelow(_CODE_MAX)).zfill(_CODE_DIGITS)
 
 #
 # external
@@ -42,26 +48,22 @@ def send_email(ctx: MappContext, email: str, subject: str, body: str) -> dict:
     If MAPP_SMTP_MOCK is true the email is only logged and not sent via SMTP.
     """
 
-    if os.environ.get('MAPP_SMTP_MOCK', 'false').lower() == 'true':
-        ctx.log(f'send_email mock - to: {email} subject: {subject} body: {body}')
+    if MAPP_SMTP_MOCK:
+        ctx.log(f':: send_email :: MOCK - to: {email} subject: {subject} body: {body}')
     else:
-        smtp_host = os.environ.get('MAPP_SMTP_HOST', 'localhost')
-        try:
-            smtp_port = int(os.environ.get('MAPP_SMTP_PORT', 587))
-        except ValueError:
-            raise MappError('INVALID_SMTP_PORT', 'MAPP_SMTP_PORT must be an integer')
-        smtp_sender = os.environ.get('MAPP_SMTP_SENDER', '')
-
+        if not MAPP_SMTP_SENDER:
+            raise MappError('SMTP_CONFIG_ERROR', 'SMTP sender address is not configured')
+        
         msg = MIMEMultipart()
-        msg['From'] = smtp_sender
+        msg['From'] = MAPP_SMTP_SENDER
         msg['To'] = email
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'plain'))
 
         try:
-            with smtplib.SMTP(smtp_host, smtp_port) as server:
+            with smtplib.SMTP(MAPP_SMTP_HOST, MAPP_SMTP_PORT) as server:
                 server.starttls()
-                server.sendmail(smtp_sender, email, msg.as_string())
+                server.sendmail(MAPP_SMTP_SENDER, email, msg.as_string())
         except smtplib.SMTPException as e:
             raise MappError('SMTP_ERROR', f'Failed to send email: {e}')
 
@@ -85,11 +87,11 @@ def start_email_verification(ctx: MappContext) -> dict:
 
     code = _generate_verification_code()
     code_hash = _get_password_hash(code)
-    created_at = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S')
+    created_at = datetime_for_db(datetime.now(timezone.utc))
 
     ctx.db.cursor.execute(
         'INSERT INTO email_verifications (user_id, created_at, code_hash, verified) VALUES (?, ?, ?, ?)',
-        (user_id, created_at, code_hash, 0)
+        (user_id, created_at, code_hash, False)
     )
     ctx.db.commit()
 
@@ -113,7 +115,7 @@ def verify_email_address(ctx: MappContext, code: str) -> dict:
     user_result = current_user(ctx)
     user_id = user_result['value']['id']
 
-    expiration_seconds = int(os.environ.get('MAPP_EMAIL_VERIFICATION_EXPIRATION', 600))
+    expiration_seconds = MAPP_EMAIL_VERIFICATION_EXPIRATION
     now = datetime.now(timezone.utc)
 
     rows = ctx.db.cursor.execute(
@@ -127,7 +129,7 @@ def verify_email_address(ctx: MappContext, code: str) -> dict:
     for row in rows:
         record_id, created_at_str, stored_hash = row
         try:
-            created_at = datetime.strptime(created_at_str, '%Y-%m-%dT%H:%M:%S').replace(tzinfo=timezone.utc)
+            created_at = datetime_from_db(created_at_str)
         except (ValueError, TypeError):
             continue
 
@@ -143,7 +145,7 @@ def verify_email_address(ctx: MappContext, code: str) -> dict:
         raise AuthenticationError('Invalid or expired verification code')
 
     ctx.db.cursor.execute(
-        'UPDATE user SET email_verified = 1 WHERE id = ?',
+        'UPDATE user SET email_verified = true WHERE id = ?',
         (user_id,)
     )
     ctx.db.cursor.execute(
