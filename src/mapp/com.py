@@ -8,7 +8,7 @@ from email.mime.multipart import MIMEMultipart
 
 from mapp.auth import current_user, _get_password_hash, _verify_password
 from mapp.context import MappContext
-from mapp.errors import AuthenticationError
+from mapp.errors import AuthenticationError, MappError
 
 __all__ = [
     'send_email',
@@ -17,12 +17,20 @@ __all__ = [
 ]
 
 #
+# constants
+#
+
+_CODE_DIGITS = 6
+_CODE_MIN = 10 ** (_CODE_DIGITS - 1)       # 100000
+_CODE_RANGE = (10 ** _CODE_DIGITS) - _CODE_MIN  # 900000  (ensures exactly 6 digits)
+
+#
 # internal
 #
 
 def _generate_verification_code() -> str:
     """Generate a 6-digit numeric verification code."""
-    return str(secrets.randbelow(900000) + 100000)
+    return str(secrets.randbelow(_CODE_RANGE) + _CODE_MIN)
 
 #
 # external
@@ -38,7 +46,10 @@ def send_email(ctx: MappContext, email: str, subject: str, body: str) -> dict:
         ctx.log(f'send_email mock - to: {email} subject: {subject} body: {body}')
     else:
         smtp_host = os.environ.get('MAPP_SMTP_HOST', 'localhost')
-        smtp_port = int(os.environ.get('MAPP_SMTP_PORT', 587))
+        try:
+            smtp_port = int(os.environ.get('MAPP_SMTP_PORT', 587))
+        except ValueError:
+            raise MappError('INVALID_SMTP_PORT', 'MAPP_SMTP_PORT must be an integer')
         smtp_sender = os.environ.get('MAPP_SMTP_SENDER', '')
 
         msg = MIMEMultipart()
@@ -47,9 +58,12 @@ def send_email(ctx: MappContext, email: str, subject: str, body: str) -> dict:
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'plain'))
 
-        with smtplib.SMTP(smtp_host, smtp_port) as server:
-            server.starttls()
-            server.sendmail(smtp_sender, email, msg.as_string())
+        try:
+            with smtplib.SMTP(smtp_host, smtp_port) as server:
+                server.starttls()
+                server.sendmail(smtp_sender, email, msg.as_string())
+        except smtplib.SMTPException as e:
+            raise MappError('SMTP_ERROR', f'Failed to send email: {e}')
 
     return {
         'type': 'struct',
@@ -103,6 +117,8 @@ def verify_email_address(ctx: MappContext, code: str) -> dict:
     now = datetime.now(timezone.utc)
 
     rows = ctx.db.cursor.execute(
+        # check only the 3 most recent records to bound the verification effort
+        # while allowing for a small number of retries before the code expires
         'SELECT id, created_at, code_hash FROM email_verifications WHERE user_id = ? ORDER BY id DESC LIMIT 3',
         (user_id,)
     ).fetchall()
