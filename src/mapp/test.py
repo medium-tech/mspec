@@ -1386,6 +1386,158 @@ class TestMTemplateApp(unittest.TestCase):
 
     # builtin - file system tests #
 
+    def _test_email_verification_flow(self, ctx:dict, io_type:str):
+        """
+        Test the email verification flow using mock SMTP.
+
+        1. create-user and login-user
+        2. com send-email (mock mode) - verify acknowledged response
+        3. com start-email-verification (mock mode) - captures code from log output
+        4. com verify-email-address with the code - verify acknowledged response
+        5. auth current-user - verify email_verified is true
+        """
+
+        env = ctx.copy()
+        env['MAPP_SMTP_MOCK'] = 'true'
+
+        try:
+            del env['MAPP_CLI_ACCESS_TOKEN']
+        except KeyError:
+            pass
+
+        env['MAPP_CLI_SESSION_FILE'] = os.path.join(self.test_dir, f'email-verify-flow-{io_type}-session.json')
+
+        try:
+            os.remove(env['MAPP_CLI_SESSION_FILE'])
+        except FileNotFoundError:
+            pass
+
+        user_email = f'email-verify-{io_type}@example.com'
+        user_name = f'email-verify-{io_type}'
+        user_password = self.test_password
+
+        def run_cmd(args, expected_code=0):
+            result = subprocess.run(args, capture_output=True, text=True, env=env, timeout=10)
+            msg = f'expected {expected_code} got {result.returncode} for command "{" ".join(args)}" output: {result.stdout + result.stderr}'
+            self.assertEqual(result.returncode, expected_code, msg)
+            return result
+
+        # 1. create-user #
+
+        create_input = json.dumps({'name': user_name, 'email': user_email, 'password': user_password, 'password_confirm': user_password})
+        run_cmd(self.cmd + ['auth', 'create-user', io_type, create_input])
+
+        # 2. login-user #
+
+        login_input = json.dumps({'email': user_email, 'password': user_password})
+        login_result = run_cmd(self.cmd + ['auth', 'login-user', io_type, login_input])
+        self.assertIn('access_token', login_result.stdout)
+
+        # 3. com send-email (mock) #
+
+        send_input = json.dumps({'email': user_email, 'subject': 'Test', 'body': 'Hello'})
+        send_result = run_cmd(self.cmd + ['com', 'send-email', io_type, send_input])
+        send_data = json.loads(send_result.stdout)['result']
+        self.assertTrue(send_data['acknowledged'], f'send-email not acknowledged: {send_data}')
+
+        # 4. start-email-verification (mock, with --log to capture code) #
+
+        start_result = run_cmd(self.cmd + ['--log', 'com', 'start-email-verification', io_type])
+        start_data = json.loads(start_result.stdout)['result']
+        self.assertTrue(start_data['acknowledged'], f'start-email-verification not acknowledged: {start_data}')
+
+        # parse the verification code from log output #
+
+        code_match = re.search(r'Your verification code is: (\d{6})', start_result.stdout)
+        self.assertIsNotNone(code_match, f'Could not find verification code in log output: {start_result.stdout}')
+        code = code_match.group(1)
+
+        # 5. verify-email-address with code #
+
+        verify_input = json.dumps({'code': code})
+        verify_result = run_cmd(self.cmd + ['com', 'verify-email-address', io_type, verify_input])
+        verify_data = json.loads(verify_result.stdout)['result']
+        self.assertTrue(verify_data['acknowledged'], f'verify-email-address not acknowledged: {verify_data}')
+
+        # 6. current-user - confirm email_verified is true #
+
+        current_result = run_cmd(self.cmd + ['auth', 'current-user', io_type])
+        current_data = json.loads(current_result.stdout)['result']
+        self.assertTrue(current_data.get('email_verified'), f'email_verified should be true after verification: {current_data}')
+
+        # 7. verify-email-address with wrong code should fail #
+
+        wrong_code_input = json.dumps({'code': '000000'})
+        run_cmd(self.cmd + ['com', 'verify-email-address', io_type, wrong_code_input], expected_code=1)
+
+    def test_cli_run_email_verification_flow(self):
+        self._test_email_verification_flow(self.crud_ctx, 'run')
+
+    def test_cli_http_email_verification_flow(self):
+        self._test_email_verification_flow(self.crud_ctx, 'http')
+
+    def test_server_email_verification_flow(self):
+        """
+        Test the email verification flow via the HTTP server.
+        Requires MAPP_SMTP_MOCK to be set in the server environment.
+        """
+        self._check_servers_running()
+
+        base_ctx = {
+            'headers': {'Content-Type': 'application/json'}
+        }
+        base_ctx.update(self.crud_ctx)
+
+        user_email = 'email-verify-server@example.com'
+        user_name = 'email-verify-server'
+        user_password = self.test_password
+
+        # create-user #
+
+        create_status, create_resp = request(
+            base_ctx, 'POST', '/api/auth/create-user',
+            json.dumps({'name': user_name, 'email': user_email, 'password': user_password, 'password_confirm': user_password}).encode()
+        )
+        self.assertEqual(create_status, 200, f'create-user failed: {create_resp}')
+
+        # login-user #
+
+        login_status, login_resp = request(
+            base_ctx, 'POST', '/api/auth/login-user',
+            json.dumps({'email': user_email, 'password': user_password}).encode()
+        )
+        self.assertEqual(login_status, 200, f'login-user failed: {login_resp}')
+        access_token = login_resp['result']['access_token']
+
+        logged_in_ctx = base_ctx.copy()
+        logged_in_ctx['headers'] = base_ctx['headers'].copy()
+        logged_in_ctx['headers']['Authorization'] = f'Bearer {access_token}'
+
+        # send-email (mock) #
+
+        send_status, send_resp = request(
+            logged_in_ctx, 'POST', '/api/com/send-email',
+            json.dumps({'email': user_email, 'subject': 'Test', 'body': 'Hello'}).encode()
+        )
+        self.assertEqual(send_status, 200, f'send-email failed: {send_resp}')
+        self.assertTrue(send_resp['result']['acknowledged'], f'send-email not acknowledged: {send_resp}')
+
+        # start-email-verification (mock - code will be in server logs, not returned) #
+
+        start_status, start_resp = request(logged_in_ctx, 'POST', '/api/com/start-email-verification', b'{}')
+        self.assertEqual(start_status, 200, f'start-email-verification failed: {start_resp}')
+        self.assertTrue(start_resp['result']['acknowledged'], f'start-email-verification not acknowledged: {start_resp}')
+
+        # verify-email-address with wrong code (server returns error) #
+
+        wrong_verify_status, wrong_verify_resp = request(
+            logged_in_ctx, 'POST', '/api/com/verify-email-address',
+            json.dumps({'code': '000000'}).encode()
+        )
+        self.assertEqual(wrong_verify_status, 401, f'verify-email-address with wrong code did not return 401: {wrong_verify_resp}')
+
+    # builtin - file system tests #
+
     def _test_file_system_ingest_flow(self, ctx:dict, io_type:str):
         """
         ./run.sh --log -fi ./tests/samples/splash.png file-system ingest-start run '{"name": "splash.png", "size": 4007485, "parts": 1, "finish": true}'

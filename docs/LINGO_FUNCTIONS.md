@@ -14,6 +14,7 @@
   - [Random](#random-functions)
   - [Auth](#auth-functions)
   - [Client](#client-functions)
+  - [Com](#com-functions)
   - [File System](#file-system-functions)
   - [Media](#media-functions)
   - [Database](#database-functions)
@@ -337,6 +338,26 @@
 `client.reload` - Reload the client, currently only availble in the js browser interpreter which calls `window.location.reload`
   - **args:** *(none)*
   - **return:** struct with `acknowledged`, `message`
+
+### Com Functions
+`com.send_email` - Send an email to the specified address
+  - **args:**
+    - **email** `str` - Recipient email address
+    - **subject** `str` - Email subject line
+    - **body** `str` - Email body text
+  - **return:** struct with `acknowledged`, `message`
+  - **note:** Set `MAPP_SMTP_MOCK=true` to log the email instead of sending via SMTP
+
+`com.start_email_verification` - Start email verification for the currently logged-in user
+  - **args:** *(none)*
+  - **return:** struct with `acknowledged`, `message`
+  - **note:** Generates a 6-digit code, stores a hash in `email_verifications`, and sends the code by email. Requires the user to be logged in.
+
+`com.verify_email_address` - Verify the email address of the currently logged-in user
+  - **args:**
+    - **code** `str` - Verification code sent to the user's email address
+  - **return:** struct with `acknowledged`, `message`
+  - **note:** Checks the code against the most recent 3 unexpired records (controlled by `MAPP_EMAIL_VERIFICATION_EXPIRATION`, default 600 seconds). On success, sets `email_verified=true` on the user and deletes the verification record. Returns `AUTHENTICATION_ERROR` if no valid match is found.
 
 ### File System Functions
 `file_system.ingest_start` - Start ingesting a file

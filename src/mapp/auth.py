@@ -243,8 +243,8 @@ def create_user(ctx: MappContext, name: str, email: str, password: str, password
         raise AuthenticationError(err_msg + ': failed to generate unique user ID')
 
     ctx.db.cursor.execute(
-        'INSERT INTO user (id, name, email) VALUES (?, ?, ?)',
-        (user_id, name, email)
+        'INSERT INTO user (id, name, email, email_verified) VALUES (?, ?, ?, ?)',
+        (user_id, name, email, 0)
     )
 
     # Hash password
@@ -368,12 +368,18 @@ def current_user(ctx: MappContext) -> dict:
         'SELECT COUNT(*) FROM user_session WHERE user_id = ?', (user.id,)
     ).fetchone()[0]
 
+    email_verified_result = ctx.db.cursor.execute(
+        'SELECT email_verified FROM user WHERE id = ?', (user.id,)
+    ).fetchone()
+    email_verified = bool(email_verified_result[0]) if email_verified_result and email_verified_result[0] is not None else False
+
     return {
         'type': 'struct',
         'value': {
             'id': user.id,
             'name': user.name,
             'email': user.email,
+            'email_verified': email_verified,
             'number_of_sessions': number_of_sessions
         }
     }

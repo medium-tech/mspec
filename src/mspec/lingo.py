@@ -9,6 +9,7 @@ from itertools import dropwhile, takewhile, islice, accumulate
 from functools import reduce
 
 from mapp.auth import create_user, login_user, is_logged_in, current_user, logout_user, delete_user, drop_sessions
+from mapp.com import send_email, start_email_verification, verify_email_address
 from mapp.file_system import get_file_content, ingest_start, list_files, get_part_content, list_parts, process_file
 from mapp.errors import NotFoundError
 from mapp.media import create_image, get_image, get_master_image, get_media_file_content, ingest_master_image, list_images, list_master_images
@@ -161,6 +162,37 @@ def _drop_sessions_function_args(app:LingoApp, expression: dict, ctx:Optional[di
     root_password = unwrap_primitive(lingo_execute(app, root_password_expr, ctx))
 
     return (ctx, root_password), {}
+
+#
+# com
+#
+
+def _send_email_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        email_expr = expression['args']['email']
+        subject_expr = expression['args']['subject']
+        body_expr = expression['args']['body']
+    except KeyError as e:
+        raise ValueError(f'send_email - missing arg: {e}')
+
+    email = unwrap_primitive(lingo_execute(app, email_expr, ctx))
+    subject = unwrap_primitive(lingo_execute(app, subject_expr, ctx))
+    body = unwrap_primitive(lingo_execute(app, body_expr, ctx))
+
+    return (ctx, email, subject, body), {}
+
+def _start_email_verification_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    return (ctx,), {}
+
+def _verify_email_address_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        code_expr = expression['args']['code']
+    except KeyError as e:
+        raise ValueError(f'verify_email_address - missing arg: {e}')
+
+    code = unwrap_primitive(lingo_execute(app, code_expr, ctx))
+
+    return (ctx, code), {}
 
 #
 # file system
@@ -673,6 +705,14 @@ lingo_function_lookup = {
         'logout_user': {'func': logout_user, 'create_args': _logout_user_function_args},
         'delete_user': {'func': delete_user, 'create_args': _delete_user_function_args},
         'drop_sessions': {'func': drop_sessions, 'create_args': _drop_sessions_function_args}
+    },
+
+    # com #
+
+    'com': {
+        'send_email': {'func': send_email, 'create_args': _send_email_function_args},
+        'start_email_verification': {'func': start_email_verification, 'create_args': _start_email_verification_function_args},
+        'verify_email_address': {'func': verify_email_address, 'create_args': _verify_email_address_function_args}
     },
 
     # file system #
