@@ -2927,35 +2927,31 @@ function _renderModelRead(app, element, ctx = null) {
 
     if(allowEdit && isOwner){
 
-        const editScript = {
-            set: {state: {[stateField]: {state: {}}}},
-            to: 'editing'
-        };
-
         elements.push({
-            button: editScript,
+            button: {
+                clientFunction: () => {
+                    app.state[stateField].original_data = JSON.parse(JSON.stringify(app.state[stateField].data));
+                    app.state[stateField].state = 'editing';
+                    renderLingoApp(app, document.getElementById('lingo-app'));
+                }
+            },
             text: 'edit',
             disabled: state.state !== 'loaded' && state.state !== 'edited'
         });
 
         // cancel //
 
-        const cancelScript = {
-            call: 'and',
-            args: {
-                a: {
-                    set: {state: {[stateField]: {state: {}}}},
-                    to: 'loaded'
-                },
-                b: {
-                    set: {state: {[stateField]: {field_errors: {}}}},
-                    to: {}
-                }
-            }
-        }
-
         elements.push({
-            button: cancelScript,
+            button: {
+                clientFunction: () => {
+                    if (app.state[stateField].hasOwnProperty('original_data') && app.state[stateField].original_data !== null) {
+                        app.state[stateField].data = JSON.parse(JSON.stringify(app.state[stateField].original_data));
+                    }
+                    app.state[stateField].state = 'loaded';
+                    app.state[stateField].field_errors = {};
+                    renderLingoApp(app, document.getElementById('lingo-app'));
+                }
+            },
             text: 'cancel',
             disabled: state.state !== 'editing' && !isEditError
         });
@@ -2967,6 +2963,11 @@ function _renderModelRead(app, element, ctx = null) {
         {break: 1},
         {text: 'status: ', style: {bold: true}},
     ]);
+
+    const isModified = state.state === 'editing'
+        && state.hasOwnProperty('original_data')
+        && state.original_data !== null
+        && JSON.stringify(state.data) !== JSON.stringify(state.original_data);
 
     const stateSwitch = {
         switch: {
@@ -2987,6 +2988,14 @@ function _renderModelRead(app, element, ctx = null) {
                             { text: 'edited', style: {color: 'green', bold: true} },
                         ]
                      }
+                },
+                {
+                    case: 'editing',
+                    then: {
+                        block: isModified
+                            ? [{ text: 'editing', style: {italic: true} }, { text: ' (modified)', style: {color: 'orange', italic: true} }]
+                            : [{ text: 'editing', style: {italic: true} }]
+                    }
                 },
                 {
                     case: 'error',
