@@ -1,12 +1,15 @@
 import unittest
 import datetime
 import json
+import os
 import sqlite3
 
 from pprint import pprint
 
+import jwt
+
 from mapp.context import MappContext, DBContext, ClientContext
-from mapp.errors import MappValidationError
+from mapp.errors import MappValidationError, AuthenticationError
 from mapp.types import new_model_class
 from mapp.module.model.db import db_model_create_table, db_model_create, db_model_unique_counts, db_model_query
 
@@ -121,7 +124,7 @@ class TestLingoPages(unittest.TestCase):
                 expected_functions.add(key)
             elif isinstance(value, dict):
                 # Nested functions like current.weekday, datetime.now, random.randint
-                if key in ['auth', 'file_system', 'media', 'db']:
+                if key in ['auth', 'com', 'file_system', 'media', 'db']:
                     continue  # Skip built-in functions which have coverage elsewhere
                 for subkey in value.keys():
                     expected_functions.add(f"{key}.{subkey}")

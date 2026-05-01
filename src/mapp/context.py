@@ -127,6 +127,12 @@ try:
     MAPP_CLI_SESSION_FILE = os.environ['MAPP_CLI_SESSION_FILE']
 except KeyError:
     MAPP_CLI_SESSION_FILE = os.path.join(os.path.expanduser('~'), '.mapp', 'cli_session.json')
+    
+try:
+    MAPP_CLI_IGNORE_SESSION_FILE = os.environ['MAPP_CLI_IGNORE_SESSION_FILE'] == 'true'
+    # set to true and mapp will ignore session files, useful for isolated testing
+except KeyError:
+    MAPP_CLI_IGNORE_SESSION_FILE = False
 
 def _get_fernet(ctx:MappContext) -> Fernet:
     key_hex = os.environ.get('MAPP_AUTH_SECRET_KEY')
@@ -143,23 +149,30 @@ def _get_fernet(ctx:MappContext) -> Fernet:
 
 def cli_load_session(ctx:MappContext) -> str | None:
     """TODO: optimize by caching the file contents in memory"""
+    if MAPP_CLI_IGNORE_SESSION_FILE:
+        ctx.log('MAPP_CLI_IGNORE_SESSION_FILE is true, ignoring CLI session file')
+        return None
     try:
         with open(MAPP_CLI_SESSION_FILE, 'rb') as f:
             encrypted = f.read()
         cipher = _get_fernet(ctx)
-        ctx.log('Loaded CLI session from disk.')
+        ctx.log(f'Loaded CLI session from {MAPP_CLI_SESSION_FILE}')
         return cipher.decrypt(encrypted).decode()
     except FileNotFoundError:
-        ctx.log('No CLI session file found on disk.')
+        ctx.log(f'No CLI session file found on disk at {MAPP_CLI_SESSION_FILE}')
         return None
     
 def cli_write_session(ctx:MappContext, access_token: str):
-    session_dir = os.path.dirname(MAPP_CLI_SESSION_FILE)
-    os.makedirs(session_dir, exist_ok=True)
-    cipher = _get_fernet(ctx)
-    encrypted = cipher.encrypt(access_token.encode())
-    with open(MAPP_CLI_SESSION_FILE, 'wb') as f:
-        f.write(encrypted)
+    if MAPP_CLI_IGNORE_SESSION_FILE:
+        ctx.log('MAPP_CLI_IGNORE_SESSION_FILE is true, not writing CLI session file')
+    else:
+        ctx.log(f'Writing CLI session to {MAPP_CLI_SESSION_FILE}')
+        session_dir = os.path.dirname(MAPP_CLI_SESSION_FILE)
+        os.makedirs(session_dir, exist_ok=True)
+        cipher = _get_fernet(ctx)
+        encrypted = cipher.encrypt(access_token.encode())
+        with open(MAPP_CLI_SESSION_FILE, 'wb') as f:
+            f.write(encrypted)
 
 def cli_delete_session():
     try:
@@ -174,8 +187,6 @@ def get_cli_access_token(ctx: MappContext) -> str:
         ctx.log('Logged in via MAPP_CLI_ACCESS_TOKEN env variable.')
     except KeyError:
         access_token = cli_load_session(ctx)
-        # if access_token is None:
-        #     raise MappError('NO_CLI_ACCESS_TOKEN', 'No session found, set MAPP_CLI_ACCESS_TOKEN or login via \'mapp auth login-user\'.')
         if access_token is not None:
             ctx.log('Logged in via local CLI session.')
     
