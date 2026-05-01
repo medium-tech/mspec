@@ -325,6 +325,21 @@
     - **mode** `str` - Logout mode (`all`, `current`, `others`)
   - **return:** struct with `acknowledged`, `message`
 
+`auth.is_logged_in` - Check if a user is currently logged in. 
+
+**In GUI client:** If `confirm` is `true` it will call the backend to confirm session is valid. If `false` it will only check to see that there is a session stored locally in the the client.
+
+**In backend:** If `confirm` is `true` it decodes the access token and confirms the session is valid and unexpired in the database. If `false` it will only check to see if the request has an authorization header.
+
+  - **args:**
+    - **confirm** `bool` *(optional)* - Whether to confirm login status with the server (default: `false`)
+  - **return:** struct with `logged_in`, `message`
+
+`auth.is_owner` *(JS browser interpreter only)* - Check if the currently logged-in user owns a model instance. Uses `user_id` stored in `localStorage` at login time; currently only available in the JavaScript browser client.
+  - **args:**
+    - **model** - Model instance data (struct with a `user_id` field)
+  - **return:** `bool` — `true` if the user is logged in and `model.user_id` matches the stored session user id; `true` if the model has no `user_id` field (no ownership restriction)
+
 `auth.delete_user` - Delete currently logged in user
   - **args:** *(none)*
   - **return:** struct with `acknowledged`, `message`
