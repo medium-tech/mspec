@@ -2839,7 +2839,7 @@ function _isModelOwner(modelData) {
         const userId = localStorage.getItem('user_id');
         return !!(userId && String(modelData.user_id) === String(userId));
     } catch (e) {
-        return true;
+        return false;
     }
 }
 
