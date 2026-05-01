@@ -142,6 +142,7 @@
         {"model":{
             "bind": {"state": {"model_delete_state": {}}},
             "display": "delete",
+            "model_data": {"state": {"model_instance": {"data": {}}}},
             "http": {"state": {"base_url": {}}},
             "model_id": {"params": {"model_id": {}}}
         }}

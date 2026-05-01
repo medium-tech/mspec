@@ -461,6 +461,15 @@ function _authIsLoggedInArgs(app, expression, ctx) {
     }
 }
 
+function _authIsOwnerArgs(app, expression, ctx) {
+    const args = expression.args || {};
+    if (!args.hasOwnProperty('model')) {
+        throw new Error('auth.is_owner - missing arg: model');
+    }
+    const model = unwrapValue(lingoExecute(app, args.model, ctx));
+    return [model];
+}
+
 
 // crud //
 
@@ -1201,9 +1210,18 @@ const lingoFunctionLookup = {
                                 if (accessToken) {
                                     localStorage.setItem('access_token', accessToken);
                                     // console.log('op.http - stored access_token in localStorage');
+                                    try {
+                                        const payload = JSON.parse(atob(accessToken.split('.')[1]));
+                                        if (payload.sub) {
+                                            localStorage.setItem('user_id', String(payload.sub));
+                                        }
+                                    } catch (e) {
+                                        console.error('op.http - failed to decode JWT for user_id:', e);
+                                    }
                                 }
                             } else if (url === '/api/auth/logout-user' && params.mode !== 'others') {
                                 localStorage.removeItem('access_token');
+                                localStorage.removeItem('user_id');
                                 // window.location.reload();
                             }
                             return {state: 'result', result: wrappedResult};
@@ -1221,6 +1239,7 @@ const lingoFunctionLookup = {
 
                         if(url == '/api/auth/logout-user') {
                             localStorage.removeItem('access_token');
+                            localStorage.removeItem('user_id');
                             window.location.reload();
                         }
 
@@ -1250,6 +1269,12 @@ const lingoFunctionLookup = {
                 }
             },
             createArgs: _authIsLoggedInArgs
+        },
+        'is_owner': {
+            func: (model) => {
+                return _isModelOwner(model);
+            },
+            createArgs: _authIsOwnerArgs
         }
     },
 
@@ -2804,6 +2829,20 @@ function renderModel(app, element, ctx = null) {
     }
 }
 
+function _isModelOwner(modelData) {
+    // returns true if model has no user_id field (no auth restriction),
+    // or if the logged-in user's id matches the model's user_id
+    if (!modelData || typeof modelData !== 'object' || !modelData.hasOwnProperty('user_id')) {
+        return true;
+    }
+    try {
+        const userId = localStorage.getItem('user_id');
+        return !!(userId && String(modelData.user_id) === String(userId));
+    } catch (e) {
+        return true;
+    }
+}
+
 function _renderModelRead(app, element, ctx = null) {
 
     //
@@ -2855,6 +2894,9 @@ function _renderModelRead(app, element, ctx = null) {
     const showData = typeof element.model.display === 'string' ? true : (element.model.display.show_data !== false);
     const loadButtonText = typeof element.model.display === 'string' ? 'load' : (element.model.display.load_button_text || 'load');
 
+    // only show edit button if the user owns this model instance
+    const isOwner = _isModelOwner(state.data);
+
     //
     // buttons
     //
@@ -2883,7 +2925,7 @@ function _renderModelRead(app, element, ctx = null) {
 
     // edit //
 
-    if(allowEdit){
+    if(allowEdit && isOwner){
 
         const editScript = {
             set: {state: {[stateField]: {state: {}}}},
@@ -3224,6 +3266,17 @@ function _renderModelDelete(app, element, ctx = null) {
     if (!state.hasOwnProperty('state')) state.state = 'initial';
     if (!state.hasOwnProperty('error')) state.error = '';
 
+    // check ownership if model_data is provided (optional)
+    let isOwner = true;
+    if (element.model.hasOwnProperty('model_data')) {
+        try {
+            const modelData = lingoExecute(app, element.model.model_data, ctx);
+            isOwner = _isModelOwner(modelData);
+        } catch (e) {
+            console.error('renderModelDelete - error checking ownership:', e);
+        }
+    }
+
     const switchElement = {
         switch: {
             expression: { type: 'str', value: state.state },
@@ -3272,13 +3325,13 @@ function _renderModelDelete(app, element, ctx = null) {
                     ]
                 }
             ],
-            default: {
+            default: isOwner ? {
                 button: {
                     set: { state: { [stateField]: { state: {} } } },
                     to: 'confirming'
                 },
                 text: 'delete'
-            }
+            } : {block: []}
         }
     }
 

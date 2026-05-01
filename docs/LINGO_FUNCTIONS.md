@@ -325,6 +325,16 @@
     - **mode** `str` - Logout mode (`all`, `current`, `others`)
   - **return:** struct with `acknowledged`, `message`
 
+`auth.is_logged_in` - Check if a user is currently logged in (client-side check using localStorage)
+  - **args:**
+    - **confirm** `bool` *(optional)* - Whether to confirm login status with the server (default: `false`)
+  - **return:** struct with `logged_in`, `message`
+
+`auth.is_owner` - Check if the currently logged-in user owns a model instance
+  - **args:**
+    - **model** - Model instance data (struct with a `user_id` field)
+  - **return:** `bool` — `true` if the user is logged in and `model.user_id` matches the stored session user id; `true` if the model has no `user_id` field (no ownership restriction)
+
 `auth.delete_user` - Delete currently logged in user
   - **args:** *(none)*
   - **return:** struct with `acknowledged`, `message`
