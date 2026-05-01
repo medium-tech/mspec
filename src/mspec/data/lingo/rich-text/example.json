@@ -36,9 +36,9 @@
 			"type": "list",
 			"display": {"format": "numbers"},
 			"value": [
-				{"text": "First item", "style": {"color": "red"}},
-				{"text": "Second item", "style": {"color": "orange"}},
-				{"text": "Third item", "style": {"color": "yellow"}}
+				"First item",
+				"Second item",
+				"Third item"
 			]
 		},
 		{
