@@ -2944,7 +2944,7 @@ function _renderModelRead(app, element, ctx = null) {
         elements.push({
             button: {
                 clientFunction: () => {
-                    if (app.state[stateField].hasOwnProperty('original_data') && app.state[stateField].original_data !== null) {
+                    if ('original_data' in app.state[stateField] && app.state[stateField].original_data !== null) {
                         app.state[stateField].data = JSON.parse(JSON.stringify(app.state[stateField].original_data));
                     }
                     app.state[stateField].state = 'loaded';
@@ -2965,7 +2965,7 @@ function _renderModelRead(app, element, ctx = null) {
     ]);
 
     const isModified = state.state === 'editing'
-        && state.hasOwnProperty('original_data')
+        && 'original_data' in state
         && state.original_data !== null
         && JSON.stringify(state.data) !== JSON.stringify(state.original_data);
 
