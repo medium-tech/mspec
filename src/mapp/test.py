@@ -1397,19 +1397,13 @@ class TestMTemplateApp(unittest.TestCase):
         5. auth current-user - verify email_verified is true
         """
 
-        env = ctx.copy()
+        env = deepcopy(ctx)
         env['MAPP_SMTP_MOCK'] = 'true'
+        env['MAPP_CLI_IGNORE_SESSION_FILE'] = 'true'
 
         try:
             del env['MAPP_CLI_ACCESS_TOKEN']
         except KeyError:
-            pass
-
-        env['MAPP_CLI_SESSION_FILE'] = os.path.join(self.test_dir, f'email-verify-flow-{io_type}-session.json')
-
-        try:
-            os.remove(env['MAPP_CLI_SESSION_FILE'])
-        except FileNotFoundError:
             pass
 
         user_email = f'email-verify-{io_type}@example.com'
@@ -1418,39 +1412,36 @@ class TestMTemplateApp(unittest.TestCase):
 
         def run_cmd(args, expected_code=0):
             result = subprocess.run(args, capture_output=True, text=True, env=env, timeout=10)
-            msg = f'expected {expected_code} got {result.returncode} for command "{" ".join(args)}" output: {result.stdout + result.stderr}'
+            msg = f'expected {expected_code} got {result.returncode} for command:\n"{" ".join(args)}"\noutput:\n{result.stdout + result.stderr}'
             if expected_code >= 0:
                 self.assertEqual(result.returncode, expected_code, msg)
             return result
-        
-		# 1. logout user but don't verify result because we may not be logged in, we just want to clear any existing session
-        logout_input = json.dumps({'mode': 'current'})
-        run_cmd(self.cmd + ['auth', 'logout-user', io_type, logout_input], expected_code=-1)
 
-        # 2. create-user #
-
+        # 1. create-user #
         create_input = json.dumps({'name': user_name, 'email': user_email, 'password': user_password, 'password_confirm': user_password})
-        run_cmd(self.cmd + ['auth', 'create-user', io_type, create_input])
+        run_cmd(self.cmd + ['--log', 'auth', 'create-user', io_type, create_input])
 
-        # 3. login-user #
-
+        # 2. login-user #
         login_input = json.dumps({'email': user_email, 'password': user_password})
-        login_result = run_cmd(self.cmd + ['auth', 'login-user', io_type, login_input])
+        login_result = run_cmd(self.cmd + ['auth', 'login-user', io_type, login_input, '--show', '--no-session'])
         self.assertIn('access_token', login_result.stdout)
 
-        # 4. com send-email (mock) #
+        # extract access token from login result and set in env for subsequent commands
+        login_data = json.loads(login_result.stdout)['result']
+        access_token = login_data['access_token']
+        env['MAPP_CLI_ACCESS_TOKEN'] = access_token
 
+        # 3. com send-email (mock) #
         send_input = json.dumps({'email': user_email, 'subject': 'Test', 'body': 'Hello'})
         send_result = run_cmd(self.cmd + ['com', 'send-email', io_type, send_input])
         send_data = json.loads(send_result.stdout)['result']
         self.assertTrue(send_data['acknowledged'], f'send-email not acknowledged: {send_data}')
 
-        # 5. start-email-verification (mock, with --log to capture code) #
-
+        # 4. start-email-verification (mock, with --log to capture code) #
         start_result = run_cmd(self.cmd + ['--log', 'com', 'start-email-verification', io_type])
         self.assertIn('"acknowledged": true', start_result.stdout, f'start-email-verification not acknowledged: {start_result.stdout}')
         
-		# 6. verify-email-address with wrong code should fail #
+        # 5. verify-email-address with wrong code should fail #
         wrong_code_input = json.dumps({'code': '000000'})
         run_cmd(self.cmd + ['com', 'verify-email-address', io_type, wrong_code_input], expected_code=1)
 
@@ -1461,13 +1452,13 @@ class TestMTemplateApp(unittest.TestCase):
             self.assertIsNotNone(code_match, f'Could not find verification code in log output: {start_result.stdout}')
             code = code_match.group(1)
 
-            # 7. verify-email-address with code #
+            # 6. verify-email-address with code #
             verify_input = json.dumps({'code': code})
             verify_result = run_cmd(self.cmd + ['com', 'verify-email-address', io_type, verify_input])
             verify_data = json.loads(verify_result.stdout)['result']
             self.assertTrue(verify_data['acknowledged'], f'verify-email-address not acknowledged: {verify_data}')
 
-            # 8. current-user - confirm email_verified is true #
+            # 7. current-user - confirm email_verified is true #
             current_result = run_cmd(self.cmd + ['auth', 'current-user', io_type])
             current_data = json.loads(current_result.stdout)['result']
             self.assertTrue(current_data.get('email_verified'), f'email_verified should be true after verification: {current_data}')

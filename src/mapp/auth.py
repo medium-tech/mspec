@@ -340,7 +340,7 @@ def is_logged_in(ctx: MappContext, confirm: bool) -> dict:
             return wrap_result(False, f'is_logged_in confirm check failed: {e}')
         
     else:
-        ctx.log('User is logged in (not confirmed)')
+        ctx.log(f'User is logged in (not confirmed) - {access_token=}')
         return wrap_result(True, 'User access token exists, but login status was not confirmed in the database')
 
 def current_user(ctx: MappContext) -> dict:
