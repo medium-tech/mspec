@@ -657,9 +657,9 @@ test('test non-owner does not see edit or delete buttons', async ({ browser, cru
   // find a model with require_login:true so it has user-ownership
   const modules = crudEnv.spec.modules;
   let targetModel, targetModuleKebab, targetModelKebab;
-  for (const [, module] of Object.entries(modules)) {
+  for (const [_moduleName, module] of Object.entries(modules)) {
     if (['auth', 'file-system', 'media'].includes(module.name.kebab_case)) continue;
-    for (const [, model] of Object.entries(module.models || {})) {
+    for (const [_modelName, model] of Object.entries(module.models || {})) {
       if (model.hidden === true) continue;
       if (!model.auth || !model.auth.require_login) continue;
       if (model.auth.max_models_per_user === 0) continue;
