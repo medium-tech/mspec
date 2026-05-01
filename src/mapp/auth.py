@@ -29,9 +29,7 @@ __all__ = [
     'current_user',
     'logout_user',
     'delete_user',
-    'drop_sessions',
-    'is_logged_in',
-    'is_owner'
+    'drop_sessions'
 ]
 
 #
@@ -344,29 +342,6 @@ def is_logged_in(ctx: MappContext, confirm: bool) -> dict:
     else:
         ctx.log(f'User is logged in (not confirmed) - {access_token=}')
         return wrap_result(True, 'User access token exists, but login status was not confirmed in the database')
-
-def is_owner(ctx: MappContext, model: dict) -> bool:
-    """
-    Check if the currently logged-in user owns a model instance.
-    ctx: MappContext - The application context.
-    model: dict - The model instance data (must contain a 'user_id' field).
-
-    return: bool
-        True if the model has no 'user_id' field (no ownership restriction),
-        or if the current user's id matches model['user_id'].
-        False if not logged in or the user ids do not match.
-    """
-    if not isinstance(model, dict) or 'user_id' not in model:
-        return True
-
-    try:
-        access_token = ctx.current_access_token()
-        if access_token is None or access_token == '':
-            return False
-        user, _ = _parse_access_token(ctx, access_token)
-        return str(model['user_id']) == str(user.id)
-    except AuthenticationError:
-        return False
 
 def current_user(ctx: MappContext) -> dict:
     """

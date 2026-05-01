@@ -330,7 +330,7 @@
     - **confirm** `bool` *(optional)* - Whether to confirm login status with the server (default: `false`)
   - **return:** struct with `logged_in`, `message`
 
-`auth.is_owner` - Check if the currently logged-in user owns a model instance
+`auth.is_owner` *(JS browser interpreter only)* - Check if the currently logged-in user owns a model instance. Uses `user_id` stored in `localStorage` at login time; only available in the JavaScript browser client, not in the Python interpreter.
   - **args:**
     - **model** - Model instance data (struct with a `user_id` field)
   - **return:** `bool` — `true` if the user is logged in and `model.user_id` matches the stored session user id; `true` if the model has no `user_id` field (no ownership restriction)
