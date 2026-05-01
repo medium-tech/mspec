@@ -53,6 +53,25 @@ function getExampleFromModel(model, index = 0) {
   return data;
 }
 
+function getUniqueExampleFromModel(model, index = 0) {
+
+  if (!model.hasOwnProperty('fields')) {
+    throw new Error(`Model "${model.name.pascal_case}" has no fields defined`);
+  }
+
+  const timestamp = Date.now();
+  const data = {};
+
+  for (const [fieldName, field] of Object.entries(model.fields)) {
+    if (!field.hasOwnProperty('examples')) {
+      throw new Error(`Field "${fieldName}" in model "${model.name.pascal_case}" has no examples defined`);
+    }
+    const value = field.examples[index];
+    data[fieldName] = (field.unique === true && field.type === 'str') ? `${value}-${timestamp}` : value;
+  }
+  return data;
+}
+
 async function checkViewField(page, fieldName, field, value) {
 
   // Skip user_id field as it's set automatically
@@ -683,7 +702,7 @@ test('test non-owner does not see edit or delete buttons', async ({ browser, cru
   await pageA.getByRole('link', { name: targetModuleKebab, exact: true }).click();
   await pageA.getByRole('link', { name: targetModelKebab, exact: true }).click();
 
-  const createExample = getExampleFromModel(targetModel, 0);
+  const createExample = getUniqueExampleFromModel(targetModel, 0);
   for (const [fieldName, value] of Object.entries(createExample)) {
     await fillFormField(pageA, fieldName, targetModel.fields[fieldName], value);
   }
