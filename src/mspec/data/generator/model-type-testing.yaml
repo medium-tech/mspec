@@ -636,3 +636,22 @@ modules:
                         examples:
                             - [ "1", "2" ]
                             - [ "1", "2" ]
+
+            rich_text_fields:
+                name:
+                    lower_case: 'rich text fields'
+
+                description: 'A model with rich text fields for testing purposes'
+
+                fields:
+
+                    x_rich_text:
+                        name:
+                            lower_case: 'x rich text'
+                        type: str
+                        rich_text: true
+                        examples:
+                            - '{"text": "hello.world"}'
+                            - '{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}'
+                            - '{"text": "lorem ipsum", "style": {"italic": true, "underline": true}}'
+                            - '{"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'

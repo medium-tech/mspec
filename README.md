@@ -77,6 +77,12 @@ This scripting spec allows rendering an interactive page including layout, style
 * [pybrowser2 - gui](#pybrowser2)
 * [browser - gui](#legacy-browser2-dev-server)
 
+## rich text
+
+A sub spec of the [page](#pages) spec for created formatted text, usable a `str` field type in an [application](#application) spec model.
+
+**sample files:** `src/mspec/data/lingo/rich-text`
+
 ## application
 
 **spec name:** `generator-beta-1`

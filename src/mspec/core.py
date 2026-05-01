@@ -527,3 +527,16 @@ def get_mapp_ui_files(ui_file_source:Optional[str]=None) -> list[Path]:
         pass
     
     return files
+
+def validate_rich_text_spec(source:dict) -> dict:
+    """
+    Validates a rich text spec document
+    
+    args:
+		source (dict): The rich text spec document to validate
+    
+    returns:
+		The source dict
+    
+    raises ValueError if the spec is invalid
+    """
