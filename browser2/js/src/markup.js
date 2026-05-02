@@ -4388,7 +4388,11 @@ function createInputElement(app, element, ctx = null) {
                 if (fieldType === 'int') {
                     value = parseInt(value, 10) || 0;
                 } else if (fieldType === 'float') {
-                    value = parseFloat(value) || 0.0;
+                    // Skip state update and re-render for incomplete float values (e.g. "1.", "-")
+                    if (!value || value === '-' || value.endsWith('.')) return;
+                    const parsed = parseFloat(value);
+                    if (isNaN(parsed)) return;
+                    value = parsed;
                 } else if (fieldType === 'bool') {
                     value = Boolean(value);
                 }
@@ -4630,8 +4634,7 @@ function createFormElement(app, element, ctx = null) {
                 listInput.placeholder = 'Enter integer';
             } else if (elementType === 'float') {
                 listInput = document.createElement('input');
-                listInput.type = 'number';
-                listInput.step = '0.1';
+                listInput.type = 'text';
                 listInput.placeholder = 'Enter number';
             } else if (elementType === 'datetime') {
                 listInput = document.createElement('input');
@@ -4783,11 +4786,13 @@ function createFormElement(app, element, ctx = null) {
 
         } else if (fieldType === 'float') {
             inputElement = document.createElement('input');
-            inputElement.type = 'number';
-            inputElement.step = '0.1';
+            inputElement.type = 'text';
             inputElement.value = typeof formData[fieldKey] !== 'undefined' ? formData[fieldKey] : '';
             inputElement.addEventListener('input', () => {
-                formData[fieldKey] = parseFloat(inputElement.value) || 0.0;
+                const parsed = parseFloat(inputElement.value);
+                if (!isNaN(parsed)) {
+                    formData[fieldKey] = parsed;
+                }
             });
 
         } else if (fieldType === 'datetime') {

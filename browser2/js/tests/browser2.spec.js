@@ -658,7 +658,7 @@ test('test - forms page', async ({ page }) => {
   await expect(inStockCheckbox).toBeVisible();
   await expect(inStockCheckbox).not.toBeChecked();
   
-  const priceInput = page.locator('input[type="number"]').nth(1);
+  const priceInput = page.locator('input[data-form-field$=":price"]');
   await expect(priceInput).toBeVisible();
   await expect(priceInput).toHaveValue('19.99');
   
@@ -721,6 +721,25 @@ test('test - forms page', async ({ page }) => {
   // Click submit button - this logs to console
   await page.getByRole('button', { name: 'Submit' }).click();
 });
+
+test('test - float input allows typing decimal point', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/forms.json');
+
+  // Single float field: verify that a decimal value with '.' is accepted (type="text" input)
+  const priceInput = page.locator('input[data-form-field$=":price"]');
+  await priceInput.fill('3.7');
+  await expect(priceInput).toHaveValue('3.7');
+
+  // List float field: type a value with a decimal point and add it
+  const floatListInput = page.getByPlaceholder('Enter number');
+  await floatListInput.fill('1.5');
+  await expect(floatListInput).toHaveValue('1.5');
+
+  await page.getByRole('button', { name: 'Add' }).nth(2).click();
+  await expect(page.locator('table').filter({ hasText: 'prices history' })).toContainText('1.5');
+});
+
 
 test('test - forms required enum and datetime fields', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
