@@ -3823,6 +3823,7 @@ function renderLingoApp(app, container, preserveFocus = false) {
         if (focusedElement && focusedElement.tagName === 'INPUT' && container.contains(focusedElement)) {
             // Store the state field this input is bound to
             const stateFieldName = focusedElement.getAttribute('data-state-field');
+			console.debug('renderLingoApp - preserving focus for input bound to state field:', stateFieldName);
             if (stateFieldName) {
                 focusedElementState = {
                     fieldName: stateFieldName,
@@ -3864,6 +3865,7 @@ function renderLingoApp(app, container, preserveFocus = false) {
     if (focusedElementState) {
         const newInputs = container.querySelectorAll(`input[data-state-field="${focusedElementState.fieldName}"]`);
         if (newInputs.length > 0) {
+			console.debug('renderLingoApp - restoring focus to input bound to state field:', focusedElementState.fieldName);
             const newInput = newInputs[0];
             newInput.focus();
             newInput.setSelectionRange(focusedElementState.selectionStart, focusedElementState.selectionEnd);
@@ -5246,6 +5248,13 @@ function createFormElement(app, element, ctx = null) {
 
     table.appendChild(submitRow);
     formContainer.appendChild(table);
+
+	formContainer.addEventListener('input', (event) => {
+		console.debug('createFormElement() - trigger re-render on form change', event.target.name, event.target.value);
+		setTimeout(() => {
+			renderLingoApp(app, document.getElementById('lingo-app'), true);
+		}, 0);
+	});
 
     // console.log('createFormElement - formData after:', formData);
     return formContainer;
