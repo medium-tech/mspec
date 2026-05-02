@@ -658,7 +658,7 @@ test('test - forms page', async ({ page }) => {
   await expect(inStockCheckbox).toBeVisible();
   await expect(inStockCheckbox).not.toBeChecked();
   
-  const priceInput = page.locator('input[type="number"]').nth(1);
+  const priceInput = page.locator('input[type="text"]').nth(1);
   await expect(priceInput).toBeVisible();
   await expect(priceInput).toHaveValue('19.99');
   

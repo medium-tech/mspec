@@ -4783,11 +4783,15 @@ function createFormElement(app, element, ctx = null) {
 
         } else if (fieldType === 'float') {
             inputElement = document.createElement('input');
-            inputElement.type = 'number';
-            inputElement.step = '0.1';
-            inputElement.value = typeof formData[fieldKey] !== 'undefined' ? formData[fieldKey] : '';
-            inputElement.addEventListener('input', () => {
-                formData[fieldKey] = parseFloat(inputElement.value) || 0.0;
+            inputElement.type = 'text';
+            // inputElement.step = '0.1';
+			const v = formData[fieldKey];
+            inputElement.value = v;
+			inputElement.inputMode = 'decimal';
+			// console.log('setting float value to value:', inputElement.value, 'v', v, 'formData[fieldKey]:', formData[fieldKey], 'type of formData[fieldKey]:', typeof formData[fieldKey]);
+            inputElement.addEventListener('input', (event) => {
+                formData[fieldKey] = inputElement.value;
+				// console.log('Float input event - raw value:', inputElement.value, 'new value:', newValue, 'event:', event);
             });
 
         } else if (fieldType === 'datetime') {
@@ -5148,11 +5152,15 @@ function createFormElement(app, element, ctx = null) {
         for (const [fieldKey, fieldSpec] of Object.entries(fields)) {
             const fieldType = fieldSpec.type;
             const defaultValue = fieldSpec.default;
-            const fieldValue = formData[fieldKey];
+			
+			if(fieldSpec.type === 'float') {
+            	formData[fieldKey] = parseFloat(formData[fieldKey]);
+			}
+			
             if (typeof defaultValue !== 'undefined') {
                 continue;
             }
-            if ((fieldSpec.enum || fieldType === 'datetime') && isUnsetFormFieldValue(fieldValue)) {
+            if ((fieldSpec.enum || fieldType === 'datetime') && isUnsetFormFieldValue(formData[fieldKey])) {
                 clientFieldErrors[fieldKey] = '(required field)';
             }
         }

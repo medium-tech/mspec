@@ -267,9 +267,9 @@ async function fillFormField(page, fieldName, field, value, preSeedMode = false)
       .locator('input[type="number"]')
       .fill(String(value));
   } else if (fieldType === 'float') {
-    // For float fields, use input[type="number"]
+    // For float fields, use input[type="text"]
     await page.getByRole('row', { name: pattern })
-      .locator('input[type="number"]')
+      .locator('input[type="text"]')
       .fill(String(value));
   } else if (fieldType === 'datetime') {
     // For datetime fields, use input[type="datetime-local"]
