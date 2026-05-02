@@ -699,7 +699,7 @@ test('test - forms page', async ({ page }) => {
   await page.getByRole('button', { name: 'Add' }).first().click();
   
   // Verify the tag was added and is displayed
-  await expect(page.locator('text=organic')).toBeVisible();
+  await expect(page.locator('table').filter({ hasText: 'organic' })).toBeVisible();
   
   // Verify the remove button is visible
   await expect(page.getByRole('button', { name: 'X' }).first()).toBeVisible();
@@ -709,14 +709,14 @@ test('test - forms page', async ({ page }) => {
   await tagsInput.press('Enter');
   
   // Verify both tags are displayed
-  await expect(page.locator('text=organic')).toBeVisible();
-  await expect(page.locator('text=eco-friendly')).toBeVisible();
+  await expect(page.locator('table').filter({ hasText: 'organic' })).toBeVisible();
+  await expect(page.locator('table').filter({ hasText: 'eco-friendly' })).toBeVisible();
   
   // Test removing a tag
   await page.getByRole('button', { name: 'X' }).first().click();
   
   // Verify one tag was removed (eco-friendly should still be there)
-  await expect(page.locator('text=eco-friendly')).toBeVisible();
+  await expect(page.locator('table').filter({ hasText: 'eco-friendly' })).toBeVisible();
   
   // Click submit button - this logs to console
   await page.getByRole('button', { name: 'Submit' }).click();
