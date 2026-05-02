@@ -3872,6 +3872,8 @@ function renderLingoApp(app, container, preserveFocus = false) {
             const newInput = newInputs[0];
             newInput.focus();
             try {
+                // setSelectionRange throws on inputs that don't support text selection
+                // (e.g. number, date, checkbox) - this is expected and can be ignored
                 newInput.setSelectionRange(focusedElementState.selectionStart, focusedElementState.selectionEnd);
             } catch(e) {}
         }
@@ -4698,7 +4700,8 @@ function createFormElement(app, element, ctx = null) {
                 listContainer.appendChild(listInput);
 
                 // Persist the in-progress typed value across re-renders by storing
-                // it in ingestState (which survives re-renders unlike the DOM element).
+                // it in ingestState (which is keyed per-field by formKeyId and survives re-renders).
+                // Only for text-like inputs: skip checkbox (bool) and enum selects which don't have a typed value.
                 if (listInput.tagName === 'INPUT' && listInput.type !== 'checkbox') {
                     listInput.value = ingestState.listInputValue || '';
                     listInput.addEventListener('input', () => {
