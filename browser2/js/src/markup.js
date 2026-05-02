@@ -3821,12 +3821,16 @@ function renderLingoApp(app, container, preserveFocus = false) {
     if (preserveFocus) {
         focusedElement = document.activeElement;
         if (focusedElement && focusedElement.tagName === 'INPUT' && container.contains(focusedElement)) {
-            // Store the state field this input is bound to
+            // Store a CSS selector to re-identify this input after re-render.
+            // Standalone inputs use data-state-field; form inputs use data-form-field.
             const stateFieldName = focusedElement.getAttribute('data-state-field');
-			console.debug('renderLingoApp - preserving focus for input bound to state field:', stateFieldName);
-            if (stateFieldName) {
+            const formFieldName = focusedElement.getAttribute('data-form-field');
+            const focusKey = stateFieldName
+                ? `[data-state-field="${stateFieldName}"]`
+                : (formFieldName ? `[data-form-field="${formFieldName}"]` : null);
+            if (focusKey) {
                 focusedElementState = {
-                    fieldName: stateFieldName,
+                    selector: `input${focusKey}`,
                     selectionStart: focusedElement.selectionStart,
                     selectionEnd: focusedElement.selectionEnd
                 };
@@ -3863,12 +3867,13 @@ function renderLingoApp(app, container, preserveFocus = false) {
     
     // Restore focus if needed
     if (focusedElementState) {
-        const newInputs = container.querySelectorAll(`input[data-state-field="${focusedElementState.fieldName}"]`);
+        const newInputs = container.querySelectorAll(focusedElementState.selector);
         if (newInputs.length > 0) {
-			console.debug('renderLingoApp - restoring focus to input bound to state field:', focusedElementState.fieldName);
             const newInput = newInputs[0];
             newInput.focus();
-            newInput.setSelectionRange(focusedElementState.selectionStart, focusedElementState.selectionEnd);
+            try {
+                newInput.setSelectionRange(focusedElementState.selectionStart, focusedElementState.selectionEnd);
+            } catch(e) {}
         }
     }
 
@@ -4692,6 +4697,15 @@ function createFormElement(app, element, ctx = null) {
                 listInput.className = 'list-input';
                 listContainer.appendChild(listInput);
 
+                // Persist the in-progress typed value across re-renders by storing
+                // it in ingestState (which survives re-renders unlike the DOM element).
+                if (listInput.tagName === 'INPUT' && listInput.type !== 'checkbox') {
+                    listInput.value = ingestState.listInputValue || '';
+                    listInput.addEventListener('input', () => {
+                        ingestState.listInputValue = listInput.value;
+                    });
+                }
+
                 const addButton = document.createElement('button');
                 addButton.textContent = 'Add';
                 addButton.type = 'button';
@@ -4725,6 +4739,7 @@ function createFormElement(app, element, ctx = null) {
                         listInput.checked = false;
                     } else if (!hasEnum) {
                         listInput.value = '';
+                        ingestState.listInputValue = '';
                     }
                     console.log(`Add to list for field ${fieldKey}`, value, 'Current list:', formData[fieldKey]);
                     updateListDisplay();
@@ -4843,6 +4858,10 @@ function createFormElement(app, element, ctx = null) {
             });
         }
         inputCell.appendChild(inputElement);
+        // Set identifier so renderLingoApp can restore focus after re-render
+        if (inputElement && inputElement.tagName === 'INPUT') {
+            inputElement.setAttribute('data-form-field', `${formStateField}:${fieldKey}`);
+        }
         row.appendChild(inputCell);
         
         // Column 3: List values display (for list types) or Description
@@ -5250,7 +5269,10 @@ function createFormElement(app, element, ctx = null) {
     formContainer.appendChild(table);
 
 	formContainer.addEventListener('input', (event) => {
-		console.debug('createFormElement() - trigger re-render on form change', event.target.name, event.target.value);
+		// Only re-render for direct form fields (have data-form-field set).
+		// List sub-inputs do not have the attribute, so skip them to avoid
+		// clearing their in-progress value on re-render.
+		if (!event.target.getAttribute('data-form-field')) return;
 		setTimeout(() => {
 			renderLingoApp(app, document.getElementById('lingo-app'), true);
 		}, 0);
