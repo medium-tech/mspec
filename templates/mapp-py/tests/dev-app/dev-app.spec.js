@@ -9,6 +9,10 @@ test('edit form state - single choice fields', async ({ browser, crudEnv }) => {
 			- ensure that canceling reverts the form to the original values
 	*/
 
+	//
+	// create model
+	//
+
 	// init page
 	const context = await browser.newContext({ });
 	const page = await context.newPage();
@@ -42,44 +46,55 @@ test('edit form state - single choice fields', async ({ browser, crudEnv }) => {
 		await expect(page.getByRole('row', { name: 'x_datetime' })).toContainText('1999-01-15T03:42:00');
 	};
 
-	checkModelData();
+	await checkModelData();
+
+	//
+	// test model edit form
+	//
 
 	// edit x bool
 	await page.getByRole('button', { name: 'edit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('editing');
+	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
 	await page.getByRole('checkbox').check();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
 	await page.getByRole('button', { name: 'cancel' }).click();
 	
 	await expect(page.getByRole('row', { name: 'x_bool' })).not.toContainText('true');
-	checkModelData();
+	await checkModelData();
 
 	// edit x int
 	await page.getByRole('button', { name: 'edit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('editing');
+	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
 	await page.getByRole('spinbutton').fill('363');
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
 	await page.getByRole('button', { name: 'cancel' }).click();
 	
 	await expect(page.getByRole('row', { name: 'x_int' })).not.toContainText('363');
-	checkModelData();
+	await checkModelData();
 
 	// edit x float
 	await page.getByRole('button', { name: 'edit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('editing');
+	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
 	await page.getByRole('row', { name: 'x float:' }).getByRole('textbox').fill('123456.7');
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
 	await page.getByRole('button', { name: 'cancel' }).click();
 	
 	await expect(page.getByRole('row', { name: 'x_float' })).not.toContainText('123456.7');
-	checkModelData();
+	await checkModelData();
 
 	// edit x string
 	await page.getByRole('button', { name: 'edit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('editing');
+	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
 	await page.getByRole('row', { name: 'x string:' }).getByRole('textbox').fill('hello.updated.string');
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
 	await page.getByRole('button', { name: 'cancel' }).click();
 	
 	await expect(page.getByRole('row', { name: 'x_string' })).not.toContainText('hello.updated.string');
-	checkModelData();
+	await checkModelData();
 
 	// edit x enum
 	await page.getByRole('button', { name: 'edit' }).click();
@@ -88,20 +103,22 @@ test('edit form state - single choice fields', async ({ browser, crudEnv }) => {
 	await page.getByRole('button', { name: 'cancel' }).click();
 	
 	await expect(page.getByRole('row', { name: 'x_enum' })).not.toContainText('tlayuda');
-	checkModelData();
+	await checkModelData();
 
 	// edit x datetime
 	await page.getByRole('button', { name: 'edit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('editing');
+	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
 	await page.getByRole('row', { name: 'x datetime:' }).getByRole('textbox').fill('1999-01-15T04:42');
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
 	await page.getByRole('button', { name: 'cancel' }).click();
 
 	await expect(page.getByRole('row', { name: 'x_datetime' })).not.toContainText('1999-01-15T04:42');
-	checkModelData();
+	await checkModelData();
 
 	// reload data and confirm values are correct
 	await page.getByRole('button', { name: 'load' }).click();
-	checkModelData();
+	await checkModelData();
 });
 
 test('edit form state - multi choice fields', async ({ browser, crudEnv }) => {
@@ -118,6 +135,10 @@ test('edit form state - multi choice fields', async ({ browser, crudEnv }) => {
 	const context = await browser.newContext({ });
 	const page = await context.newPage();
 	await context.addCookies([{ name: 'protocol_mode', value: 'true', domain: new URL(crudEnv.host).hostname, path: '/' }]);
+
+	//
+	// create model
+	//
 
 	// navigate to model
 	await page.goto(crudEnv.host);
@@ -165,18 +186,40 @@ test('edit form state - multi choice fields', async ({ browser, crudEnv }) => {
 	// confirm original data values
 	const checkModelData = async () => {
 		await expect(page.getByRole('row', { name: 'x_list_bool' })).toContainText('true, false');
+		await expect(page.getByRole('row', { name: 'x_list_bool' })).not.toContainText('true, false,');
+		await expect(page.getByRole('row', { name: 'x_list_bool' })).not.toContainText(', true, false');
+
 		await expect(page.getByRole('row', { name: 'x_list_int' })).toContainText('7, 11');
+		await expect(page.getByRole('row', { name: 'x_list_int' })).not.toContainText('7, 11,');
+		await expect(page.getByRole('row', { name: 'x_list_int' })).not.toContainText(', 7, 11');
+
 		await expect(page.getByRole('row', { name: 'x_list_float' })).toContainText('3.14, 2.718');
+		await expect(page.getByRole('row', { name: 'x_list_float' })).not.toContainText('3.14, 2.718,');
+		await expect(page.getByRole('row', { name: 'x_list_float' })).not.toContainText(', 3.14, 2.718');
+
 		await expect(page.getByRole('row', { name: 'x_list_string' })).toContainText('banana');
+		await expect(page.getByRole('row', { name: 'x_list_string' })).not.toContainText('banana,');
+		await expect(page.getByRole('row', { name: 'x_list_string' })).not.toContainText(', banana');
+
 		await expect(page.getByRole('row', { name: 'x_list_enum' })).toContainText('chorizo, al pastor');
+		await expect(page.getByRole('row', { name: 'x_list_enum' })).not.toContainText('chorizo, al pastor,');
+		await expect(page.getByRole('row', { name: 'x_list_enum' })).not.toContainText(', chorizo, al pastor');
+
 		await expect(page.getByRole('row', { name: 'x_list_datetime' })).toContainText('2000-01-11T12:34');
+		await expect(page.getByRole('row', { name: 'x_list_datetime' })).not.toContainText('2000-01-11T12:34,');
+		await expect(page.getByRole('row', { name: 'x_list_datetime' })).not.toContainText(', 2000-01-11T12:34');
 	};
 
 	await checkModelData();
 
+	//
+	// test model edit form
+	//
+
 	// edit x_list_bool
 	await page.getByRole('button', { name: 'edit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('editing');
+	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
 	await boolRow.locator('input.list-input[type="checkbox"]').uncheck();
 	await boolRow.getByRole('button', { name: 'Add' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
@@ -190,6 +233,7 @@ test('edit form state - multi choice fields', async ({ browser, crudEnv }) => {
 	// edit x_list_int
 	await page.getByRole('button', { name: 'edit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('editing');
+	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
 	await intRow.locator('input.list-input').fill('99');
 	await intRow.getByRole('button', { name: 'Add' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
@@ -203,6 +247,7 @@ test('edit form state - multi choice fields', async ({ browser, crudEnv }) => {
 	// edit x_list_float
 	await page.getByRole('button', { name: 'edit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('editing');
+	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
 	await floatRow.locator('input.list-input').fill('9.99');
 	await floatRow.getByRole('button', { name: 'Add' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
@@ -216,6 +261,7 @@ test('edit form state - multi choice fields', async ({ browser, crudEnv }) => {
 	// edit x_list_string
 	await page.getByRole('button', { name: 'edit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('editing');
+	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
 	await stringRow.locator('input.list-input').fill('mango');
 	await stringRow.getByRole('button', { name: 'Add' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
@@ -229,6 +275,7 @@ test('edit form state - multi choice fields', async ({ browser, crudEnv }) => {
 	// edit x_list_enum
 	await page.getByRole('button', { name: 'edit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('editing');
+	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
 	await enumRow.locator('select.list-input').selectOption('carne');
 	await enumRow.getByRole('button', { name: 'Add' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
@@ -242,6 +289,7 @@ test('edit form state - multi choice fields', async ({ browser, crudEnv }) => {
 	// edit x_list_datetime
 	await page.getByRole('button', { name: 'edit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('editing');
+	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
 	await datetimeRow.locator('input.list-input[type="datetime-local"]').fill('2001-06-15T10:30');
 	await datetimeRow.getByRole('button', { name: 'Add' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
