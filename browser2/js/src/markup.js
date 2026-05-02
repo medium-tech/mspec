@@ -2927,35 +2927,31 @@ function _renderModelRead(app, element, ctx = null) {
 
     if(allowEdit && isOwner){
 
-        const editScript = {
-            set: {state: {[stateField]: {state: {}}}},
-            to: 'editing'
-        };
-
         elements.push({
-            button: editScript,
+            button: {
+                clientFunction: () => {
+                    app.state[stateField].original_data = JSON.parse(JSON.stringify(app.state[stateField].data));
+                    app.state[stateField].state = 'editing';
+                    renderLingoApp(app, document.getElementById('lingo-app'));
+                }
+            },
             text: 'edit',
             disabled: state.state !== 'loaded' && state.state !== 'edited'
         });
 
         // cancel //
 
-        const cancelScript = {
-            call: 'and',
-            args: {
-                a: {
-                    set: {state: {[stateField]: {state: {}}}},
-                    to: 'loaded'
-                },
-                b: {
-                    set: {state: {[stateField]: {field_errors: {}}}},
-                    to: {}
-                }
-            }
-        }
-
         elements.push({
-            button: cancelScript,
+            button: {
+                clientFunction: () => {
+                    if ('original_data' in app.state[stateField] && app.state[stateField].original_data !== null) {
+                        app.state[stateField].data = JSON.parse(JSON.stringify(app.state[stateField].original_data));
+                    }
+                    app.state[stateField].state = 'loaded';
+                    app.state[stateField].field_errors = {};
+                    renderLingoApp(app, document.getElementById('lingo-app'));
+                }
+            },
             text: 'cancel',
             disabled: state.state !== 'editing' && !isEditError
         });
@@ -2967,6 +2963,11 @@ function _renderModelRead(app, element, ctx = null) {
         {break: 1},
         {text: 'status: ', style: {bold: true}},
     ]);
+
+    const isModified = state.state === 'editing'
+        && 'original_data' in state
+        && state.original_data !== null
+        && JSON.stringify(state.data) !== JSON.stringify(state.original_data);
 
     const stateSwitch = {
         switch: {
@@ -2987,6 +2988,14 @@ function _renderModelRead(app, element, ctx = null) {
                             { text: 'edited', style: {color: 'green', bold: true} },
                         ]
                      }
+                },
+                {
+                    case: 'editing',
+                    then: {
+                        block: isModified
+                            ? [{ text: 'editing', style: {italic: true} }, { text: ' (modified)', style: {color: 'orange', italic: true} }]
+                            : [{ text: 'editing', style: {italic: true} }]
+                    }
                 },
                 {
                     case: 'error',
@@ -3812,11 +3821,16 @@ function renderLingoApp(app, container, preserveFocus = false) {
     if (preserveFocus) {
         focusedElement = document.activeElement;
         if (focusedElement && focusedElement.tagName === 'INPUT' && container.contains(focusedElement)) {
-            // Store the state field this input is bound to
+            // Store a CSS selector to re-identify this input after re-render.
+            // Standalone inputs use data-state-field; form inputs use data-form-field.
             const stateFieldName = focusedElement.getAttribute('data-state-field');
-            if (stateFieldName) {
+            const formFieldName = focusedElement.getAttribute('data-form-field');
+            const focusKey = stateFieldName
+                ? `[data-state-field="${stateFieldName}"]`
+                : (formFieldName ? `[data-form-field="${formFieldName}"]` : null);
+            if (focusKey) {
                 focusedElementState = {
-                    fieldName: stateFieldName,
+                    selector: `input${focusKey}`,
                     selectionStart: focusedElement.selectionStart,
                     selectionEnd: focusedElement.selectionEnd
                 };
@@ -3853,11 +3867,15 @@ function renderLingoApp(app, container, preserveFocus = false) {
     
     // Restore focus if needed
     if (focusedElementState) {
-        const newInputs = container.querySelectorAll(`input[data-state-field="${focusedElementState.fieldName}"]`);
+        const newInputs = container.querySelectorAll(focusedElementState.selector);
         if (newInputs.length > 0) {
             const newInput = newInputs[0];
             newInput.focus();
-            newInput.setSelectionRange(focusedElementState.selectionStart, focusedElementState.selectionEnd);
+            try {
+                // setSelectionRange throws on inputs that don't support text selection
+                // (e.g. number, date, checkbox) - this is expected and can be ignored
+                newInput.setSelectionRange(focusedElementState.selectionStart, focusedElementState.selectionEnd);
+            } catch(e) {}
         }
     }
 
@@ -4582,6 +4600,7 @@ function createFormElement(app, element, ctx = null) {
                             const index = parseInt(removeButton.getAttribute('data-index'));
                             formData[fieldKey].splice(index, 1);
                             updateListDisplay();
+							renderLingoApp(app, document.getElementById('lingo-app'), true);
                         });
 
                         itemContainer.appendChild(removeButton);
@@ -4681,6 +4700,16 @@ function createFormElement(app, element, ctx = null) {
                 listInput.className = 'list-input';
                 listContainer.appendChild(listInput);
 
+                // Persist the in-progress typed value across re-renders by storing
+                // it in ingestState (which is keyed per-field by formKeyId and survives re-renders).
+                // Only for text-like inputs: skip checkbox (bool) and enum selects which don't have a typed value.
+                if (listInput.tagName === 'INPUT' && listInput.type !== 'checkbox') {
+                    listInput.value = ingestState.listInputValue || '';
+                    listInput.addEventListener('input', () => {
+                        ingestState.listInputValue = listInput.value;
+                    });
+                }
+
                 const addButton = document.createElement('button');
                 addButton.textContent = 'Add';
                 addButton.type = 'button';
@@ -4714,9 +4743,11 @@ function createFormElement(app, element, ctx = null) {
                         listInput.checked = false;
                     } else if (!hasEnum) {
                         listInput.value = '';
+                        ingestState.listInputValue = '';
                     }
                     console.log(`Add to list for field ${fieldKey}`, value, 'Current list:', formData[fieldKey]);
                     updateListDisplay();
+					renderLingoApp(app, document.getElementById('lingo-app'), true);
                 };
                 addButton.addEventListener('click', addToList);
                 if (listInput.tagName === 'INPUT' && (elementType === 'str' || elementType === 'int' || elementType === 'float')) {
@@ -4832,6 +4863,10 @@ function createFormElement(app, element, ctx = null) {
             });
         }
         inputCell.appendChild(inputElement);
+        // Set identifier so renderLingoApp can restore focus after re-render
+        if (inputElement && inputElement.tagName === 'INPUT') {
+            inputElement.setAttribute('data-form-field', `${formStateField}:${fieldKey}`);
+        }
         row.appendChild(inputCell);
         
         // Column 3: List values display (for list types) or Description
@@ -5237,6 +5272,16 @@ function createFormElement(app, element, ctx = null) {
 
     table.appendChild(submitRow);
     formContainer.appendChild(table);
+
+	formContainer.addEventListener('input', (event) => {
+		// Only re-render for direct form fields (have data-form-field set).
+		// List sub-inputs do not have the attribute, so skip them to avoid
+		// clearing their in-progress value on re-render.
+		if (!event.target.getAttribute('data-form-field')) return;
+		setTimeout(() => {
+			renderLingoApp(app, document.getElementById('lingo-app'), true);
+		}, 0);
+	});
 
     // console.log('createFormElement - formData after:', formData);
     return formContainer;
