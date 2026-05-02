@@ -477,24 +477,49 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
       
       // Confirm data was edited - check that we can see the updated values
       for (const [fieldName, value] of Object.entries(updateExample)) {
-        if (fieldName !== 'user_id') {
-          const fieldDef = model.fields[fieldName];
+        if (fieldName === 'user_id') continue;
+        const fieldDef = model.fields[fieldName];
+        const refs = fieldDef.references;
 
-          // Skip FK fields - values are dynamic IDs from file uploads or popup selections
-          if (fieldDef.type === 'foreign_key') {
-            continue;
+        // Skip auth FK references
+        if (refs && refs.module === 'auth') continue;
+
+        const fieldRow = page.getByRole('row', { name: new RegExp('^' + fieldName) });
+
+        if (fieldDef.type === 'foreign_key') {
+          if (isFileFkRef(refs)) {
+            // File-based FK: verify download/viewer element is present (ID is dynamic)
+            await checkViewField(page, fieldName, fieldDef, value);
+          } else if (refs && String(value) !== '-1') {
+            // Non-file FK set via popup: verify a "go to" link exists and navigates correctly
+            const goToLink = fieldRow.getByRole('link', { name: /^go to / });
+            await expect(goToLink).toBeVisible();
+            await goToLink.click();
+            await expect(page.locator('#lingo-app')).toContainText('id');
+            await page.goBack();
+            await expect(page.locator('#lingo-app')).toContainText('id');
           }
-
-          // if value is a list expect it to be joined on ", "
-          if (Array.isArray(value)) {
-            if (fieldDef.element_type === 'foreign_key') {
-              // FK list fields - values are dynamic IDs, skip exact check
-              continue;
+        } else if (Array.isArray(value)) {
+          if (fieldDef.element_type === 'foreign_key') {
+            if (isFileFkRef(refs)) {
+              // File-based FK list: verify download/gallery element is present (IDs are dynamic)
+              await checkViewField(page, fieldName, fieldDef, value);
+            } else if (refs && value.length > 0) {
+              // Non-file FK list: verify "go to" links exist and navigate correctly
+              const links = fieldRow.getByRole('link', { name: /^go to / });
+              await expect(links.first()).toBeVisible();
+              for (const link of await links.all()) {
+                await link.click();
+                await expect(page.locator('#lingo-app')).toContainText('id');
+                await page.goBack();
+                await expect(page.locator('#lingo-app')).toContainText('id');
+              }
             }
+          } else {
             await expect(page.locator('#lingo-app')).toContainText(value.join(', '));
-          }else{
-            await expect(page.locator('#lingo-app')).toContainText(String(value));
           }
+        } else {
+          await expect(page.locator('#lingo-app')).toContainText(String(value));
         }
       }
 
