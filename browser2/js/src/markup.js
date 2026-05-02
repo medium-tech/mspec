@@ -4389,7 +4389,7 @@ function createInputElement(app, element, ctx = null) {
                     value = parseInt(value, 10) || 0;
                 } else if (fieldType === 'float') {
                     // Skip state update and re-render for incomplete float values (e.g. "1.", "-")
-                    if (!value || value === '-' || value.endsWith('.')) return;
+                    if (value === '' || value === '-' || value.endsWith('.')) return;
                     const parsed = parseFloat(value);
                     if (isNaN(parsed)) return;
                     value = parsed;
@@ -4635,6 +4635,7 @@ function createFormElement(app, element, ctx = null) {
             } else if (elementType === 'float') {
                 listInput = document.createElement('input');
                 listInput.type = 'text';
+                listInput.inputMode = 'decimal';
                 listInput.placeholder = 'Enter number';
             } else if (elementType === 'datetime') {
                 listInput = document.createElement('input');
@@ -4787,6 +4788,7 @@ function createFormElement(app, element, ctx = null) {
         } else if (fieldType === 'float') {
             inputElement = document.createElement('input');
             inputElement.type = 'text';
+            inputElement.inputMode = 'decimal';
             inputElement.value = typeof formData[fieldKey] !== 'undefined' ? formData[fieldKey] : '';
             inputElement.addEventListener('input', () => {
                 const parsed = parseFloat(inputElement.value);
