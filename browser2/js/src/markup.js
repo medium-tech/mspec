@@ -4868,7 +4868,7 @@ function createFormElement(app, element, ctx = null) {
         }
         inputCell.appendChild(inputElement);
         // Set identifier so renderLingoApp can restore focus after re-render
-        if (inputElement && inputElement.tagName === 'INPUT') {
+        if (inputElement && (inputElement.tagName === 'INPUT' || inputElement.tagName === 'SELECT')) {
             inputElement.setAttribute('data-form-field', `${formStateField}:${fieldKey}`);
         }
         row.appendChild(inputCell);
@@ -5287,6 +5287,7 @@ function createFormElement(app, element, ctx = null) {
 		// clearing their in-progress value on re-render.
 		if (!event.target.getAttribute('data-form-field')) return;
 		setTimeout(() => {
+			// console.log('Form input event - re-rendering app. Event', event);
 			renderLingoApp(app, document.getElementById('lingo-app'), true);
 		}, 0);
 	});
