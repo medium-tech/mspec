@@ -4600,6 +4600,7 @@ function createFormElement(app, element, ctx = null) {
                             const index = parseInt(removeButton.getAttribute('data-index'));
                             formData[fieldKey].splice(index, 1);
                             updateListDisplay();
+							renderLingoApp(app, document.getElementById('lingo-app'), true);
                         });
 
                         itemContainer.appendChild(removeButton);
@@ -4746,6 +4747,7 @@ function createFormElement(app, element, ctx = null) {
                     }
                     console.log(`Add to list for field ${fieldKey}`, value, 'Current list:', formData[fieldKey]);
                     updateListDisplay();
+					renderLingoApp(app, document.getElementById('lingo-app'), true);
                 };
                 addButton.addEventListener('click', addToList);
                 if (listInput.tagName === 'INPUT' && (elementType === 'str' || elementType === 'int' || elementType === 'float')) {
