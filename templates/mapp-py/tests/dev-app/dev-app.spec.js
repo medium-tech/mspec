@@ -220,13 +220,28 @@ test('edit form state - multi choice fields', async ({ browser, crudEnv }) => {
 	await page.getByRole('button', { name: 'edit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('editing');
 	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
+
+	// check that bool row has 1 add button and 2 remove buttons (for the 2 existing items)
+	await expect(boolRow.getByRole('button', { name: 'Add' })).toHaveCount(1);
+	await expect(boolRow.locator('button.remove-button')).toHaveCount(2);
+
 	await boolRow.locator('input.list-input[type="checkbox"]').uncheck();
 	await boolRow.getByRole('button', { name: 'Add' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
+	await expect(boolRow.locator('button.remove-button')).toHaveCount(3);
+
 	await boolRow.locator('button.remove-button').last().click();
 	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
+	await expect(boolRow.locator('button.remove-button')).toHaveCount(2);
+
 	await boolRow.locator('button.remove-button').first().click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
+	await expect(boolRow.locator('button.remove-button')).toHaveCount(1);
+
+	await boolRow.locator('button.remove-button').first().click();
+	await expect(page.locator('#lingo-app')).toContainText('(modified)');
+	await expect(boolRow.locator('button.remove-button')).toHaveCount(0);
+
 	await page.getByRole('button', { name: 'cancel' }).click();
 	await checkModelData();
 
@@ -234,13 +249,28 @@ test('edit form state - multi choice fields', async ({ browser, crudEnv }) => {
 	await page.getByRole('button', { name: 'edit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('editing');
 	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
+
+	// check that int row has 1 add button and 2 remove buttons (for the 2 existing items)
+	await expect(intRow.getByRole('button', { name: 'Add' })).toHaveCount(1);
+	await expect(intRow.locator('button.remove-button')).toHaveCount(2);
+
 	await intRow.locator('input.list-input').fill('99');
 	await intRow.getByRole('button', { name: 'Add' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
+	await expect(intRow.locator('button.remove-button')).toHaveCount(3);
+
 	await intRow.locator('button.remove-button').last().click();
 	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
+	await expect(intRow.locator('button.remove-button')).toHaveCount(2);
+
 	await intRow.locator('button.remove-button').first().click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
+	await expect(intRow.locator('button.remove-button')).toHaveCount(1);
+
+	await intRow.locator('button.remove-button').first().click();
+	await expect(page.locator('#lingo-app')).toContainText('(modified)');
+	await expect(intRow.locator('button.remove-button')).toHaveCount(0);
+
 	await page.getByRole('button', { name: 'cancel' }).click();
 	await checkModelData();
 
@@ -248,13 +278,28 @@ test('edit form state - multi choice fields', async ({ browser, crudEnv }) => {
 	await page.getByRole('button', { name: 'edit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('editing');
 	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
+
+	// check that float row has 1 add button and 2 remove buttons (for the 2 existing items)
+	await expect(floatRow.getByRole('button', { name: 'Add' })).toHaveCount(1);
+	await expect(floatRow.locator('button.remove-button')).toHaveCount(2);
+
 	await floatRow.locator('input.list-input').fill('9.99');
 	await floatRow.getByRole('button', { name: 'Add' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
+	await expect(floatRow.locator('button.remove-button')).toHaveCount(3);
+
 	await floatRow.locator('button.remove-button').last().click();
 	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
+	await expect(floatRow.locator('button.remove-button')).toHaveCount(2);
+
 	await floatRow.locator('button.remove-button').first().click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
+	await expect(floatRow.locator('button.remove-button')).toHaveCount(1);
+	
+	await floatRow.locator('button.remove-button').first().click();
+	await expect(page.locator('#lingo-app')).toContainText('(modified)');
+	await expect(floatRow.locator('button.remove-button')).toHaveCount(0);
+
 	await page.getByRole('button', { name: 'cancel' }).click();
 	await checkModelData();
 
@@ -262,13 +307,24 @@ test('edit form state - multi choice fields', async ({ browser, crudEnv }) => {
 	await page.getByRole('button', { name: 'edit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('editing');
 	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
+
+	// check that string row has 1 add button and 1 remove button (for the 1 existing item)
+	await expect(stringRow.getByRole('button', { name: 'Add' })).toHaveCount(1);
+	await expect(stringRow.locator('button.remove-button')).toHaveCount(1);
+
 	await stringRow.locator('input.list-input').fill('mango');
 	await stringRow.getByRole('button', { name: 'Add' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
+	await expect(stringRow.locator('button.remove-button')).toHaveCount(2);
+
 	await stringRow.locator('button.remove-button').last().click();
 	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
+	await expect(stringRow.locator('button.remove-button')).toHaveCount(1);
+
 	await stringRow.locator('button.remove-button').first().click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
+	await expect(stringRow.locator('button.remove-button')).toHaveCount(0);
+
 	await page.getByRole('button', { name: 'cancel' }).click();
 	await checkModelData();
 
@@ -276,13 +332,28 @@ test('edit form state - multi choice fields', async ({ browser, crudEnv }) => {
 	await page.getByRole('button', { name: 'edit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('editing');
 	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
+
+	// check that enum row has 1 add button and 2 remove buttons (for the 2 existing items)
+	await expect(enumRow.getByRole('button', { name: 'Add' })).toHaveCount(1);
+	await expect(enumRow.locator('button.remove-button')).toHaveCount(2);
+
 	await enumRow.locator('select.list-input').selectOption('carne');
 	await enumRow.getByRole('button', { name: 'Add' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
+	await expect(enumRow.locator('button.remove-button')).toHaveCount(3);
+
 	await enumRow.locator('button.remove-button').last().click();
 	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
+	await expect(enumRow.locator('button.remove-button')).toHaveCount(2);
+
 	await enumRow.locator('button.remove-button').first().click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
+	await expect(enumRow.locator('button.remove-button')).toHaveCount(1);
+	
+	await enumRow.locator('button.remove-button').first().click();
+	await expect(page.locator('#lingo-app')).toContainText('(modified)');
+	await expect(enumRow.locator('button.remove-button')).toHaveCount(0);
+
 	await page.getByRole('button', { name: 'cancel' }).click();
 	await checkModelData();
 
@@ -290,13 +361,24 @@ test('edit form state - multi choice fields', async ({ browser, crudEnv }) => {
 	await page.getByRole('button', { name: 'edit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('editing');
 	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
+
+	// check that datetime row has 1 add button and 1 remove button (for the 1 existing item)
+	await expect(datetimeRow.getByRole('button', { name: 'Add' })).toHaveCount(1);
+	await expect(datetimeRow.locator('button.remove-button')).toHaveCount(1);
+
 	await datetimeRow.locator('input.list-input[type="datetime-local"]').fill('2001-06-15T10:30');
 	await datetimeRow.getByRole('button', { name: 'Add' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
+	await expect(datetimeRow.locator('button.remove-button')).toHaveCount(2);
+
 	await datetimeRow.locator('button.remove-button').last().click();
 	await expect(page.locator('#lingo-app')).not.toContainText('(modified)');
+	await expect(datetimeRow.locator('button.remove-button')).toHaveCount(1);
+
 	await datetimeRow.locator('button.remove-button').first().click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
+	await expect(datetimeRow.locator('button.remove-button')).toHaveCount(0);
+	
 	await page.getByRole('button', { name: 'cancel' }).click();
 	await checkModelData();
 
