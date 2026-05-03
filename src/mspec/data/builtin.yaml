@@ -30,6 +30,15 @@ modules:
                             - "alice@example.com"
                             - "bob@example.com"
 
+                    email_verified:
+                        name:
+                            lower_case: "email verified"
+                        type: bool
+                        default: false
+                        examples:
+                            - false
+                            - true
+
             user_session:
                 hidden: true
                 name:
@@ -245,6 +254,11 @@ modules:
                                 lower_case: "email"
                             type: str
                             description: "Email of the current user"
+                        email_verified:
+                            name:
+                                lower_case: "email verified"
+                            type: bool
+                            description: "Whether the current user's email has been verified"
                         number_of_sessions:
                             name:
                                 lower_case: "number of sessions"
@@ -2050,3 +2064,148 @@ modules:
                                 lower_case: "total"
                             type: int
                             description: "Total number of master images available for pagination"
+
+    com:
+        name:
+            lower_case: "com"
+
+        models:
+
+            email_verifications:
+                hidden: true
+                name:
+                    lower_case: "email verifications"
+
+                fields:
+                    user_id:
+                        name:
+                            lower_case: "user id"
+                        type: foreign_key
+                        references:
+                            module: "auth"
+                            table: "user"
+                            field: "id"
+                        examples:
+                            - "1"
+                            - "2"
+
+                    created_at:
+                        name:
+                            lower_case: "created at"
+                        type: datetime
+                        examples:
+                            - "2023-01-01T12:00:00"
+                            - "2023-01-02T15:30:00"
+
+                    code_hash:
+                        name:
+                            lower_case: "code hash"
+                        type: str
+                        examples:
+                            - "abc123hash"
+                            - "def456hash"
+
+                    verified:
+                        name:
+                            lower_case: "verified"
+                        type: bool
+                        default: false
+                        examples:
+                            - false
+                            - true
+
+        ops:
+
+            send_email:
+                name:
+                    lower_case: "send email"
+                description: "Send an email to the specified address. If MAPP_SMTP_MOCK is true the email is only logged and not sent."
+                func:
+                    call: "com.send_email"
+                    args:
+                        email:
+                            params: {email: {}}
+                        subject:
+                            params: {subject: {}}
+                        body:
+                            params: {body: {}}
+                params:
+                    email:
+                        name:
+                            lower_case: "email"
+                        type: str
+                        description: "Recipient email address"
+                    subject:
+                        name:
+                            lower_case: "subject"
+                        type: str
+                        description: "Email subject line"
+                    body:
+                        name:
+                            lower_case: "body"
+                        type: str
+                        description: "Email body text"
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: "acknowledged"
+                            type: bool
+                            description: "Whether the email was sent (or logged in mock mode) successfully"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message"
+
+            start_email_verification:
+                name:
+                    lower_case: "start email verification"
+                description: "Start email verification for the currently logged-in user by generating a one-time code and sending it to their email address"
+                func:
+                    call: "com.start_email_verification"
+                    args: {}
+                params: {}
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: "acknowledged"
+                            type: bool
+                            description: "Whether the verification email was sent successfully"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message"
+
+            verify_email_address:
+                name:
+                    lower_case: "verify email address"
+                description: "Verify the email address of the currently logged-in user using the code that was sent by email"
+                func:
+                    call: "com.verify_email_address"
+                    args:
+                        code:
+                            params: {code: {}}
+                params:
+                    code:
+                        name:
+                            lower_case: "code"
+                        type: str
+                        description: "Verification code sent to the user's email address"
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: "acknowledged"
+                            type: bool
+                            description: "Whether the email address was verified successfully"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message"

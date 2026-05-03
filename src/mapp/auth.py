@@ -243,8 +243,8 @@ def create_user(ctx: MappContext, name: str, email: str, password: str, password
         raise AuthenticationError(err_msg + ': failed to generate unique user ID')
 
     ctx.db.cursor.execute(
-        'INSERT INTO user (id, name, email) VALUES (?, ?, ?)',
-        (user_id, name, email)
+        'INSERT INTO user (id, name, email, email_verified) VALUES (?, ?, ?, ?)',
+        (user_id, name, email, 0)
     )
 
     # Hash password
@@ -340,7 +340,7 @@ def is_logged_in(ctx: MappContext, confirm: bool) -> dict:
             return wrap_result(False, f'is_logged_in confirm check failed: {e}')
         
     else:
-        ctx.log('User is logged in (not confirmed)')
+        ctx.log(f'User is logged in (not confirmed) - {access_token=}')
         return wrap_result(True, 'User access token exists, but login status was not confirmed in the database')
 
 def current_user(ctx: MappContext) -> dict:
@@ -359,7 +359,8 @@ def current_user(ctx: MappContext) -> dict:
     access_token = ctx.current_access_token()
     
     if access_token is None or access_token == '':
-        raise AuthenticationError('Not logged in (a)')
+        ctx.log('Not logged in - (a) - no access token found')
+        raise AuthenticationError('Not logged in')
 
     user, _jti = _parse_access_token(ctx, access_token)
     
@@ -367,12 +368,18 @@ def current_user(ctx: MappContext) -> dict:
         'SELECT COUNT(*) FROM user_session WHERE user_id = ?', (user.id,)
     ).fetchone()[0]
 
+    email_verified_result = ctx.db.cursor.execute(
+        'SELECT email_verified FROM user WHERE id = ?', (user.id,)
+    ).fetchone()
+    email_verified = bool(email_verified_result[0]) if email_verified_result and email_verified_result[0] is not None else False
+
     return {
         'type': 'struct',
         'value': {
             'id': user.id,
             'name': user.name,
             'email': user.email,
+            'email_verified': email_verified,
             'number_of_sessions': number_of_sessions
         }
     }
@@ -394,11 +401,12 @@ def logout_user(ctx: MappContext, mode: str) -> dict:
 
     access_token = ctx.current_access_token()
     if access_token is None:
+        ctx.log('Not logged in - (b) - already logged out')
         return {
             'type': 'struct',
             'value': {
                 'acknowledged': True,
-                'message': 'Not logged in (b)'
+                'message': 'Already logged out'
             }
 
         }
@@ -451,7 +459,8 @@ def delete_user(ctx: MappContext) -> dict:
 
     access_token = ctx.current_access_token()
     if access_token is None:
-        raise AuthenticationError('Not logged in (c)')
+        ctx.log('Not logged in - (c) - no access token found')
+        raise AuthenticationError('Not logged in')
 
     user, jti = _parse_access_token(ctx, access_token)
 

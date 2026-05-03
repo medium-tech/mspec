@@ -822,7 +822,7 @@ def application(env, start_response):
         try:
             auth_header = env['HTTP_AUTHORIZATION']
         except KeyError:
-            raise AuthenticationError('Not logged in (d)')
+            raise AuthenticationError('Not logged in ')
         
         if not auth_header.startswith('Bearer '):
             raise AuthenticationError('Invalid authorization header')

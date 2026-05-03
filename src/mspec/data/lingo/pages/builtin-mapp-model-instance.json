@@ -139,11 +139,33 @@
             "model_id": {"params": {"model_id": {}}},
             "definition": {"params": {"model_definition": {}}}
         }},
-        {"model":{
-            "bind": {"state": {"model_delete_state": {}}},
-            "display": "delete",
-            "http": {"state": {"base_url": {}}},
-            "model_id": {"params": {"model_id": {}}}
-        }}
+		{"break": 1},
+		{"branch": [
+			{
+				"if": {
+					"call": "eq",
+					"args": {
+						"a": {
+							"call": "key",
+							"args": {
+								"object": {"state": {"model_instance": {}}},
+								"key": "state"
+							}
+						},
+						"b": "edited"
+					}
+				},
+				"then": {"text": ""}
+			},
+			{
+				"else": {"model":{
+					"bind": {"state": {"model_delete_state": {}}},
+					"display": "delete",
+					"model_data": {"state": {"model_instance": {"data": {}}}},
+					"http": {"state": {"base_url": {}}},
+					"model_id": {"params": {"model_id": {}}}
+				}}
+			}
+		]}
     ]
 }

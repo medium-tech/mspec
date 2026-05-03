@@ -1,4 +1,4 @@
-import { test } from './fixtures.js';
+import { test, createAndLoginUser } from './fixtures.js';
 import { expect } from '@playwright/test';
 
 //
@@ -49,6 +49,25 @@ function getExampleFromModel(model, index = 0) {
       throw new Error(`Field "${fieldName}" in model "${model.name.pascal_case}" has no examples defined`);
     }
     data[fieldName] = field.examples[index];
+  }
+  return data;
+}
+
+function getUniqueExampleFromModel(model, index = 0) {
+
+  if (!model.hasOwnProperty('fields')) {
+    throw new Error(`Model "${model.name.pascal_case}" has no fields defined`);
+  }
+
+  const timestamp = Date.now();
+  const data = {};
+
+  for (const [fieldName, field] of Object.entries(model.fields)) {
+    if (!field.hasOwnProperty('examples')) {
+      throw new Error(`Field "${fieldName}" in model "${model.name.pascal_case}" has no examples defined`);
+    }
+    const value = field.examples[index];
+    data[fieldName] = (field.unique === true && field.type === 'str') ? `${value}-${timestamp}` : value;
   }
   return data;
 }
@@ -248,9 +267,9 @@ async function fillFormField(page, fieldName, field, value, preSeedMode = false)
       .locator('input[type="number"]')
       .fill(String(value));
   } else if (fieldType === 'float') {
-    // For float fields, use input[type="number"]
+    // For float fields, use input[type="text"]
     await page.getByRole('row', { name: pattern })
-      .locator('input[type="number"]')
+      .locator('input[type="text"]')
       .fill(String(value));
   } else if (fieldType === 'datetime') {
     // For datetime fields, use input[type="datetime-local"]
@@ -649,4 +668,74 @@ test('test validation errors are displayed in form', async ({ browser, crudEnv, 
   await page.getByRole('button', { name: 'cancel', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Submit' })).not.toBeVisible();
   await expect(page.locator('.field-error')).not.toBeVisible();
+});
+
+
+test('test non-owner does not see edit or delete buttons', async ({ browser, crudEnv }) => {
+
+  // find a model with require_login:true so it has user-ownership
+  const modules = crudEnv.spec.modules;
+  let targetModel, targetModuleKebab, targetModelKebab;
+  for (const [_moduleName, module] of Object.entries(modules)) {
+    if (['auth', 'file-system', 'media'].includes(module.name.kebab_case)) continue;
+    for (const [_modelName, model] of Object.entries(module.models || {})) {
+      if (model.hidden === true) continue;
+      if (!model.auth || !model.auth.require_login) continue;
+      if (model.auth.max_models_per_user === 0) continue;
+      targetModel = model;
+      targetModuleKebab = module.name.kebab_case;
+      targetModelKebab = model.name.kebab_case;
+      break;
+    }
+    if (targetModel) break;
+  }
+  expect(targetModel).toBeDefined();
+
+  // create and log in as user A (the owner)
+  const userA = await createAndLoginUser(crudEnv.host, browser, 'owner');
+  const contextA = await browser.newContext({ storageState: userA.storageState });
+  const pageA = await contextA.newPage();
+  await contextA.addCookies([{ name: 'protocol_mode', value: 'true', domain: new URL(crudEnv.host).hostname, path: '/' }]);
+
+  // create a model instance as user A
+  await pageA.goto(crudEnv.host);
+  await pageA.getByRole('link', { name: targetModuleKebab, exact: true }).click();
+  await pageA.getByRole('link', { name: targetModelKebab, exact: true }).click();
+
+  const createExample = getUniqueExampleFromModel(targetModel, 0);
+  for (const [fieldName, value] of Object.entries(createExample)) {
+    await fillFormField(pageA, fieldName, targetModel.fields[fieldName], value);
+  }
+  await pageA.getByRole('button', { name: 'Submit' }).click();
+  await expect(pageA.locator('#lingo-app')).toContainText('Success');
+
+  // navigate to the new item and capture its URL
+  await pageA.getByRole('link', { name: 'view item' }).click();
+  await expect(pageA.locator('h1')).toContainText(`:: ${targetModelKebab}`);
+  const itemUrl = pageA.url();
+
+  // load the item and confirm owner sees edit and delete buttons
+  await pageA.getByRole('button', { name: 'load', exact: true }).click();
+  await expect(pageA.locator('#lingo-app')).toContainText('loaded');
+  await expect(pageA.getByRole('button', { name: 'edit', exact: true })).toBeVisible();
+  await expect(pageA.getByRole('button', { name: 'delete', exact: true })).toBeVisible();
+
+  await contextA.close();
+
+  // create and log in as user B (non-owner)
+  const userB = await createAndLoginUser(crudEnv.host, browser, 'non-owner');
+  const contextB = await browser.newContext({ storageState: userB.storageState });
+  const pageB = await contextB.newPage();
+  await contextB.addCookies([{ name: 'protocol_mode', value: 'true', domain: new URL(crudEnv.host).hostname, path: '/' }]);
+
+  // navigate directly to the item created by user A
+  await pageB.goto(itemUrl);
+  await pageB.getByRole('button', { name: 'load', exact: true }).click();
+  await expect(pageB.locator('#lingo-app')).toContainText('loaded');
+
+  // non-owner should not see edit or delete buttons
+  await expect(pageB.getByRole('button', { name: 'edit', exact: true })).not.toBeVisible();
+  await expect(pageB.getByRole('button', { name: 'delete', exact: true })).not.toBeVisible();
+
+  await contextB.close();
 });
