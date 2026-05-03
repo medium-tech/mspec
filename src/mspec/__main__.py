@@ -3,7 +3,17 @@ import os
 import shutil
 import json
 from pathlib import Path
-from mspec.core import *
+from mspec.core import (
+    SAMPLE_DATA_DIR,
+    SAMPLE_BROWSER2_SPEC_DIR,
+    SAMPLE_GENERATOR_SPEC_DIR,
+    SAMPLE_LINGO_SCRIPT_SPEC_DIR,
+    SAMPLE_RICH_TEXT_SPEC_DIR,
+    builtin_spec_files,
+    load_browser2_spec,
+    load_generator_spec,
+    load_lingo_script_spec,
+)
 from mspec.lingo import lingo_app, lingo_execute, render_output
 
 #
@@ -146,12 +156,17 @@ if args.command == 'specs':
         for spec in specs['lingo_script_test_data']:
             print(f' - {spec}')
 
+        print('Builtin rich text spec files:')
+        for spec in specs['rich_text']:
+            print(f' - {spec}')
+
 elif args.command == 'example':
 
     directories = [
         SAMPLE_BROWSER2_SPEC_DIR,
         SAMPLE_GENERATOR_SPEC_DIR,
-        SAMPLE_LINGO_SCRIPT_SPEC_DIR
+        SAMPLE_LINGO_SCRIPT_SPEC_DIR,
+        SAMPLE_RICH_TEXT_SPEC_DIR,
     ]
 
     for directory in directories:
