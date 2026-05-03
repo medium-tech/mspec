@@ -73,10 +73,9 @@ modules:
                         type: str
                         rich_text: true
                         examples:
-                            - '{"text": "hello.world"}'
-                            - '{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}'
-                            - '{"text": "lorem ipsum", "style": {"italic": true, "underline": true}}'
-                            - '{"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}] }'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'
 
                     profile_picture:
                         name:
@@ -132,10 +131,9 @@ modules:
                         type: str
                         rich_text: true
                         examples:
-                            - '{"text": "hello.world"}'
-                            - '{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}'
-                            - '{"text": "lorem ipsum", "style": {"italic": true, "underline": true}}'
-                            - '{"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}] }'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'
 
                     tags:
                         name:
@@ -269,10 +267,9 @@ modules:
                         type: str
                         rich_text: true
                         examples:
-                            - '{"text": "hello.world"}'
-                            - '{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}'
-                            - '{"text": "lorem ipsum", "style": {"italic": true, "underline": true}}'
-                            - '{"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}] }'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'
 
                     attachments:
                         name:
@@ -383,10 +380,9 @@ modules:
                         type: str
                         rich_text: true
                         examples:
-                            - '{"text": "hello.world"}'
-                            - '{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}'
-                            - '{"text": "lorem ipsum", "style": {"italic": true, "underline": true}}'
-                            - '{"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}] }'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'
 
             reaction:
                 name:
