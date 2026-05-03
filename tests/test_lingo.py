@@ -13,7 +13,7 @@ from mapp.errors import MappValidationError, AuthenticationError
 from mapp.types import new_model_class
 from mapp.module.model.db import db_model_create_table, db_model_create, db_model_unique_counts, db_model_query
 
-from mspec.core import load_browser2_spec, SAMPLE_BROWSER2_SPEC_DIR, builtin_spec_files, load_lingo_script_spec, SAMPLE_LINGO_SCRIPT_SPEC_DIR
+from mspec.core import load_browser2_spec, SAMPLE_BROWSER2_SPEC_DIR, builtin_spec_files, load_lingo_script_spec, SAMPLE_LINGO_SCRIPT_SPEC_DIR, SAMPLE_RICH_TEXT_SPEC_DIR, validate_rich_text_spec
 from mspec.lingo import *
 
 
@@ -896,6 +896,306 @@ class TestLingoDbFunctions(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             db_model_query(self.ctx, self.post_class, {'view_count': 10})
         self.assertIn('unsupported field type', str(cm.exception))
+
+
+class TestValidateRichTextSpec(unittest.TestCase):
+    """Tests for validate_rich_text_spec in mspec.core"""
+
+    # builtin example files #
+
+    def test_example_files_validate(self):
+        """All example files in the rich-text data dir should validate without error"""
+        for filename in os.listdir(SAMPLE_RICH_TEXT_SPEC_DIR):
+            with self.subTest(filename=filename):
+                with open(SAMPLE_RICH_TEXT_SPEC_DIR / filename) as f:
+                    spec = json.load(f)
+                result = validate_rich_text_spec(spec)
+                self.assertIs(result, spec)
+
+    # valid minimal spec #
+
+    def test_valid_minimal_spec(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': []}
+        self.assertIs(validate_rich_text_spec(spec), spec)
+
+    def test_valid_empty_block(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': []}
+        self.assertEqual(validate_rich_text_spec(spec), spec)
+
+    # text element #
+
+    def test_valid_text_element(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [{'text': 'hello'}]}
+        self.assertIs(validate_rich_text_spec(spec), spec)
+
+    def test_valid_text_with_style_bold(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'text': 'bold', 'style': {'bold': True}}
+        ]}
+        self.assertIs(validate_rich_text_spec(spec), spec)
+
+    def test_valid_text_with_full_style(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'text': 'styled', 'style': {'bold': True, 'italic': True, 'underline': True, 'color': 'red'}}
+        ]}
+        self.assertIs(validate_rich_text_spec(spec), spec)
+
+    def test_valid_all_color_options(self):
+        colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo',
+                  'violet', 'pink', 'brown', 'black', 'gray', 'white']
+        for color in colors:
+            with self.subTest(color=color):
+                spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+                    {'text': color, 'style': {'color': color}}
+                ]}
+                self.assertIs(validate_rich_text_spec(spec), spec)
+
+    # link element #
+
+    def test_valid_link_element(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'link': 'https://example.com'}
+        ]}
+        self.assertIs(validate_rich_text_spec(spec), spec)
+
+    def test_valid_link_element_with_text(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'link': 'https://example.com', 'text': 'Example'}
+        ]}
+        self.assertIs(validate_rich_text_spec(spec), spec)
+
+    # break element #
+
+    def test_valid_break_element(self):
+        for n in [1, 2, 3, 4, 5]:
+            with self.subTest(n=n):
+                spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [{'break': n}]}
+                self.assertIs(validate_rich_text_spec(spec), spec)
+
+    # value/list element #
+
+    def test_valid_list_element_strings(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'type': 'list', 'value': ['a', 'b', 'c']}
+        ]}
+        self.assertIs(validate_rich_text_spec(spec), spec)
+
+    def test_valid_list_element_text_items(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'type': 'list', 'value': [{'text': 'item one'}, {'text': 'item two', 'style': {'bold': True}}]}
+        ]}
+        self.assertIs(validate_rich_text_spec(spec), spec)
+
+    def test_valid_list_element_link_items(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'type': 'list', 'value': [{'link': 'https://example.com', 'text': 'Example'}]}
+        ]}
+        self.assertIs(validate_rich_text_spec(spec), spec)
+
+    def test_valid_list_element_numbered(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'type': 'list', 'display': {'format': 'numbers'}, 'value': ['first', 'second']}
+        ]}
+        self.assertIs(validate_rich_text_spec(spec), spec)
+
+    def test_valid_table_element_with_headers(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {
+                'type': 'list',
+                'display': {'format': 'table', 'headers': [
+                    {'text': 'Color', 'field': 'color'},
+                    {'text': 'Amount', 'field': 'amount'},
+                ]},
+                'value': [
+                    {'color': 'red', 'amount': 5},
+                    {'color': 'blue', 'amount': 10},
+                ]
+            }
+        ]}
+        self.assertIs(validate_rich_text_spec(spec), spec)
+
+    def test_valid_table_element_with_columns(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {
+                'type': 'list',
+                'display': {'format': 'table', 'columns': ['col1', 'col2']},
+                'value': [
+                    {'col1': 'a', 'col2': {'text': 'italic', 'style': {'italic': True}}}
+                ]
+            }
+        ]}
+        self.assertIs(validate_rich_text_spec(spec), spec)
+
+    def test_valid_table_cell_link_element(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {
+                'type': 'list',
+                'display': {'format': 'table', 'columns': ['col1', 'url']},
+                'value': [
+                    {'col1': 'see here', 'url': {'link': 'https://example.com', 'text': 'click'}}
+                ]
+            }
+        ]}
+        self.assertIs(validate_rich_text_spec(spec), spec)
+
+    def test_valid_table_cell_bool_and_float(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {
+                'type': 'list',
+                'display': {'format': 'table', 'columns': ['in_stock', 'price']},
+                'value': [
+                    {'in_stock': True, 'price': 9.99}
+                ]
+            }
+        ]}
+        self.assertIs(validate_rich_text_spec(spec), spec)
+
+    # invalid specs - top level #
+
+    def test_invalid_unknown_top_level_key(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [], 'extra': 'bad'}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_wrong_version(self):
+        spec = {'lingo': {'version': 'page-beta-1'}, 'block': []}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_missing_version(self):
+        spec = {'lingo': {}, 'block': []}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_missing_block(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_block_not_list(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': 'not a list'}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    # invalid text element #
+
+    def test_invalid_text_not_str(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [{'text': 123}]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_text_unknown_key(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [{'text': 'hi', 'bad': True}]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_style_unknown_field(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'text': 'hi', 'style': {'bolder': True}}
+        ]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_style_bold_not_bool(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'text': 'hi', 'style': {'bold': 1}}
+        ]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_style_color_unknown(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'text': 'hi', 'style': {'color': 'purple'}}
+        ]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_style_color_not_str(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'text': 'hi', 'style': {'color': 1}}
+        ]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    # invalid break element #
+
+    def test_invalid_break_not_int(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [{'break': '2'}]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_break_zero(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [{'break': 0}]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_break_too_large(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [{'break': 6}]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_break_extra_key(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [{'break': 1, 'bad': True}]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    # invalid value/list element #
+
+    def test_invalid_list_type_not_list_string(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'type': 'str', 'value': []}
+        ]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_list_value_not_list(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'type': 'list', 'value': 'not a list'}
+        ]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_list_item_wrong_type(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'type': 'list', 'value': [123]}
+        ]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_list_unknown_key(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'type': 'list', 'value': [], 'extra': True}
+        ]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_list_missing_value(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'type': 'list'}
+        ]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_table_cell_not_dict_or_primitive(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {
+                'type': 'list',
+                'display': {'format': 'table', 'columns': ['col']},
+                'value': [{'col': [1, 2, 3]}]
+            }
+        ]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_block_element_no_known_key(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [{'unknown': 'value'}]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
+
+    def test_invalid_block_element_not_dict(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': ['not a dict']}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
 
 
 if __name__ == '__main__':

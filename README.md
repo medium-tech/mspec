@@ -19,6 +19,7 @@ To accomplish this there and three script specs:
 - [Language Specs](#language-specs)
   - [Scripting](#scripting)
   - [Pages](#pages)
+  - [Rich Text](#rich-text)
   - [Application](#application)
 - [Clients and Frameworks](#clients-and-frameworks)
   - [Python CLI](#python-cli)
@@ -81,7 +82,13 @@ This scripting spec allows rendering an interactive page including layout, style
 
 A sub spec of the [page](#pages) spec for created formatted text, usable a `str` field type in an [application](#application) spec model.
 
+**spec name:** `rich-text-beta-1`
+
+[creating a rich text spec](./docs/LINGO_RICH_TEXT_SPEC.md)
+
 **sample files:** `src/mspec/data/lingo/rich-text`
+
+**bootstrap example file:** `python -m mspec example example.json`
 
 ## application
 
