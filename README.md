@@ -80,7 +80,7 @@ This scripting spec allows rendering an interactive page including layout, style
 
 ## rich text
 
-A sub spec of the [page](#pages) spec for created formatted text, usable a `str` field type in an [application](#application) spec model.
+A sub spec of the [page](#pages) spec for created formatted text, usable on a `str` field type in an [application](#application) spec model to bring formatting to `str` fields.
 
 **spec name:** `rich-text-beta-1`
 

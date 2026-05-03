@@ -918,15 +918,7 @@ class TestValidateRichTextSpec(unittest.TestCase):
         spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': []}
         self.assertIs(validate_rich_text_spec(spec), spec)
 
-    def test_valid_empty_block(self):
-        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': []}
-        self.assertEqual(validate_rich_text_spec(spec), spec)
-
     # text element #
-
-    def test_valid_text_element(self):
-        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [{'text': 'hello'}]}
-        self.assertIs(validate_rich_text_spec(spec), spec)
 
     def test_valid_text_with_style_bold(self):
         spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
@@ -1002,10 +994,13 @@ class TestValidateRichTextSpec(unittest.TestCase):
         spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
             {
                 'type': 'list',
-                'display': {'format': 'table', 'headers': [
-                    {'text': 'Color', 'field': 'color'},
-                    {'text': 'Amount', 'field': 'amount'},
-                ]},
+                'display': {
+                    'format': 'table', 
+                    'headers': [
+                    	{'text': 'Color', 'field': 'color'},
+                    	{'text': 'Amount', 'field': 'amount'},
+                	]
+                },
                 'value': [
                     {'color': 'red', 'amount': 5},
                     {'color': 'blue', 'amount': 10},

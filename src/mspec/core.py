@@ -560,7 +560,7 @@ def _validate_rich_text_style(style:dict) -> None:
             )
         if key == 'color' and value not in _RICH_TEXT_COLOR_OPTIONS:
             raise ValueError(
-                f'rich text: style.color {value!r} is not a valid color option'
+                f'rich text: style.color {value} is not a valid color option'
             )
 
 
@@ -649,9 +649,9 @@ def _validate_rich_text_table_value(element:dict, context:str) -> None:
 
 
 def _validate_rich_text_block_element(element:dict, index:int) -> None:
-    ctx = f'block[{index}]'
+    block_id = f'block[{index}]'
     if not isinstance(element, dict):
-        raise ValueError(f'rich text: {ctx} must be an object, got {type(element).__name__}')
+        raise ValueError(f'rich text: {block_id} must be an object, got {type(element).__name__}')
 
     keys = set(element.keys())
 
@@ -660,20 +660,20 @@ def _validate_rich_text_block_element(element:dict, index:int) -> None:
         allowed = {'link', 'text'}
         unknown = keys - allowed
         if unknown:
-            raise ValueError(f'rich text: {ctx} link element has unknown keys: {unknown}')
+            raise ValueError(f'rich text: {block_id} link element has unknown keys: {unknown}')
         if type(element['link']) is not str:
-            raise ValueError(f'rich text: {ctx} link must be str')
+            raise ValueError(f'rich text: {block_id} link must be str')
         if 'text' in element and type(element['text']) is not str:
-            raise ValueError(f'rich text: {ctx} link element text must be str')
+            raise ValueError(f'rich text: {block_id} link element text must be str')
 
     # text element #
     elif 'text' in keys:
         allowed = {'text', 'style'}
         unknown = keys - allowed
         if unknown:
-            raise ValueError(f'rich text: {ctx} text element has unknown keys: {unknown}')
+            raise ValueError(f'rich text: {block_id} text element has unknown keys: {unknown}')
         if type(element['text']) is not str:
-            raise ValueError(f'rich text: {ctx} text must be str')
+            raise ValueError(f'rich text: {block_id} text must be str')
         if 'style' in element:
             _validate_rich_text_style(element['style'])
 
@@ -682,42 +682,42 @@ def _validate_rich_text_block_element(element:dict, index:int) -> None:
         allowed = {'break'}
         unknown = keys - allowed
         if unknown:
-            raise ValueError(f'rich text: {ctx} break element has unknown keys: {unknown}')
+            raise ValueError(f'rich text: {block_id} break element has unknown keys: {unknown}')
         value = element['break']
         if type(value) is not int:
-            raise ValueError(f'rich text: {ctx} break must be int, got {type(value).__name__}')
+            raise ValueError(f'rich text: {block_id} break must be int, got {type(value).__name__}')
         if not (1 <= value <= 5):
-            raise ValueError(f'rich text: {ctx} break must be between 1 and 5, got {value}')
+            raise ValueError(f'rich text: {block_id} break must be between 1 and 5, got {value}')
 
     # value/list element #
     elif 'type' in keys:
         allowed = {'type', 'value', 'display'}
         unknown = keys - allowed
         if unknown:
-            raise ValueError(f'rich text: {ctx} value element has unknown keys: {unknown}')
+            raise ValueError(f'rich text: {block_id} value element has unknown keys: {unknown}')
         if element['type'] != 'list':
-            raise ValueError(f'rich text: {ctx} type must be "list", got {element["type"]!r}')
+            raise ValueError(f'rich text: {block_id} type must be "list", got {element["type"]}')
         if 'value' not in element:
-            raise ValueError(f'rich text: {ctx} value element must have a value key')
+            raise ValueError(f'rich text: {block_id} value element must have a value key')
         if not isinstance(element['value'], list):
-            raise ValueError(f'rich text: {ctx} value must be a list')
+            raise ValueError(f'rich text: {block_id} value must be a list')
 
         # determine if table display #
         display = element.get('display', {})
         if display and not isinstance(display, dict):
-            raise ValueError(f'rich text: {ctx} display must be an object')
+            raise ValueError(f'rich text: {block_id} display must be an object')
         is_table = isinstance(display, dict) and display.get('format') == 'table'
 
         if is_table:
             for i, item in enumerate(element['value']):
-                _validate_rich_text_table_value(item, f'{ctx}.value[{i}]')
+                _validate_rich_text_table_value(item, f'{block_id}.value[{i}]')
         else:
             for i, item in enumerate(element['value']):
-                _validate_rich_text_link_or_text_element(item, f'{ctx}.value[{i}]')
+                _validate_rich_text_link_or_text_element(item, f'{block_id}.value[{i}]')
 
     else:
         raise ValueError(
-            f'rich text: {ctx} element must have one of: text, link, break, type'
+            f'rich text: {block_id} element must have one of: text, link, break, type'
         )
 
 
@@ -752,7 +752,7 @@ def validate_rich_text_spec(source:dict) -> dict:
 
     if version != 'rich-text-beta-1':
         raise ValueError(
-            f'rich text: lingo.version must be "rich-text-beta-1", got {version!r}'
+            f'rich text: lingo.version must be "rich-text-beta-1", got {version}'
         )
 
     # block #
