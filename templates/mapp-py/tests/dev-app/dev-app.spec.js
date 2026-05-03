@@ -171,21 +171,31 @@ test('edit form state - single-choice-fk', async ({ browser, crudEnv }) => {
 	await xFkFieldRow.getByRole('button', { name: 'Find single_choice_fields' }).click();
 	await expect(page.locator('#lingo-app')).not.toContainText('pending');
 	await page.locator('.popup-content > div > table > tbody > tr').first().click();
+	await expect(xFkFieldRow.getByRole('textbox')).not.toHaveValue('-1');
+	const xFkFieldValue = await xFkFieldRow.getByRole('textbox').inputValue();
+	const xFkFieldValueLinkText = `go to model-type-tests/single-choice-fields/${xFkFieldValue}`;
 
 	// x_fk_file: upload a PDF file
 	await xFkFileRow.locator('input[type="file"]').setInputFiles('./tests/samples/lorem-document.pdf');
 	await expect(page.locator('#lingo-app')).not.toContainText('Uploading file...');
 	await expect(page.locator('#lingo-app')).toContainText('File uploaded successfully!');
+	await expect(xFkFileRow.getByRole('button', { name: 'Reset' })).toBeVisible();
+	await expect(xFkFileRow.getByRole('textbox')).not.toHaveValue('-1');
+	const xFkFileValue = await xFkFileRow.getByRole('textbox').inputValue();
 
 	// x_fk_image: upload an image file
 	await xFkImageRow.locator('input[type="file"]').setInputFiles('./tests/samples/splash-low.jpg');
 	await expect(page.locator('#lingo-app')).not.toContainText('Uploading file...');
 	await expect(page.locator('#lingo-app')).toContainText('File uploaded successfully!');
+	await expect(xFkImageRow.getByRole('textbox')).not.toHaveValue('-1');
+	const xFkImageValue = await xFkImageRow.getByRole('textbox').inputValue();
 
-	// x_fk_master_image: upload an image file
+	// x_fk_master_image: upload a master image file
 	await xFkMasterImageRow.locator('input[type="file"]').setInputFiles('./tests/samples/splash-low.jpg');
 	await expect(page.locator('#lingo-app')).not.toContainText('Uploading file...');
 	await expect(page.locator('#lingo-app')).toContainText('File uploaded successfully!');
+	await expect(xFkMasterImageRow.getByRole('textbox')).not.toHaveValue('-1');
+	const xFkMasterImageValue = await xFkMasterImageRow.getByRole('textbox').inputValue();
 
 	// submit and navigate to item view
 	await page.getByRole('button', { name: 'Submit' }).click();
@@ -194,10 +204,16 @@ test('edit form state - single-choice-fk', async ({ browser, crudEnv }) => {
 
 	// confirm original data values
 	const checkModelData = async () => {
-		await expect(page.getByRole('row', { name: 'x_fk_field' }).getByRole('link', { name: /go to/ })).toBeVisible();
+		await expect(page.getByRole('row', { name: 'x_fk_field' }).getByRole('link', { name: xFkFieldValueLinkText })).toBeVisible();
+
 		await expect(page.getByRole('row', { name: 'x_fk_file' }).getByRole('button', { name: 'download file' })).toBeVisible();
+		await expect(page.getByRole('row', { name: 'x_fk_file' })).toContainText(xFkFileValue);
+
 		await expect(page.getByRole('row', { name: 'x_fk_image' }).locator('.viewer-container')).toBeVisible();
+		await expect(page.getByRole('row', { name: 'x_fk_image' })).toContainText(xFkImageValue);
+
 		await expect(page.getByRole('row', { name: 'x_fk_master_image' }).locator('.viewer-container')).toBeVisible();
+		await expect(page.getByRole('row', { name: 'x_fk_master_image' })).toContainText(xFkMasterImageValue);
 	};
 
 	await checkModelData();
@@ -248,7 +264,7 @@ test('edit form state - single-choice-fk', async ({ browser, crudEnv }) => {
 	await checkModelData();
 
 	// reload data and confirm values are correct
-	await page.getByRole('button', { name: 'load' }).click();
+	await page.getByRole('button', { name: 'load', exact: true }).click();
 	await checkModelData();
 });
 
@@ -644,7 +660,7 @@ test('edit form state - multi choice fields', async ({ browser, crudEnv }) => {
 	await datetimeRow.locator('button.remove-button').first().click();
 	await expect(page.locator('#lingo-app')).toContainText('(modified)');
 	await expect(datetimeRow.locator('button.remove-button')).toHaveCount(0);
-	
+
 	await page.getByRole('button', { name: 'cancel' }).click();
 	await checkModelData();
 
