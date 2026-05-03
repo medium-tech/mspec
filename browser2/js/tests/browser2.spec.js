@@ -945,3 +945,86 @@ test('test - timers', async ({ page }) => {
   // Timer has disabled itself - button should be enabled again
   await expect(page.getByRole('button', { name: 'start countdown' })).toBeEnabled();
 });
+
+test('test - empty-rich-text-block', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/rich-text/empty-rich-text-block.json');
+
+  await expect(page.locator('#debug-content')).toContainText('rich-text-beta-1');
+  // Empty block array should produce no child elements in the container
+  await expect(page.locator('#lingo-app').locator('> *')).toHaveCount(0);
+});
+
+test('test - hello-rich-text', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/rich-text/hello-rich-text.json');
+
+  await expect(page.locator('#debug-content')).toContainText('rich-text-beta-1');
+  await expect(page.locator('#lingo-app span')).toContainText('hello.world');
+});
+
+test('test - example-rich-text', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/rich-text/example-rich-text.json');
+
+  await expect(page.locator('#debug-content')).toContainText('rich-text-beta-1');
+
+  // Verify plain text content
+  await expect(page.locator('#lingo-app')).toContainText('This is an example of a rich text document.');
+
+  // Verify bold text
+  const boldSpan = page.locator('#lingo-app span').filter({ hasText: /^bold, $/ });
+  await expect(boldSpan).toHaveCSS('font-weight', '700');
+
+  // Verify italic text
+  const italicSpan = page.locator('#lingo-app span').filter({ hasText: /^italic,$/ });
+  await expect(italicSpan).toHaveCSS('font-style', 'italic');
+
+  // Verify underline text
+  const underlineSpan = page.locator('#lingo-app span').filter({ hasText: /^underline\.$/ });
+  await expect(underlineSpan).toHaveCSS('text-decoration', /underline/);
+
+  // Verify combined styles on "All together now!"
+  const allTogetherSpan = page.locator('#lingo-app span').filter({ hasText: /^All together now!$/ });
+  await expect(allTogetherSpan).toHaveCSS('font-weight', '700');
+  await expect(allTogetherSpan).toHaveCSS('font-style', 'italic');
+  await expect(allTogetherSpan).toHaveCSS('text-decoration', /underline/);
+
+  // Verify links - custom text link and raw URL link both pointing to wikipedia
+  await expect(page.locator('#lingo-app a').filter({ hasText: /^Wikipedia$/ })).toHaveAttribute('href', 'https://www.wikipedia.org');
+  await expect(page.locator('#lingo-app a').filter({ hasText: /^https:\/\/www\.wikipedia\.org$/ })).toHaveAttribute('href', 'https://www.wikipedia.org');
+  await expect(page.locator('#lingo-app a[href="https://www.wikipedia.org"]')).toHaveCount(2);
+
+  // Verify bullet list with colored items
+  const bulletList = page.locator('#lingo-app ul').first();
+  await expect(bulletList).toBeVisible();
+  await expect(bulletList.locator('li span').filter({ hasText: /^Red$/ })).toHaveCSS('color', 'rgb(255, 0, 0)');
+  await expect(bulletList.locator('li span').filter({ hasText: /^Blue$/ })).toHaveCSS('color', 'rgb(0, 0, 255)');
+  await expect(bulletList.locator('li span').filter({ hasText: /^Green$/ })).toHaveCSS('color', 'rgb(0, 128, 0)');
+
+  // Verify ordered (numbered) list
+  const orderedList = page.locator('#lingo-app ol');
+  await expect(orderedList).toBeVisible();
+  await expect(orderedList).toContainText('First item');
+  await expect(orderedList).toContainText('Second item');
+  await expect(orderedList).toContainText('Third item');
+
+  // Verify table with headers (Color, Amount, In Stock)
+  const tables = page.locator('#lingo-app table');
+  const headerTable = tables.first();
+  await expect(headerTable.locator('th').nth(0)).toContainText('Color');
+  await expect(headerTable.locator('th').nth(1)).toContainText('Amount');
+  await expect(headerTable.locator('th').nth(2)).toContainText('In Stock');
+  await expect(headerTable).toContainText('red');
+  await expect(headerTable).toContainText('green');
+  await expect(headerTable).toContainText('blue');
+  await expect(headerTable).toContainText('10');
+  await expect(headerTable).toContainText('21');
+  await expect(headerTable).toContainText('0');
+
+  // Verify grid (column-based table)
+  const gridTable = tables.nth(1);
+  await expect(gridTable).toContainText('Arbitrary informtion'); // note: typo is in the source JSON
+  await expect(gridTable.locator('span').filter({ hasText: 'Arbitrary information in italic' })).toHaveCSS('font-style', 'italic');
+  await expect(gridTable.locator('a').filter({ hasText: 'i like turtles' })).toHaveAttribute('href', 'https://en.wikipedia.org/wiki/Turtle#/media/File:Turtle_diversity.jpg');
+});
