@@ -4449,6 +4449,165 @@ function createLinkElement(app, element, ctx = null) {
 }
 
 /**
+ * Convert rich text JSON spec string to HTML for display in a contenteditable div
+ */
+function richTextSpecToHtml(jsonStr) {
+    let spec;
+    try {
+        spec = JSON.parse(jsonStr);
+    } catch (e) {
+        return '';
+    }
+    if (!spec || !Array.isArray(spec.block)) {
+        return '';
+    }
+    // Escape all characters that could cause HTML injection
+    const escape = (s) => s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    let html = '';
+    for (const block of spec.block) {
+        if ('text' in block) {
+            const text = escape(block.text);
+            if (block.style && block.style.bold) {
+                html += `<span style="font-weight: bold">${text}</span>`;
+            } else {
+                html += text;
+            }
+        } else if ('break' in block) {
+            // Clamp between 1-5 breaks as defined by the rich-text-beta-1 spec
+            const count = Math.max(1, Math.min(5, block.break));
+            for (let i = 0; i < count; i++) {
+                html += '<br>';
+            }
+        }
+    }
+    return html;
+}
+
+/**
+ * Convert HTML inside a contenteditable div to a rich text JSON spec object
+ */
+function htmlToRichTextSpec(container) {
+    const blocks = [];
+
+    const processNode = (node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const text = node.textContent;
+            if (text) {
+                blocks.push({text});
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            if (node.tagName === 'BR') {
+                blocks.push({break: 1});
+            } else if (node.tagName === 'SPAN') {
+                const fw = node.style.fontWeight;
+                const isBold = fw === 'bold' || parseInt(fw, 10) >= 700;
+                const text = node.textContent;
+                if (text) {
+                    if (isBold) {
+                        blocks.push({text, style: {bold: true}});
+                    } else {
+                        blocks.push({text});
+                    }
+                }
+            } else if (node.tagName === 'DIV') {
+                // Browsers wrap new paragraphs in divs inside contenteditable
+                if (blocks.length > 0) {
+                    blocks.push({break: 1});
+                }
+                for (const child of node.childNodes) {
+                    processNode(child);
+                }
+            } else {
+                for (const child of node.childNodes) {
+                    processNode(child);
+                }
+            }
+        }
+    };
+
+    for (const child of container.childNodes) {
+        processNode(child);
+    }
+
+    return {lingo: {version: 'rich-text-beta-1'}, block: blocks};
+}
+
+/**
+ * Create a rich text input widget: a contenteditable editor with Bold and Debug toolbar buttons
+ */
+function createRichTextInput(formData, fieldKey, initialValue) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'rich-text-input-wrapper';
+
+    // toolbar //
+    const toolbar = document.createElement('div');
+    toolbar.className = 'rich-text-toolbar';
+
+    const boldBtn = document.createElement('button');
+    boldBtn.type = 'button';
+    boldBtn.textContent = 'Bold';
+    boldBtn.className = 'rich-text-btn';
+
+    const debugBtn = document.createElement('button');
+    debugBtn.type = 'button';
+    debugBtn.textContent = 'Debug';
+    debugBtn.className = 'rich-text-btn';
+
+    toolbar.appendChild(boldBtn);
+    toolbar.appendChild(debugBtn);
+
+    // editor //
+    const editor = document.createElement('div');
+    editor.contentEditable = 'true';
+    editor.className = 'rich-text-editor';
+
+    if (initialValue) {
+        editor.innerHTML = richTextSpecToHtml(initialValue);
+    }
+
+    const syncFormData = () => {
+        formData[fieldKey] = JSON.stringify(htmlToRichTextSpec(editor));
+    };
+
+    editor.addEventListener('input', syncFormData);
+
+    // bold button: wrap selection in a bold span //
+    boldBtn.addEventListener('click', () => {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+        const range = selection.getRangeAt(0);
+        if (!editor.contains(range.commonAncestorContainer)) return;
+        const span = document.createElement('span');
+        span.style.fontWeight = 'bold';
+        try {
+            range.surroundContents(span);
+        } catch (e) {
+            // Selection spans multiple elements: extract and rewrap
+            const fragment = range.extractContents();
+            span.appendChild(fragment);
+            range.insertNode(span);
+        }
+        selection.removeAllRanges();
+        syncFormData();
+    });
+
+    // debug button: log rich text spec to console //
+    debugBtn.addEventListener('click', () => {
+        console.log('Rich text spec:', JSON.stringify(htmlToRichTextSpec(editor), null, 2));
+    });
+
+    wrapper.appendChild(toolbar);
+    wrapper.appendChild(editor);
+
+    return wrapper;
+}
+
+/**
  * Create form element with table layout
  */
 function createFormElement(app, element, ctx = null) {
@@ -4860,6 +5019,9 @@ function createFormElement(app, element, ctx = null) {
             inputElement.addEventListener('change', () => {
                 formData[fieldKey] = inputElement.value === '' ? null : inputElement.value;
             });
+
+        } else if (fieldSpec.rich_text && fieldType === 'str') {
+            inputElement = createRichTextInput(formData, fieldKey, formData[fieldKey]);
 
         } else {
             inputElement = document.createElement('input');
