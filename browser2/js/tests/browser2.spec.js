@@ -992,6 +992,7 @@ test('test - example-rich-text', async ({ page }) => {
 
   // Verify links - custom text link and raw URL link both pointing to wikipedia
   await expect(page.locator('#lingo-app a').filter({ hasText: /^Wikipedia$/ })).toHaveAttribute('href', 'https://www.wikipedia.org');
+  await expect(page.locator('#lingo-app a').filter({ hasText: /^https:\/\/www\.wikipedia\.org$/ })).toHaveAttribute('href', 'https://www.wikipedia.org');
   await expect(page.locator('#lingo-app a[href="https://www.wikipedia.org"]')).toHaveCount(2);
 
   // Verify bullet list with colored items
