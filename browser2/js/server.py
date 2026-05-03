@@ -23,7 +23,7 @@ class DevRequestHandler(http.server.SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
         
-		#
+        #
         # serve index
         #
         
@@ -77,15 +77,20 @@ class DevRequestHandler(http.server.SimpleHTTPRequestHandler):
             scripts_rel_dir = 'data/lingo/scripts/'
             lingo_scripts = [os.path.join(scripts_rel_dir, f) for f in os.listdir(scripts_dir)]
             
+            rich_text_dir = os.path.join(SPEC_DIR, 'lingo/rich-text')
+            rich_text_rel_dir = 'data/lingo/rich-text/'
+            lingo_rich_text = [os.path.join(rich_text_rel_dir, f) for f in os.listdir(rich_text_dir)]
+            
             response = {
                 'pages': lingo_pages,
-                'scripts': lingo_scripts
+                'scripts': lingo_scripts,
+                'rich_text': lingo_rich_text
             }
 
             self.wfile.write(json.dumps(response).encode('utf-8'))
             return
         
-		#
+        #
         # serve lingo examples
         #
         

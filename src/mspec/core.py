@@ -565,12 +565,11 @@ def _validate_rich_text_style(style:dict) -> None:
 
 
 def _validate_rich_text_link_or_text_element(element:dict, context:str) -> None:
-    """Validate that an element is one of: str, text element, or link element."""
-    if isinstance(element, str):
-        return
+    """Validate that an element is one of: text element, or link element."""
+
     if not isinstance(element, dict):
         raise ValueError(
-            f'rich text: {context} list item must be str, text element, or link element, '
+            f'rich text: {context} list item must be text element, or link element, '
             f'got {type(element).__name__}'
         )
     keys = set(element.keys())

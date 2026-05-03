@@ -95,11 +95,11 @@ class TestMspecCLI(unittest.TestCase):
 
     def test_example_command_rich_text(self):
         """Test the example command with example.json (rich text)"""
-        result = self._run_cli(['example', 'example.json', '--yes'])
+        result = self._run_cli(['example', 'example-rich-text.json', '--yes'])
         self.assertEqual(result.returncode, 0)
         self.assertIn('Copied example spec file to current directory:', result.stdout)
 
-        copied_file = Path('example.json')
+        copied_file = Path('example-rich-text.json')
         self.assertTrue(copied_file.exists())
         copied_file.unlink()
 

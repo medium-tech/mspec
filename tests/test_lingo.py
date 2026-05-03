@@ -653,11 +653,11 @@ class TestLingoDbFunctions(unittest.TestCase):
                 'data': {
                     'type': 'struct',
                     'value': {
-						'user_id': {'value': '3', 'type': 'str'},
-						'title': {'value': 'new post', 'type': 'str'},
-						'view_count': {'value': 30, 'type': 'int'},
-					}
-				},
+                        'user_id': {'value': '3', 'type': 'str'},
+                        'title': {'value': 'new post', 'type': 'str'},
+                        'view_count': {'value': 30, 'type': 'int'},
+                    }
+                },
             }
         }
         app = self._make_app()
@@ -966,12 +966,6 @@ class TestValidateRichTextSpec(unittest.TestCase):
 
     # value/list element #
 
-    def test_valid_list_element_strings(self):
-        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
-            {'type': 'list', 'value': ['a', 'b', 'c']}
-        ]}
-        self.assertIs(validate_rich_text_spec(spec), spec)
-
     def test_valid_list_element_text_items(self):
         spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
             {'type': 'list', 'value': [{'text': 'item one'}, {'text': 'item two', 'style': {'bold': True}}]}
@@ -986,7 +980,7 @@ class TestValidateRichTextSpec(unittest.TestCase):
 
     def test_valid_list_element_numbered(self):
         spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
-            {'type': 'list', 'display': {'format': 'numbers'}, 'value': ['first', 'second']}
+            {'type': 'list', 'display': {'format': 'numbers'}, 'value': [{'text': 'first'}, {'text': 'second'}]}
         ]}
         self.assertIs(validate_rich_text_spec(spec), spec)
 
@@ -997,9 +991,9 @@ class TestValidateRichTextSpec(unittest.TestCase):
                 'display': {
                     'format': 'table', 
                     'headers': [
-                    	{'text': 'Color', 'field': 'color'},
-                    	{'text': 'Amount', 'field': 'amount'},
-                	]
+                        {'text': 'Color', 'field': 'color'},
+                        {'text': 'Amount', 'field': 'amount'},
+                    ]
                 },
                 'value': [
                     {'color': 'red', 'amount': 5},
@@ -1135,6 +1129,13 @@ class TestValidateRichTextSpec(unittest.TestCase):
             validate_rich_text_spec(spec)
 
     # invalid value/list element #
+    
+    def test_invalid_list_element_primitive_strings(self):
+        spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [
+            {'type': 'list', 'value': ['a', 'b', 'c']}
+        ]}
+        with self.assertRaises(ValueError):
+            validate_rich_text_spec(spec)
 
     def test_invalid_list_type_not_list_string(self):
         spec = {'lingo': {'version': 'rich-text-beta-1'}, 'block': [

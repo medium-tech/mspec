@@ -7,8 +7,11 @@
 		{"break": 1},
 		{"text": "It can define formatting like "},
 		{"text": "bold, ", "style": {"bold": true}},
-		{"text": "italic, and", "style": {"italic": true}},
+		{"text": "italic,", "style": {"italic": true}},
+		{"text": " and "},
 		{"text": "underline.", "style": {"underline": true}},
+		{"text": " "},
+		{"text": "All together now!", "style": {"bold": true, "italic": true, "underline": true}},
 		{"text": " It also does links with custom display text: "},
 		{"link": "https://www.wikipedia.org", "text": "Wikipedia"},
 		{"text": " or as the raw url: "},
@@ -36,9 +39,9 @@
 			"type": "list",
 			"display": {"format": "numbers"},
 			"value": [
-				"First item",
-				"Second item",
-				"Third item"
+				{"text": "First item"},
+				{"text": "Second item"},
+				{"text": "Third item"}
 			]
 		},
 		{

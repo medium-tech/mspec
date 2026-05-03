@@ -1509,7 +1509,7 @@ function lingoApp(spec, params = {}, options = {}) {
         }
     }
     
-    lingoUpdateState(instance);
+    if(specCopy.lingo.version !== 'rich-text-beta-1') lingoUpdateState(instance);
 
     // Auto-start timers
     if (instance.spec.timers) {
@@ -3860,6 +3860,19 @@ function renderLingoApp(app, container, preserveFocus = false) {
         lingoUpdateState(app);
         const result = lingoExecute(app, app.spec.output);
         container.innerHTML = '<pre>' + JSON.stringify(result, null, 4) + '</pre>';
+	
+	} else if(app.spec.lingo.version == 'rich-text-beta-1') {
+		console.log('Rendering rich-text-beta-1 spec');
+		if(!app.spec.hasOwnProperty('block') || !Array.isArray(app.spec.block)) {
+			throw new Error('rich-text-beta-1 spec requires a block array');
+		}
+
+		for (const element of app.spec.block) {
+            const domElement = createDOMElement(app, element);
+            if (domElement) {
+                container.appendChild(domElement);
+            }
+        }
 
     }else{
         throw new Error(`Unsupported lingo version: ${app.spec.lingo.version}`);
@@ -3889,6 +3902,7 @@ function renderLingoApp(app, container, preserveFocus = false) {
  * Create a DOM element from a buffer element
  */
 function createDOMElement(app, element, ctx = null) {
+	console.debug('createDOMElement()', element);
     if ('heading' in element) {
         return createHeadingElement(app, element);
     } else if ('break' in element) {

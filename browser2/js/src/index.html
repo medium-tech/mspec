@@ -123,7 +123,7 @@
                 })
                 .then(specData => {
                     try {
-                        createParamsInput(specData)
+                        if(specData.lingo.version !== 'rich-text-beta-1') createParamsInput(specData)
                         const updateDebugInfo = (app) => showDebugInfo(app);
                         if (currentApp) {
                             stopAllTimers(currentApp);
@@ -166,8 +166,11 @@
                 .then(data => {
                     specLookup = data;
                     const specSelect = document.getElementById('spec-select');
-                    // populate two groups of options: pages and scripts
-                    // from specSelect.pages and specSelect.scripts
+                    
+					//
+					// pages
+					//
+
                     const pagesOptGroup = document.createElement('optgroup');
                     pagesOptGroup.label = 'Pages';
                     // Sort pages alphabetically before adding options
@@ -186,6 +189,10 @@
                     });
                     specSelect.appendChild(pagesOptGroup);
 
+					//
+					// scripts
+					//
+
                     const scriptsOptGroup = document.createElement('optgroup');
                     scriptsOptGroup.label = 'Scripts';
                     // Sort scripts alphabetically before adding options
@@ -203,6 +210,30 @@
                         scriptsOptGroup.appendChild(option);
                     });
                     specSelect.appendChild(scriptsOptGroup);
+
+					//
+					// rich text
+					//
+
+					console.log(data)
+
+					const richTextOptGroup = document.createElement('optgroup');
+					richTextOptGroup.label = 'Rich Text';
+					// Sort rich text files alphabetically before adding options
+					const sortedRichText = data.rich_text.slice().sort();
+					sortedRichText.forEach(richText => {
+						if (richText.includes('_test_data')) {
+							return; // skip test data files
+						}
+						if (richText.endsWith('.yaml') || richText.endsWith('.yml')) {
+							return; // skip yaml files
+						}
+						const option = document.createElement('option');
+						option.value = richText;
+						option.textContent = richText.split('/').pop();
+						richTextOptGroup.appendChild(option);
+					});
+					specSelect.appendChild(richTextOptGroup);
                 })
                 .then(() => {
                     const urlParams = new URLSearchParams(window.location.search);
