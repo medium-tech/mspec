@@ -4666,7 +4666,7 @@ function createRichTextInput(formData, fieldKey, initialValue) {
         if (!editor.contains(range.commonAncestorContainer)) return;
 
         // Map selection to character positions, then work at the spec level so
-        // that a selection shorter than a bold span only unboldes the selected
+        // that a selection shorter than a bold span only unbolds the selected
         // portion rather than the entire span.
         const {startChar, endChar} = getRangeCharPositions(range);
         if (startChar === endChar) return;
@@ -4703,7 +4703,7 @@ function createRichTextInput(formData, fieldKey, initialValue) {
                 newBlocks.push(block);
             } else {
                 const overlapStart = Math.max(startChar, blockStart);
-                const overlapEnd   = Math.min(endChar,   blockEnd);
+                const overlapEnd = Math.min(endChar, blockEnd);
                 if (overlapStart > blockStart) {
                     const text = block.text.slice(0, overlapStart - blockStart);
                     newBlocks.push(isBold ? {text, style: {bold: true}} : {text});
