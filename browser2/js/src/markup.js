@@ -4631,6 +4631,7 @@ function createRichTextInput(formData, fieldKey, initialValue) {
                     }
                 }
             }
+			editor.normalize(); // clean up any empty text nodes left by unwrapping
         } else {
             // Wrap selection in a new bold span
             const span = document.createElement('span');
