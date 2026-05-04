@@ -1146,4 +1146,19 @@ test('test - rich text input', async ({ page }) => {
 	await expect(page.locator('div.rich-text-editor span').filter({ hasText: 'one two ' })).toHaveCSS('font-weight', '700');
 	await expect(page.locator('div.rich-text-editor span').filter({ hasText: 'three' })).not.toHaveCSS('font-weight', '700');
 	await expect(page.locator('div.rich-text-editor span').filter({ hasText: ' four five' })).toHaveCSS('font-weight', '700');
+
+	// select all text again
+	await page.locator('div.rich-text-editor').evaluate((element) => {
+		const selection = window.getSelection();
+		const range = document.createRange();
+		range.selectNodeContents(element);
+		selection.removeAllRanges();
+		selection.addRange(range);
+	});
+
+	// unbold all text
+	await page.getByRole('button', { name: 'Bold' }).click();
+	await expect(page.locator('div.rich-text-editor')).toContainText('one two three four five');
+	await expect(page.locator('div.rich-text-editor span')).toHaveCount(0);
+	
 });

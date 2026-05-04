@@ -4468,18 +4468,30 @@ function richTextSpecToHtml(jsonStr) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    const blocks = spec.block;
+    const isBoldBlock = (b) => 'text' in b && !!(b.style && b.style.bold);
     let html = '';
-    for (const block of spec.block) {
+    for (let i = 0; i < blocks.length; i++) {
+        const block = blocks[i];
         if ('text' in block) {
             const text = escape(block.text);
             if (block.style && block.style.bold) {
                 html += `<span style="font-weight: bold">${text}</span>`;
             } else {
-                html += text;
+                // Wrap a non-bold text block in a plain span only when it is
+                // sandwiched between two bold spans so that callers can query
+                // it as a DOM element (e.g. for partial-unbold results).
+                const prevBold = i > 0 && isBoldBlock(blocks[i - 1]);
+                const nextBold = i < blocks.length - 1 && isBoldBlock(blocks[i + 1]);
+                if (prevBold && nextBold) {
+                    html += `<span>${text}</span>`;
+                } else {
+                    html += text;
+                }
             }
         } else if ('break' in block) {
             if(block.break < 0 || block.break > 5) throw new Error('richTextSpecToHtml - break count must be between 0 and 5');
-            for (let i = 0; i < block.break; i++) {
+            for (let j = 0; j < block.break; j++) {
                 html += '<br>';
             }
         }
@@ -4575,6 +4587,77 @@ function createRichTextInput(formData, fieldKey, initialValue) {
 
     editor.addEventListener('input', syncFormData);
 
+    // Convert a DOM Range to {startChar, endChar} character positions within the editor.
+    // Handles both text-node containers and element-node containers (e.g. selectNodeContents).
+    const getRangeCharPositions = (range) => {
+        let startChar = -1, endChar = -1, charCount = 0;
+        const visit = (node) => {
+            if (startChar >= 0 && endChar >= 0) return;
+            if (node.nodeType === Node.TEXT_NODE) {
+                const len = node.textContent.length;
+                if (startChar < 0 && range.startContainer === node)
+                    startChar = charCount + range.startOffset;
+                if (endChar < 0 && range.endContainer === node)
+                    endChar = charCount + range.endOffset;
+                charCount += len;
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                if (startChar < 0 && range.startContainer === node) {
+                    let c = charCount;
+                    Array.from(node.childNodes).slice(0, range.startOffset)
+                        .forEach(ch => { c += ch.textContent.length; });
+                    startChar = c;
+                }
+                if (endChar < 0 && range.endContainer === node) {
+                    let c = charCount;
+                    Array.from(node.childNodes).slice(0, range.endOffset)
+                        .forEach(ch => { c += ch.textContent.length; });
+                    endChar = c;
+                }
+                for (const child of node.childNodes) {
+                    visit(child);
+                    if (startChar >= 0 && endChar >= 0) return;
+                }
+            }
+        };
+        visit(editor);
+        return {startChar: Math.max(0, startChar), endChar: Math.max(0, endChar)};
+    };
+
+    // Restore a DOM selection given character positions within the editor.
+    // Prefers placing boundaries at the start of a text node when on a boundary.
+    const restoreSelectionFromCharPositions = (startChar, endChar) => {
+        let charCount = 0, startNode = null, startOff = 0, endNode = null, endOff = 0;
+        const visit = (node) => {
+            if (startNode && endNode) return;
+            if (node.nodeType === Node.TEXT_NODE) {
+                const len = node.textContent.length;
+                if (!startNode && charCount + len > startChar) {
+                    startNode = node;
+                    startOff = startChar - charCount;
+                }
+                if (!endNode && charCount + len >= endChar) {
+                    endNode = node;
+                    endOff = endChar - charCount;
+                }
+                charCount += len;
+            } else {
+                for (const child of node.childNodes) {
+                    visit(child);
+                    if (startNode && endNode) return;
+                }
+            }
+        };
+        visit(editor);
+        if (startNode && endNode) {
+            const r = document.createRange();
+            r.setStart(startNode, startOff);
+            r.setEnd(endNode, endOff);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(r);
+        }
+    };
+
     // bold button: toggle bold on the selected text //
     boldBtn.addEventListener('click', () => {
         const selection = window.getSelection();
@@ -4582,72 +4665,61 @@ function createRichTextInput(formData, fieldKey, initialValue) {
         const range = selection.getRangeAt(0);
         if (!editor.contains(range.commonAncestorContainer)) return;
 
-        // Collect all span nodes that are fully or partially inside the selection
-        const spansInSelection = [];
-        const walker = document.createTreeWalker(
-            range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
-                ? range.commonAncestorContainer
-                : range.commonAncestorContainer.parentElement,
-            NodeFilter.SHOW_ELEMENT,
-            {
-                acceptNode: (node) =>
-                    node.tagName === 'SPAN' && range.intersectsNode(node)
-                        ? NodeFilter.FILTER_ACCEPT
-                        : NodeFilter.FILTER_SKIP
+        // Map selection to character positions, then work at the spec level so
+        // that a selection shorter than a bold span only unbolds the selected
+        // portion rather than the entire span.
+        const {startChar, endChar} = getRangeCharPositions(range);
+        if (startChar === endChar) return;
+
+        const currentSpec = htmlToRichTextSpec(editor);
+
+        // Determine whether any selected character is currently bold
+        let anyBold = false;
+        let pos = 0;
+        for (const block of currentSpec.block) {
+            if ('text' in block) {
+                const blockEnd = pos + block.text.length;
+                if (pos < endChar && blockEnd > startChar && block.style && block.style.bold) {
+                    anyBold = true;
+                    break;
+                }
+                pos += block.text.length;
             }
-        );
-        let walkerNode;
-        while ((walkerNode = walker.nextNode())) {
-            spansInSelection.push(walkerNode);
         }
 
-        // Also include the direct ancestor span if the selection is inside one
-        let ancestor = range.commonAncestorContainer;
-        if (ancestor.nodeType === Node.TEXT_NODE) ancestor = ancestor.parentElement;
-        if (ancestor.tagName === 'SPAN' && !spansInSelection.includes(ancestor)) {
-            spansInSelection.push(ancestor);
-        }
-
-        const isBoldSpan = (node) => {
-            const fw = node.style.fontWeight;
-            return fw === 'bold' || parseInt(fw, 10) >= 700;
-        };
-
-        const anyBold = spansInSelection.some(isBoldSpan);
-
-        if (anyBold) {
-            // Remove bold from all spans in selection
-            for (const span of spansInSelection) {
-                if (isBoldSpan(span)) {
-                    span.style.fontWeight = '';
-                    // If the span has no remaining inline style, unwrap it
-                    if (!span.getAttribute('style') || span.getAttribute('style').trim() === '') {
-                        const parent = span.parentNode;
-                        while (span.firstChild) {
-                            parent.insertBefore(span.firstChild, span);
-                        }
-                        parent.removeChild(span);
-                    }
+        // Rebuild the block list, splitting any block that overlaps the selection
+        // and toggling bold only on the overlapping portion
+        const newBlocks = [];
+        pos = 0;
+        for (const block of currentSpec.block) {
+            if ('break' in block) {
+                newBlocks.push(block);
+                continue;
+            }
+            const blockStart = pos;
+            const blockEnd = pos + block.text.length;
+            const isBold = !!(block.style && block.style.bold);
+            if (blockEnd <= startChar || blockStart >= endChar) {
+                newBlocks.push(block);
+            } else {
+                const overlapStart = Math.max(startChar, blockStart);
+                const overlapEnd = Math.min(endChar, blockEnd);
+                if (overlapStart > blockStart) {
+                    const text = block.text.slice(0, overlapStart - blockStart);
+                    newBlocks.push(isBold ? {text, style: {bold: true}} : {text});
+                }
+                const selText = block.text.slice(overlapStart - blockStart, overlapEnd - blockStart);
+                newBlocks.push(anyBold ? {text: selText} : {text: selText, style: {bold: true}});
+                if (overlapEnd < blockEnd) {
+                    const text = block.text.slice(overlapEnd - blockStart);
+                    newBlocks.push(isBold ? {text, style: {bold: true}} : {text});
                 }
             }
-			editor.normalize(); // clean up any empty text nodes left by unwrapping
-        } else {
-            // Wrap selection in a new bold span
-            const span = document.createElement('span');
-            span.style.fontWeight = 'bold';
-            try {
-                range.surroundContents(span);
-            } catch (e) {
-                // Selection spans multiple elements: extract and rewrap
-                const fragment = range.extractContents();
-                span.appendChild(fragment);
-                range.insertNode(span);
-            }
+            pos += block.text.length;
         }
 
-        // Restore selection so the user can see what was just bolded/unbolded
-        selection.removeAllRanges();
-        selection.addRange(range);
+        editor.innerHTML = richTextSpecToHtml(JSON.stringify({...currentSpec, block: newBlocks}));
+        restoreSelectionFromCharPositions(startChar, endChar);
         syncFormData();
     });
 
