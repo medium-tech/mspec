@@ -4478,7 +4478,7 @@ function richTextSpecToHtml(jsonStr) {
                 html += text;
             }
         } else if ('break' in block) {
-            if(block.break < 0 || block.break > 5) throw new Error('richTextSpecToHtml - break count must be between 0 and 5');
+            if (block.break < 0 || block.break > 5) throw new Error('richTextSpecToHtml - break count must be between 0 and 5');
             for (let i = 0; i < block.break; i++) {
                 html += '<br>';
             }
