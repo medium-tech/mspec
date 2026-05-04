@@ -4645,7 +4645,9 @@ function createRichTextInput(formData, fieldKey, initialValue) {
             }
         }
 
+        // Restore selection so the user can see what was just bolded/unbolded
         selection.removeAllRanges();
+        selection.addRange(range);
         syncFormData();
     });
 
