@@ -71,7 +71,7 @@ modules:
                         name:
                             lower_case: 'bio'
                         type: str
-                        rich_text: true
+                        # rich_text: true
                         examples:
                             - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}] }'
                             - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'
@@ -129,7 +129,7 @@ modules:
                         name:
                             lower_case: 'description'
                         type: str
-                        rich_text: true
+                        # rich_text: true
                         examples:
                             - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}] }'
                             - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'
@@ -265,7 +265,7 @@ modules:
                         name:
                             lower_case: 'message'
                         type: str
-                        rich_text: true
+                        # rich_text: true
                         examples:
                             - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}] }'
                             - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'
@@ -378,7 +378,7 @@ modules:
                         name:
                             lower_case: 'description'
                         type: str
-                        rich_text: true
+                        # rich_text: true
                         examples:
                             - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}] }'
                             - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'

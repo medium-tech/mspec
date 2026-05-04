@@ -3902,7 +3902,7 @@ function renderLingoApp(app, container, preserveFocus = false) {
  * Create a DOM element from a buffer element
  */
 function createDOMElement(app, element, ctx = null) {
-	console.debug('createDOMElement()', element);
+	// console.debug('createDOMElement()', element);
     if ('heading' in element) {
         return createHeadingElement(app, element);
     } else if ('break' in element) {
@@ -4478,9 +4478,8 @@ function richTextSpecToHtml(jsonStr) {
                 html += text;
             }
         } else if ('break' in block) {
-            // Clamp between 1-5 breaks as defined by the rich-text-beta-1 spec
-            const count = Math.max(1, Math.min(5, block.break));
-            for (let i = 0; i < count; i++) {
+            if(block.break < 0 || block.break > 5) throw new Error('richTextSpecToHtml - break count must be between 0 and 5');
+            for (let i = 0; i < block.break; i++) {
                 html += '<br>';
             }
         }
