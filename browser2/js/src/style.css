@@ -165,6 +165,35 @@ table td {
     cursor: pointer;
 }
 
+/* Rich text input styles */
+.rich-text-input-wrapper {
+    display: inline-block;
+    min-width: 300px;
+    max-width: 400px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.rich-text-toolbar {
+    background-color: #f0f0f0;
+    border-bottom: 1px solid #ccc;
+    padding: 2px 4px;
+}
+
+.rich-text-btn {
+    padding: 2px 8px;
+    font-size: 12px;
+    margin: 2px;
+}
+
+.rich-text-editor {
+    min-height: 80px;
+    padding: 6px;
+    outline: none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
 /* viewer styles */
 .viewer-container {
     display: inline-block;

@@ -1028,3 +1028,120 @@ test('test - example-rich-text', async ({ page }) => {
   await expect(gridTable.locator('span').filter({ hasText: 'Arbitrary information in italic' })).toHaveCSS('font-style', 'italic');
   await expect(gridTable.locator('a').filter({ hasText: 'i like turtles' })).toHaveAttribute('href', 'https://en.wikipedia.org/wiki/Turtle#/media/File:Turtle_diversity.jpg');
 });
+
+test('test - rich text input', async ({ page }) => {
+  await page.goto('http://localhost:8000/?spec=data%2Flingo%2Fpages%2Frich-text-input.json');
+
+  // enter plain text
+  await page.locator('div.rich-text-editor').fill('one two three four five');
+  await expect(page.locator('div.rich-text-editor')).toContainText('one two three four five');
+  await expect(page.locator('div.rich-text-editor').filter({ hasText: 'one two three four five' })).not.toHaveCSS('font-weight', 'bold');
+
+  //
+  // select all
+  //
+
+  await page.locator('div.rich-text-editor').evaluate((element) => {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+
+  // bold all text
+  await page.getByRole('button', { name: 'Bold' }).click();
+  await expect(page.locator('div.rich-text-editor span').filter({ hasText: 'one two three four five' })).toHaveCSS('font-weight', '700');
+
+  // unbold all text
+  await page.getByRole('button', { name: 'Bold' }).click();
+  await expect(page.locator('div.rich-text-editor').filter({ hasText: 'one two three four five' })).not.toHaveCSS('font-weight', '700');
+  await expect(page.locator('div.rich-text-editor span')).toHaveCount(0);
+
+  //
+  // bold/unbold single word
+  //
+
+  // select the word "three"
+  await page.locator('div.rich-text-editor').evaluate((element) => {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.setStart(element.firstChild, 8);
+    range.setEnd(element.firstChild, 13);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+
+  // bold word "three"
+  await page.getByRole('button', { name: 'Bold' }).click();
+  await expect(page.locator('div.rich-text-editor span').filter({ hasText: 'three' })).toHaveCSS('font-weight', '700');
+
+  // unbold word "three"
+  await page.getByRole('button', { name: 'Bold' }).click();
+  await expect(page.locator('div.rich-text-editor span')).toHaveCount(0);
+
+  //
+  // bold single word, unbold larger selection containing bolded word
+  //
+
+  // select the word "three"
+  await page.locator('div.rich-text-editor').evaluate((element) => {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.setStart(element.firstChild, 8);
+    range.setEnd(element.firstChild, 13);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+
+  // bold word "three"
+  await page.getByRole('button', { name: 'Bold' }).click();
+  await expect(page.locator('div.rich-text-editor span').filter({ hasText: 'three' })).toHaveCSS('font-weight', '700');
+
+  // select larger range spanning before and after bold word
+  await page.locator('div.rich-text-editor').evaluate((element) => {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.setStart(element.firstChild, 4);
+    range.setEnd(element.lastChild, 5);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+
+  // unbold larger range - entire bold "three" span should lose bold
+  await page.getByRole('button', { name: 'Bold' }).click();
+  await expect(page.locator('div.rich-text-editor span')).toHaveCount(0);
+
+  //
+  // bold all text, unbold subsection only
+  //
+
+  // select all text
+  await page.locator('div.rich-text-editor').evaluate((element) => {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+
+  // bold all text
+  await page.getByRole('button', { name: 'Bold' }).click();
+  await expect(page.locator('div.rich-text-editor span').filter({ hasText: 'one two three four five' })).toHaveCSS('font-weight', '700');
+
+  // select the word "three" from inside the bold span
+  await page.locator('div.rich-text-editor span').evaluate((element) => {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.setStart(element.firstChild, 8);
+    range.setEnd(element.firstChild, 13);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+
+  // unbold "three" only - surrounding bold text must remain bold
+  await page.getByRole('button', { name: 'Bold' }).click();
+  await expect(page.locator('div.rich-text-editor span').filter({ hasText: 'one two ' })).toHaveCSS('font-weight', '700');
+  await expect(page.locator('div.rich-text-editor span').filter({ hasText: 'three' })).not.toHaveCSS('font-weight', '700');
+  await expect(page.locator('div.rich-text-editor span').filter({ hasText: ' four five' })).toHaveCSS('font-weight', '700');
+});
