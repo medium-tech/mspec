@@ -4576,22 +4576,75 @@ function createRichTextInput(formData, fieldKey, initialValue) {
 
     editor.addEventListener('input', syncFormData);
 
-    // bold button: wrap selection in a bold span //
+    // bold button: toggle bold on the selected text //
     boldBtn.addEventListener('click', () => {
         const selection = window.getSelection();
         if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
         const range = selection.getRangeAt(0);
         if (!editor.contains(range.commonAncestorContainer)) return;
-        const span = document.createElement('span');
-        span.style.fontWeight = 'bold';
-        try {
-            range.surroundContents(span);
-        } catch (e) {
-            // Selection spans multiple elements: extract and rewrap
-            const fragment = range.extractContents();
-            span.appendChild(fragment);
-            range.insertNode(span);
+
+        // Collect all span nodes that are fully or partially inside the selection
+        const spansInSelection = [];
+        const walker = document.createTreeWalker(
+            range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+                ? range.commonAncestorContainer
+                : range.commonAncestorContainer.parentElement,
+            NodeFilter.SHOW_ELEMENT,
+            {
+                acceptNode: (node) =>
+                    node.tagName === 'SPAN' && range.intersectsNode(node)
+                        ? NodeFilter.FILTER_ACCEPT
+                        : NodeFilter.FILTER_SKIP
+            }
+        );
+        let walkerNode;
+        while ((walkerNode = walker.nextNode())) {
+            spansInSelection.push(walkerNode);
         }
+
+        // Also include the direct ancestor span if the selection is inside one
+        let ancestor = range.commonAncestorContainer;
+        if (ancestor.nodeType === Node.TEXT_NODE) ancestor = ancestor.parentElement;
+        if (ancestor.tagName === 'SPAN' && !spansInSelection.includes(ancestor)) {
+            spansInSelection.push(ancestor);
+        }
+
+        const isBoldSpan = (node) => {
+            const fw = node.style.fontWeight;
+            return fw === 'bold' || parseInt(fw, 10) >= 700;
+        };
+
+        const anyBold = spansInSelection.some(isBoldSpan);
+
+        if (anyBold) {
+            // Remove bold from all spans in selection
+            for (const span of spansInSelection) {
+                if (isBoldSpan(span)) {
+                    span.style.fontWeight = '';
+                    // If the span has no remaining inline style, unwrap it
+                    if (!span.getAttribute('style') || span.getAttribute('style').trim() === '') {
+                        const parent = span.parentNode;
+                        while (span.firstChild) {
+                            parent.insertBefore(span.firstChild, span);
+                        }
+                        parent.removeChild(span);
+                    }
+                }
+            }
+        } else {
+            // Wrap selection in a new bold span
+            const span = document.createElement('span');
+            span.style.fontWeight = 'bold';
+            try {
+                range.surroundContents(span);
+            } catch (e) {
+                // Selection spans multiple elements: extract and rewrap
+                const fragment = range.extractContents();
+                span.appendChild(fragment);
+                range.insertNode(span);
+            }
+        }
+
         selection.removeAllRanges();
         syncFormData();
     });
