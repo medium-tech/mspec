@@ -1159,6 +1159,7 @@ test('test - rich text input', async ({ page }) => {
 	// unbold all text
 	await page.getByRole('button', { name: 'Bold' }).click();
 	await expect(page.locator('div.rich-text-editor')).toContainText('one two three four five');
+	await expect(page.locator('div.rich-text-editor').filter({ hasText: 'one two three four five' })).not.toHaveCSS('font-weight', '700');
 	await expect(page.locator('div.rich-text-editor span')).toHaveCount(0);
-	
+
 });
