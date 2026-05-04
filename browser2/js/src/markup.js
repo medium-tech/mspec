@@ -3902,7 +3902,7 @@ function renderLingoApp(app, container, preserveFocus = false) {
  * Create a DOM element from a buffer element
  */
 function createDOMElement(app, element, ctx = null) {
-	console.debug('createDOMElement()', element);
+	// console.debug('createDOMElement()', element);
     if ('heading' in element) {
         return createHeadingElement(app, element);
     } else if ('break' in element) {
@@ -4449,6 +4449,220 @@ function createLinkElement(app, element, ctx = null) {
 }
 
 /**
+ * Convert rich text JSON spec string to HTML for display in a contenteditable div
+ */
+function richTextSpecToHtml(jsonStr) {
+    let spec;
+    try {
+        spec = JSON.parse(jsonStr);
+    } catch (e) {
+        return '';
+    }
+    if (!spec || !Array.isArray(spec.block)) {
+        return '';
+    }
+    // Escape all characters that could cause HTML injection
+    const escape = (s) => s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    let html = '';
+    for (const block of spec.block) {
+        if ('text' in block) {
+            const text = escape(block.text);
+            if (block.style && block.style.bold) {
+                html += `<span style="font-weight: bold">${text}</span>`;
+            } else {
+                html += text;
+            }
+        } else if ('break' in block) {
+            if(block.break < 0 || block.break > 5) throw new Error('richTextSpecToHtml - break count must be between 0 and 5');
+            for (let i = 0; i < block.break; i++) {
+                html += '<br>';
+            }
+        }
+    }
+    return html;
+}
+
+/**
+ * Convert HTML inside a contenteditable div to a rich text JSON spec object
+ */
+function htmlToRichTextSpec(container) {
+    const blocks = [];
+
+    const processNode = (node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const text = node.textContent;
+            if (text) {
+                blocks.push({text});
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            if (node.tagName === 'BR') {
+                blocks.push({break: 1});
+            } else if (node.tagName === 'SPAN') {
+                const fw = node.style.fontWeight;
+                const isBold = fw === 'bold' || parseInt(fw, 10) >= 700;
+                const text = node.textContent;
+                if (text) {
+                    if (isBold) {
+                        blocks.push({text, style: {bold: true}});
+                    } else {
+                        blocks.push({text});
+                    }
+                }
+            } else if (node.tagName === 'DIV') {
+                // Browsers wrap new paragraphs in divs inside contenteditable
+                if (blocks.length > 0) {
+                    blocks.push({break: 1});
+                }
+                for (const child of node.childNodes) {
+                    processNode(child);
+                }
+            } else {
+                for (const child of node.childNodes) {
+                    processNode(child);
+                }
+            }
+        }
+    };
+
+    for (const child of container.childNodes) {
+        processNode(child);
+    }
+
+    return {lingo: {version: 'rich-text-beta-1'}, block: blocks};
+}
+
+/**
+ * Create a rich text input widget: a contenteditable editor with Bold and Debug toolbar buttons
+ */
+function createRichTextInput(formData, fieldKey, initialValue) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'rich-text-input-wrapper';
+
+    // toolbar //
+    const toolbar = document.createElement('div');
+    toolbar.className = 'rich-text-toolbar';
+
+    const boldBtn = document.createElement('button');
+    boldBtn.type = 'button';
+    boldBtn.textContent = 'Bold';
+    boldBtn.className = 'rich-text-btn';
+
+    const debugBtn = document.createElement('button');
+    debugBtn.type = 'button';
+    debugBtn.textContent = 'Debug';
+    debugBtn.className = 'rich-text-btn';
+
+    toolbar.appendChild(boldBtn);
+    toolbar.appendChild(debugBtn);
+
+    // editor //
+    const editor = document.createElement('div');
+    editor.contentEditable = 'true';
+    editor.className = 'rich-text-editor';
+
+    if (initialValue) {
+        editor.innerHTML = richTextSpecToHtml(initialValue);
+    }
+
+    const syncFormData = () => {
+        formData[fieldKey] = JSON.stringify(htmlToRichTextSpec(editor));
+    };
+
+    editor.addEventListener('input', syncFormData);
+
+    // bold button: toggle bold on the selected text //
+    boldBtn.addEventListener('click', () => {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+        const range = selection.getRangeAt(0);
+        if (!editor.contains(range.commonAncestorContainer)) return;
+
+        // Collect all span nodes that are fully or partially inside the selection
+        const spansInSelection = [];
+        const walker = document.createTreeWalker(
+            range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+                ? range.commonAncestorContainer
+                : range.commonAncestorContainer.parentElement,
+            NodeFilter.SHOW_ELEMENT,
+            {
+                acceptNode: (node) =>
+                    node.tagName === 'SPAN' && range.intersectsNode(node)
+                        ? NodeFilter.FILTER_ACCEPT
+                        : NodeFilter.FILTER_SKIP
+            }
+        );
+        let walkerNode;
+        while ((walkerNode = walker.nextNode())) {
+            spansInSelection.push(walkerNode);
+        }
+
+        // Also include the direct ancestor span if the selection is inside one
+        let ancestor = range.commonAncestorContainer;
+        if (ancestor.nodeType === Node.TEXT_NODE) ancestor = ancestor.parentElement;
+        if (ancestor.tagName === 'SPAN' && !spansInSelection.includes(ancestor)) {
+            spansInSelection.push(ancestor);
+        }
+
+        const isBoldSpan = (node) => {
+            const fw = node.style.fontWeight;
+            return fw === 'bold' || parseInt(fw, 10) >= 700;
+        };
+
+        const anyBold = spansInSelection.some(isBoldSpan);
+
+        if (anyBold) {
+            // Remove bold from all spans in selection
+            for (const span of spansInSelection) {
+                if (isBoldSpan(span)) {
+                    span.style.fontWeight = '';
+                    // If the span has no remaining inline style, unwrap it
+                    if (!span.getAttribute('style') || span.getAttribute('style').trim() === '') {
+                        const parent = span.parentNode;
+                        while (span.firstChild) {
+                            parent.insertBefore(span.firstChild, span);
+                        }
+                        parent.removeChild(span);
+                    }
+                }
+            }
+			editor.normalize(); // clean up any empty text nodes left by unwrapping
+        } else {
+            // Wrap selection in a new bold span
+            const span = document.createElement('span');
+            span.style.fontWeight = 'bold';
+            try {
+                range.surroundContents(span);
+            } catch (e) {
+                // Selection spans multiple elements: extract and rewrap
+                const fragment = range.extractContents();
+                span.appendChild(fragment);
+                range.insertNode(span);
+            }
+        }
+
+        // Restore selection so the user can see what was just bolded/unbolded
+        selection.removeAllRanges();
+        selection.addRange(range);
+        syncFormData();
+    });
+
+    // debug button: log rich text spec to console //
+    debugBtn.addEventListener('click', () => {
+        console.log('Rich text spec:', JSON.stringify(htmlToRichTextSpec(editor), null, 2));
+    });
+
+    wrapper.appendChild(toolbar);
+    wrapper.appendChild(editor);
+
+    return wrapper;
+}
+
+/**
  * Create form element with table layout
  */
 function createFormElement(app, element, ctx = null) {
@@ -4860,6 +5074,9 @@ function createFormElement(app, element, ctx = null) {
             inputElement.addEventListener('change', () => {
                 formData[fieldKey] = inputElement.value === '' ? null : inputElement.value;
             });
+
+        } else if (fieldSpec.rich_text && fieldType === 'str') {
+            inputElement = createRichTextInput(formData, fieldKey, formData[fieldKey]);
 
         } else {
             inputElement = document.createElement('input');
