@@ -816,6 +816,10 @@ route_list.append(dynamic_file_routes)
 
 def application(env, start_response):
 
+    #
+    # init
+    #
+
     # user from authorization header #
 
     def access_token_from_request():
@@ -848,30 +852,44 @@ def application(env, start_response):
     server_ctx.current_access_token = access_token_from_request
 
     # init request logging #
-    
-    try:
-        request_body_size = int(env.get('CONTENT_LENGTH', -1))
-    except (ValueError):
-        request_body_size = -2
 
     request_id = f'{time.time_ns()}-{os.getpid()}'
     server_ctx.log(f':: REQ :: {env["REQUEST_METHOD"]} {env["PATH_INFO"]} :: {request_id} - {request_body_size=}')
     uwsgi.set_logvar('request_id', request_id)
 
+    # request body #
+
+    try:
+        request_body_size = int(env['CONTENT_LENGTH'])
+    except:
+        request_body_size = 0
+
+    if request_body_size > FILE_SIZE_LIMIT:
+        raise RequestError(f'Request body too large: {request_body_size} bytes (limit: {FILE_SIZE_LIMIT} bytes)')
+
     request = RequestContext(
         env=env,
         # best practice is to always consume body if it exists: https://uwsgi-docs.readthedocs.io/en/latest/ThingsToKnow.html
-        raw_req_body=env['wsgi.input'].read(FILE_SIZE_LIMIT),
+        raw_req_body=env['wsgi.input'].read(request_body_size),
         request_id=request_id
     )
+    if env['wsgi.input'].read() != b'':
+        # if there is anything left on the handle then content size doesn't match, reject the request
+        raise RequestError(f'Content left on handle after reading provided CONTENT_LENGTH of {request_body_size} bytes')
    
     request.env['wsgi.input'].close()
+
+    # debug #
 
     try:
         debug_delay = float(os.environ['DEBUG_DELAY'])
         time.sleep(debug_delay)
     except KeyError:
         pass
+
+    #
+    # route request
+    #
 
     for route in route_list:
         additional_headers = []
