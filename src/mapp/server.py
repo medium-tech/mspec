@@ -12,6 +12,7 @@ from mapp.types import JSONResponse, PlainTextResponse, StaticFileResponse, Down
 from mapp.db import create_tables
 from mapp.module.model.server import create_model_routes
 from mapp.module.op.server import create_op_routes
+from mapp.file_system import FILE_SIZE_LIMIT
 from mspec.core import get_mapp_ui_files, load_browser2_spec
 
 import uwsgi
@@ -847,15 +848,20 @@ def application(env, start_response):
     server_ctx.current_access_token = access_token_from_request
 
     # init request logging #
+    
+    try:
+        request_body_size = int(env.get('CONTENT_LENGTH', -1))
+    except (ValueError):
+        request_body_size = -2
 
     request_id = f'{time.time_ns()}-{os.getpid()}'
-    server_ctx.log(f':: REQ :: {env["REQUEST_METHOD"]} {env["PATH_INFO"]} :: {request_id}')
+    server_ctx.log(f':: REQ :: {env["REQUEST_METHOD"]} {env["PATH_INFO"]} :: {request_id} - {request_body_size=}')
     uwsgi.set_logvar('request_id', request_id)
 
     request = RequestContext(
         env=env,
         # best practice is to always consume body if it exists: https://uwsgi-docs.readthedocs.io/en/latest/ThingsToKnow.html
-        raw_req_body=env['wsgi.input'].read(),
+        raw_req_body=env['wsgi.input'].read(FILE_SIZE_LIMIT),
         request_id=request_id
     )
    
