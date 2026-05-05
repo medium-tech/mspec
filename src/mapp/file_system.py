@@ -453,7 +453,7 @@ def get_part_content(ctx: MappContext, file_id: str, part_number: int) -> dict:
 	#
 
 	part_path = _file_part_path(file_id, part_number)
-
+	ctx.log(f'get_part_content - {file_id=} {part_number=} {part_path=}')
 	try:
 		with open(part_path, 'rb') as f:
 			while True:
@@ -509,7 +509,7 @@ def get_file_content(ctx: MappContext, file_id: str) -> dict:
 	#
 
 	ctx.self['file_output_name'] = file_record.name
-
+	ctx.log(f'get_file_content - {file_id=} {full_file_path=}')
 	try:
 		with open(full_file_path, 'rb') as f:
 			while True:

@@ -851,6 +851,11 @@ def application(env, start_response):
     
     server_ctx.current_access_token = access_token_from_request
 
+    try:
+        request_body_size = int(env['CONTENT_LENGTH'])
+    except:
+        request_body_size = 0
+
     # init request logging #
 
     request_id = f'{time.time_ns()}-{os.getpid()}'
@@ -858,11 +863,6 @@ def application(env, start_response):
     uwsgi.set_logvar('request_id', request_id)
 
     # request body #
-
-    try:
-        request_body_size = int(env['CONTENT_LENGTH'])
-    except:
-        request_body_size = 0
 
     if request_body_size > FILE_SIZE_LIMIT:
         raise RequestError(f'Request body too large: {request_body_size} bytes (limit: {FILE_SIZE_LIMIT} bytes)')
