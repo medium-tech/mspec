@@ -14,6 +14,7 @@ __all__ = [
     'SAMPLE_BROWSER2_SPEC_DIR',
     'SAMPLE_LINGO_SCRIPT_SPEC_DIR',
     'SAMPLE_GENERATOR_SPEC_DIR',
+    'SAMPLE_RICH_TEXT_SPEC_DIR',
     'DIST_DIR',
     'MAPP_UI_FILES',
     'builtin_spec_files',
@@ -23,12 +24,14 @@ __all__ = [
     'load_generator_spec',
     'init_generator_spec',
     'get_mapp_ui_files',
+    'validate_rich_text_spec',
 ]
 
 SAMPLE_DATA_DIR = Path(__file__).parent / 'data'
 BUILT_IN_SPEC_PATH = SAMPLE_DATA_DIR / 'builtin.yaml'
 SAMPLE_BROWSER2_SPEC_DIR = SAMPLE_DATA_DIR / 'lingo' / 'pages'
 SAMPLE_LINGO_SCRIPT_SPEC_DIR = SAMPLE_DATA_DIR / 'lingo' / 'scripts'
+SAMPLE_RICH_TEXT_SPEC_DIR = SAMPLE_DATA_DIR / 'lingo' / 'rich-text'
 SAMPLE_GENERATOR_SPEC_DIR = SAMPLE_DATA_DIR / 'generator'
 DIST_DIR = Path(__file__).parent.parent.parent / 'dist'
 MAPP_UI_FILES = SAMPLE_DATA_DIR / 'mapp-ui' / 'src'
@@ -55,6 +58,7 @@ def builtin_spec_files() -> list[str]:
         'generator': os.listdir(SAMPLE_GENERATOR_SPEC_DIR),
         'lingo_script': list(filter(lambda f: not f.endswith('_test_data.json'), script_files)),
         'lingo_script_test_data': list(filter(lambda f: f.endswith('_test_data.json'), script_files)),
+        'rich_text': os.listdir(SAMPLE_RICH_TEXT_SPEC_DIR),
         'mapp_ui': [f.name for f in get_mapp_ui_files()]
     }
 
@@ -121,7 +125,8 @@ def load_builtin_generator_modules() -> dict:
     
     return spec
 
-def load_generator_spec(spec_file:str, try_examples:bool=True) -> dict:
+def load_generator_spec(spec_file:str, try_examples:bool=True, auth_init:bool=True) -> dict:
+    # print(f'loading spec file: {spec_file}')
     """
     open and parse spec file into dict,
     first try to load from the path as provided,
@@ -145,12 +150,17 @@ def load_generator_spec(spec_file:str, try_examples:bool=True) -> dict:
     except KeyError:
         raise ValueError(f'No lingo.version defined in spec file: {spec_file}')
 
-    return init_generator_spec(contents, source_path)
+    if auth_init:
+        return init_generator_spec(contents, source_path)
+    else:
+        return contents
 
 load_mapp_spec = load_generator_spec  # alias for backward compatibility
 
 
 def init_generator_spec(spec:dict, source_path:Path) -> dict:
+
+    # print(f'initializing generator spec from source: {source_path}')
 
     #
     # project
@@ -173,7 +183,7 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
 
     for import_file in modules_to_import:
         try:
-            import_spec = load_generator_spec(import_file)
+            import_spec = load_generator_spec(import_file, auth_init=False)
             import_modules:dict = import_spec.get('modules', {})
             for module_name, module in import_modules.items():
                 if module_name in spec_modules and not module['builtin']:
@@ -189,6 +199,7 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
         use_builtin_modules = True
     
     if use_builtin_modules is True:
+        # print(f'loading built in modules')
         try:
             builtin_modules = load_builtin_generator_modules()
         except Exception as e:
@@ -212,6 +223,7 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
     #
 
     for module in spec_modules.values():
+        # print(f'initializing module: {module["name"]["lower_case"]}')
         for key, value in generate_names(module['name']['lower_case']).items():
             if key not in module['name']:
                 module['name'][key] = value
@@ -243,6 +255,7 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
             module['models'] = {}
 
         for model in module['models'].values():
+            # print(f'initializing model: {model["name"]["lower_case"]}')
             for key, value in generate_names(model['name']['lower_case']).items():
                 if key not in model['name']:
                     model['name'][key] = value
@@ -285,6 +298,7 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
             unique_model_fields = []
 
             for field_name, field in fields.items():
+                # print(f'initializing field: {field_name} in model: {model_path}')
                 try:
                     field['name']['lower_case']
                 except KeyError:
@@ -354,8 +368,17 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
                     non_list_fields.append(field)
 
                 if 'enum' in field:
+                    if not (field_type == 'str' or (field_type == 'list' and field.get('element_type') == 'str')):
+                        raise ValueError(f'only str or lists of strs can define enum, field {field_name} in model {model_path} is invalid')
                     type_id += '_enum'
                     enum_fields.append(field)
+                
+                if 'rich_text' in field:
+                    if field_type != 'str':
+                        raise ValueError(f'only str fields can define rich_text, field {field_name} in model {model_path} has type {field_type}')
+                    type_id += '_rich_text'
+                else:
+                    field['rich_text'] = False
 
                 field['type_id'] = type_id
 
@@ -527,3 +550,256 @@ def get_mapp_ui_files(ui_file_source:Optional[str]=None) -> list[Path]:
         pass
     
     return files
+
+_RICH_TEXT_COLOR_OPTIONS = {
+    'red', 'orange', 'yellow', 'green', 'blue', 'indigo',
+    'violet', 'pink', 'brown', 'black', 'gray', 'white',
+}
+
+_RICH_TEXT_STYLE_FIELDS = {
+    'bold': bool,
+    'italic': bool,
+    'underline': bool,
+    'color': str,
+}
+
+_RICH_TEXT_TOP_LEVEL_KEYS = {'lingo', 'block'}
+
+
+def _validate_rich_text_style(style:dict) -> None:
+    if not isinstance(style, dict):
+        raise ValueError(f'rich text: style must be an object, got {type(style).__name__}')
+    for key, value in style.items():
+        if key not in _RICH_TEXT_STYLE_FIELDS:
+            raise ValueError(f'rich text: unknown style field: {key!r}')
+        expected_type = _RICH_TEXT_STYLE_FIELDS[key]
+        if type(value) is not expected_type:
+            raise ValueError(
+                f'rich text: style.{key} must be {expected_type.__name__}, got {type(value).__name__}'
+            )
+        if key == 'color' and value not in _RICH_TEXT_COLOR_OPTIONS:
+            raise ValueError(
+                f'rich text: style.color {value} is not a valid color option'
+            )
+
+
+def _validate_rich_text_link_or_text_element(element:dict, context:str) -> None:
+    """Validate that an element is one of: text element, or link element."""
+
+    if not isinstance(element, dict):
+        raise ValueError(
+            f'rich text: {context} list item must be text element, or link element, '
+            f'got {type(element).__name__}'
+        )
+    keys = set(element.keys())
+    if 'link' in keys:
+        allowed = {'link', 'text'}
+        unknown = keys - allowed
+        if unknown:
+            raise ValueError(f'rich text: {context} link element has unknown keys: {unknown}')
+        if type(element['link']) is not str:
+            raise ValueError(f'rich text: {context} link element link must be str')
+        if 'text' in element and type(element['text']) is not str:
+            raise ValueError(f'rich text: {context} link element text must be str')
+    elif 'text' in keys:
+        allowed = {'text', 'style'}
+        unknown = keys - allowed
+        if unknown:
+            raise ValueError(f'rich text: {context} text element has unknown keys: {unknown}')
+        if type(element['text']) is not str:
+            raise ValueError(f'rich text: {context} text element text must be str')
+        if 'style' in element:
+            _validate_rich_text_style(element['style'])
+    else:
+        raise ValueError(
+            f'rich text: {context} list item must be str, text element, or link element'
+        )
+
+
+def _validate_rich_text_table_value(element:dict, context:str) -> None:
+    """Validate a table row object - values must be primitives, text elements, or link elements."""
+    if not isinstance(element, dict):
+        raise ValueError(
+            f'rich text: {context} table value item must be an object, got {type(element).__name__}'
+        )
+    for field_key, field_value in element.items():
+        if isinstance(field_value, (bool, int, float, str)):
+            continue
+        if isinstance(field_value, dict):
+            keys = set(field_value.keys())
+            if 'link' in keys:
+                allowed = {'link', 'text'}
+                unknown = keys - allowed
+                if unknown:
+                    raise ValueError(
+                        f'rich text: {context} table cell link element has unknown keys: {unknown}'
+                    )
+                if type(field_value['link']) is not str:
+                    raise ValueError(
+                        f'rich text: {context} table cell link element link must be str'
+                    )
+                if 'text' in field_value and type(field_value['text']) is not str:
+                    raise ValueError(
+                        f'rich text: {context} table cell link element text must be str'
+                    )
+            elif 'text' in keys:
+                allowed = {'text', 'style'}
+                unknown = keys - allowed
+                if unknown:
+                    raise ValueError(
+                        f'rich text: {context} table cell text element has unknown keys: {unknown}'
+                    )
+                if type(field_value['text']) is not str:
+                    raise ValueError(
+                        f'rich text: {context} table cell text element text must be str'
+                    )
+                if 'style' in field_value:
+                    _validate_rich_text_style(field_value['style'])
+            else:
+                raise ValueError(
+                    f'rich text: {context} table cell must be a primitive, text element, or link element'
+                )
+        else:
+            raise ValueError(
+                f'rich text: {context} table cell must be a primitive, text element, or link element, '
+                f'got {type(field_value).__name__}'
+            )
+
+
+def _validate_rich_text_block_element(element:dict, index:int) -> None:
+    block_id = f'block[{index}]'
+    if not isinstance(element, dict):
+        raise ValueError(f'rich text: {block_id} must be an object, got {type(element).__name__}')
+
+    keys = set(element.keys())
+
+    # link element #
+    if 'link' in keys:
+        allowed = {'link', 'text'}
+        unknown = keys - allowed
+        if unknown:
+            raise ValueError(f'rich text: {block_id} link element has unknown keys: {unknown}')
+        if type(element['link']) is not str:
+            raise ValueError(f'rich text: {block_id} link must be str')
+        if 'text' in element and type(element['text']) is not str:
+            raise ValueError(f'rich text: {block_id} link element text must be str')
+
+    # text element #
+    elif 'text' in keys:
+        allowed = {'text', 'style'}
+        unknown = keys - allowed
+        if unknown:
+            raise ValueError(f'rich text: {block_id} text element has unknown keys: {unknown}')
+        if type(element['text']) is not str:
+            raise ValueError(f'rich text: {block_id} text must be str')
+        if 'style' in element:
+            _validate_rich_text_style(element['style'])
+
+    # break element #
+    elif 'break' in keys:
+        allowed = {'break'}
+        unknown = keys - allowed
+        if unknown:
+            raise ValueError(f'rich text: {block_id} break element has unknown keys: {unknown}')
+        value = element['break']
+        if type(value) is not int:
+            raise ValueError(f'rich text: {block_id} break must be int, got {type(value).__name__}')
+        if not (1 <= value <= 5):
+            raise ValueError(f'rich text: {block_id} break must be between 1 and 5, got {value}')
+
+    # value/list element #
+    elif 'type' in keys:
+        allowed = {'type', 'value', 'display'}
+        unknown = keys - allowed
+        if unknown:
+            raise ValueError(f'rich text: {block_id} value element has unknown keys: {unknown}')
+        if element['type'] != 'list':
+            raise ValueError(f'rich text: {block_id} type must be "list", got {element["type"]}')
+        if 'value' not in element:
+            raise ValueError(f'rich text: {block_id} value element must have a value key')
+        if not isinstance(element['value'], list):
+            raise ValueError(f'rich text: {block_id} value must be a list')
+
+        # determine if table display #
+        display = element.get('display', {})
+        if display and not isinstance(display, dict):
+            raise ValueError(f'rich text: {block_id} display must be an object')
+        is_table = isinstance(display, dict) and display.get('format') == 'table'
+
+        if is_table:
+            for i, item in enumerate(element['value']):
+                _validate_rich_text_table_value(item, f'{block_id}.value[{i}]')
+        else:
+            for i, item in enumerate(element['value']):
+                _validate_rich_text_link_or_text_element(item, f'{block_id}.value[{i}]')
+
+    else:
+        raise ValueError(
+            f'rich text: {block_id} element must have one of: text, link, break, type'
+        )
+
+def validate_rich_text_json_string(json_string:str) -> dict:
+    """
+    Validates a rich text spec JSON string
+
+    args:
+        json_string (str): The JSON string to validate
+
+    returns:
+        The parsed JSON as a dict (if valid)
+
+    raises ValueError if the spec is invalid
+    """
+    try:
+        source = json.loads(json_string)
+    except json.JSONDecodeError as e:
+        raise ValueError(f'Invalid JSON: {str(e)}')
+
+    return validate_rich_text_spec(source)
+
+def validate_rich_text_spec(source:dict) -> dict:
+    """
+    Validates a rich text spec document
+
+    args:
+        source (dict): The rich text spec document to validate
+
+    returns:
+        The source dict (if valid)
+
+    raises ValueError if the spec is invalid
+    """
+
+    if not isinstance(source, dict):
+        raise ValueError('rich text: spec must be an object')
+
+    # top-level keys #
+
+    unknown_top = set(source.keys()) - _RICH_TEXT_TOP_LEVEL_KEYS
+    if unknown_top:
+        raise ValueError(f'rich text: unknown top-level keys: {unknown_top}')
+
+    # lingo.version #
+
+    try:
+        version = source['lingo']['version']
+    except (KeyError, TypeError):
+        raise ValueError('rich text: lingo.version must be defined')
+
+    if version != 'rich-text-beta-1':
+        raise ValueError(
+            f'rich text: lingo.version must be "rich-text-beta-1", got {version}'
+        )
+
+    # block #
+
+    if 'block' not in source:
+        raise ValueError('rich text: block must be defined')
+
+    if not isinstance(source['block'], list):
+        raise ValueError('rich text: block must be a list')
+
+    for i, element in enumerate(source['block']):
+        _validate_rich_text_block_element(element, i)
+
+    return source

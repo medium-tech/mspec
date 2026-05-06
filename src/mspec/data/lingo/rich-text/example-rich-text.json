@@ -1,0 +1,106 @@
+{
+	"lingo": {
+		"version": "rich-text-beta-1"
+	},
+	"block": [
+		{"text": "This is an example of a rich text document. It can define line breaks."},
+		{"break": 1},
+		{"text": "It can define formatting like "},
+		{"text": "bold, ", "style": {"bold": true}},
+		{"text": "italic,", "style": {"italic": true}},
+		{"text": " and "},
+		{"text": "underline.", "style": {"underline": true}},
+		{"text": " "},
+		{"text": "All together now!", "style": {"bold": true, "italic": true, "underline": true}},
+		{"text": " It also does links with custom display text: "},
+		{"link": "https://www.wikipedia.org", "text": "Wikipedia"},
+		{"text": " or as the raw url: "},
+		{"link": "https://www.wikipedia.org"},
+		{"text": ". It can also do lists and colors."},
+		{
+			"type": "list",
+			"value": [
+				{"text": "Red", "style": {"color": "red"}},
+				{"text": "Orange", "style": {"color": "orange"}},
+				{"text": "Yellow", "style": {"color": "yellow"}},
+				{"text": "Green", "style": {"color": "green"}},
+				{"text": "Blue", "style": {"color": "blue"}},
+				{"text": "Indigo", "style": {"color": "indigo"}},
+				{"text": "Violet", "style": {"color": "violet"}},
+				{"text": "Pink", "style": {"color": "pink"}},
+				{"text": "Brown", "style": {"color": "brown"}},
+				{"text": "Black", "style": {"color": "black"}},
+				{"text": "Gray", "style": {"color": "gray"}},
+				{"text": "White", "style": {"color": "white"}}
+			]
+		},
+		{"text": "Ordered lists too!"},
+		{
+			"type": "list",
+			"display": {"format": "numbers"},
+			"value": [
+				{"text": "First item"},
+				{"text": "Second item"},
+				{"text": "Third item"}
+			]
+		},
+		{
+			"text": "And of course, tables."
+		},
+		{
+            "type": "list",
+            "display": {
+                "format": "table",
+                "headers": [
+                    {"text": "Color", "field": "color"},
+                    {"text": "Amount", "field": "amount"},
+                    {"text": "In Stock", "field": "in_stock"}
+                ]
+            },
+            "value": [
+                {
+					"color": "red",
+					"amount": 10,
+					"in_stock": true
+				},
+				{
+					"color": "green",
+					"amount": 21,
+					"in_stock": true
+				},
+				{
+					"color": "blue",
+					"amount": 0,
+					"in_stock": false
+				}
+            ]
+        },
+		{"text": "And also grids."},
+        {
+            "type": "list",
+            "display": {
+                "format": "table",
+                "columns": [
+                    "column1",
+                    "column2",
+                    "column3",
+                    "column4"
+                ]
+            },
+            "value": [
+                {
+					"column1": "Arbitrary informtion",
+					"column2": {"text": "Arbitrary information in italic", "style": {"italic": true}},
+					"column3": "Even more arbitrary information",
+					"column4": "This is the last column of arbitrary information"
+				},
+                {
+					"column1": "Space astronaughts are cool",
+					"column2": "Rainbows and unicorns are also cool",
+					"column3": {"link": "https://en.wikipedia.org/wiki/Turtle#/media/File:Turtle_diversity.jpg", "text": "i like turtles"},
+					"column4": "This is the last column of arbitrary information"
+				}
+            ]
+        }
+	] 
+}

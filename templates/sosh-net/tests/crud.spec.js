@@ -48,7 +48,21 @@ function getExampleFromModel(model, index = 0) {
     if (!field.hasOwnProperty('examples')) {
       throw new Error(`Field "${fieldName}" in model "${model.name.pascal_case}" has no examples defined`);
     }
-    data[fieldName] = field.examples[index];
+	if(field.type === 'str' && field.rich_text === true) {
+		// this will not actually input the rich text example, just the raw
+		// text, but the editor has test coverage in the browser2 app
+		const richTextExample = JSON.parse(field.examples[index]);
+		let textContent = '';
+		for (const block of richTextExample.block) {
+			if(block.hasOwnProperty('text')) {
+				textContent += block.text;
+			}
+		}
+		data[fieldName] = textContent;
+	}else{
+		data[fieldName] = field.examples[index];
+	}
+    
   }
   return data;
 }
@@ -298,7 +312,12 @@ async function fillFormField(page, fieldName, field, value, preSeedMode = false)
 
       await page.locator('.popup-content > div > table > tbody > tr').first().click();
     }
-  } else {
+  } else if (field.rich_text === true) {
+	// get rich text editor from `div.rich-text-editor` under the field row
+	const editor = page.getByRole('row', { name: pattern }).locator('div.rich-text-editor');
+	await editor.fill(value);
+
+  }else{
     // For str and fallback, use input[type="text"]
     await page.getByRole('row', { name: pattern })
       .locator('input[type="text"]')

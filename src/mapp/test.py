@@ -1618,11 +1618,11 @@ class TestMTemplateApp(unittest.TestCase):
         get_part_output = self._run_cmd(get_part_cmd, env=user_env)
         get_part_result = json.loads(get_part_output.stdout)['result']
         self.assertTrue(get_part_result['acknowledged'], 'Get part content result not acknowledged')
-        self.assertTrue(os.path.exists(local_part_dest), 'Local file for part content does not exist after get-part-content command')
-        self.assertEqual(os.path.getsize(local_part_dest), sample_size, 'Local file size for part content does not match expected size')
+        self.assertTrue(os.path.exists(local_part_dest), f'Local file for part content does not exist after get-part-content command: {local_part_dest}')
+        self.assertEqual(os.path.getsize(local_part_dest), sample_size, f'Local file size for part content does not match expected size: {local_part_dest}')
         with open(local_part_dest, 'rb') as f:
             local_checksum = hashlib.sha3_256(f.read()).hexdigest()
-        self.assertEqual(local_checksum, sample_checksum, 'Local file checksum for part content does not match expected checksum')
+        self.assertEqual(local_checksum, sample_checksum, f'Local file checksum for part content does not match expected checksum: {local_part_dest}')
 
         # confirm can get file content #
 
@@ -1631,14 +1631,17 @@ class TestMTemplateApp(unittest.TestCase):
         get_file_output = self._run_cmd(get_file_cmd, env=user_env)
         get_file_result = json.loads(get_file_output.stdout)['result']
         self.assertTrue(get_file_result['acknowledged'], 'Get file content result not acknowledged')
-        self.assertTrue(os.path.exists(local_file_dest), 'Local file for file content does not exist after get-file-content command')
-        self.assertEqual(os.path.getsize(local_file_dest), sample_size, 'Local file size for file content does not match expected size')
+        self.assertTrue(os.path.exists(local_file_dest), f'Local file for file content does not exist after get-file-content command: {local_file_dest}')
+        self.assertEqual(os.path.getsize(local_file_dest), sample_size, f'Local file size for file content does not match expected size: {local_file_dest}')
         with open(local_file_dest, 'rb') as f:
             local_checksum = hashlib.sha3_256(f.read()).hexdigest()
-        self.assertEqual(local_checksum, sample_checksum, 'Local file checksum for file content does not match expected checksum')
+        self.assertEqual(local_checksum, sample_checksum, f'Local file checksum for file content does not match expected checksum: {local_file_dest}')
 
     def test_cli_run_file_system_ingest_flow(self):
         self._test_file_system_ingest_flow(self.crud_ctx, 'run')
+        
+    # def test_cli_http_file_system_ingest_flow(self):
+    #     self._test_file_system_ingest_flow(self.crud_ctx, 'http')
 
     # builtin - media tests #
 
@@ -2195,7 +2198,6 @@ class TestMTemplateApp(unittest.TestCase):
 
     def test_cli_db_validation_error(self):
         self._test_cli_validation_error('db', 3)
-
 
     def test_cli_http_validation_error(self):
         self._test_cli_validation_error('http', 4)

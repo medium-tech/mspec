@@ -71,10 +71,11 @@ modules:
                         name:
                             lower_case: 'bio'
                         type: str
+                        # rich_text: true
                         examples:
-                            - 'Loves hiking and outdoor adventures.'
-                            - 'Avid reader and coffee enthusiast.'
-                            - 'Tech geek and gamer.'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}] }'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'
 
                     profile_picture:
                         name:
@@ -128,11 +129,11 @@ modules:
                         name:
                             lower_case: 'description'
                         type: str
+                        # rich_text: true
                         examples:
-                            - 'Share your favorite hiking trails and tips!'
-                            - 'Discuss the best coffee shops in our city.'
-                            - 'Talk about the latest tech gadgets and
-                              innovations.'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}] }'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'
 
                     tags:
                         name:
@@ -264,10 +265,11 @@ modules:
                         name:
                             lower_case: 'message'
                         type: str
+                        # rich_text: true
                         examples:
-                            - 'Just had an amazing day at the beach!'
-                            - "Loving the new book I'm reading."
-                            - "Can't wait for the weekend!"
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}] }'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'
 
                     attachments:
                         name:
@@ -376,10 +378,11 @@ modules:
                         name:
                             lower_case: 'description'
                         type: str
+                        # rich_text: true
                         examples:
-                            - 'Join us for a fun birthday celebration!'
-                            - 'A day of hiking and exploring nature.'
-                            - 'Discussing our latest book over coffee.'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}] }'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'
 
             reaction:
                 name:

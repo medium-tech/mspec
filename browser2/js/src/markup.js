@@ -1509,7 +1509,7 @@ function lingoApp(spec, params = {}, options = {}) {
         }
     }
     
-    lingoUpdateState(instance);
+    if(specCopy.lingo.version !== 'rich-text-beta-1') lingoUpdateState(instance);
 
     // Auto-start timers
     if (instance.spec.timers) {
@@ -3214,12 +3214,24 @@ function _renderModelRead(app, element, ctx = null) {
                 additional = '';
             }
 
+			let outputValue;
+			if(fieldDef.type === 'str' && fieldDef.rich_text === true) {
+				try{
+					outputValue = JSON.parse(state.data[field]);
+				}catch(e){
+					console.error(`Error parsing rich text content for field ${field}:`, e, 'content:', state.data[field]);
+					throw new Error(`Invalid rich text content for field ${field}: ${e.message}`);
+				}
+			}else{
+				outputValue = state.data[field];
+			}
+
 
             convertedFields.push({
                 type: 'struct',
                 value: {
                     key: field,
-                    value: state.data[field],
+                    value: outputValue,
                     additional: additional
                 }
             });
@@ -3560,30 +3572,29 @@ function _renderModelList(app, element, ctx = null) {
         headers.push({text: field.name.lower_case, field: field.name.snake_case});
     }
 
-    // iterate over app.state[stateField].items and convert id to link
+    // convert values for display
 
-    // let itemsForTable = [];
-	// let instanceUrl = null;
-    
-    // if(element.model.hasOwnProperty('instance_url')) {
-    //     instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
+    let itemsForTable = [];
+	for (let rawItem of state.items) {
+		let itemForTable = JSON.parse(JSON.stringify(rawItem));
 
-    //     for (let item of state.items) {
-    //         // console.log('renderModelList - pre processing:', item);
+		for (const [name, field] of Object.entries(definition.fields)) {
+			// iterate over fields and convert rich text fields from JSON
+			const fieldDef = definition.fields[name];
+			if(fieldDef.type === 'str' && fieldDef.rich_text === true) {
+				try{
+					itemForTable[field.name.snake_case] = JSON.parse(rawItem.value[name]);
+				}catch(e){
+					console.error(`Error parsing rich text content for field ${name} in item:`, e, 'content:', rawItem);
+					itemForTable[field.name.snake_case] = `Invalid rich text content: ${e.message}`;
+				}
+			}
+		}
 
-    //         let copyOfItem = JSON.parse(JSON.stringify(item));
-    //         copyOfItem.value.id = {
-    //             link: `${instanceUrl}${item.value.id}`,
-    //             text: String(item.value.id)
-    //         };
-    //         itemsForTable.push(copyOfItem);
+		itemsForTable.push(itemForTable);
 
-    //         // console.log('renderModelList - post processing:', copyOfItem);
-    //     }
-    // }else{
-    //     instanceUrl = null;
-    //     itemsForTable = state.items;
-    // }
+		console.log('renderModelList - post processing:', rawItem, itemForTable);
+	}
 
     elements.push({
         type: 'list',
@@ -3594,7 +3605,7 @@ function _renderModelList(app, element, ctx = null) {
             onSelect: onSelect,
 			instance_url: element.model.instance_url || null
         },
-        value: state.items
+        value: itemsForTable
     });
 
     if (state.state === 'pending') {
@@ -3860,6 +3871,19 @@ function renderLingoApp(app, container, preserveFocus = false) {
         lingoUpdateState(app);
         const result = lingoExecute(app, app.spec.output);
         container.innerHTML = '<pre>' + JSON.stringify(result, null, 4) + '</pre>';
+	
+	} else if(app.spec.lingo.version == 'rich-text-beta-1') {
+		console.log('Rendering rich-text-beta-1 spec');
+		if(!app.spec.hasOwnProperty('block') || !Array.isArray(app.spec.block)) {
+			throw new Error('rich-text-beta-1 spec requires a block array');
+		}
+
+		for (const element of app.spec.block) {
+            const domElement = createDOMElement(app, element);
+            if (domElement) {
+                container.appendChild(domElement);
+            }
+        }
 
     }else{
         throw new Error(`Unsupported lingo version: ${app.spec.lingo.version}`);
@@ -3889,6 +3913,7 @@ function renderLingoApp(app, container, preserveFocus = false) {
  * Create a DOM element from a buffer element
  */
 function createDOMElement(app, element, ctx = null) {
+	// console.debug('createDOMElement()', element);
     if ('heading' in element) {
         return createHeadingElement(app, element);
     } else if ('break' in element) {
@@ -4435,6 +4460,292 @@ function createLinkElement(app, element, ctx = null) {
 }
 
 /**
+ * Convert rich text JSON spec string to HTML for display in a contenteditable div
+ */
+function richTextSpecToHtml(jsonStr) {
+    let spec;
+    try {
+        spec = JSON.parse(jsonStr);
+    } catch (e) {
+        return '';
+    }
+    if (!spec || !Array.isArray(spec.block)) {
+        return '';
+    }
+    // Escape all characters that could cause HTML injection
+    const escape = (s) => s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    const blocks = spec.block;
+    const isBoldBlock = (b) => 'text' in b && !!(b.style && b.style.bold);
+    let html = '';
+    for (let i = 0; i < blocks.length; i++) {
+        const block = blocks[i];
+        if ('text' in block) {
+            const text = escape(block.text);
+            if (block.style && block.style.bold) {
+                html += `<span style="font-weight: bold">${text}</span>`;
+            } else {
+                // Wrap a non-bold text block in a plain span only when it is
+                // sandwiched between two bold spans so that callers can query
+                // it as a DOM element (e.g. for partial-unbold results).
+                const prevBold = i > 0 && isBoldBlock(blocks[i - 1]);
+                const nextBold = i < blocks.length - 1 && isBoldBlock(blocks[i + 1]);
+                if (prevBold && nextBold) {
+                    html += `<span>${text}</span>`;
+                } else {
+                    html += text;
+                }
+            }
+        } else if ('break' in block) {
+            if(block.break < 0 || block.break > 5) throw new Error('richTextSpecToHtml - break count must be between 0 and 5');
+            for (let j = 0; j < block.break; j++) {
+                html += '<br>';
+            }
+        }
+    }
+    return html;
+}
+
+/**
+ * Convert HTML inside a contenteditable div to a rich text JSON spec object
+ */
+function htmlToRichTextSpec(container) {
+    const blocks = [];
+
+    const processNode = (node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const text = node.textContent;
+            if (text) {
+                blocks.push({text});
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            if (node.tagName === 'BR') {
+                blocks.push({break: 1});
+            } else if (node.tagName === 'SPAN') {
+                const fw = node.style.fontWeight;
+                const isBold = fw === 'bold' || parseInt(fw, 10) >= 700;
+                const text = node.textContent;
+                if (text) {
+                    if (isBold) {
+                        blocks.push({text, style: {bold: true}});
+                    } else {
+                        blocks.push({text});
+                    }
+                }
+            } else if (node.tagName === 'DIV') {
+                // Browsers wrap new paragraphs in divs inside contenteditable
+                if (blocks.length > 0) {
+                    blocks.push({break: 1});
+                }
+                for (const child of node.childNodes) {
+                    processNode(child);
+                }
+            } else {
+                for (const child of node.childNodes) {
+                    processNode(child);
+                }
+            }
+        }
+    };
+
+    for (const child of container.childNodes) {
+        processNode(child);
+    }
+
+    return {lingo: {version: 'rich-text-beta-1'}, block: blocks};
+}
+
+/**
+ * Create a rich text input widget: a contenteditable editor with Bold and Debug toolbar buttons
+ */
+function createRichTextInput(formData, fieldKey, initialValue) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'rich-text-input-wrapper';
+
+    // toolbar //
+    const toolbar = document.createElement('div');
+    toolbar.className = 'rich-text-toolbar';
+
+    const boldBtn = document.createElement('button');
+    boldBtn.type = 'button';
+    boldBtn.textContent = 'Bold';
+    boldBtn.className = 'rich-text-btn';
+
+    const debugBtn = document.createElement('button');
+    debugBtn.type = 'button';
+    debugBtn.textContent = 'Debug';
+    debugBtn.className = 'rich-text-btn';
+
+    toolbar.appendChild(boldBtn);
+    // toolbar.appendChild(debugBtn);
+
+    // editor //
+    const editor = document.createElement('div');
+    editor.contentEditable = 'true';
+    editor.className = 'rich-text-editor';
+
+    if (initialValue) {
+        editor.innerHTML = richTextSpecToHtml(initialValue);
+    }
+
+    const syncFormData = () => {
+        formData[fieldKey] = JSON.stringify(htmlToRichTextSpec(editor));
+    };
+
+    editor.addEventListener('input', syncFormData);
+
+    // Convert a DOM Range to {startChar, endChar} character positions within the editor.
+    // Handles both text-node containers and element-node containers (e.g. selectNodeContents).
+    const getRangeCharPositions = (range) => {
+        let startChar = -1, endChar = -1, charCount = 0;
+        const visit = (node) => {
+            if (startChar >= 0 && endChar >= 0) return;
+            if (node.nodeType === Node.TEXT_NODE) {
+                const len = node.textContent.length;
+                if (startChar < 0 && range.startContainer === node)
+                    startChar = charCount + range.startOffset;
+                if (endChar < 0 && range.endContainer === node)
+                    endChar = charCount + range.endOffset;
+                charCount += len;
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                if (startChar < 0 && range.startContainer === node) {
+                    let c = charCount;
+                    Array.from(node.childNodes).slice(0, range.startOffset)
+                        .forEach(ch => { c += ch.textContent.length; });
+                    startChar = c;
+                }
+                if (endChar < 0 && range.endContainer === node) {
+                    let c = charCount;
+                    Array.from(node.childNodes).slice(0, range.endOffset)
+                        .forEach(ch => { c += ch.textContent.length; });
+                    endChar = c;
+                }
+                for (const child of node.childNodes) {
+                    visit(child);
+                    if (startChar >= 0 && endChar >= 0) return;
+                }
+            }
+        };
+        visit(editor);
+        return {startChar: Math.max(0, startChar), endChar: Math.max(0, endChar)};
+    };
+
+    // Restore a DOM selection given character positions within the editor.
+    // Prefers placing boundaries at the start of a text node when on a boundary.
+    const restoreSelectionFromCharPositions = (startChar, endChar) => {
+        let charCount = 0, startNode = null, startOff = 0, endNode = null, endOff = 0;
+        const visit = (node) => {
+            if (startNode && endNode) return;
+            if (node.nodeType === Node.TEXT_NODE) {
+                const len = node.textContent.length;
+                if (!startNode && charCount + len > startChar) {
+                    startNode = node;
+                    startOff = startChar - charCount;
+                }
+                if (!endNode && charCount + len >= endChar) {
+                    endNode = node;
+                    endOff = endChar - charCount;
+                }
+                charCount += len;
+            } else {
+                for (const child of node.childNodes) {
+                    visit(child);
+                    if (startNode && endNode) return;
+                }
+            }
+        };
+        visit(editor);
+        if (startNode && endNode) {
+            const r = document.createRange();
+            r.setStart(startNode, startOff);
+            r.setEnd(endNode, endOff);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(r);
+        }
+    };
+
+    // bold button: toggle bold on the selected text //
+    boldBtn.addEventListener('click', () => {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+        const range = selection.getRangeAt(0);
+        if (!editor.contains(range.commonAncestorContainer)) return;
+
+        // Map selection to character positions, then work at the spec level so
+        // that a selection shorter than a bold span only unbolds the selected
+        // portion rather than the entire span.
+        const {startChar, endChar} = getRangeCharPositions(range);
+        if (startChar === endChar) return;
+
+        const currentSpec = htmlToRichTextSpec(editor);
+
+        // Determine whether any selected character is currently bold
+        let anyBold = false;
+        let pos = 0;
+        for (const block of currentSpec.block) {
+            if ('text' in block) {
+                const blockEnd = pos + block.text.length;
+                if (pos < endChar && blockEnd > startChar && block.style && block.style.bold) {
+                    anyBold = true;
+                    break;
+                }
+                pos += block.text.length;
+            }
+        }
+
+        // Rebuild the block list, splitting any block that overlaps the selection
+        // and toggling bold only on the overlapping portion
+        const newBlocks = [];
+        pos = 0;
+        for (const block of currentSpec.block) {
+            if ('break' in block) {
+                newBlocks.push(block);
+                continue;
+            }
+            const blockStart = pos;
+            const blockEnd = pos + block.text.length;
+            const isBold = !!(block.style && block.style.bold);
+            if (blockEnd <= startChar || blockStart >= endChar) {
+                newBlocks.push(block);
+            } else {
+                const overlapStart = Math.max(startChar, blockStart);
+                const overlapEnd = Math.min(endChar, blockEnd);
+                if (overlapStart > blockStart) {
+                    const text = block.text.slice(0, overlapStart - blockStart);
+                    newBlocks.push(isBold ? {text, style: {bold: true}} : {text});
+                }
+                const selText = block.text.slice(overlapStart - blockStart, overlapEnd - blockStart);
+                newBlocks.push(anyBold ? {text: selText} : {text: selText, style: {bold: true}});
+                if (overlapEnd < blockEnd) {
+                    const text = block.text.slice(overlapEnd - blockStart);
+                    newBlocks.push(isBold ? {text, style: {bold: true}} : {text});
+                }
+            }
+            pos += block.text.length;
+        }
+
+        editor.innerHTML = richTextSpecToHtml(JSON.stringify({...currentSpec, block: newBlocks}));
+        restoreSelectionFromCharPositions(startChar, endChar);
+        syncFormData();
+    });
+
+    // debug button: log rich text spec to console //
+    debugBtn.addEventListener('click', () => {
+        console.log('Rich text spec:', JSON.stringify(htmlToRichTextSpec(editor), null, 2));
+    });
+
+    wrapper.appendChild(toolbar);
+    wrapper.appendChild(editor);
+
+    return wrapper;
+}
+
+/**
  * Create form element with table layout
  */
 function createFormElement(app, element, ctx = null) {
@@ -4846,6 +5157,9 @@ function createFormElement(app, element, ctx = null) {
             inputElement.addEventListener('change', () => {
                 formData[fieldKey] = inputElement.value === '' ? null : inputElement.value;
             });
+
+        } else if (fieldSpec.rich_text && fieldType === 'str') {
+            inputElement = createRichTextInput(formData, fieldKey, formData[fieldKey]);
 
         } else {
             inputElement = document.createElement('input');

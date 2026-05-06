@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from dataclasses import dataclass, asdict
 
 from mapp.errors import MappValidationError, MappError, MappUserError
+from mspec.core import validate_rich_text_json_string
 
 __all__ = [
     'DATETIME_FORMAT_STR',
@@ -611,9 +612,19 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
                 errors[field_name] = f'Field "{field_name}" is not of type "{field_type}".'
                 total_errors += 1
 
-            if field_type == 'str' and 'enum' in field and value not in field['enum']:
-                errors[field_name] = f'Field "{field_name}" has value "{value}" which is not in the allowed enum values.'
-                total_errors += 1
+            if field_type == 'str':
+                if 'enum' in field and value not in field['enum']:
+                    errors[field_name] = f'Field "{field_name}" has value "{value}" which is not in the allowed enum values.'
+                    total_errors += 1
+                elif field.get('rich_text') is True:
+                    try:
+                        validate_rich_text_json_string(value)
+                    except ValueError as e:
+                        errors[field_name] = f'Field "{field_name}" failed rich text validation: {e}'
+                        total_errors += 1
+                    except Exception as e:
+                        errors[field_name] = f'Field "{field_name}" failed rich text validation with an unexpected error: {e}'
+                        total_errors += 1
 
         else:
             

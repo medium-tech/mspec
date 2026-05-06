@@ -155,7 +155,6 @@ test('test - functions-struct', async ({ page }) => {
   }
 });
 
-
 test('test - functions-math', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
   await page.locator('#spec-select').selectOption('data/lingo/pages/functions-math.json');
@@ -894,6 +893,7 @@ test('test - secure field redaction', async ({ page }) => {
   // Confirm there are no password inputs
   await expect(page.locator('input[type="password"]')).not.toBeVisible();
 });
+
 test('test - spec file loaded from url query param', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/?spec=data/lingo/pages/test-page.json');
 
@@ -944,4 +944,222 @@ test('test - timers', async ({ page }) => {
 
   // Timer has disabled itself - button should be enabled again
   await expect(page.getByRole('button', { name: 'start countdown' })).toBeEnabled();
+});
+
+test('test - empty-rich-text-block', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/rich-text/empty-rich-text-block.json');
+
+  await expect(page.locator('#debug-content')).toContainText('rich-text-beta-1');
+  // Empty block array should produce no child elements in the container
+  await expect(page.locator('#lingo-app').locator('> *')).toHaveCount(0);
+});
+
+test('test - hello-rich-text', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/rich-text/hello-rich-text.json');
+
+  await expect(page.locator('#debug-content')).toContainText('rich-text-beta-1');
+  await expect(page.locator('#lingo-app span')).toContainText('hello.world');
+});
+
+test('test - example-rich-text', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/rich-text/example-rich-text.json');
+
+  await expect(page.locator('#debug-content')).toContainText('rich-text-beta-1');
+
+  // Verify plain text content
+  await expect(page.locator('#lingo-app')).toContainText('This is an example of a rich text document.');
+
+  // Verify bold text
+  const boldSpan = page.locator('#lingo-app span').filter({ hasText: /^bold, $/ });
+  await expect(boldSpan).toHaveCSS('font-weight', '700');
+
+  // Verify italic text
+  const italicSpan = page.locator('#lingo-app span').filter({ hasText: /^italic,$/ });
+  await expect(italicSpan).toHaveCSS('font-style', 'italic');
+
+  // Verify underline text
+  const underlineSpan = page.locator('#lingo-app span').filter({ hasText: /^underline\.$/ });
+  await expect(underlineSpan).toHaveCSS('text-decoration', /underline/);
+
+  // Verify combined styles on "All together now!"
+  const allTogetherSpan = page.locator('#lingo-app span').filter({ hasText: /^All together now!$/ });
+  await expect(allTogetherSpan).toHaveCSS('font-weight', '700');
+  await expect(allTogetherSpan).toHaveCSS('font-style', 'italic');
+  await expect(allTogetherSpan).toHaveCSS('text-decoration', /underline/);
+
+  // Verify links - custom text link and raw URL link both pointing to wikipedia
+  await expect(page.locator('#lingo-app a').filter({ hasText: /^Wikipedia$/ })).toHaveAttribute('href', 'https://www.wikipedia.org');
+  await expect(page.locator('#lingo-app a').filter({ hasText: /^https:\/\/www\.wikipedia\.org$/ })).toHaveAttribute('href', 'https://www.wikipedia.org');
+  await expect(page.locator('#lingo-app a[href="https://www.wikipedia.org"]')).toHaveCount(2);
+
+  // Verify bullet list with colored items
+  const bulletList = page.locator('#lingo-app ul').first();
+  await expect(bulletList).toBeVisible();
+  await expect(bulletList.locator('li span').filter({ hasText: /^Red$/ })).toHaveCSS('color', 'rgb(255, 0, 0)');
+  await expect(bulletList.locator('li span').filter({ hasText: /^Blue$/ })).toHaveCSS('color', 'rgb(0, 0, 255)');
+  await expect(bulletList.locator('li span').filter({ hasText: /^Green$/ })).toHaveCSS('color', 'rgb(0, 128, 0)');
+
+  // Verify ordered (numbered) list
+  const orderedList = page.locator('#lingo-app ol');
+  await expect(orderedList).toBeVisible();
+  await expect(orderedList).toContainText('First item');
+  await expect(orderedList).toContainText('Second item');
+  await expect(orderedList).toContainText('Third item');
+
+  // Verify table with headers (Color, Amount, In Stock)
+  const tables = page.locator('#lingo-app table');
+  const headerTable = tables.first();
+  await expect(headerTable.locator('th').nth(0)).toContainText('Color');
+  await expect(headerTable.locator('th').nth(1)).toContainText('Amount');
+  await expect(headerTable.locator('th').nth(2)).toContainText('In Stock');
+  await expect(headerTable).toContainText('red');
+  await expect(headerTable).toContainText('green');
+  await expect(headerTable).toContainText('blue');
+  await expect(headerTable).toContainText('10');
+  await expect(headerTable).toContainText('21');
+  await expect(headerTable).toContainText('0');
+
+  // Verify grid (column-based table)
+  const gridTable = tables.nth(1);
+  await expect(gridTable).toContainText('Arbitrary informtion'); // note: typo is in the source JSON
+  await expect(gridTable.locator('span').filter({ hasText: 'Arbitrary information in italic' })).toHaveCSS('font-style', 'italic');
+  await expect(gridTable.locator('a').filter({ hasText: 'i like turtles' })).toHaveAttribute('href', 'https://en.wikipedia.org/wiki/Turtle#/media/File:Turtle_diversity.jpg');
+});
+
+test('test - rich text input', async ({ page }) => {
+	await page.goto('http://localhost:8000/?spec=data%2Flingo%2Fpages%2Frich-text-input.json');
+	
+	// enter plain text
+	await page.locator('div.rich-text-editor').fill('one two three four five');
+	await expect(page.locator('div.rich-text-editor')).toContainText('one two three four five');
+	await expect(page.locator('div.rich-text-editor').filter({ hasText: 'one two three four five' })).not.toHaveCSS('font-weight', 'bold');
+
+	//
+	// select all
+	//
+
+	await page.locator('div.rich-text-editor').evaluate((element) => {
+		const selection = window.getSelection();
+		const range = document.createRange();
+		range.selectNodeContents(element);
+		selection.removeAllRanges();
+		selection.addRange(range);
+	});
+
+	// bold all text
+	await page.getByRole('button', { name: 'Bold' }).click();
+	await expect(page.locator('div.rich-text-editor span').filter({ hasText: 'one two three four five' })).toHaveCSS('font-weight', '700');
+
+	// unbold all text
+	await page.getByRole('button', { name: 'Bold' }).click();
+	await expect(page.locator('div.rich-text-editor').filter({ hasText: 'one two three four five' })).not.toHaveCSS('font-weight', '700');
+	await expect(page.locator('div.rich-text-editor span')).toHaveCount(0);
+
+	//
+	// bold/unbold single word
+	//
+
+	// select the word "three"
+	await page.locator('div.rich-text-editor').evaluate((element) => {
+		const selection = window.getSelection();
+		const range = document.createRange();
+		console.log('element text content:', element, element.textContent, range);
+		range.setStart(element.firstChild, 8);
+		range.setEnd(element.firstChild, 13);
+		selection.removeAllRanges();
+		selection.addRange(range);
+	});
+	
+	// bold word "three" (again)
+	await page.getByRole('button', { name: 'Bold' }).click();
+	await expect(page.locator('div.rich-text-editor span').filter({ hasText: 'three' })).toHaveCSS('font-weight', '700');
+
+	// unbold word "three"
+	await page.getByRole('button', { name: 'Bold' }).click();
+	await expect(page.locator('div.rich-text-editor').filter({ hasText: 'one two three four five' })).not.toHaveCSS('font-weight', '700');
+
+	//
+	// bold single word, unbold larger selection containing bolded word
+	// 
+
+	// select the word "three"
+	await page.locator('div.rich-text-editor').evaluate((element) => {
+		const selection = window.getSelection();
+		const range = document.createRange();
+		console.log('element text content:', element, element.textContent, range);
+		range.setStart(element.firstChild, 8);
+		range.setEnd(element.firstChild, 13);
+		selection.removeAllRanges();
+		selection.addRange(range);
+	});
+	
+	// bold word "three"
+	await page.getByRole('button', { name: 'Bold' }).click();
+	await expect(page.locator('div.rich-text-editor span').filter({ hasText: 'three' })).toHaveCSS('font-weight', '700');
+
+	// select larger range
+	await page.locator('div.rich-text-editor').evaluate((element) => {
+		const selection = window.getSelection();
+		const range = document.createRange();
+		range.setStart(element.firstChild, 4);
+		range.setEnd(element.lastChild, 5);
+		selection.removeAllRanges();
+		selection.addRange(range);
+	});
+
+	// unbold larger range
+	await page.getByRole('button', { name: 'Bold' }).click();
+	await expect(page.locator('div.rich-text-editor').filter({ hasText: 'one two three four five' })).not.toHaveCSS('font-weight', '700');
+
+	//
+	// bold all text, unbold subsection
+	//
+
+	// select all text
+	await page.locator('div.rich-text-editor').evaluate((element) => {
+		const selection = window.getSelection();
+		const range = document.createRange();
+		range.selectNodeContents(element);
+		selection.removeAllRanges();
+		selection.addRange(range);
+	});
+
+	// bold all text
+	await page.getByRole('button', { name: 'Bold' }).click();
+	await expect(page.locator('div.rich-text-editor span').filter({ hasText: 'one two three four five' })).toHaveCSS('font-weight', '700');
+
+	// select the word "three"
+	await page.locator('div.rich-text-editor span').evaluate((element) => {
+		const selection = window.getSelection();
+		const range = document.createRange();
+		range.setStart(element.firstChild, 8);
+		range.setEnd(element.firstChild, 13);
+		selection.removeAllRanges();
+		selection.addRange(range);
+	});
+
+	// unbold "three"
+	await page.getByRole('button', { name: 'Bold' }).click();
+	await expect(page.locator('div.rich-text-editor span').filter({ hasText: 'one two ' })).toHaveCSS('font-weight', '700');
+	await expect(page.locator('div.rich-text-editor span').filter({ hasText: 'three' })).not.toHaveCSS('font-weight', '700');
+	await expect(page.locator('div.rich-text-editor span').filter({ hasText: ' four five' })).toHaveCSS('font-weight', '700');
+
+	// select all text again
+	await page.locator('div.rich-text-editor').evaluate((element) => {
+		const selection = window.getSelection();
+		const range = document.createRange();
+		range.selectNodeContents(element);
+		selection.removeAllRanges();
+		selection.addRange(range);
+	});
+
+	// unbold all text
+	await page.getByRole('button', { name: 'Bold' }).click();
+	await expect(page.locator('div.rich-text-editor')).toContainText('one two three four five');
+	await expect(page.locator('div.rich-text-editor').filter({ hasText: 'one two three four five' })).not.toHaveCSS('font-weight', '700');
+	await expect(page.locator('div.rich-text-editor span')).toHaveCount(0);
+
 });
