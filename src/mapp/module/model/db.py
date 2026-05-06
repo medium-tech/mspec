@@ -38,7 +38,10 @@ def db_model_create_table(ctx:MappContext, model_class: type) -> Acknowledgment:
                 col_def = f'{field_name} INTEGER'
             case 'float':
                 col_def = f'{field_name} REAL'
-            case 'str' | 'enum':
+            case 'str':
+                max_len = 25000 if field.get('rich_text') is True else 1000
+                col_def = f'{field_name} TEXT CHECK (LENGTH("{field_name}") <= {max_len})'
+            case 'enum':
                 col_def = f'{field_name} TEXT'
             case 'datetime':
                 col_def = f'{field_name} TEXT'

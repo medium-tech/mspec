@@ -107,6 +107,16 @@ def model_validation_errors(model:dict) -> Generator[tuple[dict, str], None, Non
             invalid_example[field_name] = invalid_value
             yield invalid_example, field_name
 
+        if field['type'] == 'str':
+            invalid_example = deepcopy(example)
+            max_len = 25000 if field.get('rich_text') is True else 1000
+            invalid_example[field_name] = 'a' * (max_len + 1)
+            yield invalid_example, field_name
+        elif field['type'] == 'list' and field.get('element_type') == 'str':
+            invalid_example = deepcopy(example)
+            invalid_example[field_name] = ['a' * 400, 'a' * 400, 'a' * 201]
+            yield invalid_example, field_name
+
 def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None, decode_json=True) -> tuple[int, dict]:
     """send request and returnn status code and response body as dict"""
 
