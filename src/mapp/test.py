@@ -2199,7 +2199,6 @@ class TestMTemplateApp(unittest.TestCase):
     def test_cli_db_validation_error(self):
         self._test_cli_validation_error('db', 3)
 
-
     def test_cli_http_validation_error(self):
         self._test_cli_validation_error('http', 4)
 

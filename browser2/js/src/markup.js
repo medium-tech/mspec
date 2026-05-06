@@ -3214,12 +3214,24 @@ function _renderModelRead(app, element, ctx = null) {
                 additional = '';
             }
 
+			let outputValue;
+			if(fieldDef.type === 'str' && fieldDef.rich_text === true) {
+				try{
+					outputValue = JSON.parse(state.data[field]);
+				}catch(e){
+					console.error(`Error parsing rich text content for field ${field}:`, e, 'content:', state.data[field]);
+					throw new Error(`Invalid rich text content for field ${field}: ${e.message}`);
+				}
+			}else{
+				outputValue = state.data[field];
+			}
+
 
             convertedFields.push({
                 type: 'struct',
                 value: {
                     key: field,
-                    value: state.data[field],
+                    value: outputValue,
                     additional: additional
                 }
             });
@@ -3560,30 +3572,29 @@ function _renderModelList(app, element, ctx = null) {
         headers.push({text: field.name.lower_case, field: field.name.snake_case});
     }
 
-    // iterate over app.state[stateField].items and convert id to link
+    // convert values for display
 
-    // let itemsForTable = [];
-	// let instanceUrl = null;
-    
-    // if(element.model.hasOwnProperty('instance_url')) {
-    //     instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
+    let itemsForTable = [];
+	for (let rawItem of state.items) {
+		let itemForTable = {...rawItem.value};
 
-    //     for (let item of state.items) {
-    //         // console.log('renderModelList - pre processing:', item);
+		for (const [name, field] of Object.entries(definition.fields)) {
+			// iterate over fields and convert rich text fields from JSON
+			const fieldDef = definition.fields[name];
+			if(fieldDef.type === 'str' && fieldDef.rich_text === true) {
+				try{
+					itemForTable[field.name.snake_case] = JSON.parse(rawItem.value[name]);
+				}catch(e){
+					console.error(`Error parsing rich text content for field ${name} in item:`, e, 'content:', rawItem);
+					itemForTable[field.name.snake_case] = `Invalid rich text content: ${e.message}`;
+				}
+			}
+		}
 
-    //         let copyOfItem = JSON.parse(JSON.stringify(item));
-    //         copyOfItem.value.id = {
-    //             link: `${instanceUrl}${item.value.id}`,
-    //             text: String(item.value.id)
-    //         };
-    //         itemsForTable.push(copyOfItem);
+		itemsForTable.push(itemForTable);
 
-    //         // console.log('renderModelList - post processing:', copyOfItem);
-    //     }
-    // }else{
-    //     instanceUrl = null;
-    //     itemsForTable = state.items;
-    // }
+		console.log('renderModelList - post processing:', rawItem, itemForTable);
+	}
 
     elements.push({
         type: 'list',
@@ -3594,7 +3605,7 @@ function _renderModelList(app, element, ctx = null) {
             onSelect: onSelect,
 			instance_url: element.model.instance_url || null
         },
-        value: state.items
+        value: itemsForTable
     });
 
     if (state.state === 'pending') {
@@ -4570,7 +4581,7 @@ function createRichTextInput(formData, fieldKey, initialValue) {
     debugBtn.className = 'rich-text-btn';
 
     toolbar.appendChild(boldBtn);
-    toolbar.appendChild(debugBtn);
+    // toolbar.appendChild(debugBtn);
 
     // editor //
     const editor = document.createElement('div');

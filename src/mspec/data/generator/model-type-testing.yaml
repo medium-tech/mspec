@@ -649,7 +649,7 @@ modules:
                         name:
                             lower_case: 'x rich text'
                         type: str
-                        # rich_text: true
+                        rich_text: true
                         examples:
                             - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}] }'
                             - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'
@@ -659,12 +659,12 @@ modules:
                             - false
                             - 123
                             - 45.67
-                            # - "not rich text"
-                            # - ""
+                            - "not rich text"
+                            - ""
                             - []
                             - {}
                             - null
-                            #- '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello'
-                            #- '{"lingo": {"version": "rich-text-beta-1"},"output": [{"text": "hello.world"}] }'
-                            #- '{"lingo": {"version": "page-beta-1"},"params": {},"state": {},"ops": {},"output": [{"text": "."}]}'  # wrong lingo spec
-                            #- [ '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "valid rich text"}] }' ] # lists should not be valid
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"output": [{"text": "hello.world"}] }'
+                            - '{"lingo": {"version": "page-beta-1"},"params": {},"state": {},"ops": {},"output": [{"text": "."}]}'  # wrong lingo spec
+                            - [ '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "valid rich text"}] }' ] # lists should not be valid

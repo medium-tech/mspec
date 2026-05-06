@@ -125,7 +125,8 @@ def load_builtin_generator_modules() -> dict:
     
     return spec
 
-def load_generator_spec(spec_file:str, try_examples:bool=True) -> dict:
+def load_generator_spec(spec_file:str, try_examples:bool=True, auth_init:bool=True) -> dict:
+    # print(f'loading spec file: {spec_file}')
     """
     open and parse spec file into dict,
     first try to load from the path as provided,
@@ -149,12 +150,17 @@ def load_generator_spec(spec_file:str, try_examples:bool=True) -> dict:
     except KeyError:
         raise ValueError(f'No lingo.version defined in spec file: {spec_file}')
 
-    return init_generator_spec(contents, source_path)
+    if auth_init:
+        return init_generator_spec(contents, source_path)
+    else:
+        return contents
 
 load_mapp_spec = load_generator_spec  # alias for backward compatibility
 
 
 def init_generator_spec(spec:dict, source_path:Path) -> dict:
+
+    # print(f'initializing generator spec from source: {source_path}')
 
     #
     # project
@@ -177,7 +183,7 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
 
     for import_file in modules_to_import:
         try:
-            import_spec = load_generator_spec(import_file)
+            import_spec = load_generator_spec(import_file, auth_init=False)
             import_modules:dict = import_spec.get('modules', {})
             for module_name, module in import_modules.items():
                 if module_name in spec_modules and not module['builtin']:
@@ -193,6 +199,7 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
         use_builtin_modules = True
     
     if use_builtin_modules is True:
+        # print(f'loading built in modules')
         try:
             builtin_modules = load_builtin_generator_modules()
         except Exception as e:
@@ -216,6 +223,7 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
     #
 
     for module in spec_modules.values():
+        # print(f'initializing module: {module["name"]["lower_case"]}')
         for key, value in generate_names(module['name']['lower_case']).items():
             if key not in module['name']:
                 module['name'][key] = value
@@ -247,6 +255,7 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
             module['models'] = {}
 
         for model in module['models'].values():
+            # print(f'initializing model: {model["name"]["lower_case"]}')
             for key, value in generate_names(model['name']['lower_case']).items():
                 if key not in model['name']:
                     model['name'][key] = value
@@ -289,6 +298,7 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
             unique_model_fields = []
 
             for field_name, field in fields.items():
+                # print(f'initializing field: {field_name} in model: {model_path}')
                 try:
                     field['name']['lower_case']
                 except KeyError:
@@ -358,8 +368,17 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
                     non_list_fields.append(field)
 
                 if 'enum' in field:
+                    if not (field_type == 'str' or (field_type == 'list' and field.get('element_type') == 'str')):
+                        raise ValueError(f'only str or lists of strs can define enum, field {field_name} in model {model_path} is invalid')
                     type_id += '_enum'
                     enum_fields.append(field)
+                
+                if 'rich_text' in field:
+                    if field_type != 'str':
+                        raise ValueError(f'only str fields can define rich_text, field {field_name} in model {model_path} has type {field_type}')
+                    type_id += '_rich_text'
+                else:
+                    field['rich_text'] = False
 
                 field['type_id'] = type_id
 
@@ -719,6 +738,24 @@ def _validate_rich_text_block_element(element:dict, index:int) -> None:
             f'rich text: {block_id} element must have one of: text, link, break, type'
         )
 
+def validate_rich_text_json_string(json_string:str) -> dict:
+    """
+    Validates a rich text spec JSON string
+
+    args:
+        json_string (str): The JSON string to validate
+
+    returns:
+        The parsed JSON as a dict (if valid)
+
+    raises ValueError if the spec is invalid
+    """
+    try:
+        source = json.loads(json_string)
+    except json.JSONDecodeError as e:
+        raise ValueError(f'Invalid JSON: {str(e)}')
+
+    return validate_rich_text_spec(source)
 
 def validate_rich_text_spec(source:dict) -> dict:
     """
@@ -728,7 +765,7 @@ def validate_rich_text_spec(source:dict) -> dict:
         source (dict): The rich text spec document to validate
 
     returns:
-        The source dict
+        The source dict (if valid)
 
     raises ValueError if the spec is invalid
     """
