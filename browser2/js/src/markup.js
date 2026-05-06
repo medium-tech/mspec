@@ -3576,7 +3576,7 @@ function _renderModelList(app, element, ctx = null) {
 
     let itemsForTable = [];
 	for (let rawItem of state.items) {
-		let itemForTable = {...rawItem.value};
+		let itemForTable = JSON.parse(JSON.stringify(rawItem));
 
 		for (const [name, field] of Object.entries(definition.fields)) {
 			// iterate over fields and convert rich text fields from JSON
