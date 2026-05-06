@@ -22,6 +22,12 @@ from collections import defaultdict
 from mspec.core import load_generator_spec
 
 from dotenv import dotenv_values
+from mapp.types import (
+    MAX_LIST_FIELD_ITEMS,
+    MAX_LIST_STR_TOTAL_LENGTH,
+    MAX_RICH_TEXT_JSON_LENGTH,
+    MAX_STR_FIELD_LENGTH,
+)
 
 def seed_pagination_item(unique_id, base_cmd, seed_cmd, env, require_auth, model_data):
     if require_auth:
@@ -109,13 +115,34 @@ def model_validation_errors(model:dict) -> Generator[tuple[dict, str], None, Non
 
         if field['type'] == 'str':
             invalid_example = deepcopy(example)
-            max_len = 25000 if field.get('rich_text') is True else 1000
+            max_len = MAX_RICH_TEXT_JSON_LENGTH if field.get('rich_text') is True else MAX_STR_FIELD_LENGTH
             invalid_example[field_name] = 'a' * (max_len + 1)
             yield invalid_example, field_name
-        elif field['type'] == 'list' and field.get('element_type') == 'str':
+        elif field['type'] == 'list':
             invalid_example = deepcopy(example)
-            invalid_example[field_name] = ['a' * 400, 'a' * 400, 'a' * 201]
+            seed_values = list(example.get(field_name, []))
+            if len(seed_values) == 0:
+                element_type = field.get('element_type')
+                default_value = {
+                    'bool': True,
+                    'int': 1,
+                    'float': 1.0,
+                    'str': 'a',
+                    'datetime': '2000-01-01T00:00:00',
+                    'foreign_key': '1',
+                }.get(element_type, 'a')
+                seed_values = [default_value]
+            invalid_example[field_name] = [seed_values[-1]] * (MAX_LIST_FIELD_ITEMS + 1)
             yield invalid_example, field_name
+
+            if field.get('element_type') == 'str':
+                invalid_example = deepcopy(example)
+                invalid_example[field_name] = [
+                    'a' * 400,
+                    'a' * 400,
+                    'a' * (MAX_LIST_STR_TOTAL_LENGTH - 800 + 1),
+                ]
+                yield invalid_example, field_name
 
 def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None, decode_json=True) -> tuple[int, dict]:
     """send request and returnn status code and response body as dict"""

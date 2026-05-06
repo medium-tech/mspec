@@ -4,7 +4,14 @@ import sqlite3
 from mapp.auth import current_user
 from mapp.context import MappContext
 from mapp.errors import AuthenticationError, NotFoundError, MappError, MappUserError
-from mapp.types import DATETIME_FORMAT_STR, ModelListResult, validate_model, Acknowledgment
+from mapp.types import (
+    DATETIME_FORMAT_STR,
+    MAX_RICH_TEXT_JSON_LENGTH,
+    MAX_STR_FIELD_LENGTH,
+    ModelListResult,
+    validate_model,
+    Acknowledgment,
+)
 
 
 __all__ = [
@@ -39,7 +46,7 @@ def db_model_create_table(ctx:MappContext, model_class: type) -> Acknowledgment:
             case 'float':
                 col_def = f'{field_name} REAL'
             case 'str':
-                max_len = 25000 if field.get('rich_text') is True else 1000
+                max_len = MAX_RICH_TEXT_JSON_LENGTH if field.get('rich_text') is True else MAX_STR_FIELD_LENGTH
                 col_def = f'{field_name} TEXT CHECK (LENGTH("{field_name}") <= {max_len})'
             case 'enum':
                 col_def = f'{field_name} TEXT'
