@@ -835,7 +835,7 @@ class TestMTemplateApp(unittest.TestCase):
 
         # create crud users
         
-        crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn', 'frank', 'gloria', 'henry']
+        crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn', 'frank']
 
         if needs_crud_rebuild and cls.spec['project']['use_builtin_modules']:
             sys.stdout.write(', users')
@@ -2208,10 +2208,10 @@ class TestMTemplateApp(unittest.TestCase):
         self.pool.starmap(run_cli_validation_error_for_model, jobs)
 
     def test_cli_db_validation_error(self):
-        self._test_cli_validation_error('db', 5)
+        self._test_cli_validation_error('db', 3)
 
     def test_cli_http_validation_error(self):
-        self._test_cli_validation_error('http', 6)
+        self._test_cli_validation_error('http', 4)
 
     def test_server_validation_error(self):
         self._check_servers_running()
@@ -2222,7 +2222,7 @@ class TestMTemplateApp(unittest.TestCase):
         }
         base_ctx.update(self.crud_ctx)
 
-        crud_user = 7
+        crud_user = 5
 
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
