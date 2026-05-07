@@ -1,5 +1,6 @@
 import json
 
+from copy import deepcopy
 from collections import namedtuple
 from typing import Any, Optional, NamedTuple, Callable
 from datetime import datetime, timezone
@@ -7,6 +8,7 @@ from dataclasses import dataclass, asdict
 
 from mapp.errors import MappValidationError, MappError, MappUserError
 from mspec.core import validate_rich_text_json_string
+# from mspec.lingo import LingoApp, lingo_execute
 
 __all__ = [
     'DATETIME_FORMAT_STR',
@@ -225,16 +227,50 @@ def new_model_class(model_spec:dict, module_spec:Optional[dict]=None) -> type:
     Returns:
         type: A dynamically created model class.
     """
-    fields = ['id']
+    
+    from mspec.lingo import LingoApp, lingo_execute, unwrap_primitive
+
     try:
         class_name = model_spec['name']['pascal_case']
-        fields += [field['name']['snake_case'] for field in model_spec['fields'].values()]
     except KeyError as e:
         raise ValueError(f'Missing required model specification key: {e}')
     
+    fields = ['id']
+
+    # copy because adding validation_callable below makes this
+    # not json serializable
+    _model_spec = deepcopy(model_spec)
+    
+    for field in _model_spec['fields'].values():
+
+        field_name = field['name']['snake_case']
+        fields.append(field_name)
+
+        if 'validation' in field:
+            validation = field['validation']
+            try:
+                # only allowed validation currently is length of string validation
+                # eventually more of the lingo scripting spec will be enabled
+                assert validation['call'] == 'le'
+                validation['args']['a']['call'] == 'len'
+                validation['args']['a']['args']['object']['self'] == 'value'
+                assert isinstance(validation['args']['b'], int)
+            except (KeyError, AssertionError):
+                raise ValueError(f'validation for field {field_name} in model {class_name} is invalid, currently only supports string length validation')
+            
+            # create validation callable #
+
+            lingo_app = LingoApp(
+                {},
+                dict(),
+                dict(),
+                list()
+            )
+            field['validation_callable'] = lambda value: unwrap_primitive(lingo_execute(lingo_app, deepcopy(validation), {'self': {'value': value}}))
+    
     new_class = namedtuple(class_name, fields)
-    new_class._model_spec = model_spec
-    new_class._module_spec = module_spec
+    new_class._model_spec = _model_spec
+    new_class._module_spec = deepcopy(module_spec)
     return new_class
 
 def new_model(model_class:type, data:dict):
@@ -625,6 +661,20 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
                     except Exception as e:
                         errors[field_name] = f'Field "{field_name}" failed rich text validation with an unexpected error: {e}'
                         total_errors += 1
+
+                if 'validation_callable' in field:
+                    try:
+                        result = field['validation_callable'](value)
+                        if result is not True:
+                            try:
+                                errors[field_name] = f'Field "{field_name}" is invalid: ' + field['validation_message']
+                            except KeyError:
+                                errors[field_name] = f'Field "{field_name}" is invalid.'
+                            total_errors += 1
+                    except Exception as e:
+                        errors[field_name] = f'Field "{field_name}" failed custom validation with an unexpected error: {e}'
+                        total_errors += 1
+                        raise
 
         else:
             

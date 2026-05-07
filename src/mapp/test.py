@@ -10,7 +10,7 @@ import multiprocessing
 import hashlib
 import shutil
 import jwt
-import uuid
+import time
 
 from pathlib import Path
 from copy import deepcopy
@@ -88,7 +88,7 @@ def example_from_model(model:dict, index=0) -> dict:
             raise ValueError(f'No example for field "{model["name"]["pascal_case"]}.{field_name}" at index {index}')
         
         if field['unique'] is True:
-            data[field_name] = f'unique string - {uuid.uuid4()}'
+            data[field_name] = str(time.monotonic()).replace('.', '')
         else:
             data[field_name] = value
 
@@ -574,11 +574,9 @@ def run_cli_validation_error_for_model(module_name_kebab, model, command_type, u
 
     model_name_kebab = model['name']['kebab_case']
 
-    # seed valid model #
-
-    args = cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(example_to_update)]
-    seed_result = _run_cmd(args, env=ctx)
-    update_model_id = str(json.loads(seed_result.stdout)['id'])
+    #
+    # test canot create invalid model
+    #
 
     for invalid_example, invalid_field_name in model_validation_errors(model):
         model_name_kebab = model['name']['kebab_case']
@@ -596,6 +594,19 @@ def run_cli_validation_error_for_model(module_name_kebab, model, command_type, u
         assert 'field_errors' in create_error, f'Expected field_errors in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
         assert isinstance(create_error['field_errors'], dict), f'Expected field_errors to be a dict in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
         assert len(create_error['field_errors']) == 1, f'Expected one field error in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
+
+    #
+    # test cannot update valid model with invalid data
+    #
+
+    # seed valid model #
+
+    args = cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(example_to_update)]
+    seed_result = _run_cmd(args, env=ctx)
+    update_model_id = str(json.loads(seed_result.stdout)['id'])
+
+    for invalid_example, invalid_field_name in model_validation_errors(model):
+        model_name_kebab = model['name']['kebab_case']
 
         # attempt to update (pre-seeded model) with invalid data #
 
@@ -823,9 +834,10 @@ class TestMTemplateApp(unittest.TestCase):
             shutil.copy2(str(cls.crud_db_cache_file), str(cls.crud_db_file))
 
         # create crud users
+        
+        crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn', 'frank', 'gloria', 'henry']
 
         if needs_crud_rebuild and cls.spec['project']['use_builtin_modules']:
-            crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn']
             sys.stdout.write(', users')
             sys.stdout.flush()
             for user_name in crud_users:
@@ -958,7 +970,6 @@ class TestMTemplateApp(unittest.TestCase):
         if cls.spec['project']['use_builtin_modules']:
             print(':: logging in users ::')
 
-            crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn']
             for user_name in crud_users:
                 user = login_cached_user(cls.cmd, cls.crud_ctx, user_name, f'{user_name}@example.com')
                 cls.crud_users.append(user)
@@ -2197,10 +2208,10 @@ class TestMTemplateApp(unittest.TestCase):
         self.pool.starmap(run_cli_validation_error_for_model, jobs)
 
     def test_cli_db_validation_error(self):
-        self._test_cli_validation_error('db', 3)
+        self._test_cli_validation_error('db', 5)
 
     def test_cli_http_validation_error(self):
-        self._test_cli_validation_error('http', 4)
+        self._test_cli_validation_error('http', 6)
 
     def test_server_validation_error(self):
         self._check_servers_running()
@@ -2210,6 +2221,8 @@ class TestMTemplateApp(unittest.TestCase):
             }
         }
         base_ctx.update(self.crud_ctx)
+
+        crud_user = 7
 
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
@@ -2226,23 +2239,16 @@ class TestMTemplateApp(unittest.TestCase):
 
                 if model['auth']['require_login']:
                     ctx = base_ctx.copy()
-                    ctx['headers']['Authorization'] = self.crud_users[0]['env']['Authorization']
+                    ctx['headers']['Authorization'] = self.crud_users[crud_user]['env']['Authorization']
                 else:
                     ctx = base_ctx
 
-                # create a valid model to update with invalid data
-                example_to_update = example_from_model(model)
-                create_status, create_resp = request(
-                    ctx,
-                    'POST',
-                    f'/api/{module_name_kebab}/{model_name_kebab}',
-                    json.dumps(example_to_update).encode()
-                )
-                self.assertEqual(create_status, 200, f'Create for validation error test failed: {create_resp}')
-                update_model_id = str(create_resp['id'])
+
+                #
+                # test cannot create invalid models
+                #
 
                 for invalid_example, invalid_field_name in model_validation_errors(model):
-                    # create (invalid)
                     status, output = request(
                         ctx,
                         'POST',
@@ -2258,6 +2264,23 @@ class TestMTemplateApp(unittest.TestCase):
                     )
                     self.assertIn('message', output_error, f'Expected error message in response for {model_name_kebab} with invalid data {invalid_example}, got {output} for field {invalid_field_name}')
 
+                #
+                # test cannot update valid model with invalid data
+                #
+
+                # create a valid model to update with invalid data
+                example_to_update = example_from_model(model)
+                create_status, create_resp = request(
+                    ctx,
+                    'POST',
+                    f'/api/{module_name_kebab}/{model_name_kebab}',
+                    json.dumps(example_to_update).encode()
+                )
+
+                self.assertEqual(create_status, 200, f'Create for validation error test failed: {create_resp}')
+                update_model_id = str(create_resp['id'])
+
+                for invalid_example, invalid_field_name in model_validation_errors(model):
                     # update (invalid)
                     status, output = request(
                         ctx,
@@ -2285,7 +2308,7 @@ class TestMTemplateApp(unittest.TestCase):
 
                 del read_model['id']
                 if model['auth']['require_login']:
-                    example_to_update['user_id'] = self.crud_users[0]['user']['id']
+                    example_to_update['user_id'] = self.crud_users[crud_user]['user']['id']
                 
                 self.assertEqual(read_model, example_to_update, f'Read after validation error for {model["name"]["pascal_case"]} does not match original example data, expected: {example_to_update} got: {read_model}')
 

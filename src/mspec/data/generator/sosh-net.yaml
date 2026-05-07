@@ -64,8 +64,21 @@ modules:
                             - "alice123"
                             - "bob_the_builder"
                             - "charlie_brown"
+                        validation_errors:
+                            - 'i am 26 characters longggg'
                         random: random_user_name
                         unique: true
+                        validation:
+                            call: 'le'
+                            args:
+                                a:
+                                    call: 'len'
+                                    args:
+                                        object:
+                                            self: 'value'
+                                b: 25
+                        validation_message: 'must be 25 characters or less'
+                        
 
                     bio:
                         name:

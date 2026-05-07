@@ -379,7 +379,16 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
                     type_id += '_rich_text'
                 else:
                     field['rich_text'] = False
-
+                    
+                if 'validation' in field:
+                    
+                    if field_type != 'str':
+                        raise ValueError(f'only str fields can define validation, field {field_name} in model {model_path} has type {field_type}')
+                    
+                    validation = field['validation']
+                    if not isinstance(validation, dict):
+                        raise ValueError(f'validation for field {field_name} in model {model_path} must be an object')
+                    
                 field['type_id'] = type_id
 
             model['non_list_fields'] = sorted(non_list_fields, key=lambda x: x['name']['snake_case'])
