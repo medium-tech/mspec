@@ -126,6 +126,7 @@ function structKey(object, key) {
 			throw new Error(msg);
 		}
 	}
+
 	return current;
 
 }
@@ -1222,7 +1223,7 @@ const lingoFunctionLookup = {
                             } else if (url === '/api/auth/logout-user' && params.mode !== 'others') {
                                 localStorage.removeItem('access_token');
                                 localStorage.removeItem('user_id');
-                                // window.location.reload();
+                                window.location.reload();
                             }
                             return {state: 'result', result: wrappedResult};
                         } else {
@@ -2380,6 +2381,7 @@ function renderOp(app, expression, ctx = null) {
         const showResult = display.hasOwnProperty('show_result') ? unwrapValue(lingoExecute(app, display.show_result, ctx)) : true;
         const showSubmitButton = display.hasOwnProperty('show_submit_button') ? unwrapValue(lingoExecute(app, display.show_submit_button, ctx)) : true;
         const showStatusDisplay = display.hasOwnProperty('show_status_display') ? unwrapValue(lingoExecute(app, display.show_status_display, ctx)) : true;
+		const friendlyStatus = display.hasOwnProperty('friendly_status') ? unwrapValue(lingoExecute(app, display.friendly_status, ctx)) : false;
         
         // render op.auto_submit if provided, otherwise default to false
         let autoSubmit;
@@ -2474,6 +2476,7 @@ function renderOp(app, expression, ctx = null) {
                 auto_submit: autoSubmit,
 				show_submit_button: showSubmitButton,
 				show_status_display: showStatusDisplay,
+				friendly_status: friendlyStatus,
                 action: {
                     set: {state: {[stateField]: {}}},
                     to: {
@@ -5529,16 +5532,33 @@ function createFormElement(app, element, ctx = null) {
 		showStatusDisplay = true;
 	}
 
+	let showFriendlyStatus;
+	if(element.form.hasOwnProperty('friendly_status')) {
+		// for friendly status, only show loading, success or errors,
+		// not idle status
+		showFriendlyStatus = element.form.friendly_status;
+	}else{
+		showFriendlyStatus = false;
+	}
+
     let stateColor;
+	let isFriendlyStatus;
     switch(currentState.state) {
         case 'success':
             stateColor = 'green';
+			isFriendlyStatus = true;
             break;
         case 'error':
             stateColor = 'red';
+			isFriendlyStatus = true;
             break;
+		case 'loading':
+			stateColor = 'blue';
+			isFriendlyStatus = true;
+			break;
         default:
             stateColor = 'blue';
+			isFriendlyStatus = false;
     }
 
     const statusDisplay = {text: currentState.state, style: {bold: true, color: stateColor}};
@@ -5582,7 +5602,7 @@ function createFormElement(app, element, ctx = null) {
     }
 
     const statusCell = document.createElement('td');
-    if (showStatusDisplay) {
+    if (showStatusDisplay && (showFriendlyStatus ? isFriendlyStatus : true)) {
         statusCell.appendChild(statusElement);
     }
     const additionalCell = document.createElement('td');
