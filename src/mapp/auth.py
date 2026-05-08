@@ -83,7 +83,7 @@ def _check_user_credentials(ctx: MappContext, email: str, password: str) -> str:
     err_msg = 'Invalid email or password'
     
     user_id_result = ctx.db.cursor.execute(
-        "SELECT id FROM user WHERE email = ?",
+        "SELECT id FROM auth_user WHERE email = ?",
         (email.lower(),)
     ).fetchone()
 
@@ -91,7 +91,7 @@ def _check_user_credentials(ctx: MappContext, email: str, password: str) -> str:
         raise AuthenticationError(err_msg)
     
     pw_hash_result = ctx.db.cursor.execute(
-        "SELECT hash FROM password_hash WHERE user_id = ?", 
+        "SELECT hash FROM auth_password_hash WHERE user_id = ?", 
         (user_id_result[0],)
     ).fetchone()
 
@@ -149,7 +149,7 @@ def _parse_access_token(ctx:dict, token:str) -> tuple[User, str]:
     if time.time() > exp:
 
         ctx.db.cursor.execute(
-            'DELETE FROM user_session WHERE id = ? AND user_id = ?',
+            'DELETE FROM auth_user_session WHERE id = ? AND user_id = ?',
             (jti, user_id)
         )
         ctx.db.commit()
@@ -159,7 +159,7 @@ def _parse_access_token(ctx:dict, token:str) -> tuple[User, str]:
     # check session exists #
 
     session_result = ctx.db.cursor.execute(
-        'SELECT id FROM user_session WHERE id = ? AND user_id = ?',
+        'SELECT id FROM auth_user_session WHERE id = ? AND user_id = ?',
         (jti, user_id)
     ).fetchone()
 
@@ -169,7 +169,7 @@ def _parse_access_token(ctx:dict, token:str) -> tuple[User, str]:
     # load user #
 
     user_result = ctx.db.cursor.execute(
-        'SELECT id, name, email FROM user WHERE id = ?',
+        'SELECT id, name, email FROM auth_user WHERE id = ?',
         (user_id,)
     ).fetchone()
 
@@ -223,7 +223,7 @@ def create_user(ctx: MappContext, name: str, email: str, password: str, password
     # check if user exists
 
     existing = ctx.db.cursor.execute(
-        'SELECT id FROM user WHERE email = ?', (email,)
+        'SELECT id FROM auth_user WHERE email = ?', (email,)
     ).fetchone()
 
     if existing:
@@ -234,7 +234,7 @@ def create_user(ctx: MappContext, name: str, email: str, password: str, password
     for _ in range(3):
         user_id = secrets.randbits(63)
         collision = ctx.db.cursor.execute(
-            'SELECT id FROM user WHERE id = ?', (user_id,)
+            'SELECT id FROM auth_user WHERE id = ?', (user_id,)
         ).fetchone()
         if not collision:
             break
@@ -243,7 +243,7 @@ def create_user(ctx: MappContext, name: str, email: str, password: str, password
         raise AuthenticationError(err_msg + ': failed to generate unique user ID')
 
     ctx.db.cursor.execute(
-        'INSERT INTO user (id, name, email, email_verified) VALUES (?, ?, ?, ?)',
+        'INSERT INTO auth_user (id, name, email, email_verified) VALUES (?, ?, ?, ?)',
         (user_id, name, email, 0)
     )
 
@@ -252,7 +252,7 @@ def create_user(ctx: MappContext, name: str, email: str, password: str, password
     for _ in range(3):
         pw_hash_id = secrets.randbits(63)
         collision = ctx.db.cursor.execute(
-            'SELECT id FROM password_hash WHERE id = ?', (pw_hash_id,)
+            'SELECT id FROM auth_password_hash WHERE id = ?', (pw_hash_id,)
         ).fetchone()
         if not collision:
             break
@@ -261,7 +261,7 @@ def create_user(ctx: MappContext, name: str, email: str, password: str, password
         raise AuthenticationError(err_msg + ': failed to generate unique password hash ID')
 
     ctx.db.cursor.execute(
-        'INSERT INTO password_hash (id, user_id, hash) VALUES (?, ?, ?)',
+        'INSERT INTO auth_password_hash (id, user_id, hash) VALUES (?, ?, ?)',
         (pw_hash_id, user_id, pw_hash)
     )
     ctx.db.commit()
@@ -291,7 +291,7 @@ def login_user(ctx: MappContext, email: str, password: str) -> dict:
     token, token_type, jti = _create_access_token(user_id)
     # Create session record
     ctx.db.cursor.execute(
-        'INSERT INTO user_session (id, user_id, created_at) VALUES (?, ?, ?)',
+        'INSERT INTO auth_user_session (id, user_id, created_at) VALUES (?, ?, ?)',
         (jti, user_id, datetime.now(timezone.utc))
     )
     ctx.db.commit()
@@ -365,11 +365,11 @@ def current_user(ctx: MappContext) -> dict:
     user, _jti = _parse_access_token(ctx, access_token)
     
     number_of_sessions = ctx.db.cursor.execute(
-        'SELECT COUNT(*) FROM user_session WHERE user_id = ?', (user.id,)
+        'SELECT COUNT(*) FROM auth_user_session WHERE user_id = ?', (user.id,)
     ).fetchone()[0]
 
     email_verified_result = ctx.db.cursor.execute(
-        'SELECT email_verified FROM user WHERE id = ?', (user.id,)
+        'SELECT email_verified FROM auth_user WHERE id = ?', (user.id,)
     ).fetchone()
     email_verified = bool(email_verified_result[0]) if email_verified_result and email_verified_result[0] is not None else False
 
@@ -415,17 +415,17 @@ def logout_user(ctx: MappContext, mode: str) -> dict:
 
     match mode:
         case 'current':
-            sql = 'DELETE FROM user_session WHERE id = ? AND user_id = ?'
+            sql = 'DELETE FROM auth_user_session WHERE id = ? AND user_id = ?'
             values = (jti, user.id)
             msg = 'Current session logged out successfully'
         
         case 'others':
-            sql = 'DELETE FROM user_session WHERE user_id = ? AND id != ?'
+            sql = 'DELETE FROM auth_user_session WHERE user_id = ? AND id != ?'
             values = (user.id, jti)
             msg = 'Other sessions logged out successfully'
         
         case 'all':
-            sql = 'DELETE FROM user_session WHERE user_id = ?'
+            sql = 'DELETE FROM auth_user_session WHERE user_id = ?'
             values = (user.id,)
             msg = 'All sessions logged out successfully'
         
@@ -467,13 +467,13 @@ def delete_user(ctx: MappContext) -> dict:
     # delete all sessions for this user #
 
     ctx.db.cursor.execute(
-        'DELETE FROM user_session WHERE user_id = ?', (user.id,)
+        'DELETE FROM auth_user_session WHERE user_id = ?', (user.id,)
     )
 
     # delete user record #
     
     ctx.db.cursor.execute(
-        'DELETE FROM user WHERE id = ?', (user.id,)
+        'DELETE FROM auth_user WHERE id = ?', (user.id,)
     )
     ctx.db.commit()
     return {
@@ -500,7 +500,7 @@ def drop_sessions(ctx: MappContext, root_password: str) -> dict:
     assert _verify_root_password(root_password) is True
 
     ctx.db.cursor.execute(
-        'DELETE FROM user_session'
+        'DELETE FROM auth_user_session'
     )
     ctx.db.commit()
     return {
