@@ -113,34 +113,25 @@ def model_validation_errors(model:dict) -> Generator[tuple[dict, str], None, Non
             invalid_example[field_name] = invalid_value
             yield invalid_example, field_name
 
-        if field['type'] == 'str':
+        if field['type'] in ['str', 'foreign_key']:
             invalid_example = deepcopy(example)
             max_len = MAX_RICH_TEXT_JSON_LENGTH if field.get('rich_text') is True else MAX_STR_FIELD_LENGTH
-            invalid_example[field_name] = 'a' * (max_len + 1)
+            invalid_example[field_name] = '1' * (max_len + 1)
             yield invalid_example, field_name
+            
         elif field['type'] == 'list':
             invalid_example = deepcopy(example)
             seed_values = list(example.get(field_name, []))
-            if len(seed_values) == 0:
-                element_type = field.get('element_type')
-                default_value = {
-                    'bool': True,
-                    'int': 1,
-                    'float': 1.0,
-                    'str': 'a',
-                    'datetime': '2000-01-01T00:00:00',
-                    'foreign_key': '1',
-                }.get(element_type, 'a')
-                seed_values = [default_value]
+            assert len(seed_values) > 0, f'Need at least one example value in list field "{field_name}" for validation error generation'
             invalid_example[field_name] = [seed_values[-1]] * (MAX_LIST_FIELD_ITEMS + 1)
             yield invalid_example, field_name
 
-            if field.get('element_type') == 'str':
+            if field['element_type'] in ['str', 'foreign_key']:
                 invalid_example = deepcopy(example)
                 invalid_example[field_name] = [
-                    'a' * 400,
-                    'a' * 400,
-                    'a' * (MAX_LIST_STR_TOTAL_LENGTH - 800 + 1),
+                    '1' * 400,
+                    '1' * 400,
+                    '1' * (MAX_LIST_STR_TOTAL_LENGTH - 800 + 1),
                 ]
                 yield invalid_example, field_name
 

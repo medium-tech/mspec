@@ -619,13 +619,18 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
             if not isinstance(value, python_type):
                 errors[field_name] = f'Field "{field_name}" is not of type "{field_type}".'
                 total_errors += 1
-
-            if field_type == 'str':
+                
+            if isinstance(value, str):
+                # match on actual python type instead of field_type because
+                # multiple types including foreign_key are represented as str
                 max_len = MAX_RICH_TEXT_JSON_LENGTH if field.get('rich_text') is True else MAX_STR_FIELD_LENGTH
                 if len(value) > max_len:
                     errors[field_name] = f'Field "{field_name}" exceeds max length of {max_len} characters.'
                     total_errors += 1
-                elif 'enum' in field and value not in field['enum']:
+
+            if field_type == 'str':
+                
+                if 'enum' in field and value not in field['enum']:
                     errors[field_name] = f'Field "{field_name}" has value "{value}" which is not in the allowed enum values.'
                     total_errors += 1
                 elif field.get('rich_text') is True:
@@ -672,13 +677,16 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
                     errors[field_name] = f'Element {i} of field "{field_name}" has value "{element}" which is not in the allowed enum values: {field["enum"]}.'
                     total_errors += 1
                     break
-                elif element_type == 'str':
+                
+                if isinstance(element, str):
+                    # match on actual python type instead of element_type because
+                    # multiple types including foreign_key are represented as str
                     list_str_len += len(element)
 
             if field_name in errors:
                 continue
 
-            if element_type == 'str' and list_str_len > MAX_LIST_STR_TOTAL_LENGTH:
+            if list_str_len > MAX_LIST_STR_TOTAL_LENGTH:
                 errors[field_name] = (
                     f'Field "{field_name}" has combined string length {list_str_len} '
                     f'which exceeds max length of {MAX_LIST_STR_TOTAL_LENGTH} characters.'
