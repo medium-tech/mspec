@@ -59,29 +59,12 @@ function getExampleFromModel(model, index = 0) {
 			}
 		}
 		data[fieldName] = textContent;
+	}else if(field.type === 'str' && field.unique === true) {
+		data[fieldName] = `${Date.now()}`;
 	}else{
 		data[fieldName] = field.examples[index];
 	}
     
-  }
-  return data;
-}
-
-function getUniqueExampleFromModel(model, index = 0) {
-
-  if (!model.hasOwnProperty('fields')) {
-    throw new Error(`Model "${model.name.pascal_case}" has no fields defined`);
-  }
-
-  const timestamp = Date.now();
-  const data = {};
-
-  for (const [fieldName, field] of Object.entries(model.fields)) {
-    if (!field.hasOwnProperty('examples')) {
-      throw new Error(`Field "${fieldName}" in model "${model.name.pascal_case}" has no examples defined`);
-    }
-    const value = field.examples[index];
-    data[fieldName] = (field.unique === true && field.type === 'str') ? `${value}-${timestamp}` : value;
   }
   return data;
 }
@@ -300,8 +283,8 @@ async function fillFormField(page, fieldName, field, value, preSeedMode = false)
       const row = page.getByRole('row', { name: pattern });
       await row.locator('input[type="file"]').setInputFiles(sampleFile);
       await expect(page.locator('#lingo-app')).not.toContainText('Uploading file...');
+	  await expect(page.locator('#lingo-app')).not.toContainText('error');
       await expect(page.locator('#lingo-app')).toContainText('File uploaded successfully!');
-      await expect(page.locator('#lingo-app')).not.toContainText('error');
     } else if (refs && String(value) !== '-1') {
       // Non-file FK with non-default value: use the popup to find a pre-seeded record
       const row = page.getByRole('row', { name: pattern });
@@ -721,7 +704,7 @@ test('test non-owner does not see edit or delete buttons', async ({ browser, cru
   await pageA.getByRole('link', { name: targetModuleKebab, exact: true }).click();
   await pageA.getByRole('link', { name: targetModelKebab, exact: true }).click();
 
-  const createExample = getUniqueExampleFromModel(targetModel, 0);
+  const createExample = getExampleFromModel(targetModel, 0);
   for (const [fieldName, value] of Object.entries(createExample)) {
     await fillFormField(pageA, fieldName, targetModel.fields[fieldName], value);
   }

@@ -658,6 +658,7 @@ class TestMTemplateApp(unittest.TestCase):
     use_cache: bool
     app_type: str = ''
     threads: int = 12
+    verbose: bool = False
 
     pool: Optional[multiprocessing.Pool] = None
 
@@ -698,7 +699,8 @@ class TestMTemplateApp(unittest.TestCase):
         if not cls.use_cache:
             # delete everything including all db and cache files
             shutil.rmtree(cls.test_dir, ignore_errors=True)
-            print(f':: deleted test directory: {cls.test_dir}')
+            if cls.verbose:
+                print(f':: deleted test directory: {cls.test_dir}')
         else:
             # always recreate the crud file system
             shutil.rmtree(crud_fs_path, ignore_errors=True)
@@ -709,7 +711,8 @@ class TestMTemplateApp(unittest.TestCase):
                 except FileNotFoundError:
                     pass
             
-            print(f':: deleted database files')
+            if cls.verbose:
+                print(f':: deleted database files')
 
         os.makedirs(cls.test_dir, exist_ok=True)
 
@@ -830,7 +833,8 @@ class TestMTemplateApp(unittest.TestCase):
                 raise RuntimeError(f'AssertionError {e} while creating tables for crud cache db: {crud_result.stdout + crud_result.stderr}')
         
         else:
-            print(f':: copying cached crud db to working db ::')
+            if cls.verbose:
+                print(f':: copying cached crud db to working db ::')
             shutil.copy2(str(cls.crud_db_cache_file), str(cls.crud_db_file))
 
         # create crud users
@@ -961,14 +965,16 @@ class TestMTemplateApp(unittest.TestCase):
             sys.stdout.write(f', cached db file\n')
         
         else:
-            print(f':: copying cached pagination db to working db ::')
+            if cls.verbose:
+                print(f':: copying cached pagination db to working db ::')
             shutil.copy2(str(cls.pagination_db_cache_file), str(cls.pagination_db_file))
 
         # create login sessions in working dbs #
 
         cls.crud_users = []
         if cls.spec['project']['use_builtin_modules']:
-            print(':: logging in users ::')
+            if cls.verbose:
+                print(':: logging in users ::')
 
             for user_name in crud_users:
                 user = login_cached_user(cls.cmd, cls.crud_ctx, user_name, f'{user_name}@example.com')
@@ -1043,26 +1049,31 @@ class TestMTemplateApp(unittest.TestCase):
         
         # start servers #
 
-        print(':: starting server processes ::')
+        if cls.verbose:
+            print(':: starting server processes ::')
 
-        print('    :: ', ' '.join(crud_server_start_cmd))
+        if cls.verbose:
+            print('    :: ', ' '.join(crud_server_start_cmd))
         crud_result = subprocess.run(crud_server_start_cmd, env=cls.crud_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
         if crud_result.returncode != 0:
             raise RuntimeError(f'Error starting CRUD server: {crud_result.stdout + crud_result.stderr}')
 
-        print('    :: ', ' '.join(pagination_server_start_cmd))
+        if cls.verbose:
+            print('    :: ', ' '.join(pagination_server_start_cmd))
         pagination_result = subprocess.run(pagination_server_start_cmd, env=cls.pagination_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
         if pagination_result.returncode != 0:
             raise RuntimeError(f'Error starting pagination server: {pagination_result.stdout + pagination_result.stderr}')
 
-        print(':: setup complete')
+        if cls.verbose:
+            print(':: setup complete')
 
         print(':: test progress :: ', end='', flush=True)
     
     @classmethod
     def tearDownClass(cls):
-
-        print('\n:: tearing down tests')
+        
+        if cls.verbose:
+            print('\n:: tearing down tests')
 
         # stop pool #
 
@@ -1079,7 +1090,8 @@ class TestMTemplateApp(unittest.TestCase):
             except subprocess.CalledProcessError as e:
                 print(f'    :: Error stopping servers: {e} :: {e.output} :: {e.stderr} ::')
         
-        print(':: teardown complete ::')
+        if cls.verbose:
+            print(':: teardown complete ::')
 
     def _run_cmd(self, cmd:list[str], expected_code=0, env:Optional[dict[str, str]] = None) -> subprocess.CompletedProcess:
         result = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=10)
@@ -2606,6 +2618,7 @@ def test_spec(cli_args:list[str], host:str|None, env_vars:dict, use_cache:bool=F
     TestMTemplateApp.env_vars = env_vars
     TestMTemplateApp.use_cache = use_cache
     TestMTemplateApp.app_type = app_type
+    TestMTemplateApp.verbose = verbose
 
     # Support test filtering by name
     test_filters = getattr(test_spec, '_test_filters', None)
