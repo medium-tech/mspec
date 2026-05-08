@@ -12,6 +12,10 @@ from mspec.core import validate_rich_text_json_string
 
 __all__ = [
     'DATETIME_FORMAT_STR',
+    'MAX_STR_FIELD_LENGTH',
+    'MAX_RICH_TEXT_JSON_LENGTH',
+    'MAX_LIST_FIELD_ITEMS',
+    'MAX_LIST_STR_TOTAL_LENGTH',
     'Acknowledgment',
     'PlainTextResponse',
     'JSONResponse',
@@ -58,6 +62,10 @@ __all__ = [
 #
 
 DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
+MAX_STR_FIELD_LENGTH = 1000
+MAX_RICH_TEXT_JSON_LENGTH = 25000
+MAX_LIST_FIELD_ITEMS = 10
+MAX_LIST_STR_TOTAL_LENGTH = 1000
 
 def datetime_now_utc() -> datetime:
     return datetime.now(timezone.utc)
@@ -647,8 +655,17 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
             if not isinstance(value, python_type):
                 errors[field_name] = f'Field "{field_name}" is not of type "{field_type}".'
                 total_errors += 1
+                
+            if isinstance(value, str):
+                # match on actual python type instead of field_type because
+                # multiple types including foreign_key are represented as str
+                max_len = MAX_RICH_TEXT_JSON_LENGTH if field.get('rich_text') is True else MAX_STR_FIELD_LENGTH
+                if len(value) > max_len:
+                    errors[field_name] = f'Field "{field_name}" exceeds max length of {max_len} characters.'
+                    total_errors += 1
 
             if field_type == 'str':
+                
                 if 'enum' in field and value not in field['enum']:
                     errors[field_name] = f'Field "{field_name}" has value "{value}" which is not in the allowed enum values.'
                     total_errors += 1
@@ -684,6 +701,10 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
                 errors[field_name] = f'Field "{field_name}" is expected to be a list.'
                 total_errors += 1
                 continue
+            if len(value) > MAX_LIST_FIELD_ITEMS:
+                errors[field_name] = f'Field "{field_name}" exceeds max length of {MAX_LIST_FIELD_ITEMS} items.'
+                total_errors += 1
+                continue
 
             # element type definition #
 
@@ -696,6 +717,7 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
 
             # confirm type of elements #
 
+            list_str_len = 0
             for i, element in enumerate(value):
                 if not isinstance(element, python_type):
                     errors[field_name] = f'Element {i} of field "{field_name}" is not "{element_type}".'
@@ -705,6 +727,21 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
                     errors[field_name] = f'Element {i} of field "{field_name}" has value "{element}" which is not in the allowed enum values: {field["enum"]}.'
                     total_errors += 1
                     break
+                
+                if isinstance(element, str):
+                    # match on actual python type instead of element_type because
+                    # multiple types including foreign_key are represented as str
+                    list_str_len += len(element)
+
+            if field_name in errors:
+                continue
+
+            if list_str_len > MAX_LIST_STR_TOTAL_LENGTH:
+                errors[field_name] = (
+                    f'Field "{field_name}" has combined string length {list_str_len} '
+                    f'which exceeds max length of {MAX_LIST_STR_TOTAL_LENGTH} characters.'
+                )
+                total_errors += 1
 
     if total_errors > 0:
         raise MappValidationError(err_msg, errors)

@@ -22,6 +22,12 @@ from collections import defaultdict
 from mspec.core import load_generator_spec
 
 from dotenv import dotenv_values
+from mapp.types import (
+    MAX_LIST_FIELD_ITEMS,
+    MAX_LIST_STR_TOTAL_LENGTH,
+    MAX_RICH_TEXT_JSON_LENGTH,
+    MAX_STR_FIELD_LENGTH,
+)
 
 def seed_pagination_item(unique_id, base_cmd, seed_cmd, env, require_auth, model_data):
     if require_auth:
@@ -106,6 +112,28 @@ def model_validation_errors(model:dict) -> Generator[tuple[dict, str], None, Non
             invalid_example = deepcopy(example)
             invalid_example[field_name] = invalid_value
             yield invalid_example, field_name
+
+        if field['type'] in ['str', 'foreign_key']:
+            invalid_example = deepcopy(example)
+            max_len = MAX_RICH_TEXT_JSON_LENGTH if field.get('rich_text') is True else MAX_STR_FIELD_LENGTH
+            invalid_example[field_name] = '1' * (max_len + 1)
+            yield invalid_example, field_name
+            
+        elif field['type'] == 'list':
+            invalid_example = deepcopy(example)
+            seed_values = list(example.get(field_name, []))
+            assert len(seed_values) > 0, f'Need at least one example value in list field "{field_name}" for validation error generation'
+            invalid_example[field_name] = [seed_values[-1]] * (MAX_LIST_FIELD_ITEMS + 1)
+            yield invalid_example, field_name
+
+            if field['element_type'] in ['str', 'foreign_key']:
+                invalid_example = deepcopy(example)
+                invalid_example[field_name] = [
+                    '1' * 400,
+                    '1' * 400,
+                    '1' * (MAX_LIST_STR_TOTAL_LENGTH - 800 + 1),
+                ]
+                yield invalid_example, field_name
 
 def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None, decode_json=True) -> tuple[int, dict]:
     """send request and returnn status code and response body as dict"""
