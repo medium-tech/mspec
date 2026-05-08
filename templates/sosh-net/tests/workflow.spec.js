@@ -40,7 +40,7 @@ async function loginUser(page, host, email, password) {
 	await page.getByRole('row', { name: 'password: show' }).first().getByRole('textbox').fill(password);
 	await page.getByRole('button', { name: 'login' }).click();
 	// after login the account details section becomes visible
-	await expect(page.getByRole('heading', { name: ':: account details' })).toBeVisible({ timeout: 10000 });
+	await expect(page.getByRole('heading', { name: ':: account' })).toBeVisible({ timeout: 10000 });
 }
 
 async function createProfile(page, host, uniqueId) {
