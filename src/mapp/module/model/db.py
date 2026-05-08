@@ -92,11 +92,11 @@ def db_model_create_table(ctx:MappContext, model_class: type) -> Acknowledgment:
             id INTEGER PRIMARY KEY,
             value,
             position INTEGER,
-            {model_snake_case}_id INTEGER REFERENCES {table_name}(id)
+            {table_name}_id INTEGER REFERENCES {table_name}(id)
         )"""
         ctx.db.cursor.execute(list_sql_table)
 
-        index_sql = f"CREATE INDEX IF NOT EXISTS {list_table_name}_index ON {list_table_name}({model_snake_case}_id)"
+        index_sql = f"CREATE INDEX IF NOT EXISTS {list_table_name}_index ON {list_table_name}({table_name}_id)"
         ctx.db.cursor.execute(index_sql)
 
     ctx.db.commit()
@@ -196,7 +196,7 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
             if field['element_type'] == 'datetime':
                 value = value.isoformat()
             ctx.db.cursor.execute(
-                f"INSERT INTO {list_table_name} (value, position, {model_snake_case}_id) VALUES (?, ?, ?)",
+                f"INSERT INTO {list_table_name} (value, position, {table_name}_id) VALUES (?, ?, ?)",
                 (value, pos, obj.id)
             )
 
@@ -251,7 +251,7 @@ def db_model_read(ctx:MappContext, model_class: type, model_id: str):
         list_table_name = f'{table_name}_{field_name}'
 
         list_cursor = ctx.db.cursor.execute(
-            f'SELECT value FROM {list_table_name} WHERE {model_snake_case}_id = ? ORDER BY position ASC',
+            f'SELECT value FROM {list_table_name} WHERE {table_name}_id = ? ORDER BY position ASC',
             (model_id,)
         )
         assert list_cursor is not None
@@ -335,7 +335,7 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
 
         # clear existing values #
 
-        ctx.db.cursor.execute(f'DELETE FROM {list_table_name} WHERE {model_snake_case}_id = ?', (obj.id,))
+        ctx.db.cursor.execute(f'DELETE FROM {list_table_name} WHERE {table_name}_id = ?', (obj.id,))
 
         # insert new values #
         
@@ -343,7 +343,7 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
             if field['element_type'] == 'datetime':
                 value = value.isoformat()
             ctx.db.cursor.execute(
-                f'INSERT INTO {list_table_name} (value, position, {model_snake_case}_id) VALUES (?, ?, ?)',
+                f'INSERT INTO {list_table_name} (value, position, {table_name}_id) VALUES (?, ?, ?)',
                 (value, pos, obj.id)
             )
 
@@ -387,7 +387,7 @@ def db_model_delete(ctx:MappContext, model_class: type, model_id: str) -> Acknow
     for field in model_spec['list_fields']:
         field_name = field['name']['snake_case']
         list_table_name = f'{table_name}_{field_name}'
-        ctx.db.cursor.execute(f'DELETE FROM {list_table_name} WHERE {model_snake_case}_id = ?', (model_id,))
+        ctx.db.cursor.execute(f'DELETE FROM {list_table_name} WHERE {table_name}_id = ?', (model_id,))
 
     # main table #
 
@@ -446,7 +446,7 @@ def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int
             list_table_name = f'{table_name}_{field_name}'
 
             cursor = ctx.db.cursor.execute(
-                f'SELECT value FROM {list_table_name} WHERE {model_snake_case}_id = ? ORDER BY position ASC',
+                f'SELECT value FROM {list_table_name} WHERE {table_name}_id = ? ORDER BY position ASC',
                 (data['id'],)
             )
             
@@ -609,7 +609,7 @@ def db_model_query(ctx:MappContext, model_class: type, where: dict, offset: int=
             list_table_name = f'{table_name}_{field_name}'
 
             cursor = ctx.db.cursor.execute(
-                f'SELECT value FROM {list_table_name} WHERE {model_snake_case}_id = ? ORDER BY position ASC',
+                f'SELECT value FROM {list_table_name} WHERE {table_name}_id = ? ORDER BY position ASC',
                 (data['id'],)
             )
 
