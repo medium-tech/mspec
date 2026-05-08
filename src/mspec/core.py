@@ -477,7 +477,15 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
 
             if 'hidden' not in op:
                 op['hidden'] = False
-
+                
+            if 'entry_points' in op:
+                if 'server' not in op['entry_points']:
+                    op['entry_points']['server'] = True
+                if 'cli' not in op['entry_points']:
+                    op['entry_points']['cli'] = True
+            else:
+                op['entry_points'] = {'server': True, 'cli': True}
+                
             # params #
 
             try:

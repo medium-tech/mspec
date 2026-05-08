@@ -330,6 +330,8 @@ modules:
                     args:
                         root_password:
                             params: {root_password: {}}
+                entry_points:
+                    server: false
                 params:
                     root_password:
                         name:

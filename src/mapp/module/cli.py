@@ -30,6 +30,6 @@ def add_module_subparser(subparsers, spec:dict, module:dict):
     # parsers for each op #
 
     for op in module.get('ops', {}).values():
-        if op.get('hidden', False) is True:
+        if op['hidden'] is True or op['entry_points']['cli'] is False:
             continue
         add_op_subparser(model_subparsers, spec, module, op)

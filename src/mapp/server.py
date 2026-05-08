@@ -128,7 +128,7 @@ for module in spec_modules.values():
             route_list.append(route_resolver)
         
     for op in module.get('ops', {}).values():
-        if op.get('hidden', False) is False:
+        if op['hidden']is False and op['entry_points']['server'] is True:
             route_resolver = create_op_routes(module, op)
             route_list.append(route_resolver)
 
@@ -225,7 +225,7 @@ def generate_module_html(spec: dict, module_key: str) -> bytes:
     
     # get model names and op names for this module
     model_names = [model['name']['kebab_case'] for model in module.get('models', {}).values() if not model.get('hidden', False)]
-    op_names = [op['name']['kebab_case'] for op in module.get('ops', {}).values() if not op.get('hidden', False)]
+    op_names = [op['name']['kebab_case'] for op in module.get('ops', {}).values() if not op['hidden'] and op['entry_points']['server'] is True]
     
     lingo_params = {
         'project_name': project_name,
@@ -756,7 +756,7 @@ for module_key, module in mapp_spec['modules'].items():
     # add static op pages #
     for op_key, op in module.get('ops', {}).items():
 
-        if op.get('hidden', False) is True:
+        if op['hidden'] is True or op['entry_points']['server'] is not True:
             continue
 
         op_kebab = op['name']['kebab_case']

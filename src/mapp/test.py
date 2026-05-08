@@ -1220,7 +1220,6 @@ class TestMTemplateApp(unittest.TestCase):
         result = run_auth_cmd(cmd + ["auth", "is-logged-in", io_type])
         self.assertIn('"logged_in": false', result.stdout)
 
-
     def test_cli_run_auth_flow(self):
         self._test_user_auth_flow(self.crud_ctx, 'run')
     
@@ -1394,6 +1393,50 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertIn('logged_in', logged_out_is_logged_in_resp['result'])
         self.assertFalse(logged_out_is_logged_in_resp['result']['logged_in'])
 
+    def test_auth_drop_sessions_hidden(self):
+        """
+        Test that the /api/auth/drop-sessions endpoint is not available in the server, but is via cli
+        """
+        
+        #
+        # server
+        #
+
+        self._check_servers_running()
+
+        base_ctx = {
+            'headers': {
+                'Content-Type': 'application/json',
+            }
+        }
+        base_ctx.update(self.crud_ctx)
+
+        # attempt to call drop-sessions endpoint
+        methods = ['GET', 'OPTIONS', 'PUT', 'POST', 'DELETE']
+        for method in methods:
+            drop_sessions_status, drop_sessions_resp = request(
+                base_ctx,
+                method,
+                '/api/auth/drop-sessions'
+            )
+
+            # should return 404 not found because endpoint should be hidden
+            self.assertEqual(drop_sessions_status, 404, f'Expected 404 from {method} auth/drop-sessions; but got {drop_sessions_status} and response {drop_sessions_resp}')
+
+        #
+        # cli
+        #
+
+        args = self.cmd + ['auth', 'drop-sessions']
+
+        result_1 = self._run_cmd(args + ['-h'], env=self.crud_ctx, expected_code=0)
+        self.assertIn(':: dev-app :: auth :: drop-sessions', result_1.stdout, 'drop-sessions command help not found in output')
+
+        result_2 = self._run_cmd(args + ['run', '-h'], env=self.crud_ctx, expected_code=0)
+        self.assertIn(':: dev-app :: auth :: drop-sessions :: run', result_2.stdout, 'drop-sessions command help not found in output')
+
+        result_3 = self._run_cmd(args + ['http', '-h'], env=self.crud_ctx, expected_code=0)
+        self.assertIn(':: dev-app :: auth :: drop-sessions :: http', result_3.stdout, 'drop-sessions command help not found in output')
 
     # builtin - file system tests #
 
