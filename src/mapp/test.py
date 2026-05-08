@@ -183,6 +183,7 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
     model_name_kebab = model['name']['kebab_case']
     max_models = model['auth']['max_models_per_user']
     model_db_args = cmd + [module_name_kebab, model_name_kebab, command_type]
+    module_name_snake = module_name_kebab.replace('-', '_')
 
     ctx = create_user_env if require_login else crud_ctx
 
@@ -304,15 +305,15 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
         assert code == 0, f'expected 0 got {code} for command "{" ".join(delete_args)}" output: {stdout + stderr}'
         delete_output = json.loads(stdout)
         assert delete_output['acknowledged'], f'Delete {model_name} ID did not return acknowledgement'
-        expected_delete_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
-        assert delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message'
+        expected_delete_msg = f'{module_name_snake}_{model["name"]["snake_case"]} {created_model_id} has been deleted'
+        assert delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message, got: {delete_output["message"]}'
 
         # confirm delete is idempotent #
 
         _, code, stdout, stderr = run_cmd(model_db_args + ['delete', str(created_model_id)], ctx)
         assert code == 0, f'expected 0 got {code} for command "{" ".join(model_db_args + ["delete", str(created_model_id)])}" output: {stdout + stderr}'
         delete_output = json.loads(stdout)
-        assert delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message'
+        assert delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID {created_model_id} did not return correct message, got: {delete_output["message"]}'
 
     # read after delete #
 
@@ -322,7 +323,7 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
         try:
             read_output_err = json.loads(stdout)['error']
             assert read_output_err['code'] == 'NOT_FOUND', f'Read after delete for {model_name} did not return NOT_FOUND code for id {created_model_id}'
-            assert read_output_err['message'] == f'{model["name"]["snake_case"]} {created_model_id} not found', f'Read after delete for {model_name} did not return correct message for id {created_model_id}'
+            assert read_output_err['message'] == f'{module_name_snake}_{model["name"]["snake_case"]} {created_model_id} not found', f'Read after delete for {model_name} did not return correct message for id {created_model_id}, got: {read_output_err["message"]}'
         except KeyError as e:
             raise RuntimeError(f'KeyError {e} while reading after delete for {model_name} id {created_model_id}: {stdout + stderr}')
         except json.JSONDecodeError as e:
@@ -344,6 +345,7 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
     require_login = model['auth']['require_login']
     model_name_kebab = model['name']['kebab_case']
     max_models = model['auth']['max_models_per_user']
+    module_name_snake = module_name_kebab.replace('-', '_')
 
     #
     # create
@@ -513,8 +515,8 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
         assert 'acknowledged' in delete_output, f'Delete {model_name} id: {created_model_id} did not return acknowledgement field'
         assert delete_output['acknowledged'], f'Delete {model_name} id: {created_model_id} did not return acknowledged=True'
         assert 'message' in delete_output, f'Delete {model_name} id: {created_model_id} did not return message field'
-        expected_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
-        assert delete_output['message'].startswith(expected_msg), f'Delete {model_name} id: {created_model_id} did not return correct message'
+        expected_msg = f'{module_name_snake}_{model["name"]["snake_case"]} {created_model_id} has been deleted'
+        assert delete_output['message'].startswith(expected_msg), f'Delete {model_name} id: {created_model_id} did not return correct message, got: {delete_output["message"]}'
 
     if not hidden:
 
@@ -525,7 +527,7 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
         assert 'acknowledged' in delete_output, f'Delete {model_name} id: {created_model_id} did not return acknowledgement field'
         assert delete_output['acknowledged'], f'Delete {model_name} id: {created_model_id} did not return acknowledged=True'
         assert 'message' in delete_output, f'Delete {model_name} id: {created_model_id} did not return message field'
-        expected_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
+        expected_msg = f'{module_name_snake}_{model["name"]["snake_case"]} {created_model_id} has been deleted'
         assert delete_output['message'].startswith(expected_msg), f'Delete {model_name} id: {created_model_id} did not return correct message'
 
         # read after delete #
