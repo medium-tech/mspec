@@ -1430,13 +1430,13 @@ class TestMTemplateApp(unittest.TestCase):
         args = self.cmd + ['auth', 'drop-sessions']
 
         result_1 = self._run_cmd(args + ['-h'], env=self.crud_ctx, expected_code=0)
-        self.assertIn(':: dev-app :: auth :: drop-sessions', result_1.stdout, 'drop-sessions command help not found in output')
+        self.assertIn(':: auth :: drop-sessions', result_1.stdout, 'drop-sessions command help not found in output')
 
         result_2 = self._run_cmd(args + ['run', '-h'], env=self.crud_ctx, expected_code=0)
-        self.assertIn(':: dev-app :: auth :: drop-sessions :: run', result_2.stdout, 'drop-sessions command help not found in output')
+        self.assertIn(':: auth :: drop-sessions :: run', result_2.stdout, 'drop-sessions command help not found in output')
 
         result_3 = self._run_cmd(args + ['http', '-h'], env=self.crud_ctx, expected_code=0)
-        self.assertIn(':: dev-app :: auth :: drop-sessions :: http', result_3.stdout, 'drop-sessions command help not found in output')
+        self.assertIn(':: auth :: drop-sessions :: http', result_3.stdout, 'drop-sessions command help not found in output')
 
     # builtin - file system tests #
 
