@@ -767,6 +767,7 @@ class TestMTemplateApp(unittest.TestCase):
         crud_env = dict(cls.env_vars)
         crud_env['MAPP_SERVER_PORT'] = str(crud_port)
         crud_env['MAPP_CLIENT_HOST'] = f'http://localhost:{crud_port}'
+        crud_env['MAPP_SMTP_MOCK'] = 'true'
         crud_env['MAPP_DB_URL'] = str(cls.crud_db_file.resolve())
         crud_env['MAPP_FILE_SYSTEM_REPO'] = str(crud_fs_path.resolve())
         crud_env['MAPP_SERVER_DEVELOPMENT_MODE'] = 'true'
@@ -795,6 +796,7 @@ class TestMTemplateApp(unittest.TestCase):
         pagination_env = dict(cls.env_vars)
         pagination_env['MAPP_SERVER_PORT'] = str(pagination_port)
         pagination_env['MAPP_CLIENT_HOST'] = f'http://localhost:{pagination_port}'
+        pagination_env['MAPP_SMTP_MOCK'] = 'true'
         pagination_env['MAPP_DB_URL'] = str(cls.pagination_db_file.resolve())
         pagination_env['MAPP_FILE_SYSTEM_REPO'] = str((Path(cls.test_dir) / 'pagination_file_system').resolve())
         pagination_env['MAPP_CLI_SESSION_FILE'] = os.path.join(cls.test_dir, 'pagination-env-test-session.json')
@@ -1494,7 +1496,6 @@ class TestMTemplateApp(unittest.TestCase):
         """
 
         env = deepcopy(ctx)
-        env['MAPP_SMTP_MOCK'] = 'true'
         env['MAPP_CLI_IGNORE_SESSION_FILE'] = 'true'
 
         try:
@@ -1545,7 +1546,7 @@ class TestMTemplateApp(unittest.TestCase):
             # only verify for non-http because we can't see the logs for the server to get the code
             # parse the verification code from log output #
             code_match = re.search(r'Your verification code is: (\d{6})', start_result.stdout)
-            self.assertIsNotNone(code_match, f'Could not find verification code in log output: {start_result.stdout}')
+            self.assertIsNotNone(code_match, f'Could not find verification code in log output: {start_result.stdout}, MAPP_SMTP_MOCK must be true')
             code = code_match.group(1)
 
             # 6. verify-email-address with code #
