@@ -1,0 +1,8 @@
+{
+	"lingo": {
+		"version": "rich-text-beta-1"
+	},
+	"block": [
+		{"text": "hello.world"}
+	] 
+}

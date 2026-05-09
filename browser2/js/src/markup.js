@@ -126,6 +126,7 @@ function structKey(object, key) {
 			throw new Error(msg);
 		}
 	}
+
 	return current;
 
 }
@@ -459,6 +460,15 @@ function _authIsLoggedInArgs(app, expression, ctx) {
     }else{
         return [false];
     }
+}
+
+function _authIsOwnerArgs(app, expression, ctx) {
+    const args = expression.args || {};
+    if (!args.hasOwnProperty('model')) {
+        throw new Error('auth.is_owner - missing arg: model');
+    }
+    const model = unwrapValue(lingoExecute(app, args.model, ctx));
+    return [model];
 }
 
 
@@ -1201,10 +1211,19 @@ const lingoFunctionLookup = {
                                 if (accessToken) {
                                     localStorage.setItem('access_token', accessToken);
                                     // console.log('op.http - stored access_token in localStorage');
+                                    try {
+                                        const payload = JSON.parse(atob(accessToken.split('.')[1]));
+                                        if (payload.sub) {
+                                            localStorage.setItem('user_id', String(payload.sub));
+                                        }
+                                    } catch (e) {
+                                        console.error('op.http - failed to decode JWT for user_id:', e);
+                                    }
                                 }
                             } else if (url === '/api/auth/logout-user' && params.mode !== 'others') {
                                 localStorage.removeItem('access_token');
-                                // window.location.reload();
+                                localStorage.removeItem('user_id');
+                                window.location.reload();
                             }
                             return {state: 'result', result: wrappedResult};
                         } else {
@@ -1221,6 +1240,7 @@ const lingoFunctionLookup = {
 
                         if(url == '/api/auth/logout-user') {
                             localStorage.removeItem('access_token');
+                            localStorage.removeItem('user_id');
                             window.location.reload();
                         }
 
@@ -1250,6 +1270,12 @@ const lingoFunctionLookup = {
                 }
             },
             createArgs: _authIsLoggedInArgs
+        },
+        'is_owner': {
+            func: (model) => {
+                return _isModelOwner(model);
+            },
+            createArgs: _authIsOwnerArgs
         }
     },
 
@@ -1484,7 +1510,7 @@ function lingoApp(spec, params = {}, options = {}) {
         }
     }
     
-    lingoUpdateState(instance);
+    if(specCopy.lingo.version !== 'rich-text-beta-1') lingoUpdateState(instance);
 
     // Auto-start timers
     if (instance.spec.timers) {
@@ -2355,6 +2381,7 @@ function renderOp(app, expression, ctx = null) {
         const showResult = display.hasOwnProperty('show_result') ? unwrapValue(lingoExecute(app, display.show_result, ctx)) : true;
         const showSubmitButton = display.hasOwnProperty('show_submit_button') ? unwrapValue(lingoExecute(app, display.show_submit_button, ctx)) : true;
         const showStatusDisplay = display.hasOwnProperty('show_status_display') ? unwrapValue(lingoExecute(app, display.show_status_display, ctx)) : true;
+		const friendlyStatus = display.hasOwnProperty('friendly_status') ? unwrapValue(lingoExecute(app, display.friendly_status, ctx)) : false;
         
         // render op.auto_submit if provided, otherwise default to false
         let autoSubmit;
@@ -2449,6 +2476,7 @@ function renderOp(app, expression, ctx = null) {
                 auto_submit: autoSubmit,
 				show_submit_button: showSubmitButton,
 				show_status_display: showStatusDisplay,
+				friendly_status: friendlyStatus,
                 action: {
                     set: {state: {[stateField]: {}}},
                     to: {
@@ -2804,6 +2832,20 @@ function renderModel(app, element, ctx = null) {
     }
 }
 
+function _isModelOwner(modelData) {
+    // returns true if model has no user_id field (no auth restriction),
+    // or if the logged-in user's id matches the model's user_id
+    if (!modelData || typeof modelData !== 'object' || !modelData.hasOwnProperty('user_id')) {
+        return true;
+    }
+    try {
+        const userId = localStorage.getItem('user_id');
+        return !!(userId && String(modelData.user_id) === String(userId));
+    } catch (e) {
+        return false;
+    }
+}
+
 function _renderModelRead(app, element, ctx = null) {
 
     //
@@ -2855,6 +2897,9 @@ function _renderModelRead(app, element, ctx = null) {
     const showData = typeof element.model.display === 'string' ? true : (element.model.display.show_data !== false);
     const loadButtonText = typeof element.model.display === 'string' ? 'load' : (element.model.display.load_button_text || 'load');
 
+    // only show edit button if the user owns this model instance
+    const isOwner = _isModelOwner(state.data);
+
     //
     // buttons
     //
@@ -2883,37 +2928,33 @@ function _renderModelRead(app, element, ctx = null) {
 
     // edit //
 
-    if(allowEdit){
-
-        const editScript = {
-            set: {state: {[stateField]: {state: {}}}},
-            to: 'editing'
-        };
+    if(allowEdit && isOwner){
 
         elements.push({
-            button: editScript,
+            button: {
+                clientFunction: () => {
+                    app.state[stateField].original_data = JSON.parse(JSON.stringify(app.state[stateField].data));
+                    app.state[stateField].state = 'editing';
+                    renderLingoApp(app, document.getElementById('lingo-app'));
+                }
+            },
             text: 'edit',
             disabled: state.state !== 'loaded' && state.state !== 'edited'
         });
 
         // cancel //
 
-        const cancelScript = {
-            call: 'and',
-            args: {
-                a: {
-                    set: {state: {[stateField]: {state: {}}}},
-                    to: 'loaded'
-                },
-                b: {
-                    set: {state: {[stateField]: {field_errors: {}}}},
-                    to: {}
-                }
-            }
-        }
-
         elements.push({
-            button: cancelScript,
+            button: {
+                clientFunction: () => {
+                    if ('original_data' in app.state[stateField] && app.state[stateField].original_data !== null) {
+                        app.state[stateField].data = JSON.parse(JSON.stringify(app.state[stateField].original_data));
+                    }
+                    app.state[stateField].state = 'loaded';
+                    app.state[stateField].field_errors = {};
+                    renderLingoApp(app, document.getElementById('lingo-app'));
+                }
+            },
             text: 'cancel',
             disabled: state.state !== 'editing' && !isEditError
         });
@@ -2925,6 +2966,11 @@ function _renderModelRead(app, element, ctx = null) {
         {break: 1},
         {text: 'status: ', style: {bold: true}},
     ]);
+
+    const isModified = state.state === 'editing'
+        && 'original_data' in state
+        && state.original_data !== null
+        && JSON.stringify(state.data) !== JSON.stringify(state.original_data);
 
     const stateSwitch = {
         switch: {
@@ -2945,6 +2991,14 @@ function _renderModelRead(app, element, ctx = null) {
                             { text: 'edited', style: {color: 'green', bold: true} },
                         ]
                      }
+                },
+                {
+                    case: 'editing',
+                    then: {
+                        block: isModified
+                            ? [{ text: 'editing', style: {italic: true} }, { text: ' (modified)', style: {color: 'orange', italic: true} }]
+                            : [{ text: 'editing', style: {italic: true} }]
+                    }
                 },
                 {
                     case: 'error',
@@ -3163,12 +3217,24 @@ function _renderModelRead(app, element, ctx = null) {
                 additional = '';
             }
 
+			let outputValue;
+			if(fieldDef.type === 'str' && fieldDef.rich_text === true) {
+				try{
+					outputValue = JSON.parse(state.data[field]);
+				}catch(e){
+					console.error(`Error parsing rich text content for field ${field}:`, e, 'content:', state.data[field]);
+					throw new Error(`Invalid rich text content for field ${field}: ${e.message}`);
+				}
+			}else{
+				outputValue = state.data[field];
+			}
+
 
             convertedFields.push({
                 type: 'struct',
                 value: {
                     key: field,
-                    value: state.data[field],
+                    value: outputValue,
                     additional: additional
                 }
             });
@@ -3224,6 +3290,17 @@ function _renderModelDelete(app, element, ctx = null) {
     if (!state.hasOwnProperty('state')) state.state = 'initial';
     if (!state.hasOwnProperty('error')) state.error = '';
 
+    // check ownership if model_data is provided (optional)
+    let isOwner = true;
+    if (element.model.hasOwnProperty('model_data')) {
+        try {
+            const modelData = lingoExecute(app, element.model.model_data, ctx);
+            isOwner = _isModelOwner(modelData);
+        } catch (e) {
+            console.error('renderModelDelete - error checking ownership:', e);
+        }
+    }
+
     const switchElement = {
         switch: {
             expression: { type: 'str', value: state.state },
@@ -3272,13 +3349,13 @@ function _renderModelDelete(app, element, ctx = null) {
                     ]
                 }
             ],
-            default: {
+            default: isOwner ? {
                 button: {
                     set: { state: { [stateField]: { state: {} } } },
                     to: 'confirming'
                 },
                 text: 'delete'
-            }
+            } : {block: []}
         }
     }
 
@@ -3498,30 +3575,29 @@ function _renderModelList(app, element, ctx = null) {
         headers.push({text: field.name.lower_case, field: field.name.snake_case});
     }
 
-    // iterate over app.state[stateField].items and convert id to link
+    // convert values for display
 
-    // let itemsForTable = [];
-	// let instanceUrl = null;
-    
-    // if(element.model.hasOwnProperty('instance_url')) {
-    //     instanceUrl = unwrapValue(lingoExecute(app, element.model.instance_url, ctx));
+    let itemsForTable = [];
+	for (let rawItem of state.items) {
+		let itemForTable = JSON.parse(JSON.stringify(rawItem));
 
-    //     for (let item of state.items) {
-    //         // console.log('renderModelList - pre processing:', item);
+		for (const [name, field] of Object.entries(definition.fields)) {
+			// iterate over fields and convert rich text fields from JSON
+			const fieldDef = definition.fields[name];
+			if(fieldDef.type === 'str' && fieldDef.rich_text === true) {
+				try{
+					itemForTable[field.name.snake_case] = JSON.parse(rawItem.value[name]);
+				}catch(e){
+					console.error(`Error parsing rich text content for field ${name} in item:`, e, 'content:', rawItem);
+					itemForTable[field.name.snake_case] = `Invalid rich text content: ${e.message}`;
+				}
+			}
+		}
 
-    //         let copyOfItem = JSON.parse(JSON.stringify(item));
-    //         copyOfItem.value.id = {
-    //             link: `${instanceUrl}${item.value.id}`,
-    //             text: String(item.value.id)
-    //         };
-    //         itemsForTable.push(copyOfItem);
+		itemsForTable.push(itemForTable);
 
-    //         // console.log('renderModelList - post processing:', copyOfItem);
-    //     }
-    // }else{
-    //     instanceUrl = null;
-    //     itemsForTable = state.items;
-    // }
+		console.log('renderModelList - post processing:', rawItem, itemForTable);
+	}
 
     elements.push({
         type: 'list',
@@ -3532,7 +3608,7 @@ function _renderModelList(app, element, ctx = null) {
             onSelect: onSelect,
 			instance_url: element.model.instance_url || null
         },
-        value: state.items
+        value: itemsForTable
     });
 
     if (state.state === 'pending') {
@@ -3759,11 +3835,16 @@ function renderLingoApp(app, container, preserveFocus = false) {
     if (preserveFocus) {
         focusedElement = document.activeElement;
         if (focusedElement && focusedElement.tagName === 'INPUT' && container.contains(focusedElement)) {
-            // Store the state field this input is bound to
+            // Store a CSS selector to re-identify this input after re-render.
+            // Standalone inputs use data-state-field; form inputs use data-form-field.
             const stateFieldName = focusedElement.getAttribute('data-state-field');
-            if (stateFieldName) {
+            const formFieldName = focusedElement.getAttribute('data-form-field');
+            const focusKey = stateFieldName
+                ? `[data-state-field="${stateFieldName}"]`
+                : (formFieldName ? `[data-form-field="${formFieldName}"]` : null);
+            if (focusKey) {
                 focusedElementState = {
-                    fieldName: stateFieldName,
+                    selector: `input${focusKey}`,
                     selectionStart: focusedElement.selectionStart,
                     selectionEnd: focusedElement.selectionEnd
                 };
@@ -3793,6 +3874,19 @@ function renderLingoApp(app, container, preserveFocus = false) {
         lingoUpdateState(app);
         const result = lingoExecute(app, app.spec.output);
         container.innerHTML = '<pre>' + JSON.stringify(result, null, 4) + '</pre>';
+	
+	} else if(app.spec.lingo.version == 'rich-text-beta-1') {
+		console.log('Rendering rich-text-beta-1 spec');
+		if(!app.spec.hasOwnProperty('block') || !Array.isArray(app.spec.block)) {
+			throw new Error('rich-text-beta-1 spec requires a block array');
+		}
+
+		for (const element of app.spec.block) {
+            const domElement = createDOMElement(app, element);
+            if (domElement) {
+                container.appendChild(domElement);
+            }
+        }
 
     }else{
         throw new Error(`Unsupported lingo version: ${app.spec.lingo.version}`);
@@ -3800,11 +3894,15 @@ function renderLingoApp(app, container, preserveFocus = false) {
     
     // Restore focus if needed
     if (focusedElementState) {
-        const newInputs = container.querySelectorAll(`input[data-state-field="${focusedElementState.fieldName}"]`);
+        const newInputs = container.querySelectorAll(focusedElementState.selector);
         if (newInputs.length > 0) {
             const newInput = newInputs[0];
             newInput.focus();
-            newInput.setSelectionRange(focusedElementState.selectionStart, focusedElementState.selectionEnd);
+            try {
+                // setSelectionRange throws on inputs that don't support text selection
+                // (e.g. number, date, checkbox) - this is expected and can be ignored
+                newInput.setSelectionRange(focusedElementState.selectionStart, focusedElementState.selectionEnd);
+            } catch(e) {}
         }
     }
 
@@ -3818,6 +3916,7 @@ function renderLingoApp(app, container, preserveFocus = false) {
  * Create a DOM element from a buffer element
  */
 function createDOMElement(app, element, ctx = null) {
+	// console.debug('createDOMElement()', element);
     if ('heading' in element) {
         return createHeadingElement(app, element);
     } else if ('break' in element) {
@@ -4364,6 +4463,292 @@ function createLinkElement(app, element, ctx = null) {
 }
 
 /**
+ * Convert rich text JSON spec string to HTML for display in a contenteditable div
+ */
+function richTextSpecToHtml(jsonStr) {
+    let spec;
+    try {
+        spec = JSON.parse(jsonStr);
+    } catch (e) {
+        return '';
+    }
+    if (!spec || !Array.isArray(spec.block)) {
+        return '';
+    }
+    // Escape all characters that could cause HTML injection
+    const escape = (s) => s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    const blocks = spec.block;
+    const isBoldBlock = (b) => 'text' in b && !!(b.style && b.style.bold);
+    let html = '';
+    for (let i = 0; i < blocks.length; i++) {
+        const block = blocks[i];
+        if ('text' in block) {
+            const text = escape(block.text);
+            if (block.style && block.style.bold) {
+                html += `<span style="font-weight: bold">${text}</span>`;
+            } else {
+                // Wrap a non-bold text block in a plain span only when it is
+                // sandwiched between two bold spans so that callers can query
+                // it as a DOM element (e.g. for partial-unbold results).
+                const prevBold = i > 0 && isBoldBlock(blocks[i - 1]);
+                const nextBold = i < blocks.length - 1 && isBoldBlock(blocks[i + 1]);
+                if (prevBold && nextBold) {
+                    html += `<span>${text}</span>`;
+                } else {
+                    html += text;
+                }
+            }
+        } else if ('break' in block) {
+            if(block.break < 0 || block.break > 5) throw new Error('richTextSpecToHtml - break count must be between 0 and 5');
+            for (let j = 0; j < block.break; j++) {
+                html += '<br>';
+            }
+        }
+    }
+    return html;
+}
+
+/**
+ * Convert HTML inside a contenteditable div to a rich text JSON spec object
+ */
+function htmlToRichTextSpec(container) {
+    const blocks = [];
+
+    const processNode = (node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const text = node.textContent;
+            if (text) {
+                blocks.push({text});
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            if (node.tagName === 'BR') {
+                blocks.push({break: 1});
+            } else if (node.tagName === 'SPAN') {
+                const fw = node.style.fontWeight;
+                const isBold = fw === 'bold' || parseInt(fw, 10) >= 700;
+                const text = node.textContent;
+                if (text) {
+                    if (isBold) {
+                        blocks.push({text, style: {bold: true}});
+                    } else {
+                        blocks.push({text});
+                    }
+                }
+            } else if (node.tagName === 'DIV') {
+                // Browsers wrap new paragraphs in divs inside contenteditable
+                if (blocks.length > 0) {
+                    blocks.push({break: 1});
+                }
+                for (const child of node.childNodes) {
+                    processNode(child);
+                }
+            } else {
+                for (const child of node.childNodes) {
+                    processNode(child);
+                }
+            }
+        }
+    };
+
+    for (const child of container.childNodes) {
+        processNode(child);
+    }
+
+    return {lingo: {version: 'rich-text-beta-1'}, block: blocks};
+}
+
+/**
+ * Create a rich text input widget: a contenteditable editor with Bold and Debug toolbar buttons
+ */
+function createRichTextInput(formData, fieldKey, initialValue) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'rich-text-input-wrapper';
+
+    // toolbar //
+    const toolbar = document.createElement('div');
+    toolbar.className = 'rich-text-toolbar';
+
+    const boldBtn = document.createElement('button');
+    boldBtn.type = 'button';
+    boldBtn.textContent = 'Bold';
+    boldBtn.className = 'rich-text-btn';
+
+    const debugBtn = document.createElement('button');
+    debugBtn.type = 'button';
+    debugBtn.textContent = 'Debug';
+    debugBtn.className = 'rich-text-btn';
+
+    toolbar.appendChild(boldBtn);
+    // toolbar.appendChild(debugBtn);
+
+    // editor //
+    const editor = document.createElement('div');
+    editor.contentEditable = 'true';
+    editor.className = 'rich-text-editor';
+
+    if (initialValue) {
+        editor.innerHTML = richTextSpecToHtml(initialValue);
+    }
+
+    const syncFormData = () => {
+        formData[fieldKey] = JSON.stringify(htmlToRichTextSpec(editor));
+    };
+
+    editor.addEventListener('input', syncFormData);
+
+    // Convert a DOM Range to {startChar, endChar} character positions within the editor.
+    // Handles both text-node containers and element-node containers (e.g. selectNodeContents).
+    const getRangeCharPositions = (range) => {
+        let startChar = -1, endChar = -1, charCount = 0;
+        const visit = (node) => {
+            if (startChar >= 0 && endChar >= 0) return;
+            if (node.nodeType === Node.TEXT_NODE) {
+                const len = node.textContent.length;
+                if (startChar < 0 && range.startContainer === node)
+                    startChar = charCount + range.startOffset;
+                if (endChar < 0 && range.endContainer === node)
+                    endChar = charCount + range.endOffset;
+                charCount += len;
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                if (startChar < 0 && range.startContainer === node) {
+                    let c = charCount;
+                    Array.from(node.childNodes).slice(0, range.startOffset)
+                        .forEach(ch => { c += ch.textContent.length; });
+                    startChar = c;
+                }
+                if (endChar < 0 && range.endContainer === node) {
+                    let c = charCount;
+                    Array.from(node.childNodes).slice(0, range.endOffset)
+                        .forEach(ch => { c += ch.textContent.length; });
+                    endChar = c;
+                }
+                for (const child of node.childNodes) {
+                    visit(child);
+                    if (startChar >= 0 && endChar >= 0) return;
+                }
+            }
+        };
+        visit(editor);
+        return {startChar: Math.max(0, startChar), endChar: Math.max(0, endChar)};
+    };
+
+    // Restore a DOM selection given character positions within the editor.
+    // Prefers placing boundaries at the start of a text node when on a boundary.
+    const restoreSelectionFromCharPositions = (startChar, endChar) => {
+        let charCount = 0, startNode = null, startOff = 0, endNode = null, endOff = 0;
+        const visit = (node) => {
+            if (startNode && endNode) return;
+            if (node.nodeType === Node.TEXT_NODE) {
+                const len = node.textContent.length;
+                if (!startNode && charCount + len > startChar) {
+                    startNode = node;
+                    startOff = startChar - charCount;
+                }
+                if (!endNode && charCount + len >= endChar) {
+                    endNode = node;
+                    endOff = endChar - charCount;
+                }
+                charCount += len;
+            } else {
+                for (const child of node.childNodes) {
+                    visit(child);
+                    if (startNode && endNode) return;
+                }
+            }
+        };
+        visit(editor);
+        if (startNode && endNode) {
+            const r = document.createRange();
+            r.setStart(startNode, startOff);
+            r.setEnd(endNode, endOff);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(r);
+        }
+    };
+
+    // bold button: toggle bold on the selected text //
+    boldBtn.addEventListener('click', () => {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+        const range = selection.getRangeAt(0);
+        if (!editor.contains(range.commonAncestorContainer)) return;
+
+        // Map selection to character positions, then work at the spec level so
+        // that a selection shorter than a bold span only unbolds the selected
+        // portion rather than the entire span.
+        const {startChar, endChar} = getRangeCharPositions(range);
+        if (startChar === endChar) return;
+
+        const currentSpec = htmlToRichTextSpec(editor);
+
+        // Determine whether any selected character is currently bold
+        let anyBold = false;
+        let pos = 0;
+        for (const block of currentSpec.block) {
+            if ('text' in block) {
+                const blockEnd = pos + block.text.length;
+                if (pos < endChar && blockEnd > startChar && block.style && block.style.bold) {
+                    anyBold = true;
+                    break;
+                }
+                pos += block.text.length;
+            }
+        }
+
+        // Rebuild the block list, splitting any block that overlaps the selection
+        // and toggling bold only on the overlapping portion
+        const newBlocks = [];
+        pos = 0;
+        for (const block of currentSpec.block) {
+            if ('break' in block) {
+                newBlocks.push(block);
+                continue;
+            }
+            const blockStart = pos;
+            const blockEnd = pos + block.text.length;
+            const isBold = !!(block.style && block.style.bold);
+            if (blockEnd <= startChar || blockStart >= endChar) {
+                newBlocks.push(block);
+            } else {
+                const overlapStart = Math.max(startChar, blockStart);
+                const overlapEnd = Math.min(endChar, blockEnd);
+                if (overlapStart > blockStart) {
+                    const text = block.text.slice(0, overlapStart - blockStart);
+                    newBlocks.push(isBold ? {text, style: {bold: true}} : {text});
+                }
+                const selText = block.text.slice(overlapStart - blockStart, overlapEnd - blockStart);
+                newBlocks.push(anyBold ? {text: selText} : {text: selText, style: {bold: true}});
+                if (overlapEnd < blockEnd) {
+                    const text = block.text.slice(overlapEnd - blockStart);
+                    newBlocks.push(isBold ? {text, style: {bold: true}} : {text});
+                }
+            }
+            pos += block.text.length;
+        }
+
+        editor.innerHTML = richTextSpecToHtml(JSON.stringify({...currentSpec, block: newBlocks}));
+        restoreSelectionFromCharPositions(startChar, endChar);
+        syncFormData();
+    });
+
+    // debug button: log rich text spec to console //
+    debugBtn.addEventListener('click', () => {
+        console.log('Rich text spec:', JSON.stringify(htmlToRichTextSpec(editor), null, 2));
+    });
+
+    wrapper.appendChild(toolbar);
+    wrapper.appendChild(editor);
+
+    return wrapper;
+}
+
+/**
  * Create form element with table layout
  */
 function createFormElement(app, element, ctx = null) {
@@ -4529,6 +4914,7 @@ function createFormElement(app, element, ctx = null) {
                             const index = parseInt(removeButton.getAttribute('data-index'));
                             formData[fieldKey].splice(index, 1);
                             updateListDisplay();
+							renderLingoApp(app, document.getElementById('lingo-app'), true);
                         });
 
                         itemContainer.appendChild(removeButton);
@@ -4628,6 +5014,16 @@ function createFormElement(app, element, ctx = null) {
                 listInput.className = 'list-input';
                 listContainer.appendChild(listInput);
 
+                // Persist the in-progress typed value across re-renders by storing
+                // it in ingestState (which is keyed per-field by formKeyId and survives re-renders).
+                // Only for text-like inputs: skip checkbox (bool) and enum selects which don't have a typed value.
+                if (listInput.tagName === 'INPUT' && listInput.type !== 'checkbox') {
+                    listInput.value = ingestState.listInputValue || '';
+                    listInput.addEventListener('input', () => {
+                        ingestState.listInputValue = listInput.value;
+                    });
+                }
+
                 const addButton = document.createElement('button');
                 addButton.textContent = 'Add';
                 addButton.type = 'button';
@@ -4661,9 +5057,11 @@ function createFormElement(app, element, ctx = null) {
                         listInput.checked = false;
                     } else if (!hasEnum) {
                         listInput.value = '';
+                        ingestState.listInputValue = '';
                     }
                     console.log(`Add to list for field ${fieldKey}`, value, 'Current list:', formData[fieldKey]);
                     updateListDisplay();
+					renderLingoApp(app, document.getElementById('lingo-app'), true);
                 };
                 addButton.addEventListener('click', addToList);
                 if (listInput.tagName === 'INPUT' && (elementType === 'str' || elementType === 'int' || elementType === 'float')) {
@@ -4699,11 +5097,15 @@ function createFormElement(app, element, ctx = null) {
 
         } else if (fieldType === 'float') {
             inputElement = document.createElement('input');
-            inputElement.type = 'number';
-            inputElement.step = '0.1';
-            inputElement.value = typeof formData[fieldKey] !== 'undefined' ? formData[fieldKey] : '';
-            inputElement.addEventListener('input', () => {
-                formData[fieldKey] = parseFloat(inputElement.value) || 0.0;
+            inputElement.type = 'text';
+            // inputElement.step = '0.1';
+			const v = formData[fieldKey];
+            inputElement.value = v;
+			inputElement.inputMode = 'decimal';
+			// console.log('setting float value to value:', inputElement.value, 'v', v, 'formData[fieldKey]:', formData[fieldKey], 'type of formData[fieldKey]:', typeof formData[fieldKey]);
+            inputElement.addEventListener('input', (event) => {
+                formData[fieldKey] = inputElement.value;
+				// console.log('Float input event - raw value:', inputElement.value, 'new value:', newValue, 'event:', event);
             });
 
         } else if (fieldType === 'datetime') {
@@ -4759,6 +5161,9 @@ function createFormElement(app, element, ctx = null) {
                 formData[fieldKey] = inputElement.value === '' ? null : inputElement.value;
             });
 
+        } else if (fieldSpec.rich_text && fieldType === 'str') {
+            inputElement = createRichTextInput(formData, fieldKey, formData[fieldKey]);
+
         } else {
             inputElement = document.createElement('input');
             if(fieldSpec.secure || fieldSpec.secure_input) {
@@ -4779,6 +5184,10 @@ function createFormElement(app, element, ctx = null) {
             });
         }
         inputCell.appendChild(inputElement);
+        // Set identifier so renderLingoApp can restore focus after re-render
+        if (inputElement && (inputElement.tagName === 'INPUT' || inputElement.tagName === 'SELECT')) {
+            inputElement.setAttribute('data-form-field', `${formStateField}:${fieldKey}`);
+        }
         row.appendChild(inputCell);
         
         // Column 3: List values display (for list types) or Description
@@ -5060,11 +5469,15 @@ function createFormElement(app, element, ctx = null) {
         for (const [fieldKey, fieldSpec] of Object.entries(fields)) {
             const fieldType = fieldSpec.type;
             const defaultValue = fieldSpec.default;
-            const fieldValue = formData[fieldKey];
+			
+			if(fieldSpec.type === 'float') {
+            	formData[fieldKey] = parseFloat(formData[fieldKey]);
+			}
+			
             if (typeof defaultValue !== 'undefined') {
                 continue;
             }
-            if ((fieldSpec.enum || fieldType === 'datetime') && isUnsetFormFieldValue(fieldValue)) {
+            if ((fieldSpec.enum || fieldType === 'datetime') && isUnsetFormFieldValue(formData[fieldKey])) {
                 clientFieldErrors[fieldKey] = '(required field)';
             }
         }
@@ -5119,16 +5532,33 @@ function createFormElement(app, element, ctx = null) {
 		showStatusDisplay = true;
 	}
 
+	let showFriendlyStatus;
+	if(element.form.hasOwnProperty('friendly_status')) {
+		// for friendly status, only show loading, success or errors,
+		// not idle status
+		showFriendlyStatus = element.form.friendly_status;
+	}else{
+		showFriendlyStatus = false;
+	}
+
     let stateColor;
+	let isFriendlyStatus;
     switch(currentState.state) {
         case 'success':
             stateColor = 'green';
+			isFriendlyStatus = true;
             break;
         case 'error':
             stateColor = 'red';
+			isFriendlyStatus = true;
             break;
+		case 'loading':
+			stateColor = 'blue';
+			isFriendlyStatus = true;
+			break;
         default:
             stateColor = 'blue';
+			isFriendlyStatus = false;
     }
 
     const statusDisplay = {text: currentState.state, style: {bold: true, color: stateColor}};
@@ -5172,7 +5602,7 @@ function createFormElement(app, element, ctx = null) {
     }
 
     const statusCell = document.createElement('td');
-    if (showStatusDisplay) {
+    if (showStatusDisplay && (showFriendlyStatus ? isFriendlyStatus : true)) {
         statusCell.appendChild(statusElement);
     }
     const additionalCell = document.createElement('td');
@@ -5184,6 +5614,17 @@ function createFormElement(app, element, ctx = null) {
 
     table.appendChild(submitRow);
     formContainer.appendChild(table);
+
+	formContainer.addEventListener('input', (event) => {
+		// Only re-render for direct form fields (have data-form-field set).
+		// List sub-inputs do not have the attribute, so skip them to avoid
+		// clearing their in-progress value on re-render.
+		if (!event.target.getAttribute('data-form-field')) return;
+		setTimeout(() => {
+			// console.log('Form input event - re-rendering app. Event', event);
+			renderLingoApp(app, document.getElementById('lingo-app'), true);
+		}, 0);
+	});
 
     // console.log('createFormElement - formData after:', formData);
     return formContainer;

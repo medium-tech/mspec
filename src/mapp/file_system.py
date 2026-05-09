@@ -22,8 +22,8 @@ __all__ = [
 ]
 
 MAPP_FILE_SYSTEM_REPO = os.getenv('MAPP_FILE_SYSTEM_REPO', '')
-FILE_SIZE_LIMIT = 50 * 1024 * 1024
-OS_HANDLE_BUFFER_SIZE = 8192
+FILE_SIZE_LIMIT = int(os.getenv('MAPP_FILE_SIZE_LIMIT', 50 * 1024 * 1024))
+OS_HANDLE_BUFFER_SIZE = int(os.getenv('MAPP_OS_HANDLE_BUFFER_SIZE', 8192))
 
 """
 
@@ -102,7 +102,7 @@ def _ingest_part(ctx: MappContext, part_number:int, file_input: bytes, file_reco
 
 	ctx.db.cursor.execute(
 		"""
-		INSERT INTO file_part (file_id, size, part_number, sha3_256, user_id, uploaded_at)
+		INSERT INTO file_system_file_part (file_id, size, part_number, sha3_256, user_id, uploaded_at)
 		VALUES (?, ?, ?, ?, ?, ?)
 		""",
 		(
@@ -125,7 +125,7 @@ def _list_parts(ctx: MappContext, file_id:str) -> list[FilePart]:
 	ctx.db.cursor.execute(
 		"""
 		SELECT id, file_id, size, part_number, sha3_256, user_id, uploaded_at
-		FROM file_part
+		FROM file_system_file_part
 		WHERE file_id = ?
 		ORDER BY part_number ASC
 		""",
@@ -178,7 +178,7 @@ def _ingest_finish(ctx: MappContext, file_record: File) -> File:
 
 	ctx.db.cursor.execute(
 		"""
-		UPDATE file
+		UPDATE file_system_file
 		SET status = ?, message = ?, updated_at = ?
 		WHERE id = ?
 		""",
@@ -257,7 +257,7 @@ def _process_file(ctx: MappContext, file_record: File) -> File:
 
 	ctx.db.cursor.execute(
 		"""
-		UPDATE file
+		UPDATE file_system_file
 		SET status = ?, sha3_256 = ?, message = ?, updated_at = ?
 		WHERE id = ?
 		""",
@@ -352,7 +352,7 @@ def ingest_start(ctx: MappContext, name: str, size: int, parts: int, content_typ
 	)
 
 	ctx.db.cursor.execute("""
-		INSERT INTO file (name, status, message, extension, size, parts, content_type, user_id, created_at, updated_at, sha3_256)
+		INSERT INTO file_system_file (name, status, message, extension, size, parts, content_type, user_id, created_at, updated_at, sha3_256)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		""",
 		(
@@ -453,7 +453,7 @@ def get_part_content(ctx: MappContext, file_id: str, part_number: int) -> dict:
 	#
 
 	part_path = _file_part_path(file_id, part_number)
-
+	ctx.log(f'get_part_content - {file_id=} {part_number=} {part_path=}')
 	try:
 		with open(part_path, 'rb') as f:
 			while True:
@@ -509,7 +509,7 @@ def get_file_content(ctx: MappContext, file_id: str) -> dict:
 	#
 
 	ctx.self['file_output_name'] = file_record.name
-
+	ctx.log(f'get_file_content - {file_id=} {full_file_path=}')
 	try:
 		with open(full_file_path, 'rb') as f:
 			while True:
@@ -550,7 +550,7 @@ def list_files(ctx: MappContext, offset: int = 0, size: int = 50, user_id: str =
 	ctx.db.cursor.execute(
 		"""
 		SELECT id, name, status, message, extension, size, parts, content_type, user_id, created_at, updated_at, sha3_256
-		FROM file
+		FROM file_system_file
 		WHERE (? = '-1' OR user_id = ?) AND (? = '-1' OR id = ?) AND (? = 'all' OR status = ?)
 		ORDER BY updated_at ASC
 		LIMIT ? OFFSET ?
@@ -579,7 +579,7 @@ def list_files(ctx: MappContext, offset: int = 0, size: int = 50, user_id: str =
 	# fetch total count #
 
 	ctx.db.cursor.execute(
-		"SELECT COUNT(*) FROM file WHERE (? = '-1' OR user_id = ?) AND (? = '-1' OR id = ?) AND (? = 'all' OR status = ?)",
+		"SELECT COUNT(*) FROM file_system_file WHERE (? = '-1' OR user_id = ?) AND (? = '-1' OR id = ?) AND (? = 'all' OR status = ?)",
 		(user_id, user_id, file_id, file_id, status, status)
 	)
 	total = ctx.db.cursor.fetchone()[0]
@@ -598,7 +598,7 @@ def list_parts(ctx: MappContext, file_id: str = '-1', offset: int = 0, size: int
 	ctx.db.cursor.execute(
 		"""
 		SELECT id, file_id, size, part_number, sha3_256, user_id, uploaded_at
-		FROM file_part
+		FROM file_system_file_part
 		WHERE (? = '-1' OR user_id = ?) AND (? = '-1' OR file_id = ?)
 		ORDER BY part_number ASC
 		LIMIT ? OFFSET ?
@@ -622,7 +622,7 @@ def list_parts(ctx: MappContext, file_id: str = '-1', offset: int = 0, size: int
 	# fetch total count #
 
 	ctx.db.cursor.execute(
-		"SELECT COUNT(*) FROM file_part WHERE (? = '-1' OR user_id = ?) AND (? = '-1' OR file_id = ?)",
+		"SELECT COUNT(*) FROM file_system_file_part WHERE (? = '-1' OR user_id = ?) AND (? = '-1' OR file_id = ?)",
 		(user_id, user_id, file_id, file_id)
 	)
 	total = ctx.db.cursor.fetchone()[0]
@@ -670,7 +670,7 @@ def process_file(ctx: MappContext, file_id: str) -> dict:
 		)
 		ctx.db.cursor.execute(
 			"""
-			UPDATE file
+			UPDATE file_system_file
 			SET status = ?, sha3_256 = ?, message = ?, updated_at = ?
 			WHERE id = ?
 			""",
@@ -694,7 +694,7 @@ def process_file(ctx: MappContext, file_id: str) -> dict:
 		)
 		ctx.db.cursor.execute(
 			"""
-			UPDATE file
+			UPDATE file_system_file
 			SET status = ?, message = ?, updated_at = ?
 			WHERE id = ?
 			""",

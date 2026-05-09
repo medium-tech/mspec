@@ -78,7 +78,8 @@ test('test user auth flow', async ({ browser, crudEnv }) => {
   await page.getByRole('link', { name: 'logout-user' }).click();
   await page.getByRole('combobox').selectOption('current');
   await page.getByRole('button', { name: 'Submit' }).click();
-  await expect(page.locator('#lingo-app')).toContainText('success');
+  await page.waitForLoadState('networkidle');
+  await expect(page.locator('#lingo-app')).toContainText('initial');
 
   // confirm cannot get current user //
   
@@ -200,5 +201,32 @@ test('test redacted fields', async ({ browser, crudEnv }) => {
   await page.getByRole('button', { name: 'hide access_token' }).click();
   await expect(page.locator('#lingo-app')).toContainText('show access_token');
   await expect(page.locator('tbody')).toContainText('REDACTED');
+
+});
+
+test('test auth drop sessions is hidden', async ({ browser, crudEnv }) => {
+
+	const { host: crudHost } = crudEnv;
+
+	// init //
+	const context = await browser.newContext();
+	const page = await context.newPage();
+	await page.goto(crudHost);
+	await context.addCookies([{ 
+		name: 'protocol_mode', 
+		value: 'true', 
+		path: '/',
+		domain: new URL(crudHost).hostname,
+		secure: false,
+	}]);
+	await page.reload();
+	await page.goto(crudHost);
+
+	await page.getByRole('link', { name: 'auth' }).click();
+  	await expect(page.locator('#lingo-app')).not.toContainText('drop-sessions');
+
+	const response = await page.goto(`${crudHost}/auth/drop-sessions`);
+	expect(response.status()).toBe(404);
+  	await expect(page.locator('pre')).toContainText('{"code": "NOT_FOUND", "message": "not found: /auth/drop-sessions"}');
 
 });

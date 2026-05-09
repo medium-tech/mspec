@@ -41,6 +41,7 @@ class TestMspecCLI(unittest.TestCase):
         self.assertIn('Builtin browser2 spec files:', result.stdout)
         self.assertIn('Builtin generator spec files:', result.stdout)
         self.assertIn('Builtin mspec lingo script spec files:', result.stdout)
+        self.assertIn('Builtin rich text spec files:', result.stdout)
         self.assertGreaterEqual(result.stdout.count('.json'), 4)
         self.assertGreaterEqual(result.stdout.count('.yaml'), 3)
     
@@ -89,6 +90,16 @@ class TestMspecCLI(unittest.TestCase):
         
         # Clean up - remove the copied file
         copied_file = Path('basic_math_test_data.json')
+        self.assertTrue(copied_file.exists())
+        copied_file.unlink()
+
+    def test_example_command_rich_text(self):
+        """Test the example command with example.json (rich text)"""
+        result = self._run_cli(['example', 'example-rich-text.json', '--yes'])
+        self.assertEqual(result.returncode, 0)
+        self.assertIn('Copied example spec file to current directory:', result.stdout)
+
+        copied_file = Path('example-rich-text.json')
         self.assertTrue(copied_file.exists())
         copied_file.unlink()
 
@@ -184,6 +195,7 @@ class TestMspecCLI(unittest.TestCase):
             self.assertEqual(result.returncode, 0, msg=result.stderr)
             self.assertTrue((output_dir / 'lingo' / 'pages').is_dir())
             self.assertTrue((output_dir / 'lingo' / 'scripts').is_dir())
+            self.assertTrue((output_dir / 'lingo' / 'rich-text').is_dir())
             self.assertTrue((output_dir / 'generator').is_dir())
 
             # recursevely count number of files copied
@@ -209,6 +221,7 @@ class TestMspecCLI(unittest.TestCase):
             self.assertTrue(output_dir.exists())
             self.assertTrue((output_dir / 'lingo' / 'pages').is_dir())
             self.assertTrue((output_dir / 'lingo' / 'scripts').is_dir())
+            self.assertTrue((output_dir / 'lingo' / 'rich-text').is_dir())
             self.assertTrue((output_dir / 'generator').is_dir())
 
             # recursevely count number of files copied

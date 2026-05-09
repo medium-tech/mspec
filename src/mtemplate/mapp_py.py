@@ -16,6 +16,7 @@ class MappPyProject(MTemplateProject):
 
     prefixes = {
         'tests/samples': 'binary',
+        'tests/dev-app': 'ignore',
         'app': 'ignore',
         'test-results': 'ignore',
         'mapp-tests': 'ignore',

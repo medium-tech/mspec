@@ -78,7 +78,7 @@ def _get_image_record(ctx: MappContext, image_id: str) -> Image:
 
 	ctx.db.cursor.execute("""
 	SELECT id, file_id, user_id, format, width, height, aspect_ratio, file_size, compression_mode, bit_depth, color_space, chroma_subsampling, created_at
-	FROM image
+	FROM media_image
 	WHERE id = ?
 	""", (image_id,))
 
@@ -109,7 +109,7 @@ def _get_master_image_record(ctx: MappContext, master_image_id: str) -> MasterIm
 
 	ctx.db.cursor.execute("""
 	SELECT id, original_image_id, web_image_id, thumbnail_image_id, user_id, created_at
-	FROM master_image
+	FROM media_master_image
 	WHERE id = ?
 	""", (master_image_id,))
 
@@ -219,7 +219,7 @@ def create_image(ctx: MappContext, name:str, content_type: str) -> dict:
 	)
 
 	ctx.db.cursor.execute("""
-		INSERT INTO image (file_id, user_id, format, width, height, aspect_ratio, file_size, compression_mode, bit_depth, color_space, chroma_subsampling, created_at)
+		INSERT INTO media_image (file_id, user_id, format, width, height, aspect_ratio, file_size, compression_mode, bit_depth, color_space, chroma_subsampling, created_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	""", (
 		image_record.file_id,
@@ -330,7 +330,7 @@ def ingest_master_image(ctx: MappContext, name: str, content_type: str, thumbnai
 	)
 
 	ctx.db.cursor.execute("""
-		INSERT INTO master_image (original_image_id, web_image_id, thumbnail_image_id, user_id, created_at)
+		INSERT INTO media_master_image (original_image_id, web_image_id, thumbnail_image_id, user_id, created_at)
 		VALUES (?, ?, ?, ?, ?)
 	""", (
 		master_image_record.original_image_id,
@@ -430,7 +430,7 @@ def list_images(ctx: MappContext, offset: int = 0, size: int = 50, image_id: str
 
 	ctx.db.cursor.execute(f"""
 	SELECT id, file_id, user_id, format, width, height, aspect_ratio, file_size, compression_mode, bit_depth, color_space, chroma_subsampling, created_at
-	FROM image
+	FROM media_image
 	WHERE (? = '-1' OR id = ?) AND (? = '-1' OR file_id = ?) AND (? = '-1' OR user_id = ?)
 	ORDER BY created_at DESC
 	LIMIT ? OFFSET ?
@@ -459,7 +459,7 @@ def list_images(ctx: MappContext, offset: int = 0, size: int = 50, image_id: str
 
 	ctx.db.cursor.execute(f"""
 	SELECT COUNT(*)
-	FROM image
+	FROM media_image
 	WHERE (? = '-1' OR id = ?) AND (? = '-1' OR file_id = ?) AND (? = '-1' OR user_id = ?)
 	""", (image_id, image_id, file_id, file_id, user_id, user_id))
 
@@ -516,7 +516,7 @@ def list_master_images(ctx: MappContext, offset: int = 0, size: int = 50, master
 
 	ctx.db.cursor.execute("""
 	SELECT id, original_image_id, web_image_id, thumbnail_image_id, user_id, created_at
-	FROM master_image
+	FROM media_master_image
 	WHERE (? = '-1' OR id = ?) AND (? = '-1' OR user_id = ?)
 	ORDER BY created_at DESC
 	LIMIT ? OFFSET ?
@@ -538,7 +538,7 @@ def list_master_images(ctx: MappContext, offset: int = 0, size: int = 50, master
 
 	ctx.db.cursor.execute("""
 	SELECT COUNT(*)
-	FROM master_image
+	FROM media_master_image
 	WHERE (? = '-1' OR id = ?) AND (? = '-1' OR user_id = ?)
 	""", (master_image_id, master_image_id, user_id, user_id))
 

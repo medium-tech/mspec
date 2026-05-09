@@ -1,14 +1,21 @@
 import json
 
+from copy import deepcopy
 from collections import namedtuple
 from typing import Any, Optional, NamedTuple, Callable
 from datetime import datetime, timezone
 from dataclasses import dataclass, asdict
 
 from mapp.errors import MappValidationError, MappError, MappUserError
+from mspec.core import validate_rich_text_json_string
+# from mspec.lingo import LingoApp, lingo_execute
 
 __all__ = [
     'DATETIME_FORMAT_STR',
+    'MAX_STR_FIELD_LENGTH',
+    'MAX_RICH_TEXT_JSON_LENGTH',
+    'MAX_LIST_FIELD_ITEMS',
+    'MAX_LIST_STR_TOTAL_LENGTH',
     'Acknowledgment',
     'PlainTextResponse',
     'JSONResponse',
@@ -55,6 +62,10 @@ __all__ = [
 #
 
 DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
+MAX_STR_FIELD_LENGTH = 1000
+MAX_RICH_TEXT_JSON_LENGTH = 25000
+MAX_LIST_FIELD_ITEMS = 10
+MAX_LIST_STR_TOTAL_LENGTH = 1000
 
 def datetime_now_utc() -> datetime:
     return datetime.now(timezone.utc)
@@ -224,16 +235,50 @@ def new_model_class(model_spec:dict, module_spec:Optional[dict]=None) -> type:
     Returns:
         type: A dynamically created model class.
     """
-    fields = ['id']
+    
+    from mspec.lingo import LingoApp, lingo_execute, unwrap_primitive
+
     try:
         class_name = model_spec['name']['pascal_case']
-        fields += [field['name']['snake_case'] for field in model_spec['fields'].values()]
     except KeyError as e:
         raise ValueError(f'Missing required model specification key: {e}')
     
+    fields = ['id']
+
+    # copy because adding validation_callable below makes this
+    # not json serializable
+    _model_spec = deepcopy(model_spec)
+    
+    for field in _model_spec['fields'].values():
+
+        field_name = field['name']['snake_case']
+        fields.append(field_name)
+
+        if 'validation' in field:
+            validation = field['validation']
+            try:
+                # only allowed validation currently is length of string validation
+                # eventually more of the lingo scripting spec will be enabled
+                assert validation['call'] == 'le'
+                validation['args']['a']['call'] == 'len'
+                validation['args']['a']['args']['object']['self'] == 'value'
+                assert isinstance(validation['args']['b'], int)
+            except (KeyError, AssertionError):
+                raise ValueError(f'validation for field {field_name} in model {class_name} is invalid, currently only supports string length validation')
+            
+            # create validation callable #
+
+            lingo_app = LingoApp(
+                {},
+                dict(),
+                dict(),
+                list()
+            )
+            field['validation_callable'] = lambda value: unwrap_primitive(lingo_execute(lingo_app, deepcopy(validation), {'self': {'value': value}}))
+    
     new_class = namedtuple(class_name, fields)
-    new_class._model_spec = model_spec
-    new_class._module_spec = module_spec
+    new_class._model_spec = _model_spec
+    new_class._module_spec = deepcopy(module_spec)
     return new_class
 
 def new_model(model_class:type, data:dict):
@@ -610,10 +655,43 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
             if not isinstance(value, python_type):
                 errors[field_name] = f'Field "{field_name}" is not of type "{field_type}".'
                 total_errors += 1
+                
+            if isinstance(value, str):
+                # match on actual python type instead of field_type because
+                # multiple types including foreign_key are represented as str
+                max_len = MAX_RICH_TEXT_JSON_LENGTH if field.get('rich_text') is True else MAX_STR_FIELD_LENGTH
+                if len(value) > max_len:
+                    errors[field_name] = f'Field "{field_name}" exceeds max length of {max_len} characters.'
+                    total_errors += 1
 
-            if field_type == 'str' and 'enum' in field and value not in field['enum']:
-                errors[field_name] = f'Field "{field_name}" has value "{value}" which is not in the allowed enum values.'
-                total_errors += 1
+            if field_type == 'str':
+                
+                if 'enum' in field and value not in field['enum']:
+                    errors[field_name] = f'Field "{field_name}" has value "{value}" which is not in the allowed enum values.'
+                    total_errors += 1
+                elif field.get('rich_text') is True:
+                    try:
+                        validate_rich_text_json_string(value)
+                    except ValueError as e:
+                        errors[field_name] = f'Field "{field_name}" failed rich text validation: {e}'
+                        total_errors += 1
+                    except Exception as e:
+                        errors[field_name] = f'Field "{field_name}" failed rich text validation with an unexpected error: {e}'
+                        total_errors += 1
+
+                if 'validation_callable' in field:
+                    try:
+                        result = field['validation_callable'](value)
+                        if result is not True:
+                            try:
+                                errors[field_name] = f'Field "{field_name}" is invalid: ' + field['validation_message']
+                            except KeyError:
+                                errors[field_name] = f'Field "{field_name}" is invalid.'
+                            total_errors += 1
+                    except Exception as e:
+                        errors[field_name] = f'Field "{field_name}" failed custom validation with an unexpected error: {e}'
+                        total_errors += 1
+                        raise
 
         else:
             
@@ -621,6 +699,10 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
 
             if not isinstance(value, list):
                 errors[field_name] = f'Field "{field_name}" is expected to be a list.'
+                total_errors += 1
+                continue
+            if len(value) > MAX_LIST_FIELD_ITEMS:
+                errors[field_name] = f'Field "{field_name}" exceeds max length of {MAX_LIST_FIELD_ITEMS} items.'
                 total_errors += 1
                 continue
 
@@ -635,6 +717,7 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
 
             # confirm type of elements #
 
+            list_str_len = 0
             for i, element in enumerate(value):
                 if not isinstance(element, python_type):
                     errors[field_name] = f'Element {i} of field "{field_name}" is not "{element_type}".'
@@ -644,6 +727,21 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
                     errors[field_name] = f'Element {i} of field "{field_name}" has value "{element}" which is not in the allowed enum values: {field["enum"]}.'
                     total_errors += 1
                     break
+                
+                if isinstance(element, str):
+                    # match on actual python type instead of element_type because
+                    # multiple types including foreign_key are represented as str
+                    list_str_len += len(element)
+
+            if field_name in errors:
+                continue
+
+            if list_str_len > MAX_LIST_STR_TOTAL_LENGTH:
+                errors[field_name] = (
+                    f'Field "{field_name}" has combined string length {list_str_len} '
+                    f'which exceeds max length of {MAX_LIST_STR_TOTAL_LENGTH} characters.'
+                )
+                total_errors += 1
 
     if total_errors > 0:
         raise MappValidationError(err_msg, errors)

@@ -45,12 +45,15 @@
 * 🟢 support for list of foreign keys
     * 🟢 backend
     * 🟢 ui
-* 🟡 split social media off from dev app
+* 🟢 split social media off from dev app
     * 🟢 custom pages
 	* 🟢 css update on all pages
-    * 🟡 deploy to web
+    * 🟢 deploy to web
 * 🟢 implement max_models_by_field - ie. limit 1 reaction per post_id
 * 🟢 add unique constraint to str fields - ie. only 1 profile with a specific username can exist
+* 🔴 update auth
+	* 🔴 verify email
+	* 🔴 reset password
 * 🔴 add lingo rich text format
 	* 🔴 define sub protocol for rich text formating
 	* 🔴 update field def's to support this as an option on str fields

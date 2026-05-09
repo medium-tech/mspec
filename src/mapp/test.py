@@ -10,7 +10,7 @@ import multiprocessing
 import hashlib
 import shutil
 import jwt
-import uuid
+import time
 
 from pathlib import Path
 from copy import deepcopy
@@ -22,6 +22,12 @@ from collections import defaultdict
 from mspec.core import load_generator_spec
 
 from dotenv import dotenv_values
+from mapp.types import (
+    MAX_LIST_FIELD_ITEMS,
+    MAX_LIST_STR_TOTAL_LENGTH,
+    MAX_RICH_TEXT_JSON_LENGTH,
+    MAX_STR_FIELD_LENGTH,
+)
 
 def seed_pagination_item(unique_id, base_cmd, seed_cmd, env, require_auth, model_data):
     if require_auth:
@@ -88,7 +94,7 @@ def example_from_model(model:dict, index=0) -> dict:
             raise ValueError(f'No example for field "{model["name"]["pascal_case"]}.{field_name}" at index {index}')
         
         if field['unique'] is True:
-            data[field_name] = f'unique string - {uuid.uuid4()}'
+            data[field_name] = str(time.monotonic()).replace('.', '')
         else:
             data[field_name] = value
 
@@ -106,6 +112,28 @@ def model_validation_errors(model:dict) -> Generator[tuple[dict, str], None, Non
             invalid_example = deepcopy(example)
             invalid_example[field_name] = invalid_value
             yield invalid_example, field_name
+
+        if field['type'] in ['str', 'foreign_key']:
+            invalid_example = deepcopy(example)
+            max_len = MAX_RICH_TEXT_JSON_LENGTH if field.get('rich_text') is True else MAX_STR_FIELD_LENGTH
+            invalid_example[field_name] = '1' * (max_len + 1)
+            yield invalid_example, field_name
+            
+        elif field['type'] == 'list':
+            invalid_example = deepcopy(example)
+            seed_values = list(example.get(field_name, []))
+            assert len(seed_values) > 0, f'Need at least one example value in list field "{field_name}" for validation error generation'
+            invalid_example[field_name] = [seed_values[-1]] * (MAX_LIST_FIELD_ITEMS + 1)
+            yield invalid_example, field_name
+
+            if field['element_type'] in ['str', 'foreign_key']:
+                invalid_example = deepcopy(example)
+                invalid_example[field_name] = [
+                    '1' * 400,
+                    '1' * 400,
+                    '1' * (MAX_LIST_STR_TOTAL_LENGTH - 800 + 1),
+                ]
+                yield invalid_example, field_name
 
 def request(ctx:dict, method:str, endpoint:str, request_body:Optional[dict]=None, decode_json=True) -> tuple[int, dict]:
     """send request and returnn status code and response body as dict"""
@@ -155,6 +183,7 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
     model_name_kebab = model['name']['kebab_case']
     max_models = model['auth']['max_models_per_user']
     model_db_args = cmd + [module_name_kebab, model_name_kebab, command_type]
+    module_name_snake = module_name_kebab.replace('-', '_')
 
     ctx = create_user_env if require_login else crud_ctx
 
@@ -276,15 +305,15 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
         assert code == 0, f'expected 0 got {code} for command "{" ".join(delete_args)}" output: {stdout + stderr}'
         delete_output = json.loads(stdout)
         assert delete_output['acknowledged'], f'Delete {model_name} ID did not return acknowledgement'
-        expected_delete_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
-        assert delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message'
+        expected_delete_msg = f'{module_name_snake}_{model["name"]["snake_case"]} {created_model_id} has been deleted'
+        assert delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message, got: {delete_output["message"]}'
 
         # confirm delete is idempotent #
 
         _, code, stdout, stderr = run_cmd(model_db_args + ['delete', str(created_model_id)], ctx)
         assert code == 0, f'expected 0 got {code} for command "{" ".join(model_db_args + ["delete", str(created_model_id)])}" output: {stdout + stderr}'
         delete_output = json.loads(stdout)
-        assert delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID did not return correct message'
+        assert delete_output['message'].startswith(expected_delete_msg), f'Delete {model_name} ID {created_model_id} did not return correct message, got: {delete_output["message"]}'
 
     # read after delete #
 
@@ -294,7 +323,7 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
         try:
             read_output_err = json.loads(stdout)['error']
             assert read_output_err['code'] == 'NOT_FOUND', f'Read after delete for {model_name} did not return NOT_FOUND code for id {created_model_id}'
-            assert read_output_err['message'] == f'{model["name"]["snake_case"]} {created_model_id} not found', f'Read after delete for {model_name} did not return correct message for id {created_model_id}'
+            assert read_output_err['message'] == f'{module_name_snake}_{model["name"]["snake_case"]} {created_model_id} not found', f'Read after delete for {model_name} did not return correct message for id {created_model_id}, got: {read_output_err["message"]}'
         except KeyError as e:
             raise RuntimeError(f'KeyError {e} while reading after delete for {model_name} id {created_model_id}: {stdout + stderr}')
         except json.JSONDecodeError as e:
@@ -316,6 +345,7 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
     require_login = model['auth']['require_login']
     model_name_kebab = model['name']['kebab_case']
     max_models = model['auth']['max_models_per_user']
+    module_name_snake = module_name_kebab.replace('-', '_')
 
     #
     # create
@@ -485,8 +515,8 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
         assert 'acknowledged' in delete_output, f'Delete {model_name} id: {created_model_id} did not return acknowledgement field'
         assert delete_output['acknowledged'], f'Delete {model_name} id: {created_model_id} did not return acknowledged=True'
         assert 'message' in delete_output, f'Delete {model_name} id: {created_model_id} did not return message field'
-        expected_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
-        assert delete_output['message'].startswith(expected_msg), f'Delete {model_name} id: {created_model_id} did not return correct message'
+        expected_msg = f'{module_name_snake}_{model["name"]["snake_case"]} {created_model_id} has been deleted'
+        assert delete_output['message'].startswith(expected_msg), f'Delete {model_name} id: {created_model_id} did not return correct message, got: {delete_output["message"]}'
 
     if not hidden:
 
@@ -497,7 +527,7 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
         assert 'acknowledged' in delete_output, f'Delete {model_name} id: {created_model_id} did not return acknowledgement field'
         assert delete_output['acknowledged'], f'Delete {model_name} id: {created_model_id} did not return acknowledged=True'
         assert 'message' in delete_output, f'Delete {model_name} id: {created_model_id} did not return message field'
-        expected_msg = f'{model["name"]["snake_case"]} {created_model_id} has been deleted'
+        expected_msg = f'{module_name_snake}_{model["name"]["snake_case"]} {created_model_id} has been deleted'
         assert delete_output['message'].startswith(expected_msg), f'Delete {model_name} id: {created_model_id} did not return correct message'
 
         # read after delete #
@@ -574,11 +604,9 @@ def run_cli_validation_error_for_model(module_name_kebab, model, command_type, u
 
     model_name_kebab = model['name']['kebab_case']
 
-    # seed valid model #
-
-    args = cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(example_to_update)]
-    seed_result = _run_cmd(args, env=ctx)
-    update_model_id = str(json.loads(seed_result.stdout)['id'])
+    #
+    # test canot create invalid model
+    #
 
     for invalid_example, invalid_field_name in model_validation_errors(model):
         model_name_kebab = model['name']['kebab_case']
@@ -596,6 +624,19 @@ def run_cli_validation_error_for_model(module_name_kebab, model, command_type, u
         assert 'field_errors' in create_error, f'Expected field_errors in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
         assert isinstance(create_error['field_errors'], dict), f'Expected field_errors to be a dict in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
         assert len(create_error['field_errors']) == 1, f'Expected one field error in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
+
+    #
+    # test cannot update valid model with invalid data
+    #
+
+    # seed valid model #
+
+    args = cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(example_to_update)]
+    seed_result = _run_cmd(args, env=ctx)
+    update_model_id = str(json.loads(seed_result.stdout)['id'])
+
+    for invalid_example, invalid_field_name in model_validation_errors(model):
+        model_name_kebab = model['name']['kebab_case']
 
         # attempt to update (pre-seeded model) with invalid data #
 
@@ -647,6 +688,7 @@ class TestMTemplateApp(unittest.TestCase):
     use_cache: bool
     app_type: str = ''
     threads: int = 12
+    verbose: bool = False
 
     pool: Optional[multiprocessing.Pool] = None
 
@@ -687,7 +729,8 @@ class TestMTemplateApp(unittest.TestCase):
         if not cls.use_cache:
             # delete everything including all db and cache files
             shutil.rmtree(cls.test_dir, ignore_errors=True)
-            print(f':: deleted test directory: {cls.test_dir}')
+            if cls.verbose:
+                print(f':: deleted test directory: {cls.test_dir}')
         else:
             # always recreate the crud file system
             shutil.rmtree(crud_fs_path, ignore_errors=True)
@@ -698,7 +741,8 @@ class TestMTemplateApp(unittest.TestCase):
                 except FileNotFoundError:
                     pass
             
-            print(f':: deleted database files')
+            if cls.verbose:
+                print(f':: deleted database files')
 
         os.makedirs(cls.test_dir, exist_ok=True)
 
@@ -723,6 +767,7 @@ class TestMTemplateApp(unittest.TestCase):
         crud_env = dict(cls.env_vars)
         crud_env['MAPP_SERVER_PORT'] = str(crud_port)
         crud_env['MAPP_CLIENT_HOST'] = f'http://localhost:{crud_port}'
+        crud_env['MAPP_SMTP_MOCK'] = 'true'
         crud_env['MAPP_DB_URL'] = str(cls.crud_db_file.resolve())
         crud_env['MAPP_FILE_SYSTEM_REPO'] = str(crud_fs_path.resolve())
         crud_env['MAPP_SERVER_DEVELOPMENT_MODE'] = 'true'
@@ -751,6 +796,7 @@ class TestMTemplateApp(unittest.TestCase):
         pagination_env = dict(cls.env_vars)
         pagination_env['MAPP_SERVER_PORT'] = str(pagination_port)
         pagination_env['MAPP_CLIENT_HOST'] = f'http://localhost:{pagination_port}'
+        pagination_env['MAPP_SMTP_MOCK'] = 'true'
         pagination_env['MAPP_DB_URL'] = str(cls.pagination_db_file.resolve())
         pagination_env['MAPP_FILE_SYSTEM_REPO'] = str((Path(cls.test_dir) / 'pagination_file_system').resolve())
         pagination_env['MAPP_CLI_SESSION_FILE'] = os.path.join(cls.test_dir, 'pagination-env-test-session.json')
@@ -819,13 +865,15 @@ class TestMTemplateApp(unittest.TestCase):
                 raise RuntimeError(f'AssertionError {e} while creating tables for crud cache db: {crud_result.stdout + crud_result.stderr}')
         
         else:
-            print(f':: copying cached crud db to working db ::')
+            if cls.verbose:
+                print(f':: copying cached crud db to working db ::')
             shutil.copy2(str(cls.crud_db_cache_file), str(cls.crud_db_file))
 
         # create crud users
+        
+        crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn', 'frank']
 
         if needs_crud_rebuild and cls.spec['project']['use_builtin_modules']:
-            crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn']
             sys.stdout.write(', users')
             sys.stdout.flush()
             for user_name in crud_users:
@@ -949,16 +997,17 @@ class TestMTemplateApp(unittest.TestCase):
             sys.stdout.write(f', cached db file\n')
         
         else:
-            print(f':: copying cached pagination db to working db ::')
+            if cls.verbose:
+                print(f':: copying cached pagination db to working db ::')
             shutil.copy2(str(cls.pagination_db_cache_file), str(cls.pagination_db_file))
 
         # create login sessions in working dbs #
 
         cls.crud_users = []
         if cls.spec['project']['use_builtin_modules']:
-            print(':: logging in users ::')
+            if cls.verbose:
+                print(':: logging in users ::')
 
-            crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn']
             for user_name in crud_users:
                 user = login_cached_user(cls.cmd, cls.crud_ctx, user_name, f'{user_name}@example.com')
                 cls.crud_users.append(user)
@@ -1032,26 +1081,31 @@ class TestMTemplateApp(unittest.TestCase):
         
         # start servers #
 
-        print(':: starting server processes ::')
+        if cls.verbose:
+            print(':: starting server processes ::')
 
-        print('    :: ', ' '.join(crud_server_start_cmd))
+        if cls.verbose:
+            print('    :: ', ' '.join(crud_server_start_cmd))
         crud_result = subprocess.run(crud_server_start_cmd, env=cls.crud_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
         if crud_result.returncode != 0:
             raise RuntimeError(f'Error starting CRUD server: {crud_result.stdout + crud_result.stderr}')
 
-        print('    :: ', ' '.join(pagination_server_start_cmd))
+        if cls.verbose:
+            print('    :: ', ' '.join(pagination_server_start_cmd))
         pagination_result = subprocess.run(pagination_server_start_cmd, env=cls.pagination_ctx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
         if pagination_result.returncode != 0:
             raise RuntimeError(f'Error starting pagination server: {pagination_result.stdout + pagination_result.stderr}')
 
-        print(':: setup complete')
+        if cls.verbose:
+            print(':: setup complete')
 
         print(':: test progress :: ', end='', flush=True)
     
     @classmethod
     def tearDownClass(cls):
-
-        print('\n:: tearing down tests')
+        
+        if cls.verbose:
+            print('\n:: tearing down tests')
 
         # stop pool #
 
@@ -1068,7 +1122,8 @@ class TestMTemplateApp(unittest.TestCase):
             except subprocess.CalledProcessError as e:
                 print(f'    :: Error stopping servers: {e} :: {e.output} :: {e.stderr} ::')
         
-        print(':: teardown complete ::')
+        if cls.verbose:
+            print(':: teardown complete ::')
 
     def _run_cmd(self, cmd:list[str], expected_code=0, env:Optional[dict[str, str]] = None) -> subprocess.CompletedProcess:
         result = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=10)
@@ -1208,7 +1263,6 @@ class TestMTemplateApp(unittest.TestCase):
         # 13. is-logged-in (should be false)
         result = run_auth_cmd(cmd + ["auth", "is-logged-in", io_type])
         self.assertIn('"logged_in": false', result.stdout)
-
 
     def test_cli_run_auth_flow(self):
         self._test_user_auth_flow(self.crud_ctx, 'run')
@@ -1383,6 +1437,194 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertIn('logged_in', logged_out_is_logged_in_resp['result'])
         self.assertFalse(logged_out_is_logged_in_resp['result']['logged_in'])
 
+    def test_auth_drop_sessions_hidden(self):
+        """
+        Test that the /api/auth/drop-sessions endpoint is not available in the server, but is via cli
+        """
+        
+        #
+        # server
+        #
+
+        self._check_servers_running()
+
+        base_ctx = {
+            'headers': {
+                'Content-Type': 'application/json',
+            }
+        }
+        base_ctx.update(self.crud_ctx)
+
+        # attempt to call drop-sessions endpoint
+        methods = ['GET', 'OPTIONS', 'PUT', 'POST', 'DELETE']
+        for method in methods:
+            drop_sessions_status, drop_sessions_resp = request(
+                base_ctx,
+                method,
+                '/api/auth/drop-sessions'
+            )
+
+            # should return 404 not found because endpoint should be hidden
+            self.assertEqual(drop_sessions_status, 404, f'Expected 404 from {method} auth/drop-sessions; but got {drop_sessions_status} and response {drop_sessions_resp}')
+
+        #
+        # cli
+        #
+
+        args = self.cmd + ['auth', 'drop-sessions']
+
+        result_1 = self._run_cmd(args + ['-h'], env=self.crud_ctx, expected_code=0)
+        self.assertIn(':: auth :: drop-sessions', result_1.stdout, 'drop-sessions command help not found in output')
+
+        result_2 = self._run_cmd(args + ['run', '-h'], env=self.crud_ctx, expected_code=0)
+        self.assertIn(':: auth :: drop-sessions :: run', result_2.stdout, 'drop-sessions command help not found in output')
+
+        result_3 = self._run_cmd(args + ['http', '-h'], env=self.crud_ctx, expected_code=0)
+        self.assertIn(':: auth :: drop-sessions :: http', result_3.stdout, 'drop-sessions command help not found in output')
+
+    # builtin - file system tests #
+
+    def _test_email_verification_flow(self, ctx:dict, io_type:str):
+        """
+        Test the email verification flow using mock SMTP.
+
+        1. create-user and login-user
+        2. com send-email (mock mode) - verify acknowledged response
+        3. com start-email-verification (mock mode) - captures code from log output
+        4. com verify-email-address with the code - verify acknowledged response
+        5. auth current-user - verify email_verified is true
+        """
+
+        env = deepcopy(ctx)
+        env['MAPP_CLI_IGNORE_SESSION_FILE'] = 'true'
+
+        try:
+            del env['MAPP_CLI_ACCESS_TOKEN']
+        except KeyError:
+            pass
+
+        user_email = f'email-verify-{io_type}@example.com'
+        user_name = f'email-verify-{io_type}'
+        user_password = self.test_password
+
+        def run_cmd(args, expected_code=0):
+            result = subprocess.run(args, capture_output=True, text=True, env=env, timeout=10)
+            msg = f'expected {expected_code} got {result.returncode} for command:\n"{" ".join(args)}"\noutput:\n{result.stdout + result.stderr}'
+            if expected_code >= 0:
+                self.assertEqual(result.returncode, expected_code, msg)
+            return result
+
+        # 1. create-user #
+        create_input = json.dumps({'name': user_name, 'email': user_email, 'password': user_password, 'password_confirm': user_password})
+        run_cmd(self.cmd + ['--log', 'auth', 'create-user', io_type, create_input])
+
+        # 2. login-user #
+        login_input = json.dumps({'email': user_email, 'password': user_password})
+        login_result = run_cmd(self.cmd + ['auth', 'login-user', io_type, login_input, '--show', '--no-session'])
+        self.assertIn('access_token', login_result.stdout)
+
+        # extract access token from login result and set in env for subsequent commands
+        login_data = json.loads(login_result.stdout)['result']
+        access_token = login_data['access_token']
+        env['MAPP_CLI_ACCESS_TOKEN'] = access_token
+
+        # 3. com send-email (mock) #
+        send_input = json.dumps({'email': user_email, 'subject': 'Test', 'body': 'Hello'})
+        send_result = run_cmd(self.cmd + ['com', 'send-email', io_type, send_input])
+        send_data = json.loads(send_result.stdout)['result']
+        self.assertTrue(send_data['acknowledged'], f'send-email not acknowledged: {send_data}')
+
+        # 4. start-email-verification (mock, with --log to capture code) #
+        start_result = run_cmd(self.cmd + ['--log', 'com', 'start-email-verification', io_type])
+        self.assertIn('"acknowledged": true', start_result.stdout, f'start-email-verification not acknowledged: {start_result.stdout}')
+        
+        # 5. verify-email-address with wrong code should fail #
+        wrong_code_input = json.dumps({'code': '000000'})
+        run_cmd(self.cmd + ['com', 'verify-email-address', io_type, wrong_code_input], expected_code=1)
+
+        if io_type != 'http':
+            # only verify for non-http because we can't see the logs for the server to get the code
+            # parse the verification code from log output #
+            code_match = re.search(r'Your verification code is: (\d{6})', start_result.stdout)
+            self.assertIsNotNone(code_match, f'Could not find verification code in log output: {start_result.stdout}, MAPP_SMTP_MOCK must be true')
+            code = code_match.group(1)
+
+            # 6. verify-email-address with code #
+            verify_input = json.dumps({'code': code})
+            verify_result = run_cmd(self.cmd + ['com', 'verify-email-address', io_type, verify_input])
+            verify_data = json.loads(verify_result.stdout)['result']
+            self.assertTrue(verify_data['acknowledged'], f'verify-email-address not acknowledged: {verify_data}')
+
+            # 7. current-user - confirm email_verified is true #
+            current_result = run_cmd(self.cmd + ['auth', 'current-user', io_type])
+            current_data = json.loads(current_result.stdout)['result']
+            self.assertTrue(current_data.get('email_verified'), f'email_verified should be true after verification: {current_data}')
+
+    def test_cli_run_email_verification_flow(self):
+        self._test_email_verification_flow(self.crud_ctx, 'run')
+
+    def test_cli_http_email_verification_flow(self):
+        self._test_email_verification_flow(self.crud_ctx, 'http')
+
+    def test_server_email_verification_flow(self):
+        """
+        Test the email verification flow via the HTTP server.
+        Requires MAPP_SMTP_MOCK to be set in the server environment.
+        """
+        self._check_servers_running()
+
+        base_ctx = {
+            'headers': {'Content-Type': 'application/json'}
+        }
+        base_ctx.update(self.crud_ctx)
+
+        user_email = 'email-verify-server@example.com'
+        user_name = 'email-verify-server'
+        user_password = self.test_password
+
+        # create-user #
+
+        create_status, create_resp = request(
+            base_ctx, 'POST', '/api/auth/create-user',
+            json.dumps({'name': user_name, 'email': user_email, 'password': user_password, 'password_confirm': user_password}).encode()
+        )
+        self.assertEqual(create_status, 200, f'create-user failed: {create_resp}')
+
+        # login-user #
+
+        login_status, login_resp = request(
+            base_ctx, 'POST', '/api/auth/login-user',
+            json.dumps({'email': user_email, 'password': user_password}).encode()
+        )
+        self.assertEqual(login_status, 200, f'login-user failed: {login_resp}')
+        access_token = login_resp['result']['access_token']
+
+        logged_in_ctx = base_ctx.copy()
+        logged_in_ctx['headers'] = base_ctx['headers'].copy()
+        logged_in_ctx['headers']['Authorization'] = f'Bearer {access_token}'
+
+        # send-email (mock) #
+
+        send_status, send_resp = request(
+            logged_in_ctx, 'POST', '/api/com/send-email',
+            json.dumps({'email': user_email, 'subject': 'Test', 'body': 'Hello'}).encode()
+        )
+        self.assertEqual(send_status, 200, f'send-email failed: {send_resp}')
+        self.assertTrue(send_resp['result']['acknowledged'], f'send-email not acknowledged: {send_resp}')
+
+        # start-email-verification (mock - code will be in server logs, not returned) #
+
+        start_status, start_resp = request(logged_in_ctx, 'POST', '/api/com/start-email-verification', b'{}')
+        self.assertEqual(start_status, 200, f'start-email-verification failed: {start_resp}')
+        self.assertTrue(start_resp['result']['acknowledged'], f'start-email-verification not acknowledged: {start_resp}')
+
+        # verify-email-address with wrong code (server returns error) #
+
+        wrong_verify_status, wrong_verify_resp = request(
+            logged_in_ctx, 'POST', '/api/com/verify-email-address',
+            json.dumps({'code': '000000'}).encode()
+        )
+        self.assertEqual(wrong_verify_status, 401, f'verify-email-address with wrong code did not return 401: {wrong_verify_resp}')
 
     # builtin - file system tests #
 
@@ -1473,11 +1715,11 @@ class TestMTemplateApp(unittest.TestCase):
         get_part_output = self._run_cmd(get_part_cmd, env=user_env)
         get_part_result = json.loads(get_part_output.stdout)['result']
         self.assertTrue(get_part_result['acknowledged'], 'Get part content result not acknowledged')
-        self.assertTrue(os.path.exists(local_part_dest), 'Local file for part content does not exist after get-part-content command')
-        self.assertEqual(os.path.getsize(local_part_dest), sample_size, 'Local file size for part content does not match expected size')
+        self.assertTrue(os.path.exists(local_part_dest), f'Local file for part content does not exist after get-part-content command: {local_part_dest}')
+        self.assertEqual(os.path.getsize(local_part_dest), sample_size, f'Local file size for part content does not match expected size: {local_part_dest}')
         with open(local_part_dest, 'rb') as f:
             local_checksum = hashlib.sha3_256(f.read()).hexdigest()
-        self.assertEqual(local_checksum, sample_checksum, 'Local file checksum for part content does not match expected checksum')
+        self.assertEqual(local_checksum, sample_checksum, f'Local file checksum for part content does not match expected checksum: {local_part_dest}')
 
         # confirm can get file content #
 
@@ -1486,14 +1728,17 @@ class TestMTemplateApp(unittest.TestCase):
         get_file_output = self._run_cmd(get_file_cmd, env=user_env)
         get_file_result = json.loads(get_file_output.stdout)['result']
         self.assertTrue(get_file_result['acknowledged'], 'Get file content result not acknowledged')
-        self.assertTrue(os.path.exists(local_file_dest), 'Local file for file content does not exist after get-file-content command')
-        self.assertEqual(os.path.getsize(local_file_dest), sample_size, 'Local file size for file content does not match expected size')
+        self.assertTrue(os.path.exists(local_file_dest), f'Local file for file content does not exist after get-file-content command: {local_file_dest}')
+        self.assertEqual(os.path.getsize(local_file_dest), sample_size, f'Local file size for file content does not match expected size: {local_file_dest}')
         with open(local_file_dest, 'rb') as f:
             local_checksum = hashlib.sha3_256(f.read()).hexdigest()
-        self.assertEqual(local_checksum, sample_checksum, 'Local file checksum for file content does not match expected checksum')
+        self.assertEqual(local_checksum, sample_checksum, f'Local file checksum for file content does not match expected checksum: {local_file_dest}')
 
     def test_cli_run_file_system_ingest_flow(self):
         self._test_file_system_ingest_flow(self.crud_ctx, 'run')
+        
+    # def test_cli_http_file_system_ingest_flow(self):
+    #     self._test_file_system_ingest_flow(self.crud_ctx, 'http')
 
     # builtin - media tests #
 
@@ -2051,7 +2296,6 @@ class TestMTemplateApp(unittest.TestCase):
     def test_cli_db_validation_error(self):
         self._test_cli_validation_error('db', 3)
 
-
     def test_cli_http_validation_error(self):
         self._test_cli_validation_error('http', 4)
 
@@ -2063,6 +2307,8 @@ class TestMTemplateApp(unittest.TestCase):
             }
         }
         base_ctx.update(self.crud_ctx)
+
+        crud_user = 5
 
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
@@ -2079,23 +2325,16 @@ class TestMTemplateApp(unittest.TestCase):
 
                 if model['auth']['require_login']:
                     ctx = base_ctx.copy()
-                    ctx['headers']['Authorization'] = self.crud_users[0]['env']['Authorization']
+                    ctx['headers']['Authorization'] = self.crud_users[crud_user]['env']['Authorization']
                 else:
                     ctx = base_ctx
 
-                # create a valid model to update with invalid data
-                example_to_update = example_from_model(model)
-                create_status, create_resp = request(
-                    ctx,
-                    'POST',
-                    f'/api/{module_name_kebab}/{model_name_kebab}',
-                    json.dumps(example_to_update).encode()
-                )
-                self.assertEqual(create_status, 200, f'Create for validation error test failed: {create_resp}')
-                update_model_id = str(create_resp['id'])
+
+                #
+                # test cannot create invalid models
+                #
 
                 for invalid_example, invalid_field_name in model_validation_errors(model):
-                    # create (invalid)
                     status, output = request(
                         ctx,
                         'POST',
@@ -2111,6 +2350,23 @@ class TestMTemplateApp(unittest.TestCase):
                     )
                     self.assertIn('message', output_error, f'Expected error message in response for {model_name_kebab} with invalid data {invalid_example}, got {output} for field {invalid_field_name}')
 
+                #
+                # test cannot update valid model with invalid data
+                #
+
+                # create a valid model to update with invalid data
+                example_to_update = example_from_model(model)
+                create_status, create_resp = request(
+                    ctx,
+                    'POST',
+                    f'/api/{module_name_kebab}/{model_name_kebab}',
+                    json.dumps(example_to_update).encode()
+                )
+
+                self.assertEqual(create_status, 200, f'Create for validation error test failed: {create_resp}')
+                update_model_id = str(create_resp['id'])
+
+                for invalid_example, invalid_field_name in model_validation_errors(model):
                     # update (invalid)
                     status, output = request(
                         ctx,
@@ -2138,7 +2394,7 @@ class TestMTemplateApp(unittest.TestCase):
 
                 del read_model['id']
                 if model['auth']['require_login']:
-                    example_to_update['user_id'] = self.crud_users[0]['user']['id']
+                    example_to_update['user_id'] = self.crud_users[crud_user]['user']['id']
                 
                 self.assertEqual(read_model, example_to_update, f'Read after validation error for {model["name"]["pascal_case"]} does not match original example data, expected: {example_to_update} got: {read_model}')
 
@@ -2393,6 +2649,7 @@ def test_spec(cli_args:list[str], host:str|None, env_vars:dict, use_cache:bool=F
     TestMTemplateApp.env_vars = env_vars
     TestMTemplateApp.use_cache = use_cache
     TestMTemplateApp.app_type = app_type
+    TestMTemplateApp.verbose = verbose
 
     # Support test filtering by name
     test_filters = getattr(test_spec, '_test_filters', None)

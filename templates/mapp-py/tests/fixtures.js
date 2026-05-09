@@ -43,7 +43,7 @@ async function getEnvSpec(envFileName, expect) {
   return { host, spec };
 }
 
-async function createAndLoginUser(host, browser, envName) {
+export async function createAndLoginUser(host, browser, envName) {
   const uniqueId = Date.now();
   const email = `${envName}-user-${uniqueId}@example.com`;
   const password = 'pw' + uniqueId;

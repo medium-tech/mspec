@@ -1,0 +1,41 @@
+{
+    "lingo": {
+        "version": "page-beta-1"
+    },
+    "params": {},
+
+    "state": {
+        "my_test_form": {
+            "type": "struct",
+            "default": {
+				"state": "initial",
+                "error": "",
+                "item_id": "",
+                "data": {},
+                "field_errors": {}
+			}
+        }
+    },
+
+    "ops": {},
+
+    "output": [
+        {"heading": "Forms", "level": 1},
+        {
+            "form": {
+                "bind": {"state": {"my_test_form": {}}},
+                "fields": {
+                    "text": {
+                        "name": {
+                            "lower_case": "text"
+                        },
+                        "type": "str",
+						"rich_text": true,
+                        "default": "{\"lingo\": {\"version\": \"rich-text-beta-1\"},\"block\": [] }",
+                        "description": "A rich text input field"
+                    }
+                }
+            }
+        }
+    ]
+}
