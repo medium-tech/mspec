@@ -28,7 +28,12 @@ MAPP_SMTP_MOCK = os.environ.get('MAPP_SMTP_MOCK', 'false').lower() == 'true'
 MAPP_SMTP_HOST = os.environ.get('MAPP_SMTP_HOST', 'localhost')
 MAPP_SMTP_PORT = int(os.environ.get('MAPP_SMTP_PORT', 587))
 MAPP_SMTP_SENDER = os.environ.get('MAPP_SMTP_SENDER', '')
+MAPP_SMTP_USERNAME = os.environ.get('MAPP_SMTP_USERNAME', '')
+MAPP_SMTP_PASSWORD = os.environ.get('MAPP_SMTP_PASSWORD', '')
 MAPP_EMAIL_VERIFICATION_EXPIRATION = int(os.environ.get('MAPP_EMAIL_VERIFICATION_EXPIRATION', 600))
+MAPP_EMAIL_VERIFICATION_SUBJECT = os.environ.get('MAPP_EMAIL_VERIFICATION_SUBJECT', 'Your Email Verification Code')
+MAPP_EMAIL_VERIFICATION_URL = os.environ.get('MAPP_EMAIL_VERIFICATION_URL', None)
+
 
 #
 # internal
@@ -48,22 +53,52 @@ def send_email(ctx: MappContext, email: str, subject: str, body: str) -> dict:
     If MAPP_SMTP_MOCK is true the email is only logged and not sent via SMTP.
     """
 
+    #
+    # send mock email
+    #
+
     if MAPP_SMTP_MOCK:
-        ctx.log(f':: send_email :: MOCK - to: {email} subject: {subject} body: {body}')
+        mock_msg = f':: send_email :: MOCK - to: {email} subject: {subject} body: {body}'
+        ctx.log(mock_msg)
+
+    #
+    # send email via SMTP
+    #
+
     else:
+
+        # smtp configuration #
+
         if not MAPP_SMTP_SENDER:
-            raise MappError('SMTP_CONFIG_ERROR', 'SMTP sender address is not configured')
+            ctx.log('ERROR: MAPP_SMTP_SENDER is not set - cannot send email')
+            raise MappError('INTERNAL_ERROR', 'Could not send email')
+        if not MAPP_SMTP_HOST:
+            ctx.log('ERROR: MAPP_SMTP_HOST is not set - cannot send email')
+            raise MappError('INTERNAL_ERROR', 'Could not send email')
+        if not MAPP_SMTP_PORT:
+            ctx.log('ERROR: MAPP_SMTP_PORT is not set - cannot send email')
+            raise MappError('INTERNAL_ERROR', 'Could not send email')
         
+        # construct email #
+
         msg = MIMEMultipart()
         msg['From'] = MAPP_SMTP_SENDER
         msg['To'] = email
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'plain'))
 
+        # send email #
+
+        ctx.log(f':: send_email :: to {email} from {MAPP_SMTP_SENDER} via SMTP')
+
         try:
             with smtplib.SMTP(MAPP_SMTP_HOST, MAPP_SMTP_PORT) as server:
                 server.starttls()
+                if MAPP_SMTP_USERNAME and MAPP_SMTP_PASSWORD:
+                    server.login(MAPP_SMTP_USERNAME, MAPP_SMTP_PASSWORD)
+
                 server.sendmail(MAPP_SMTP_SENDER, email, msg.as_string())
+               
         except smtplib.SMTPException as e:
             raise MappError('SMTP_ERROR', f'Failed to send email: {e}')
 
@@ -81,9 +116,13 @@ def start_email_verification(ctx: MappContext) -> dict:
     Generates a 6-digit code, stores a hash in email_verifications, and sends the code by email.
     """
 
+    # user info #
+
     user_result = current_user(ctx)
     user_id = user_result['value']['id']
     user_email = user_result['value']['email']
+
+    # generate and store code #
 
     code = _generate_verification_code()
     code_hash = _get_password_hash(code)
@@ -95,7 +134,13 @@ def start_email_verification(ctx: MappContext) -> dict:
     )
     ctx.db.commit()
 
-    send_email(ctx, user_email, 'Email Verification Code', f'Your verification code is: {code}')
+    # send email with code to user #
+
+    email_msg = f'Your verification code is: {code}'
+    if MAPP_EMAIL_VERIFICATION_URL is not None:
+        email_msg += f'\n\nEnter this code at the following URL to verify your email address:\n{MAPP_EMAIL_VERIFICATION_URL}'
+
+    send_email(ctx, user_email, MAPP_EMAIL_VERIFICATION_SUBJECT, email_msg)
 
     return {
         'type': 'struct',
