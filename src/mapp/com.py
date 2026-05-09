@@ -90,7 +90,7 @@ def start_email_verification(ctx: MappContext) -> dict:
     created_at = datetime_for_db(datetime.now(timezone.utc))
 
     ctx.db.cursor.execute(
-        'INSERT INTO email_verifications (user_id, created_at, code_hash, verified) VALUES (?, ?, ?, ?)',
+        'INSERT INTO com_email_verifications (user_id, created_at, code_hash, verified) VALUES (?, ?, ?, ?)',
         (user_id, created_at, code_hash, False)
     )
     ctx.db.commit()
@@ -121,7 +121,7 @@ def verify_email_address(ctx: MappContext, code: str) -> dict:
     rows = ctx.db.cursor.execute(
         # check only the 3 most recent records to bound the verification effort
         # while allowing for a small number of retries before the code expires
-        'SELECT id, created_at, code_hash FROM email_verifications WHERE user_id = ? ORDER BY id DESC LIMIT 3',
+        'SELECT id, created_at, code_hash FROM com_email_verifications WHERE user_id = ? ORDER BY id DESC LIMIT 3',
         (user_id,)
     ).fetchall()
 
@@ -145,11 +145,11 @@ def verify_email_address(ctx: MappContext, code: str) -> dict:
         raise AuthenticationError('Invalid or expired verification code')
 
     ctx.db.cursor.execute(
-        'UPDATE user SET email_verified = true WHERE id = ?',
+        'UPDATE auth_user SET email_verified = true WHERE id = ?',
         (user_id,)
     )
     ctx.db.cursor.execute(
-        'DELETE FROM email_verifications WHERE id = ?',
+        'DELETE FROM com_email_verifications WHERE id = ?',
         (matched_id,)
     )
     ctx.db.commit()

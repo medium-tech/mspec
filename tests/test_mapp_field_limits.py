@@ -24,6 +24,9 @@ class _FakeModel:
         ],
         'list_fields': [],
     }
+    _module_spec = {
+        'name': {'snake_case': 'test_module'},
+    }
 
 
 class TestMappFieldLimits(unittest.TestCase):
@@ -80,7 +83,7 @@ class TestMappFieldLimits(unittest.TestCase):
 
         db_model_create_table(ctx, _FakeModel)
         create_sql = ctx.db.cursor.execute(
-            "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'fake_model'"
+            "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'test_module_fake_model'"
         ).fetchone()[0]
 
         self.assertIn(f'CHECK (LENGTH("title") <= {MAX_STR_FIELD_LENGTH})', create_sql)

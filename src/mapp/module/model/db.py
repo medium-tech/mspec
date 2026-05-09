@@ -29,6 +29,8 @@ __all__ = [
 def db_model_create_table(ctx:MappContext, model_class: type) -> Acknowledgment:
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']
+    module_snake_case = model_class._module_spec['name']['snake_case']
+    table_name = f'{module_snake_case}_{model_snake_case}'
 
     # non list fields #
     
@@ -67,12 +69,12 @@ def db_model_create_table(ctx:MappContext, model_class: type) -> Acknowledgment:
         columns.append(col_def)
 
         if field_type == 'foreign_key':
-            indexes.append(f"CREATE INDEX IF NOT EXISTS {model_snake_case}_{field_name}_fk_index ON {model_snake_case}('{field_name}')")
+            indexes.append(f"CREATE INDEX IF NOT EXISTS {table_name}_{field_name}_fk_index ON {table_name}('{field_name}')")
 
     # create main table #
 
     columns_str = ', '.join(columns)
-    main_sql_table = f"CREATE TABLE IF NOT EXISTS {model_snake_case}({columns_str})"
+    main_sql_table = f"CREATE TABLE IF NOT EXISTS {table_name}({columns_str})"
     ctx.db.cursor.execute(main_sql_table)
 
     # create foreign key indexes #
@@ -84,22 +86,22 @@ def db_model_create_table(ctx:MappContext, model_class: type) -> Acknowledgment:
 
     for field in model_spec['list_fields']:
         field_name = field['name']['snake_case']
-        list_table_name = f'{model_snake_case}_{field_name}'
+        list_table_name = f'{table_name}_{field_name}'
         
         list_sql_table = f"""CREATE TABLE IF NOT EXISTS {list_table_name}(
             id INTEGER PRIMARY KEY,
             value,
             position INTEGER,
-            {model_snake_case}_id INTEGER REFERENCES {model_snake_case}(id)
+            {table_name}_id INTEGER REFERENCES {table_name}(id)
         )"""
         ctx.db.cursor.execute(list_sql_table)
 
-        index_sql = f"CREATE INDEX IF NOT EXISTS {list_table_name}_index ON {list_table_name}({model_snake_case}_id)"
+        index_sql = f"CREATE INDEX IF NOT EXISTS {list_table_name}_index ON {list_table_name}({table_name}_id)"
         ctx.db.cursor.execute(index_sql)
 
     ctx.db.commit()
 
-    return Acknowledgment(f'Table {model_snake_case} created or already exists.')
+    return Acknowledgment(f'Table {table_name} created or already exists.')
 
 def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
 
@@ -112,6 +114,8 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
 
     model_spec = model_class._model_spec
     model_snake_case = model_class._model_spec['name']['snake_case']
+    module_snake_case = model_class._module_spec['name']['snake_case']
+    table_name = f'{module_snake_case}_{model_snake_case}'
 
     # auth #
 
@@ -126,7 +130,7 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
 
         if max_models >= 0:
             existing_count = ctx.db.cursor.execute(
-                f'SELECT COUNT(*) FROM {model_snake_case} WHERE user_id = ?',
+                f'SELECT COUNT(*) FROM {table_name} WHERE user_id = ?',
                 (user['value']['id'],)
             ).fetchone()[0]
 
@@ -137,7 +141,7 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
             if max_count >= 0:
                 field_value = getattr(obj, field_name)
                 count = ctx.db.cursor.execute(
-                    f'SELECT COUNT(*) FROM {model_snake_case} WHERE user_id = ? AND "{field_name}" = ?',
+                    f'SELECT COUNT(*) FROM {table_name} WHERE user_id = ? AND "{field_name}" = ?',
                     (user['value']['id'], field_value)
                 ).fetchone()[0]
                 if count >= max_count:
@@ -167,9 +171,9 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
     if has_non_list_fields:
         fields_str = ', '.join(f"'{f}'" for f in fields)
         placeholder_str = ', '.join(placeholders)
-        non_list_sql = f'INSERT INTO {model_snake_case} (' + fields_str + ') VALUES (' + placeholder_str + ')'
+        non_list_sql = f'INSERT INTO {table_name} (' + fields_str + ') VALUES (' + placeholder_str + ')'
     else:
-        non_list_sql = f'INSERT INTO {model_snake_case} DEFAULT VALUES'
+        non_list_sql = f'INSERT INTO {table_name} DEFAULT VALUES'
 
     # call db #
 
@@ -186,13 +190,13 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
 
     for field in model_spec['list_fields']:
         field_name = field['name']['snake_case']
-        list_table_name = f'{model_snake_case}_{field_name}'
+        list_table_name = f'{table_name}_{field_name}'
         values_list = getattr(obj, field_name, [])
         for pos, value in enumerate(values_list):
             if field['element_type'] == 'datetime':
                 value = value.isoformat()
             ctx.db.cursor.execute(
-                f"INSERT INTO {list_table_name} (value, position, {model_snake_case}_id) VALUES (?, ?, ?)",
+                f"INSERT INTO {list_table_name} (value, position, {table_name}_id) VALUES (?, ?, ?)",
                 (value, pos, obj.id)
             )
 
@@ -205,6 +209,8 @@ def db_model_read(ctx:MappContext, model_class: type, model_id: str):
 
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']
+    module_snake_case = model_class._module_spec['name']['snake_case']
+    table_name = f'{module_snake_case}_{model_snake_case}'
 
     # auth #
 
@@ -215,11 +221,11 @@ def db_model_read(ctx:MappContext, model_class: type, model_id: str):
 
     # read non list fields #
 
-    sql = f'SELECT * FROM {model_snake_case} WHERE id=?'
+    sql = f'SELECT * FROM {table_name} WHERE id=?'
 
     main_row = ctx.db.cursor.execute(sql, (model_id,)).fetchone()
     if main_row is None:
-        raise NotFoundError(f'{model_snake_case} {model_id} not found')
+        raise NotFoundError(f'{table_name} {model_id} not found')
 
     # convert non list fields #
 
@@ -242,10 +248,10 @@ def db_model_read(ctx:MappContext, model_class: type, model_id: str):
     for index, field in enumerate(model_spec['list_fields']):
 
         field_name = field['name']['snake_case']
-        list_table_name = f'{model_snake_case}_{field_name}'
+        list_table_name = f'{table_name}_{field_name}'
 
         list_cursor = ctx.db.cursor.execute(
-            f'SELECT value FROM {list_table_name} WHERE {model_snake_case}_id = ? ORDER BY position ASC',
+            f'SELECT value FROM {list_table_name} WHERE {table_name}_id = ? ORDER BY position ASC',
             (model_id,)
         )
         assert list_cursor is not None
@@ -273,6 +279,8 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
 
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']
+    module_snake_case = model_class._module_spec['name']['snake_case']
+    table_name = f'{module_snake_case}_{model_snake_case}'
 
     # auth #
 
@@ -309,13 +317,13 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
     if len(non_list_fields) > 0:
         values.append(obj.id)
         set_clause = ', '.join(non_list_fields)
-        sql = f'UPDATE {model_snake_case} SET {set_clause} WHERE id=?'
+        sql = f'UPDATE {table_name} SET {set_clause} WHERE id=?'
 
         # execute sql #
 
         result = ctx.db.cursor.execute(sql, values)
         if result.rowcount == 0:
-            raise NotFoundError(f'{model_snake_case} {obj.id} not found')
+            raise NotFoundError(f'{table_name} {obj.id} not found')
 
     #
     # list fields
@@ -323,11 +331,11 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
 
     for field in model_spec['list_fields']:
         field_name = field['name']['snake_case']
-        list_table_name = f'{model_snake_case}_{field_name}'
+        list_table_name = f'{table_name}_{field_name}'
 
         # clear existing values #
 
-        ctx.db.cursor.execute(f'DELETE FROM {list_table_name} WHERE {model_snake_case}_id = ?', (obj.id,))
+        ctx.db.cursor.execute(f'DELETE FROM {list_table_name} WHERE {table_name}_id = ?', (obj.id,))
 
         # insert new values #
         
@@ -335,7 +343,7 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
             if field['element_type'] == 'datetime':
                 value = value.isoformat()
             ctx.db.cursor.execute(
-                f'INSERT INTO {list_table_name} (value, position, {model_snake_case}_id) VALUES (?, ?, ?)',
+                f'INSERT INTO {list_table_name} (value, position, {table_name}_id) VALUES (?, ?, ?)',
                 (value, pos, obj.id)
             )
 
@@ -351,7 +359,9 @@ def db_model_delete(ctx:MappContext, model_class: type, model_id: str) -> Acknow
 
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']
-    msg = f'{model_snake_case} {model_id} has been deleted or was already absent.'
+    module_snake_case = model_class._module_spec['name']['snake_case']
+    table_name = f'{module_snake_case}_{model_snake_case}'
+    msg = f'{table_name} {model_id} has been deleted or was already absent.'
 
     # auth #
 
@@ -361,7 +371,7 @@ def db_model_delete(ctx:MappContext, model_class: type, model_id: str) -> Acknow
 
         # check user id of model owner #
 
-        sql = f'SELECT id, user_id FROM {model_snake_case} WHERE id=?'
+        sql = f'SELECT id, user_id FROM {table_name} WHERE id=?'
 
         ctx.db.cursor.execute(sql, (model_id,))
         row = ctx.db.cursor.fetchone()
@@ -370,18 +380,18 @@ def db_model_delete(ctx:MappContext, model_class: type, model_id: str) -> Acknow
             return Acknowledgment(msg)
         
         if str(row[1]) != user['value']['id']:
-            raise AuthenticationError(f'{model_snake_case} {model_id} not found or not authorized to delete')
+            raise AuthenticationError(f'{table_name} {model_id} not found or not authorized to delete')
 
     # list tables #
 
     for field in model_spec['list_fields']:
         field_name = field['name']['snake_case']
-        list_table_name = f'{model_snake_case}_{field_name}'
-        ctx.db.cursor.execute(f'DELETE FROM {list_table_name} WHERE {model_snake_case}_id = ?', (model_id,))
+        list_table_name = f'{table_name}_{field_name}'
+        ctx.db.cursor.execute(f'DELETE FROM {list_table_name} WHERE {table_name}_id = ?', (model_id,))
 
     # main table #
 
-    ctx.db.cursor.execute(f'DELETE FROM {model_snake_case} WHERE id = ?', (model_id,))
+    ctx.db.cursor.execute(f'DELETE FROM {table_name} WHERE id = ?', (model_id,))
     ctx.db.commit()
     return Acknowledgment(msg)
 
@@ -391,6 +401,8 @@ def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int
 
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']
+    module_snake_case = model_class._module_spec['name']['snake_case']
+    table_name = f'{module_snake_case}_{model_snake_case}'
 
     # auth #
 
@@ -400,7 +412,7 @@ def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int
 
     # query #
 
-    sql = f'SELECT * FROM {model_snake_case} ORDER BY id LIMIT ? OFFSET ?'
+    sql = f'SELECT * FROM {table_name} ORDER BY id LIMIT ? OFFSET ?'
     rows = ctx.db.cursor.execute(sql, (size, offset)).fetchall()
     
     # convert results #
@@ -431,10 +443,10 @@ def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int
         for index, field in enumerate(model_spec['list_fields'], start=1):
 
             field_name = field['name']['snake_case']
-            list_table_name = f'{model_snake_case}_{field_name}'
+            list_table_name = f'{table_name}_{field_name}'
 
             cursor = ctx.db.cursor.execute(
-                f'SELECT value FROM {list_table_name} WHERE {model_snake_case}_id = ? ORDER BY position ASC',
+                f'SELECT value FROM {list_table_name} WHERE {table_name}_id = ? ORDER BY position ASC',
                 (data['id'],)
             )
             
@@ -454,7 +466,7 @@ def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int
 
     # result #
         
-    total_items = ctx.db.cursor.execute(f'SELECT COUNT(*) FROM {model_snake_case}').fetchone()[0]
+    total_items = ctx.db.cursor.execute(f'SELECT COUNT(*) FROM {table_name}').fetchone()[0]
 
     return ModelListResult(
         items=models, 
@@ -467,6 +479,8 @@ def db_model_unique_counts(ctx:MappContext, model_class: type, group_by: str, fi
 
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']
+    module_snake_case = model_class._module_spec['name']['snake_case']
+    table_name = f'{module_snake_case}_{model_snake_case}'
 
     # auth #
 
@@ -495,7 +509,7 @@ def db_model_unique_counts(ctx:MappContext, model_class: type, group_by: str, fi
 
     # query #
 
-    sql = f'SELECT {group_by}, COUNT(*) FROM {model_snake_case}{where_clause} GROUP BY {group_by}'
+    sql = f'SELECT {group_by}, COUNT(*) FROM {table_name}{where_clause} GROUP BY {group_by}'
     rows = ctx.db.cursor.execute(sql, where_values).fetchall()
 
     # convert results #
@@ -516,6 +530,8 @@ def db_model_query(ctx:MappContext, model_class: type, where: dict, offset: int=
 
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']
+    module_snake_case = model_class._module_spec['name']['snake_case']
+    table_name = f'{module_snake_case}_{model_snake_case}'
 
     # auth #
 
@@ -557,11 +573,11 @@ def db_model_query(ctx:MappContext, model_class: type, where: dict, offset: int=
 
     where_clause = f" WHERE {' AND '.join(where_parts)}" if where_parts else ''
     query_values = tuple(where_values) + (size, offset)
-    sql = f'SELECT * FROM {model_snake_case}{where_clause} LIMIT ? OFFSET ?'
+    sql = f'SELECT * FROM {table_name}{where_clause} LIMIT ? OFFSET ?'
     rows = ctx.db.cursor.execute(sql, query_values).fetchall()
 
     # total count #
-    count_sql = f'SELECT COUNT(*) FROM {model_snake_case}{where_clause}'
+    count_sql = f'SELECT COUNT(*) FROM {table_name}{where_clause}'
     total = ctx.db.cursor.execute(count_sql, where_values).fetchone()[0]
 
     ctx.log(f'db_model_query - sql: {sql}, values: {query_values}, total: {total} where: {where}')
@@ -590,10 +606,10 @@ def db_model_query(ctx:MappContext, model_class: type, where: dict, offset: int=
         for index, field in enumerate(model_spec['list_fields'], start=1):
 
             field_name = field['name']['snake_case']
-            list_table_name = f'{model_snake_case}_{field_name}'
+            list_table_name = f'{table_name}_{field_name}'
 
             cursor = ctx.db.cursor.execute(
-                f'SELECT value FROM {list_table_name} WHERE {model_snake_case}_id = ? ORDER BY position ASC',
+                f'SELECT value FROM {list_table_name} WHERE {table_name}_id = ? ORDER BY position ASC',
                 (data['id'],)
             )
 
