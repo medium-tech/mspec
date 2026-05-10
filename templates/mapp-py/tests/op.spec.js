@@ -133,7 +133,7 @@ test('test ops for all modules', async ({ browser, crudEnv, crudSession, skipMod
       const opKebab = op.name.kebab_case;
       
       // Skip hidden ops
-      if (op.hidden === true) {
+      if (op.hidden === true || op?.entry_points?.server === false) {
         continue;
       }
 

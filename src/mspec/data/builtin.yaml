@@ -307,8 +307,7 @@ modules:
                     call: "auth.delete_user"
                     args: {}
                 params: {}
-                entry_points:
-                    server: false
+
                 result:
                     type: struct
                     fields:

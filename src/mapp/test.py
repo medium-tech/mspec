@@ -1459,9 +1459,6 @@ class TestMTemplateApp(unittest.TestCase):
             '/api/auth/drop-sessions',
             '/auth/drop-sessions',
 
-            '/api/auth/delete-user',
-            '/auth/delete-user',
-            
             '/api/com/send-email',
             '/com/send-email'
         ]
@@ -1485,7 +1482,6 @@ class TestMTemplateApp(unittest.TestCase):
 
         commands = [
             ['auth', 'drop-sessions'],
-            ['auth', 'delete-user'],
             ['com', 'send-email']
         ]
 
@@ -1549,10 +1545,12 @@ class TestMTemplateApp(unittest.TestCase):
         env['MAPP_CLI_ACCESS_TOKEN'] = access_token
 
         # 3. com send-email (mock) #
-        send_input = json.dumps({'email': user_email, 'subject': 'Test', 'body': 'Hello'})
-        send_result = run_cmd(self.cmd + ['com', 'send-email', io_type, send_input])
-        send_data = json.loads(send_result.stdout)['result']
-        self.assertTrue(send_data['acknowledged'], f'send-email not acknowledged: {send_data}')
+        if io_type != 'http':
+            # this is hidden in the server, so skip if io_type is http
+            send_input = json.dumps({'email': user_email, 'subject': 'Test', 'body': 'Hello'})
+            send_result = run_cmd(self.cmd + ['com', 'send-email', io_type, send_input])
+            send_data = json.loads(send_result.stdout)['result']
+            self.assertTrue(send_data['acknowledged'], f'send-email not acknowledged: {send_data}')
 
         # 4. start-email-verification (mock, with --log to capture code) #
         start_result = run_cmd(self.cmd + ['--log', 'com', 'start-email-verification', io_type])
@@ -1622,15 +1620,6 @@ class TestMTemplateApp(unittest.TestCase):
         logged_in_ctx = base_ctx.copy()
         logged_in_ctx['headers'] = base_ctx['headers'].copy()
         logged_in_ctx['headers']['Authorization'] = f'Bearer {access_token}'
-
-        # send-email (mock) #
-
-        send_status, send_resp = request(
-            logged_in_ctx, 'POST', '/api/com/send-email',
-            json.dumps({'email': user_email, 'subject': 'Test', 'body': 'Hello'}).encode()
-        )
-        self.assertEqual(send_status, 200, f'send-email failed: {send_resp}')
-        self.assertTrue(send_resp['result']['acknowledged'], f'send-email not acknowledged: {send_resp}')
 
         # start-email-verification (mock - code will be in server logs, not returned) #
 

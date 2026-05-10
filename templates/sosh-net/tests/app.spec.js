@@ -30,15 +30,10 @@ test('test hidden entry points', async ({ browser, crudEnv }) => {
 
 	await page.getByRole('link', { name: 'auth' }).click();
   	await expect(page.locator('#lingo-app')).not.toContainText('drop-sessions');
-	await expect(page.locator('#lingo-app')).not.toContainText('delete-user');
 
 	let response = await page.goto(`${crudHost}/auth/drop-sessions`);
 	expect(response.status()).toBe(404);
   	await expect(page.locator('pre')).toContainText('{"code": "NOT_FOUND", "message": "not found: /auth/drop-sessions"}');
-
-	response = await page.goto(`${crudHost}/auth/delete-user`);
-	expect(response.status()).toBe(404);
-  	await expect(page.locator('pre')).toContainText('{"code": "NOT_FOUND", "message": "not found: /auth/delete-user"}');
 
 	//
 	// com
