@@ -3,7 +3,7 @@ lingo:
 
 project:
     name:
-        lower_case: 'sosh net'
+        lower_case: 'social'
 
     description: 'A simple social network'
 
@@ -17,14 +17,14 @@ server:
 client:
     default_host: 'http://localhost:8008'
 
-index_page: 'sosh-front-page.yaml'
+index_page: 'social-front-page.yaml'
 
 modules:
-    sosh_net:
+    social:
         name:
-            lower_case: 'sosh net'
+            lower_case: 'social'
 
-        page: 'sosh-network-page.yaml'
+        page: 'social-network-page.yaml'
         pages:
             account: 'builtin-mapp-page-account.yaml'
 
@@ -33,9 +33,9 @@ modules:
                 name:
                     lower_case: 'profile'
 
-                page: 'sosh-profile.yaml'
+                page: 'social-profile.yaml'
                 pages:
-                    yours: 'sosh-profile-user.yaml'
+                    yours: 'social-profile-user.yaml'
 
                 auth:
                     require_login: true
@@ -111,8 +111,8 @@ modules:
                 auth:
                     require_login: true
 
-                page: 'sosh-forums.json'
-                instance_page: 'sosh-forum-instance.json'
+                page: 'social-forums.json'
+                instance_page: 'social-forum-instance.json'
 
                 fields:
 
@@ -165,7 +165,7 @@ modules:
                 auth:
                     require_login: true
 
-                instance_page: 'sosh-thread-instance.json'
+                instance_page: 'social-thread-instance.json'
 
                 fields:
                     user_id:
@@ -187,7 +187,7 @@ modules:
                         type: foreign_key
                         default: "-1"
                         references:
-                            module: 'sosh_net'
+                            module: 'social'
                             table: 'forum'
                             field: 'id'
                         examples:
@@ -210,7 +210,7 @@ modules:
                         description: 'The main post of the thread, always shown at the top'
                         type: foreign_key
                         references:
-                            module: 'sosh_net'
+                            module: 'social'
                             table: 'post'
                             field: 'id'
                         examples:
@@ -250,7 +250,7 @@ modules:
                             forum and will show up in chatter'
                         type: foreign_key
                         references:
-                            module: 'sosh_net'
+                            module: 'social'
                             table: 'forum'
                             field: 'id'
                         default: "-1"
@@ -265,7 +265,7 @@ modules:
                         description: 'The post this is a reply to, if -1 then it is not a reply'
                         type: foreign_key
                         references:
-                            module: 'sosh_net'
+                            module: 'social'
                             table: 'post'
                             field: 'id'
                         default: "-1"
@@ -321,7 +321,7 @@ modules:
                         default: []
                         element_type: foreign_key
                         references:
-                            module: 'sosh_net'
+                            module: 'social'
                             table: 'post'
                             field: 'id'
                         examples:
@@ -426,7 +426,7 @@ modules:
                             lower_case: 'post id'
                         type: foreign_key
                         references:
-                            module: 'sosh_net'
+                            module: 'social'
                             table: 'post'
                             field: 'id'
                         examples:
@@ -470,11 +470,11 @@ modules:
                             args:
                                 model_id:
                                     params: { post_id: {} }
-                                model_type: 'sosh_net.post'
+                                model_type: 'social.post'
                         reactions:
                             call: 'db.unique_counts'
                             args:
-                                model_type: 'sosh_net.reaction'
+                                model_type: 'social.reaction'
                                 group_by:
                                     type: str
                                     value: 'reaction_type'
@@ -490,7 +490,7 @@ modules:
                             lower_case: 'post id'
                         type: foreign_key
                         references:
-                            module: 'sosh_net'
+                            module: 'social'
                             table: 'post'
                             field: 'id'
                         examples:
@@ -523,7 +523,7 @@ modules:
                         profile:
                             call: 'db.query'
                             args:
-                                model_type: 'sosh_net.profile'
+                                model_type: 'social.profile'
                                 where:
                                     type: struct
                                     value:
@@ -574,11 +574,11 @@ modules:
                                       args:
                                           model_id:
                                               params: { forum_id: {} }
-                                          model_type: 'sosh_net.forum'
+                                          model_type: 'social.forum'
                         threads:
                             call: 'db.query'
                             args:
-                                model_type: 'sosh_net.thread'
+                                model_type: 'social.thread'
                                 offset:
                                     params: { offset: {} }
                                 size:
@@ -596,7 +596,7 @@ modules:
                             lower_case: 'forum id'
                         type: foreign_key
                         references:
-                            module: 'sosh_net'
+                            module: 'social'
                             table: 'forum'
                             field: 'id'
                         examples:
@@ -653,7 +653,7 @@ modules:
                         replies:
                             call: 'db.query'
                             args:
-                                model_type: 'sosh_net.post'
+                                model_type: 'social.post'
                                 offset:
                                     params: { offset: {} }
                                 size:
@@ -669,7 +669,7 @@ modules:
                             lower_case: 'post id'
                         type: foreign_key
                         references:
-                            module: 'sosh_net'
+                            module: 'social'
                             table: 'post'
                             field: 'id'
                         examples:
@@ -721,7 +721,7 @@ modules:
                         thread_id:
                             call: 'db.create'
                             args:
-                                model_type: 'sosh_net.thread'
+                                model_type: 'social.thread'
                                 data:
                                     forum_id:
                                         params: { forum_id: {} }
@@ -734,7 +734,7 @@ modules:
                                     main_post_id:
                                         call: 'db.create'
                                         args:
-                                            model_type: 'sosh_net.post'
+                                            model_type: 'social.post'
                                             data:
                                                 forum_id:
                                                     params: { forum_id: {} }
@@ -753,7 +753,7 @@ modules:
                             lower_case: 'forum id'
                         type: foreign_key
                         references:
-                            module: 'sosh_net'
+                            module: 'social'
                             table: 'forum'
                             field: 'id'
                         examples:
@@ -813,7 +813,7 @@ modules:
                         thread_id:
                             type: foreign_key
                             references:
-                                module: 'sosh_net'
+                                module: 'social'
                                 table: 'thread'
                                 field: 'id'
             
@@ -829,7 +829,7 @@ modules:
                             args:
                                 model_id:
                                     params: { thread_id: {} }
-                                model_type: 'sosh_net.thread'
+                                model_type: 'social.thread'
                     value:
                         thread: {self: thread}
                         main_post:
@@ -841,7 +841,7 @@ modules:
                                         key: 'main_post_id'
                                         object:
                                             self: thread
-                                model_type: 'sosh_net.post'
+                                model_type: 'social.post'
                         forum:
                             branch:
                                 - if:
@@ -871,7 +871,7 @@ modules:
                                                 key: 'forum_id'
                                                 object:
                                                     self: thread
-                                          model_type: 'sosh_net.forum'
+                                          model_type: 'social.forum'
 
                 params:
                     thread_id:
@@ -879,7 +879,7 @@ modules:
                             lower_case: 'thread id'
                         type: foreign_key
                         references:
-                            module: 'sosh_net'
+                            module: 'social'
                             table: 'thread'
                             field: 'id'
                         examples:

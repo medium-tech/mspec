@@ -2,7 +2,7 @@
     "lingo": {
         "version": "page-beta-1",
         "parent_url": "/api/spec",
-        "title": "sosh net :: forum"
+        "title": "social :: forum"
     },
     "params": {
         "project_name": {
@@ -153,7 +153,7 @@
                             },
                             "type": "foreign_key",
                             "references": {
-                                "module": "sosh_net",
+                                "module": "social",
                                 "table": "forum",
                                 "field": "id"
                             },
@@ -417,7 +417,7 @@
                         },
                         "type": "foreign_key",
                         "references": {
-                            "module": "sosh_net",
+                            "module": "social",
                             "table": "forum",
                             "field": "id"
                         }
@@ -434,7 +434,7 @@
                         },
                         "type": "foreign_key",
                         "references": {
-                            "module": "sosh_net",
+                            "module": "social",
                             "table": "post",
                             "field": "id"
                         }
@@ -633,7 +633,7 @@
                                     }
                                 },
                                 "interactive": true,
-                                "http": "/api/sosh-net/create-thread",
+                                "http": "/api/social/create-thread",
                                 "display": {
                                     "show_result": false
                                 },
@@ -674,7 +674,7 @@
                                             "call": "concat",
                                             "args": {
                                                 "items": [
-                                                    "/sosh-net/thread/",
+                                                    "/social/thread/",
                                                     {
                                                         "call": "key",
                                                         "args": {
@@ -825,7 +825,7 @@
                                     "show_status_display": false
                                 },
                                 "interactive": true,
-                                "http": "/api/sosh-net/get-threads-for-forum",
+                                "http": "/api/social/get-threads-for-forum",
                                 "params": {
                                     "forum_id": {
                                         "params": {
@@ -923,7 +923,7 @@
                                                         "field": "title"
                                                     }
                                                 ],
-                                                "instance_url": "/sosh-net/thread/"
+                                                "instance_url": "/social/thread/"
                                             },
                                             "value": {
                                                 "call": "map",
