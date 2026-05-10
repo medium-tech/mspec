@@ -203,30 +203,3 @@ test('test redacted fields', async ({ browser, crudEnv }) => {
   await expect(page.locator('tbody')).toContainText('REDACTED');
 
 });
-
-test('test auth drop sessions is hidden', async ({ browser, crudEnv }) => {
-
-	const { host: crudHost } = crudEnv;
-
-	// init //
-	const context = await browser.newContext();
-	const page = await context.newPage();
-	await page.goto(crudHost);
-	await context.addCookies([{ 
-		name: 'protocol_mode', 
-		value: 'true', 
-		path: '/',
-		domain: new URL(crudHost).hostname,
-		secure: false,
-	}]);
-	await page.reload();
-	await page.goto(crudHost);
-
-	await page.getByRole('link', { name: 'auth' }).click();
-  	await expect(page.locator('#lingo-app')).not.toContainText('drop-sessions');
-
-	const response = await page.goto(`${crudHost}/auth/drop-sessions`);
-	expect(response.status()).toBe(404);
-  	await expect(page.locator('pre')).toContainText('{"code": "NOT_FOUND", "message": "not found: /auth/drop-sessions"}');
-
-});

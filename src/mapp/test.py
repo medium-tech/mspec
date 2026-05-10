@@ -1437,15 +1437,11 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertIn('logged_in', logged_out_is_logged_in_resp['result'])
         self.assertFalse(logged_out_is_logged_in_resp['result']['logged_in'])
 
-    def test_auth_drop_sessions_hidden(self):
+    def test_hidden_endpoints(self):
         """
-        Test that the /api/auth/drop-sessions endpoint is not available in the server, but is via cli
+        Test that endpoints with entry_points.server=false are not accessible via the server, but still show up in CLI help
         """
         
-        #
-        # server
-        #
-
         self._check_servers_running()
 
         base_ctx = {
@@ -1454,33 +1450,57 @@ class TestMTemplateApp(unittest.TestCase):
             }
         }
         base_ctx.update(self.crud_ctx)
+        
+        #
+        # server
+        #
 
-        # attempt to call drop-sessions endpoint
-        methods = ['GET', 'OPTIONS', 'PUT', 'POST', 'DELETE']
-        for method in methods:
-            drop_sessions_status, drop_sessions_resp = request(
-                base_ctx,
-                method,
-                '/api/auth/drop-sessions'
-            )
+        endpoints = [
+            '/api/auth/drop-sessions',
+            '/auth/drop-sessions',
 
-            # should return 404 not found because endpoint should be hidden
-            self.assertEqual(drop_sessions_status, 404, f'Expected 404 from {method} auth/drop-sessions; but got {drop_sessions_status} and response {drop_sessions_resp}')
+            '/api/auth/delete-user',
+            '/auth/delete-user',
+            
+            '/api/com/send-email',
+            '/com/send-email'
+        ]
+
+        for endpoint in endpoints:
+            # attempt to call drop-sessions endpoint
+            methods = ['GET', 'OPTIONS', 'PUT', 'POST', 'DELETE']
+            for method in methods:
+                drop_sessions_status, drop_sessions_resp = request(
+                    base_ctx,
+                    method,
+                    endpoint
+                )
+
+                # should return 404 not found because endpoint should be hidden
+                self.assertEqual(drop_sessions_status, 404, f'Expected 404 from {method} {endpoint}; but got {drop_sessions_status} and response {drop_sessions_resp}')
 
         #
         # cli
         #
 
-        args = self.cmd + ['auth', 'drop-sessions']
+        commands = [
+            ['auth', 'drop-sessions'],
+            ['auth', 'delete-user'],
+            ['com', 'send-email']
+        ]
 
-        result_1 = self._run_cmd(args + ['-h'], env=self.crud_ctx, expected_code=0)
-        self.assertIn(':: auth :: drop-sessions', result_1.stdout, 'drop-sessions command help not found in output')
+        for cmd in commands:
 
-        result_2 = self._run_cmd(args + ['run', '-h'], env=self.crud_ctx, expected_code=0)
-        self.assertIn(':: auth :: drop-sessions :: run', result_2.stdout, 'drop-sessions command help not found in output')
+            args = self.cmd + cmd
 
-        result_3 = self._run_cmd(args + ['http', '-h'], env=self.crud_ctx, expected_code=0)
-        self.assertIn(':: auth :: drop-sessions :: http', result_3.stdout, 'drop-sessions command help not found in output')
+            result_1 = self._run_cmd(args + ['-h'], env=self.crud_ctx, expected_code=0)
+            self.assertIn(f':: {cmd[0]} :: {cmd[1]}', result_1.stdout, 'drop-sessions command help not found in output')
+
+            result_2 = self._run_cmd(args + ['run', '-h'], env=self.crud_ctx, expected_code=0)
+            self.assertIn(f':: {cmd[0]} :: {cmd[1]} :: run', result_2.stdout, 'drop-sessions command help not found in output')
+
+            result_3 = self._run_cmd(args + ['http', '-h'], env=self.crud_ctx, expected_code=0)
+            self.assertIn(f':: {cmd[0]} :: {cmd[1]} :: http', result_3.stdout, 'drop-sessions command help not found in output')
 
     # builtin - file system tests #
 
