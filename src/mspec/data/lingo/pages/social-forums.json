@@ -2,7 +2,7 @@
     "lingo": {
         "version": "page-beta-1",
         "parent_url": "/api/spec",
-		"title": "sosh net :: forums"
+		"title": "social :: forums"
     },
     "params": {
         "project_name": {

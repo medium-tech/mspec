@@ -1,20 +1,20 @@
 lingo:
     version: page-beta-1
     parent_url: '/api/spec'
-    title: "sosh net :: profiles"
+    title: "social :: profiles"
 
 params:
     project_name:
         name:
             lower_case: 'project name'
         type: str
-        default: 'sosh-net'
+        default: 'social'
 
     module_name:
         name:
             lower_case: 'module name'
         type: str
-        default: 'sosh-net'
+        default: 'social'
 
     model_name:
         name:
@@ -93,12 +93,12 @@ state:
 ops: {}
 
 output:
-    - heading: "sosh.net"
+    - heading: "social"
       level: 1
 
     - breadcrumbs:
-        - "home"
-        - "sosh-net"
+        - "mtech"
+        - "social"
         - "profile"
 
     - heading: ":: profiles"
@@ -106,7 +106,7 @@ output:
       
     - text: ':: '
 
-    - link: '/sosh-net/profile/yours'
+    - link: '/social/profile/yours'
       text: 'your profile'
 
     - break: 1

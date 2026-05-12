@@ -2,7 +2,7 @@
     "lingo": {
         "version": "page-beta-1",
         "parent_url": "/api/spec",
-        "title": "sosh net :: forum"
+        "title": "social :: forum"
     },
     "params": {
         "project_name": {
@@ -69,7 +69,8 @@
                             "lower_case": "description"
                         },
                         "type": "str",
-                        "description": "The description of the forum post"
+                        "description": "The description of the forum post",
+						"rich_text": true
                     },
                     "tags": {
                         "name": {
@@ -153,7 +154,7 @@
                             },
                             "type": "foreign_key",
                             "references": {
-                                "module": "sosh_net",
+                                "module": "social",
                                 "table": "forum",
                                 "field": "id"
                             },
@@ -319,7 +320,7 @@
                             "value": {
                                 "user_id": "-1",
                                 "topic": "...",
-                                "description": "...",
+                                "description": "{\"lingo\": {\"version\": \"rich-text-beta-1\"},\"block\": [{\"text\": \"Loading...\"}]}",
                                 "tags": []
                             }
                         }
@@ -417,7 +418,7 @@
                         },
                         "type": "foreign_key",
                         "references": {
-                            "module": "sosh_net",
+                            "module": "social",
                             "table": "forum",
                             "field": "id"
                         }
@@ -434,7 +435,7 @@
                         },
                         "type": "foreign_key",
                         "references": {
-                            "module": "sosh_net",
+                            "module": "social",
                             "table": "post",
                             "field": "id"
                         }
@@ -603,7 +604,8 @@
             "level": 3
         },
         {
-            "lingo": { "state": {"forum": {"description": {}}}}
+            "lingo": { "state": {"forum": {"description": {}}}},
+			"rich_text": true
         },
         {
             "break": 1
@@ -633,7 +635,7 @@
                                     }
                                 },
                                 "interactive": true,
-                                "http": "/api/sosh-net/create-thread",
+                                "http": "/api/social/create-thread",
                                 "display": {
                                     "show_result": false
                                 },
@@ -674,7 +676,7 @@
                                             "call": "concat",
                                             "args": {
                                                 "items": [
-                                                    "/sosh-net/thread/",
+                                                    "/social/thread/",
                                                     {
                                                         "call": "key",
                                                         "args": {
@@ -825,7 +827,7 @@
                                     "show_status_display": false
                                 },
                                 "interactive": true,
-                                "http": "/api/sosh-net/get-threads-for-forum",
+                                "http": "/api/social/get-threads-for-forum",
                                 "params": {
                                     "forum_id": {
                                         "params": {
@@ -923,7 +925,7 @@
                                                         "field": "title"
                                                     }
                                                 ],
-                                                "instance_url": "/sosh-net/thread/"
+                                                "instance_url": "/social/thread/"
                                             },
                                             "value": {
                                                 "call": "map",

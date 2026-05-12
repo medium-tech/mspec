@@ -1,6 +1,6 @@
 lingo:
     version: page-beta-1
-    title: "sosh net :: the network"
+    title: "social :: the network"
 
 params: {}
 
@@ -18,25 +18,25 @@ state:
 ops: {}
 
 output:
-    - heading: 'shosh net'
+    - heading: 'social'
       level: 1
 
     - breadcrumbs:
           - "mtech"
-          - "sosh-net"
+          - "social"
 
     - heading: ":: the network"
       level: 2
       
     - text: ' ● '
-    - link: '/sosh-net/profile'
+    - link: '/social/profile'
       text: 'profiles'
     - text: ' ● '
-    - link: '/sosh-net/forum'
+    - link: '/social/forum'
       text: 'forums'
     - text: ' ● '
-    - link: '/sosh-net/account'
+    - link: '/social/account'
       text: 'account'
     - text: ' ● '
     - break: 1
-    - text: this is sosh net.
+    - text: this is social.
