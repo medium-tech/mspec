@@ -87,7 +87,7 @@ def get_context_from_env():
 
     # db_url = os.getenv('MAPP_DB_URL', f'file:{DEFAULT_DB_PATH}')
     db_url = os.environ['MAPP_DB_URL']
-    db_conn = sqlite3.connect(db_url, uri=True)
+    db_conn = sqlite3.connect(db_url, uri=True, timeout=os.environ.get('MAPP_DB_TIMEOUT', 20))
     atexit.register(lambda: db_conn.close())
 
     client_host = os.getenv('MAPP_CLIENT_HOST', 'http://localhost:8000')

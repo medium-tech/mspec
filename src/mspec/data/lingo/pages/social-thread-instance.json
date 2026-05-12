@@ -2,7 +2,7 @@
     "lingo": {
         "version": "page-beta-1",
         "parent_url": "/api/spec",
-        "title": "sosh net :: thread"
+        "title": "social :: thread"
     },
     "params": {
         "project_name": {
@@ -308,7 +308,7 @@
                         },
                         "type": "foreign_key",
                         "references": {
-                            "module": "sosh_net",
+                            "module": "social",
                             "table": "forum",
                             "field": "id"
                         }
@@ -319,7 +319,7 @@
                         },
                         "type": "foreign_key",
                         "references": {
-                            "module": "sosh_net",
+                            "module": "social",
                             "table": "post",
                             "field": "id"
                         }
@@ -361,7 +361,7 @@
                         "type": "list",
                         "element_type": "foreign_key",
                         "references": {
-                            "module": "sosh_net",
+                            "module": "social",
                             "table": "post",
                             "field": "id"
                         }
@@ -956,7 +956,7 @@
 				"call": "concat",
 				"args": {
 					"items": [
-						"/sosh-net/forum/",
+						"/social/forum/",
 						{
 							"call": "key",
 							"args": {
@@ -1103,7 +1103,7 @@
                     "show_status_display": false
                 },
                 "interactive": true,
-                "http": "/api/sosh-net/get-thread-and-post",
+                "http": "/api/social/get-thread-and-post",
                 "params": {
                     "thread_id": {
                         "params": {
@@ -1131,7 +1131,7 @@
 					"show_status_display": false
 				},
 				"interactive": true,
-				"http": "/api/sosh-net/get-replies-for-post",
+				"http": "/api/social/get-replies-for-post",
 				"params": {
 					"post_id": {
 						"call": "key",
@@ -1243,7 +1243,7 @@
                                                     "field": "message"
                                                 }
                                             ],
-                                            "instance_url": "/sosh-net/post/"
+                                            "instance_url": "/social/post/"
                                         },
                                         "value": {
                                             "call": "map",
@@ -1315,8 +1315,8 @@
 					"mode": "create",
 					"show_model_state": false
 				},
-                "http": "/api/sosh-net/post",
-                "instance_url": "/sosh-net/post/",
+                "http": "/api/social/post",
+                "instance_url": "/social/post/",
                 "definition": {
                     "state": {
                         "post_model_definition": {}

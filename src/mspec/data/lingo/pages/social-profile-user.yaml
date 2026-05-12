@@ -1,20 +1,20 @@
 lingo:
     version: page-beta-1
     parent_url: '/api/spec'
-    title: "sosh net :: your profile"
+    title: "social :: your profile"
 
 params:
     project_name:
         name:
             lower_case: 'project name'
         type: str
-        default: 'sosh-net'
+        default: 'social'
 
     module_name:
         name:
             lower_case: 'module name'
         type: str
-        default: 'sosh-net'
+        default: 'social'
 
     model_name:
         name:
@@ -46,6 +46,7 @@ params:
                     name:
                         lower_case: 'bio'
                     type: str
+                    rich_text: true
                 profile_picture:
                     name:
                         lower_case: 'profile picture'
@@ -197,12 +198,12 @@ state:
 ops: {}
 
 output:
-    - heading: "sosh.net"
+    - heading: "social"
       level: 1
 
     - breadcrumbs:
-        - "home"
-        - "sosh-net"
+        - "mtech"
+        - "social"
         - "profile"
         - "yours"
 
@@ -216,7 +217,7 @@ output:
                       bind: {state: {op_profile_state: {}}}
                       auto_submit: true
                       interactive: true
-                      http: '/api/sosh-net/get-current-user-profile'
+                      http: '/api/social/get-current-user-profile'
                       display:
                           show_result: false
                           show_submit_button: false
@@ -269,6 +270,6 @@ output:
 
           - else:
                 - text: 'please '
-                - link: '/sosh-net/account'
+                - link: '/social/account'
                   text: 'login or create an account'
                 - text: ' to view or edit your profile'

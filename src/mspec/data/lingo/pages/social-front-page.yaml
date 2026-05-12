@@ -1,6 +1,6 @@
 lingo:
     version: page-beta-1
-    title: "sosh net :: front page"
+    title: "social :: front page"
 
 params: {}
 
@@ -23,5 +23,5 @@ output:
 
     - text: ' --> '
 
-    - link: '/sosh-net'
-      text: 'enter sosh net'
+    - link: '/social'
+      text: 'enter social'
