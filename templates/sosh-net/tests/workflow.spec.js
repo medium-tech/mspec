@@ -52,7 +52,8 @@ async function createProfile(page, host, uniqueId) {
 	await expect(page.getByRole('heading', { name: ':: create profile' })).toBeVisible({ timeout: 10000 });
 
 	await page.getByRole('row', { name: 'username:' }).getByRole('textbox').fill(`user_${uniqueId}`);
-	await page.getByRole('row', { name: 'bio:' }).getByRole('textbox').fill(`Bio for workflow user ${uniqueId}`);
+	const editor = page.getByRole('row', { name: 'bio:' }).locator('div.rich-text-editor');
+	await editor.fill(`Bio for workflow user ${uniqueId}`);
 
 	const profile_pic_row = page.getByRole('row', { name: 'profile picture:' });
 	await profile_pic_row.locator('input[type="file"]').setInputFiles('./tests/samples/splash-low.jpg');
@@ -72,7 +73,8 @@ async function createForumAndThread(page, host, uniqueId) {
 	// create a forum
 	await page.getByRole('button', { name: 'create forum' }).click();
 	await page.getByRole('row', { name: 'topic:' }).getByRole('textbox').fill(`Workflow Forum ${uniqueId}`);
-	await page.getByRole('row', { name: 'description:' }).getByRole('textbox').fill(`Forum for workflow test ${uniqueId}`);
+	const editor = await page.getByRole('row', { name: 'description:' }).locator('div.rich-text-editor')
+	editor.fill(`Forum for workflow test ${uniqueId}`);
 	await page.getByRole('button', { name: 'Submit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('Success', { timeout: 10000 });
 
@@ -267,7 +269,7 @@ test('test navigation links', async ({ page, crudEnv }) => {
 	await expect(page.locator('h2')).toContainText(':: the network');
 	await page.getByRole('link', { name: 'profiles' }).click();
 	await page.getByRole('link', { name: 'your profile' }).click();
-	await page.getByRole('link', { name: 'home' }).click();
+	await page.getByRole('link', { name: 'mtech' }).click();
 	await expect(page.getByRole('heading')).toContainText('medium tech');
 	await page.getByRole('link', { name: 'enter social' }).click();
 	await page.getByRole('link', { name: 'profiles' }).click();
@@ -279,7 +281,7 @@ test('test navigation links', async ({ page, crudEnv }) => {
 	await expect(page.locator('h2')).toContainText(':: the network');
 	await page.getByRole('link', { name: 'profiles' }).click();
 	await expect(page.locator('h2')).toContainText(':: profiles');
-	await page.getByRole('link', { name: 'home' }).click();
+	await page.getByRole('link', { name: 'mtech' }).click();
 	await expect(page.getByRole('heading')).toContainText('medium tech');
 	await page.getByRole('link', { name: 'enter social' }).click();
 
@@ -341,11 +343,12 @@ test('test navigation links', async ({ page, crudEnv }) => {
 	await page.goto(`${host}/social/post/1`);
 	await expect(page.getByRole('heading')).toContainText(':: post :: 1');
 	await page.getByRole('link', { name: 'social' }).click();
+	await expect(page.locator('h2')).toContainText(':: the network');
+	await page.getByRole('link', { name: 'mtech' }).click();
 	await expect(page.getByRole('heading')).toContainText('medium tech');
 
 	// account page breadcrumbs
-	await page.getByRole('link', { name: 'enter social' }).click();
-	await page.getByRole('link', { name: 'account' }).click();
+	await page.goto(`${host}/social/account`);
 	await expect(page.locator('h2')).toContainText(':: account');
 	await page.getByRole('link', { name: 'social' }).click();
 	await expect(page.locator('h2')).toContainText(':: the network');
