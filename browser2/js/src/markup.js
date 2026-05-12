@@ -2160,35 +2160,64 @@ function renderState(app, expression, ctx = null) {
  * Render lingo expression - equivalent to Python render_lingo()
  */
 function renderLingo(app, element, ctx = null) {
-    const result = lingoExecute(app, element.lingo, ctx);
-    
-    const convert = (x) => {
-        if (x instanceof Date) {
-            return formatDateTime(x);
-        }
-        return String(x);
-    };
+	/*
+	IF:		element.rich_text is true, we will render as rich text spec, either as a json string or object
+	ELSE: 	convert item to a string (this functionality should be migrated to the text element in the future)
 
-    // console.log('lingo - renderLingo result', element, result);
-    
-    // Handle wrapped format {type: ..., value: ...}
-    if (typeof result === 'object' && result !== null && 'value' in result) {
-        if (['str', 'int', 'float', 'bool', 'datetime'].includes(result.type)) {
-            return {text: convert(result.value)};
-        } else if (result.type === 'list') {
-            return {text: result.value.map(item => convert(item)).join(', ')};
-        } else {
-            throw new Error(`lingo - unexpected result value type: ${result.type}`);
-        }
-    } else if (typeof result === 'object' && result !== null && 'text' in result) {
-        // Already a text element
-        return result;
-    } else if (Array.isArray(result)) {
-        return {text: result.map(item => convert(item)).join(', ')};
-    } else {
-        console.error('lingo - invalid result type', element, result);
-        throw new Error(`lingo - invalid result type: ${typeof result}`, result);
-    }
+	TODO: migrate non rich_text behavior to the text element and remove this feature from the lingo element
+	*/
+	console.log('renderLingo()', element, ctx);
+	const result = lingoExecute(app, element.lingo, ctx);
+
+
+	if(element?.rich_text === true) {
+		console.log('renderLingo() - rich text element:', element, 'parsed rich text:', result);
+
+		const richText = JSON.parse(result.value);
+
+		console.log('renderLingo() - rich text after parsing:', richText);
+	
+		if(richText.lingo.version === 'rich-text-beta-1'){
+			if(!('block' in richText)){
+				throw new Error('lingo - missing block field for rich-text-beta-1 lingo element');
+			}
+			return renderBlock(app, {block: richText.block}, ctx);
+		}else{
+			throw new Error(`lingo - unsupported lingo version: ${richText.lingo.version}`);
+		}
+
+	}else{
+
+		console.log('renderLingo()', element, ctx, typeof element.lingo, element.lingo, result);
+		
+		const convert = (x) => {
+			if (x instanceof Date) {
+				return formatDateTime(x);
+			}
+			return String(x);
+		};
+
+		// console.log('lingo - renderLingo result', element, result);
+		
+		// Handle wrapped format {type: ..., value: ...}
+		if (typeof result === 'object' && result !== null && 'value' in result) {
+			if (['str', 'int', 'float', 'bool', 'datetime'].includes(result.type)) {
+				return {text: convert(result.value)};
+			} else if (result.type === 'list') {
+				return {text: result.value.map(item => convert(item)).join(', ')};
+			} else {
+				throw new Error(`lingo - unexpected result value type: ${result.type}`);
+			}
+		} else if (typeof result === 'object' && result !== null && 'text' in result) {
+			// Already a text element
+			return result;
+		} else if (Array.isArray(result)) {
+			return {text: result.map(item => convert(item)).join(', ')};
+		} else {
+			console.error('lingo - invalid result type', element, result);
+			throw new Error(`lingo - invalid result type: ${typeof result}`, result);
+		}
+	}
 }
 
 /**
@@ -3584,12 +3613,15 @@ function _renderModelList(app, element, ctx = null) {
 		for (const [name, field] of Object.entries(definition.fields)) {
 			// iterate over fields and convert rich text fields from JSON
 			const fieldDef = definition.fields[name];
+			console.log('renderModelList - processing field for table display:', name, fieldDef);
+			
 			if(fieldDef.type === 'str' && fieldDef.rich_text === true) {
+				console.log('renderModelList - processing rich text field:', name);
 				try{
-					itemForTable[field.name.snake_case] = JSON.parse(rawItem.value[name]);
+					itemForTable.value[field.name.snake_case] = JSON.parse(rawItem.value[name]);
 				}catch(e){
 					console.error(`Error parsing rich text content for field ${name} in item:`, e, 'content:', rawItem);
-					itemForTable[field.name.snake_case] = `Invalid rich text content: ${e.message}`;
+					throw new Error(`Invalid rich text content for field ${name} in item: ${e.message}`);
 				}
 			}
 		}

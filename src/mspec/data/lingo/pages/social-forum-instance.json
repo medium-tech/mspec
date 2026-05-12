@@ -69,7 +69,8 @@
                             "lower_case": "description"
                         },
                         "type": "str",
-                        "description": "The description of the forum post"
+                        "description": "The description of the forum post",
+						"rich_text": true
                     },
                     "tags": {
                         "name": {
@@ -319,7 +320,7 @@
                             "value": {
                                 "user_id": "-1",
                                 "topic": "...",
-                                "description": "...",
+                                "description": "{\"lingo\": {\"version\": \"rich-text-beta-1\"},\"block\": [{\"text\": \"Loading...\"}]}",
                                 "tags": []
                             }
                         }
@@ -603,7 +604,8 @@
             "level": 3
         },
         {
-            "lingo": { "state": {"forum": {"description": {}}}}
+            "lingo": { "state": {"forum": {"description": {}}}},
+			"rich_text": true
         },
         {
             "break": 1

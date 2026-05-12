@@ -46,6 +46,7 @@ params:
                     name:
                         lower_case: 'bio'
                     type: str
+                    rich_text: true
                 profile_picture:
                     name:
                         lower_case: 'profile picture'
@@ -201,7 +202,7 @@ output:
       level: 1
 
     - breadcrumbs:
-        - "home"
+        - "mtech"
         - "social"
         - "profile"
         - "yours"
