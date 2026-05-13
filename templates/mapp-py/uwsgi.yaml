@@ -11,3 +11,4 @@ uwsgi:
     py-autoreload: 0
     touch-workers-reload: app/touch-to-reload
     logformat: %('    ') :: RESP :: %(status) :: %(method) %(uri) :: %(size) bytes in %(msecs) msecs :: %(request_id)
+    log-maxsize: 104857600

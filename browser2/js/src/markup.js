@@ -3599,9 +3599,22 @@ function _renderModelList(app, element, ctx = null) {
     // table display
     //
 
-    let headers = [{text: 'id', field: 'id'}];
-    for (const [name, field] of Object.entries(definition.fields)) {
-        headers.push({text: field.name.lower_case, field: field.name.snake_case});
+	let fieldList;
+	if (element.model.fields && Array.isArray(element.model.fields)) {
+		fieldList = element.model.fields;
+	}else{
+		fieldList = ['id'].concat(Object.keys(definition.fields));
+	}
+
+    let headers = [];
+    for (const name of fieldList) {
+		if(name === 'id'){
+			headers.push({text: 'id', field: 'id'});
+
+		}else{
+			const field = definition.fields[name];
+			headers.push({text: field.name.lower_case, field: field.name.snake_case});
+		}
     }
 
     // convert values for display

@@ -181,7 +181,8 @@
 							"display": "list",
 							"http": {"state": {"model_item_api_url": {}}},
 							"definition": {"params": {"model_definition": {}}},
-							"instance_url": {"state": {"model_item_url": {}}}
+							"instance_url": {"state": {"model_item_url": {}}},
+							"fields": ["id", "topic", "tags"]
 						}}
 					]
 				}
