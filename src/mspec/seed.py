@@ -24,6 +24,8 @@ __all__ = [
     'random_int',
     'random_float',
     'random_str',
+    'random_word',
+    'random_list_of_words',
     'random_str_rich_text',
     'random_str_enum',
     'random_list',
@@ -61,6 +63,12 @@ def random_float(min:float=-100.0, max:float=100.0, round_to=2) -> float:
 
 def random_str() -> str:
     return ' '.join(random.choices(random_words, k=random.randint(1, 5)))
+
+def random_word() -> str:
+    return random.choice(random_words)
+
+def random_list_of_words(min:int=1, max:int=5) -> list[str]:
+    return [random_word() for _ in range(random.randint(min, max))]
 
 def random_str_rich_text() -> str:
     color_options = [

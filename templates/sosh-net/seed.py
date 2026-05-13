@@ -6,19 +6,20 @@ from mapp.module.model.http import http_model_create, http_model_read
 from mapp.module.op.http import http_run_op
 from mapp.types import new_model, new_model_class, new_op_classes, new_op_params
 
-from mspec.seed import random_email, random_image, random_person_name, random_str, random_str_rich_text, random_user_name
+from mspec.seed import (
+    random_email, 
+    random_image, 
+    random_person_name, 
+    random_str, 
+    random_str_rich_text, 
+    random_user_name, 
+    random_list_of_words
+)
 
 
-NUM_USERS = 5
-ITEMS_PER_ROUND = 6
+NUM_USERS = 33
+ITEMS_PER_ROUND = 5
 SEED_PASSWORD = 'Seed_pass_1!'
-THUMBNAIL_MAX_SIZE = 1
-
-
-def _make_username(index: int) -> str:
-    base = random_user_name().lower().replace(' ', '_').replace('-', '_')
-    username = f'{base}_{index}'
-    return username[:25]
 
 
 def _create_users_with_tokens(ctx, spec: dict, num_users: int) -> list[dict]:
@@ -68,11 +69,7 @@ def _create_master_image(ctx, spec: dict, image_name: str) -> str:
     try:
         ctx.self['file_input'] = random_image()
         ctx.self['file_input_name'] = image_name
-        ingest_params = new_op_params(ingest_params_class, {
-            'name': image_name,
-            'content_type': 'image/png',
-            'thumbnail_max_size': THUMBNAIL_MAX_SIZE,
-        })
+        ingest_params = new_op_params(ingest_params_class, {'name': image_name})
         image_result = http_run_op(ctx, ingest_params_class, ingest_output_class, ingest_params)
         return str(image_result.result['master_image_id'])
     finally:
@@ -87,14 +84,24 @@ def _seed_profiles(ctx, spec: dict, social_module: dict, users: list[dict]):
     for i, user in enumerate(users):
         ctx.client.set_bearer_token(user['access_token'])
         profile_picture = _create_master_image(ctx, spec, f'seed-profile-{i}.png')
-        profile_data = {
-            'user_id': '-1',
-            'username': _make_username(i),
-            'bio': random_str_rich_text(),
-            'profile_picture': profile_picture,
-        }
-        profile = new_model(profile_class, profile_data)
-        http_model_create(ctx, profile_class, profile)
+        print('  :: seeding profile for user {}/{} with profile picture {}'.format(i + 1, len(users), profile_picture))
+        while True:
+            try:
+                profile_data = {
+                    'user_id': '-1',
+                    'username': random_user_name()[0:25],
+                    'bio': random_str_rich_text(),
+                    'profile_picture': profile_picture,
+                }
+                profile = new_model(profile_class, profile_data)
+                http_model_create(ctx, profile_class, profile)
+                break
+            except Exception as e:
+                if 'Another record with the same value exists' in str(e):
+                    print('   :: username conflict, retrying with a new username...')
+                    continue
+                else:
+                    raise e
 
 
 def _seed_forums(ctx, social_module: dict, users: list[dict], num_forums: int):
@@ -106,9 +113,9 @@ def _seed_forums(ctx, social_module: dict, users: list[dict], num_forums: int):
         for i in range(num_forums):
             forum_data = {
                 'user_id': '-1',
-                'topic': f'{random_str().title()} Forum {i + 1}',
+                'topic': f'{random_str().title()}',
                 'description': random_str_rich_text(),
-                'tags': [random_str(), random_str()],
+                'tags': random_list_of_words(0, 5),
             }
             forum = new_model(forum_class, forum_data)
             http_model_create(ctx, forum_class, forum)
@@ -123,7 +130,7 @@ def _seed_threads_in_forum_1(ctx, social_module: dict, users: list[dict], num_th
         for i in range(num_threads):
             params = new_op_params(params_class, {
                 'forum_id': '1',
-                'title': f'{random_str().title()} Thread {i + 1}',
+                'title': f'{random_str().title()}',
                 'message': random_str_rich_text(),
                 'attachments': [],
                 'images': [],
@@ -166,6 +173,7 @@ def seed():
 
     print(f':: round 1/4: creating {NUM_USERS} user accounts and profiles...')
     users = _create_users_with_tokens(ctx, spec, NUM_USERS)
+    print(f'    :: seeding profiles for {NUM_USERS} users...')
     _seed_profiles(ctx, spec, social_module, users)
 
     print(f':: round 2/4: creating {ITEMS_PER_ROUND} forums per user...')
