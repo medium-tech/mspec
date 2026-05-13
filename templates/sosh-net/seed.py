@@ -63,10 +63,9 @@ def _create_master_image(ctx, spec: dict, image_name: str) -> str:
     ingest_op = media_module['ops']['ingest_master_image']
     ingest_params_class, ingest_output_class = new_op_classes(ingest_op, media_module)
 
-    ctx.self['file_input'] = random_image()
-    ctx.self['file_input_name'] = image_name
-
     try:
+        ctx.self['file_input'] = random_image()
+        ctx.self['file_input_name'] = image_name
         ingest_params = new_op_params(ingest_params_class, {
             'name': image_name,
             'content_type': 'image/png',

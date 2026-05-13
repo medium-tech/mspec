@@ -27,12 +27,13 @@ class TestSeedRandomGenerators(unittest.TestCase):
             self.assertEqual(rich_text, validate_rich_text_json_string(rich_text_json))
 
     def test_random_str_rich_text_adds_spaces_between_sentences(self):
-        with patch('mspec.seed.random.randint', side_effect=[2, 3, 1, 1, 3, 1]):
-            with patch('mspec.seed.random_bool', return_value=False):
-                with patch('mspec.seed.random.choices', return_value=['lion', 'apple', 'sad']):
-                    rich_text_json = random_str_rich_text()
+        with patch('mspec.seed.random.randint', side_effect=[2, 3, 1, 1, 3, 1]), \
+             patch('mspec.seed.random_bool', return_value=False), \
+             patch('mspec.seed.random.choices', return_value=['lion', 'apple', 'sad']):
+            rich_text_json = random_str_rich_text()
 
         rich_text = json.loads(rich_text_json)
+        self.assertEqual(len(rich_text['block']), 2)
         self.assertEqual(rich_text['block'][0]['text'], 'Lion apple sad. ')
         self.assertEqual(rich_text['block'][1]['text'], 'Lion apple sad.')
 
