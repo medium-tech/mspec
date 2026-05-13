@@ -2,6 +2,7 @@ import random
 import io
 import datetime
 import argparse
+import json
 
 from PIL import Image, ImageDraw
 
@@ -23,6 +24,7 @@ __all__ = [
     'random_int',
     'random_float',
     'random_str',
+    'random_str_rich_text',
     'random_str_enum',
     'random_list',
     'random_datetime',
@@ -58,6 +60,37 @@ def random_float(min:float=-100.0, max:float=100.0, round_to=2) -> float:
 
 def random_str() -> str:
     return ' '.join(random.choices(random_words, k=random.randint(1, 5)))
+
+def random_str_rich_text() -> str:
+    color_options = [
+        'red', 'orange', 'yellow', 'green', 'blue', 'indigo',
+        'violet', 'pink', 'brown', 'black', 'gray', 'white',
+    ]
+    num_sentences = random.randint(1, 5)
+    blocks = []
+
+    for sentence_index in range(num_sentences):
+        sentence = ' '.join(random.choices(random_words, k=random.randint(3, 10))).capitalize() + '.'
+        style = {}
+
+        if random_bool():
+            style['bold'] = True
+
+        if random.randint(0, 2) == 0:
+            style['color'] = random.choice(color_options)
+
+        if len(style) == 0:
+            blocks.append({'text': sentence})
+        else:
+            blocks.append({'text': sentence, 'style': style})
+
+        if sentence_index < num_sentences - 1 and random.randint(0, 2) == 0:
+            blocks.append({'break': random.randint(1, 2)})
+
+    return json.dumps({
+        'lingo': {'version': 'rich-text-beta-1'},
+        'block': blocks,
+    })
 
 def random_str_enum(enum:list) -> str:
     return random.choice(enum)
