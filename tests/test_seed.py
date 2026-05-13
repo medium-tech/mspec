@@ -27,6 +27,9 @@ class TestSeedRandomGenerators(unittest.TestCase):
             self.assertEqual(rich_text, validate_rich_text_json_string(rich_text_json))
 
     def test_random_str_rich_text_adds_spaces_between_sentences(self):
+        # randint side_effect order:
+        # [num_sentences, sentence_1_word_count, sentence_1_color_flag, sentence_1_break_flag,
+        #  sentence_2_word_count, sentence_2_color_flag]
         with patch('mspec.seed.random.randint', side_effect=[2, 3, 1, 1, 3, 1]), \
              patch('mspec.seed.random_bool', return_value=False), \
              patch('mspec.seed.random.choices', return_value=['lion', 'apple', 'sad']):

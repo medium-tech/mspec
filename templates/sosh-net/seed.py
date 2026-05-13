@@ -12,6 +12,7 @@ from mspec.seed import random_email, random_image, random_person_name, random_st
 NUM_USERS = 5
 ITEMS_PER_ROUND = 6
 SEED_PASSWORD = 'Seed_pass_1!'
+THUMBNAIL_MAX_SIZE = 1
 
 
 def _make_username(index: int) -> str:
@@ -59,6 +60,7 @@ def _create_users_with_tokens(ctx, spec: dict, num_users: int) -> list[dict]:
 
 
 def _create_master_image(ctx, spec: dict, image_name: str) -> str:
+    """Create a master image via media ingest and return its id."""
     media_module = spec['modules']['media']
     ingest_op = media_module['ops']['ingest_master_image']
     ingest_params_class, ingest_output_class = new_op_classes(ingest_op, media_module)
@@ -69,7 +71,7 @@ def _create_master_image(ctx, spec: dict, image_name: str) -> str:
         ingest_params = new_op_params(ingest_params_class, {
             'name': image_name,
             'content_type': 'image/png',
-            'thumbnail_max_size': 1,
+            'thumbnail_max_size': THUMBNAIL_MAX_SIZE,
         })
         image_result = http_run_op(ctx, ingest_params_class, ingest_output_class, ingest_params)
         return str(image_result.result['master_image_id'])
