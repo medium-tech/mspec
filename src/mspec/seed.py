@@ -33,6 +33,7 @@ __all__ = [
     'random_thing_name',
     'random_email',
     'random_phone_number',
+    'random_image',
 
     'seed',
     'main',
@@ -71,6 +72,8 @@ def random_str_rich_text() -> str:
 
     for sentence_index in range(num_sentences):
         sentence = ' '.join(random.choices(random_words, k=random.randint(3, 10))).capitalize() + '.'
+        if sentence_index < num_sentences - 1:
+            sentence += ' '
         style = {}
 
         if random_bool():
@@ -194,7 +197,7 @@ _SKIP_MODULES = {'auth', 'file_system', 'media'}
 _MEDIA_INGEST_TABLES = {'file', 'image', 'master_image'}
 
 
-def _make_minimal_png() -> bytes:
+def random_image() -> bytes:
     """Create a 500x500 PNG with random text placed at random positions."""
     if random.choice([True, False]):
         bg_color = (255, 255, 255)
@@ -254,7 +257,7 @@ def _ingest_for_table(ctx, spec: dict, ref_table_name: str):
             media_module = spec['modules']['media']
             op = media_module['ops']['create_image']
             params_class, output_class = new_op_classes(op, media_module)
-            content = _make_minimal_png()
+            content = random_image()
             filename = 'seed-image.png'
             ctx.self['file_input'] = content
             ctx.self['file_input_name'] = filename
@@ -269,7 +272,7 @@ def _ingest_for_table(ctx, spec: dict, ref_table_name: str):
             media_module = spec['modules']['media']
             op = media_module['ops']['ingest_master_image']
             params_class, output_class = new_op_classes(op, media_module)
-            content = _make_minimal_png()
+            content = random_image()
             filename = 'seed-master-image.png'
             ctx.self['file_input'] = content
             ctx.self['file_input_name'] = filename
