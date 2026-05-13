@@ -171,8 +171,14 @@ test('edit form state - single-choice-fk', async ({ browser, crudEnv }) => {
 	await xFkFieldRow.getByRole('button', { name: 'Find single_choice_fields' }).click();
 	await expect(page.locator('#lingo-app')).not.toContainText('pending');
 	await page.locator('.popup-content > div > table > tbody > tr').first().click();
-	await expect(xFkFieldRow.getByRole('textbox')).not.toHaveValue('-1');
-	const xFkFieldValue = await xFkFieldRow.getByRole('textbox').inputValue();
+
+	const idRegex = /item id: ([0-9]+)/;
+	await expect(xFkFieldRow).toHaveText(idRegex);
+	await expect(xFkFieldRow).not.toHaveText('item id: -1');
+
+	// extract id of selected FK record for later verification in item view
+	const xFkFieldContent = await xFkFieldRow.textContent();
+	const xFkFieldValue = xFkFieldContent.match(idRegex)[1];
 	const xFkFieldValueLinkText = `go to model-type-tests/single-choice-fields/${xFkFieldValue}`;
 
 	// x_fk_file: upload a PDF file
@@ -180,22 +186,37 @@ test('edit form state - single-choice-fk', async ({ browser, crudEnv }) => {
 	await expect(page.locator('#lingo-app')).not.toContainText('Uploading file...');
 	await expect(page.locator('#lingo-app')).toContainText('File uploaded successfully!');
 	await expect(xFkFileRow.getByRole('button', { name: 'Reset' })).toBeVisible();
-	await expect(xFkFileRow.getByRole('textbox')).not.toHaveValue('-1');
-	const xFkFileValue = await xFkFileRow.getByRole('textbox').inputValue();
+	await expect(xFkFileRow).toContainText('file: lorem-document.pdf');
+
+	// extract id from hidden text input
+	const xFkFileInput = xFkFileRow.locator('td').nth(1).locator('div').locator('input[type="text"]');
+	await expect(xFkFileInput).toBeHidden();
+	const xFkFileInputValue = await xFkFileInput.inputValue();
+	await expect(xFkFileInputValue).not.toBe('-1');
 
 	// x_fk_image: upload an image file
 	await xFkImageRow.locator('input[type="file"]').setInputFiles('./tests/samples/splash-low.jpg');
 	await expect(page.locator('#lingo-app')).not.toContainText('Uploading file...');
 	await expect(page.locator('#lingo-app')).toContainText('File uploaded successfully!');
-	await expect(xFkImageRow.getByRole('textbox')).not.toHaveValue('-1');
-	const xFkImageValue = await xFkImageRow.getByRole('textbox').inputValue();
+	await expect(xFkImageRow).toContainText('file: splash-low.jpg');
+
+	// extract id from hidden text input
+	const xFkImageInput = xFkImageRow.locator('td').nth(1).locator('div').locator('input[type="text"]');
+	await expect(xFkImageInput).toBeHidden();
+	const xFkImageInputValue = await xFkImageInput.inputValue();
+	await expect(xFkImageInputValue).not.toBe('-1');
 
 	// x_fk_master_image: upload a master image file
 	await xFkMasterImageRow.locator('input[type="file"]').setInputFiles('./tests/samples/splash-low.jpg');
 	await expect(page.locator('#lingo-app')).not.toContainText('Uploading file...');
 	await expect(page.locator('#lingo-app')).toContainText('File uploaded successfully!');
-	await expect(xFkMasterImageRow.getByRole('textbox')).not.toHaveValue('-1');
-	const xFkMasterImageValue = await xFkMasterImageRow.getByRole('textbox').inputValue();
+	await expect(xFkMasterImageRow).toContainText('file: splash-low.jpg');
+
+	// extract id from hidden text input
+	const xFkMasterImageInput = xFkMasterImageRow.locator('td').nth(1).locator('div').locator('input[type="text"]');
+	await expect(xFkMasterImageInput).toBeHidden();
+	const xFkMasterImageInputValue = await xFkMasterImageInput.inputValue();
+	await expect(xFkMasterImageInputValue).not.toBe('-1');
 
 	// submit and navigate to item view
 	await page.getByRole('button', { name: 'Submit' }).click();
@@ -207,13 +228,13 @@ test('edit form state - single-choice-fk', async ({ browser, crudEnv }) => {
 		await expect(page.getByRole('row', { name: 'x_fk_field' }).getByRole('link', { name: xFkFieldValueLinkText })).toBeVisible();
 
 		await expect(page.getByRole('row', { name: 'x_fk_file' }).getByRole('button', { name: 'download file' })).toBeVisible();
-		await expect(page.getByRole('row', { name: 'x_fk_file' })).toContainText(xFkFileValue);
+		await expect(page.getByRole('row', { name: 'x_fk_file' })).toContainText(xFkFileInputValue);
 
 		await expect(page.getByRole('row', { name: 'x_fk_image' }).locator('.viewer-container')).toBeVisible();
-		await expect(page.getByRole('row', { name: 'x_fk_image' })).toContainText(xFkImageValue);
+		await expect(page.getByRole('row', { name: 'x_fk_image' })).toContainText(xFkImageInputValue);
 
 		await expect(page.getByRole('row', { name: 'x_fk_master_image' }).locator('.viewer-container')).toBeVisible();
-		await expect(page.getByRole('row', { name: 'x_fk_master_image' })).toContainText(xFkMasterImageValue);
+		await expect(page.getByRole('row', { name: 'x_fk_master_image' })).toContainText(xFkMasterImageInputValue);
 	};
 
 	await checkModelData();
