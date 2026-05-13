@@ -62,7 +62,7 @@ def _seed_profiles(ctx, social_module: dict, users: list[dict]):
     profile_model = social_module['models']['profile']
     profile_class = new_model_class(profile_model, social_module)
 
-    for i, user in enumerate(users, start=1):
+    for i, user in enumerate(users):
         ctx.client.set_bearer_token(user['access_token'])
         profile_data = {
             'user_id': '-1',

@@ -79,7 +79,7 @@ def random_str_rich_text() -> str:
         if random.randint(0, 2) == 0:
             style['color'] = random.choice(color_options)
 
-        if len(style) == 0:
+        if not style:
             blocks.append({'text': sentence})
         else:
             blocks.append({'text': sentence, 'style': style})
