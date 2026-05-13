@@ -4862,7 +4862,7 @@ function createFormElement(app, element, ctx = null) {
             // console.log(`Found existing form state for ${formKeyId}:`, app.clientState.forms[formKeyId]);
             ingestState = app.clientState.forms[formKeyId];
         } else {
-            ingestState = {status: 'idle', error: null, popup: null, showSecureFields: {}};
+            ingestState = {status: 'idle', error: null, popup: null, showSecureFields: {}, filename: null};
             app.clientState.forms[formKeyId] = ingestState;
         }
 
@@ -5163,26 +5163,41 @@ function createFormElement(app, element, ctx = null) {
             });
 
         } else if (fieldType === 'foreign_key') {
-            inputElement = document.createElement('input');
-            inputElement.type = 'text';
-
+            
             const module = fieldSpec.references.module;
             const table = fieldSpec.references.table;
 
             if(table === 'user') {
+				inputElement = document.createElement('input');
+            	inputElement.type = 'text';
                 inputElement.placeholder = 'Will be set automatically';
                 inputElement.disabled = true;
                 inputElement.value = '';
             }else {
-                inputElement.placeholder = `Enter ${module}.${table} ID`;
-                inputElement.value = typeof formData[fieldKey] !== 'undefined' ? formData[fieldKey] : '';
-                inputElement.addEventListener('input', () => {
-                    formData[fieldKey] = inputElement.value;
+				let textInput = document.createElement('input');
+            	textInput.type = 'text';
+                textInput.placeholder = `Enter ${module}.${table} ID`;
+                textInput.value = typeof formData[fieldKey] !== 'undefined' ? formData[fieldKey] : '';
+                textInput.addEventListener('input', () => {
+                    formData[fieldKey] = textInput.value;
                 });
+				console.log(`Foreign key for module ${module} table ${table}`);
+                textInput.disabled = true;
+                textInput.hidden = true;
 
-                if (ingestState.status !== 'idle') {
-                    inputElement.disabled = true;
-                }
+				inputElement = document.createElement('div');
+				inputElement.appendChild(textInput);
+
+				const inputMessage = document.createElement('span');
+				// if ingest state filename is set, show the filename, else show the default message
+				if (ingestState.filename) {
+					inputMessage.textContent = `file: ${ingestState.filename}`;
+				} else if(textInput.value && textInput.value !== '-1') {
+					inputMessage.textContent = `item id: ${textInput.value}`;
+				} else {
+					inputMessage.textContent = `(no item selected)`;
+				}
+				inputElement.appendChild(inputMessage);
             }
 
         } else if (fieldSpec.enum) {
@@ -5228,6 +5243,7 @@ function createFormElement(app, element, ctx = null) {
                 formData[fieldKey] = inputElement.value;
             });
         }
+		console.log(`appending inputElement`, inputElement)
         inputCell.appendChild(inputElement);
         // Set identifier so renderLingoApp can restore focus after re-render
         if (inputElement && (inputElement.tagName === 'INPUT' || inputElement.tagName === 'SELECT')) {
@@ -5320,6 +5336,7 @@ function createFormElement(app, element, ctx = null) {
                 fileInput.type = 'file';
                 fileInput.addEventListener('change', async () => {
                     const file = fileInput.files[0];
+					console.log('File input change event - selected file:', file);
                     if (file) {
                         ingestState.status = 'uploading';
                         fileIngestStatus.textContent = 'Uploading file...';
@@ -5365,6 +5382,7 @@ function createFormElement(app, element, ctx = null) {
                             }
 
                             fileIngestStatus.textContent = 'File uploaded successfully!';
+							ingestState.filename = file.name;
                         }
                         
                         renderLingoApp(app, fileInput.closest('.lingo-container'), true);
