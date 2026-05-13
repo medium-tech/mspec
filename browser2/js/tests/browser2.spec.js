@@ -673,8 +673,13 @@ test('test - forms page', async ({ page }) => {
   
   // Check foreign key field (supplier_id)
   const supplierIdInput = page.getByPlaceholder('Enter inventory.supplier ID');
-  await expect(supplierIdInput).toBeVisible();
+  await expect(supplierIdInput).toBeHidden();
   await expect(supplierIdInput).toHaveValue('1');
+
+  // expect row by name 'supplier id:' to contain text 'item id: 1'
+  const supplierIdRow = page.locator('tr').filter({ hasText: 'supplier id:' });
+  await expect(supplierIdRow).toBeVisible();
+  await expect(supplierIdRow).toContainText('item id: 1');
   
   // Check list field inputs are visible
   await expect(page.getByPlaceholder('Enter text')).toBeVisible(); // tags list
