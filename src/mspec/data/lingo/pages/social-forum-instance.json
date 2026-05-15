@@ -173,7 +173,8 @@
                                 "lower_case": "message"
                             },
                             "type": "str",
-                            "description": "Main post message for the thread"
+                            "description": "Main post message for the thread",
+							"rich_text": true
                         },
                         "attachments": {
                             "name": {

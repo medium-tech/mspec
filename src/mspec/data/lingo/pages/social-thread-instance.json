@@ -328,7 +328,9 @@
                         "name": {
                             "lower_case": "message"
                         },
-                        "type": "str"
+                        "type": "str",
+						"rich_text": true,
+						"description": "Content of the post, supports rich text format"
                     },
                     "attachments": {
                         "name": {
@@ -554,7 +556,7 @@
                             "type": "struct",
                             "value": {
                                 "id": "-1",
-                                "message": "..."
+                                "message": "{\"lingo\": {\"version\": \"rich-text-beta-1\"},\"block\": [{\"text\": \"Loading...\"}]}"
                             }
                         }
                     }
@@ -989,7 +991,8 @@
                         "message": {}
                     }
                 }
-            }
+            },
+			"rich_text": true
         },
         {
             "heading": ":: replies",
@@ -1233,17 +1236,9 @@
                                         "type": "list",
                                         "display": {
                                             "format": "table",
-                                            "headers": [
-                                                {
-                                                    "text": "Id",
-                                                    "field": "id"
-                                                },
-                                                {
-                                                    "text": "Reply",
-                                                    "field": "message"
-                                                }
-                                            ],
-                                            "instance_url": "/social/post/"
+                                            "columns": [
+                                                "message"
+                                            ]
                                         },
                                         "value": {
                                             "call": "map",
@@ -1251,24 +1246,18 @@
                                                 "function": {
                                                     "type": "struct",
                                                     "value": {
-                                                        "id": {
-                                                            "call": "key",
-                                                            "args": {
-                                                                "object": {
-                                                                    "self": "item"
-                                                                },
-                                                                "key": "id"
-                                                            }
-                                                        },
                                                         "message": {
-                                                            "call": "key",
-                                                            "args": {
-                                                                "object": {
-                                                                    "self": "item"
-                                                                },
-                                                                "key": "message"
-                                                            }
-                                                        }
+															"lingo": {
+																"call": "key",
+																"args": {
+																	"object": {
+																		"self": "item"
+																	},
+																	"key": "message"
+																}
+															},
+															"rich_text": true
+														}
                                                     }
                                                 },
                                                 "iterable": {

@@ -85,7 +85,7 @@ async function createForumAndThread(page, host, uniqueId) {
 	// create a thread in the forum
 	await page.getByRole('button', { name: 'create thread' }).click();
 	await page.getByRole('row', { name: 'title:' }).getByRole('textbox').fill(`Workflow Thread ${uniqueId}`);
-	await page.getByRole('row', { name: 'message:' }).getByRole('textbox').fill(`Thread message for workflow test ${uniqueId}`);
+	await page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor').fill(`Thread message for workflow test ${uniqueId}`);
 	await page.getByRole('button', { name: 'Submit' }).click();
 	// create-thread op shows 'view thread' link on success (not the generic 'success' text)
 	await expect(page.getByRole('link', { name: 'view thread' })).toBeVisible({ timeout: 10000 });
@@ -103,8 +103,11 @@ async function logoutUser(page, host) {
 
 async function leaveReply(page, message) {
 	// ':: add reply' section is at the bottom of the thread instance page
+	await expect(page.locator('#lingo-app')).not.toContainText('🟡', { timeout: 10000 });
 	await expect(page.getByRole('heading', { name: ':: add reply' })).toBeVisible({ timeout: 10000 });
-	await page.getByRole('row', { name: 'message:' }).getByRole('textbox').fill(message);
+	
+	
+	await page.locator('div.rich-text-editor').fill(message);
 	await page.getByRole('button', { name: 'Submit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('success', { timeout: 10000 });
 }
