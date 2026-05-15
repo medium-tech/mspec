@@ -113,6 +113,14 @@ test('test - functions-float', async ({ page }) => {
     'float(\'1e-003\') = 0.001',
     'round(3.14159) = 3',
     'round(3.14159, ndigits=3) = 3.142',
+    'floor(3.7) = 3',
+    'floor(-3.2) = -4',
+    'ceil(3.2) = 4',
+    'ceil(-3.7) = -3',
+    'trunc(3.7) = 3',
+    'trunc(-3.7) = -3',
+    'isclose(1.0, 1.0000000001) = true',
+    'isclose(1.0, 1.1) = false',
   ];
 
   for (const text of expectedText) {
@@ -130,6 +138,29 @@ test('test - functions-str', async ({ page }) => {
     'str(123) = 123',
     'join(\'-\', [\'a\',\'b\',\'c\']) = a-b-c',
     'concat([\'hello\', \' \', \'world\']) = hello world',
+    'casefold(\'Hello World\') = hello world',
+    'ljust(\'hi\', 5) = hi   ',
+    'ljust(\'hi\', 5, \'*\') = hi***',
+    'rjust(\'hi\', 5) =    hi',
+    'rjust(\'hi\', 5, \'*\') = ***hi',
+    'center(\'hi\', 6) =   hi  ',
+    'center(\'hi\', 6, \'*\') = **hi**',
+    'strip(\'  hello  \') = hello',
+    'strip(\'***hello***\', \'*\') = hello',
+    'rstrip(\'hello   \') = hello',
+    'rstrip(\'hello***\', \'*\') = hello',
+    'lstrip(\'   hello\') = hello',
+    'lstrip(\'***hello\', \'*\') = hello',
+    'removeprefix(\'hello world\', \'hello \') = world',
+    'removeprefix(\'hello world\', \'bye \') = hello world',
+    'removesuffix(\'hello world\', \' world\') = hello',
+    'removesuffix(\'hello world\', \' earth\') = hello world',
+    'startswith(\'hello world\', \'hello\') = true',
+    'startswith(\'hello world\', \'world\') = false',
+    'endswith(\'hello world\', \'world\') = true',
+    'endswith(\'hello world\', \'hello\') = false',
+    'replace(\'hello world\', \'world\', \'there\') = hello there',
+    'replace(\'aaa\', \'a\', \'b\', count=2) = bba',
   ];
 
   for (const text of expectedText) {
@@ -201,7 +232,9 @@ test('test - functions-sequence', async ({ page }) => {
     'sum([1,2,3], start=0) = 6',
     'sum([1,2,3], start=10) = 16',
     'sorted([5,2,9]) = 2, 5, 9',
-    'sorted([\'banana\', \'apple\', \'cherry\']) = apple, banana, cherry'
+    'sorted([\'banana\', \'apple\', \'cherry\']) = apple, banana, cherry',
+    'count([1,2,1,3,1], 1) = 3',
+    'count(\'hello world\', \'l\') = 3',
   ];
 
   for (const text of expectedText) {

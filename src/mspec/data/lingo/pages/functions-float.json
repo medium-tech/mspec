@@ -15,6 +15,38 @@
         "test_round_ndigits": {
             "type": "float",
             "calc": {"call": "round", "args": {"number": 3.14159, "ndigits": 3}}
+        },
+        "test_floor": {
+            "type": "int",
+            "calc": {"call": "floor", "args": {"number": 3.7}}
+        },
+        "test_floor_neg": {
+            "type": "int",
+            "calc": {"call": "floor", "args": {"number": -3.2}}
+        },
+        "test_ceil": {
+            "type": "int",
+            "calc": {"call": "ceil", "args": {"number": 3.2}}
+        },
+        "test_ceil_neg": {
+            "type": "int",
+            "calc": {"call": "ceil", "args": {"number": -3.7}}
+        },
+        "test_trunc": {
+            "type": "int",
+            "calc": {"call": "trunc", "args": {"number": 3.7}}
+        },
+        "test_trunc_neg": {
+            "type": "int",
+            "calc": {"call": "trunc", "args": {"number": -3.7}}
+        },
+        "test_isclose_true": {
+            "type": "bool",
+            "calc": {"call": "isclose", "args": {"a": 1.0, "b": 1.0000000001}}
+        },
+        "test_isclose_false": {
+            "type": "bool",
+            "calc": {"call": "isclose", "args": {"a": 1.0, "b": 1.1}}
         }
     },
     "ops": {},
@@ -23,7 +55,15 @@
         {"block": [
             {"text": "float('1e-003') = "}, {"lingo": {"state": {"test_float": {}}}}, {"break": 1},
             {"text": "round(3.14159) = "}, {"lingo": {"state": {"test_round_default": {}}}}, {"break": 1},
-            {"text": "round(3.14159, ndigits=3) = "}, {"lingo": {"state": {"test_round_ndigits": {}}}}, {"break": 1}
+            {"text": "round(3.14159, ndigits=3) = "}, {"lingo": {"state": {"test_round_ndigits": {}}}}, {"break": 1},
+            {"text": "floor(3.7) = "}, {"lingo": {"state": {"test_floor": {}}}}, {"break": 1},
+            {"text": "floor(-3.2) = "}, {"lingo": {"state": {"test_floor_neg": {}}}}, {"break": 1},
+            {"text": "ceil(3.2) = "}, {"lingo": {"state": {"test_ceil": {}}}}, {"break": 1},
+            {"text": "ceil(-3.7) = "}, {"lingo": {"state": {"test_ceil_neg": {}}}}, {"break": 1},
+            {"text": "trunc(3.7) = "}, {"lingo": {"state": {"test_trunc": {}}}}, {"break": 1},
+            {"text": "trunc(-3.7) = "}, {"lingo": {"state": {"test_trunc_neg": {}}}}, {"break": 1},
+            {"text": "isclose(1.0, 1.0000000001) = "}, {"lingo": {"state": {"test_isclose_true": {}}}}, {"break": 1},
+            {"text": "isclose(1.0, 1.1) = "}, {"lingo": {"state": {"test_isclose_false": {}}}}, {"break": 1}
         ]}
     ]
 }
