@@ -947,6 +947,13 @@ const lingoFunctionLookup = {
             'count': {'type': 'int', 'default': -1}
         }
     },
+    're_match': {
+        func: (pattern, string) => new RegExp(pattern).test(string),
+        args: {
+            'pattern': {'type': 'str'},
+            'string': {'type': 'str'}
+        }
+    },
 
 	// struct //
     

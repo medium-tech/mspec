@@ -256,15 +256,6 @@ def new_model_class(model_spec:dict, module_spec:Optional[dict]=None) -> type:
 
         if 'validation' in field:
             validation = field['validation']
-            try:
-                # only allowed validation currently is length of string validation
-                # eventually more of the lingo scripting spec will be enabled
-                assert validation['call'] == 'le'
-                validation['args']['a']['call'] == 'len'
-                validation['args']['a']['args']['object']['self'] == 'value'
-                assert isinstance(validation['args']['b'], int)
-            except (KeyError, AssertionError):
-                raise ValueError(f'validation for field {field_name} in model {class_name} is invalid, currently only supports string length validation')
             
             # create validation callable #
 

@@ -241,6 +241,14 @@
     - **count** `int` (default: -1, meaning replace all occurrences)
   - **return:** `str`
 
+`re_match` - return true if the string matches the regular expression pattern
+
+**NOTE:** Use `^` and `$` anchors for full-string matching. Only use regex syntax compatible with both Python and JavaScript.
+  - **args:**
+    - **pattern** `str`
+    - **string** `str`
+  - **return:** `bool`
+
 ### Math Functions
 `add` - perform addition on `a` and `b` and return the result
   - **args:**
