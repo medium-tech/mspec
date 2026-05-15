@@ -185,6 +185,17 @@ def _parse_access_token(ctx:dict, token:str) -> tuple[User, str]:
 #
 
 EMAIL_REGEX = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+ALLOWED_TEST_ADDRESSES = ['localhost', '127.0.0.1']
+
+if os.environ.get('MAPP_ALLOW_SIMPLE_PASSWORDS_FOR_TESTING') == 'true':
+    if os.environ.get('MAPP_SERVER_DEVELOPMENT_MODE') != 'true':
+        raise RuntimeError(f'Must be in development mode to allow simple passwords')
+    verification_url = os.environ.get('MAPP_EMAIL_VERIFICATION_URL', 'not-set')
+    if not any(addr in verification_url for addr in ALLOWED_TEST_ADDRESSES):
+        raise RuntimeError(f'Must be using local address (localhost or 127.0.0.1) when using simple passwords, but got {verification_url} for MAPP_EMAIL_VERIFICATION_URL')
+    PASSWORD_MIN_LENGTH = 3
+else:
+    PASSWORD_MIN_LENGTH = 10
 
 def create_user(ctx: MappContext, name: str, email: str, password: str, password_confirm: str) -> dict:
     err_msg = 'Could not create user'
@@ -211,11 +222,14 @@ def create_user(ctx: MappContext, name: str, email: str, password: str, password
     if not re.match(EMAIL_REGEX, email):
         field_errors['email'] = 'Invalid email format'
     
-    if password == '' or password is None:
+    if password is None:
         field_errors['password'] = 'Password cannot be empty'
+    
+    if len(password) < PASSWORD_MIN_LENGTH:
+        field_errors['password'] = f'Password must be at least {PASSWORD_MIN_LENGTH} characters long'
 
     if password != password_confirm:
-        field_errors['password_confirm'] = 'Password confirmation does not match password'
+        field_errors['password_confirm'] = 'Confirmation does not match'
 
     if field_errors:
         raise MappValidationError(err_msg, field_errors)

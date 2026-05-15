@@ -360,3 +360,68 @@ test('test navigation links', async ({ page, crudEnv }) => {
 	await page.getByRole('link', { name: 'mtech' }).click();
 	await expect(page.getByRole('heading')).toContainText('medium tech');
 });
+
+test('test create user with duplicate email', async ({ browser, crudEnv }) => {
+
+	// init //
+
+	const uniqueId = new Date().getTime();
+	const email = `dupe-sosh-${uniqueId}@email.com`;
+	const testPassword = 'test-password-123';
+
+	const host = crudEnv.host;
+	const initialContext = await browser.newContext();
+	const page = await initialContext.newPage();
+	await page.goto(host);
+	
+	// go to form and fill out //
+	await page.goto(host);
+	await page.getByRole('link', { name: 'enter social' }).click();
+	await page.getByRole('link', { name: 'account' }).click();
+	await page.getByRole('row', { name: 'name:' }).getByRole('textbox').fill('Dupe Email Test');
+	await page.getByRole('row', { name: 'email:' }).nth(1).getByRole('textbox').fill(email);
+	await page.getByRole('row', { name: 'password:' }).nth(1).getByRole('textbox').fill(testPassword);
+	await page.getByRole('row', { name: 'password confirm:' }).getByRole('textbox').fill(testPassword);
+
+	// create user //
+	await page.getByRole('button', { name: 'create account' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('success');
+
+	// attempt to create user again with same email //
+	await page.getByRole('button', { name: 'create account' }).click();
+	await expect(page.getByRole('table').nth(1)).toContainText('Could not create user: email already exists');
+	
+});
+
+test('test create user with bad passwords', async ({ browser, crudEnv }) => {
+
+	// init //
+
+	const uniqueId = new Date().getTime();
+	const email = `bad-pw-sosh-${uniqueId}@email.com`;
+
+	const host = crudEnv.host;
+	const initialContext = await browser.newContext();
+	const page = await initialContext.newPage();
+	
+	// go to form and fill out //
+	await page.goto(host);
+	await page.getByRole('link', { name: 'enter social' }).click();
+	await page.getByRole('link', { name: 'account' }).click();
+
+	await page.getByRole('row', { name: 'name:' }).getByRole('textbox').fill('Bad Pass Test');
+	await page.getByRole('row', { name: 'email:' }).nth(1).getByRole('textbox').fill(email);
+	
+	// short password
+	await page.getByRole('row', { name: 'password:' }).nth(1).getByRole('textbox').fill('1');
+	await page.getByRole('row', { name: 'password confirm:' }).getByRole('textbox').fill('1');
+	await page.getByRole('button', { name: 'create account' }).click();
+	await expect(page.getByRole('table').nth(1)).toContainText('Could not create user password: Password must be at least');
+
+	// mismatched password confirmation
+	await page.getByRole('row', { name: 'password:' }).nth(1).getByRole('textbox').fill('1234567890123');
+	await page.getByRole('row', { name: 'password confirm:' }).getByRole('textbox').fill('0234567890123');
+	await page.getByRole('button', { name: 'create account' }).click();
+	await expect(page.getByRole('table').nth(1)).toContainText('Could not create user password_confirm: Confirmation does not match');
+	
+});

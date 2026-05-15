@@ -1404,10 +1404,26 @@ const lingoFunctionLookup = {
                     } else {
                         const errorData = await response.json();
                         let errorMessage = `${response.status} ${response.statusText}`;
-                        if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
-                            errorMessage = errorData.error.message;
+						
+						if (errorData.hasOwnProperty('error')) {
+							if (errorData.error.hasOwnProperty('message')) {
+                            	errorMessage = errorData.error.message;
+                            }
+
+							if (errorData.error.hasOwnProperty('code') && errorData.error.code === 'VALIDATION_ERROR') {
+								errorMessage = errorData.error.message
+
+								// iterate over field_errors and append to errorMessage
+								if (errorData.error.hasOwnProperty('field_errors')) {
+									const fieldErrors = errorData.error.field_errors;
+									for (const [field, message] of Object.entries(fieldErrors)) {
+										errorMessage += ` ${field}: ${message}`;
+									}
+								}
+
+							}
                         }
-                        console.error('op.http - HTTP error:', response.status, response.statusText);
+                        console.error('op.http - HTTP error:', response, errorData);
 
                         if(url == '/api/auth/logout-user') {
                             localStorage.removeItem('access_token');
@@ -5414,7 +5430,7 @@ function createFormElement(app, element, ctx = null) {
                 formData[fieldKey] = inputElement.value;
             });
         }
-		console.log(`appending inputElement`, inputElement)
+		// console.log(`appending inputElement`, inputElement)
         inputCell.appendChild(inputElement);
         // Set identifier so renderLingoApp can restore focus after re-render
         if (inputElement && (inputElement.tagName === 'INPUT' || inputElement.tagName === 'SELECT')) {
