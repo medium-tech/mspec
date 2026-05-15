@@ -161,6 +161,8 @@ test('test - functions-str', async ({ page }) => {
     'endswith(\'hello world\', \'hello\') = false',
     'replace(\'hello world\', \'world\', \'there\') = hello there',
     'replace(\'aaa\', \'a\', \'b\', count=2) = bba',
+    're_match(\'^[a-zA-Z0-9._-]+$\', \'alice_123\') = true',
+    're_match(\'^[a-zA-Z0-9._-]+$\', \'invalid name!\') = false',
   ];
 
   for (const text of expectedText) {

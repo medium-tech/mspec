@@ -1,5 +1,6 @@
 import math
 import operator
+import re
 
 from copy import deepcopy
 from dataclasses import dataclass
@@ -590,6 +591,9 @@ def str_replace(string:str, old:str, new:str, count:int=-1) -> str:
         return string.replace(old, new)
     return string.replace(old, new, count)
 
+def str_re_match(pattern:str, string:str) -> bool:
+    return bool(re.match(pattern, string))
+
 def lingo_isclose(a:float, b:float, rel_tol:float=1e-09, abs_tol:float=0.0) -> bool:
     return math.isclose(a, b, rel_tol=rel_tol, abs_tol=abs_tol)
 
@@ -687,6 +691,7 @@ lingo_function_lookup = {
     'startswith': {'func': lambda string, prefix: string.startswith(prefix), 'args': {'string': {'type': 'str'}, 'prefix': {'type': 'str'}}},
     'endswith': {'func': lambda string, suffix: string.endswith(suffix), 'args': {'string': {'type': 'str'}, 'suffix': {'type': 'str'}}},
     'replace': {'func': str_replace, 'args': {'string': {'type': 'str'}, 'old': {'type': 'str'}, 'new': {'type': 'str'}, 'count': {'type': 'int', 'default': -1}}},
+    're_match': {'func': str_re_match, 'args': {'pattern': {'type': 'str'}, 'string': {'type': 'str'}}},
 
     # struct #
 

@@ -107,6 +107,14 @@
         "test_replace_count": {
             "type": "str",
             "calc": {"call": "replace", "args": {"string": "aaa", "old": "a", "new": "b", "count": 2}}
+        },
+        "test_re_match_true": {
+            "type": "bool",
+            "calc": {"call": "re_match", "args": {"pattern": "^[a-zA-Z0-9._-]+$", "string": "alice_123"}}
+        },
+        "test_re_match_false": {
+            "type": "bool",
+            "calc": {"call": "re_match", "args": {"pattern": "^[a-zA-Z0-9._-]+$", "string": "invalid name!"}}
         }
     },
     "ops": {},
@@ -138,7 +146,9 @@
             {"text": "endswith('hello world', 'world') = "}, {"lingo": {"state": {"test_endswith_true": {}}}}, {"break": 1},
             {"text": "endswith('hello world', 'hello') = "}, {"lingo": {"state": {"test_endswith_false": {}}}}, {"break": 1},
             {"text": "replace('hello world', 'world', 'there') = "}, {"lingo": {"state": {"test_replace": {}}}}, {"break": 1},
-            {"text": "replace('aaa', 'a', 'b', count=2) = "}, {"lingo": {"state": {"test_replace_count": {}}}}, {"break": 1}
+            {"text": "replace('aaa', 'a', 'b', count=2) = "}, {"lingo": {"state": {"test_replace_count": {}}}}, {"break": 1},
+            {"text": "re_match('^[a-zA-Z0-9._-]+$', 'alice_123') = "}, {"lingo": {"state": {"test_re_match_true": {}}}}, {"break": 1},
+            {"text": "re_match('^[a-zA-Z0-9._-]+$', 'invalid name!') = "}, {"lingo": {"state": {"test_re_match_false": {}}}}, {"break": 1}
         ]}
     ]
 }

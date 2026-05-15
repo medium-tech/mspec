@@ -240,7 +240,7 @@ class TestLingoPages(unittest.TestCase):
         self.assertFalse(app.state['test_isclose_false'])
 
     def test_str_functions(self):
-        """Test string functions: str, join, casefold, ljust, rjust, center, strip, rstrip, lstrip, removeprefix, removesuffix, startswith, endswith, replace"""
+        """Test string functions: str, join, casefold, ljust, rjust, center, strip, rstrip, lstrip, removeprefix, removesuffix, startswith, endswith, replace, re_match"""
         app = lingo_app(self.functions_str_spec)
         
         # Test str function
@@ -298,6 +298,10 @@ class TestLingoPages(unittest.TestCase):
         # Test replace
         self.assertEqual(app.state['test_replace'], 'hello there')
         self.assertEqual(app.state['test_replace_count'], 'bba')
+
+        # Test re_match
+        self.assertTrue(app.state['test_re_match_true'])
+        self.assertFalse(app.state['test_re_match_false'])
 
     def test_struct_functions(self):
         """Test struct functions: key"""
