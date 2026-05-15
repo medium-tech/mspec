@@ -213,7 +213,7 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(app.state['test_int_base'], 42)
 
     def test_float_functions(self):
-        """Test float conversion and rounding functions: float, round"""
+        """Test float conversion and rounding functions: float, round, floor, ceil, trunc, isclose"""
         app = lingo_app(self.functions_float_spec)
 
         # Test float function
@@ -223,8 +223,24 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(app.state['test_round_default'], 3)
         self.assertEqual(app.state['test_round_ndigits'], 3.142)
 
+        # Test floor
+        self.assertEqual(app.state['test_floor'], 3)
+        self.assertEqual(app.state['test_floor_neg'], -4)
+
+        # Test ceil
+        self.assertEqual(app.state['test_ceil'], 4)
+        self.assertEqual(app.state['test_ceil_neg'], -3)
+
+        # Test trunc
+        self.assertEqual(app.state['test_trunc'], 3)
+        self.assertEqual(app.state['test_trunc_neg'], -3)
+
+        # Test isclose
+        self.assertTrue(app.state['test_isclose_true'])
+        self.assertFalse(app.state['test_isclose_false'])
+
     def test_str_functions(self):
-        """Test string functions: str, join"""
+        """Test string functions: str, join, casefold, ljust, rjust, center, strip, rstrip, lstrip, removeprefix, removesuffix, startswith, endswith, replace"""
         app = lingo_app(self.functions_str_spec)
         
         # Test str function
@@ -232,6 +248,56 @@ class TestLingoPages(unittest.TestCase):
         
         # Test join function
         self.assertEqual(app.state['test_join'], 'a-b-c')
+
+        # Test concat function
+        self.assertEqual(app.state['test_concat'], 'hello world')
+
+        # Test casefold
+        self.assertEqual(app.state['test_casefold'], 'hello world')
+
+        # Test ljust
+        self.assertEqual(app.state['test_ljust'], 'hi   ')
+        self.assertEqual(app.state['test_ljust_fillchar'], 'hi***')
+
+        # Test rjust
+        self.assertEqual(app.state['test_rjust'], '   hi')
+        self.assertEqual(app.state['test_rjust_fillchar'], '***hi')
+
+        # Test center
+        self.assertEqual(app.state['test_center'], '  hi  ')
+        self.assertEqual(app.state['test_center_fillchar'], '**hi**')
+
+        # Test strip
+        self.assertEqual(app.state['test_strip'], 'hello')
+        self.assertEqual(app.state['test_strip_chars'], 'hello')
+
+        # Test rstrip
+        self.assertEqual(app.state['test_rstrip'], 'hello')
+        self.assertEqual(app.state['test_rstrip_chars'], 'hello')
+
+        # Test lstrip
+        self.assertEqual(app.state['test_lstrip'], 'hello')
+        self.assertEqual(app.state['test_lstrip_chars'], 'hello')
+
+        # Test removeprefix
+        self.assertEqual(app.state['test_removeprefix'], 'world')
+        self.assertEqual(app.state['test_removeprefix_no_match'], 'hello world')
+
+        # Test removesuffix
+        self.assertEqual(app.state['test_removesuffix'], 'hello')
+        self.assertEqual(app.state['test_removesuffix_no_match'], 'hello world')
+
+        # Test startswith
+        self.assertTrue(app.state['test_startswith_true'])
+        self.assertFalse(app.state['test_startswith_false'])
+
+        # Test endswith
+        self.assertTrue(app.state['test_endswith_true'])
+        self.assertFalse(app.state['test_endswith_false'])
+
+        # Test replace
+        self.assertEqual(app.state['test_replace'], 'hello there')
+        self.assertEqual(app.state['test_replace_count'], 'bba')
 
     def test_struct_functions(self):
         """Test struct functions: key"""
@@ -262,7 +328,7 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(app.state['test_abs'], 10)
 
     def test_sequence_functions(self):
-        """Test sequence functions: len, range, slice, any, all, sum, sorted"""
+        """Test sequence functions: len, range, slice, any, all, sum, sorted, count"""
         app = lingo_app(self.functions_sequence_spec)
 
         # Test len
@@ -290,6 +356,10 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(app.state['test_sum_start'], 16)
         self.assertEqual(app.state['test_sorted'], [2, 5, 9])
         self.assertEqual(app.state['test_sorted_strings'], ['apple', 'banana', 'cherry'])
+
+        # Test count
+        self.assertEqual(app.state['test_count_list'], 3)
+        self.assertEqual(app.state['test_count_str'], 3)
 
     def test_sequence_ops_functions(self):
         """Test sequence ops: map, filter, dropwhile, takewhile, reversed, accumulate, reduce"""

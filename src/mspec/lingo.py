@@ -1,3 +1,4 @@
+import math
 import operator
 
 from copy import deepcopy
@@ -566,6 +567,35 @@ def str_join(separator:str, items:list) -> str:
 def str_concat(items:list) -> str:
     return ''.join(str(item) for item in items)
 
+def str_ljust(string:str, width:int, fillchar:str=' ') -> str:
+    return string.ljust(width, fillchar)
+
+def str_rjust(string:str, width:int, fillchar:str=' ') -> str:
+    return string.rjust(width, fillchar)
+
+def str_center(string:str, width:int, fillchar:str=' ') -> str:
+    return string.center(width, fillchar)
+
+def str_strip(string:str, chars:str=None) -> str:
+    return string.strip(chars)
+
+def str_rstrip(string:str, chars:str=None) -> str:
+    return string.rstrip(chars)
+
+def str_lstrip(string:str, chars:str=None) -> str:
+    return string.lstrip(chars)
+
+def str_replace(string:str, old:str, new:str, count:int=-1) -> str:
+    if count == -1:
+        return string.replace(old, new)
+    return string.replace(old, new, count)
+
+def lingo_isclose(a:float, b:float, rel_tol:float=1e-09, abs_tol:float=0.0) -> bool:
+    return math.isclose(a, b, rel_tol=rel_tol, abs_tol=abs_tol)
+
+def lingo_count(source, value) -> int:
+    return source.count(value)
+
 def struct_key(object:dict, key_name:str) -> Any:
     try:
         return object[key_name]
@@ -635,12 +665,28 @@ lingo_function_lookup = {
 
     'float': {'func': float, 'args': {'number': {'type': 'any'}}},
     'round': {'func': round, 'args': {'number': {'type': 'float'}, 'ndigits': {'type': 'int', 'default': None}}},
+    'floor': {'func': math.floor, 'args': {'number': {'type': ('int', 'float')}}},
+    'ceil': {'func': math.ceil, 'args': {'number': {'type': ('int', 'float')}}},
+    'trunc': {'func': math.trunc, 'args': {'number': {'type': ('int', 'float')}}},
+    'isclose': {'func': lingo_isclose, 'args': {'a': {'type': 'float'}, 'b': {'type': 'float'}, 'rel_tol': {'type': 'float', 'default': 1e-09}, 'abs_tol': {'type': 'float', 'default': 0.0}}},
 
     # str #
 
     'str': {'func': str_convert, 'args': {'object': {'type': 'any'}}},
     'join': {'func': str_join, 'args': {'separator': {'type': 'str'}, 'items': {'type': 'list'}}},
     'concat': {'func': str_concat, 'args': {'items': {'type': 'list'}}},
+    'casefold': {'func': lambda string: string.casefold(), 'args': {'string': {'type': 'str'}}},
+    'ljust': {'func': str_ljust, 'args': {'string': {'type': 'str'}, 'width': {'type': 'int'}, 'fillchar': {'type': 'str', 'default': ' '}}},
+    'rjust': {'func': str_rjust, 'args': {'string': {'type': 'str'}, 'width': {'type': 'int'}, 'fillchar': {'type': 'str', 'default': ' '}}},
+    'center': {'func': str_center, 'args': {'string': {'type': 'str'}, 'width': {'type': 'int'}, 'fillchar': {'type': 'str', 'default': ' '}}},
+    'strip': {'func': str_strip, 'args': {'string': {'type': 'str'}, 'chars': {'type': 'str', 'default': None}}},
+    'rstrip': {'func': str_rstrip, 'args': {'string': {'type': 'str'}, 'chars': {'type': 'str', 'default': None}}},
+    'lstrip': {'func': str_lstrip, 'args': {'string': {'type': 'str'}, 'chars': {'type': 'str', 'default': None}}},
+    'removeprefix': {'func': lambda string, prefix: string.removeprefix(prefix), 'args': {'string': {'type': 'str'}, 'prefix': {'type': 'str'}}},
+    'removesuffix': {'func': lambda string, suffix: string.removesuffix(suffix), 'args': {'string': {'type': 'str'}, 'suffix': {'type': 'str'}}},
+    'startswith': {'func': lambda string, prefix: string.startswith(prefix), 'args': {'string': {'type': 'str'}, 'prefix': {'type': 'str'}}},
+    'endswith': {'func': lambda string, suffix: string.endswith(suffix), 'args': {'string': {'type': 'str'}, 'suffix': {'type': 'str'}}},
+    'replace': {'func': str_replace, 'args': {'string': {'type': 'str'}, 'old': {'type': 'str'}, 'new': {'type': 'str'}, 'count': {'type': 'int', 'default': -1}}},
 
     # struct #
 
@@ -669,6 +715,7 @@ lingo_function_lookup = {
     'all': {'func': all, 'args': {'iterable': {'type': 'list'}}},
     'sum': {'func': lambda i, s: sum(i, s), 'args': {'iterable': {'type': 'list'}, 'start': {'type': ('int', 'float'), 'default': 0}}},
     'sorted': {'func': sorted, 'args': {'iterable': {'type': 'list'}}},
+    'count': {'func': lingo_count, 'args': {'source': {'type': ('str', 'list')}, 'value': {'type': ('str', 'int', 'float')}}},
 
     # sequence ops #
 

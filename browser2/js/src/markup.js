@@ -782,6 +782,29 @@ const lingoFunctionLookup = {
             'ndigits': {'type': 'int', 'default': null}
         }
     },
+    'floor': {
+        func: (number) => Math.floor(number),
+        args: {'number': {'type': 'number'}}
+    },
+    'ceil': {
+        func: (number) => Math.ceil(number),
+        args: {'number': {'type': 'number'}}
+    },
+    'trunc': {
+        func: (number) => Math.trunc(number),
+        args: {'number': {'type': 'number'}}
+    },
+    'isclose': {
+        func: (a, b, rel_tol = 1e-9, abs_tol = 0.0) => {
+            return Math.abs(a - b) <= Math.max(rel_tol * Math.max(Math.abs(a), Math.abs(b)), abs_tol);
+        },
+        args: {
+            'a': {'type': 'float'},
+            'b': {'type': 'float'},
+            'rel_tol': {'type': 'float', 'default': 1e-9},
+            'abs_tol': {'type': 'float', 'default': 0.0}
+        }
+    },
     
     // str //
     
@@ -802,8 +825,128 @@ const lingoFunctionLookup = {
             'items': {'type': 'list'}
         }
     },
-
-    // struct //
+    'casefold': {
+        func: (string) => string.toLowerCase(),
+        args: {'string': {'type': 'str'}}
+    },
+    'ljust': {
+        func: (string, width, fillchar = ' ') => string.padEnd(width, fillchar),
+        args: {
+            'string': {'type': 'str'},
+            'width': {'type': 'int'},
+            'fillchar': {'type': 'str', 'default': ' '}
+        }
+    },
+    'rjust': {
+        func: (string, width, fillchar = ' ') => string.padStart(width, fillchar),
+        args: {
+            'string': {'type': 'str'},
+            'width': {'type': 'int'},
+            'fillchar': {'type': 'str', 'default': ' '}
+        }
+    },
+    'center': {
+        func: (string, width, fillchar = ' ') => {
+            const padding = Math.max(0, width - string.length);
+            const padLeft = Math.floor(padding / 2);
+            const padRight = padding - padLeft;
+            return fillchar.repeat(padLeft) + string + fillchar.repeat(padRight);
+        },
+        args: {
+            'string': {'type': 'str'},
+            'width': {'type': 'int'},
+            'fillchar': {'type': 'str', 'default': ' '}
+        }
+    },
+    'strip': {
+        func: (string, chars = null) => {
+            if (chars === null) return string.trim();
+            const charSet = new Set(chars);
+            let start = 0;
+            let end = string.length - 1;
+            while (start <= end && charSet.has(string[start])) start++;
+            while (end >= start && charSet.has(string[end])) end--;
+            return string.slice(start, end + 1);
+        },
+        args: {
+            'string': {'type': 'str'},
+            'chars': {'type': 'str', 'default': null}
+        }
+    },
+    'rstrip': {
+        func: (string, chars = null) => {
+            if (chars === null) return string.trimEnd();
+            const charSet = new Set(chars);
+            let end = string.length - 1;
+            while (end >= 0 && charSet.has(string[end])) end--;
+            return string.slice(0, end + 1);
+        },
+        args: {
+            'string': {'type': 'str'},
+            'chars': {'type': 'str', 'default': null}
+        }
+    },
+    'lstrip': {
+        func: (string, chars = null) => {
+            if (chars === null) return string.trimStart();
+            const charSet = new Set(chars);
+            let start = 0;
+            while (start < string.length && charSet.has(string[start])) start++;
+            return string.slice(start);
+        },
+        args: {
+            'string': {'type': 'str'},
+            'chars': {'type': 'str', 'default': null}
+        }
+    },
+    'removeprefix': {
+        func: (string, prefix) => string.startsWith(prefix) ? string.slice(prefix.length) : string,
+        args: {
+            'string': {'type': 'str'},
+            'prefix': {'type': 'str'}
+        }
+    },
+    'removesuffix': {
+        func: (string, suffix) => string.endsWith(suffix) ? string.slice(0, -suffix.length) : string,
+        args: {
+            'string': {'type': 'str'},
+            'suffix': {'type': 'str'}
+        }
+    },
+    'startswith': {
+        func: (string, prefix) => string.startsWith(prefix),
+        args: {
+            'string': {'type': 'str'},
+            'prefix': {'type': 'str'}
+        }
+    },
+    'endswith': {
+        func: (string, suffix) => string.endsWith(suffix),
+        args: {
+            'string': {'type': 'str'},
+            'suffix': {'type': 'str'}
+        }
+    },
+    'replace': {
+        func: (string, old, newStr, count = -1) => {
+            if (count === -1) {
+                return string.split(old).join(newStr);
+            }
+            let result = string;
+            for (let i = 0; i < count; i++) {
+                const idx = result.indexOf(old);
+                if (idx === -1) break;
+                result = result.slice(0, idx) + newStr + result.slice(idx + old.length);
+            }
+            return result;
+        },
+        args: {
+            'string': {'type': 'str'},
+            'old': {'type': 'str'},
+            'new': {'type': 'str'},
+            'count': {'type': 'int', 'default': -1}
+        }
+    },
     
     'key': {
         func: structKey,
@@ -917,8 +1060,25 @@ const lingoFunctionLookup = {
         func: (iterable) => [...iterable].sort(),
         args: {'iterable': {'type': 'list'}}
     },
-    
-    // sequence ops //
+    'count': {
+        func: (source, value) => {
+            if (typeof source === 'string') {
+                let cnt = 0;
+                let idx = 0;
+                const strValue = String(value);
+                while ((idx = source.indexOf(strValue, idx)) !== -1) {
+                    cnt++;
+                    idx += strValue.length;
+                }
+                return cnt;
+            }
+            return source.filter(item => item === value).length;
+        },
+        args: {
+            'source': {'type': 'any'},
+            'value': {'type': 'any'}
+        }
+    },
     
     'map': {
         func: (predicate, iterable) => ({type: 'list', value: iterable.map(predicate)}),

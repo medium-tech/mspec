@@ -123,6 +123,29 @@
     - **ndigits** `int` (optional)
   - **return:** `float`
 
+`floor` - return the floor of a number (largest integer <= number)
+  - **args:**
+    - **number** `int|float`
+  - **return:** `int`
+
+`ceil` - return the ceiling of a number (smallest integer >= number)
+  - **args:**
+    - **number** `int|float`
+  - **return:** `int`
+
+`trunc` - truncate a number to an integer (toward zero)
+  - **args:**
+    - **number** `int|float`
+  - **return:** `int`
+
+`isclose` - return true if two values are close to each other
+  - **args:**
+    - **a** `float`
+    - **b** `float`
+    - **rel_tol** `float` (default: 1e-09)
+    - **abs_tol** `float` (default: 0.0)
+  - **return:** `bool`
+
 ### Str Functions
 `str` - convert to string
   - **args:**
@@ -133,6 +156,87 @@
   - **args:**
     - **separator** `str`
     - **items** `list`
+  - **return:** `str`
+
+`concat` - concatenate a list of strings
+  - **args:**
+    - **items** `list`
+  - **return:** `str`
+
+`casefold` - return a casefolded copy of the string for caseless matching
+  - **args:**
+    - **string** `str`
+  - **return:** `str`
+
+`ljust` - left-justify string in a field of given width
+  - **args:**
+    - **string** `str`
+    - **width** `int`
+    - **fillchar** `str` (default: `' '`)
+  - **return:** `str`
+
+`rjust` - right-justify string in a field of given width
+  - **args:**
+    - **string** `str`
+    - **width** `int`
+    - **fillchar** `str` (default: `' '`)
+  - **return:** `str`
+
+`center` - center string in a field of given width
+  - **args:**
+    - **string** `str`
+    - **width** `int`
+    - **fillchar** `str` (default: `' '`)
+  - **return:** `str`
+
+`strip` - return a copy of the string with leading and trailing whitespace (or given chars) removed
+  - **args:**
+    - **string** `str`
+    - **chars** `str` (optional)
+  - **return:** `str`
+
+`rstrip` - return a copy of the string with trailing whitespace (or given chars) removed
+  - **args:**
+    - **string** `str`
+    - **chars** `str` (optional)
+  - **return:** `str`
+
+`lstrip` - return a copy of the string with leading whitespace (or given chars) removed
+  - **args:**
+    - **string** `str`
+    - **chars** `str` (optional)
+  - **return:** `str`
+
+`removeprefix` - return the string with the given prefix removed (if present)
+  - **args:**
+    - **string** `str`
+    - **prefix** `str`
+  - **return:** `str`
+
+`removesuffix` - return the string with the given suffix removed (if present)
+  - **args:**
+    - **string** `str`
+    - **suffix** `str`
+  - **return:** `str`
+
+`startswith` - return true if the string starts with the given prefix
+  - **args:**
+    - **string** `str`
+    - **prefix** `str`
+  - **return:** `bool`
+
+`endswith` - return true if the string ends with the given suffix
+  - **args:**
+    - **string** `str`
+    - **suffix** `str`
+  - **return:** `bool`
+
+`replace` - return a copy of the string with occurrences of `old` replaced by `new`
+  - **args:**
+    - **string** `str`
+    - **old** `str`
+    - **new** `str`
+    - **count** `int` (default: -1, meaning replace all occurrences)
   - **return:** `str`
 
 ### Math Functions
@@ -236,6 +340,12 @@
   - **args:**
     - **iterable** `list`
   - **return:** `list`
+
+`count` - return the number of occurrences of a value in a string or list
+  - **args:**
+    - **source** `str|list`
+    - **value** `str|int|float`
+  - **return:** `int`
 
 ### Sequence Ops Functions
 `map` - apply a function to each item in a list and return a new list
