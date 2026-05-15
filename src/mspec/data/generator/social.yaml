@@ -63,13 +63,15 @@ modules:
                         examples:
                             - "alice123"
                             - "bob_the_builder"
-                            - "charlie_brown"
-                            - "alice.smith"
-                            - "bob-jones"
+                            - "charlie.brown"
+                            - "david-torrez"
+                            - "eve~is~cool"
                         validation_errors:
-                            - 'i am 26 characters longggg'
-                            - 'invalid username!'
-                            - 'user name'
+                            - 'i-am-26-characters-longggg'
+                            - 'invalid-username!'
+                            - 'no spaces pls'
+                            - 'no-$ymbols'
+                            - '@bad-username'
                         random: random_user_name
                         unique: true
                         validation:
@@ -87,10 +89,10 @@ modules:
                                 b:
                                     call: 're_match'
                                     args:
-                                        pattern: '^[a-zA-Z0-9._-]+$'
+                                        pattern: '^[a-zA-Z0-9._~-]+$'
                                         string:
                                             self: 'value'
-                        validation_message: 'must be 25 characters or less and only contain letters, numbers, hyphens, underscores, and periods'
+                        validation_message: 'must be 25 characters or less and only contain letters, numbers, hyphens, underscores, periods, and tildes'
                         
 
                     bio:
