@@ -806,16 +806,21 @@
                 "call": "max",
                 "args": {
                     "a": {
-                        "call": "floordiv",
+                        "call": "ceil",
                         "args": {
-                            "a": {
-                                "state": {
-                                    "total_replies": {}
-                                }
-                            },
-                            "b": {
-                                "state": {
-                                    "page_size": {}
+                            "number": {
+                                "call": "div",
+                                "args": {
+                                    "a": {
+                                        "state": {
+                                            "total_replies": {}
+                                        }
+                                    },
+                                    "b": {
+                                        "state": {
+                                            "page_size": {}
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1373,4 +1378,3 @@
         }
     ]
 }
-

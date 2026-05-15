@@ -327,6 +327,29 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(app.state['test_max'], 7)
         self.assertEqual(app.state['test_abs'], 10)
 
+    def test_social_thread_last_page_uses_ceil_division(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        app = lingo_app({
+            'params': {},
+            'state': {
+                'total_replies': {'type': 'int', 'default': 0},
+                'page_size': {'type': 'int', 'default': 20},
+            },
+            'ops': {'last_page': thread_spec['ops']['last_page']},
+            'output': [],
+        })
+
+        test_cases = [
+            {'total_replies': 0, 'page_size': 20, 'expected_page': 1},
+            {'total_replies': 21, 'page_size': 20, 'expected_page': 2},
+            {'total_replies': 40, 'page_size': 20, 'expected_page': 2},
+        ]
+        for case in test_cases:
+            app.state['total_replies'] = case['total_replies']
+            app.state['page_size'] = case['page_size']
+            page_result = lingo_execute(app, {'op': {'last_page': {}}})
+            self.assertEqual(page_result['value'], case['expected_page'])
+
     def test_sequence_functions(self):
         """Test sequence functions: len, range, slice, any, all, sum, sorted, count"""
         app = lingo_app(self.functions_sequence_spec)
