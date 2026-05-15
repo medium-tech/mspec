@@ -907,7 +907,7 @@ const lingoFunctionLookup = {
         }
     },
     'removesuffix': {
-        func: (string, suffix) => string.endsWith(suffix) ? string.slice(0, -suffix.length) : string,
+        func: (string, suffix) => string.endsWith(suffix) && suffix.length > 0 ? string.slice(0, string.length - suffix.length) : string,
         args: {
             'string': {'type': 'str'},
             'suffix': {'type': 'str'}
