@@ -947,6 +947,8 @@ const lingoFunctionLookup = {
             'count': {'type': 'int', 'default': -1}
         }
     },
+
+	// struct //
     
     'key': {
         func: structKey,
@@ -1079,6 +1081,8 @@ const lingoFunctionLookup = {
             'value': {'type': 'any'}
         }
     },
+
+	// sequence op //
     
     'map': {
         func: (predicate, iterable) => ({type: 'list', value: iterable.map(predicate)}),

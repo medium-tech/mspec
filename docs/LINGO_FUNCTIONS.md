@@ -164,6 +164,8 @@
   - **return:** `str`
 
 `casefold` - return a casefolded copy of the string for caseless matching
+
+**NOTE:** Python has robust casefolding for international case-insensitive matching, but Javascript lacks this. The JS interpreter will return a normal lower case string.
   - **args:**
     - **string** `str`
   - **return:** `str`
