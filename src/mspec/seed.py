@@ -149,12 +149,16 @@ def random_person_name() -> str:
 
     return name
 
-def random_user_name() -> str:
+def random_user_name_seperator() -> str:
+    return random.choice(['', '_', '.', '-', '~'])
+
+def random_user_name(max_length: int=25) -> str:
     num = random.randint(1, 4)
+    sep = random_user_name_seperator
     if num == 1:
-        name = random.choice(random_adjectives) + ' ' + random.choice(random_nouns)
+        name = random.choice(random_adjectives) + sep() + random.choice(random_nouns)
     elif num == 2:
-        name = ('The ' + random.choice(random_nouns) + ' ' + random.choice(random_nouns)).title()
+        name = (f'The{sep()}' + random.choice(random_nouns) + sep() + random.choice(random_nouns)).title()
     elif num == 3:
         name = random.choice(random_words).title()
         if random.randint(0, 2) == 0:
@@ -170,7 +174,7 @@ def random_user_name() -> str:
                 _words.append(_word)
 
         random.shuffle(_words)
-        name = ' '.join(_words)
+        name = sep().join(_words)
 
     return name
 
@@ -184,7 +188,7 @@ def random_thing_name() -> str:
     return ' '.join(words)
 
 def random_email() -> str:
-    user_name = random_user_name().replace(' ', '_')
+    user_name = random_user_name().replace('~', '-')
     domain = random.choice(random_words)
     tld = random.choice(['com', 'net', 'org', 'io', 'ai'])
     return f'{user_name}@{domain}.{tld}'

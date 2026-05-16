@@ -41,7 +41,11 @@ def _create_users_with_tokens(ctx, spec: dict, num_users: int) -> list[dict]:
             'password': SEED_PASSWORD,
             'password_confirm': SEED_PASSWORD,
         })
-        create_result = http_run_op(ctx, create_params_class, create_output_class, create_params)
+        try:
+            create_result = http_run_op(ctx, create_params_class, create_output_class, create_params)
+        except Exception as e:
+            print(f'  :: failed to create user {i + 1}/{num_users}: {email}, error: {e}')
+            raise e
 
         login_params = new_op_params(login_params_class, {
             'email': email,
@@ -89,7 +93,7 @@ def _seed_profiles(ctx, spec: dict, social_module: dict, users: list[dict]):
             try:
                 profile_data = {
                     'user_id': '-1',
-                    'username': random_user_name()[0:25],
+                    'username': random_user_name(max_length=25),
                     'bio': random_str_rich_text(),
                     'profile_picture': profile_picture,
                 }
