@@ -11,6 +11,7 @@ import hashlib
 import shutil
 import jwt
 import time
+from datetime import datetime
 
 from pathlib import Path
 from copy import deepcopy
@@ -99,6 +100,22 @@ def example_from_model(model:dict, index=0) -> dict:
             data[field_name] = value
 
     return data
+
+
+def _pop_and_validate_timestamps(model_data:dict, context:str) -> tuple[datetime, datetime]:
+    assert 'date_created' in model_data, f'{context} missing date_created'
+    assert 'date_modified' in model_data, f'{context} missing date_modified'
+
+    date_created_raw = model_data.pop('date_created')
+    date_modified_raw = model_data.pop('date_modified')
+
+    date_created = datetime.fromisoformat(date_created_raw)
+    date_modified = datetime.fromisoformat(date_modified_raw)
+
+    assert date_created.tzinfo is not None, f'{context} date_created missing timezone'
+    assert date_modified.tzinfo is not None, f'{context} date_modified missing timezone'
+
+    return date_created, date_modified
 
 def model_validation_errors(model:dict) -> Generator[tuple[dict, str], None, None]:
     """
@@ -211,6 +228,8 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
             assert code == 0, f'expected 0 got {code} for command "{" ".join(create_args)}" output: {stdout + stderr}'
             created_model = json.loads(stdout)
             created_model_id = created_model.pop('id')
+            created_date_created, created_date_modified = _pop_and_validate_timestamps(created_model, f'create {model_name}')
+            assert created_date_created <= created_date_modified, f'Create timestamps out of order for {model_name}'
             if require_login:
                 example_to_create['user_id'] = create_user['id']
             assert created_model == example_to_create, f'Created {model_name} does not match example data {n=}'
@@ -241,6 +260,8 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
         assert code == 0, f'expected 0 got {code} for command "{" ".join(read_args)}" output: {stdout + stderr}'
         read_model = json.loads(stdout)
         read_model_id = read_model.pop('id')
+        read_date_created, read_date_modified = _pop_and_validate_timestamps(read_model, f'read {model_name}')
+        assert read_date_created <= read_date_modified, f'Read timestamps out of order for {model_name}'
         assert read_model == example_to_create, f'Read {model_name} does not match example data'
         assert read_model_id == created_model_id, f'Read {model_name} ID does not match created ID'
 
@@ -260,6 +281,7 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
     if require_login:
         updated_example['user_id'] = create_user['id']
 
+    time.sleep(0.02)
     update_args = model_db_args + ['update', created_model_id, json.dumps(updated_example)]
 
     if hidden:
@@ -277,6 +299,8 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
         assert code == 0, f'expected 0 got {code} for command "{" ".join(update_args)}" output: {stdout + stderr}'
         updated_model = json.loads(stdout)
         updated_model_id = updated_model.pop('id')
+        updated_date_created, updated_date_modified = _pop_and_validate_timestamps(updated_model, f'update {model_name}')
+        assert updated_date_modified > updated_date_created, f'Update did not advance date_modified for {model_name}'
         assert updated_model == updated_example, f'Updated {model_name} does not match updated example data'
         assert updated_model_id == created_model_id, f'Updated {model_name} ID does not match created ID'
 
@@ -377,6 +401,8 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
         else:
             assert created_status == 200, f'Create {model_name} did not return status 200 OK, {n=} response: {created_model}'
             created_model_id = created_model.pop('id')
+            created_date_created, created_date_modified = _pop_and_validate_timestamps(created_model, f'create {model_name}')
+            assert created_date_created <= created_date_modified, f'Create timestamps out of order for {model_name}'
             if require_login:
                 example_to_create['user_id'] = alice_user['id']
             assert created_model == example_to_create, f'Created {model_name} (id: {created_model_id} n: {n}) does not match example data'
@@ -419,6 +445,8 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
     else:
         assert read_status == 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}'
         read_model_id = read_model.pop('id')
+        read_date_created, read_date_modified = _pop_and_validate_timestamps(read_model, f'read {model_name}')
+        assert read_date_created <= read_date_modified, f'Read timestamps out of order for {model_name}'
         assert read_model == example_to_create, f'Read {model_name} id: {read_model_id} does not match example data'
         assert read_model_id == created_model_id, f'Read {model_name} id: {read_model_id} does not match created id: {created_model_id}'
 
@@ -431,6 +459,7 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
     except ValueError as e:
         raise ValueError(f'Need at least 2 examples for update testing: {e}')
 
+    time.sleep(0.02)
     if require_login and not hidden:
         updated_example['user_id'] = alice_user['id']
 
@@ -459,6 +488,7 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
         read_status, read_model = request(ctx, 'GET', f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}', None)
         assert read_status == 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}'
         read_model_id = read_model.pop('id')
+        _pop_and_validate_timestamps(read_model, f'read-after-failed-update {model_name}')
         assert read_model == example_to_create, f'Read {model_name} id: {read_model_id} does not match example data after failed update attempt'
 
     # send request #
@@ -477,6 +507,8 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
     else:
         assert updated_status == 200, f'Update {model_name} id: {created_model_id} did not return status 200 OK, response: {updated_model}'
         updated_model_id = updated_model.pop('id')
+        updated_date_created, updated_date_modified = _pop_and_validate_timestamps(updated_model, f'update {model_name}')
+        assert updated_date_modified > updated_date_created, f'Update did not advance date_modified for {model_name}'
         assert updated_model == updated_example, f'Updated {model_name} id: {updated_model_id} does not match updated example data'
         assert updated_model_id == created_model_id, f'Updated {model_name} id: {updated_model_id} does not match created id: {created_model_id}'
 
@@ -501,6 +533,7 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
         read_status, read_model = request(ctx, 'GET', f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}', None)
         assert read_status == 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}'
         read_model_id = read_model.pop('id')
+        _pop_and_validate_timestamps(read_model, f'read-after-failed-delete {model_name}')
         assert read_model == updated_example, f'Read {model_name} id: {read_model_id} does not match updated example data after failed delete attempt'
 
     # send request #
@@ -625,6 +658,15 @@ def run_cli_validation_error_for_model(module_name_kebab, model, command_type, u
         assert isinstance(create_error['field_errors'], dict), f'Expected field_errors to be a dict in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
         assert len(create_error['field_errors']) == 1, f'Expected one field error in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
 
+    # timestamp fields are managed automatically and must be rejected when provided
+    invalid_create_with_date = deepcopy(example_to_update)
+    invalid_create_with_date['date_created'] = '2024-01-01T00:00:00+00:00'
+    create_with_date_cmd = cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(invalid_create_with_date)]
+    create_with_date_result = _run_cmd(create_with_date_cmd, expected_code=1, env=ctx)
+    create_with_date_error = json.loads(create_with_date_result.stdout).get('error', {})
+    assert create_with_date_error.get('code') == 'VALIDATION_ERROR', f'Expected VALIDATION_ERROR when create payload sets date_created, got {create_with_date_error}'
+    assert 'date_created' in create_with_date_error.get('field_errors', {}), f'Expected date_created field error, got {create_with_date_error}'
+
     #
     # test cannot update valid model with invalid data
     #
@@ -652,10 +694,19 @@ def run_cli_validation_error_for_model(module_name_kebab, model, command_type, u
         assert isinstance(update_error['field_errors'], dict), f'Expected field_errors to be a dict in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
         assert len(update_error['field_errors']) == 1, f'Expected one field error in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
 
+    invalid_update_with_date = deepcopy(example_to_update)
+    invalid_update_with_date['date_modified'] = '2024-01-01T00:00:00+00:00'
+    update_with_date_cmd = cmd + [module_name_kebab, model_name_kebab, command_type, 'update', update_model_id, json.dumps(invalid_update_with_date)]
+    update_with_date_result = _run_cmd(update_with_date_cmd, expected_code=1, env=ctx)
+    update_with_date_error = json.loads(update_with_date_result.stdout).get('error', {})
+    assert update_with_date_error.get('code') == 'VALIDATION_ERROR', f'Expected VALIDATION_ERROR when update payload sets date_modified, got {update_with_date_error}'
+    assert 'date_modified' in update_with_date_error.get('field_errors', {}), f'Expected date_modified field error, got {update_with_date_error}'
+
     # read back original example to ensure it was not modified
     read_back_result = _run_cmd(cmd + [module_name_kebab, model_name_kebab, command_type, 'read', update_model_id], env=ctx)
     read_model = json.loads(read_back_result.stdout)
     del read_model['id']
+    _pop_and_validate_timestamps(read_model, f'read-after-validation-error {model["name"]["pascal_case"]}')
     if model['auth']['require_login']:
         example_to_update['user_id'] = user_id
 
@@ -2359,6 +2410,19 @@ class TestMTemplateApp(unittest.TestCase):
                     )
                     self.assertIn('message', output_error, f'Expected error message in response for {model_name_kebab} with invalid data {invalid_example}, got {output} for field {invalid_field_name}')
 
+                invalid_create_with_date = example_from_model(model)
+                invalid_create_with_date['date_created'] = '2024-01-01T00:00:00+00:00'
+                status, output = request(
+                    ctx,
+                    'POST',
+                    f'/api/{module_name_kebab}/{model_name_kebab}',
+                    json.dumps(invalid_create_with_date).encode()
+                )
+                self.assertEqual(status, 400, f'Expected 400 when create payload sets date_created, got {status}, resp: {output}')
+                output_error = output.get('error', {})
+                self.assertEqual(output_error.get('code', '-'), 'VALIDATION_ERROR', f'Expected VALIDATION_ERROR for date_created create payload, got {output}')
+                self.assertIn('date_created', output_error.get('field_errors', {}), f'Expected date_created field error, got {output}')
+
                 #
                 # test cannot update valid model with invalid data
                 #
@@ -2392,6 +2456,19 @@ class TestMTemplateApp(unittest.TestCase):
                     )
                     self.assertIn('message', output_error, f'Expected error message in response for {model_name_kebab} with invalid data {invalid_example}, got {output} for field {invalid_field_name}')
 
+                invalid_update_with_date = deepcopy(example_to_update)
+                invalid_update_with_date['date_modified'] = '2024-01-01T00:00:00+00:00'
+                status, output = request(
+                    ctx,
+                    'PUT',
+                    f'/api/{module_name_kebab}/{model_name_kebab}/{update_model_id}',
+                    json.dumps(invalid_update_with_date).encode()
+                )
+                self.assertEqual(status, 400, f'Expected 400 when update payload sets date_modified, got {status}, resp: {output}')
+                output_error = output.get('error', {})
+                self.assertEqual(output_error.get('code', '-'), 'VALIDATION_ERROR', f'Expected VALIDATION_ERROR for date_modified update payload, got {output}')
+                self.assertIn('date_modified', output_error.get('field_errors', {}), f'Expected date_modified field error, got {output}')
+
                 # read back original example to ensure it was not modified
                 status, read_model = request(
                     ctx,
@@ -2402,6 +2479,7 @@ class TestMTemplateApp(unittest.TestCase):
                 self.assertEqual(status, 200, f'Read after validation error for {model["name"]["pascal_case"]} did not return 200 OK, resp: {read_model}')
 
                 del read_model['id']
+                _pop_and_validate_timestamps(read_model, f'server-read-after-validation-error {model_name_kebab}')
                 if model['auth']['require_login']:
                     example_to_update['user_id'] = self.crud_users[crud_user]['user']['id']
                 

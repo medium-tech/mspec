@@ -3,7 +3,7 @@ import sqlite3
 
 from mapp.auth import current_user
 from mapp.context import MappContext
-from mapp.errors import AuthenticationError, NotFoundError, MappError, MappUserError
+from mapp.errors import AuthenticationError, NotFoundError, MappError, MappUserError, MappValidationError
 from mapp.types import (
     DATETIME_FORMAT_STR,
     MAX_RICH_TEXT_JSON_LENGTH,
@@ -25,6 +25,26 @@ __all__ = [
     'db_model_query'
 ]
 
+MODEL_TIMESTAMP_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f+00:00', 'NOW')"
+
+
+def _validate_auto_timestamp_fields_not_set(obj: object) -> None:
+    field_errors = {}
+    if getattr(obj, 'date_created', None) is not None:
+        field_errors['date_created'] = 'date_created is set automatically and cannot be provided.'
+    if getattr(obj, 'date_modified', None) is not None:
+        field_errors['date_modified'] = 'date_modified is set automatically and cannot be provided.'
+
+    if field_errors:
+        raise MappValidationError('Timestamp fields are set automatically.', field_errors)
+
+
+def _parse_row_timestamps(row: tuple) -> dict:
+    return {
+        'date_created': datetime.fromisoformat(row[1]),
+        'date_modified': datetime.fromisoformat(row[2]),
+    }
+
 
 def db_model_create_table(ctx:MappContext, model_class: type) -> Acknowledgment:
     model_spec = model_class._model_spec
@@ -34,7 +54,11 @@ def db_model_create_table(ctx:MappContext, model_class: type) -> Acknowledgment:
 
     # non list fields #
     
-    columns = ['id INTEGER PRIMARY KEY AUTOINCREMENT']
+    columns = [
+        'id INTEGER PRIMARY KEY AUTOINCREMENT',
+        f'date_created TEXT NOT NULL DEFAULT ({MODEL_TIMESTAMP_SQL})',
+        f'date_modified TEXT NOT NULL DEFAULT ({MODEL_TIMESTAMP_SQL})',
+    ]
     indexes = []
     for field in model_spec['non_list_fields']:
         field_name = field['name']['snake_case']
@@ -107,6 +131,7 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
 
     # init #
 
+    _validate_auto_timestamp_fields_not_set(obj)
     validate_model(model_class, obj)
     
     if obj.id is not None:
@@ -201,7 +226,7 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
             )
 
     ctx.db.commit()
-    return obj
+    return db_model_read(ctx, model_class, obj.id)
 
 def db_model_read(ctx:MappContext, model_class: type, model_id: str):
 
@@ -230,7 +255,8 @@ def db_model_read(ctx:MappContext, model_class: type, model_id: str):
     # convert non list fields #
 
     data = {'id': model_id}
-    for index, field in enumerate(model_spec['non_list_fields'], start=1):
+    data.update(_parse_row_timestamps(main_row))
+    for index, field in enumerate(model_spec['non_list_fields'], start=3):
         field_name = field['name']['snake_case']
         match field['type']:
             case 'bool':
@@ -275,6 +301,7 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
     if obj.id is None:
         raise MappError('MODEL_ID_NOT_PROVIDED', 'id must be provided to update an item')
 
+    _validate_auto_timestamp_fields_not_set(obj)
     validate_model(model_class, obj)
 
     model_spec = model_class._model_spec
@@ -314,16 +341,16 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
         non_list_fields.append(f"'{field_name}' = ?")
         values.append(value)
 
-    if len(non_list_fields) > 0:
-        values.append(obj.id)
-        set_clause = ', '.join(non_list_fields)
-        sql = f'UPDATE {table_name} SET {set_clause} WHERE id=?'
+    non_list_fields.append(f"date_modified = {MODEL_TIMESTAMP_SQL}")
+    values.append(obj.id)
+    set_clause = ', '.join(non_list_fields)
+    sql = f'UPDATE {table_name} SET {set_clause} WHERE id=?'
 
-        # execute sql #
+    # execute sql #
 
-        result = ctx.db.cursor.execute(sql, values)
-        if result.rowcount == 0:
-            raise NotFoundError(f'{table_name} {obj.id} not found')
+    result = ctx.db.cursor.execute(sql, values)
+    if result.rowcount == 0:
+        raise NotFoundError(f'{table_name} {obj.id} not found')
 
     #
     # list fields
@@ -350,8 +377,8 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
     # finish #
 
     ctx.db.commit()
-    
-    return obj
+
+    return db_model_read(ctx, model_class, obj.id)
 
 def db_model_delete(ctx:MappContext, model_class: type, model_id: str) -> Acknowledgment:
 
@@ -421,10 +448,11 @@ def db_model_list(ctx:MappContext, model_class: type, offset: int = 0, size: int
 
     for row in rows:
         data = {'id': str(row[0])}
+        data.update(_parse_row_timestamps(row))
 
         # convert non list fields #
 
-        for index, field in enumerate(model_spec['non_list_fields'], start=1):
+        for index, field in enumerate(model_spec['non_list_fields'], start=3):
             field_name = field['name']['snake_case']
             match field['type']:
                 case 'bool':
@@ -588,8 +616,9 @@ def db_model_query(ctx:MappContext, model_class: type, where: dict, offset: int=
 
     for row in rows:
         data = {'id': str(row[0])}
+        data.update(_parse_row_timestamps(row))
 
-        for index, field in enumerate(model_spec['non_list_fields'], start=1):
+        for index, field in enumerate(model_spec['non_list_fields'], start=3):
             field_name = field['name']['snake_case']
             match field['type']:
                 case 'bool':

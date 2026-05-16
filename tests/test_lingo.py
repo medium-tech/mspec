@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 import sqlite3
+import time
 
 from pprint import pprint
 
@@ -11,7 +12,7 @@ import jwt
 from mapp.context import MappContext, DBContext, ClientContext
 from mapp.errors import MappValidationError, AuthenticationError
 from mapp.types import new_model_class
-from mapp.module.model.db import db_model_create_table, db_model_create, db_model_unique_counts, db_model_query
+from mapp.module.model.db import db_model_create_table, db_model_create, db_model_read, db_model_update, db_model_unique_counts, db_model_query
 
 from mspec.core import load_browser2_spec, SAMPLE_BROWSER2_SPEC_DIR, builtin_spec_files, load_lingo_script_spec, SAMPLE_LINGO_SCRIPT_SPEC_DIR, SAMPLE_RICH_TEXT_SPEC_DIR, validate_rich_text_spec
 from mspec.lingo import *
@@ -773,6 +774,16 @@ class TestLingoDbFunctions(unittest.TestCase):
         self.assertEqual(read_result['value']['title'], 'new post')
         self.assertEqual(read_result['value']['view_count'], 30)
         self.assertEqual(read_result['value']['user_id'], '3')
+        self.assertIn('date_created', read_result['value'])
+        self.assertIn('date_modified', read_result['value'])
+        date_created = read_result['value']['date_created']
+        date_modified = read_result['value']['date_modified']
+        if isinstance(date_created, str):
+            date_created = datetime.fromisoformat(date_created)
+        if isinstance(date_modified, str):
+            date_modified = datetime.fromisoformat(date_modified)
+        self.assertIsNotNone(date_created.tzinfo)
+        self.assertIsNotNone(date_modified.tzinfo)
         
     def test_db_create_with_primitive_struct(self):
         expression = {
@@ -849,6 +860,18 @@ class TestLingoDbFunctions(unittest.TestCase):
         self.assertEqual(result['value']['title'], 'world')
         self.assertEqual(result['value']['user_id'], '2')
         self.assertEqual(result['value']['view_count'], 20)
+        self.assertIn('date_created', result['value'])
+        self.assertIn('date_modified', result['value'])
+
+    def test_db_update_sets_date_modified_after_date_created(self):
+        original = db_model_read(self.ctx, self.post_class, '1')
+        self.assertIsNotNone(original.date_created.tzinfo)
+        self.assertIsNotNone(original.date_modified.tzinfo)
+
+        time.sleep(0.02)
+        updated_input = original._replace(title='hello updated', date_created=None, date_modified=None)
+        updated = db_model_update(self.ctx, self.post_class, updated_input)
+        self.assertGreater(updated.date_modified, updated.date_created)
 
     # db.unique_counts tests #
 
