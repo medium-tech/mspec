@@ -584,6 +584,7 @@
       - **local_field** `str` - source field in the base model
       - **foreign_field** `str` - target field in the joined model
       - **fields** `list[str]` - joined fields to project (e.g. `['username']`)
+      - **cardinality** `str` *(optional, default: `one`)* - `one` returns a single joined struct (first/only match), `many` returns a list
   - **return:** struct with all model fields
 
 `db.unique_counts` - Return counts of unique values for a model field
@@ -597,6 +598,7 @@
   - **args:**
     - **model_type** `str` - dot-notation module.model (e.g. `sosh_net.profile`)
     - **where** `struct` - `{field_name: {eq: value}}` filter expressions (currently only the `eq` operator is supported for filters)
+    - **fields** `struct` *(legacy alias, optional)* - backward-compatible equality filter input from existing specs; maps to `where`
     - **offset** `int` *(optional)* - pagination offset
     - **size** `int` *(optional)* - pagination size
     - **include** `list[struct]` *(optional)* - same join syntax as `db.read`

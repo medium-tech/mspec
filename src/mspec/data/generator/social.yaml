@@ -730,7 +730,7 @@ modules:
                 name:
                     lower_case: 'get replies for post'
 
-                description: 'Get all replies for a post by post ID, including author username and reaction counts'
+                description: 'Get all replies for a post by post id, including author username and reaction counts'
                 func:
                     type: struct
                     value:
@@ -921,7 +921,7 @@ modules:
             get_thread_and_post:
                 name:
                     lower_case: 'get thread and post'
-                description: 'Get a thread and its main post by thread ID, including owner username and reaction counts'
+                description: 'Get a thread and its main post by thread id, including owner username and reaction counts'
                 func:
                     type: struct
                     self:
