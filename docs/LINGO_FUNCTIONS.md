@@ -596,7 +596,7 @@
 `db.query` - Return all rows matching a set of field equality filters
   - **args:**
     - **model_type** `str` - dot-notation module.model (e.g. `sosh_net.profile`)
-    - **where** `struct` - `{field_name: {eq: value}}` filter expressions (`eq` is currently the only supported operator for db query filters)
+    - **where** `struct` - `{field_name: {eq: value}}` filter expressions (currently only the `eq` operator is supported for filters)
     - **offset** `int` *(optional)* - pagination offset
     - **size** `int` *(optional)* - pagination size
     - **include** `list[struct]` *(optional)* - same join syntax as `db.read`
