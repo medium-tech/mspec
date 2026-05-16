@@ -3164,6 +3164,10 @@ function _renderModelRead(app, element, ctx = null) {
             button: {
                 clientFunction: () => {
                     app.state[stateField].original_data = JSON.parse(JSON.stringify(app.state[stateField].data));
+                    const editableData = {...(app.state[stateField].data || {})};
+                    delete editableData.date_created;
+                    delete editableData.date_modified;
+                    app.state[stateField].data = editableData;
                     app.state[stateField].state = 'editing';
                     renderLingoApp(app, document.getElementById('lingo-app'));
                 }
@@ -3267,12 +3271,7 @@ function _renderModelRead(app, element, ctx = null) {
                         args: {
                             http: element.model.http,
                             bind: element.model.bind,
-                            data: (() => {
-                                const updateData = {...(app.state[stateField].data || {})};
-                                delete updateData.date_created;
-                                delete updateData.date_modified;
-                                return updateData;
-                            })()
+                            data: app.state[stateField].data
                         }
                     }
                 }
