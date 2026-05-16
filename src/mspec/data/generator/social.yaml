@@ -41,6 +41,15 @@ modules:
                     require_login: true
                     max_models_per_user: 1
 
+                db:
+                    indexes:
+                        - name: 'idx_social_profile_user_id'
+                          fields: ['user_id']
+                          unique: true
+                        - name: 'idx_social_profile_username'
+                          fields: ['username']
+                          unique: true
+
                 fields:
 
                     user_id:
@@ -126,6 +135,24 @@ modules:
                 auth:
                     require_login: true
 
+                db:
+                    indexes:
+                        - name: 'idx_social_forum_user_id'
+                          fields: ['user_id']
+                    joins:
+                        profile:
+                            model_type: 'social.profile'
+                            local_field: 'user_id'
+                            foreign_field: 'user_id'
+                            fields:
+                                - 'username'
+                    list:
+                        default_fields:
+                            - 'id'
+                            - 'topic'
+                            - 'tags'
+                            - 'profile.username'
+
                 page: 'social-forums.json'
                 instance_page: 'social-forum-instance.json'
 
@@ -179,6 +206,22 @@ modules:
 
                 auth:
                     require_login: true
+
+                db:
+                    indexes:
+                        - name: 'idx_social_thread_forum_id'
+                          fields: ['forum_id']
+                        - name: 'idx_social_thread_user_id'
+                          fields: ['user_id']
+                        - name: 'idx_social_thread_main_post_id'
+                          fields: ['main_post_id']
+                    joins:
+                        profile:
+                            model_type: 'social.profile'
+                            local_field: 'user_id'
+                            foreign_field: 'user_id'
+                            fields:
+                                - 'username'
 
                 instance_page: 'social-thread-instance.json'
 
@@ -242,6 +285,22 @@ modules:
 
                 auth:
                     require_login: true
+
+                db:
+                    indexes:
+                        - name: 'idx_social_post_reply_to'
+                          fields: ['reply_to']
+                        - name: 'idx_social_post_user_id'
+                          fields: ['user_id']
+                        - name: 'idx_social_post_forum_id'
+                          fields: ['forum_id']
+                    joins:
+                        profile:
+                            model_type: 'social.profile'
+                            local_field: 'user_id'
+                            foreign_field: 'user_id'
+                            fields:
+                                - 'username'
 
                 fields:
 
@@ -420,6 +479,16 @@ modules:
                     require_login: true
                     max_models_by_field:
                         post_id: 1 # only allow one reaction per user per post
+
+                db:
+                    indexes:
+                        - name: 'idx_social_reaction_post_id'
+                          fields: ['post_id']
+                        - name: 'idx_social_reaction_user_id_post_id'
+                          fields: ['user_id', 'post_id']
+                          unique: true
+                        - name: 'idx_social_reaction_post_id_reaction_type'
+                          fields: ['post_id', 'reaction_type']
 
                 fields:
 
@@ -661,7 +730,7 @@ modules:
                 name:
                     lower_case: 'get replies for post'
 
-                description: 'Get all replies for a post by post id'
+                description: 'Get all replies for a post by post id, including author username and reaction counts'
                 func:
                     type: struct
                     value:
@@ -677,6 +746,23 @@ modules:
                                     reply_to:
                                         eq:
                                             params: { post_id: {} }
+                                include:
+                                    type: list
+                                    value:
+                                        - alias: 'profile'
+                                          model_type: 'social.profile'
+                                          local_field: 'user_id'
+                                          foreign_field: 'user_id'
+                                          fields:
+                                              - 'username'
+                                unique_counts:
+                                    type: list
+                                    value:
+                                        - alias: 'reaction_counts'
+                                          model_type: 'social.reaction'
+                                          source_field: 'id'
+                                          foreign_field: 'post_id'
+                                          group_by: 'reaction_type'
 
                 params:
                     post_id:
@@ -835,7 +921,7 @@ modules:
             get_thread_and_post:
                 name:
                     lower_case: 'get thread and post'
-                description: 'Get a thread and its main post by thread id'
+                description: 'Get a thread and its main post by thread id, including owner username and reaction counts'
                 func:
                     type: struct
                     self:
@@ -845,6 +931,15 @@ modules:
                                 model_id:
                                     params: { thread_id: {} }
                                 model_type: 'social.thread'
+                                include:
+                                    type: list
+                                    value:
+                                        - alias: 'profile'
+                                          model_type: 'social.profile'
+                                          local_field: 'user_id'
+                                          foreign_field: 'user_id'
+                                          fields:
+                                              - 'username'
                     value:
                         thread: {self: thread}
                         main_post:
@@ -857,6 +952,29 @@ modules:
                                         object:
                                             self: thread
                                 model_type: 'social.post'
+                                include:
+                                    type: list
+                                    value:
+                                        - alias: 'profile'
+                                          model_type: 'social.profile'
+                                          local_field: 'user_id'
+                                          foreign_field: 'user_id'
+                                          fields:
+                                              - 'username'
+                        main_post_reaction_counts:
+                            call: 'db.unique_counts'
+                            args:
+                                model_type: 'social.reaction'
+                                group_by: 'reaction_type'
+                                filters:
+                                    type: struct
+                                    value:
+                                        post_id:
+                                            call: 'key'
+                                            args:
+                                                key: 'main_post_id'
+                                                object:
+                                                    self: thread
                         forum:
                             branch:
                                 - if:
@@ -912,4 +1030,251 @@ modules:
                         main_post:
                             name:
                                 lower_case: 'main post'
+                            type: struct
+                        main_post_reaction_counts:
+                            name:
+                                lower_case: 'main post reaction counts'
+                            type: list
+                            element_type: struct
+                        forum:
+                            name:
+                                lower_case: 'forum'
+                            type: struct
+
+            react_to_thread_main_post:
+                name:
+                    lower_case: 'react to thread main post'
+                description: 'Create or update current user reaction for the thread main post'
+                func:
+                    type: struct
+                    self:
+                        thread:
+                            call: 'db.read'
+                            args:
+                                model_id:
+                                    params: { thread_id: {} }
+                                model_type: 'social.thread'
+                    value:
+                        reaction:
+                            call: 'db.upsert'
+                            args:
+                                model_type: 'social.reaction'
+                                conflict_fields: ['user_id', 'post_id']
+                                data:
+                                    user_id:
+                                        call: 'key'
+                                        args:
+                                            key: 'id'
+                                            object:
+                                                call: 'auth.current_user'
+                                                args: {}
+                                    post_id:
+                                        call: 'key'
+                                        args:
+                                            key: 'main_post_id'
+                                            object: { self: thread }
+                                    reaction_type:
+                                        params: { reaction_type: {} }
+                params:
+                    thread_id:
+                        name:
+                            lower_case: 'thread id'
+                        type: foreign_key
+                        references:
+                            module: 'social'
+                            table: 'thread'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+                    reaction_type:
+                        name:
+                            lower_case: 'reaction type'
+                        type: str
+                        enum:
+                            - '🙂'
+                            - '❤️'
+                            - '😂'
+                            - '👍'
+                            - '👎'
+                            - '😢'
+                            - '😡'
+                            - '😬'
+                            - '🥱'
+                            - '😮'
+                            - '🤔'
+                        examples:
+                            - '🙂'
+                            - '❤️'
+                            - '😂'
+                result:
+                    type: struct
+                    fields:
+                        reaction:
+                            name:
+                                lower_case: 'reaction'
+                            type: struct
+
+            remove_reaction_from_thread_main_post:
+                name:
+                    lower_case: 'remove reaction from thread main post'
+                description: 'Remove current user reaction for the thread main post'
+                func:
+                    type: struct
+                    self:
+                        thread:
+                            call: 'db.read'
+                            args:
+                                model_id:
+                                    params: { thread_id: {} }
+                                model_type: 'social.thread'
+                    value:
+                        removed:
+                            call: 'db.delete_where'
+                            args:
+                                model_type: 'social.reaction'
+                                where:
+                                    user_id:
+                                        eq:
+                                            call: 'key'
+                                            args:
+                                                key: 'id'
+                                                object:
+                                                    call: 'auth.current_user'
+                                                    args: {}
+                                    post_id:
+                                        eq:
+                                            call: 'key'
+                                            args:
+                                                key: 'main_post_id'
+                                                object: { self: thread }
+                params:
+                    thread_id:
+                        name:
+                            lower_case: 'thread id'
+                        type: foreign_key
+                        references:
+                            module: 'social'
+                            table: 'thread'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+                result:
+                    type: struct
+                    fields:
+                        removed:
+                            name:
+                                lower_case: 'removed'
+                            type: struct
+
+            react_to_reply:
+                name:
+                    lower_case: 'react to reply'
+                description: 'Create or update current user reaction for a reply'
+                func:
+                    type: struct
+                    value:
+                        reaction:
+                            call: 'db.upsert'
+                            args:
+                                model_type: 'social.reaction'
+                                conflict_fields: ['user_id', 'post_id']
+                                data:
+                                    user_id:
+                                        call: 'key'
+                                        args:
+                                            key: 'id'
+                                            object:
+                                                call: 'auth.current_user'
+                                                args: {}
+                                    post_id:
+                                        params: { post_id: {} }
+                                    reaction_type:
+                                        params: { reaction_type: {} }
+                params:
+                    post_id:
+                        name:
+                            lower_case: 'post id'
+                        type: foreign_key
+                        references:
+                            module: 'social'
+                            table: 'post'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+                    reaction_type:
+                        name:
+                            lower_case: 'reaction type'
+                        type: str
+                        enum:
+                            - '🙂'
+                            - '❤️'
+                            - '😂'
+                            - '👍'
+                            - '👎'
+                            - '😢'
+                            - '😡'
+                            - '😬'
+                            - '🥱'
+                            - '😮'
+                            - '🤔'
+                        examples:
+                            - '🙂'
+                            - '❤️'
+                            - '😂'
+                result:
+                    type: struct
+                    fields:
+                        reaction:
+                            name:
+                                lower_case: 'reaction'
+                            type: struct
+
+            remove_reaction_from_reply:
+                name:
+                    lower_case: 'remove reaction from reply'
+                description: 'Remove current user reaction for a reply'
+                func:
+                    type: struct
+                    value:
+                        removed:
+                            call: 'db.delete_where'
+                            args:
+                                model_type: 'social.reaction'
+                                where:
+                                    user_id:
+                                        eq:
+                                            call: 'key'
+                                            args:
+                                                key: 'id'
+                                                object:
+                                                    call: 'auth.current_user'
+                                                    args: {}
+                                    post_id:
+                                        eq:
+                                            params: { post_id: {} }
+                params:
+                    post_id:
+                        name:
+                            lower_case: 'post id'
+                        type: foreign_key
+                        references:
+                            module: 'social'
+                            table: 'post'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+                result:
+                    type: struct
+                    fields:
+                        removed:
+                            name:
+                                lower_case: 'removed'
                             type: struct
