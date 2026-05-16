@@ -3268,7 +3268,7 @@ function _renderModelRead(app, element, ctx = null) {
                             http: element.model.http,
                             bind: element.model.bind,
                             data: (() => {
-                                const updateData = JSON.parse(JSON.stringify(app.state[stateField].data || {}));
+                                const updateData = {...(app.state[stateField].data || {})};
                                 delete updateData.date_created;
                                 delete updateData.date_modified;
                                 return updateData;

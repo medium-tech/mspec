@@ -871,6 +871,7 @@ class TestLingoDbFunctions(unittest.TestCase):
         time.sleep(0.02)
         updated_input = original._replace(title='hello updated', date_created=None, date_modified=None)
         updated = db_model_update(self.ctx, self.post_class, updated_input)
+        self.assertEqual(updated.date_created, original.date_created)
         self.assertGreater(updated.date_modified, updated.date_created)
 
     # db.unique_counts tests #

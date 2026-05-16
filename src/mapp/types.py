@@ -281,7 +281,7 @@ def new_model_class(model_spec:dict, module_spec:Optional[dict]=None) -> type:
 
     fields.extend(MODEL_TIMESTAMP_FIELDS)
     
-    new_class = namedtuple(class_name, fields, defaults=[None, None])
+    new_class = namedtuple(class_name, fields, defaults=[None] * len(MODEL_TIMESTAMP_FIELDS))
     new_class._model_spec = _model_spec
     new_class._module_spec = deepcopy(module_spec)
     return new_class

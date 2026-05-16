@@ -30,6 +30,8 @@ from mapp.types import (
     MAX_STR_FIELD_LENGTH,
 )
 
+TIMESTAMP_UPDATE_DELAY_SEC = 0.02
+
 def seed_pagination_item(unique_id, base_cmd, seed_cmd, env, require_auth, model_data):
     if require_auth:
 
@@ -281,7 +283,8 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
     if require_login:
         updated_example['user_id'] = create_user['id']
 
-    time.sleep(0.02)
+    # ensure date_modified is measurably newer than date_created in timestamp assertions
+    time.sleep(TIMESTAMP_UPDATE_DELAY_SEC)
     update_args = model_db_args + ['update', created_model_id, json.dumps(updated_example)]
 
     if hidden:
@@ -459,7 +462,8 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
     except ValueError as e:
         raise ValueError(f'Need at least 2 examples for update testing: {e}')
 
-    time.sleep(0.02)
+    # ensure date_modified is measurably newer than date_created in timestamp assertions
+    time.sleep(TIMESTAMP_UPDATE_DELAY_SEC)
     if require_login and not hidden:
         updated_example['user_id'] = alice_user['id']
 
