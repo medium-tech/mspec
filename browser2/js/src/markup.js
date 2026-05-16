@@ -24,9 +24,11 @@ window.disableProtocol = disableProtocol;
 
 // Date/time formatting
 const datetimeFormatStr = '%Y-%m-%dT%H:%M:%S';
+const modelTimestampFields = ['date_created', 'date_modified'];
 
 function initDateTimeFromInput(value) {
-    // 
+    // for model fields fields with type: datetime
+
     // value from date time input will be in format "YYYY-MM-DDTHH:MM" if chosen by a user,
     // but in 2000-01-11T12:34:56 format if set programmatically
     // so we need to handle both cases
@@ -40,6 +42,7 @@ function initDateTimeFromInput(value) {
 }
 
 function normalizeDateTimeValue(value) {
+	// for model fields fields with type: datetime
     if (value === null || typeof value === 'undefined' || value === '') {
         return null;
     }
@@ -51,6 +54,20 @@ function normalizeDateTimeValue(value) {
         return asString.substring(0, 19);
     }
     return asString;
+}
+
+function formatModelTimestampLocal(value) {
+	// for automatic datetime fields: date_created and date_modified
+    if (value === null || typeof value === 'undefined' || value === '') {
+        return '';
+    }
+
+    const date = value instanceof Date ? value : new Date(String(value));
+    if (Number.isNaN(date.getTime())) {
+        return String(value);
+    }
+
+    return date.toLocaleString(undefined, {timeZoneName: 'short'});
 }
 
 function isUnsetFormFieldValue(value) {
@@ -3150,6 +3167,10 @@ function _renderModelRead(app, element, ctx = null) {
             button: {
                 clientFunction: () => {
                     app.state[stateField].original_data = JSON.parse(JSON.stringify(app.state[stateField].data));
+                    const editableData = {...(app.state[stateField].data || {})};
+                    delete editableData.date_created;
+                    delete editableData.date_modified;
+                    app.state[stateField].data = editableData;
                     app.state[stateField].state = 'editing';
                     renderLingoApp(app, document.getElementById('lingo-app'));
                 }
@@ -3183,10 +3204,23 @@ function _renderModelRead(app, element, ctx = null) {
         {text: 'status: ', style: {bold: true}},
     ]);
 
+    const stripSystemTimestamps = (data) => {
+        if (!data || typeof data !== 'object') {
+            return data;
+        }
+        if (Array.isArray(data)) {
+            return data;
+        }
+        const normalized = {...data};
+        delete normalized.date_created;
+        delete normalized.date_modified;
+        return normalized;
+    };
+
     const isModified = state.state === 'editing'
         && 'original_data' in state
         && state.original_data !== null
-        && JSON.stringify(state.data) !== JSON.stringify(state.original_data);
+        && JSON.stringify(stripSystemTimestamps(state.data)) !== JSON.stringify(stripSystemTimestamps(state.original_data));
 
     const stateSwitch = {
         switch: {
@@ -3441,6 +3475,8 @@ function _renderModelRead(app, element, ctx = null) {
 					console.error(`Error parsing rich text content for field ${field}:`, e, 'content:', state.data[field]);
 					throw new Error(`Invalid rich text content for field ${field}: ${e.message}`);
 				}
+			}else if (modelTimestampFields.includes(field)) {
+                outputValue = formatModelTimestampLocal(state.data[field]);
 			}else{
 				outputValue = state.data[field];
 			}
@@ -3791,6 +3827,11 @@ function _renderModelList(app, element, ctx = null) {
 		fieldList = element.model.fields;
 	}else{
 		fieldList = ['id'].concat(Object.keys(definition.fields));
+        for (const timestampField of modelTimestampFields) {
+            if (!fieldList.includes(timestampField)) {
+                fieldList.push(timestampField);
+            }
+        }
 	}
 
     let headers = [];
@@ -3800,7 +3841,12 @@ function _renderModelList(app, element, ctx = null) {
 
 		}else{
 			const field = definition.fields[name];
-			headers.push({text: field.name.lower_case, field: field.name.snake_case});
+            if (field) {
+                headers.push({text: field.name.lower_case, field: field.name.snake_case});
+            } else {
+				// automatic date_create and date_modified fields
+                headers.push({text: name.replaceAll('_', ' '), field: name});
+            }
 		}
     }
 
@@ -3825,6 +3871,12 @@ function _renderModelList(app, element, ctx = null) {
 				}
 			}
 		}
+
+        for (const timestampField of modelTimestampFields) {
+            if (itemForTable.value && Object.prototype.hasOwnProperty.call(itemForTable.value, timestampField)) {
+                itemForTable.value[timestampField] = formatModelTimestampLocal(itemForTable.value[timestampField]);
+            }
+        }
 
 		itemsForTable.push(itemForTable);
 

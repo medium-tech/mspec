@@ -62,11 +62,13 @@ __all__ = [
 #
 
 DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
+MODEL_TIMESTAMP_FIELDS = ('date_created', 'date_modified')
 MAX_STR_FIELD_LENGTH = 1000
 MAX_RICH_TEXT_JSON_LENGTH = 25000
 MAX_LIST_FIELD_ITEMS = 10
 MAX_LIST_STR_TOTAL_LENGTH = 1000
 
+# for model field's with type: datetime
 def datetime_now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -82,6 +84,12 @@ def datetime_for_db(dt:datetime) -> str:
 def datetime_from_db(date_str:str) -> datetime:
     return datetime.fromisoformat(date_str)
 
+# for auto timestamp fields: date_created / date_modified
+def model_timestamp_from_str(date_str:str) -> datetime:
+    return datetime.fromisoformat(date_str)
+
+def model_timestamp_to_str(dt:datetime) -> str:
+    return dt.isoformat()
 
 class Acknowledgment:
     def __init__(self, message: str = 'No additional information') -> None:
@@ -266,8 +274,10 @@ def new_model_class(model_spec:dict, module_spec:Optional[dict]=None) -> type:
                 list()
             )
             field['validation_callable'] = lambda value: unwrap_primitive(lingo_execute(lingo_app, deepcopy(validation), {'self': {'value': value}}))
+
+    fields.extend(MODEL_TIMESTAMP_FIELDS)
     
-    new_class = namedtuple(class_name, fields)
+    new_class = namedtuple(class_name, fields, defaults=[None] * len(MODEL_TIMESTAMP_FIELDS))
     new_class._model_spec = _model_spec
     new_class._module_spec = deepcopy(module_spec)
     return new_class
@@ -290,6 +300,10 @@ def new_model(model_class:type, data:dict):
 
     if 'id' not in data:
         data['id'] = None
+    if 'date_created' not in data:
+        data['date_created'] = None
+    if 'date_modified' not in data:
+        data['date_modified'] = None
 
     for field in model_class._model_spec['fields'].values():
         field_name = field['name']['snake_case']
@@ -536,6 +550,21 @@ def convert_dict_to_model(model_class:type, data:dict):
     except KeyError:
         pass
 
+    for field_name in MODEL_TIMESTAMP_FIELDS:
+        try:
+            field_value = data[field_name]
+        except KeyError:
+            continue
+
+        if field_value is None:
+            converted_data[field_name] = None
+        elif isinstance(field_value, datetime):
+            converted_data[field_name] = field_value
+        elif isinstance(field_value, str):
+            converted_data[field_name] = model_timestamp_from_str(field_value)
+        else:
+            raise ValueError(f'Model field "{field_name}" must be datetime, str, or None')
+
     return new_model(model_class, converted_data)
 
 def convert_dict_to_op_params(op_class:type, data:dict):
@@ -773,7 +802,10 @@ class MappJsonEncoder(json.JSONEncoder):
 
     def default(self, obj):
         if isinstance(obj, datetime):
-            return obj.strftime(DATETIME_FORMAT_STR)
+            if obj.tzinfo is not None:
+                return model_timestamp_to_str(obj)
+            else:
+                return obj.strftime(DATETIME_FORMAT_STR)
         elif isinstance(obj, ModelListResult):
             return {
                 'items': [item._asdict() for item in obj.items],
@@ -817,6 +849,9 @@ def json_to_model(json_str:str, model_class:type, model_id:Optional[str]=None) -
             # id provided as arg and not in json, set it
             if model_id is not None:
                 data['id'] = model_id
+
+        for field_name in MODEL_TIMESTAMP_FIELDS:
+            data[field_name] = model_timestamp_from_str(data[field_name])
 
         return new_model(model_class, data)
     
@@ -864,7 +899,11 @@ def json_to_model_w_convert(model_class:type, json_str:str, model_id:Optional[st
 def model_list_from_json(json_str:str, model_class:type) -> 'ModelListResult':
     try:
         data = json.loads(json_str)
-        items = [model_class(**item) for item in data['items']]
+        items = []
+        for item in data['items']:
+            for field_name in MODEL_TIMESTAMP_FIELDS:
+                item[field_name] = model_timestamp_from_str(item[field_name])
+            items.append(model_class(**item))
         total = data['total']
         return ModelListResult(items=items, total=total)
     

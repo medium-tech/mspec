@@ -422,6 +422,8 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
       // Click model link
       await page.getByRole('link', { name: modelKebab, exact: true }).click();
       await expect(page.locator('h1')).toContainText(`:: ${modelKebab}`);
+      await expect(page.locator('#lingo-app')).toContainText('date created');
+      await expect(page.locator('#lingo-app')).toContainText('date modified');
 
       // Get example data for create (index 0)
       const createExample = getExampleFromModel(model, 0);
@@ -443,6 +445,8 @@ test('test crud and list for all models', async ({ browser, crudEnv, crudSession
       // Confirm it loads successfully
       await expect(page.locator('h1')).toContainText(`:: ${modelKebab}`);
       await expect(page.locator('#lingo-app')).toContainText('id');
+      await expect(page.locator('#lingo-app')).toContainText('date_created');
+      await expect(page.locator('#lingo-app')).toContainText('date_modified');
 
       // Verify that the created data is displayed correctly for each field
       for (const [fieldName, value] of Object.entries(createExample)) {
