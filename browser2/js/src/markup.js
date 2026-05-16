@@ -3205,6 +3205,9 @@ function _renderModelRead(app, element, ctx = null) {
         if (!data || typeof data !== 'object') {
             return data;
         }
+        if (Array.isArray(data)) {
+            return data;
+        }
         const normalized = {...data};
         delete normalized.date_created;
         delete normalized.date_modified;
