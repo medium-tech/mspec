@@ -3201,10 +3201,20 @@ function _renderModelRead(app, element, ctx = null) {
         {text: 'status: ', style: {bold: true}},
     ]);
 
+    const stripSystemTimestamps = (data) => {
+        if (!data || typeof data !== 'object') {
+            return data;
+        }
+        const normalized = {...data};
+        delete normalized.date_created;
+        delete normalized.date_modified;
+        return normalized;
+    };
+
     const isModified = state.state === 'editing'
         && 'original_data' in state
         && state.original_data !== null
-        && JSON.stringify(state.data) !== JSON.stringify(state.original_data);
+        && JSON.stringify(stripSystemTimestamps(state.data)) !== JSON.stringify(stripSystemTimestamps(state.original_data));
 
     const stateSwitch = {
         switch: {
