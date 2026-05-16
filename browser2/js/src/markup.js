@@ -27,7 +27,8 @@ const datetimeFormatStr = '%Y-%m-%dT%H:%M:%S';
 const modelTimestampFields = ['date_created', 'date_modified'];
 
 function initDateTimeFromInput(value) {
-    // 
+    // for model fields fields with type: datetime
+
     // value from date time input will be in format "YYYY-MM-DDTHH:MM" if chosen by a user,
     // but in 2000-01-11T12:34:56 format if set programmatically
     // so we need to handle both cases
@@ -41,6 +42,7 @@ function initDateTimeFromInput(value) {
 }
 
 function normalizeDateTimeValue(value) {
+	// for model fields fields with type: datetime
     if (value === null || typeof value === 'undefined' || value === '') {
         return null;
     }
@@ -55,6 +57,7 @@ function normalizeDateTimeValue(value) {
 }
 
 function formatModelTimestampLocal(value) {
+	// for automatic datetime fields: date_created and date_modified
     if (value === null || typeof value === 'undefined' || value === '') {
         return '';
     }
@@ -3841,6 +3844,7 @@ function _renderModelList(app, element, ctx = null) {
             if (field) {
                 headers.push({text: field.name.lower_case, field: field.name.snake_case});
             } else {
+				// automatic date_create and date_modified fields
                 headers.push({text: name.replaceAll('_', ' '), field: name});
             }
 		}

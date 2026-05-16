@@ -68,6 +68,7 @@ MAX_RICH_TEXT_JSON_LENGTH = 25000
 MAX_LIST_FIELD_ITEMS = 10
 MAX_LIST_STR_TOTAL_LENGTH = 1000
 
+# for model field's with type: datetime
 def datetime_now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -83,17 +84,12 @@ def datetime_for_db(dt:datetime) -> str:
 def datetime_from_db(date_str:str) -> datetime:
     return datetime.fromisoformat(date_str)
 
+# for auto timestamp fields: date_created / date_modified
 def model_timestamp_from_str(date_str:str) -> datetime:
-    dt = datetime.fromisoformat(date_str)
-    if dt.tzinfo is None:
-        return dt.replace(tzinfo=timezone.utc)
-    return dt
+    return datetime.fromisoformat(date_str)
 
 def model_timestamp_to_str(dt:datetime) -> str:
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
     return dt.isoformat()
-
 
 class Acknowledgment:
     def __init__(self, message: str = 'No additional information') -> None:
@@ -808,7 +804,8 @@ class MappJsonEncoder(json.JSONEncoder):
         if isinstance(obj, datetime):
             if obj.tzinfo is not None:
                 return model_timestamp_to_str(obj)
-            return obj.strftime(DATETIME_FORMAT_STR)
+            else:
+                return obj.strftime(DATETIME_FORMAT_STR)
         elif isinstance(obj, ModelListResult):
             return {
                 'items': [item._asdict() for item in obj.items],
@@ -854,8 +851,7 @@ def json_to_model(json_str:str, model_class:type, model_id:Optional[str]=None) -
                 data['id'] = model_id
 
         for field_name in MODEL_TIMESTAMP_FIELDS:
-            if field_name in data and isinstance(data[field_name], str):
-                data[field_name] = model_timestamp_from_str(data[field_name])
+            data[field_name] = model_timestamp_from_str(data[field_name])
 
         return new_model(model_class, data)
     
@@ -906,8 +902,7 @@ def model_list_from_json(json_str:str, model_class:type) -> 'ModelListResult':
         items = []
         for item in data['items']:
             for field_name in MODEL_TIMESTAMP_FIELDS:
-                if field_name in item and isinstance(item[field_name], str):
-                    item[field_name] = model_timestamp_from_str(item[field_name])
+                item[field_name] = model_timestamp_from_str(item[field_name])
             items.append(model_class(**item))
         total = data['total']
         return ModelListResult(items=items, total=total)
