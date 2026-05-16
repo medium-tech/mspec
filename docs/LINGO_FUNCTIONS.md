@@ -572,6 +572,8 @@
     - **model_type** `str` - dot-notation module.model
     - **data** `struct` - model field values
     - **conflict_fields** `list[str]` - field names used to detect conflicts (e.g. `['user_id', 'post_id']`)
+  - **conflict behavior:** if a conflict is found, all non-conflict fields in `data` are updated on the matched row
+  - **constraint requirement:** each `conflict_fields` set must match a unique index in the model definition, otherwise return a validation error
   - **return:** struct of the created/updated model
 
 `db.read` - Read a single model instance by ID
@@ -584,7 +586,7 @@
       - **local_field** `str` - source field in the base model
       - **foreign_field** `str` - target field in the joined model
       - **fields** `list[str]` - joined fields to project (e.g. `['username']`)
-      - **cardinality** `str` *(optional, default: `one`)* - `one` returns a single joined struct (first/only match), `many` returns a list
+      - **cardinality** `str` *(optional, default: `one`)* - `one` returns a single joined struct (lowest `id` match when multiple rows match), `many` returns a list
   - **return:** struct with all model fields
 
 `db.unique_counts` - Return counts of unique values for a model field
@@ -599,6 +601,7 @@
     - **model_type** `str` - dot-notation module.model (e.g. `sosh_net.profile`)
     - **where** `struct` - `{field_name: {eq: value}}` filter expressions (currently only the `eq` operator is supported for filters)
     - **fields** `struct` *(legacy alias, optional)* - backward-compatible equality filter input from existing specs; maps to `where`
+      - if both `where` and `fields` are provided in one call, return a validation error
     - **offset** `int` *(optional)* - pagination offset
     - **size** `int` *(optional)* - pagination size
     - **include** `list[struct]` *(optional)* - same join syntax as `db.read`

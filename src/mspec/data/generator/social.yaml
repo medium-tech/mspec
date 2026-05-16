@@ -139,6 +139,7 @@ modules:
                     indexes:
                         - name: 'idx_social_forum_user_id'
                           fields: ['user_id']
+                    # join aliases are reusable relation definitions for read/list/query calls
                     joins:
                         profile:
                             model_type: 'social.profile'
@@ -147,6 +148,7 @@ modules:
                             fields:
                                 - 'username'
                     list:
+                        # profile.username maps to the profile join alias above
                         default_fields:
                             - 'id'
                             - 'topic'
@@ -758,6 +760,7 @@ modules:
                                 unique_counts:
                                     type: list
                                     value:
+                                        # for each reply row, count reactions where reaction.post_id == reply.id grouped by emoji
                                         - alias: 'reaction_counts'
                                           model_type: 'social.reaction'
                                           source_field: 'id'
