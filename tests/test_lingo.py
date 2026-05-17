@@ -355,6 +355,33 @@ class TestLingoPages(unittest.TestCase):
             page_result = lingo_execute(app, {'op': {'last_page': {}}})
             self.assertEqual(page_result['value'], case['expected_page'])
 
+    def test_social_thread_page_includes_reaction_ui_blocks(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+
+        def _find(node, predicate):
+            if predicate(node):
+                return True
+            if isinstance(node, dict):
+                return any(_find(value, predicate) for value in node.values())
+            if isinstance(node, list):
+                return any(_find(item, predicate) for item in node)
+            return False
+
+        self.assertTrue(_find(thread_spec['output'], lambda node: isinstance(node, dict) and node.get('text') == 'created by: '))
+        self.assertTrue(_find(
+            thread_spec['output'],
+            lambda node: isinstance(node, dict)
+            and node.get('op', {}).get('http') == '/api/social/react-to-thread-main-post'
+            and node.get('op', {}).get('display', {}).get('friendly_status') is True
+        ))
+        self.assertTrue(_find(thread_spec['output'], lambda node: isinstance(node, dict) and node.get('key') == 'date_modified'))
+        self.assertTrue(_find(
+            thread_spec['output'],
+            lambda node: isinstance(node, dict)
+            and node.get('op', {}).get('http') == '/api/social/react-to-reply'
+            and node.get('op', {}).get('display', {}).get('friendly_status') is True
+        ))
+
     def test_sequence_functions(self):
         """Test sequence functions: len, range, slice, any, all, sum, sorted, count"""
         app = lingo_app(self.functions_sequence_spec)
