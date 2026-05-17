@@ -581,7 +581,7 @@
                             "value": {
                                 "id": "-1",
                                 "profile": {
-                                    "username": "..."
+                                    "username": "Loading..."
                                 },
                                 "message": "{\"lingo\": {\"version\": \"rich-text-beta-1\"},\"block\": [{\"text\": \"Loading...\"}]}"
                             }

@@ -367,6 +367,21 @@ class TestLingoPages(unittest.TestCase):
                 return any(_find(item, predicate) for item in node)
             return False
 
+        def _find_node(node, predicate):
+            if predicate(node):
+                return node
+            if isinstance(node, dict):
+                for value in node.values():
+                    found = _find_node(value, predicate)
+                    if found is not None:
+                        return found
+            if isinstance(node, list):
+                for item in node:
+                    found = _find_node(item, predicate)
+                    if found is not None:
+                        return found
+            return None
+
         self.assertTrue(_find(thread_spec['output'], lambda node: isinstance(node, dict) and node.get('text') == 'created by: '))
         self.assertTrue(_find(
             thread_spec['output'],
@@ -374,7 +389,17 @@ class TestLingoPages(unittest.TestCase):
             and node.get('op', {}).get('http') == '/api/social/react-to-thread-main-post'
             and node.get('op', {}).get('display', {}).get('friendly_status') is True
         ))
-        self.assertTrue(_find(thread_spec['output'], lambda node: isinstance(node, dict) and node.get('key') == 'date_modified'))
+        reply_list = _find_node(
+            thread_spec['output'],
+            lambda node: isinstance(node, dict)
+            and node.get('type') == 'list'
+            and node.get('display', {}).get('columns') == ['reply']
+        )
+        self.assertIsNotNone(reply_list)
+        reply_block = (
+            reply_list['value']['args']['function']['value']['reply']['block']
+        )
+        self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'date_modified'))
         self.assertTrue(_find(
             thread_spec['output'],
             lambda node: isinstance(node, dict)
