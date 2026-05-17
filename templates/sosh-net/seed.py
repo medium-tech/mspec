@@ -22,7 +22,6 @@ from mspec.seed import (
 NUM_USERS = 33
 ITEMS_PER_ROUND = 5
 SEED_PASSWORD = 'Seed_pass_1!'
-REACTION_TYPES = ['🙂', '❤️', '😂', '👍', '👎', '😢', '😡', '😬', '🥱', '😮', '🤔']
 
 
 def _create_users_with_tokens(ctx, spec: dict, num_users: int) -> list[dict]:
@@ -183,6 +182,7 @@ def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: in
 
     react_to_reply_op = social_module['ops']['react_to_reply']
     react_to_reply_params_class, react_to_reply_output_class = new_op_classes(react_to_reply_op, social_module)
+    reaction_types = react_to_thread_op['params']['reaction_type']['enum']
 
     thread_ids = []
     for thread_id in range(1, num_threads + 1):
@@ -193,8 +193,12 @@ def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: in
             print(f'  :: skipping thread {thread_id} while seeding reactions: {e}')
             continue
 
+    if len(thread_ids) < 1:
+        print('  :: no threads found for reaction seeding')
+        return
+
     ctx.client.set_bearer_token(users[0]['access_token'])
-    first_thread = http_model_read(ctx, thread_class, '1')
+    first_thread = http_model_read(ctx, thread_class, thread_ids[0])
     main_post_id = str(first_thread.main_post_id)
 
     get_replies_params = new_op_params(get_replies_params_class, {
@@ -211,14 +215,14 @@ def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: in
         for thread_id in thread_ids:
             react_to_thread_params = new_op_params(react_to_thread_params_class, {
                 'thread_id': thread_id,
-                'reaction_type': random.choice(REACTION_TYPES),
+                'reaction_type': random.choice(reaction_types),
             })
             http_run_op(ctx, react_to_thread_params_class, react_to_thread_output_class, react_to_thread_params)
 
         for reply_id in reply_ids:
             react_to_reply_params = new_op_params(react_to_reply_params_class, {
                 'post_id': reply_id,
-                'reaction_type': random.choice(REACTION_TYPES),
+                'reaction_type': random.choice(reaction_types),
             })
             http_run_op(ctx, react_to_reply_params_class, react_to_reply_output_class, react_to_reply_params)
 
