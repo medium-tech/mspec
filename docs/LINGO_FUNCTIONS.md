@@ -580,7 +580,7 @@
   - **args:**
     - **model_type** `str` - dot-notation module.model (e.g. `sosh_net.post`)
     - **model_id** `str` - the record ID
-    - **include** `list[struct]` *(optional)* - join request list. Each item supports:
+    - **include** `struct` *(optional)* - join request:
       - **alias** `str` - output key name
       - **model_type** `str` - joined model type
       - **local_field** `str` - source field in the base model
@@ -604,7 +604,7 @@
       - if both `where` and `fields` are provided in one call, return a validation error
     - **offset** `int` *(optional)* - pagination offset
     - **size** `int` *(optional)* - pagination size
-    - **include** `list[struct]` *(optional)* - same join syntax as `db.read`
+    - **include** `struct` *(optional)* - same join syntax as `db.read`
     - **unique_counts** `list[struct]` *(optional)* - attach grouped counts for each returned row. Each item supports:
       - **alias** `str` - output key name
       - **model_type** `str` - model to aggregate
@@ -618,7 +618,8 @@
   - **args:**
     - **model_type** `str` - dot-notation module.model
     - **where** `struct` - same filter format as `db.query`
-  - **return:** struct with delete metadata (e.g. `acknowledged`, `deleted_count`)
+    - **message** `str` *(optional)* - custom success message
+  - **return:** struct with `acknowledged=true` and `message`
 
 ## Control Flow
 
