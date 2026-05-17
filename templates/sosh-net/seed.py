@@ -171,8 +171,8 @@ def _seed_replies_in_first_thread(ctx, social_module: dict, users: list[dict], n
 
 
 def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: int, num_replies: int):
-    thread_model = social_module['models']['thread']
-    thread_class = new_model_class(thread_model, social_module)
+    get_threads_op = social_module['ops']['get_threads_for_forum']
+    get_threads_params_class, get_threads_output_class = new_op_classes(get_threads_op, social_module)
 
     get_replies_op = social_module['ops']['get_replies_for_post']
     get_replies_params_class, get_replies_output_class = new_op_classes(get_replies_op, social_module)
@@ -184,22 +184,30 @@ def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: in
     react_to_reply_params_class, react_to_reply_output_class = new_op_classes(react_to_reply_op, social_module)
     reaction_types = react_to_thread_op['params']['reaction_type']['enum']
 
-    thread_ids = []
-    for thread_id in range(1, num_threads + 1):
-        try:
-            http_model_read(ctx, thread_class, str(thread_id))
-            thread_ids.append(str(thread_id))
-        except Exception as e:
-            print(f'  :: skipping thread {thread_id} while seeding reactions: {e}')
-            continue
+    ctx.client.set_bearer_token(users[0]['access_token'])
+    get_threads_params = new_op_params(get_threads_params_class, {
+        'forum_id': '1',
+        'offset': 0,
+        'size': num_threads,
+    })
+    threads_result = http_run_op(ctx, get_threads_params_class, get_threads_output_class, get_threads_params)
+    thread_ids = [str(thread['id']) for thread in threads_result.result.get('threads', []) if thread.get('id') is not None]
 
     if len(thread_ids) < 1:
         print('  :: no threads found for reaction seeding')
         return
 
-    ctx.client.set_bearer_token(users[0]['access_token'])
-    first_thread = http_model_read(ctx, thread_class, thread_ids[0])
-    main_post_id = str(first_thread.main_post_id)
+    first_thread_id = thread_ids[0]
+    get_thread_and_post_op = social_module['ops']['get_thread_and_post']
+    get_thread_and_post_params_class, get_thread_and_post_output_class = new_op_classes(get_thread_and_post_op, social_module)
+    get_thread_and_post_params = new_op_params(get_thread_and_post_params_class, {'thread_id': first_thread_id})
+    thread_result = http_run_op(ctx, get_thread_and_post_params_class, get_thread_and_post_output_class, get_thread_and_post_params)
+    main_post = thread_result.result.get('main_post', {})
+    main_post_id = main_post.get('id')
+    if main_post_id is None:
+        print('  :: no main post found for first thread reaction seeding')
+        return
+    main_post_id = str(main_post_id)
 
     get_replies_params = new_op_params(get_replies_params_class, {
         'post_id': main_post_id,
@@ -207,7 +215,7 @@ def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: in
         'size': num_replies,
     })
     replies_result = http_run_op(ctx, get_replies_params_class, get_replies_output_class, get_replies_params)
-    reply_ids = [str(reply['id']) for reply in replies_result.result.get('replies', [])]
+    reply_ids = [str(reply['id']) for reply in replies_result.result.get('replies', []) if reply.get('id') is not None]
 
     for user in users:
         ctx.client.set_bearer_token(user['access_token'])
