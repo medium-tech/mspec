@@ -171,6 +171,7 @@ def _seed_replies_in_first_thread(ctx, social_module: dict, users: list[dict], n
 
 
 def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: int, num_replies: int):
+    """Seed one random reaction per user for selected threads and replies."""
     get_threads_op = social_module['ops']['get_threads_for_forum']
     get_threads_params_class, get_threads_output_class = new_op_classes(get_threads_op, social_module)
 
@@ -191,7 +192,12 @@ def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: in
         'size': num_threads,
     })
     threads_result = http_run_op(ctx, get_threads_params_class, get_threads_output_class, get_threads_params)
-    thread_ids = [str(thread['id']) for thread in threads_result.result.get('threads', []) if thread.get('id') is not None]
+    threads = threads_result.result.get('threads', [])
+    thread_ids = []
+    for thread in threads:
+        thread_id = thread.get('id')
+        if thread_id is not None:
+            thread_ids.append(str(thread_id))
 
     if len(thread_ids) < 1:
         print('  :: no threads found for reaction seeding')
@@ -215,7 +221,12 @@ def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: in
         'size': num_replies,
     })
     replies_result = http_run_op(ctx, get_replies_params_class, get_replies_output_class, get_replies_params)
-    reply_ids = [str(reply['id']) for reply in replies_result.result.get('replies', []) if reply.get('id') is not None]
+    replies = replies_result.result.get('replies', [])
+    reply_ids = []
+    for reply in replies:
+        reply_id = reply.get('id')
+        if reply_id is not None:
+            reply_ids.append(str(reply_id))
 
     for user in users:
         ctx.client.set_bearer_token(user['access_token'])
