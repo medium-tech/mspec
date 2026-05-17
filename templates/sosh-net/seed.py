@@ -1,4 +1,6 @@
 #! /usr/bin/env python3
+import random
+
 from dotenv import load_dotenv
 
 from mapp.context import get_context_from_env, spec_from_env
@@ -20,6 +22,7 @@ from mspec.seed import (
 NUM_USERS = 33
 ITEMS_PER_ROUND = 5
 SEED_PASSWORD = 'Seed_pass_1!'
+REACTION_TYPES = ['🙂', '❤️', '😂', '👍', '👎', '😢', '😡', '😬', '🥱', '😮', '🤔']
 
 
 def _create_users_with_tokens(ctx, spec: dict, num_users: int) -> list[dict]:
@@ -168,6 +171,57 @@ def _seed_replies_in_first_thread(ctx, social_module: dict, users: list[dict], n
             http_model_create(ctx, post_class, reply)
 
 
+def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: int, num_replies: int):
+    thread_model = social_module['models']['thread']
+    thread_class = new_model_class(thread_model, social_module)
+
+    get_replies_op = social_module['ops']['get_replies_for_post']
+    get_replies_params_class, get_replies_output_class = new_op_classes(get_replies_op, social_module)
+
+    react_to_thread_op = social_module['ops']['react_to_thread_main_post']
+    react_to_thread_params_class, react_to_thread_output_class = new_op_classes(react_to_thread_op, social_module)
+
+    react_to_reply_op = social_module['ops']['react_to_reply']
+    react_to_reply_params_class, react_to_reply_output_class = new_op_classes(react_to_reply_op, social_module)
+
+    thread_ids = []
+    for thread_id in range(1, num_threads + 1):
+        try:
+            http_model_read(ctx, thread_class, str(thread_id))
+            thread_ids.append(str(thread_id))
+        except Exception:
+            continue
+
+    ctx.client.set_bearer_token(users[0]['access_token'])
+    first_thread = http_model_read(ctx, thread_class, '1')
+    main_post_id = str(first_thread.main_post_id)
+
+    get_replies_params = new_op_params(get_replies_params_class, {
+        'post_id': main_post_id,
+        'offset': 0,
+        'size': num_replies,
+    })
+    replies_result = http_run_op(ctx, get_replies_params_class, get_replies_output_class, get_replies_params)
+    reply_ids = [str(reply['id']) for reply in replies_result.result.get('replies', [])]
+
+    for user in users:
+        ctx.client.set_bearer_token(user['access_token'])
+
+        for thread_id in thread_ids:
+            react_to_thread_params = new_op_params(react_to_thread_params_class, {
+                'thread_id': thread_id,
+                'reaction_type': random.choice(REACTION_TYPES),
+            })
+            http_run_op(ctx, react_to_thread_params_class, react_to_thread_output_class, react_to_thread_params)
+
+        for reply_id in reply_ids:
+            react_to_reply_params = new_op_params(react_to_reply_params_class, {
+                'post_id': reply_id,
+                'reaction_type': random.choice(REACTION_TYPES),
+            })
+            http_run_op(ctx, react_to_reply_params_class, react_to_reply_output_class, react_to_reply_params)
+
+
 def seed():
     load_dotenv()
     ctx = get_context_from_env()
@@ -175,19 +229,22 @@ def seed():
 
     social_module = spec['modules']['social']
 
-    print(f':: round 1/4: creating {NUM_USERS} user accounts and profiles...')
+    print(f':: round 1/5: creating {NUM_USERS} user accounts and profiles...')
     users = _create_users_with_tokens(ctx, spec, NUM_USERS)
     print(f'    :: seeding profiles for {NUM_USERS} users...')
     _seed_profiles(ctx, spec, social_module, users)
 
-    print(f':: round 2/4: creating {ITEMS_PER_ROUND} forums per user...')
+    print(f':: round 2/5: creating {ITEMS_PER_ROUND} forums per user...')
     _seed_forums(ctx, social_module, users, ITEMS_PER_ROUND)
 
-    print(f':: round 3/4: creating {ITEMS_PER_ROUND} threads per user in forum 1...')
+    print(f':: round 3/5: creating {ITEMS_PER_ROUND} threads per user in forum 1...')
     _seed_threads_in_forum_1(ctx, social_module, users, ITEMS_PER_ROUND)
 
-    print(f':: round 4/4: creating {ITEMS_PER_ROUND} replies per user in the first thread of forum 1...')
+    print(f':: round 4/5: creating {ITEMS_PER_ROUND} replies per user in the first thread of forum 1...')
     _seed_replies_in_first_thread(ctx, social_module, users, ITEMS_PER_ROUND)
+
+    print(f':: round 5/5: creating 1 random reaction per user for first {ITEMS_PER_ROUND} threads and first {ITEMS_PER_ROUND} replies in thread 1...')
+    _seed_reactions(ctx, social_module, users, ITEMS_PER_ROUND, ITEMS_PER_ROUND)
 
     print(':: seed workflow complete')
 
