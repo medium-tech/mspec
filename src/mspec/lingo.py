@@ -13,9 +13,9 @@ from functools import reduce
 from mapp.auth import create_user, login_user, is_logged_in, current_user, logout_user, delete_user, drop_sessions
 from mapp.com import send_email, start_email_verification, verify_email_address
 from mapp.file_system import get_file_content, ingest_start, list_files, get_part_content, list_parts, process_file
-from mapp.errors import NotFoundError
+from mapp.errors import NotFoundError, MappValidationError
 from mapp.media import create_image, get_image, get_master_image, get_media_file_content, ingest_master_image, list_images, list_master_images
-from mapp.module.model.db import db_model_create, db_model_read, db_model_unique_counts, db_model_query
+from mapp.module.model.db import db_model_create, db_model_read, db_model_update, db_model_delete, db_model_unique_counts, db_model_query
 from mapp.types import get_python_type_for_field, new_model_class, convert_dict_to_model
 
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
@@ -400,38 +400,31 @@ def _get_model_class_from_type(app:LingoApp, model_type:str) -> type:
         raise ValueError(f'db - model not found: {model_key} in module {module_key}')
     return new_model_class(model_spec, module_spec)
 
-def _db_read_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
-    try:
-        model_type_expr = expression['args']['model_type']
-        model_id_expr = expression['args']['model_id']
-    except KeyError as e:
-        raise ValueError(f'db.read - missing arg: {e}')
+def _resolve_expression_value(app:LingoApp, expression: Any, ctx:Optional[dict]=None) -> Any:
+    if isinstance(expression, dict) and not ('type' in expression and 'value' in expression):
+        expression = lingo_execute(app, expression, ctx)
+    return unwrap_primitive(expression)
 
-    model_type = unwrap_primitive(lingo_execute(app, model_type_expr, ctx))
-    model_id = unwrap_primitive(lingo_execute(app, model_id_expr, ctx))
-    model_class = _get_model_class_from_type(app, model_type)
+def _resolve_struct_expression(app:LingoApp, expression: Any, ctx:Optional[dict], error_message: str) -> dict:
+    result = lingo_execute(app, expression, ctx)
+    if isinstance(result, dict) and result.get('type') == 'struct':
+        result = result['value']
+    if not isinstance(result, dict):
+        raise ValueError(error_message)
+    return result
 
-    return (ctx, model_class, str(model_id)), {}
+def _resolve_list_expression(app:LingoApp, expression: Any, ctx:Optional[dict], error_message: str) -> list:
+    result = lingo_execute(app, expression, ctx)
+    if isinstance(result, dict) and result.get('type') == 'list':
+        result = result['value']
+    if not isinstance(result, list):
+        raise ValueError(error_message)
+    return result
 
-def _db_create_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
-    try:
-        model_type_expr = expression['args']['model_type']
-        data_expr = expression['args']['data']
-    except KeyError as e:
-        raise ValueError(f'db.create - missing arg: {e}')
-
-    model_type = unwrap_primitive(lingo_execute(app, model_type_expr, ctx))
-    model_class = _get_model_class_from_type(app, model_type)
-
-    raw_data = lingo_execute(app, data_expr, ctx)
-    if isinstance(raw_data, dict) and raw_data.get('type') == 'struct':
-        input_data = raw_data['value']
-    elif isinstance(raw_data, dict):
-        input_data = raw_data
-    else:
-        raise ValueError('db.create - data expression must evaluate to a struct')
-
+def _db_create_data_dict(app:LingoApp, data_expr: Any, ctx:Optional[dict]) -> dict:
+    input_data = _resolve_struct_expression(app, data_expr, ctx, 'db.create - data expression must evaluate to a struct')
     data = {}
+
     for field_name, field_expression in input_data.items():
         field_value = lingo_execute(app, field_expression, ctx)
 
@@ -445,7 +438,137 @@ def _db_create_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=
         else:
             data[field_name] = unwrap_primitive(field_value)
 
+    return data
+
+def _db_parse_where_conditions(app:LingoApp, where_expr: Any, ctx:Optional[dict], error_prefix: str, legacy_fields: bool=False) -> dict:
+    where = _resolve_struct_expression(app, where_expr, ctx, f'{error_prefix} - where expression must be a struct')
+    conditions = {}
+
+    for field_name, condition in where.items():
+        if legacy_fields and (not isinstance(condition, dict) or len(condition) != 1 or next(iter(condition.keys())) not in ('eq', 'ne')):
+            operand_value = lingo_execute(app, condition, ctx)
+            conditions[field_name] = {'eq': unwrap_primitive(operand_value)}
+            continue
+
+        if not isinstance(condition, dict) or len(condition) != 1:
+            raise ValueError(f'{error_prefix} - each field condition must be a struct with a single operator: {field_name}')
+
+        operator, operand_expr = next(iter(condition.items()))
+        if operator not in ('eq', 'ne'):
+            raise ValueError(f'{error_prefix} - unsupported operator: {operator} in field condition for field {field_name}')
+
+        operand_value = lingo_execute(app, operand_expr, ctx)
+        conditions[field_name] = {operator: unwrap_primitive(operand_value)}
+
+    return conditions
+
+def _db_parse_include_spec(app:LingoApp, include_expr: Any, ctx:Optional[dict]) -> dict:
+    include = _resolve_struct_expression(app, include_expr, ctx, 'db.include - include expression must evaluate to a struct')
+
+    try:
+        alias = _resolve_expression_value(app, include['alias'], ctx)
+        model_type = _resolve_expression_value(app, include['model_type'], ctx)
+        local_field = _resolve_expression_value(app, include['local_field'], ctx)
+        foreign_field = _resolve_expression_value(app, include['foreign_field'], ctx)
+        fields = _resolve_list_expression(app, include['fields'], ctx, 'db.include - include.fields must evaluate to a list')
+    except KeyError as e:
+        raise ValueError(f'db.include - missing required include key: {e}')
+
+    cardinality = _resolve_expression_value(app, include.get('cardinality', 'one'), ctx)
+    if cardinality not in ('one', 'many'):
+        raise ValueError(f'db.include - unsupported cardinality: {cardinality}')
+
+    model_class = _get_model_class_from_type(app, str(model_type))
+    field_list = [str(field_name) for field_name in fields]
+
+    return {
+        'alias': str(alias),
+        'model_class': model_class,
+        'local_field': str(local_field),
+        'foreign_field': str(foreign_field),
+        'fields': field_list,
+        'cardinality': str(cardinality),
+    }
+
+def _db_parse_unique_counts_specs(app:LingoApp, unique_counts_expr: Any, ctx:Optional[dict]) -> list:
+    unique_counts = _resolve_list_expression(app, unique_counts_expr, ctx, 'db.query - unique_counts must evaluate to a list')
+    parsed = []
+
+    for index, unique_count in enumerate(unique_counts):
+        if isinstance(unique_count, dict) and unique_count.get('type') == 'struct':
+            unique_count = unique_count['value']
+
+        if not isinstance(unique_count, dict):
+            raise ValueError(f'db.query - unique_counts[{index}] must be a struct')
+
+        try:
+            alias = _resolve_expression_value(app, unique_count['alias'], ctx)
+            model_type = _resolve_expression_value(app, unique_count['model_type'], ctx)
+            source_field = _resolve_expression_value(app, unique_count['source_field'], ctx)
+            foreign_field = _resolve_expression_value(app, unique_count['foreign_field'], ctx)
+            group_by = _resolve_expression_value(app, unique_count['group_by'], ctx)
+        except KeyError as e:
+            raise ValueError(f'db.query - unique_counts[{index}] missing key: {e}')
+
+        parsed.append({
+            'alias': str(alias),
+            'model_class': _get_model_class_from_type(app, str(model_type)),
+            'source_field': str(source_field),
+            'foreign_field': str(foreign_field),
+            'group_by': str(group_by),
+        })
+
+    return parsed
+
+def _db_read_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        model_type_expr = expression['args']['model_type']
+        model_id_expr = expression['args']['model_id']
+    except KeyError as e:
+        raise ValueError(f'db.read - missing arg: {e}')
+
+    model_type = _resolve_expression_value(app, model_type_expr, ctx)
+    model_id = _resolve_expression_value(app, model_id_expr, ctx)
+    model_class = _get_model_class_from_type(app, model_type)
+    kwargs = {}
+
+    include_expr = expression['args'].get('include')
+    if include_expr is not None:
+        kwargs['include'] = _db_parse_include_spec(app, include_expr, ctx)
+
+    return (ctx, model_class, str(model_id)), kwargs
+
+def _db_create_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        model_type_expr = expression['args']['model_type']
+        data_expr = expression['args']['data']
+    except KeyError as e:
+        raise ValueError(f'db.create - missing arg: {e}')
+
+    model_type = _resolve_expression_value(app, model_type_expr, ctx)
+    model_class = _get_model_class_from_type(app, model_type)
+    data = _db_create_data_dict(app, data_expr, ctx)
+
     return (ctx, model_class, data), {}
+
+def _db_upsert_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        model_type_expr = expression['args']['model_type']
+        data_expr = expression['args']['data']
+        conflict_fields_expr = expression['args']['conflict_fields']
+    except KeyError as e:
+        raise ValueError(f'db.upsert - missing arg: {e}')
+
+    model_type = _resolve_expression_value(app, model_type_expr, ctx)
+    model_class = _get_model_class_from_type(app, model_type)
+    data = _db_create_data_dict(app, data_expr, ctx)
+    conflict_fields_raw = _resolve_list_expression(app, conflict_fields_expr, ctx, 'db.upsert - conflict_fields must evaluate to a list')
+    conflict_fields = [str(field_name) for field_name in conflict_fields_raw]
+
+    if len(conflict_fields) == 0:
+        raise ValueError('db.upsert - conflict_fields must not be empty')
+
+    return (ctx, model_class, data, conflict_fields), {}
 
 def _db_unique_counts_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     try:
@@ -475,61 +598,102 @@ def _db_unique_counts_function_args(app:LingoApp, expression: dict, ctx:Optional
 def _db_query_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     try:
         model_type_expr = expression['args']['model_type']
-        where_expr = expression['args']['where']
     except KeyError as e:
         raise ValueError(f'db.query - missing arg: {e}')
 
-    model_type = unwrap_primitive(lingo_execute(app, model_type_expr, ctx))
+    has_where = 'where' in expression['args']
+    has_fields = 'fields' in expression['args']
+    if has_where and has_fields:
+        raise ValueError('db.query - args.where and args.fields cannot both be provided')
+    if not has_where and not has_fields:
+        raise ValueError('db.query - missing arg: where')
+
+    where_expr = expression['args']['where'] if has_where else expression['args']['fields']
+
+    model_type = _resolve_expression_value(app, model_type_expr, ctx)
     model_class = _get_model_class_from_type(app, model_type)
-    where = unwrap_primitive(lingo_execute(app, where_expr, ctx))
+    where = _db_parse_where_conditions(app, where_expr, ctx, 'db.query', legacy_fields=has_fields)
 
-    offset = unwrap_primitive(lingo_execute(app, expression['args']['offset'], ctx)) if 'offset' in expression['args'] else 0
-    size = unwrap_primitive(lingo_execute(app, expression['args']['size'], ctx)) if 'size' in expression['args'] else 25
+    offset = _resolve_expression_value(app, expression['args']['offset'], ctx) if 'offset' in expression['args'] else 0
+    size = _resolve_expression_value(app, expression['args']['size'], ctx) if 'size' in expression['args'] else 25
 
+    kwargs = {}
+    include_expr = expression['args'].get('include')
+    if include_expr is not None:
+        kwargs['include'] = _db_parse_include_spec(app, include_expr, ctx)
 
-    """
-    a fields expression is a struct where each key contains an operator and then a value
-    the operator must be a support query operator and the value may be executed as a lingo expression or primitive
+    unique_counts_expr = expression['args'].get('unique_counts')
+    if unique_counts_expr is not None:
+        kwargs['unique_counts'] = _db_parse_unique_counts_specs(app, unique_counts_expr, ctx)
 
-    currently support operators:
-        eq = equal
-        ne = not equal
+    return (ctx, model_class, where, offset, size), kwargs
 
-    example:
-
-        type: struct
-        value:
-            forum_id:
-                eq:
-                    params: {forum_id: {}}
-            reply_to:
-                ne: '-1'
-    """
-
+def _db_delete_where_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     try:
-        condition_items = where.items()
-    except (KeyError, AttributeError, TypeError):
-        raise ValueError('db.query - where expression must be a struct with value key containing conditions')
-    
-    conditions = {}
+        model_type_expr = expression['args']['model_type']
+        where_expr = expression['args']['where']
+    except KeyError as e:
+        raise ValueError(f'db.delete_where - missing arg: {e}')
 
-    for field_name, condition in condition_items:
-        if not isinstance(condition, dict) or len(condition) != 1:
-            raise ValueError(f'db.query - each field condition must be a struct with a single operator: {field_name}')
-        
-        operator, operand_expr = next(iter(condition.items()))
-        if operator not in ('eq', 'ne'):
-            raise ValueError(f'db.query - unsupported operator: {operator} in field condition for field {field_name}')
-        
-        operand_value = lingo_execute(app, operand_expr, ctx)
-        conditions[field_name] = {operator: unwrap_primitive(operand_value)}
+    model_type = _resolve_expression_value(app, model_type_expr, ctx)
+    model_class = _get_model_class_from_type(app, model_type)
+    where = _db_parse_where_conditions(app, where_expr, ctx, 'db.delete_where')
 
-    return (ctx, model_class, conditions, offset, size), {}
+    kwargs = {}
+    if 'message' in expression['args']:
+        kwargs['message'] = str(_resolve_expression_value(app, expression['args']['message'], ctx))
 
-def db_read(ctx, model_class, model_id:str) -> dict:
+    return (ctx, model_class, where), kwargs
+
+def _db_project_model_fields(model: Any, field_names: list[str]) -> dict:
+    model_data = model._asdict()
+    projected = {}
+    for field_name in field_names:
+        try:
+            projected[field_name] = model_data[field_name]
+        except KeyError:
+            raise ValueError(f'db.include - field not found on included model: {field_name}')
+    return projected
+
+def _db_sort_models_by_id(models: list[Any]) -> list[Any]:
+    def _sort_key(model):
+        model_id = getattr(model, 'id', None)
+        try:
+            return int(model_id)
+        except (TypeError, ValueError):
+            return str(model_id)
+    return sorted(models, key=_sort_key)
+
+def _db_resolve_include_for_row(ctx, row: dict, include: dict) -> Any:
+    local_value = row.get(include['local_field'])
+    if local_value is None:
+        return [] if include['cardinality'] == 'many' else None
+
+    if include['foreign_field'] == 'id':
+        try:
+            joined_model = db_model_read(ctx, include['model_class'], str(local_value))
+            joined_rows = [joined_model]
+        except NotFoundError:
+            joined_rows = []
+    else:
+        joined_result = db_model_query(ctx, include['model_class'], {include['foreign_field']: {'eq': local_value}}, 0, 1000000)
+        joined_rows = joined_result['items']
+
+    joined_rows = _db_sort_models_by_id(joined_rows)
+    projected_rows = [_db_project_model_fields(model, include['fields']) for model in joined_rows]
+
+    if include['cardinality'] == 'many':
+        return projected_rows
+
+    return projected_rows[0] if projected_rows else None
+
+def db_read(ctx, model_class, model_id:str, include:dict=None) -> dict:
     try:
         model = db_model_read(ctx, model_class, model_id)
-        return {'type': 'struct', 'value': model._asdict()}
+        model_value = model._asdict()
+        if include is not None:
+            model_value[include['alias']] = _db_resolve_include_for_row(ctx, model_value, include)
+        return {'type': 'struct', 'value': model_value}
     except NotFoundError as e:
         raise
 
@@ -538,21 +702,95 @@ def db_create(ctx, model_class, data:dict) -> str:
     model = db_model_create(ctx, model_class, model)
     return str(model.id)
 
+def db_upsert(ctx, model_class, data:dict, conflict_fields:list[str]) -> dict:
+    model_spec = model_class._model_spec
+    db_indexes = model_spec.get('db', {}).get('indexes', [])
+    has_unique_conflict_index = False
+    conflict_set = set(conflict_fields)
+
+    for index in db_indexes:
+        if index.get('unique') is True and set(index.get('fields', [])) == conflict_set:
+            has_unique_conflict_index = True
+            break
+
+    if not has_unique_conflict_index and len(conflict_fields) == 1:
+        if conflict_fields[0] in model_spec.get('unique_model_fields', []):
+            has_unique_conflict_index = True
+
+    if not has_unique_conflict_index:
+        raise MappValidationError(
+            'db.upsert - conflict_fields must match a unique index in model definition',
+            {'conflict_fields': 'Must match a unique index in the model definition.'},
+        )
+
+    for field_name in conflict_fields:
+        if field_name not in data:
+            raise MappValidationError(
+                f'db.upsert - conflict field missing from data: {field_name}',
+                {field_name: 'Conflict field is required in data.'},
+            )
+
+    where = {field_name: {'eq': data[field_name]} for field_name in conflict_fields}
+    query_result = db_model_query(ctx, model_class, where, 0, 2)
+
+    if query_result['total'] == 0:
+        model = convert_dict_to_model(model_class, data)
+        saved_model = db_model_create(ctx, model_class, model)
+    elif query_result['total'] == 1:
+        existing = query_result['items'][0]
+        updated_data = existing._asdict()
+        updated_data.update(data)
+        updated_data['date_created'] = None
+        updated_data['date_modified'] = None
+        model = convert_dict_to_model(model_class, updated_data)
+        saved_model = db_model_update(ctx, model_class, model)
+    else:
+        raise MappValidationError(
+            'db.upsert - conflict_fields matched multiple rows; expected unique match',
+            {'conflict_fields': 'Matched multiple rows; expected one due to unique index.'},
+        )
+
+    return {'type': 'struct', 'value': saved_model._asdict()}
+
 def db_unique_counts(ctx, model_class, group_by:str, filters=None) -> list:
     rows = db_model_unique_counts(ctx, model_class, group_by, filters)
     return [{'type': 'struct', 'value': row} for row in rows]
 
-def db_query(ctx, model_class, where:dict, offset:int=0, size:int=25) -> list:
+def db_query(ctx, model_class, where:dict, offset:int=0, size:int=25, include:dict=None, unique_counts:list=None) -> list:
     query_result = db_model_query(ctx, model_class, where, offset, size)
-    import pprint
-    ctx.log(f'db_query - raw query result: {pprint.pformat(query_result)}')
+
+    items = [item._asdict() for item in query_result['items']]
+    if include is not None:
+        for item in items:
+            item[include['alias']] = _db_resolve_include_for_row(ctx, item, include)
+
+    if unique_counts is not None:
+        for item in items:
+            for unique_count in unique_counts:
+                source_value = item.get(unique_count['source_field'])
+                if source_value is None:
+                    item[unique_count['alias']] = []
+                    continue
+                item[unique_count['alias']] = db_model_unique_counts(
+                    ctx,
+                    unique_count['model_class'],
+                    unique_count['group_by'],
+                    {unique_count['foreign_field']: source_value},
+                )
+
     return {
         'type': 'struct',
         'value': {
-            'items': [item._asdict() for item in query_result['items']],
+            'items': items,
             'total': query_result['total']
         }
     }
+
+def db_delete_where(ctx, model_class, where:dict, message:str='Items deleted.') -> dict:
+    query_result = db_model_query(ctx, model_class, where, 0, 1000000)
+    for item in query_result['items']:
+        db_model_delete(ctx, model_class, item.id)
+    return {'type': 'struct', 'value': {'acknowledged': True, 'message': message}}
 
 def str_convert(object:Any) -> str:
     if object is True:
@@ -794,9 +1032,11 @@ lingo_function_lookup = {
 
     'db': {
         'create': {'func': db_create, 'create_args': _db_create_function_args},
+        'upsert': {'func': db_upsert, 'create_args': _db_upsert_function_args},
         'read': {'func': db_read, 'create_args': _db_read_function_args},
         'unique_counts': {'func': db_unique_counts, 'create_args': _db_unique_counts_function_args},
         'query': {'func': db_query, 'create_args': _db_query_function_args},
+        'delete_where': {'func': db_delete_where, 'create_args': _db_delete_where_function_args},
     }
 }
 
