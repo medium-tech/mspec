@@ -567,10 +567,26 @@
     - **data** `struct` - model field values
   - **return:** `str` model ID
 
+`db.upsert` - Create or update a model instance using one or more conflict fields
+  - **args:**
+    - **model_type** `str` - dot-notation module.model
+    - **data** `struct` - model field values
+    - **conflict_fields** `list[str]` - field names used to detect conflicts (e.g. `['user_id', 'post_id']`)
+  - **conflict behavior:** if a conflict is found, all non-conflict fields in `data` are updated on the matched row
+  - **constraint requirement:** each `conflict_fields` set must match a unique index in the model definition, otherwise return a validation error
+  - **return:** struct of the created/updated model
+
 `db.read` - Read a single model instance by ID
   - **args:**
     - **model_type** `str` - dot-notation module.model (e.g. `sosh_net.post`)
     - **model_id** `str` - the record ID
+    - **include** `struct` *(optional)* - join request:
+      - **alias** `str` - output key name
+      - **model_type** `str` - joined model type
+      - **local_field** `str` - source field in the base model
+      - **foreign_field** `str` - target field in the joined model
+      - **fields** `list[str]` - joined fields to project (e.g. `['username']`)
+      - **cardinality** `str` *(optional, default: `one`)* - `one` returns a single joined struct (lowest `id` match when multiple rows match), `many` returns a list
   - **return:** struct with all model fields
 
 `db.unique_counts` - Return counts of unique values for a model field
@@ -583,9 +599,27 @@
 `db.query` - Return all rows matching a set of field equality filters
   - **args:**
     - **model_type** `str` - dot-notation module.model (e.g. `sosh_net.profile`)
-    - **fields** `struct` - `{field_name: value}` equality filters; only `str` and `foreign_key` field types are supported
+    - **where** `struct` - `{field_name: {eq: value}}` filter expressions (currently only the `eq` operator is supported for filters)
+    - **fields** `struct` *(legacy alias, optional)* - backward-compatible equality filter input from existing specs; maps to `where`
+      - if both `where` and `fields` are provided in one call, return a validation error
+    - **offset** `int` *(optional)* - pagination offset
+    - **size** `int` *(optional)* - pagination size
+    - **include** `struct` *(optional)* - same join syntax as `db.read`
+    - **unique_counts** `list[struct]` *(optional)* - attach grouped counts for each returned row. Each item supports:
+      - **alias** `str` - output key name
+      - **model_type** `str` - model to aggregate
+      - **source_field** `str` - field from row being queried
+      - **foreign_field** `str` - field in aggregate model matched to `source_field`
+      - **group_by** `str` - grouped field in aggregate model (e.g. `reaction_type`)
   - **return:** list of matching model structs (same format as `db.read`)
   - **errors:** Raises a `ValueError` if a filter key is an unsupported field type (e.g. `int`, `bool`)
+
+`db.delete_where` - Delete model rows by filter criteria
+  - **args:**
+    - **model_type** `str` - dot-notation module.model
+    - **where** `struct` - same filter format as `db.query`
+    - **message** `str` *(optional)* - custom success message
+  - **return:** struct with `acknowledged=true` and `message`
 
 ## Control Flow
 
