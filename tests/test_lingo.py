@@ -693,7 +693,7 @@ def _make_profile_spec():
             {'name': {'lower_case': 'username', 'snake_case': 'username'}, 'type': 'str'},
         ],
         'list_fields': [],
-        'unique_model_fields': [],
+        'unique_model_fields': ['username'],
     }
 
 
@@ -779,10 +779,12 @@ class TestLingoDbFunctions(unittest.TestCase):
 
         r1 = self.reaction_class(id=None, user_id='1', post_id='1', reaction_type='like')
         r2 = self.reaction_class(id=None, user_id='2', post_id='1', reaction_type='love')
-        r3 = self.reaction_class(id=None, user_id='1', post_id='2', reaction_type='like')
+        r3 = self.reaction_class(id=None, user_id='3', post_id='1', reaction_type='like')
+        r4 = self.reaction_class(id=None, user_id='1', post_id='2', reaction_type='like')
         db_model_create(self.ctx, self.reaction_class, r1)
         db_model_create(self.ctx, self.reaction_class, r2)
         db_model_create(self.ctx, self.reaction_class, r3)
+        db_model_create(self.ctx, self.reaction_class, r4)
 
     def tearDown(self):
         self.ctx.db.connection.close()
@@ -957,7 +959,7 @@ class TestLingoDbFunctions(unittest.TestCase):
         self.assertEqual(result['type'], 'list')
         self.assertEqual(len(result['value']), 2)
         counts = {item['value']['group']: item['value']['count'] for item in result['value']}
-        self.assertEqual(counts['like'], 2)
+        self.assertEqual(counts['like'], 3)
         self.assertEqual(counts['love'], 1)
 
     def test_db_unique_counts_with_filter(self):
@@ -976,7 +978,7 @@ class TestLingoDbFunctions(unittest.TestCase):
         result = lingo_execute(app, expression, self.ctx)
         self.assertEqual(result['type'], 'list')
         counts = {item['value']['group']: item['value']['count'] for item in result['value']}
-        self.assertEqual(counts['like'], 1)
+        self.assertEqual(counts['like'], 2)
         self.assertEqual(counts['love'], 1)
 
     # db.query tests #
@@ -1033,6 +1035,24 @@ class TestLingoDbFunctions(unittest.TestCase):
         self.assertIsInstance(result['value'].get('total'), int)
         self.assertEqual(result['value']['total'], 1)
         self.assertEqual(result['value']['items'][0]['user_id'], '2')
+
+    def test_db_query_reaction_distribution_for_user(self):
+        expression = {
+            'call': 'db.query',
+            'args': {
+                'model_type': {'value': 'test_app.reaction', 'type': 'str'},
+                'where': {
+                    'user_id': {
+                        'eq': '1'
+                    }
+                }
+            }
+        }
+        app = self._make_app()
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['value']['total'], 2)
+        reaction_types = sorted(item['reaction_type'] for item in result['value']['items'])
+        self.assertEqual(reaction_types, ['like', 'like'])
 
     def test_db_query_accepts_legacy_fields_alias(self):
         expression = {
@@ -1145,6 +1165,24 @@ class TestLingoDbFunctions(unittest.TestCase):
         app = self._make_app()
         with self.assertRaises(MappValidationError):
             lingo_execute(app, expression, self.ctx)
+
+    def test_db_upsert_supports_single_field_unique_model_fields(self):
+        expression = {
+            'call': 'db.upsert',
+            'args': {
+                'model_type': {'value': 'test_app.profile', 'type': 'str'},
+                'conflict_fields': ['username'],
+                'data': {
+                    'user_id': '4',
+                    'username': 'alice',
+                },
+            }
+        }
+        app = self._make_app()
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['type'], 'struct')
+        self.assertEqual(result['value']['username'], 'alice')
+        self.assertEqual(result['value']['user_id'], '4')
 
     def test_db_delete_where_deletes_rows_and_returns_ack(self):
         expression = {

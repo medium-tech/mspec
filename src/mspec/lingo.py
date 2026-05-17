@@ -19,6 +19,8 @@ from mapp.module.model.db import db_model_create, db_model_read, db_model_update
 from mapp.types import get_python_type_for_field, new_model_class, convert_dict_to_model
 
 datetime_format_str = '%Y-%m-%dT%H:%M:%S'
+db_query_batch_size = 1000000
+db_upsert_conflict_check_size = 2
 
 @dataclass
 class LingoApp:
@@ -445,7 +447,8 @@ def _db_parse_where_conditions(app:LingoApp, where_expr: Any, ctx:Optional[dict]
     conditions = {}
 
     for field_name, condition in where.items():
-        if legacy_fields and (not isinstance(condition, dict) or len(condition) != 1 or next(iter(condition.keys())) not in ('eq', 'ne')):
+        if legacy_fields and _db_is_legacy_fields_condition(condition):
+            # Backward compatibility: legacy `fields` accepts {field: value} and maps it to eq.
             operand_value = lingo_execute(app, condition, ctx)
             conditions[field_name] = {'eq': unwrap_primitive(operand_value)}
             continue
@@ -461,6 +464,13 @@ def _db_parse_where_conditions(app:LingoApp, where_expr: Any, ctx:Optional[dict]
         conditions[field_name] = {operator: unwrap_primitive(operand_value)}
 
     return conditions
+
+def _db_is_legacy_fields_condition(condition: Any) -> bool:
+    if not isinstance(condition, dict):
+        return True
+    if len(condition) != 1:
+        return True
+    return next(iter(condition.keys())) not in ('eq', 'ne')
 
 def _db_parse_include_spec(app:LingoApp, include_expr: Any, ctx:Optional[dict]) -> dict:
     include = _resolve_struct_expression(app, include_expr, ctx, 'db.include - include expression must evaluate to a struct')
@@ -656,6 +666,7 @@ def _db_project_model_fields(model: Any, field_names: list[str]) -> dict:
     return projected
 
 def _db_sort_models_by_id(models: list[Any]) -> list[Any]:
+    """Sort model rows by ID with numeric ordering when IDs are numeric strings."""
     def _sort_key(model):
         model_id = getattr(model, 'id', None)
         try:
@@ -676,7 +687,7 @@ def _db_resolve_include_for_row(ctx, row: dict, include: dict) -> Any:
         except NotFoundError:
             joined_rows = []
     else:
-        joined_result = db_model_query(ctx, include['model_class'], {include['foreign_field']: {'eq': local_value}}, 0, 1000000)
+        joined_result = db_model_query(ctx, include['model_class'], {include['foreign_field']: {'eq': local_value}}, 0, db_query_batch_size)
         joined_rows = joined_result['items']
 
     joined_rows = _db_sort_models_by_id(joined_rows)
@@ -705,6 +716,16 @@ def db_create(ctx, model_class, data:dict) -> str:
 def db_upsert(ctx, model_class, data:dict, conflict_fields:list[str]) -> dict:
     model_spec = model_class._model_spec
     db_indexes = model_spec.get('db', {}).get('indexes', [])
+    unique_model_fields = model_spec.get('unique_model_fields', [])
+    normalized_unique_model_fields = set()
+    for field in unique_model_fields:
+        if isinstance(field, str):
+            normalized_unique_model_fields.add(field)
+        elif isinstance(field, dict):
+            try:
+                normalized_unique_model_fields.add(field['name']['snake_case'])
+            except KeyError:
+                continue
     has_unique_conflict_index = False
     conflict_set = set(conflict_fields)
 
@@ -714,7 +735,7 @@ def db_upsert(ctx, model_class, data:dict, conflict_fields:list[str]) -> dict:
             break
 
     if not has_unique_conflict_index and len(conflict_fields) == 1:
-        if conflict_fields[0] in model_spec.get('unique_model_fields', []):
+        if conflict_fields[0] in normalized_unique_model_fields:
             has_unique_conflict_index = True
 
     if not has_unique_conflict_index:
@@ -731,7 +752,7 @@ def db_upsert(ctx, model_class, data:dict, conflict_fields:list[str]) -> dict:
             )
 
     where = {field_name: {'eq': data[field_name]} for field_name in conflict_fields}
-    query_result = db_model_query(ctx, model_class, where, 0, 2)
+    query_result = db_model_query(ctx, model_class, where, 0, db_upsert_conflict_check_size)
 
     if query_result['total'] == 0:
         model = convert_dict_to_model(model_class, data)
@@ -740,6 +761,7 @@ def db_upsert(ctx, model_class, data:dict, conflict_fields:list[str]) -> dict:
         existing = query_result['items'][0]
         updated_data = existing._asdict()
         updated_data.update(data)
+        # db_model_update expects timestamp inputs to be unset and handles them automatically.
         updated_data['date_created'] = None
         updated_data['date_modified'] = None
         model = convert_dict_to_model(model_class, updated_data)
@@ -787,7 +809,7 @@ def db_query(ctx, model_class, where:dict, offset:int=0, size:int=25, include:di
     }
 
 def db_delete_where(ctx, model_class, where:dict, message:str='Items deleted.') -> dict:
-    query_result = db_model_query(ctx, model_class, where, 0, 1000000)
+    query_result = db_model_query(ctx, model_class, where, 0, db_query_batch_size)
     for item in query_result['items']:
         db_model_delete(ctx, model_class, item.id)
     return {'type': 'struct', 'value': {'acknowledged': True, 'message': message}}
