@@ -189,7 +189,8 @@ def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: in
         try:
             http_model_read(ctx, thread_class, str(thread_id))
             thread_ids.append(str(thread_id))
-        except Exception:
+        except Exception as e:
+            print(f'  :: skipping thread {thread_id} while seeding reactions: {e}')
             continue
 
     ctx.client.set_bearer_token(users[0]['access_token'])
