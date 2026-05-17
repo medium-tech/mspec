@@ -182,7 +182,7 @@ def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: in
 
     react_to_reply_op = social_module['ops']['react_to_reply']
     react_to_reply_params_class, react_to_reply_output_class = new_op_classes(react_to_reply_op, social_module)
-    reaction_types = react_to_thread_op['params']['reaction_type']['enum']
+    available_reactions = react_to_thread_op['params']['reaction_type']['enum']
 
     ctx.client.set_bearer_token(users[0]['access_token'])
     get_threads_params = new_op_params(get_threads_params_class, {
@@ -223,14 +223,14 @@ def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: in
         for thread_id in thread_ids:
             react_to_thread_params = new_op_params(react_to_thread_params_class, {
                 'thread_id': thread_id,
-                'reaction_type': random.choice(reaction_types),
+                'reaction_type': random.choice(available_reactions),
             })
             http_run_op(ctx, react_to_thread_params_class, react_to_thread_output_class, react_to_thread_params)
 
         for reply_id in reply_ids:
             react_to_reply_params = new_op_params(react_to_reply_params_class, {
                 'post_id': reply_id,
-                'reaction_type': random.choice(reaction_types),
+                'reaction_type': random.choice(available_reactions),
             })
             http_run_op(ctx, react_to_reply_params_class, react_to_reply_output_class, react_to_reply_params)
 
