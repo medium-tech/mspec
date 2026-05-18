@@ -205,6 +205,7 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
     try:
         result = ctx.db.cursor.execute(non_list_sql, values)
     except sqlite3.IntegrityError as e:
+        ctx.db.connection.rollback()
         msg = f'Another record with the same value exists, check field(s): ' + ', '.join(model_spec['unique_model_fields'])
         raise MappUserError('UNIQUE_CONSTRAINT_VIOLATED', msg)
     assert result.rowcount == 1
@@ -220,10 +221,14 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
         for pos, value in enumerate(values_list):
             if field['element_type'] == 'datetime':
                 value = value.isoformat()
-            ctx.db.cursor.execute(
-                f"INSERT INTO {list_table_name} (value, position, {table_name}_id) VALUES (?, ?, ?)",
-                (value, pos, obj.id)
-            )
+            try:
+                ctx.db.cursor.execute(
+                    f"INSERT INTO {list_table_name} (value, position, {table_name}_id) VALUES (?, ?, ?)",
+                    (value, pos, obj.id)
+                )
+            except Exception as e:
+                ctx.db.connection.rollback()
+                raise MappError('Failed to insert list field value', str(e))
 
     ctx.db.commit()
     return db_model_read(ctx, model_class, obj.id)
@@ -347,8 +352,12 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
     sql = f'UPDATE {table_name} SET {set_clause} WHERE id=?'
 
     # execute sql #
-
-    result = ctx.db.cursor.execute(sql, values)
+    try:
+        result = ctx.db.cursor.execute(sql, values)
+    except Exception as e:
+        ctx.db.connection.rollback()
+        raise MappError('Failed to update model', str(e))
+    
     if result.rowcount == 0:
         raise NotFoundError(f'{table_name} {obj.id} not found')
 
@@ -362,18 +371,26 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
 
         # clear existing values #
 
-        ctx.db.cursor.execute(f'DELETE FROM {list_table_name} WHERE {table_name}_id = ?', (obj.id,))
+        try:
+            ctx.db.cursor.execute(f'DELETE FROM {list_table_name} WHERE {table_name}_id = ?', (obj.id,))
+        except Exception as e:
+            ctx.db.connection.rollback()
+            raise MappError('Failed to clear list field values', str(e))
 
         # insert new values #
         
         for pos, value in enumerate(getattr(obj, field_name)):
             if field['element_type'] == 'datetime':
                 value = value.isoformat()
-            ctx.db.cursor.execute(
-                f'INSERT INTO {list_table_name} (value, position, {table_name}_id) VALUES (?, ?, ?)',
-                (value, pos, obj.id)
-            )
-
+            try:
+                ctx.db.cursor.execute(
+                    f'INSERT INTO {list_table_name} (value, position, {table_name}_id) VALUES (?, ?, ?)',
+                    (value, pos, obj.id)
+                )
+            except Exception as e:
+                ctx.db.connection.rollback()
+                raise MappError('Failed to insert list field value', str(e))
+            
     # finish #
 
     ctx.db.commit()

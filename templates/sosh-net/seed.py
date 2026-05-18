@@ -107,6 +107,7 @@ def _seed_profiles(ctx, spec: dict, social_module: dict, users: list[dict]):
                     print('   :: username conflict, retrying with a new username...')
                     continue
                 else:
+                    print(f'   :: failed to create profile for user \n{profile_data}')
                     raise e
 
 
@@ -192,12 +193,12 @@ def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: in
         'size': num_threads,
     })
     threads_result = http_run_op(ctx, get_threads_params_class, get_threads_output_class, get_threads_params)
-    threads = threads_result.result.get('threads', [])
+    threads = threads_result.result['threads']['value']['items']
     thread_ids = []
+    
     for thread in threads:
-        thread_id = thread.get('id')
-        if thread_id is not None:
-            thread_ids.append(str(thread_id))
+        thread_id = thread['id']
+        thread_ids.append(str(thread_id))
 
     if len(thread_ids) < 1:
         print('  :: no threads found for reaction seeding')
@@ -208,12 +209,8 @@ def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: in
     get_thread_and_post_params_class, get_thread_and_post_output_class = new_op_classes(get_thread_and_post_op, social_module)
     get_thread_and_post_params = new_op_params(get_thread_and_post_params_class, {'thread_id': first_thread_id})
     thread_result = http_run_op(ctx, get_thread_and_post_params_class, get_thread_and_post_output_class, get_thread_and_post_params)
-    main_post = thread_result.result.get('main_post', {})
-    main_post_id = main_post.get('id')
-    if main_post_id is None:
-        print('  :: no main post found for first thread reaction seeding')
-        return
-    main_post_id = str(main_post_id)
+    main_post = thread_result.result['main_post']['value']
+    main_post_id = main_post['id']
 
     get_replies_params = new_op_params(get_replies_params_class, {
         'post_id': main_post_id,
@@ -221,12 +218,10 @@ def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: in
         'size': num_replies,
     })
     replies_result = http_run_op(ctx, get_replies_params_class, get_replies_output_class, get_replies_params)
-    replies = replies_result.result.get('replies', [])
+    replies = replies_result.result['replies']['value']['items']
     reply_ids = []
     for reply in replies:
-        reply_id = reply.get('id')
-        if reply_id is not None:
-            reply_ids.append(str(reply_id))
+        reply_ids.append(reply['id'])
 
     for user in users:
         ctx.client.set_bearer_token(user['access_token'])
