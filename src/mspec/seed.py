@@ -176,7 +176,7 @@ def random_user_name(max_length: int=25) -> str:
         random.shuffle(_words)
         name = sep().join(_words)
 
-    return name
+    return name[0:max_length]
 
 def random_thing_name() -> str:
     words = []
