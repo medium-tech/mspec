@@ -633,6 +633,56 @@
                 ]
             }
         },
+        "main_post_reaction_counts_string": {
+            "type": "str",
+            "calc": {
+                "call": "join",
+                "args": {
+                    "separator": " ",
+                    "items": {
+                        "call": "map",
+                        "args": {
+                            "function": {
+                                "call": "concat",
+                                "args": {
+                                    "items": [
+                                        {
+                                            "call": "key",
+                                            "args": {
+                                                "object": {
+                                                    "self": "item"
+                                                },
+                                                "key": "group"
+                                            }
+                                        },
+                                        "x",
+                                        {
+                                            "call": "str",
+                                            "args": {
+                                                "object": {
+                                                    "call": "key",
+                                                    "args": {
+                                                        "object": {
+                                                            "self": "item"
+                                                        },
+                                                        "key": "count"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "iterable": {
+                                "state": {
+                                    "main_post_reaction_counts": {}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "forum": {
             "type": "struct",
             "calc": {
@@ -1106,7 +1156,7 @@
         {
             "lingo": {
                 "state": {
-                    "main_post_reaction_counts": {}
+                    "main_post_reaction_counts_string": {}
                 }
             }
         },
@@ -1392,7 +1442,7 @@
                                                         "reply": {
                                                             "block": [
                                                                 {
-                                                                    "text": {
+                                                                    "lingo": {
                                                                         "call": "concat",
                                                                         "args": {
                                                                             "items": [
@@ -1442,12 +1492,54 @@
                                                                 },
                                                                 {
                                                                     "lingo": {
-                                                                        "call": "key",
+                                                                        "call": "join",
                                                                         "args": {
-                                                                            "object": {
-                                                                                "self": "item"
-                                                                            },
-                                                                            "key": "reaction_counts"
+                                                                            "separator": " ",
+                                                                            "items": {
+                                                                                "call": "map",
+                                                                                "args": {
+                                                                                    "function": {
+                                                                                        "call": "concat",
+                                                                                        "args": {
+                                                                                            "items": [
+                                                                                                {
+                                                                                                    "call": "key",
+                                                                                                    "args": {
+                                                                                                        "object": {
+                                                                                                            "self": "item"
+                                                                                                        },
+                                                                                                        "key": "group"
+                                                                                                    }
+                                                                                                },
+                                                                                                "x",
+                                                                                                {
+                                                                                                    "call": "str",
+                                                                                                    "args": {
+                                                                                                        "object": {
+                                                                                                            "call": "key",
+                                                                                                            "args": {
+                                                                                                                "object": {
+                                                                                                                    "self": "item"
+                                                                                                                },
+                                                                                                                "key": "count"
+                                                                                                            }
+                                                                                                        }
+                                                                                                    }
+                                                                                                }
+                                                                                            ]
+                                                                                        }
+                                                                                    },
+                                                                                    "iterable": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "reaction_counts"
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
                                                                         }
                                                                     }
                                                                 },

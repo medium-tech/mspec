@@ -383,6 +383,15 @@ class TestLingoPages(unittest.TestCase):
             return None
 
         self.assertTrue(_find(thread_spec['output'], lambda node: isinstance(node, dict) and node.get('text') == 'created by: '))
+        self.assertEqual(
+            thread_spec['state']['main_post_reaction_counts_string']['calc']['call'],
+            'join'
+        )
+        self.assertTrue(_find(
+            thread_spec['output'],
+            lambda node: isinstance(node, dict)
+            and node.get('lingo', {}).get('state', {}).get('main_post_reaction_counts_string') == {}
+        ))
         self.assertTrue(_find(
             thread_spec['output'],
             lambda node: isinstance(node, dict)
@@ -399,7 +408,10 @@ class TestLingoPages(unittest.TestCase):
         reply_block = (
             reply_list['value']['args']['function']['value']['reply']['block']
         )
+        self.assertIn('lingo', reply_block[0])
         self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'date_modified'))
+        self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'group'))
+        self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'count'))
         self.assertTrue(_find(
             thread_spec['output'],
             lambda node: isinstance(node, dict)
