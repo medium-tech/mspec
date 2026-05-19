@@ -73,14 +73,20 @@ async function createForumAndThread(page, host, uniqueId) {
 	// create a forum
 	await page.getByRole('button', { name: 'create forum' }).click();
 	await page.getByRole('row', { name: 'topic:' }).getByRole('textbox').fill(`Workflow Forum ${uniqueId}`);
-	const editor = await page.getByRole('row', { name: 'description:' }).locator('div.rich-text-editor')
-	editor.fill(`Forum for workflow test ${uniqueId}`);
+	const editor = await page.getByRole('row', { name: 'description:' }).locator('div.rich-text-editor');
+	await editor.fill(`Forum for workflow test ${uniqueId}`);
 	await page.getByRole('button', { name: 'Submit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('Success', { timeout: 10000 });
 
 	// navigate to the created forum via the 'view item' link
 	await page.getByRole('link', { name: 'view item' }).click();
 	await page.waitForSelector('#lingo-app');
+
+	// extract forum id from url
+	const forumUrl = page.url();
+	// expects /social/forum/{id}
+	const forumIdMatch = forumUrl.match(/\/forum\/(\d+)/);
+	const forumId = forumIdMatch ? forumIdMatch[1] : null;
 
 	// create a thread in the forum
 	await page.getByRole('button', { name: 'create thread' }).click();
@@ -89,6 +95,18 @@ async function createForumAndThread(page, host, uniqueId) {
 	await page.getByRole('button', { name: 'Submit' }).click();
 	// create-thread op shows 'view thread' link on success (not the generic 'success' text)
 	await expect(page.getByRole('link', { name: 'view thread' })).toBeVisible({ timeout: 10000 });
+
+	// click 'view thread' to go to thread instance
+	await page.getByRole('link', { name: 'view thread' }).click();
+	await page.waitForSelector('#lingo-app');
+
+	// extract thread id from url
+	const threadUrl = page.url();
+	// expects /social/thread/{id}
+	const threadIdMatch = threadUrl.match(/\/thread\/(\d+)/);
+	const threadId = threadIdMatch ? threadIdMatch[1] : null;
+
+	return { forumId, threadId };
 }
 
 async function logoutUser(page, host) {
@@ -242,7 +260,7 @@ test('test navigation links', async ({ browser, crudEnv }) => {
 	const { email, password } = await createAccount(page, host, uniqueId);
 	await loginUser(page, host, email, password);
 	await createProfile(page, host, uniqueId);
-	await createForumAndThread(page, host, uniqueId);
+	const { forumId, threadId } = await createForumAndThread(page, host, uniqueId);
 
 	//
 	// main pages
@@ -309,46 +327,38 @@ test('test navigation links', async ({ browser, crudEnv }) => {
 	await expect(page.getByRole('heading')).toContainText('medium tech');
 	await page.getByRole('link', { name: 'enter social' }).click();
 
-	// view forum breadcrumbs
-	await page.goto(`${host}/social/forum`);
-	await expect(page.locator('h2')).toContainText(':: search forums');
-	await page.locator('tr').nth(1).click();
-
+	// view forum breadcrumbs (use forumId for direct navigation)
+	await page.goto(`${host}/social/forum/${forumId}`);
 	await expect(page.locator('h1')).toContainText(':: forum ::');
 	await page.getByRole('link').nth(3).click();
-
 	await expect(page.locator('h1')).toContainText(':: forum ::');
 	await page.getByRole('link', { name: 'forum' }).click();
 	await expect(page.locator('h2')).toContainText(':: search forums');
-	
-	await page.goto(`${host}/social/forum`);
-	await expect(page.locator('h2')).toContainText(':: search forums');
-	await page.locator('tr').nth(1).click();
+
+	await page.goto(`${host}/social/forum/${forumId}`);
 	await expect(page.locator('h1')).toContainText(':: forum ::');
 	await page.getByRole('link', { name: 'social' }).click();
 	await expect(page.locator('h2')).toContainText(':: the network');
-	await page.goto(`${host}/social/forum`);
-	await expect(page.locator('h2')).toContainText(':: search forums');
-	await page.locator('tr').nth(1).click();
+	await page.goto(`${host}/social/forum/${forumId}`);
 	await expect(page.locator('h1')).toContainText(':: forum ::');
 	await page.getByRole('link', { name: 'mtech' }).click();
 	await expect(page.getByRole('heading')).toContainText('medium tech');
 
-	// view thread breadcrumbs
-	await page.goto(`${host}/social/thread/1`);
+	// view thread breadcrumbs (use threadId for direct navigation)
+	await page.goto(`${host}/social/thread/${threadId}`);
 	await expect(page.locator('h1')).toContainText(':: thread ::');
 	await page.getByRole('link').nth(4).click();
 	await expect(page.locator('h1')).toContainText(':: forum ::');
 
-	await page.goto(`${host}/social/thread/1`);
+	await page.goto(`${host}/social/thread/${threadId}`);
 	await page.getByRole('link').nth(3).click();
 	await expect(page.locator('h1')).toContainText(':: forum ::');
-	
-	await page.goto(`${host}/social/thread/1`);
+
+	await page.goto(`${host}/social/thread/${threadId}`);
 	await expect(page.locator('h1')).toContainText(':: thread ::');
 	await page.getByRole('link', { name: 'social' }).click();
 	await expect(page.locator('h2')).toContainText(':: the network');
-	await page.goto(`${host}/social/thread/1`);
+	await page.goto(`${host}/social/thread/${threadId}`);
 	await expect(page.locator('h1')).toContainText(':: thread ::');
 	await page.getByRole('link', { name: 'mtech' }).click();
 	await expect(page.getByRole('heading')).toContainText('medium tech');
