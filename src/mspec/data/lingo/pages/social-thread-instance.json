@@ -1604,9 +1604,9 @@
                                                                 },
                                                                 {
                                                                     "lingo": {
-                                                                        "call": "str",
+                                                                        "call": "len",
                                                                         "args": {
-                                                                            "object": {
+                                                                            "collection": {
                                                                                 "call": "key",
                                                                                 "args": {
                                                                                     "object": {
@@ -1618,6 +1618,9 @@
                                                                             }
                                                                         }
                                                                     }
+                                                                },
+                                                                {
+                                                                    "text": " reaction types"
                                                                 },
                                                                 {
                                                                     "branch": [
