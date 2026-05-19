@@ -2375,16 +2375,16 @@ function renderLingo(app, element, ctx = null) {
 
 	TODO: migrate non rich_text behavior to the text element and remove this feature from the lingo element
 	*/
-	console.log('renderLingo()', element, ctx);
+	// console.log('renderLingo()', element, ctx);
 	const result = lingoExecute(app, element.lingo, ctx);
 
 
 	if(element?.rich_text === true) {
-		console.log('renderLingo() - rich text element:', element, 'parsed rich text:', result);
+		// console.log('renderLingo() - rich text element:', element, 'parsed rich text:', result);
 
 		const richText = JSON.parse(result.value);
 
-		console.log('renderLingo() - rich text after parsing:', richText);
+		// console.log('renderLingo() - rich text after parsing:', richText);
 	
 		if(richText.lingo.version === 'rich-text-beta-1'){
 			if(!('block' in richText)){
@@ -2397,7 +2397,7 @@ function renderLingo(app, element, ctx = null) {
 
 	}else{
 
-		console.log('renderLingo()', element, ctx, typeof element.lingo, element.lingo, result);
+		// console.log('renderLingo()', element, ctx, typeof element.lingo, element.lingo, result);
 		
 		const convert = (x) => {
 			if (x instanceof Date) {
@@ -3010,10 +3010,11 @@ function renderArgs(app, expression, ctx = null) {
  * Render self access - equivalent to Python render_self()
  */
 function renderSelf(app, expression, ctx = null) {
+	// console.log('renderSelf()', expression.self, ctx);
     try {
         return ctx.self[expression.self];
     } catch (error) {
-		// console.error('renderSelf - missing self context:', expression, ctx);
+		console.error('renderSelf - missing self context:', expression, ctx);
         throw new Error('self - missing self context');
     }
 }
