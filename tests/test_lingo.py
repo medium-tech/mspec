@@ -428,8 +428,7 @@ class TestLingoPages(unittest.TestCase):
         self.assertIn('link', reply_block[0])
         self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('link', {}).get('call') == 'concat'))
         self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'date_modified'))
-        self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'group'))
-        self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'count'))
+        self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'reaction_counts'))
         self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'user_reaction'))
         self.assertTrue(_find(
             thread_spec['output'],

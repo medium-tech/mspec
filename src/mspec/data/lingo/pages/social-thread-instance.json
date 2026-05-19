@@ -1604,52 +1604,16 @@
                                                                 },
                                                                 {
                                                                     "lingo": {
-                                                                        "call": "join",
+                                                                        "call": "str",
                                                                         "args": {
-                                                                            "separator": " ",
-                                                                            "items": {
-                                                                                "call": "map",
+                                                                            "object": {
+                                                                                "call": "key",
                                                                                 "args": {
-                                                                                    "function": {
-                                                                                        "call": "concat",
-                                                                                        "args": {
-                                                                                            "items": [
-                                                                                                {
-                                                                                                    "call": "key",
-                                                                                                    "args": {
-                                                                                                        "object": {
-                                                                                                            "self": "item"
-                                                                                                        },
-                                                                                                        "key": "group"
-                                                                                                    }
-                                                                                                },
-                                                                                                "x",
-                                                                                                {
-                                                                                                    "call": "str",
-                                                                                                    "args": {
-                                                                                                        "object": {
-                                                                                                            "call": "key",
-                                                                                                            "args": {
-                                                                                                                "object": {
-                                                                                                                    "self": "item"
-                                                                                                                },
-                                                                                                                "key": "count"
-                                                                                                            }
-                                                                                                        }
-                                                                                                    }
-                                                                                                }
-                                                                                            ]
-                                                                                        }
+                                                                                    "object": {
+                                                                                        "self": "item"
                                                                                     },
-                                                                                    "iterable": {
-                                                                                        "call": "key",
-                                                                                        "args": {
-                                                                                            "object": {
-                                                                                                "self": "item"
-                                                                                            },
-                                                                                            "key": "reaction_counts"
-                                                                                        }
-                                                                                    }
+                                                                                    "key": "reaction_counts",
+                                                                                    "default_value": []
                                                                                 }
                                                                             }
                                                                         }
