@@ -225,29 +225,6 @@
                 "result": {"type": "any", "value": null}
             }
         },
-        "header": {
-            "type": "str",
-            "calc": {
-                "call": "join",
-                "args": {
-                    "separator": "",
-                    "items": [
-                        ":: ",
-                        {
-                            "params": {
-                                "model_name": {}
-                            }
-                        },
-                        " :: ",
-                        {
-                            "params": {
-                                "model_id": {}
-                            }
-                        }
-                    ]
-                }
-            }
-        },
 		"total_threads": {
 			"type": "int",
 			"calc": {
@@ -574,8 +551,19 @@
     "output": [
         {
             "heading": {
-                "state": {
-                    "header": {}
+                "call": "join",
+                "args": {
+                    "separator": "",
+                    "items": [
+                        ":: ",
+                        {
+                            "params": {
+                                "model_name": {}
+                            }
+                        },
+                        " :: ",
+                        { "state": {"forum": {"topic": {}}}}
+                    ]
                 }
             },
             "level": 1
@@ -600,10 +588,7 @@
                 }
             ]
         },
-        {
-            "heading": { "state": {"forum": {"topic": {}}}},
-            "level": 3
-        },
+		{"break": 1},
         {
             "lingo": { "state": {"forum": {"description": {}}}},
 			"rich_text": true

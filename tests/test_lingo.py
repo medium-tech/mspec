@@ -355,6 +355,70 @@ class TestLingoPages(unittest.TestCase):
             page_result = lingo_execute(app, {'op': {'last_page': {}}})
             self.assertEqual(page_result['value'], case['expected_page'])
 
+    def test_social_thread_page_includes_reaction_ui_blocks(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+
+        def _find(node, predicate):
+            if predicate(node):
+                return True
+            if isinstance(node, dict):
+                return any(_find(value, predicate) for value in node.values())
+            if isinstance(node, list):
+                return any(_find(item, predicate) for item in node)
+            return False
+
+        def _find_node(node, predicate):
+            if predicate(node):
+                return node
+            if isinstance(node, dict):
+                for value in node.values():
+                    found = _find_node(value, predicate)
+                    if found is not None:
+                        return found
+            if isinstance(node, list):
+                for item in node:
+                    found = _find_node(item, predicate)
+                    if found is not None:
+                        return found
+            return None
+
+        self.assertTrue(_find(thread_spec['output'], lambda node: isinstance(node, dict) and node.get('text') == 'created by: '))
+        self.assertEqual(
+            thread_spec['state']['main_post_reaction_counts_string']['calc']['call'],
+            'join'
+        )
+        self.assertTrue(_find(
+            thread_spec['output'],
+            lambda node: isinstance(node, dict)
+            and node.get('lingo', {}).get('state', {}).get('main_post_reaction_counts_string') == {}
+        ))
+        self.assertTrue(_find(
+            thread_spec['output'],
+            lambda node: isinstance(node, dict)
+            and node.get('op', {}).get('http') == '/api/social/react-to-thread-main-post'
+            and node.get('op', {}).get('display', {}).get('friendly_status') is True
+        ))
+        reply_list = _find_node(
+            thread_spec['output'],
+            lambda node: isinstance(node, dict)
+            and node.get('type') == 'list'
+            and node.get('display', {}).get('columns') == ['reply']
+        )
+        self.assertIsNotNone(reply_list)
+        reply_block = (
+            reply_list['value']['args']['function']['value']['reply']['block']
+        )
+        self.assertIn('lingo', reply_block[0])
+        self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'date_modified'))
+        self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'group'))
+        self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'count'))
+        self.assertTrue(_find(
+            thread_spec['output'],
+            lambda node: isinstance(node, dict)
+            and node.get('op', {}).get('http') == '/api/social/react-to-reply'
+            and node.get('op', {}).get('display', {}).get('friendly_status') is True
+        ))
+
     def test_sequence_functions(self):
         """Test sequence functions: len, range, slice, any, all, sum, sorted, count"""
         app = lingo_app(self.functions_sequence_spec)

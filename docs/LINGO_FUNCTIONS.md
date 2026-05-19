@@ -7,6 +7,7 @@
   - [Int](#int-functions)
   - [Float](#float-functions)
   - [Str](#str-functions)
+  - [Struct](#struct-functions)
   - [Math](#math-functions)
   - [Sequence](#sequence-functions)
   - [Sequence Ops](#sequence-ops-functions)
@@ -248,6 +249,13 @@
     - **pattern** `str`
     - **string** `str`
   - **return:** `bool`
+
+### Struct Functions
+`key` - return the value of `key` from `object`
+  - **args:**
+    - **key** `str`
+	- **object** `struct`
+	- **default_value** `any` (only implemented in javascript currently)
 
 ### Math Functions
 `add` - perform addition on `a` and `b` and return the result

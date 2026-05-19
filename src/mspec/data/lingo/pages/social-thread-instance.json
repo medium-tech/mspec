@@ -60,29 +60,6 @@
         }
     },
     "state": {
-        "header": {
-            "type": "str",
-            "calc": {
-                "call": "join",
-                "args": {
-                    "separator": "",
-                    "items": [
-                        ":: ",
-                        {
-                            "params": {
-                                "model_name": {}
-                            }
-                        },
-                        " :: ",
-                        {
-                            "params": {
-                                "model_id": {}
-                            }
-                        }
-                    ]
-                }
-            }
-        },
         "thread_op_view_state": {
             "type": "struct",
             "default": {
@@ -107,8 +84,32 @@
                 }
             }
         },
-		"overall_op_view_state": {
-			"type": "str",
+        "main_post_reaction_op_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "reply_reaction_op_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "overall_op_view_state": {
+            "type": "str",
 			"description": "state is either 'default', 'result' or 'error'. If thread_op_view_state and replies_op_view_state are result this will return result, if either are error it will return error, otherwise default",
 			"calc": {
 				"branch": [
@@ -556,11 +557,107 @@
                             "type": "struct",
                             "value": {
                                 "id": "-1",
+                                "profile": {
+                                    "username": "Loading..."
+                                },
                                 "message": "{\"lingo\": {\"version\": \"rich-text-beta-1\"},\"block\": [{\"text\": \"Loading...\"}]}"
                             }
                         }
                     }
                 ]
+            }
+        },
+        "main_post_reaction_counts": {
+            "type": "list",
+            "calc": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "thread_op_view_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "thread_op_view_state": {}
+                                    }
+                                },
+                                "key": "result.value.main_post_reaction_counts.value"
+                            }
+                        }
+                    },
+                    {
+                        "else": {
+                            "type": "list",
+                            "value": []
+                        }
+                    }
+                ]
+            }
+        },
+        "main_post_reaction_counts_string": {
+            "type": "str",
+            "calc": {
+                "call": "join",
+                "args": {
+                    "separator": " ",
+                    "items": {
+                        "call": "map",
+                        "args": {
+                            "function": {
+                                "call": "concat",
+                                "args": {
+                                    "items": [
+                                        {
+                                            "call": "key",
+                                            "args": {
+                                                "object": {
+                                                    "self": "item"
+                                                },
+                                                "key": "group"
+                                            }
+                                        },
+                                        "x",
+                                        {
+                                            "call": "str",
+                                            "args": {
+                                                "object": {
+                                                    "call": "key",
+                                                    "args": {
+                                                        "object": {
+                                                            "self": "item"
+                                                        },
+                                                        "key": "count"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "iterable": {
+                                "state": {
+                                    "main_post_reaction_counts": {}
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "forum": {
@@ -916,8 +1013,25 @@
     "output": [
         {
             "heading": {
-                "state": {
-                    "header": {}
+                "call": "join",
+                "args": {
+                    "separator": "",
+                    "items": [
+                        ":: ",
+                        {
+                            "params": {
+                                "model_name": {}
+                            }
+                        },
+                        " :: ",
+                        {
+							"state": {
+								"thread": {
+									"title": {}
+								}
+							}
+						}
+                    ]
                 }
             },
             "level": 1
@@ -930,28 +1044,21 @@
                         "module_name": {}
                     }
                 },
-                {
-                    "params": {
-                        "model_name": {}
-                    }
-                },
-                {
-                    "params": {
-                        "model_id": {}
-                    }
-                }
+                "forum",
+				{
+					"call": "key",
+					"args": {
+						"object": {
+							"state": {
+								"forum": {}
+							}
+						},
+						"key": "id"
+					}
+				}
             ]
         },
-        {
-            "heading": {
-                "state": {
-                    "thread": {
-                        "title": {}
-                    }
-                }
-            },
-            "level": 3
-        },
+		{"break": 1},
         {
             "text": "forum: ",
 			"style": {
@@ -990,6 +1097,31 @@
             "break": 1
         },
         {
+            "text": "created by: ",
+            "style": {
+                "bold": true
+            }
+        },
+        {
+            "text": "@"
+        },
+        {
+            "lingo": {
+                "call": "key",
+                "args": {
+                    "object": {
+                        "state": {
+                            "main_post": {}
+                        }
+                    },
+                    "key": "profile.username"
+                }
+            }
+        },
+        {
+            "break": 1
+        },
+        {
             "lingo": {
                 "state": {
                     "main_post": {
@@ -997,7 +1129,51 @@
                     }
                 }
             },
-			"rich_text": true
+            "rich_text": true
+        },
+        {
+            "break": 1
+        },
+        {
+            "text": "reactions: ",
+            "style": {
+                "bold": true
+            }
+        },
+        {
+            "lingo": {
+                "state": {
+                    "main_post_reaction_counts_string": {}
+                }
+            }
+        },
+        {
+            "break": 1
+        },
+        {
+            "op": {
+                "bind": {
+                    "state": {
+                        "main_post_reaction_op_state": {}
+                    }
+                },
+                "display": {
+                    "friendly_status": true,
+                    "show_result": false
+                },
+                "interactive": true,
+                "http": "/api/social/react-to-thread-main-post",
+                "params": {
+                    "thread_id": {
+                        "params": {
+                            "model_id": {}
+                        }
+                    }
+                },
+                "definition": "social.react_to_thread_main_post",
+                "submit_button_text": "react",
+				"instruction": ""
+            }
         },
         {
             "heading": ":: replies",
@@ -1242,7 +1418,7 @@
                                         "display": {
                                             "format": "table",
                                             "columns": [
-                                                "message"
+                                                "reply"
                                             ]
                                         },
                                         "value": {
@@ -1251,18 +1427,143 @@
                                                 "function": {
                                                     "type": "struct",
                                                     "value": {
-                                                        "message": {
-															"lingo": {
-																"call": "key",
-																"args": {
-																	"object": {
-																		"self": "item"
-																	},
-																	"key": "message"
-																}
-															},
-															"rich_text": true
-														}
+                                                        "reply": {
+                                                            "block": [
+                                                                {
+                                                                    "lingo": {
+                                                                        "call": "concat",
+                                                                        "args": {
+                                                                            "items": [
+                                                                                "@",
+                                                                                {
+                                                                                    "call": "key",
+                                                                                    "args": {
+                                                                                        "object": {
+                                                                                            "self": "item"
+                                                                                        },
+                                                                                        "key": "profile.username",
+																						"default_value": " anonymous"
+                                                                                    }
+                                                                                },
+                                                                                " ",
+                                                                                {
+                                                                                    "call": "key",
+                                                                                    "args": {
+                                                                                        "object": {
+                                                                                            "self": "item"
+                                                                                        },
+                                                                                        "key": "date_modified"
+                                                                                    }
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {"break": 1},
+                                                                {
+                                                                    "lingo": {
+                                                                        "call": "key",
+                                                                        "args": {
+                                                                            "object": {
+                                                                                "self": "item"
+                                                                            },
+                                                                            "key": "message"
+                                                                        }
+                                                                    },
+                                                                    "rich_text": true
+                                                                },
+                                                                {"break": 1},
+                                                                {
+                                                                    "text": "reactions: ",
+                                                                    "style": {
+                                                                        "bold": true
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "lingo": {
+                                                                        "call": "join",
+                                                                        "args": {
+                                                                            "separator": " ",
+                                                                            "items": {
+                                                                                "call": "map",
+                                                                                "args": {
+                                                                                    "function": {
+                                                                                        "call": "concat",
+                                                                                        "args": {
+                                                                                            "items": [
+                                                                                                {
+                                                                                                    "call": "key",
+                                                                                                    "args": {
+                                                                                                        "object": {
+                                                                                                            "self": "item"
+                                                                                                        },
+                                                                                                        "key": "group"
+                                                                                                    }
+                                                                                                },
+                                                                                                "x",
+                                                                                                {
+                                                                                                    "call": "str",
+                                                                                                    "args": {
+                                                                                                        "object": {
+                                                                                                            "call": "key",
+                                                                                                            "args": {
+                                                                                                                "object": {
+                                                                                                                    "self": "item"
+                                                                                                                },
+                                                                                                                "key": "count"
+                                                                                                            }
+                                                                                                        }
+                                                                                                    }
+                                                                                                }
+                                                                                            ]
+                                                                                        }
+                                                                                    },
+                                                                                    "iterable": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "reaction_counts"
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {"break": 1},
+                                                                {
+                                                                    "op": {
+                                                                        "bind": {
+                                                                            "state": {
+                                                                                "reply_reaction_op_state": {}
+                                                                            }
+                                                                        },
+                                                                        "display": {
+                                                                            "friendly_status": true,
+                                                                            "show_result": false
+                                                                        },
+                                                                        "interactive": true,
+                                                                        "http": "/api/social/react-to-reply",
+																		"instruction": "",
+                                                                        "params": {
+                                                                            "post_id": {
+                                                                                "call": "key",
+                                                                                "args": {
+                                                                                    "object": {
+                                                                                        "self": "item"
+                                                                                    },
+                                                                                    "key": "id"
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        "definition": "social.react_to_reply",
+                                                                        "submit_button_text": "react"
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
                                                     }
                                                 },
                                                 "iterable": {
