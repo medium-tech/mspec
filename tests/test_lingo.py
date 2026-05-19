@@ -4,6 +4,7 @@ import json
 import os
 import sqlite3
 import time
+import yaml
 
 from pprint import pprint
 
@@ -387,10 +388,22 @@ class TestLingoPages(unittest.TestCase):
             thread_spec['state']['main_post_reaction_counts_string']['calc']['call'],
             'join'
         )
+        self.assertIn('main_post_user_reaction', thread_spec['state'])
         self.assertTrue(_find(
             thread_spec['output'],
             lambda node: isinstance(node, dict)
             and node.get('lingo', {}).get('state', {}).get('main_post_reaction_counts_string') == {}
+        ))
+        self.assertTrue(_find(
+            thread_spec['output'],
+            lambda node: isinstance(node, dict)
+            and node.get('link', {}).get('call') == 'concat'
+            and node.get('link', {}).get('args', {}).get('items', [None])[0] == '/social/profile/'
+        ))
+        self.assertTrue(_find(
+            thread_spec['output'],
+            lambda node: isinstance(node, dict)
+            and node.get('lingo', {}).get('state', {}).get('main_post_user_reaction') == {}
         ))
         self.assertTrue(_find(
             thread_spec['output'],
@@ -408,16 +421,39 @@ class TestLingoPages(unittest.TestCase):
         reply_block = (
             reply_list['value']['args']['function']['value']['reply']['block']
         )
-        self.assertIn('lingo', reply_block[0])
+        self.assertIn('link', reply_block[0])
+        self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('link', {}).get('call') == 'concat'))
         self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'date_modified'))
         self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'group'))
         self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'count'))
+        self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'user_reaction'))
         self.assertTrue(_find(
             thread_spec['output'],
             lambda node: isinstance(node, dict)
             and node.get('op', {}).get('http') == '/api/social/react-to-reply'
             and node.get('op', {}).get('display', {}).get('friendly_status') is True
         ))
+
+    def test_social_ops_include_profile_ids_and_user_reactions(self):
+        social_generator_path = SAMPLE_BROWSER2_SPEC_DIR.parent.parent / 'generator' / 'social.yaml'
+        with open(social_generator_path, 'r') as f:
+            social_spec = yaml.safe_load(f)
+
+        ops = social_spec['modules']['social']['ops']
+        thread_main_post_include_fields = (
+            ops['get_thread_and_post']['func']['value']['main_post']['args']['include']['fields']
+        )
+        self.assertIn('id', thread_main_post_include_fields)
+        self.assertIn('current_user_main_post_reaction', ops['get_thread_and_post']['func']['value'])
+
+        reply_profile_fields = (
+            ops['get_replies_for_post']['func']['self']['replies_query']['args']['include']['fields']
+        )
+        self.assertIn('id', reply_profile_fields)
+        mapped_reply_fields = (
+            ops['get_replies_for_post']['func']['value']['replies']['value']['items']['args']['function']['value']
+        )
+        self.assertIn('user_reaction', mapped_reply_fields)
 
     def test_sequence_functions(self):
         """Test sequence functions: len, range, slice, any, all, sum, sorted, count"""

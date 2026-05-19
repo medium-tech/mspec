@@ -728,8 +728,15 @@ modules:
                 description: 'Get all replies for a post by post id, including author username and reaction counts'
                 func:
                     type: struct
-                    value:
-                        replies:
+                    self:
+                        current_user_id:
+                            call: 'key'
+                            args:
+                                key: 'id'
+                                object:
+                                    call: 'auth.current_user'
+                                    args: {}
+                        replies_query:
                             call: 'db.query'
                             args:
                                 model_type: 'social.post'
@@ -747,6 +754,7 @@ modules:
                                     local_field: 'user_id'
                                     foreign_field: 'user_id'
                                     fields:
+                                        - 'id'
                                         - 'username'
                                 unique_counts:
                                     type: list
@@ -757,6 +765,93 @@ modules:
                                           source_field: 'id'
                                           foreign_field: 'post_id'
                                           group_by: 'reaction_type'
+                    value:
+                        replies:
+                            type: struct
+                            value:
+                                total:
+                                    call: 'key'
+                                    args:
+                                        object:
+                                            self: replies_query
+                                        key: 'total'
+                                items:
+                                    call: 'map'
+                                    args:
+                                        function:
+                                            type: struct
+                                            value:
+                                                id:
+                                                    call: 'key'
+                                                    args:
+                                                        object:
+                                                            self: item
+                                                        key: 'id'
+                                                date_modified:
+                                                    call: 'key'
+                                                    args:
+                                                        object:
+                                                            self: item
+                                                        key: 'date_modified'
+                                                message:
+                                                    call: 'key'
+                                                    args:
+                                                        object:
+                                                            self: item
+                                                        key: 'message'
+                                                profile:
+                                                    type: struct
+                                                    value:
+                                                        id:
+                                                            call: 'key'
+                                                            args:
+                                                                object:
+                                                                    self: item
+                                                                key: 'profile.id'
+                                                                default_value: '-1'
+                                                        username:
+                                                            call: 'key'
+                                                            args:
+                                                                object:
+                                                                    self: item
+                                                                key: 'profile.username'
+                                                                default_value: 'anonymous'
+                                                reaction_counts:
+                                                    call: 'key'
+                                                    args:
+                                                        object:
+                                                            self: item
+                                                        key: 'reaction_counts'
+                                                        default_value: []
+                                                user_reaction:
+                                                    call: 'key'
+                                                    args:
+                                                        object:
+                                                            call: 'db.query'
+                                                            args:
+                                                                model_type: 'social.reaction'
+                                                                size: 1
+                                                                where:
+                                                                    type: struct
+                                                                    value:
+                                                                        user_id:
+                                                                            eq:
+                                                                                self: current_user_id
+                                                                        post_id:
+                                                                            eq:
+                                                                                call: 'key'
+                                                                                args:
+                                                                                    object:
+                                                                                        self: item
+                                                                                    key: 'id'
+                                                        key: 'items.0.reaction_type'
+                                                        default_value: ''
+                                        iterable:
+                                            call: 'key'
+                                            args:
+                                                object:
+                                                    self: replies_query
+                                                key: 'items'
 
                 params:
                     post_id:
@@ -950,6 +1045,7 @@ modules:
                                     local_field: 'user_id'
                                     foreign_field: 'user_id'
                                     fields:
+                                        - 'id'
                                         - 'username'
                         main_post_reaction_counts:
                             call: 'db.unique_counts'
@@ -965,6 +1061,34 @@ modules:
                                                 key: 'main_post_id'
                                                 object:
                                                     self: thread
+                        current_user_main_post_reaction:
+                            call: 'key'
+                            args:
+                                object:
+                                    call: 'db.query'
+                                    args:
+                                        model_type: 'social.reaction'
+                                        size: 1
+                                        where:
+                                            type: struct
+                                            value:
+                                                post_id:
+                                                    eq:
+                                                        call: 'key'
+                                                        args:
+                                                            key: 'main_post_id'
+                                                            object:
+                                                                self: thread
+                                                user_id:
+                                                    eq:
+                                                        call: 'key'
+                                                        args:
+                                                            key: 'id'
+                                                            object:
+                                                                call: 'auth.current_user'
+                                                                args: {}
+                                key: 'items.0.reaction_type'
+                                default_value: ''
                         forum:
                             branch:
                                 - if:
@@ -1026,6 +1150,10 @@ modules:
                                 lower_case: 'main post reaction counts'
                             type: list
                             element_type: struct
+                        current_user_main_post_reaction:
+                            name:
+                                lower_case: 'current user main post reaction'
+                            type: str
                         forum:
                             name:
                                 lower_case: 'forum'
