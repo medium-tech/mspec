@@ -1606,7 +1606,7 @@
                                                                     "lingo": {
                                                                         "call": "len",
                                                                         "args": {
-                                                                            "collection": {
+                                                                            "object": {
                                                                                 "call": "key",
                                                                                 "args": {
                                                                                     "object": {
