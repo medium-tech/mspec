@@ -4464,6 +4464,9 @@ function createValueElement(app, element, ctx = null) {
 					console.error('createValueElement - table item is not a struct:', unwrappedStruct);
                     throw new Error('createValueElement - table format list items must be structs');
                 }
+
+                const rowCtx = ctx ? {...ctx} : {};
+                rowCtx.self = {item: unwrappedStruct};
                 
                 const row = document.createElement('tr');
                 if (selecting === 1 || instanceUrl) {
@@ -4497,7 +4500,7 @@ function createValueElement(app, element, ctx = null) {
                             // Scripted expression - need to evaluate it
                             // console.log('createValueElement - evaluating scripted expression for table cell:', fieldValue);
                             try {
-                                const result = lingoExecute(app, fieldValue);
+                                const result = lingoExecute(app, fieldValue, rowCtx);
                                 // console.log('createValueElement - result of evaluating scripted expression for table cell:', result);
                                 if(typeof result === 'object' && result !== null && 'value' in result) {
                                     cellValue = result.value;
@@ -4510,15 +4513,15 @@ function createValueElement(app, element, ctx = null) {
                             }
                         }else if('link' in fieldValue){
 							// console.log('createValueElement - LINK', fieldValue);
-                            cellValue = createLinkElement(app, fieldValue);
+                            cellValue = createLinkElement(app, fieldValue, rowCtx);
                         }else if('button' in fieldValue){
-                            cellValue = createButtonElement(app, fieldValue);
+                            cellValue = createButtonElement(app, fieldValue, rowCtx);
                         }else if('text' in fieldValue){
-                            cellValue = createTextElement(app, fieldValue);
+                            cellValue = createTextElement(app, fieldValue, rowCtx);
                         }else if('block' in fieldValue){
                             let blockContainer = [];
                             for(const blockElement of fieldValue.block) {
-                                const domElement = createDOMElement(app, blockElement);
+                                const domElement = createDOMElement(app, blockElement, rowCtx);
                                 if (domElement) {
                                     blockContainer.push(domElement);
                                 }
