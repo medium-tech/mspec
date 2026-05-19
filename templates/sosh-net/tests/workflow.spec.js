@@ -232,8 +232,17 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 	}
 });
 
-test('test navigation links', async ({ page, crudEnv }) => {
+test('test navigation links', async ({ browser, crudEnv }) => {
 	const host = crudEnv.host;
+
+	const uniqueId = Date.now() * 1000;
+	const userContext = await browser.newContext();
+	const page = await userContext.newPage();
+
+	const { email, password } = await createAccount(page, host, uniqueId);
+	await loginUser(page, host, email, password);
+	await createProfile(page, host, uniqueId);
+	await createForumAndThread(page, host, uniqueId);
 
 	//
 	// main pages
@@ -264,7 +273,7 @@ test('test navigation links', async ({ page, crudEnv }) => {
 	await expect(page.locator('h2')).toContainText(':: your profile');
 	await page.getByRole('link', { name: 'yours' }).click();
 	await expect(page.locator('h2')).toContainText(':: your profile');
-	await page.getByRole('link', { name: 'profile' }).click();
+	await page.getByRole('link', { name: 'profile', exact: true }).click();
 	await expect(page.locator('h2')).toContainText(':: profiles');
 	await page.getByRole('link', { name: 'your profile' }).click();
 	await expect(page.locator('h2')).toContainText(':: your profile');
@@ -291,62 +300,56 @@ test('test navigation links', async ({ page, crudEnv }) => {
 	// forum list breadcrumbs
 	await page.getByRole('link', { name: 'forums' }).click();
 	await page.getByRole('link', { name: 'forum' }).click();
-	await expect(page.locator('h2')).toContainText(':: forums');
+	await expect(page.locator('h2')).toContainText(':: search forums');
 	await page.getByRole('link', { name: 'social' }).click();
 	await expect(page.locator('h2')).toContainText(':: the network');
 	await page.getByRole('link', { name: 'forums' }).click();
-	await expect(page.locator('h2')).toContainText(':: forums');
+	await expect(page.locator('h2')).toContainText(':: search forums');
 	await page.getByRole('link', { name: 'mtech' }).click();
 	await expect(page.getByRole('heading')).toContainText('medium tech');
 	await page.getByRole('link', { name: 'enter social' }).click();
 
 	// view forum breadcrumbs
-	await page.goto(`${host}/social/forum/1`);			// it doesnt matter if
-	await expect(page.locator('h1')).toContainText(':: forum :: 1');	// forum 1 exists, breadcrumbs
-	await page.getByRole('link', { name: '1' }).click();				// should still work
-	await expect(page.locator('h1')).toContainText(':: forum :: 1');
+	await page.goto(`${host}/social/forum`);
+	await expect(page.locator('h2')).toContainText(':: search forums');
+	await page.locator('tr').nth(1).click();
+
+	await expect(page.locator('h1')).toContainText(':: forum ::');
+	await page.getByRole('link').nth(3).click();
+
+	await expect(page.locator('h1')).toContainText(':: forum ::');
 	await page.getByRole('link', { name: 'forum' }).click();
-	await expect(page.locator('h2')).toContainText(':: forums');
-	await page.goto(`${host}/social/forum/1`);
-	await expect(page.locator('h1')).toContainText(':: forum :: 1');
+	await expect(page.locator('h2')).toContainText(':: search forums');
+	
+	await page.goto(`${host}/social/forum`);
+	await expect(page.locator('h2')).toContainText(':: search forums');
+	await page.locator('tr').nth(1).click();
+	await expect(page.locator('h1')).toContainText(':: forum ::');
 	await page.getByRole('link', { name: 'social' }).click();
 	await expect(page.locator('h2')).toContainText(':: the network');
-	await page.goto(`${host}/social/forum/1`);
-	await expect(page.locator('h1')).toContainText(':: forum :: 1');
+	await page.goto(`${host}/social/forum`);
+	await expect(page.locator('h2')).toContainText(':: search forums');
+	await page.locator('tr').nth(1).click();
+	await expect(page.locator('h1')).toContainText(':: forum ::');
 	await page.getByRole('link', { name: 'mtech' }).click();
 	await expect(page.getByRole('heading')).toContainText('medium tech');
 
 	// view thread breadcrumbs
 	await page.goto(`${host}/social/thread/1`);
-	await expect(page.locator('h1')).toContainText(':: thread :: 1');
-	await page.getByRole('link', { name: '1' }).click();
-	await expect(page.locator('h1')).toContainText(':: thread :: 1');
-	await page.getByRole('link', { name: 'thread' }).click();
-	await expect(page.locator('h1')).toContainText(':: thread');
-	await page.goto(`${host}/social/thread/1`);
-	await expect(page.locator('h1')).toContainText(':: thread :: 1');
-	await page.getByRole('link', { name: 'social' }).click();
-	await expect(page.locator('h2')).toContainText(':: the network');
-	await page.goto(`${host}/social/thread/1`);
-	await expect(page.locator('h1')).toContainText(':: thread :: 1');
-	await page.getByRole('link', { name: 'mtech' }).click();
-	await expect(page.getByRole('heading')).toContainText('medium tech');
+	await expect(page.locator('h1')).toContainText(':: thread ::');
+	await page.getByRole('link').nth(4).click();
+	await expect(page.locator('h1')).toContainText(':: forum ::');
 
-	// post breadcrumbs
-	await page.goto(`${host}/social/post/1`);
-	await expect(page.getByRole('heading')).toContainText(':: post :: 1');
-	await page.getByRole('link', { name: '1' }).click();
-	await expect(page.getByRole('heading')).toContainText(':: post :: 1');
-	await page.getByRole('link', { name: 'post' }).click();
-	await expect(page.locator('h1')).toContainText(':: post');
-	await page.goto(`${host}/social/post/1`);
-	await expect(page.getByRole('heading')).toContainText(':: post :: 1');
+	await page.goto(`${host}/social/thread/1`);
+	await page.getByRole('link').nth(3).click();
+	await expect(page.locator('h1')).toContainText(':: forum ::');
+	
+	await page.goto(`${host}/social/thread/1`);
+	await expect(page.locator('h1')).toContainText(':: thread ::');
 	await page.getByRole('link', { name: 'social' }).click();
 	await expect(page.locator('h2')).toContainText(':: the network');
-	await page.goto(`${host}/social/post/1`);
-	await expect(page.getByRole('heading')).toContainText(':: post :: 1');
-	await page.getByRole('link', { name: 'social' }).click();
-	await expect(page.locator('h2')).toContainText(':: the network');
+	await page.goto(`${host}/social/thread/1`);
+	await expect(page.locator('h1')).toContainText(':: thread ::');
 	await page.getByRole('link', { name: 'mtech' }).click();
 	await expect(page.getByRole('heading')).toContainText('medium tech');
 

@@ -95,7 +95,7 @@ function strConcat(items) {
     return items.map(item => String(item)).join('');
 }
 
-function structKey(object, key) {
+function structKey(object, key, default_value = null) {
 	/*
 	Return the key of a struct
 
@@ -135,7 +135,11 @@ function structKey(object, key) {
 				current = current[keySplit[i]];
 			} else {
 				console.error('lingo function key - key not found in object:', key, 'object:', object);
-				throw new Error(`lingo function key - key '${key}' not found in object`);
+				if (default_value === null) {
+					throw new Error(`lingo function key - key '${key}' not found in object`);
+				} else {
+					return default_value;
+				}
 			}
 		} catch (error) {
 			const msg = `lingo function key - count not access: ${keySplit[i]} in ${key}`;
@@ -978,7 +982,8 @@ const lingoFunctionLookup = {
         func: structKey,
         args: {
             'object': {'type': 'struct'},
-            'key': {'type': 'str'}
+            'key': {'type': 'str'},
+			'default_value': {'type': 'any', 'default': null}
         }
     },
     
@@ -4080,8 +4085,8 @@ function renderBreadcrumbs(app, element, ctx = null) {
     if (!Array.isArray(crumbs)) {
         throw new Error('breadcrumbs - breadcrumbs must be a list');
     }
-    if (crumbs.length === 0 || crumbs.length > 4) {
-        throw new Error('breadcrumbs - breadcrumbs list must have 1 to 4 items');
+    if (crumbs.length === 0 || crumbs.length > 6) {
+        throw new Error('breadcrumbs - breadcrumbs list must have 1 to 6 items');
     }
 
     const elements = [{text: ':: '}];
