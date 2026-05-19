@@ -314,6 +314,10 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(app.state['key_x_int'], 42)
         self.assertAlmostEqual(app.state['key_x_float'], 3.14)
         self.assertEqual(app.state['key_x_str'], 'hello.world')
+        self.assertEqual(app.state['access_nested_struct'], 'additional_value')
+        self.assertEqual(app.state['access_nested_list'], 'nested_list_value_1')
+        self.assertEqual(app.state['non_existent_key'], 'this is a default value')
+        self.assertEqual(app.state['non_existent_list_element'], 'hello.world')
         
     def test_math_functions(self):
         """Test math operators: add, sub, mul, div, floordiv, mod, pow, min, max, abs"""

@@ -12,7 +12,14 @@
                     "x_bool": true,
                     "x_int": 42,
                     "x_float": 3.14,
-                    "x_str": "hello.world"
+                    "x_str": "hello.world",
+					"x_nested_struct": {
+						"additional_key": "additional_value"
+					},
+					"x_nested_list": [
+						{"nested_list_key_1": "nested_list_value_1"},
+						{"nested_list_key_2": "nested_list_value_2"}
+					]
                 }
             }
         },
@@ -55,7 +62,49 @@
                     "key": "x_str"
                 }
             }
-        }
+        },
+		"access_nested_struct": {
+			"type": "str",
+			"calc": {
+				"call": "key",
+				"args": {
+					"object": {"state": {"source_struct": {}}},
+					"key": "x_nested_struct.additional_key"
+				}
+			}
+		},
+		"access_nested_list": {
+			"type": "str",
+			"calc": {
+				"call": "key",
+				"args": {
+					"object": {"state": {"source_struct": {}}},
+					"key": "x_nested_list.0.nested_list_key_1"
+				}
+			}
+		},
+		"non_existent_key": {
+			"type": "str",
+			"calc": {
+				"call": "key",
+				"args": {
+					"object": {"state": {"source_struct": {}}},
+					"key": "non_existent_key",
+					"default_value": "this is a default value"
+				}
+			}
+		},
+		"non_existent_list_element": {
+			"type": "str",
+			"calc": {
+				"call": "key",
+				"args": {
+					"object": {"state": {"source_struct": {}}},
+					"key": "x_nested_list.10.non_existent_key",
+					"default_value": "hello.world"
+				}
+			}
+		}
     },
     "ops": {},
     "output": [
@@ -64,7 +113,11 @@
             {"text": "key(state.source_struct, 'x_bool') = "}, {"lingo": {"state": {"key_x_bool": {}}}}, {"break": 1},
             {"text": "key(state.source_struct, 'x_int') = "}, {"lingo": {"state": {"key_x_int": {}}}}, {"break": 1},
             {"text": "key(state.source_struct, 'x_float') = "}, {"lingo": {"state": {"key_x_float": {}}}}, {"break": 1},
-            {"text": "key(state.source_struct, 'x_str') = "}, {"lingo": {"state": {"key_x_str": {}}}}, {"break": 1}
+            {"text": "key(state.source_struct, 'x_str') = "}, {"lingo": {"state": {"key_x_str": {}}}}, {"break": 1},
+			{"text": "key(state.source_struct, 'x_nested_struct.additional_key') = "}, {"lingo": {"state": {"access_nested_struct": {}}}}, {"break": 1},
+			{"text": "key(state.source_struct, 'x_nested_list.0.nested_list_key_1') = "}, {"lingo": {"state": {"access_nested_list": {}}}}, {"break": 1},
+			{"text": "key(state.source_struct, 'non_existent_key', default='this is a default value') = "}, {"lingo": {"state": {"non_existent_key": {}}}}, {"break": 1},
+			{"text": "key(state.source_struct, 'x_nested_list.10.non_existent_key', default='hello.world') = "}, {"lingo": {"state": {"non_existent_list_element": {}}}}, {"break": 1}
         ]}
     ]
 }

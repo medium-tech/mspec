@@ -181,6 +181,10 @@ test('test - functions-struct', async ({ page }) => {
     'key(state.source_struct, \'x_int\') = 42',
     'key(state.source_struct, \'x_float\') = 3.14',
     'key(state.source_struct, \'x_str\') = hello.world',
+	'key(state.source_struct, \'x_nested_struct.additional_key\') = additional_value',
+	'key(state.source_struct, \'x_nested_list.0.nested_list_key_1\') = nested_list_value_1',
+	'key(state.source_struct, \'non_existent_key\', default=\'this is a default value\') = this is a default value',
+	'key(state.source_struct, \'x_nested_list.10.non_existent_key\', default=\'hello.world\') = hello.world'
   ];
 
   for (const text of expectedText) {

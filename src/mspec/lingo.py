@@ -39,9 +39,10 @@ class LingoApp:
 def _struct_key_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     object = lingo_execute(app, expression['args']['object'], ctx)
     key = lingo_execute(app, expression['args']['key'], ctx)
+    default_value = expression['args'].get('default_value', None)
     struct_value = object['value'] if isinstance(object, dict) and 'value' in object else object
     key_value = key['value'] if isinstance(key, dict) and 'value' in key else key
-    return (struct_value, key_value), {}
+    return (struct_value, key_value, default_value), {}
 
 def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     
@@ -860,11 +861,39 @@ def lingo_isclose(a:float, b:float, rel_tol:float=1e-09, abs_tol:float=0.0) -> b
 def lingo_count(source, value) -> int:
     return source.count(value)
 
-def struct_key(object:dict, key_name:str) -> Any:
-    try:
-        return object[key_name]
-    except KeyError:
-        raise ValueError(f'struct_key - key not found in struct: {key_name}')
+def struct_key(object:dict, key_name:str, default_value:Any=None) -> Any:
+    # Validate key_name
+    if not isinstance(key_name, str) or key_name.startswith('.') or key_name.endswith('.'):
+        raise ValueError(f'struct_key - key_name must be a string and must not start or end with a dot: {key_name}')
+
+    keys = key_name.split('.')
+    if len(keys) > 10:
+        raise ValueError(f'struct_key - key_name exceeds 10 keys: {key_name}')
+
+    current = object
+    for key in keys:
+        if isinstance(current, dict):
+            if key in current:
+                current = current[key]
+            else:
+                if default_value is not None:
+                    return default_value
+                else:
+                    raise ValueError(f'struct_key - key not found in struct: {key_name} (missing: {key})')
+        elif isinstance(current, list):
+            try:
+                idx = int(key)
+            except Exception:
+                raise ValueError(f'struct_key - expected integer index for list access, got: {key} in {key_name}')
+            if idx < 0 or idx >= len(current):
+                if default_value is not None:
+                    return default_value
+                else:
+                    raise ValueError(f'struct_key - list index out of range: {idx} in {key_name}')
+            current = current[idx]
+        else:
+            raise ValueError(f'struct_key - cannot access key {key} in non-dict/list object (type={type(current).__name__}) for {key_name}')
+    return current
 
 def lingo_int(number:Any=None, string:str=None, base:int=10) -> int:
     if number is not None:
@@ -1589,7 +1618,7 @@ def render_value(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
     except KeyError:
         raise ValueError('value - missing type key')
     
-	# optional self key to create local state downstream #
+    # optional self key to create local state downstream #
     self_keys = []
     if 'self' in expression:
         try:
@@ -1600,7 +1629,7 @@ def render_value(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
             raise ValueError(f'value - error processing self expression for key: {self_key}') from e
         
     
-	# execute based on type #
+    # execute based on type #
     
     match _type:
         case 'bool' | 'int' | 'float' | 'str' | 'datetime':
