@@ -3,6 +3,7 @@ import operator
 import re
 
 from copy import deepcopy
+from collections import namedtuple
 from dataclasses import dataclass
 from datetime import datetime
 from random import randint
@@ -12,6 +13,7 @@ from functools import reduce
 
 from mapp.auth import create_user, login_user, is_logged_in, current_user, logout_user, delete_user, drop_sessions
 from mapp.com import send_email, start_email_verification, verify_email_address
+from mapp.context import MappContext
 from mapp.file_system import get_file_content, ingest_start, list_files, get_part_content, list_parts, process_file
 from mapp.errors import NotFoundError, MappValidationError
 from mapp.media import create_image, get_image, get_master_image, get_media_file_content, ingest_master_image, list_images, list_master_images
@@ -47,8 +49,20 @@ def _struct_key_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) ->
 def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     
     def map_func(item):
-        new_ctx = ctx.copy() if ctx is not None else {}
-        new_ctx['self'] = {'item': item}
+        if isinstance(ctx, MappContext):
+            new_ctx = MappContext(
+                server_port=ctx.server_port,
+                client=ctx.client,
+                db=ctx.db,
+                log=ctx.log,
+                current_access_token=ctx.current_access_token,
+                self=deepcopy(ctx.self)
+            )
+            new_ctx.self.update({'item': item})
+        else:
+            new_ctx = ctx.copy() if ctx is not None else {}
+            new_ctx['self'].update({'item': item})
+        
         result = lingo_execute(app, expression['args']['function'], new_ctx)
         # If result is a dict with 'value' key, extract the value
         # Otherwise return the result as-is (e.g., for link/text dicts)
