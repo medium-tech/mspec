@@ -4230,7 +4230,6 @@ function createDOMElement(app, element, ctx = null) {
     } else if ('button' in element) {
         return createButtonElement(app, element, ctx);
     } else if ('input' in element) {
-        return createInputElement(app, element);
         return createInputElement(app, element, ctx);
     } else if ('link' in element) {
         return createLinkElement(app, element, ctx);
