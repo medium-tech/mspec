@@ -256,6 +256,7 @@ test('test - functions-sequence-ops', async ({ page }) => {
 
   const expectedText = [
     'map(add(item, 10), [1,2,3,4,5]) = 11, 12, 13, 14, 15',
+	'map(key(item, \'x\'), state.source_list_struct) = 1, 3, 5',
     'filter(gt(item, 3), [1,2,3,4,5,6,7]) = 4, 5, 6, 7',
     'dropwhile(lt(item, 4), [1,2,3,4,5,6,7]) = 4, 5, 6, 7',
     'takewhile(lt(item, 4), [1,2,3,4,5,6,7]) = 1, 2, 3',

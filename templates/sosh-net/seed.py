@@ -22,6 +22,7 @@ from mspec.seed import (
 NUM_USERS = 33
 ITEMS_PER_ROUND = 5
 SEED_PASSWORD = 'Seed_pass_1!'
+RICH_TEXT_COLORS = ['black']
 
 
 def _create_users_with_tokens(ctx, spec: dict, num_users: int) -> list[dict]:
@@ -96,7 +97,7 @@ def _seed_profiles(ctx, spec: dict, social_module: dict, users: list[dict]):
                 profile_data = {
                     'user_id': '-1',
                     'username': random_user_name(max_length=25),
-                    'bio': random_str_rich_text(),
+                    'bio': random_str_rich_text(color_options=RICH_TEXT_COLORS),
                     'profile_picture': profile_picture,
                 }
                 profile = new_model(profile_class, profile_data)
@@ -121,7 +122,7 @@ def _seed_forums(ctx, social_module: dict, users: list[dict], num_forums: int):
             forum_data = {
                 'user_id': '-1',
                 'topic': f'{random_str().title()}',
-                'description': random_str_rich_text(),
+                'description': random_str_rich_text(color_options=RICH_TEXT_COLORS),
                 'tags': random_list_of_words(0, 5),
             }
             forum = new_model(forum_class, forum_data)
@@ -138,7 +139,7 @@ def _seed_threads_in_forum_1(ctx, social_module: dict, users: list[dict], num_th
             params = new_op_params(params_class, {
                 'forum_id': '1',
                 'title': f'{random_str().title()}',
-                'message': random_str_rich_text(),
+                'message': random_str_rich_text(color_options=RICH_TEXT_COLORS),
                 'attachments': [],
                 'images': [],
             })
@@ -162,7 +163,7 @@ def _seed_replies_in_first_thread(ctx, social_module: dict, users: list[dict], n
                 'user_id': '-1',
                 'forum_id': '1',
                 'reply_to': main_post_id,
-                'message': random_str_rich_text(),
+                'message': random_str_rich_text(color_options=RICH_TEXT_COLORS),
                 'attachments': [],
                 'images': [],
                 'related_posts': [],
@@ -220,8 +221,8 @@ def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: in
     replies_result = http_run_op(ctx, get_replies_params_class, get_replies_output_class, get_replies_params)
     replies = replies_result.result['replies']['value']['items']
     reply_ids = []
-    for reply in replies:
-        reply_ids.append(reply['id'])
+    for reply in replies['value']:
+        reply_ids.append(reply['id']['value'])
 
     for user in users:
         ctx.client.set_bearer_token(user['access_token'])

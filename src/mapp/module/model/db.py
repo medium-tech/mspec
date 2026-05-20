@@ -624,6 +624,8 @@ def db_model_query(ctx:MappContext, model_class: type, where: dict, offset: int=
     # total count #
     count_sql = f'SELECT COUNT(*) FROM {table_name}{where_clause}'
     total = ctx.db.cursor.execute(count_sql, where_values).fetchone()[0]
+    
+    ctx.log(f'Executed query: {sql} with values {query_values}, total count: {total}')
 
     # convert results #
 

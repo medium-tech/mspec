@@ -499,6 +499,7 @@ class TestLingoPages(unittest.TestCase):
 
         # Test map
         self.assertEqual(app.state['test_map'], [11, 12, 13, 14, 15])
+        self.assertEqual(app.state['test_map_list_struct'], [1, 3, 5])
 
         # Test filter
         self.assertEqual(app.state['test_filter'], [4, 5, 6, 7])

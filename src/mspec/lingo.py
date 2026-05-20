@@ -47,7 +47,7 @@ def _struct_key_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) ->
     return (struct_value, key_value, default_value), {}
 
 def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
-    
+    # ctx.log(f'map_function_args -, ctx: {ctx.self.keys()}')
     def map_func(item):
         if isinstance(ctx, MappContext):
             new_ctx = MappContext(
@@ -60,10 +60,10 @@ def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) 
             )
             new_ctx.self.update({'item': item})
         else:
-            new_ctx = ctx.copy() if ctx is not None else {}
+            new_ctx = ctx.copy() if ctx is not None else {'self': {}}
             new_ctx['self'].update({'item': item})
         
-        result = lingo_execute(app, expression['args']['function'], new_ctx)
+        result = lingo_execute(app, deepcopy(expression['args']['function']), new_ctx)
         # If result is a dict with 'value' key, extract the value
         # Otherwise return the result as-is (e.g., for link/text dicts)
         if isinstance(result, dict) and 'value' in result:
@@ -74,7 +74,7 @@ def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) 
                 evaluated_result = {}
                 for key, value in result.items():
                     # Recursively evaluate the value, which might contain nested expressions
-                    eval_value = lingo_execute(app, value, new_ctx)
+                    eval_value = lingo_execute(app, deepcopy(value), new_ctx)
                     # Extract value if it's wrapped
                     if isinstance(eval_value, dict) and 'value' in eval_value:
                         evaluated_result[key] = eval_value['value']
@@ -82,6 +82,12 @@ def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) 
                         evaluated_result[key] = eval_value
                 return evaluated_result
             return result
+        
+    # def debug_wrapper(item):
+    #     breakpoint()
+    #     result = map_func(item)
+    #     breakpoint()
+    #     return result
     
     iterable = lingo_execute(app, expression['args']['iterable'], ctx)
     return (map_func, iterable['value'] if isinstance(iterable, dict) else iterable), {}
@@ -814,7 +820,7 @@ def db_query(ctx, model_class, where:dict, offset:int=0, size:int=25, include:di
                     unique_count['group_by'],
                     {unique_count['foreign_field']: source_value},
                 )
-
+    
     return {
         'type': 'struct',
         'value': {

@@ -1544,7 +1544,7 @@
                                                                                         "object": {
                                                                                             "self": "item"
                                                                                         },
-                                                                                        "key": "profile.id",
+                                                                                        "key": "profile.value.id.value",
                                                                                         "default_value": "-1"
                                                                                     }
                                                                                 }
@@ -1562,7 +1562,7 @@
                                                                                         "object": {
                                                                                             "self": "item"
                                                                                         },
-                                                                                        "key": "profile.username",
+                                                                                        "key": "profile.value.username.value",
                                                                                         "default_value": "anonymous"
                                                                                     }
                                                                                 }
