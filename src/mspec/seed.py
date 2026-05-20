@@ -70,11 +70,12 @@ def random_word() -> str:
 def random_list_of_words(min:int=1, max:int=5) -> list[str]:
     return [random_word() for _ in range(random.randint(min, max))]
 
-def random_str_rich_text() -> str:
-    color_options = [
+def random_str_rich_text(color_options=None) -> str:
+    all_colors = [
         'red', 'orange', 'yellow', 'green', 'blue', 'indigo',
         'violet', 'pink', 'brown', 'black', 'gray', 'white',
     ]
+    color_options = color_options or all_colors
     num_sentences = random.randint(1, 5)
     blocks = []
 

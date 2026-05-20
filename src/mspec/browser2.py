@@ -3,6 +3,7 @@ import json
 import tkinter
 import webbrowser
 from tkinter import ttk
+from mapp.context import MappContext
 from mspec.core import SAMPLE_DATA_DIR, load_browser2_spec
 from mspec.lingo import lingo_app, render_output, lingo_execute, lingo_update_state
 
@@ -31,7 +32,13 @@ class LingoPage(tkinter.Frame):
         self._text_in_cur_element = False
         self.link_count = 0
         self.style_count = 0
-
+        self.ctx = MappContext(
+            server_port=0,
+            client=None,
+            db=None,
+            log=lambda msg: print(f':: {msg}'),
+            self={},
+        )
         self.app = lingo_app(spec)
         self.render_output()
 
@@ -297,7 +304,7 @@ class LingoPage(tkinter.Frame):
                 return value['value']
             # Check if it's a lingo expression (e.g., {"call": "add", "args": {...}})
             elif 'call' in value or 'state' in value or 'params' in value or 'op' in value:
-                result = lingo_execute(self.app, value)
+                result = lingo_execute(self.app, value, self.ctx)
                 if isinstance(result, dict) and 'value' in result:
                     return result['value']
                 return result
@@ -315,7 +322,7 @@ class LingoPage(tkinter.Frame):
     def render_button(self, element:dict):
         def on_click():
             print(f'button clicked: {element["text"]}')
-            lingo_execute(self.app, element['button'])
+            lingo_execute(self.app, element['button'], self.ctx)
             self.render_output()
             
         button = ttk.Button(self._text_buffer, text=element['text'], command=on_click)

@@ -624,8 +624,8 @@ def db_model_query(ctx:MappContext, model_class: type, where: dict, offset: int=
     # total count #
     count_sql = f'SELECT COUNT(*) FROM {table_name}{where_clause}'
     total = ctx.db.cursor.execute(count_sql, where_values).fetchone()[0]
-
-    ctx.log(f'db_model_query - sql: {sql}, values: {query_values}, total: {total} where: {where}')
+    
+    ctx.log(f'Executed query: {sql} with values {query_values}, total count: {total}')
 
     # convert results #
 
@@ -672,8 +672,5 @@ def db_model_query(ctx:MappContext, model_class: type, where: dict, offset: int=
             data[field_name] = [convert_element(row[0]) for row in cursor.fetchall()]
 
         models.append(model_class(**data))
-    
-    # import pprint
-    # ctx.log(f'db_model_query - converted models: {pprint.pformat(models)}')
 
     return {'items': models, 'total': total}

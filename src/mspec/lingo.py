@@ -3,6 +3,7 @@ import operator
 import re
 
 from copy import deepcopy
+from collections import namedtuple
 from dataclasses import dataclass
 from datetime import datetime
 from random import randint
@@ -12,6 +13,7 @@ from functools import reduce
 
 from mapp.auth import create_user, login_user, is_logged_in, current_user, logout_user, delete_user, drop_sessions
 from mapp.com import send_email, start_email_verification, verify_email_address
+from mapp.context import MappContext
 from mapp.file_system import get_file_content, ingest_start, list_files, get_part_content, list_parts, process_file
 from mapp.errors import NotFoundError, MappValidationError
 from mapp.media import create_image, get_image, get_master_image, get_media_file_content, ingest_master_image, list_images, list_master_images
@@ -39,16 +41,29 @@ class LingoApp:
 def _struct_key_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     object = lingo_execute(app, expression['args']['object'], ctx)
     key = lingo_execute(app, expression['args']['key'], ctx)
+    default_value = expression['args'].get('default_value', None)
     struct_value = object['value'] if isinstance(object, dict) and 'value' in object else object
     key_value = key['value'] if isinstance(key, dict) and 'value' in key else key
-    return (struct_value, key_value), {}
+    return (struct_value, key_value, default_value), {}
 
 def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
-    
+    # ctx.log(f'map_function_args -, ctx: {ctx.self.keys()}')
     def map_func(item):
-        new_ctx = ctx.copy() if ctx is not None else {}
-        new_ctx['self'] = {'item': item}
-        result = lingo_execute(app, expression['args']['function'], new_ctx)
+        if isinstance(ctx, MappContext):
+            new_ctx = MappContext(
+                server_port=ctx.server_port,
+                client=ctx.client,
+                db=ctx.db,
+                log=ctx.log,
+                current_access_token=ctx.current_access_token,
+                self=deepcopy(ctx.self)
+            )
+            new_ctx.self.update({'item': item})
+        else:
+            new_ctx = ctx.copy() if ctx is not None else {'self': {}}
+            new_ctx['self'].update({'item': item})
+        
+        result = lingo_execute(app, deepcopy(expression['args']['function']), new_ctx)
         # If result is a dict with 'value' key, extract the value
         # Otherwise return the result as-is (e.g., for link/text dicts)
         if isinstance(result, dict) and 'value' in result:
@@ -59,7 +74,7 @@ def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) 
                 evaluated_result = {}
                 for key, value in result.items():
                     # Recursively evaluate the value, which might contain nested expressions
-                    eval_value = lingo_execute(app, value, new_ctx)
+                    eval_value = lingo_execute(app, deepcopy(value), new_ctx)
                     # Extract value if it's wrapped
                     if isinstance(eval_value, dict) and 'value' in eval_value:
                         evaluated_result[key] = eval_value['value']
@@ -67,6 +82,12 @@ def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) 
                         evaluated_result[key] = eval_value
                 return evaluated_result
             return result
+        
+    # def debug_wrapper(item):
+    #     breakpoint()
+    #     result = map_func(item)
+    #     breakpoint()
+    #     return result
     
     iterable = lingo_execute(app, expression['args']['iterable'], ctx)
     return (map_func, iterable['value'] if isinstance(iterable, dict) else iterable), {}
@@ -799,7 +820,7 @@ def db_query(ctx, model_class, where:dict, offset:int=0, size:int=25, include:di
                     unique_count['group_by'],
                     {unique_count['foreign_field']: source_value},
                 )
-
+    
     return {
         'type': 'struct',
         'value': {
@@ -860,11 +881,39 @@ def lingo_isclose(a:float, b:float, rel_tol:float=1e-09, abs_tol:float=0.0) -> b
 def lingo_count(source, value) -> int:
     return source.count(value)
 
-def struct_key(object:dict, key_name:str) -> Any:
-    try:
-        return object[key_name]
-    except KeyError:
-        raise ValueError(f'struct_key - key not found in struct: {key_name}')
+def struct_key(object:dict, key_name:str, default_value:Any=None) -> Any:
+    # Validate key_name
+    if not isinstance(key_name, str) or key_name.startswith('.') or key_name.endswith('.'):
+        raise ValueError(f'struct_key - key_name must be a string and must not start or end with a dot: {key_name}')
+
+    keys = key_name.split('.')
+    if len(keys) > 10:
+        raise ValueError(f'struct_key - key_name exceeds 10 keys: {key_name}')
+
+    current = object
+    for key in keys:
+        if isinstance(current, dict):
+            if key in current:
+                current = current[key]
+            else:
+                if default_value is not None:
+                    return default_value
+                else:
+                    raise ValueError(f'struct_key - key not found in struct: {key_name} (missing: {key})')
+        elif isinstance(current, list):
+            try:
+                idx = int(key)
+            except Exception:
+                raise ValueError(f'struct_key - expected integer index for list access, got: {key} in {key_name}')
+            if idx < 0 or idx >= len(current):
+                if default_value is not None:
+                    return default_value
+                else:
+                    raise ValueError(f'struct_key - list index out of range: {idx} in {key_name}')
+            current = current[idx]
+        else:
+            raise ValueError(f'struct_key - cannot access key {key} in non-dict/list object (type={type(current).__name__}) for {key_name}')
+    return current
 
 def lingo_int(number:Any=None, string:str=None, base:int=10) -> int:
     if number is not None:
@@ -1589,7 +1638,7 @@ def render_value(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
     except KeyError:
         raise ValueError('value - missing type key')
     
-	# optional self key to create local state downstream #
+    # optional self key to create local state downstream #
     self_keys = []
     if 'self' in expression:
         try:
@@ -1600,7 +1649,7 @@ def render_value(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
             raise ValueError(f'value - error processing self expression for key: {self_key}') from e
         
     
-	# execute based on type #
+    # execute based on type #
     
     match _type:
         case 'bool' | 'int' | 'float' | 'str' | 'datetime':

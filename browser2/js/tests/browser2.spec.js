@@ -181,6 +181,10 @@ test('test - functions-struct', async ({ page }) => {
     'key(state.source_struct, \'x_int\') = 42',
     'key(state.source_struct, \'x_float\') = 3.14',
     'key(state.source_struct, \'x_str\') = hello.world',
+	'key(state.source_struct, \'x_nested_struct.additional_key\') = additional_value',
+	'key(state.source_struct, \'x_nested_list.0.nested_list_key_1\') = nested_list_value_1',
+	'key(state.source_struct, \'non_existent_key\', default=\'this is a default value\') = this is a default value',
+	'key(state.source_struct, \'x_nested_list.10.non_existent_key\', default=\'hello.world\') = hello.world'
   ];
 
   for (const text of expectedText) {
@@ -252,6 +256,7 @@ test('test - functions-sequence-ops', async ({ page }) => {
 
   const expectedText = [
     'map(add(item, 10), [1,2,3,4,5]) = 11, 12, 13, 14, 15',
+	'map(key(item, \'x\'), state.source_list_struct) = 1, 3, 5',
     'filter(gt(item, 3), [1,2,3,4,5,6,7]) = 4, 5, 6, 7',
     'dropwhile(lt(item, 4), [1,2,3,4,5,6,7]) = 4, 5, 6, 7',
     'takewhile(lt(item, 4), [1,2,3,4,5,6,7]) = 1, 2, 3',

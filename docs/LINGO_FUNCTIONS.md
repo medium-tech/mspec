@@ -251,11 +251,11 @@
   - **return:** `bool`
 
 ### Struct Functions
-`key` - return the value of `key` from `object`
+`key` - return the value of `key` from `object`. Key may use dot notationt to access sub objects and even lists, ex: `my.nested.key`, `works.on.0.lists` also! Argument `key` may access up to 10 levels, it must not start or end with a period.
   - **args:**
     - **key** `str`
 	- **object** `struct`
-	- **default_value** `any` (only implemented in javascript currently)
+	- **default_value** `any`
 
 ### Math Functions
 `add` - perform addition on `a` and `b` and return the result

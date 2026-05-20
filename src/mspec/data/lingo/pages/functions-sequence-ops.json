@@ -4,6 +4,14 @@
     },
     "params": {},
     "state": {
+		"source_list_struct": {
+			"type": "list",
+			"default": [
+				{"x": 1, "y": 2},
+				{"x": 3, "y": 4},
+				{"x": 5, "y": 6}
+			]
+		},
         "test_map": {
             "type": "list",
             "calc": {
@@ -14,6 +22,16 @@
                 }
             }
         },
+		"test_map_list_struct": {
+			"type": "list",
+			"calc": {
+				"call": "map",
+				"args": {
+					"function": {"call": "key", "args": {"object": {"self": "item"}, "key": "x"}},
+					"iterable": {"state": {"source_list_struct": {}}}	
+				}
+			}
+		},
         "test_filter": {
             "type": "list",
             "calc": {
@@ -70,6 +88,7 @@
         {"heading": {"text": "Sequence Ops Functions"}, "level": 1},
         {"block": [
             {"text": "map(add(item, 10), [1,2,3,4,5]) = "}, {"lingo": {"state": {"test_map": {}}}}, {"break": 1},
+			{"text": "map(key(item, 'x'), state.source_list_struct) = "}, {"lingo": {"state": {"test_map_list_struct": {}}}}, {"break": 1},
             {"text": "filter(gt(item, 3), [1,2,3,4,5,6,7]) = "}, {"lingo": {"state": {"test_filter": {}}}}, {"break": 1},
             {"text": "dropwhile(lt(item, 4), [1,2,3,4,5,6,7]) = "}, {"lingo": {"state": {"test_dropwhile": {}}}}, {"break": 1},
             {"text": "takewhile(lt(item, 4), [1,2,3,4,5,6,7]) = "}, {"lingo": {"state": {"test_takewhile": {}}}}, {"break": 1},

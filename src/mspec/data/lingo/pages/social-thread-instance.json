@@ -558,6 +558,7 @@
                             "value": {
                                 "id": "-1",
                                 "profile": {
+                                    "id": "-1",
                                     "username": "Loading..."
                                 },
                                 "message": "{\"lingo\": {\"version\": \"rich-text-beta-1\"},\"block\": [{\"text\": \"Loading...\"}]}"
@@ -658,6 +659,47 @@
                         }
                     }
                 }
+            }
+        },
+        "main_post_user_reaction": {
+            "type": "str",
+            "calc": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "thread_op_view_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "thread_op_view_state": {}
+                                    }
+                                },
+                                "key": "result.value.current_user_main_post_reaction.value",
+                                "default_value": ""
+                            }
+                        }
+                    },
+                    {
+                        "else": ""
+                    }
+                ]
             }
         },
         "forum": {
@@ -1103,18 +1145,44 @@
             }
         },
         {
-            "text": "@"
-        },
-        {
-            "lingo": {
-                "call": "key",
+            "link": {
+                "call": "concat",
                 "args": {
-                    "object": {
-                        "state": {
-                            "main_post": {}
+                    "items": [
+                        "/social/profile/",
+                        {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "main_post": {}
+                                    }
+                                },
+                                "key": "profile.id",
+                                "default_value": "-1"
+                            }
                         }
-                    },
-                    "key": "profile.username"
+                    ]
+                }
+            },
+            "text": {
+                "call": "concat",
+                "args": {
+                    "items": [
+                        "@",
+                        {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "main_post": {}
+                                    }
+                                },
+                                "key": "profile.username",
+                                "default_value": "anonymous"
+                            }
+                        }
+                    ]
                 }
             }
         },
@@ -1146,6 +1214,41 @@
                     "main_post_reaction_counts_string": {}
                 }
             }
+        },
+        {
+            "branch": [
+                {
+                    "if": {
+                        "call": "ne",
+                        "args": {
+                            "a": {
+                                "state": {
+                                    "main_post_user_reaction": {}
+                                }
+                            },
+                            "b": ""
+                        }
+                    },
+                    "then": [
+                        {
+                            "text": " ● your reaction: ",
+                            "style": {
+                                "bold": true
+                            }
+                        },
+                        {
+                            "lingo": {
+                                "state": {
+                                    "main_post_user_reaction": {}
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "else": ""
+                }
+            ]
         },
         {
             "break": 1
@@ -1430,7 +1533,25 @@
                                                         "reply": {
                                                             "block": [
                                                                 {
-                                                                    "lingo": {
+                                                                    "link": {
+                                                                        "call": "concat",
+                                                                        "args": {
+                                                                            "items": [
+                                                                                "/social/profile/",
+                                                                                {
+                                                                                    "call": "key",
+                                                                                    "args": {
+                                                                                        "object": {
+                                                                                            "self": "item"
+                                                                                        },
+                                                                                        "key": "profile.value.id.value",
+                                                                                        "default_value": "-1"
+                                                                                    }
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "text": {
                                                                         "call": "concat",
                                                                         "args": {
                                                                             "items": [
@@ -1441,21 +1562,23 @@
                                                                                         "object": {
                                                                                             "self": "item"
                                                                                         },
-                                                                                        "key": "profile.username",
-																						"default_value": " anonymous"
-                                                                                    }
-                                                                                },
-                                                                                " ",
-                                                                                {
-                                                                                    "call": "key",
-                                                                                    "args": {
-                                                                                        "object": {
-                                                                                            "self": "item"
-                                                                                        },
-                                                                                        "key": "date_modified"
+                                                                                        "key": "profile.value.username.value",
+                                                                                        "default_value": "anonymous"
                                                                                     }
                                                                                 }
                                                                             ]
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {"text": " "},
+                                                                {
+                                                                    "lingo": {
+                                                                        "call": "key",
+                                                                        "args": {
+                                                                            "object": {
+                                                                                "self": "item"
+                                                                            },
+                                                                            "key": "date_modified"
                                                                         }
                                                                     }
                                                                 },
@@ -1531,6 +1654,46 @@
                                                                             }
                                                                         }
                                                                     }
+                                                                },
+                                                                {
+                                                                    "branch": [
+                                                                        {
+                                                                            "if": {
+                                                                                "call": "ne",
+                                                                                "args": {
+                                                                                    "a": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "user_reaction",
+                                                                                            "default_value": ""
+                                                                                        }
+                                                                                    },
+                                                                                    "b": ""
+                                                                                }
+                                                                            },
+                                                                            "then": [
+                                                                                {"text": " ● your reaction: ", "style": {"bold": true}},
+                                                                                {
+                                                                                    "lingo": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "user_reaction",
+                                                                                            "default_value": ""
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        {
+                                                                            "else": ""
+                                                                        }
+                                                                    ]
                                                                 },
                                                                 {"break": 1},
                                                                 {
