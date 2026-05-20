@@ -915,7 +915,7 @@ modules:
             get_thread_and_post:
                 name:
                     lower_case: 'get thread and post'
-                description: 'Get a thread and its main post by thread id, including owner username and reaction counts'
+                description: 'Get a thread and its main post by thread id, including owner username, profile id, reaction counts, and the logged in user reaction'
                 func:
                     type: struct
                     self:
@@ -951,6 +951,7 @@ modules:
                                     foreign_field: 'user_id'
                                     fields:
                                         - 'username'
+                                        - 'id'
                         main_post_reaction_counts:
                             call: 'db.unique_counts'
                             args:
@@ -965,6 +966,49 @@ modules:
                                                 key: 'main_post_id'
                                                 object:
                                                     self: thread
+                        my_reaction:
+                            branch:
+                                - if:
+                                    call: 'auth.is_logged_in'
+                                    args: {}
+                                  then:
+                                    call: 'join'
+                                    args:
+                                        separator: ''
+                                        items:
+                                            call: 'map'
+                                            args:
+                                                function:
+                                                    call: 'key'
+                                                    args:
+                                                        key: 'reaction_type'
+                                                        object:
+                                                            self: item
+                                                iterable:
+                                                    call: 'key'
+                                                    args:
+                                                        key: 'items'
+                                                        object:
+                                                            call: 'db.query'
+                                                            args:
+                                                                model_type: 'social.reaction'
+                                                                where:
+                                                                    user_id:
+                                                                        eq:
+                                                                            call: 'key'
+                                                                            args:
+                                                                                key: 'id'
+                                                                                object:
+                                                                                    call: 'auth.current_user'
+                                                                                    args: {}
+                                                                    post_id:
+                                                                        eq:
+                                                                            call: 'key'
+                                                                            args:
+                                                                                key: 'main_post_id'
+                                                                                object:
+                                                                                    self: thread
+                                - else: ''
                         forum:
                             branch:
                                 - if:
@@ -1026,6 +1070,11 @@ modules:
                                 lower_case: 'main post reaction counts'
                             type: list
                             element_type: struct
+                        my_reaction:
+                            name:
+                                lower_case: 'my reaction'
+                            description: 'The logged in user reaction to the main post, or empty string'
+                            type: str
                         forum:
                             name:
                                 lower_case: 'forum'

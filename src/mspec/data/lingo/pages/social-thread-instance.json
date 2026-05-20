@@ -558,7 +558,8 @@
                             "value": {
                                 "id": "-1",
                                 "profile": {
-                                    "username": "Loading..."
+                                    "username": "Loading...",
+                                    "id": "-1"
                                 },
                                 "message": "{\"lingo\": {\"version\": \"rich-text-beta-1\"},\"block\": [{\"text\": \"Loading...\"}]}"
                             }
@@ -658,6 +659,49 @@
                         }
                     }
                 }
+            }
+        },
+        "my_main_post_reaction": {
+            "type": "str",
+            "calc": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "thread_op_view_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "thread_op_view_state": {}
+                                    }
+                                },
+                                "key": "result.value.my_reaction.value"
+                            }
+                        }
+                    },
+                    {
+                        "else": {
+                            "type": "str",
+                            "value": ""
+                        }
+                    }
+                ]
             }
         },
         "forum": {
@@ -1103,18 +1147,42 @@
             }
         },
         {
-            "text": "@"
-        },
-        {
-            "lingo": {
-                "call": "key",
+            "link": {
+                "call": "concat",
                 "args": {
-                    "object": {
-                        "state": {
-                            "main_post": {}
+                    "items": [
+                        "/social/profile/",
+                        {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "main_post": {}
+                                    }
+                                },
+                                "key": "profile.id"
+                            }
                         }
-                    },
-                    "key": "profile.username"
+                    ]
+                }
+            },
+            "text": {
+                "call": "concat",
+                "args": {
+                    "items": [
+                        "@",
+                        {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "main_post": {}
+                                    }
+                                },
+                                "key": "profile.username"
+                            }
+                        }
+                    ]
                 }
             }
         },
@@ -1146,6 +1214,43 @@
                     "main_post_reaction_counts_string": {}
                 }
             }
+        },
+        {
+            "branch": [
+                {
+                    "if": {
+                        "call": "ne",
+                        "args": {
+                            "a": {
+                                "state": {
+                                    "my_main_post_reaction": {}
+                                }
+                            },
+                            "b": ""
+                        }
+                    },
+                    "then": [
+                        {
+                            "text": " ● your reaction: ",
+                            "style": {
+                                "bold": true
+                            }
+                        },
+                        {
+                            "lingo": {
+                                "state": {
+                                    "my_main_post_reaction": {}
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "else": {
+                        "text": ""
+                    }
+                }
+            ]
         },
         {
             "break": 1
