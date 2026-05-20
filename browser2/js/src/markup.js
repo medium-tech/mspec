@@ -56,18 +56,56 @@ function normalizeDateTimeValue(value) {
     return asString;
 }
 
+function parseUtcDateTimeValue(value) {
+    if (value === null || typeof value === 'undefined' || value === '') {
+        return null;
+    }
+    if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value;
+    }
+
+    const asString = String(value).trim();
+    if (asString.length === 0) {
+        return null;
+    }
+
+    const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(asString);
+    const normalizedValue = hasTimezone ? asString : `${normalizeDateTimeValue(asString)}Z`;
+    const date = new Date(normalizedValue);
+    return Number.isNaN(date.getTime()) ? null : date;
+}
+
 function formatModelTimestampLocal(value) {
 	// for automatic datetime fields: date_created and date_modified
     if (value === null || typeof value === 'undefined' || value === '') {
         return '';
     }
 
-    const date = value instanceof Date ? value : new Date(String(value));
-    if (Number.isNaN(date.getTime())) {
+    const date = parseUtcDateTimeValue(value);
+    if (date === null) {
         return String(value);
     }
 
     return date.toLocaleString(undefined, {timeZoneName: 'short'});
+}
+
+function formatFriendlyDateTime(value) {
+    if (value === null || typeof value === 'undefined' || value === '') {
+        return '';
+    }
+
+    const date = parseUtcDateTimeValue(value);
+    if (date === null) {
+        return String(value);
+    }
+
+    return new Intl.DateTimeFormat('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+    }).format(date);
 }
 
 function isUnsetFormFieldValue(value) {
@@ -1201,6 +1239,12 @@ const lingoFunctionLookup = {
             func: () => new Date(),
             args: {},
             sig: 'kwargs'
+        },
+        'format_friendly': {
+            func: formatFriendlyDateTime,
+            args: {
+                'datetime': {'type': 'any'}
+            }
         }
     },
     

@@ -416,6 +416,13 @@
     - *(none)*
   - **return:** `datetime`
 
+`datetime.format_friendly` - return a friendly formatted datetime string in the user's local timezone/offset
+
+**NOTE:** This function is currently implemented in the JavaScript Browser2 renderer only.
+  - **args:**
+    - **datetime** `datetime`
+  - **return:** `str`
+
 `current.weekday` - return the current weekday as an integer (0=Monday, 6=Sunday)
   - **args:**
     - *(none)*

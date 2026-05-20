@@ -1191,6 +1191,38 @@
         },
         {
             "lingo": {
+                "call": "datetime.format_friendly",
+                "args": {
+                    "datetime": {
+                        "call": "key",
+                        "args": {
+                            "object": {
+                                "state": {
+                                    "main_post": {}
+                                }
+                            },
+                            "key": "time_modified",
+                            "default_value": {
+                                "call": "key",
+                                "args": {
+                                    "object": {
+                                        "state": {
+                                            "main_post": {}
+                                        }
+                                    },
+                                    "key": "date_modified"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "break": 1
+        },
+        {
+            "lingo": {
                 "state": {
                     "main_post": {
                         "message": {}
@@ -1573,12 +1605,26 @@
                                                                 {"text": " "},
                                                                 {
                                                                     "lingo": {
-                                                                        "call": "key",
+                                                                        "call": "datetime.format_friendly",
                                                                         "args": {
-                                                                            "object": {
-                                                                                "self": "item"
-                                                                            },
-                                                                            "key": "date_modified"
+                                                                            "datetime": {
+                                                                                "call": "key",
+                                                                                "args": {
+                                                                                    "object": {
+                                                                                        "self": "item"
+                                                                                    },
+                                                                                    "key": "time_modified",
+                                                                                    "default_value": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "date_modified"
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
                                                                         }
                                                                     }
                                                                 },

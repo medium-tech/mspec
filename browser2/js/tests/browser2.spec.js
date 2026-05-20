@@ -288,6 +288,41 @@ test('test - functions-datetime', async ({ page }) => {
   }
 });
 
+test.describe('datetime formatting', () => {
+  test.use({ timezoneId: 'America/New_York' });
+
+  test('test - datetime.format_friendly', async ({ page }) => {
+    await page.goto('http://127.0.0.1:8000/');
+    await expect(page.locator('#lingo-app')).toContainText('hello.world');
+    await page.evaluate(() => {
+      const spec = {
+        lingo: {
+          version: 'page-beta-1'
+        },
+        params: {},
+        state: {},
+        ops: {},
+        output: [
+          {text: 'datetime.format_friendly() = '},
+          {
+            lingo: {
+              call: 'datetime.format_friendly',
+              args: {
+                datetime: '2023-10-25T14:30:00'
+              }
+            }
+          }
+        ]
+      };
+
+      const app = lingoApp(spec);
+      renderLingoApp(app, document.getElementById('lingo-app'));
+    });
+
+    await expect(page.locator('#lingo-app')).toContainText('datetime.format_friendly() = Wed, Oct 25, 10:30 AM');
+  });
+});
+
 test('test - functions-random', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
   await page.locator('#spec-select').selectOption('data/lingo/pages/functions-random.json');
