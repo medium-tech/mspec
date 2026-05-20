@@ -69,8 +69,9 @@ function parseUtcDateTimeValue(value) {
         return null;
     }
 
-    const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(asString);
-    const normalizedValue = hasTimezone ? asString : `${normalizeDateTimeValue(asString)}Z`;
+    const normalizedString = normalizeDateTimeValue(asString);
+    const hasTimezone = /(?:Z|[+-]\d{2}(?::?\d{2})?)$/i.test(asString);
+    const normalizedValue = hasTimezone ? asString : `${normalizedString}Z`;
     const date = new Date(normalizedValue);
     return Number.isNaN(date.getTime()) ? null : date;
 }

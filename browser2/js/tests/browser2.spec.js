@@ -294,6 +294,15 @@ test.describe('datetime formatting', () => {
   test('test - datetime.format_friendly', async ({ page }) => {
     await page.goto('http://127.0.0.1:8000/');
     await expect(page.locator('#lingo-app')).toContainText('hello.world');
+    const expectedFriendlyText = await page.evaluate(() => {
+      return new Intl.DateTimeFormat('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      }).format(new Date('2023-10-25T14:30:00Z'));
+    });
     await page.evaluate(() => {
       const spec = {
         lingo: {
@@ -319,7 +328,7 @@ test.describe('datetime formatting', () => {
       renderLingoApp(app, document.getElementById('lingo-app'));
     });
 
-    await expect(page.locator('#lingo-app')).toContainText('datetime.format_friendly() = Wed, Oct 25, 10:30 AM');
+    await expect(page.locator('#lingo-app')).toContainText(`datetime.format_friendly() = ${expectedFriendlyText}`);
   });
 });
 
