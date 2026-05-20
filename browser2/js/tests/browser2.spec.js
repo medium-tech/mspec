@@ -295,13 +295,13 @@ test.describe('datetime formatting', () => {
     await page.goto('http://127.0.0.1:8000/');
     await expect(page.locator('#lingo-app')).toContainText('hello.world');
     const expectedFriendlyText = await page.evaluate(() => {
-      return new Intl.DateTimeFormat('en-US', {
+      return new Intl.DateTimeFormat(navigator.language, {
         weekday: 'short',
         month: 'short',
         day: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
-      }).format(new Date('2023-10-25T14:30:00Z'));
+      }).format(new Date('2030-10-23T14:30:00Z'));
     });
     await page.evaluate(() => {
       const spec = {
@@ -317,7 +317,7 @@ test.describe('datetime formatting', () => {
             lingo: {
               call: 'datetime.format_friendly',
               args: {
-                datetime: '2023-10-25T14:30:00'
+                datetime: '2030-10-23T14:30:00'
               }
             }
           }
