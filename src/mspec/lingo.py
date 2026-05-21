@@ -568,7 +568,9 @@ def _db_parse_sort_specs(app:LingoApp, sort_expr: Any, ctx:Optional[dict]) -> li
         except KeyError as e:
             raise ValueError(f'db.query - sort[{index}] missing key: {e}')
 
-        order_value = str(order).lower()
+        if not isinstance(order, str):
+            raise ValueError(f'db.query - sort[{index}] order must be a string')
+        order_value = order.lower()
         if order_value not in ('asc', 'desc'):
             raise ValueError(f'db.query - sort[{index}] order must be "asc" or "desc"')
 

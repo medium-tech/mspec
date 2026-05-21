@@ -1363,17 +1363,11 @@ class TestLingoDbFunctions(unittest.TestCase):
         extra = self.post_class(id=None, user_id='1', title='another post', view_count=5)
         db_model_create(self.ctx, self.post_class, extra)
 
-        time.sleep(0.02)
-        existing = db_model_read(self.ctx, self.post_class, '1')
-        updated = self.post_class(
-            id=existing.id,
-            date_created=None,
-            date_modified=None,
-            user_id=existing.user_id,
-            title='hello updated',
-            view_count=existing.view_count,
+        self.ctx.db.cursor.execute(
+            'UPDATE test_app_post SET date_modified = ? WHERE id = ?',
+            ('9999-01-01T00:00:00.000+00:00', '1')
         )
-        db_model_update(self.ctx, self.post_class, updated)
+        self.ctx.db.commit()
 
         expression = {
             'call': 'db.query',
@@ -1393,7 +1387,7 @@ class TestLingoDbFunctions(unittest.TestCase):
         result = lingo_execute(app, expression, self.ctx)
         self.assertEqual(result['value']['total'], 2)
         self.assertEqual(result['value']['items'][0]['id'], '1')
-        self.assertEqual(result['value']['items'][0]['title'], 'hello updated')
+        self.assertEqual(result['value']['items'][0]['title'], 'hello')
 
     def test_db_query_rejects_invalid_sort_order(self):
         expression = {
