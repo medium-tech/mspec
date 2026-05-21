@@ -16,7 +16,7 @@ def create_tables(ctx: MappContext, spec: dict) -> Acknowledgment:
             raise MappError('NO_MODELS_DEFINED', f'No models defined in module: {module["name"]["kebab_case"]}')
 
         for model in spec_models.values():
-            model_class = new_model_class(model, module)
+            model_class = new_model_class(spec, model, module)
             ack = db_model_create_table(ctx, model_class)
             if not isinstance(ack, Acknowledgment):
                 raise MappError('TABLE_CREATION_FAILED', f'Failed to create table for model: {model_class._model_spec["name"]["kebab_case"]}')

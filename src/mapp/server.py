@@ -124,7 +124,7 @@ for module in spec_modules.values():
     for model in module.get('models', {}).values():
 
         if model.get('hidden', False) is False:
-            route_resolver, model_class = create_model_routes(module, model)
+            route_resolver, model_class = create_model_routes(mapp_spec, module, model)
             route_list.append(route_resolver)
         
     for op in module.get('ops', {}).values():
