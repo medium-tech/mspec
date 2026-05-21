@@ -56,18 +56,58 @@ function normalizeDateTimeValue(value) {
     return asString;
 }
 
+function parseUtcDateTimeValue(value) {
+    if (value === null || typeof value === 'undefined' || value === '') {
+        return null;
+    }
+    if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value;
+    }
+
+    const asString = String(value).trim();
+    if (asString.length === 0) {
+        return null;
+    }
+
+    const hasTimezone = /(?:Z|[+-]\d{2}(?::?\d{2})?)$/i.test(asString);
+    const normalizedValue = hasTimezone
+        ? asString
+        : `${normalizeDateTimeValue(asString)}Z`;
+    const date = new Date(normalizedValue);
+    return Number.isNaN(date.getTime()) ? null : date;
+}
+
 function formatModelTimestampLocal(value) {
 	// for automatic datetime fields: date_created and date_modified
     if (value === null || typeof value === 'undefined' || value === '') {
         return '';
     }
 
-    const date = value instanceof Date ? value : new Date(String(value));
-    if (Number.isNaN(date.getTime())) {
+    const date = parseUtcDateTimeValue(value);
+    if (date === null) {
         return String(value);
     }
 
     return date.toLocaleString(undefined, {timeZoneName: 'short'});
+}
+
+function formatFriendlyDateTime(value) {
+    if (value === null || typeof value === 'undefined' || value === '') {
+        return '';
+    }
+
+    const date = parseUtcDateTimeValue(value);
+    if (date === null) {
+        return String(value);
+    }
+
+    return new Intl.DateTimeFormat(navigator.language, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+    }).format(date);
 }
 
 function isUnsetFormFieldValue(value) {
@@ -134,8 +174,8 @@ function structKey(object, key, default_value = null) {
 			if (current && typeof current === 'object' && keySplit[i] in current) {
 				current = current[keySplit[i]];
 			} else {
-				console.error('lingo function key - key not found in object:', key, 'object:', object);
 				if (default_value === null) {
+					console.error('lingo function key - key not found in object:', key, 'object:', object);
 					throw new Error(`lingo function key - key '${key}' not found in object`);
 				} else {
 					return default_value;
@@ -1201,6 +1241,12 @@ const lingoFunctionLookup = {
             func: () => new Date(),
             args: {},
             sig: 'kwargs'
+        },
+        'format_friendly': {
+            func: formatFriendlyDateTime,
+            args: {
+                'datetime': {'type': 'any'}
+            }
         }
     },
     
@@ -1924,7 +1970,7 @@ function lingoExecute(app, expression, ctx = null) {
         } else {
 			if('link' in expression && ctx && 'self' in ctx) {
 				// hack to render dynamic links w/ current context
-				console.log('lingoExecute(link)', expression, ctx);
+				// console.log('lingoExecute(link)', expression, ctx);
 				let newExpression = {
 					link: lingoExecute(app, expression.link, ctx)
 				}
@@ -1932,7 +1978,7 @@ function lingoExecute(app, expression, ctx = null) {
 					newExpression.text = lingoExecute(app, expression.text, ctx);
 				}
 				result = newExpression;
-				console.log('lingoExecute(link) - result', result);
+				// console.log('lingoExecute(link) - result', result);
 
 			}else{
             	result = expression;
