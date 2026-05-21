@@ -1359,6 +1359,55 @@ class TestLingoDbFunctions(unittest.TestCase):
         titles = {item['title'] for item in result['value']['items']}
         self.assertEqual(titles, {'hello', 'another post'})
 
+    def test_db_query_sorts_by_date_modified_desc(self):
+        extra = self.post_class(id=None, user_id='1', title='another post', view_count=5)
+        db_model_create(self.ctx, self.post_class, extra)
+
+        self.ctx.db.cursor.execute(
+            'UPDATE test_app_post SET date_modified = ? WHERE id = ?',
+            ('9999-01-01T00:00:00.000+00:00', '1')
+        )
+        self.ctx.db.commit()
+
+        expression = {
+            'call': 'db.query',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'where': {
+                    'user_id': {
+                        'eq': '1'
+                    }
+                },
+                'sort': [
+                    {'field': 'date_modified', 'order': 'desc'}
+                ]
+            }
+        }
+        app = self._make_app()
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['value']['total'], 2)
+        self.assertEqual(result['value']['items'][0]['id'], '1')
+        self.assertEqual(result['value']['items'][0]['title'], 'hello')
+
+    def test_db_query_rejects_invalid_sort_order(self):
+        expression = {
+            'call': 'db.query',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'where': {
+                    'user_id': {
+                        'eq': '1'
+                    }
+                },
+                'sort': [
+                    {'field': 'date_modified', 'order': 'descending'}
+                ]
+            }
+        }
+        app = self._make_app()
+        with self.assertRaises(ValueError):
+            lingo_execute(app, expression, self.ctx)
+
     def test_db_query_raises_on_unsupported_field_type(self):
         with self.assertRaises(ValueError) as cm:
             db_model_query(self.ctx, self.post_class, {'view_count': 10})

@@ -744,6 +744,9 @@ modules:
                                     params: { offset: {} }
                                 size:
                                     params: { size: {} }
+                                sort:
+                                    - field: 'date_modified'
+                                      order: 'desc'
                                 where:
                                     reply_to:
                                         eq:

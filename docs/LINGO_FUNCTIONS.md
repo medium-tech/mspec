@@ -619,6 +619,9 @@
       - if both `where` and `fields` are provided in one call, return a validation error
     - **offset** `int` *(optional)* - pagination offset
     - **size** `int` *(optional)* - pagination size
+    - **sort** `list[struct]` *(optional)* - ordered sort specs. Each item must include:
+      - **field** `str` - sortable field name (e.g. `date_modified`)
+      - **order** `str` - `asc` or `desc`
     - **include** `struct` *(optional)* - same join syntax as `db.read`
     - **unique_counts** `list[struct]` *(optional)* - attach grouped counts for each returned row. Each item supports:
       - **alias** `str` - output key name
