@@ -1189,6 +1189,12 @@
         {
             "break": 1
         },
+		{
+            "text": "last modified: ",
+            "style": {
+                "bold": true
+            }
+        },
         {
             "lingo": {
                 "call": "datetime.format_friendly",

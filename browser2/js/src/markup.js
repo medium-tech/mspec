@@ -174,8 +174,8 @@ function structKey(object, key, default_value = null) {
 			if (current && typeof current === 'object' && keySplit[i] in current) {
 				current = current[keySplit[i]];
 			} else {
-				console.error('lingo function key - key not found in object:', key, 'object:', object);
 				if (default_value === null) {
+					console.error('lingo function key - key not found in object:', key, 'object:', object);
 					throw new Error(`lingo function key - key '${key}' not found in object`);
 				} else {
 					return default_value;
@@ -1970,7 +1970,7 @@ function lingoExecute(app, expression, ctx = null) {
         } else {
 			if('link' in expression && ctx && 'self' in ctx) {
 				// hack to render dynamic links w/ current context
-				console.log('lingoExecute(link)', expression, ctx);
+				// console.log('lingoExecute(link)', expression, ctx);
 				let newExpression = {
 					link: lingoExecute(app, expression.link, ctx)
 				}
@@ -1978,7 +1978,7 @@ function lingoExecute(app, expression, ctx = null) {
 					newExpression.text = lingoExecute(app, expression.text, ctx);
 				}
 				result = newExpression;
-				console.log('lingoExecute(link) - result', result);
+				// console.log('lingoExecute(link) - result', result);
 
 			}else{
             	result = expression;
