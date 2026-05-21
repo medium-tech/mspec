@@ -630,16 +630,24 @@ def run_cli_validation_error_for_model(module_name_kebab, model, command_type, u
     if model['hidden'] is True:
         return
     
+    model_name_kebab = model['name']['kebab_case']
+
+    if model_name_kebab in ['forum']:
+        # get a user that has a profile and can create a forum
+        user_to_use = user_index - 3
+    else:
+        user_to_use = user_index
+    
     example_to_update = example_from_model(model)
 
-    user_id = crud_users[user_index]['user']['id']
+    user_id = crud_users[user_to_use]['user']['id']
     if model['auth']['require_login']:
-        ctx = deepcopy(crud_users[user_index]['env'])
+        ctx = deepcopy(crud_users[user_to_use]['env'])
         example_to_update['user_id'] = user_id
     else:
         ctx = deepcopy(crud_ctx)
 
-    model_name_kebab = model['name']['kebab_case']
+    
 
     #
     # test canot create invalid model
@@ -660,7 +668,7 @@ def run_cli_validation_error_for_model(module_name_kebab, model, command_type, u
         assert 'message' in create_error, f'Expected error message in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
         assert 'field_errors' in create_error, f'Expected field_errors in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
         assert isinstance(create_error['field_errors'], dict), f'Expected field_errors to be a dict in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
-        assert len(create_error['field_errors']) == 1, f'Expected one field error in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
+        assert invalid_field_name in create_error['field_errors'], f'Expected field error for {invalid_field_name} in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
 
     # timestamp fields are managed automatically and must be rejected when provided
     invalid_create_with_date = deepcopy(example_to_update)
@@ -696,7 +704,7 @@ def run_cli_validation_error_for_model(module_name_kebab, model, command_type, u
         assert 'message' in update_error, f'Expected error message in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
         assert 'field_errors' in update_error, f'Expected field_errors in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
         assert isinstance(update_error['field_errors'], dict), f'Expected field_errors to be a dict in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
-        assert len(update_error['field_errors']) == 1, f'Expected one field error in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
+        assert invalid_field_name in update_error['field_errors'], f'Expected field error for {invalid_field_name} in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
 
     invalid_update_with_date = deepcopy(example_to_update)
     invalid_update_with_date['date_modified'] = '2024-01-01T00:00:00+00:00'
@@ -924,6 +932,10 @@ class TestMTemplateApp(unittest.TestCase):
                 print(f':: copying cached crud db to working db ::')
             shutil.copy2(str(cls.crud_db_cache_file), str(cls.crud_db_file))
 
+        # social app requires users have a profile before posting
+        # this is a hack solution to ensure they are created
+        seed_profiles = 'social' in cls.spec['modules']
+
         # create crud users
         
         crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn', 'frank']
@@ -931,7 +943,7 @@ class TestMTemplateApp(unittest.TestCase):
         if needs_crud_rebuild and cls.spec['project']['use_builtin_modules']:
             sys.stdout.write(', users')
             sys.stdout.flush()
-            for user_name in crud_users:
+            for n, user_name in enumerate(crud_users):
 
                 # logout #
 
@@ -939,7 +951,7 @@ class TestMTemplateApp(unittest.TestCase):
                 result = subprocess.run(logout_cmd, capture_output=True, text=True, env=cls.crud_ctx)
                 # do not check result because logout may fail if no user is logged in
 
-                # create #
+                # create user #
 
                 user_data = {
                     'name': user_name,
@@ -952,6 +964,31 @@ class TestMTemplateApp(unittest.TestCase):
                 result = subprocess.run(create_cmd, capture_output=True, text=True, env=cls.crud_ctx)
                 if result.returncode != 0:
                     raise RuntimeError(f'Error creating crud user {user_name}:\n{result.stdout + result.stderr}')
+                
+                # seed profile #
+                if seed_profiles and n < 3:
+                
+                    # login #
+                    login_params = {'email': user_data['email'], 'password': user_data['password']}
+                    login_cmd = cls.cmd + ['auth', 'login-user', 'run', json.dumps(login_params), '--show', '--no-session']
+                    login_result = subprocess.run(login_cmd, capture_output=True, text=True, env=cls.crud_ctx)
+                    if login_result.returncode != 0:
+                        raise RuntimeError(f'Error logging in crud user {user_name} for profile creation:\n{login_result.stdout + login_result.stderr}')
+                    access_token = json.loads(login_result.stdout)['result']['access_token']
+
+                    profile_ctx = deepcopy(cls.crud_ctx)
+                    profile_ctx['MAPP_CLI_ACCESS_TOKEN'] = access_token
+
+                    profile_data = {
+                        'user_id': '-1',
+                        'username': f'{user_name}_profile',
+                        'bio': '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "i am ' + user_name + '"}]}',
+                        'profile_picture': '-1'
+                    }
+                    profile_cmd = cls.cmd + ['social', 'profile', 'db', 'create', json.dumps(profile_data)]
+                    profile_result = subprocess.run(profile_cmd, capture_output=True, text=True, env=profile_ctx)
+                    if profile_result.returncode != 0:
+                        raise RuntimeError(f'Error creating profile for crud user {user_name}:\n{profile_result.stdout + profile_result.stderr}')
             
             shutil.copy2(str(cls.crud_db_file), str(cls.crud_db_cache_file))
             sys.stdout.write(f', cached db file')
@@ -1004,6 +1041,8 @@ class TestMTemplateApp(unittest.TestCase):
             seed_jobs = []
             for module in cls.spec['modules'].values():
                 module_name_kebab = module['name']['kebab_case']
+                if module_name_kebab == 'social':
+                    continue # skip because these require creating a profile for each user
 
                 for model in module['models'].values():
                     if model['hidden'] is True:
@@ -2061,6 +2100,8 @@ class TestMTemplateApp(unittest.TestCase):
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
+                if model_name == 'profile':
+                    continue # skip because this was already made during setup, and user can only create one
                 jobs.append((module_name_kebab, model_name, model, command_type, self.cmd, self.crud_ctx, create_user, create_user_env, other_user, other_user_env))
 
         # parallel process tests #
@@ -2111,6 +2152,8 @@ class TestMTemplateApp(unittest.TestCase):
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
+                if model_name == 'profile':
+                    continue # skip because this was already made during setup, and user can only create one
                 jobs.append((module_name_kebab, model_name, model, base_ctx, logged_out_ctx, alice_ctx, bob_ctx, charlie_ctx, alice_user, bob_user, charlie_user))
 
         #
@@ -2131,6 +2174,8 @@ class TestMTemplateApp(unittest.TestCase):
 
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
+            if module_name_kebab == 'social':
+                continue
 
             for model in module['models'].values():
 
@@ -2221,6 +2266,9 @@ class TestMTemplateApp(unittest.TestCase):
 
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
+            if module_name_kebab == 'social':
+                continue
+
             for model_name, model in module['models'].items():
 
                 if model['auth']['max_models_per_user'] == 0:

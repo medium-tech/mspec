@@ -279,6 +279,28 @@ modules:
                             - 'My favorite PNW hiking trails'
                             - 'Favorite programming languages'
                             - 'Tips for cooking'
+                        validation:
+                            call: 'eq'
+                            args:
+                                a:
+                                    call: 'key'
+                                    args:
+                                        key: 'total'
+                                        default_value: 0
+                                        object:
+                                            call: 'db.query'
+                                            args:
+                                                model_type: 'social.profile'
+                                                where:
+                                                    user_id:
+                                                        eq:
+                                                            call: 'key'
+                                                            args:
+                                                                key: 'id'
+                                                                object:
+                                                                    call: 'auth.current_user'
+                                b: 1
+                        validation_message: 'You must have a profile to create a forum'
                     
                     main_post_id:
                         name:
@@ -293,9 +315,6 @@ modules:
                             - "1"
                             - "2"
                             - "3"
-
-
-
 
             post:
                 name:
@@ -376,6 +395,29 @@ modules:
                             - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'
                             - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'
 
+                        validation:
+                            call: 'eq'
+                            args:
+                                a:
+                                    call: 'key'
+                                    args:
+                                        key: 'total'
+                                        default_value: 0
+                                        object:
+                                            call: 'db.query'
+                                            args:
+                                                model_type: 'social.profile'
+                                                where:
+                                                    user_id:
+                                                        eq:
+                                                            call: 'key'
+                                                            args:
+                                                                key: 'id'
+                                                                object:
+                                                                    call: 'auth.current_user'
+                                b: 1
+                        validation_message: 'You must have a profile to create a forum'
+
                     attachments:
                         name:
                             lower_case: 'attachments'
@@ -451,6 +493,29 @@ modules:
                             - 'Birthday Party'
                             - 'Hiking Trip'
                             - 'Book Club Meeting'
+
+                        validation:
+                            call: 'eq'
+                            args:
+                                a:
+                                    call: 'key'
+                                    args:
+                                        key: 'total'
+                                        default_value: 0
+                                        object:
+                                            call: 'db.query'
+                                            args:
+                                                model_type: 'social.profile'
+                                                where:
+                                                    user_id:
+                                                        eq:
+                                                            call: 'key'
+                                                            args:
+                                                                key: 'id'
+                                                                object:
+                                                                    call: 'auth.current_user'
+                                b: 1
+                        validation_message: 'You must have a profile to create a forum'
 
                     event_start_time:
                         name:

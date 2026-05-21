@@ -438,3 +438,19 @@ test('test create user with bad passwords', async ({ browser, crudEnv }) => {
 	await expect(page.getByRole('table').nth(1)).toContainText('Could not create user password_confirm: Confirmation does not match');
 	
 });
+
+
+test('test cannot create without a profile', async ({ browser, crudEnv }) => {
+
+	// init //
+
+	const host = crudEnv.host;
+	const initialContext = await browser.newContext();
+	const page = await initialContext.newPage();
+	
+	await page.goto(host);
+	await expect(page.locator('#lingo-app')).toContainText('create a test to confirm a user cannot create a forum, thread or post without a profile');
+	
+});
+
+
