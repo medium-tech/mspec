@@ -561,7 +561,7 @@ def db_model_unique_counts(ctx:MappContext, model_class: type, group_by: str, fi
 
     return [{'group': str(row[0]) if row[0] is not None else None, 'count': row[1]} for row in rows]
 
-def db_model_query(ctx:MappContext, model_class: type, where: dict, offset: int=0, size: int=25) -> dict:
+def db_model_query(ctx:MappContext, model_class: type, where: dict, offset: int=0, size: int=25, sort: list=None) -> dict:
 
     """
     where is a dict like this:
@@ -614,11 +614,29 @@ def db_model_query(ctx:MappContext, model_class: type, where: dict, offset: int=
         
         where_values.append(value)
 
+    # sort #
+
+    sortable_fields = {'id', 'date_created', 'date_modified'}
+    sortable_fields.update(field_map.keys())
+
+    order_parts = []
+    for index, sort_spec in enumerate(sort or []):
+        field_name = sort_spec.get('field')
+        order = sort_spec.get('order')
+
+        if not isinstance(field_name, str) or field_name not in sortable_fields:
+            raise ValueError(f'db_model_query - unsupported sort field in sort[{index}]: {field_name}')
+        if order not in ('asc', 'desc'):
+            raise ValueError(f'db_model_query - unsupported sort order in sort[{index}]: {order}')
+
+        order_parts.append(f'{field_name} {order.upper()}')
+
     # query #
 
     where_clause = f" WHERE {' AND '.join(where_parts)}" if where_parts else ''
+    order_clause = f" ORDER BY {', '.join(order_parts)}" if order_parts else ''
     query_values = tuple(where_values) + (size, offset)
-    sql = f'SELECT * FROM {table_name}{where_clause} LIMIT ? OFFSET ?'
+    sql = f'SELECT * FROM {table_name}{where_clause}{order_clause} LIMIT ? OFFSET ?'
     rows = ctx.db.cursor.execute(sql, query_values).fetchall()
 
     # total count #

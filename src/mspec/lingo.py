@@ -551,6 +551,34 @@ def _db_parse_unique_counts_specs(app:LingoApp, unique_counts_expr: Any, ctx:Opt
 
     return parsed
 
+def _db_parse_sort_specs(app:LingoApp, sort_expr: Any, ctx:Optional[dict]) -> list:
+    sort_specs = _resolve_list_expression(app, sort_expr, ctx, 'db.query - sort must evaluate to a list')
+    parsed = []
+
+    for index, sort_spec in enumerate(sort_specs):
+        if isinstance(sort_spec, dict) and sort_spec.get('type') == 'struct':
+            sort_spec = sort_spec['value']
+
+        if not isinstance(sort_spec, dict):
+            raise ValueError(f'db.query - sort[{index}] must be a struct')
+
+        try:
+            field = _resolve_expression_value(app, sort_spec['field'], ctx)
+            order = _resolve_expression_value(app, sort_spec['order'], ctx)
+        except KeyError as e:
+            raise ValueError(f'db.query - sort[{index}] missing key: {e}')
+
+        order_value = str(order).lower()
+        if order_value not in ('asc', 'desc'):
+            raise ValueError(f'db.query - sort[{index}] order must be "asc" or "desc"')
+
+        parsed.append({
+            'field': str(field),
+            'order': order_value,
+        })
+
+    return parsed
+
 def _db_read_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     try:
         model_type_expr = expression['args']['model_type']
@@ -656,6 +684,10 @@ def _db_query_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=N
     unique_counts_expr = expression['args'].get('unique_counts')
     if unique_counts_expr is not None:
         kwargs['unique_counts'] = _db_parse_unique_counts_specs(app, unique_counts_expr, ctx)
+
+    sort_expr = expression['args'].get('sort')
+    if sort_expr is not None:
+        kwargs['sort'] = _db_parse_sort_specs(app, sort_expr, ctx)
 
     return (ctx, model_class, where, offset, size), kwargs
 
@@ -799,8 +831,8 @@ def db_unique_counts(ctx, model_class, group_by:str, filters=None) -> list:
     rows = db_model_unique_counts(ctx, model_class, group_by, filters)
     return [{'type': 'struct', 'value': row} for row in rows]
 
-def db_query(ctx, model_class, where:dict, offset:int=0, size:int=25, include:dict=None, unique_counts:list=None) -> list:
-    query_result = db_model_query(ctx, model_class, where, offset, size)
+def db_query(ctx, model_class, where:dict, offset:int=0, size:int=25, include:dict=None, unique_counts:list=None, sort:list=None) -> list:
+    query_result = db_model_query(ctx, model_class, where, offset, size, sort=sort)
 
     items = [item._asdict() for item in query_result['items']]
     if include is not None:
