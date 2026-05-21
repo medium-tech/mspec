@@ -1,6 +1,9 @@
 #! /usr/bin/env python3
 import random
 
+from random import shuffle
+from itertools import repeat
+
 from dotenv import load_dotenv
 
 from mapp.context import get_context_from_env, spec_from_env
@@ -155,21 +158,30 @@ def _seed_replies_in_first_thread(ctx, social_module: dict, users: list[dict], n
     ctx.client.set_bearer_token(users[0]['access_token'])
     first_thread = http_model_read(ctx, thread_class, '1')
     main_post_id = str(first_thread.main_post_id)
+    
+    reply_seeds = []
 
     for user in users:
+        reply_seeds.extend(repeat(user, times=num_replies))
+    
+    shuffle(reply_seeds)
+    total_replies = 0
+    for user in reply_seeds:
         ctx.client.set_bearer_token(user['access_token'])
-        for _ in range(num_replies):
-            reply_data = {
-                'user_id': '-1',
-                'forum_id': '1',
-                'reply_to': main_post_id,
-                'message': random_str_rich_text(color_options=RICH_TEXT_COLORS),
-                'attachments': [],
-                'images': [],
-                'related_posts': [],
-            }
-            reply = new_model(post_class, reply_data)
-            http_model_create(ctx, post_class, reply)
+        reply_data = {
+            'user_id': '-1',
+            'forum_id': '1',
+            'reply_to': main_post_id,
+            'message': random_str_rich_text(color_options=RICH_TEXT_COLORS),
+            'attachments': [],
+            'images': [],
+            'related_posts': [],
+        }
+        reply = new_model(post_class, reply_data)
+        http_model_create(ctx, post_class, reply)
+        total_replies += 1
+    
+    print(f'  :: seeded {total_replies} replies ({num_replies} per {len(users)} users) in thread 1')
 
 
 def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: int, num_replies: int):
