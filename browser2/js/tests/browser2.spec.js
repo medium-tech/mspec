@@ -332,6 +332,14 @@ test.describe('datetime formatting', () => {
   });
 });
 
+test('test - social-thread-instance timestamp fallback does not render error', async ({ page }) => {
+  await page.goto('http://127.0.0.1:8000/');
+  await page.locator('#spec-select').selectOption('data/lingo/pages/social-thread-instance.json');
+
+  await expect(page.locator('#lingo-app')).toContainText('Failed to fetch parent spec: 404 - Not found');
+  await expect(page.locator('body')).not.toContainText('Render error');
+});
+
 test('test - functions-random', async ({ page }) => {
   await page.goto('http://127.0.0.1:8000/');
   await page.locator('#spec-select').selectOption('data/lingo/pages/functions-random.json');

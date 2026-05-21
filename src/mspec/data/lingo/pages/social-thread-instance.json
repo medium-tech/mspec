@@ -1194,26 +1194,54 @@
                 "call": "datetime.format_friendly",
                 "args": {
                     "datetime": {
-                        "call": "key",
-                        "args": {
-                            "object": {
-                                "state": {
-                                    "main_post": {}
+                        "branch": [
+                            {
+                                "if": {
+                                    "call": "ne",
+                                    "args": {
+                                        "a": {
+                                            "call": "key",
+                                            "args": {
+                                                "object": {
+                                                    "state": {
+                                                        "main_post": {}
+                                                    }
+                                                },
+                                                "key": "time_modified",
+                                                "default_value": ""
+                                            }
+                                        },
+                                        "b": ""
+                                    }
+                                },
+                                "then": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "main_post": {}
+                                            }
+                                        },
+                                        "key": "time_modified",
+                                        "default_value": ""
+                                    }
                                 }
                             },
-                            "key": "time_modified",
-                            "default_value": {
-                                "call": "key",
-                                "args": {
-                                    "object": {
-                                        "state": {
-                                            "main_post": {}
-                                        }
-                                    },
-                                    "key": "date_modified"
+                            {
+                                "else": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "main_post": {}
+                                            }
+                                        },
+                                        "key": "date_modified",
+                                        "default_value": ""
+                                    }
                                 }
                             }
-                        }
+                        ]
                     }
                 }
             }
@@ -1608,22 +1636,48 @@
                                                                         "call": "datetime.format_friendly",
                                                                         "args": {
                                                                             "datetime": {
-                                                                                "call": "key",
-                                                                                "args": {
-                                                                                    "object": {
-                                                                                        "self": "item"
+                                                                                "branch": [
+                                                                                    {
+                                                                                        "if": {
+                                                                                            "call": "ne",
+                                                                                            "args": {
+                                                                                                "a": {
+                                                                                                    "call": "key",
+                                                                                                    "args": {
+                                                                                                        "object": {
+                                                                                                            "self": "item"
+                                                                                                        },
+                                                                                                        "key": "time_modified",
+                                                                                                        "default_value": ""
+                                                                                                    }
+                                                                                                },
+                                                                                                "b": ""
+                                                                                            }
+                                                                                        },
+                                                                                        "then": {
+                                                                                            "call": "key",
+                                                                                            "args": {
+                                                                                                "object": {
+                                                                                                    "self": "item"
+                                                                                                },
+                                                                                                "key": "time_modified",
+                                                                                                "default_value": ""
+                                                                                            }
+                                                                                        }
                                                                                     },
-                                                                                    "key": "time_modified",
-                                                                                    "default_value": {
-                                                                                        "call": "key",
-                                                                                        "args": {
-                                                                                            "object": {
-                                                                                                "self": "item"
-                                                                                            },
-                                                                                            "key": "date_modified"
+                                                                                    {
+                                                                                        "else": {
+                                                                                            "call": "key",
+                                                                                            "args": {
+                                                                                                "object": {
+                                                                                                    "self": "item"
+                                                                                                },
+                                                                                                "key": "date_modified",
+                                                                                                "default_value": ""
+                                                                                            }
                                                                                         }
                                                                                     }
-                                                                                }
+                                                                                ]
                                                                             }
                                                                         }
                                                                     }
