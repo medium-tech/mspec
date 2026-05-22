@@ -632,7 +632,7 @@ def run_cli_validation_error_for_model(module_name_kebab, model, command_type, u
     
     model_name_kebab = model['name']['kebab_case']
 
-    if model_name_kebab in ['forum']:
+    if model_name_kebab in ['forum', 'thread', 'post', 'event']:
         # get a user that has a profile and can create a forum
         user_to_use = user_index - 3
     else:

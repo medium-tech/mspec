@@ -221,6 +221,8 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 		// leave a reply on the thread															// the crud test hasn't deleted the thread
 		await leaveReply(page, `Reply from workflow user ${user.email}`);
 
+		throw new Error('Add reactions to thread and replies')
+
 		// logout
 		await logoutUser(page, host);
 
@@ -450,6 +452,20 @@ test('test cannot create without a profile', async ({ browser, crudEnv }) => {
 	
 	await page.goto(host);
 	await expect(page.locator('#lingo-app')).toContainText('create a test to confirm a user cannot create a forum, thread or post without a profile');
+	
+});
+
+
+test('test validation errors', async ({ browser, crudEnv }) => {
+
+	// init //
+
+	const host = crudEnv.host;
+	const initialContext = await browser.newContext();
+	const page = await initialContext.newPage();
+	
+	await page.goto(host);
+	await expect(page.locator('#lingo-app')).toContainText('test validation errors on forms');
 	
 });
 
