@@ -496,7 +496,9 @@ test('test create user with bad passwords', async ({ browser, crudEnv }) => {
 
 test('test validation errors', async ({ browser, crudEnv }) => {
 
-	// init //
+	//
+	// init
+	//
 
 	const host = crudEnv.host;
 	const initialContext = await browser.newContext();
@@ -638,17 +640,85 @@ test('test validation errors', async ({ browser, crudEnv }) => {
 	// create profile so we can create other items
 	//
 
+	await createProfile(page, host, uniqueId);
+
+	//
+	// create invalid forum
+	//
+
+	// long topic
+	await page.goto(`${host}/social/forum`);
+	await page.getByRole('button', { name: 'create forum' }).click();
+	await page.getByRole('row', { name: 'topic:' }).getByRole('textbox').fill(longStr);
+	await page.getByRole('row', { name: 'description:' }).locator('div.rich-text-editor').fill('This is a description.');
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('Field "topic" exceeds max length of 1000 characters.', { ignoreCase: true });
+
+	// long description
 	await page.reload();
-	await page.getByRole('row', { name: 'username:' }).getByRole('textbox').fill(userName);
-	await page.getByRole('row', { name: 'bio:' }).locator('div.rich-text-editor').fill('This is a bio.');
-	profile_pic_row = page.getByRole('row', { name: 'profile picture:' });
-	await profile_pic_row.locator('input[type="file"]').setInputFiles('./tests/samples/splash-low.jpg');
-	await expect(page.locator('#lingo-app')).toContainText('success', { ignoreCase: true });
+	await page.getByRole('button', { name: 'create forum' }).click();
+	await page.getByRole('row', { name: 'topic:' }).getByRole('textbox').fill(`Valid Topic ${uniqueId}`);
+	await page.getByRole('row', { name: 'description:' }).locator('div.rich-text-editor').fill(longRichText);
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('Field "description" exceeds max length of 25000 characters.', { ignoreCase: true });
 
-	await expect(initialPage.locator('#lingo-app')).toContainText('test validation errors on forms', { timeout: 500, ignoreCase: true });
-	await createForumAndThread(initialPage, host, uniqueId);
+	// too many tags
+	await page.reload();
+	await page.getByRole('button', { name: 'create forum' }).click();
+	await page.getByRole('row', { name: 'topic:' }).getByRole('textbox').fill(`Valid Topic ${uniqueId}`);
+	await page.getByRole('row', { name: 'description:' }).locator('div.rich-text-editor').fill('This is a description.');
 	
+	for (let i = 1; i < 12; i++) {
+		await page.getByRole('textbox', { name: 'Enter text' }).fill(`tag-${i}`);
+		await page.getByRole('textbox', { name: 'Enter text' }).press('Enter');
+	}
+
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('Field "tags" exceeds max length of 10 items.', { ignoreCase: true });
+
+	//
+	// create forum and thread so we have at least 1 item to response to
+	//
+
+	await createForumAndThread(page, host, uniqueId);
+
+	//
+	// create invalid thread
+	//
+
+	await page.goto(`${host}/social/forum`);
+	await page.locator('tr').nth(1).click();
+
+	// long title
+	await page.getByRole('button', { name: 'create thread' }).click();
+	await page.getByRole('row', { name: 'title:' }).getByRole('textbox').fill(longStr);
+	await page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor').fill('This is a message.');
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('Field "title" exceeds max length of 1000 characters.', { ignoreCase: true });
+
+	// long message
+	await page.reload();
+	await page.getByRole('button', { name: 'create thread' }).click();
+	await page.getByRole('row', { name: 'title:' }).getByRole('textbox').fill(`Valid Title ${uniqueId}`);
+	await page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor').fill(longRichText);
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('Field "message" exceeds max length of 25000 characters.', { ignoreCase: true });
 
 	
+	
+	//
+	// create invalid reply
+	//
+
+	await page.goto(`${host}/social/forum`);
+	await page.locator('tr').nth(1).click();
+	await expect(page.locator('#lingo-app')).toContainText(':: forum ::', { ignoreCase: true });
+	await page.locator('tr').nth(2).click();
+	await expect(page.locator('#lingo-app')).toContainText(':: thread ::', { ignoreCase: true });
+
+	// long message
+	await page.locator('.rich-text-editor').fill(longRichText);
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('Field "message" exceeds max length of 25000 characters.', { ignoreCase: true });
 
 });
