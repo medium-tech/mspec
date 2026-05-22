@@ -494,18 +494,161 @@ test('test create user with bad passwords', async ({ browser, crudEnv }) => {
 
 });
 
-
-
-
 test('test validation errors', async ({ browser, crudEnv }) => {
 
 	// init //
 
 	const host = crudEnv.host;
 	const initialContext = await browser.newContext();
-	const page = await initialContext.newPage();
+	const initialPage = await initialContext.newPage();
 
-	await page.goto(host);
-	await expect(page.locator('#lingo-app')).toContainText('test validation errors on forms');
+	await initialPage.goto(host);
+	await initialPage.goto('http://localhost:8008/');
+	const uniqueId = Date.now();
+
+	const goodEmail = `test-validation-errors-${uniqueId}@example.com`;
+	const longEmail = 'a'.repeat(1001) + '@example.com';
+	const longStr = 'a'.repeat(1001);
+	const longRichText = 'a'.repeat(25001);
+
+	//
+	// login validation errors
+	//
+
+	// long email
+	await initialPage.goto(`${host}/social/account`);
+	await initialPage.getByRole('table').filter({ hasText: 'email:Email of the userpassword:showlogin' }).locator('input[type="text"]').fill(longEmail);
+	await initialPage.getByRole('table').filter({ hasText: 'email:Email of the userpassword:showlogin' }).locator('input[type="password"]').fill('test-password-456');
+	await initialPage.getByRole('button', { name: 'login' }).click();
+	await expect(initialPage.locator('#lingo-app')).toContainText('Field "email" exceeds max length of 1000 characters.');
+
+	// invalid password
+	await initialPage.reload();
+	await initialPage.getByRole('table').filter({ hasText: 'email:Email of the userpassword:showlogin' }).locator('input[type="text"]').fill(goodEmail);
+	await initialPage.getByRole('table').filter({ hasText: 'email:Email of the userpassword:showlogin' }).locator('input[type="password"]').fill(longStr);
+	await initialPage.getByRole('button', { name: 'login' }).click();
+	await expect(initialPage.locator('#lingo-app')).toContainText('Field "password" exceeds max length of 1000 characters.');
+
+	//
+	// create account validation errors
+	//
+
+	// invalid name
+	await initialPage.reload();
+	await initialPage.getByRole('row', { name: 'name:' }).getByRole('textbox').fill(longStr);
+	await initialPage.getByRole('row', { name: 'email:' }).nth(1).getByRole('textbox').fill(`test-validation-errors-${uniqueId}@example.com`);
+	await initialPage.getByRole('row', { name: 'password:' }).nth(1).getByRole('textbox').fill('test-password-456');
+	await initialPage.getByRole('row', { name: 'password confirm:' }).getByRole('textbox').fill('test-password-456');
+	await initialPage.getByRole('button', { name: 'create account' }).click();
+	await expect(initialPage.locator('#lingo-app')).toContainText('Field "name" exceeds max length of 1000 characters.');
+
+	// invalid email
+	await initialPage.reload();
+	await initialPage.getByRole('row', { name: 'name:' }).getByRole('textbox').fill('John Doe');
+	await initialPage.getByRole('row', { name: 'email:' }).nth(1).getByRole('textbox').fill(`not-an-email-address`);
+	await initialPage.getByRole('row', { name: 'password:' }).nth(1).getByRole('textbox').fill('test-password-456');
+	await initialPage.getByRole('row', { name: 'password confirm:' }).getByRole('textbox').fill('test-password-456');
+	await initialPage.getByRole('button', { name: 'create account' }).click();
+	await expect(initialPage.locator('#lingo-app')).toContainText('invalid email format', { ignoreCase: true });
+
+	// long email
+	await initialPage.reload();
+	await initialPage.getByRole('row', { name: 'name:' }).getByRole('textbox').fill('John Doe');
+	await initialPage.getByRole('row', { name: 'email:' }).nth(1).getByRole('textbox').fill(longEmail);
+	await initialPage.getByRole('row', { name: 'password:' }).nth(1).getByRole('textbox').fill('test-password-456');
+	await initialPage.getByRole('row', { name: 'password confirm:' }).getByRole('textbox').fill('test-password-456');
+	await initialPage.getByRole('button', { name: 'create account' }).click();
+	await expect(initialPage.locator('#lingo-app')).toContainText('Field "email" exceeds max length of 1000 characters.');
+
+	// password mismatch
+	await initialPage.reload();
+	await initialPage.getByRole('row', { name: 'name:' }).getByRole('textbox').fill('John Doe');
+	await initialPage.getByRole('row', { name: 'email:' }).nth(1).getByRole('textbox').fill(goodEmail);
+	await initialPage.getByRole('row', { name: 'password:' }).nth(1).getByRole('textbox').fill('test-password-456');
+	await initialPage.getByRole('row', { name: 'password confirm:' }).getByRole('textbox').fill('test-password-4567');
+	await initialPage.getByRole('button', { name: 'create account' }).click();
+	await expect(initialPage.locator('#lingo-app')).toContainText('Confirmation does not match', { ignoreCase: true });
+
+	// long password
+	await initialPage.reload();
+	await initialPage.getByRole('row', { name: 'name:' }).getByRole('textbox').fill('John Doe');
+	await initialPage.getByRole('row', { name: 'email:' }).nth(1).getByRole('textbox').fill(goodEmail);
+	await initialPage.getByRole('row', { name: 'password:' }).nth(1).getByRole('textbox').fill(longStr);
+	await initialPage.getByRole('row', { name: 'password confirm:' }).getByRole('textbox').fill('test-password-4567');
+	await initialPage.getByRole('button', { name: 'create account' }).click();
+	await expect(initialPage.locator('#lingo-app')).toContainText('Field "password" exceeds max length of 1000 characters.', { ignoreCase: true });
+
+	// long password confirm
+	await initialPage.reload();
+	await initialPage.getByRole('row', { name: 'name:' }).getByRole('textbox').fill('John Doe');
+	await initialPage.getByRole('row', { name: 'email:' }).nth(1).getByRole('textbox').fill(goodEmail);
+	await initialPage.getByRole('row', { name: 'password:' }).nth(1).getByRole('textbox').fill('test-password-456');
+	await initialPage.getByRole('row', { name: 'password confirm:' }).getByRole('textbox').fill(longStr);
+	await initialPage.getByRole('button', { name: 'create account' }).click();
+	await expect(initialPage.locator('#lingo-app')).toContainText('Field "password_confirm" exceeds max length of 1000 characters.', { ignoreCase: true });
+
+	//
+	// create account so we can create other items
+	//
+
+	const userContext = await browser.newContext();
+	const page = await userContext.newPage();
+
+	const { email, password } = await createAccount(page, host, uniqueId);
+	await loginUser(page, host, email, password);
+	
+	//
+	// profile validation errors
+	//
+
+	const userName = `user_${uniqueId}`
+	await page.goto(`${host}/social/profile/yours`);
+
+	// long username
+	await page.getByRole('row', { name: 'username:' }).getByRole('textbox').fill(longStr);
+	await page.getByRole('row', { name: 'bio:' }).locator('div.rich-text-editor').fill('This is a bio.');
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('Field "username" is invalid: must be 25 characters or less and only contain letters, numbers, hyphens, underscores, periods, and tildes', { ignoreCase: true });
+
+	// long bio
+	await page.reload();
+	await page.getByRole('row', { name: 'username:' }).getByRole('textbox').fill(userName);
+	await page.getByRole('row', { name: 'bio:' }).locator('div.rich-text-editor').fill(longRichText);
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('Field "bio" exceeds max length of 25000 characters.', { ignoreCase: true });
+
+	// profile picture - invalid image file
+	await page.reload();
+	await page.getByRole('row', { name: 'username:' }).getByRole('textbox').fill(userName);
+	await page.getByRole('row', { name: 'bio:' }).locator('div.rich-text-editor').fill('This is a bio.');
+	let profile_pic_row = page.getByRole('row', { name: 'profile picture:' });
+	await profile_pic_row.locator('input[type="file"]').setInputFiles('./tests/samples/lorem-document.pdf');
+	await expect(page.locator('#lingo-app')).toContainText('File is missing an image track', { ignoreCase: true });
+
+	// profile picture - too large image
+	await page.reload();
+	await page.getByRole('row', { name: 'username:' }).getByRole('textbox').fill(userName);
+	await page.getByRole('row', { name: 'bio:' }).locator('div.rich-text-editor').fill('This is a bio.');
+	profile_pic_row = page.getByRole('row', { name: 'profile picture:' });
+	await profile_pic_row.locator('input[type="file"]').setInputFiles('./tests/samples/large-image.tiff');
+	await expect(page.locator('#lingo-app')).not.toContainText('success', { ignoreCase: true });
+	await expect(page.locator('#lingo-app')).toContainText('failed', { ignoreCase: true });
+
+	//
+	// create profile so we can create other items
+	//
+
+	await page.reload();
+	await page.getByRole('row', { name: 'username:' }).getByRole('textbox').fill(userName);
+	await page.getByRole('row', { name: 'bio:' }).locator('div.rich-text-editor').fill('This is a bio.');
+	profile_pic_row = page.getByRole('row', { name: 'profile picture:' });
+	await profile_pic_row.locator('input[type="file"]').setInputFiles('./tests/samples/splash-low.jpg');
+	await expect(page.locator('#lingo-app')).toContainText('success', { ignoreCase: true });
+
+	await expect(initialPage.locator('#lingo-app')).toContainText('test validation errors on forms', { timeout: 500, ignoreCase: true });
+	await createForumAndThread(initialPage, host, uniqueId);
+	
+
+	
 
 });
