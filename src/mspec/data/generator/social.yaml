@@ -196,7 +196,7 @@ modules:
                                                                 object:
                                                                     call: 'auth.current_user'
                                 b: 1
-                        validation_message: 'You must have a profile to create a forum'
+                        validation_message: 'You must have a profile to create items'
 
                     description:
                         name:
@@ -300,7 +300,7 @@ modules:
                                                                 object:
                                                                     call: 'auth.current_user'
                                 b: 1
-                        validation_message: 'You must have a profile to create a forum'
+                        validation_message: 'You must have a profile to create items'
                     
                     main_post_id:
                         name:
@@ -416,7 +416,7 @@ modules:
                                                                 object:
                                                                     call: 'auth.current_user'
                                 b: 1
-                        validation_message: 'You must have a profile to create a forum'
+                        validation_message: 'You must have a profile to create items'
 
                     attachments:
                         name:
@@ -515,7 +515,7 @@ modules:
                                                                 object:
                                                                     call: 'auth.current_user'
                                 b: 1
-                        validation_message: 'You must have a profile to create a forum'
+                        validation_message: 'You must have a profile to create items'
 
                     event_start_time:
                         name:

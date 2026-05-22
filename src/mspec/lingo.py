@@ -1723,7 +1723,7 @@ def render_value(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
                 if isinstance(field_value, dict):
                     try:
                         result_struct[field_name] = lingo_execute(app, field_value, ctx)
-                    except NotFoundError as e:
+                    except (NotFoundError, MappValidationError) as e:
                         raise e
                     except Exception as e:
                         raise ValueError(f'value - error processing struct field {field_name}') from e
