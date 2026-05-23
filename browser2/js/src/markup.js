@@ -544,7 +544,16 @@ function _authIsOwnerArgs(app, expression, ctx) {
 
 /**
  * Resolve bind.state to {fieldName, listIndex} where listIndex is null for plain state
- * or an integer for list-indexed state (when bind.state value has {index: expr} or {_list_index: N}).
+ * or an integer for list-indexed state.
+ *
+ * Supports two formats for the bind.state field value:
+ *   - {index: expr}     - evaluates expr against ctx to obtain the list index (used at render time)
+ *   - {_list_index: N}  - uses the pre-resolved integer N directly (used in baked-in form actions)
+ *
+ * @param {object} app - the lingo app instance
+ * @param {object} bindState - the bind.state object, e.g. {myField: {}} or {myField: {_list_index: 2}}
+ * @param {object|null} ctx - the current evaluation context
+ * @returns {{fieldName: string, listIndex: number|null}}
  */
 function _resolveBindState(app, bindState, ctx) {
     const stateKeys = Object.keys(bindState);
@@ -570,6 +579,11 @@ function _resolveBindState(app, bindState, ctx) {
 
 /**
  * Get the state slot for a field, supporting both plain and list-indexed access.
+ *
+ * @param {object} app - the lingo app instance
+ * @param {string} fieldName - the name of the state field
+ * @param {number|null} listIndex - the list index, or null for plain (non-list) state access
+ * @returns {object} the state value or list element
  */
 function _getStateSlot(app, fieldName, listIndex) {
     if (listIndex !== null && listIndex !== undefined) {
@@ -578,7 +592,7 @@ function _getStateSlot(app, fieldName, listIndex) {
     return app.state[fieldName];
 }
 
-(app, expression, ctx) {
+function _crudCreateArgs(app, expression, ctx) {
     const args = expression.args || {};
     const url = unwrapValue(lingoExecute(app, args.http, ctx));
     const data = lingoExecute(app, args.data, ctx);
