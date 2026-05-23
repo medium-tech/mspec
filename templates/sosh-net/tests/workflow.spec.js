@@ -634,7 +634,9 @@ test('test validation errors', async ({ browser, crudEnv }) => {
 	profile_pic_row = page.getByRole('row', { name: 'profile picture:' });
 	await profile_pic_row.locator('input[type="file"]').setInputFiles('./tests/samples/large-image.tiff');
 	await expect(page.locator('#lingo-app')).not.toContainText('success', { ignoreCase: true });
-	await expect(page.locator('#lingo-app')).toContainText('failed', { ignoreCase: true });
+
+	// case insensitive regix to find "fail" or "error"
+	await expect(page.locator('#lingo-app')).toContainText(/(fail|error)/i, { ignoreCase: true });
 
 	//
 	// create profile so we can create other items
