@@ -509,7 +509,7 @@ test('test validation errors', async ({ browser, crudEnv }) => {
 	const initialPage = await initialContext.newPage();
 
 	await initialPage.goto(host);
-	await initialPage.goto('http://localhost:8008/');
+	await initialPage.goto(host);
 	const uniqueId = Date.now();
 
 	const goodEmail = `test-validation-errors-${uniqueId}@example.com`;
