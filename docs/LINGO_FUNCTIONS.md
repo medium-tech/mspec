@@ -369,7 +369,7 @@
 `map` - apply a function to each item in a list and return a new list
   - **args:**
     - **iterable** `list`
-    - **function** `expression`
+    - **function** `expression` - evaluated for each item; the current item is accessible as `self.item` and the zero-based position as `self.index`
   - **return:** `list`
 
 `filter` - filter a list by a function, returning items where the function is true

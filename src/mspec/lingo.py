@@ -92,6 +92,44 @@ def _map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) 
     iterable = lingo_execute(app, expression['args']['iterable'], ctx)
     return (map_func, iterable['value'] if isinstance(iterable, dict) else iterable), {}
 
+
+def _indexed_map_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    '''map function args that include the iteration index in the self context as self.index'''
+    def map_func(idx_item_tuple):
+        idx, item = idx_item_tuple
+        if isinstance(ctx, MappContext):
+            new_ctx = MappContext(
+                server_port=ctx.server_port,
+                client=ctx.client,
+                db=ctx.db,
+                log=ctx.log,
+                current_access_token=ctx.current_access_token,
+                self=deepcopy(ctx.self)
+            )
+            new_ctx.self.update({'item': item, 'index': idx})
+        else:
+            new_ctx = ctx.copy() if ctx is not None else {'self': {}}
+            new_ctx['self'].update({'item': item, 'index': idx})
+        
+        result = lingo_execute(app, deepcopy(expression['args']['function']), new_ctx)
+        if isinstance(result, dict) and 'value' in result:
+            return result['value']
+        else:
+            if isinstance(result, dict):
+                evaluated_result = {}
+                for key, value in result.items():
+                    eval_value = lingo_execute(app, deepcopy(value), new_ctx)
+                    if isinstance(eval_value, dict) and 'value' in eval_value:
+                        evaluated_result[key] = eval_value['value']
+                    else:
+                        evaluated_result[key] = eval_value
+                return evaluated_result
+            return result
+
+    iterable = lingo_execute(app, expression['args']['iterable'], ctx)
+    iterable_value = iterable['value'] if isinstance(iterable, dict) else iterable
+    return (map_func, enumerate(iterable_value)), {}
+
 def _accumulate_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     
     def accumulate_func(a, b):
@@ -1068,7 +1106,7 @@ lingo_function_lookup = {
 
     # sequence ops #
 
-    'map': {'func': map, 'create_args': _map_function_args},
+    'map': {'func': map, 'create_args': _indexed_map_function_args},
     'filter': {'func': filter, 'create_args': _map_function_args},
     'dropwhile': {'func': dropwhile, 'create_args': _map_function_args},
     'takewhile': {'func': takewhile, 'create_args': _map_function_args},

@@ -422,9 +422,9 @@ function _mapFunctionArgs(app, expression, ctx) {
     const iterableValue = (typeof iterable === 'object' && 'value' in iterable) ? iterable.value : iterable;
 	// console.log('mapFunctionArgs - expression:', expression);
 	// console.log('mapFunctionArgs - iterableValue:', iterableValue);
-    const predicate = (item) => {
+    const predicate = (item, idx) => {
         const newCtx = ctx ? {...ctx} : {};
-        newCtx.self = {item};
+        newCtx.self = {item, index: idx};
         const result = lingoExecute(app, args.function, newCtx);
         if (typeof result === 'object' && result !== null && 'value' in result) {
 
@@ -542,6 +542,56 @@ function _authIsOwnerArgs(app, expression, ctx) {
 
 // crud //
 
+/**
+ * Resolve bind.state to {fieldName, listIndex} where listIndex is null for plain state
+ * or an integer for list-indexed state.
+ *
+ * Supports two formats for the bind.state field value:
+ *   - {index: expr}     - evaluates expr against ctx to obtain the list index (used at render time)
+ *   - {_list_index: N}  - uses the pre-resolved integer N directly (used in baked-in form actions)
+ *
+ * @param {object} app - the lingo app instance
+ * @param {object} bindState - the bind.state object, e.g. {myField: {}} or {myField: {_list_index: 2}}
+ * @param {object|null} ctx - the current evaluation context
+ * @returns {{fieldName: string, listIndex: number|null}}
+ */
+function _resolveBindState(app, bindState, ctx) {
+    const stateKeys = Object.keys(bindState);
+    if (stateKeys.length !== 1) {
+        throw new Error('bind.state must have exactly one field');
+    }
+    const fieldName = stateKeys[0];
+    if (!app.spec.state.hasOwnProperty(fieldName)) {
+        throw new Error(`bind.state - state field not found: ${fieldName}`);
+    }
+    const bindValue = bindState[fieldName];
+    if (bindValue && typeof bindValue === 'object') {
+        if ('_list_index' in bindValue) {
+            return {fieldName, listIndex: bindValue._list_index};
+        }
+        if ('index' in bindValue) {
+            const listIndex = unwrapValue(lingoExecute(app, bindValue.index, ctx));
+            return {fieldName, listIndex};
+        }
+    }
+    return {fieldName, listIndex: null};
+}
+
+/**
+ * Get the state slot for a field, supporting both plain and list-indexed access.
+ *
+ * @param {object} app - the lingo app instance
+ * @param {string} fieldName - the name of the state field
+ * @param {number|null} listIndex - the list index, or null for plain (non-list) state access
+ * @returns {object} the state value or list element
+ */
+function _getStateSlot(app, fieldName, listIndex) {
+    if (listIndex !== null && listIndex !== undefined) {
+        return app.state[fieldName][listIndex];
+    }
+    return app.state[fieldName];
+}
+
 function _crudCreateArgs(app, expression, ctx) {
     const args = expression.args || {};
     const url = unwrapValue(lingoExecute(app, args.http, ctx));
@@ -634,14 +684,8 @@ function _opHttpArgs(app, expression, ctx) {
     const url = unwrapValue(lingoExecute(app, args.url, ctx));
     const params = lingoExecute(app, args.data, ctx);
     if (expression.args.bind && expression.args.bind.state) {
-        const stateKeys = Object.keys(expression.args.bind.state);
-        if (stateKeys.length === 1) {
-            const stateField = stateKeys[0];
-            if (!app.state.hasOwnProperty(stateField)) {
-                throw new Error(`op.http - state field not found: ${stateField}`);
-            }
-            app.state[stateField].state = 'loading';
-        }
+        const {fieldName, listIndex} = _resolveBindState(app, expression.args.bind.state, ctx);
+        _getStateSlot(app, fieldName, listIndex).state = 'loading';
     }
     // console.log('op.http - url:', expression, url, 'params:', params);
     return [url, params];
@@ -2252,10 +2296,25 @@ function renderSet(app, expression, ctx = null) {
                 throw new Error(`set - state field not found: ${fieldName}`);
             }
 
-            stateToSet = app.state[fieldName];
-            setStateValue = (newValue) => app.state[fieldName] = newValue;
-            setStructValue = (structFieldName, newValue) => app.state[fieldName][structFieldName] = newValue;
-            fieldType = app.spec.state[fieldName].type;
+            // support list-indexed state: {fieldName: {_list_index: N}}
+            const setBindValue = target[fieldName];
+            const setListIndex = (setBindValue && typeof setBindValue === 'object' && '_list_index' in setBindValue)
+                ? setBindValue._list_index
+                : null;
+
+            if (setListIndex !== null) {
+                stateToSet = app.state[fieldName][setListIndex];
+                setStateValue = (newValue) => { app.state[fieldName][setListIndex] = newValue; };
+                setStructValue = (structFieldName, newValue) => { app.state[fieldName][setListIndex][structFieldName] = newValue; };
+                fieldType = app.spec.state[fieldName].item_type
+                    ? app.spec.state[fieldName].item_type.type
+                    : 'struct';
+            } else {
+                stateToSet = app.state[fieldName];
+                setStateValue = (newValue) => app.state[fieldName] = newValue;
+                setStructValue = (structFieldName, newValue) => app.state[fieldName][structFieldName] = newValue;
+                fieldType = app.spec.state[fieldName].type;
+            }
             fieldDisplayName = `state.${fieldName}`;
 
         }else if('clientState' in expression.set){
@@ -2314,7 +2373,9 @@ function renderSet(app, expression, ctx = null) {
                         will remain unchanged
                 */
 
-                const numStructKeys = Object.keys(target[fieldName]).length;
+                // struct field keys, excluding internal _list_index key used for list-indexed state
+                const structTargetKeys = Object.keys(target[fieldName]).filter(k => k !== '_list_index');
+                const numStructKeys = structTargetKeys.length;
                 let structSetType;
                 if (numStructKeys == 0) {
                     structSetType = 'multiple';
@@ -2325,8 +2386,8 @@ function renderSet(app, expression, ctx = null) {
                 }
 
                 if(structSetType === 'single'){
-                    // struct field name is the only key in target[fieldName]
-                    const structFieldName = Object.keys(target[fieldName])[0];
+                    // struct field name is the only key in target[fieldName] (excluding _list_index)
+                    const structFieldName = structTargetKeys[0];
 
                     if (!(structFieldName in stateToSet)) {
                         throw new Error(`set - struct field not found: ${fieldName}.${structFieldName}`);
@@ -2761,6 +2822,14 @@ function renderOp(app, expression, ctx = null) {
             throw new Error(`op - bind state field not found: ${stateField}`);
         }
 
+        // resolve list index if bind.state uses {index: expr} syntax
+        const {listIndex} = _resolveBindState(app, op.bind.state, ctx);
+
+        // resolved bind with baked-in list index (so form action works without ctx)
+        const resolvedBind = listIndex !== null
+            ? {state: {[stateField]: {_list_index: listIndex}}}
+            : op.bind;
+
         // create form element //
 
         const url = unwrapValue(lingoExecute(app, op.http, ctx));
@@ -2768,7 +2837,8 @@ function renderOp(app, expression, ctx = null) {
         const submitButtonText = expression.op.submit_button_text ? unwrapValue(lingoExecute(app, expression.op.submit_button_text, ctx)) : 'Submit';
 
         // merge app.state[stateField].data and paramOverrides to create request body, with paramOverrides taking precedence
-        let requestBody = app.state[stateField].data
+        const stateSlot = _getStateSlot(app, stateField, listIndex);
+        let requestBody = stateSlot.data
         for (const [key, value] of Object.entries(paramOverrides)) {
             requestBody[key] = value;
         }
@@ -2776,20 +2846,20 @@ function renderOp(app, expression, ctx = null) {
         const formElement = {
             form: {
                 fields: formFields,
-                bind: op.bind,
+                bind: resolvedBind,
                 submit_button_text: submitButtonText,
                 auto_submit: autoSubmit,
 				show_submit_button: showSubmitButton,
 				show_status_display: showStatusDisplay,
 				friendly_status: friendlyStatus,
                 action: {
-                    set: {state: {[stateField]: {}}},
+                    set: {state: {[stateField]: listIndex !== null ? {_list_index: listIndex} : {}}},
                     to: {
                         call: 'op.http',
                         args: {
                             url: url,
                             data: requestBody,
-                            bind: op.bind
+                            bind: resolvedBind
                         }
                     }
                 }
@@ -2798,8 +2868,8 @@ function renderOp(app, expression, ctx = null) {
 
         // initialize showSecureResultFields in bound state //
 
-        if (!app.state[stateField].hasOwnProperty('showSecureResultFields')) {
-            app.state[stateField].showSecureResultFields = {};
+        if (!stateSlot.hasOwnProperty('showSecureResultFields')) {
+            stateSlot.showSecureResultFields = {};
         }
 
         // collect secure fields from result definition //
@@ -2809,8 +2879,8 @@ function renderOp(app, expression, ctx = null) {
             for (const [fieldKey, fieldSpec] of Object.entries(definition.result.fields)) {
                 if (fieldSpec.secure) {
                     secureResultFields[fieldKey] = fieldSpec;
-                    if (!(fieldKey in app.state[stateField].showSecureResultFields)) {
-                        app.state[stateField].showSecureResultFields[fieldKey] = false;
+                    if (!(fieldKey in stateSlot.showSecureResultFields)) {
+                        stateSlot.showSecureResultFields[fieldKey] = false;
                     }
                 }
             }
@@ -2818,7 +2888,7 @@ function renderOp(app, expression, ctx = null) {
 
         // build result display based on current op state //
 
-        const currentOpState = app.state[stateField];
+        const currentOpState = stateSlot;
         let resultDisplayElements;
 
         if (currentOpState.state === 'result') {
@@ -5144,12 +5214,20 @@ function createFormElement(app, element, ctx = null) {
     }
     const formStateField = stateKeys[0];
 
-    const formId = `form_${formStateField}`;
+    // support list-indexed state: {fieldName: {_list_index: N}}
+    const formBindValue = bind.state[formStateField];
+    const formListIndex = (formBindValue && typeof formBindValue === 'object' && '_list_index' in formBindValue)
+        ? formBindValue._list_index
+        : null;
+
+    const formId = formListIndex !== null
+        ? `form_${formStateField}_${formListIndex}`
+        : `form_${formStateField}`;
 
     if( !app.state.hasOwnProperty(formStateField) ) {
         throw new Error(`createFormElement - state field not found: ${formStateField}`);
     }
-    const currentState = app.state[formStateField];
+    const currentState = _getStateSlot(app, formStateField, formListIndex);
     const formData = currentState.data || {};
     // console.log('createFormElement - formData before:', formData); 
     
