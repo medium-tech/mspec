@@ -174,7 +174,7 @@
 				},
 				{
 					"else": [
-						{"heading": ":: forums", "level": 2},
+						{"heading": ":: search forums", "level": 2},
 						{"button": {"op": {"flip_display": {}}}, "text": "create forum"},
 						{"model": {
 							"bind": {"state": {"model_list": {}}},

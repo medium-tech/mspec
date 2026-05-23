@@ -181,6 +181,10 @@ test('test - functions-struct', async ({ page }) => {
     'key(state.source_struct, \'x_int\') = 42',
     'key(state.source_struct, \'x_float\') = 3.14',
     'key(state.source_struct, \'x_str\') = hello.world',
+	'key(state.source_struct, \'x_nested_struct.additional_key\') = additional_value',
+	'key(state.source_struct, \'x_nested_list.0.nested_list_key_1\') = nested_list_value_1',
+	'key(state.source_struct, \'non_existent_key\', default=\'this is a default value\') = this is a default value',
+	'key(state.source_struct, \'x_nested_list.10.non_existent_key\', default=\'hello.world\') = hello.world'
   ];
 
   for (const text of expectedText) {
@@ -252,6 +256,7 @@ test('test - functions-sequence-ops', async ({ page }) => {
 
   const expectedText = [
     'map(add(item, 10), [1,2,3,4,5]) = 11, 12, 13, 14, 15',
+	'map(key(item, \'x\'), state.source_list_struct) = 1, 3, 5',
     'filter(gt(item, 3), [1,2,3,4,5,6,7]) = 4, 5, 6, 7',
     'dropwhile(lt(item, 4), [1,2,3,4,5,6,7]) = 4, 5, 6, 7',
     'takewhile(lt(item, 4), [1,2,3,4,5,6,7]) = 1, 2, 3',
@@ -281,6 +286,50 @@ test('test - functions-datetime', async ({ page }) => {
   for (const text of expectedText) {
     await expect(page.locator('#lingo-app')).toContainText(text);
   }
+});
+
+test.describe('datetime formatting', () => {
+  test.use({ timezoneId: 'America/New_York' });
+
+  test('test - datetime.format_friendly', async ({ page }) => {
+    await page.goto('http://127.0.0.1:8000/');
+    await expect(page.locator('#lingo-app')).toContainText('hello.world');
+    const expectedFriendlyText = await page.evaluate(() => {
+      return new Intl.DateTimeFormat(navigator.language, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      }).format(new Date('2030-10-23T14:30:00Z'));
+    });
+    await page.evaluate(() => {
+      const spec = {
+        lingo: {
+          version: 'page-beta-1'
+        },
+        params: {},
+        state: {},
+        ops: {},
+        output: [
+          {text: 'datetime.format_friendly() = '},
+          {
+            lingo: {
+              call: 'datetime.format_friendly',
+              args: {
+                datetime: '2030-10-23T14:30:00'
+              }
+            }
+          }
+        ]
+      };
+
+      const app = lingoApp(spec);
+      renderLingoApp(app, document.getElementById('lingo-app'));
+    });
+
+    await expect(page.locator('#lingo-app')).toContainText(`datetime.format_friendly() = ${expectedFriendlyText}`);
+  });
 });
 
 test('test - functions-random', async ({ page }) => {

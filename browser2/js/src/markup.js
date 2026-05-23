@@ -56,18 +56,58 @@ function normalizeDateTimeValue(value) {
     return asString;
 }
 
+function parseUtcDateTimeValue(value) {
+    if (value === null || typeof value === 'undefined' || value === '') {
+        return null;
+    }
+    if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value;
+    }
+
+    const asString = String(value).trim();
+    if (asString.length === 0) {
+        return null;
+    }
+
+    const hasTimezone = /(?:Z|[+-]\d{2}(?::?\d{2})?)$/i.test(asString);
+    const normalizedValue = hasTimezone
+        ? asString
+        : `${normalizeDateTimeValue(asString)}Z`;
+    const date = new Date(normalizedValue);
+    return Number.isNaN(date.getTime()) ? null : date;
+}
+
 function formatModelTimestampLocal(value) {
 	// for automatic datetime fields: date_created and date_modified
     if (value === null || typeof value === 'undefined' || value === '') {
         return '';
     }
 
-    const date = value instanceof Date ? value : new Date(String(value));
-    if (Number.isNaN(date.getTime())) {
+    const date = parseUtcDateTimeValue(value);
+    if (date === null) {
         return String(value);
     }
 
     return date.toLocaleString(undefined, {timeZoneName: 'short'});
+}
+
+function formatFriendlyDateTime(value) {
+    if (value === null || typeof value === 'undefined' || value === '') {
+        return '';
+    }
+
+    const date = parseUtcDateTimeValue(value);
+    if (date === null) {
+        return String(value);
+    }
+
+    return new Intl.DateTimeFormat(navigator.language, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+    }).format(date);
 }
 
 function isUnsetFormFieldValue(value) {
@@ -95,7 +135,7 @@ function strConcat(items) {
     return items.map(item => String(item)).join('');
 }
 
-function structKey(object, key) {
+function structKey(object, key, default_value = null) {
 	/*
 	Return the key of a struct
 
@@ -134,8 +174,12 @@ function structKey(object, key) {
 			if (current && typeof current === 'object' && keySplit[i] in current) {
 				current = current[keySplit[i]];
 			} else {
-				console.error('lingo function key - key not found in object:', key, 'object:', object);
-				throw new Error(`lingo function key - key '${key}' not found in object`);
+				if (default_value === null) {
+					console.error('lingo function key - key not found in object:', key, 'object:', object);
+					throw new Error(`lingo function key - key '${key}' not found in object`);
+				} else {
+					return default_value;
+				}
 			}
 		} catch (error) {
 			const msg = `lingo function key - count not access: ${keySplit[i]} in ${key}`;
@@ -284,9 +328,14 @@ async function mediaIngestMasterImage(file) {
             return data;
             // You can handle the response data as needed, e.g., update the UI or store the media ID
         } else {
-            const errMsg = `Error ingesting master image: ${response.status} - ${response.statusText}`;
-            const responseText = await response.text();
-            console.error(errMsg, response, responseText);
+			const responseData = await response.json();
+			let errMsg = '';
+			if (responseData.hasOwnProperty('error') && responseData.error.hasOwnProperty('message')) {
+				errMsg = responseData.error.message
+			}else{
+            	errMsg = `Error ingesting master image: ${response.status} - ${response.statusText}`;
+			}
+            console.error(errMsg, response, responseData);
             return {'error': errMsg};
         }
 
@@ -371,6 +420,8 @@ function _mapFunctionArgs(app, expression, ctx) {
     const args = expression.args || {};
     const iterable = lingoExecute(app, args.iterable, ctx);
     const iterableValue = (typeof iterable === 'object' && 'value' in iterable) ? iterable.value : iterable;
+	// console.log('mapFunctionArgs - expression:', expression);
+	// console.log('mapFunctionArgs - iterableValue:', iterableValue);
     const predicate = (item) => {
         const newCtx = ctx ? {...ctx} : {};
         newCtx.self = {item};
@@ -978,7 +1029,8 @@ const lingoFunctionLookup = {
         func: structKey,
         args: {
             'object': {'type': 'struct'},
-            'key': {'type': 'str'}
+            'key': {'type': 'str'},
+			'default_value': {'type': 'any', 'default': null}
         }
     },
     
@@ -1194,6 +1246,12 @@ const lingoFunctionLookup = {
             func: () => new Date(),
             args: {},
             sig: 'kwargs'
+        },
+        'format_friendly': {
+            func: formatFriendlyDateTime,
+            args: {
+                'datetime': {'type': 'any'}
+            }
         }
     },
     
@@ -1915,7 +1973,21 @@ function lingoExecute(app, expression, ctx = null) {
         } else if ('breadcrumbs' in expression) {
             return renderBreadcrumbs(app, expression, ctx);
         } else {
-            result = expression;
+			if('link' in expression && ctx && 'self' in ctx) {
+				// hack to render dynamic links w/ current context
+				// console.log('lingoExecute(link)', expression, ctx);
+				let newExpression = {
+					link: lingoExecute(app, expression.link, ctx)
+				}
+				if('text' in expression) {
+					newExpression.text = lingoExecute(app, expression.text, ctx);
+				}
+				result = newExpression;
+				// console.log('lingoExecute(link) - result', result);
+
+			}else{
+            	result = expression;
+			}
         }
     } else {
         result = expression;
@@ -2370,16 +2442,16 @@ function renderLingo(app, element, ctx = null) {
 
 	TODO: migrate non rich_text behavior to the text element and remove this feature from the lingo element
 	*/
-	console.log('renderLingo()', element, ctx);
+	// console.log('renderLingo()', element, ctx);
 	const result = lingoExecute(app, element.lingo, ctx);
 
 
 	if(element?.rich_text === true) {
-		console.log('renderLingo() - rich text element:', element, 'parsed rich text:', result);
+		// console.log('renderLingo() - rich text element:', element, 'parsed rich text:', result);
 
 		const richText = JSON.parse(result.value);
 
-		console.log('renderLingo() - rich text after parsing:', richText);
+		// console.log('renderLingo() - rich text after parsing:', richText);
 	
 		if(richText.lingo.version === 'rich-text-beta-1'){
 			if(!('block' in richText)){
@@ -2392,7 +2464,7 @@ function renderLingo(app, element, ctx = null) {
 
 	}else{
 
-		console.log('renderLingo()', element, ctx, typeof element.lingo, element.lingo, result);
+		// console.log('renderLingo()', element, ctx, typeof element.lingo, element.lingo, result);
 		
 		const convert = (x) => {
 			if (x instanceof Date) {
@@ -3005,10 +3077,11 @@ function renderArgs(app, expression, ctx = null) {
  * Render self access - equivalent to Python render_self()
  */
 function renderSelf(app, expression, ctx = null) {
+	// console.log('renderSelf()', expression.self, ctx);
     try {
         return ctx.self[expression.self];
     } catch (error) {
-		// console.error('renderSelf - missing self context:', expression, ctx);
+		console.error('renderSelf - missing self context:', expression, ctx);
         throw new Error('self - missing self context');
     }
 }
@@ -4080,8 +4153,8 @@ function renderBreadcrumbs(app, element, ctx = null) {
     if (!Array.isArray(crumbs)) {
         throw new Error('breadcrumbs - breadcrumbs must be a list');
     }
-    if (crumbs.length === 0 || crumbs.length > 4) {
-        throw new Error('breadcrumbs - breadcrumbs list must have 1 to 4 items');
+    if (crumbs.length === 0 || crumbs.length > 6) {
+        throw new Error('breadcrumbs - breadcrumbs list must have 1 to 6 items');
     }
 
     const elements = [{text: ':: '}];
@@ -4202,23 +4275,23 @@ function renderLingoApp(app, container, preserveFocus = false) {
 function createDOMElement(app, element, ctx = null) {
 	// console.debug('createDOMElement()', element);
     if ('heading' in element) {
-        return createHeadingElement(app, element);
+        return createHeadingElement(app, element, ctx);
     } else if ('break' in element) {
-        return createBreakElement(app, element);
+        return createBreakElement(app, element, ctx);
     } else if ('button' in element) {
-        return createButtonElement(app, element);
+        return createButtonElement(app, element, ctx);
     } else if ('input' in element) {
-        return createInputElement(app, element);
+        return createInputElement(app, element, ctx);
     } else if ('link' in element) {
-        return createLinkElement(app, element);
+        return createLinkElement(app, element, ctx);
     } else if ('text' in element) {
-        return createTextElement(app, element);
+        return createTextElement(app, element, ctx);
     } else if ('value' in element) {
-        return createValueElement(app, element);
+        return createValueElement(app, element, ctx);
     } else if ('form' in element) {
-        return createFormElement(app, element);
+        return createFormElement(app, element, ctx);
     } else if ('viewer' in element) {
-        return createViewerElement(app, element);
+        return createViewerElement(app, element, ctx);
     } else if (Array.isArray(element)) {
         // If the element is an array, render each item and wrap in a div
         const container = document.createElement('div');
@@ -4504,7 +4577,7 @@ function createValueElement(app, element, ctx = null) {
                             }
                         }else if('link' in fieldValue){
 							// console.log('createValueElement - LINK', fieldValue);
-                            cellValue = createLinkElement(app, fieldValue);
+                            cellValue = createLinkElement(app, fieldValue, ctx);
                         }else if('button' in fieldValue){
                             cellValue = createButtonElement(app, fieldValue);
                         }else if('text' in fieldValue){
@@ -4512,7 +4585,8 @@ function createValueElement(app, element, ctx = null) {
                         }else if('block' in fieldValue){
                             let blockContainer = [];
                             for(const blockElement of fieldValue.block) {
-                                const domElement = createDOMElement(app, blockElement);
+								// console.log('about to call createDomElement for block element in table cell:', blockElement);
+                                const domElement = createDOMElement(app, blockElement, ctx);
                                 if (domElement) {
                                     blockContainer.push(domElement);
                                 }
@@ -4536,7 +4610,7 @@ function createValueElement(app, element, ctx = null) {
                             });
                         }else if (cellValue.every(item => typeof item === 'object' && item !== null)) {
                             cellValue.forEach(item => {
-                                const domElement = createDOMElement(app, item);
+                                const domElement = createDOMElement(app, item, ctx);
                                 td.appendChild(domElement);
                             });
                         } else {
@@ -4553,10 +4627,10 @@ function createValueElement(app, element, ctx = null) {
                     } else if(typeof cellValue === 'object' && cellValue !== null) {
                         // console.log('createValueElement - evaluating object value for table cell:', cellValue);
                         try {
-                            const result = lingoExecute(app, cellValue);
+                            const result = lingoExecute(app, cellValue, ctx);
                             // console.log('createValueElement - result of evaluating object value for table cell:', result);
                             if(typeof result === 'object' && result !== null) {
-                                td.appendChild(createDOMElement(app, result));
+                                td.appendChild(createDOMElement(app, result, ctx));
                             } else {
                                 td.textContent = String(result);
                             }
@@ -4593,7 +4667,7 @@ function createValueElement(app, element, ctx = null) {
 
             const container = document.createElement(elementType);
             for(const item of element.value) {
-                const itemElement = createDOMElement({spec: {lingo: {version: 'page-beta-1'}}}, item);
+                const itemElement = createDOMElement({spec: {lingo: {version: 'page-beta-1'}}}, item, ctx);
                 if(itemElement) {
                     const li = document.createElement('li');
                     li.appendChild(itemElement);
@@ -4729,6 +4803,7 @@ function createLinkElement(app, element, ctx = null) {
 	let text;
 	//console.log('createLinkElement()', element);
     if (typeof element.link !== 'string') {
+		// console.log('createLinkElement - evaluating link expression:', element.link, ctx);
         link = unwrapValue(lingoExecute(app, element.link, ctx));
     }else{
         link = element.link;
@@ -5552,7 +5627,7 @@ function createFormElement(app, element, ctx = null) {
                     const popupModelElements = renderModel(app, popupModelList);
 
                     popupModelElements.forEach(el => {
-                        const domElement = createDOMElement(app, el);
+                        const domElement = createDOMElement(app, el, ctx);
                         domElement.style.zIndex = 101;
                         popUpContentContainer.appendChild(domElement);
                     });
@@ -5706,7 +5781,7 @@ function createFormElement(app, element, ctx = null) {
                     const popupModelElements = renderModel(app, popupModelList)
 
                     popupModelElements.forEach(el => {
-                        const domElement = createDOMElement(app, el);
+                        const domElement = createDOMElement(app, el, ctx);
                         domElement.style.zIndex = 101;
                         popUpContentContainer.appendChild(domElement);
                     });

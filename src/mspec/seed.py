@@ -70,11 +70,12 @@ def random_word() -> str:
 def random_list_of_words(min:int=1, max:int=5) -> list[str]:
     return [random_word() for _ in range(random.randint(min, max))]
 
-def random_str_rich_text() -> str:
-    color_options = [
+def random_str_rich_text(color_options=None) -> str:
+    all_colors = [
         'red', 'orange', 'yellow', 'green', 'blue', 'indigo',
         'violet', 'pink', 'brown', 'black', 'gray', 'white',
     ]
+    color_options = color_options or all_colors
     num_sentences = random.randint(1, 5)
     blocks = []
 
@@ -176,7 +177,7 @@ def random_user_name(max_length: int=25) -> str:
         random.shuffle(_words)
         name = sep().join(_words)
 
-    return name
+    return name[0:max_length]
 
 def random_thing_name() -> str:
     words = []
@@ -328,7 +329,7 @@ def _seed_foreign_model(ctx, spec: dict, ref_module_name: str, ref_table_name: s
 
 def _create_model(ctx, spec: dict, module: dict, model: dict, _depth: int = 0):
     """Build and POST a single random model. Returns the created model or None on error."""
-    model_class = new_model_class(model, module)
+    model_class = new_model_class(spec, model, module)
     data = {}
     for field_name, field in model['fields'].items():
         snake_name = field['name']['snake_case']

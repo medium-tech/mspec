@@ -41,6 +41,15 @@ modules:
                     require_login: true
                     max_models_per_user: 1
 
+                db:
+                    indexes:
+                        - name: 'idx_social_profile_user_id'
+                          fields: ['user_id']
+                          unique: true
+                        - name: 'idx_social_profile_username'
+                          fields: ['username']
+                          unique: true
+
                 fields:
 
                     user_id:
@@ -126,6 +135,19 @@ modules:
                 auth:
                     require_login: true
 
+                db:
+                    indexes:
+                        - name: 'idx_social_forum_user_id'
+                          fields: ['user_id']
+                    # join aliases are reusable relation definitions for read/list/query calls
+                    joins:
+                        profile:
+                            model_type: 'social.profile'
+                            local_field: 'user_id'
+                            foreign_field: 'user_id'
+                            fields:
+                                - 'username'
+
                 page: 'social-forums.json'
                 instance_page: 'social-forum-instance.json'
 
@@ -152,6 +174,29 @@ modules:
                             - 'Favorite Hiking Trails'
                             - 'Best Coffee Shops in Town'
                             - 'Latest Tech Gadgets'
+                        
+                        validation:
+                            call: 'eq'
+                            args:
+                                a:
+                                    call: 'key'
+                                    args:
+                                        key: 'total'
+                                        default_value: 0
+                                        object:
+                                            call: 'db.query'
+                                            args:
+                                                model_type: 'social.profile'
+                                                where:
+                                                    user_id:
+                                                        eq:
+                                                            call: 'key'
+                                                            args:
+                                                                key: 'id'
+                                                                object:
+                                                                    call: 'auth.current_user'
+                                b: 1
+                        validation_message: 'You must have a profile to create items'
 
                     description:
                         name:
@@ -179,6 +224,22 @@ modules:
 
                 auth:
                     require_login: true
+
+                db:
+                    indexes:
+                        - name: 'idx_social_thread_forum_id'
+                          fields: ['forum_id']
+                        - name: 'idx_social_thread_user_id'
+                          fields: ['user_id']
+                        - name: 'idx_social_thread_main_post_id'
+                          fields: ['main_post_id']
+                    joins:
+                        profile:
+                            model_type: 'social.profile'
+                            local_field: 'user_id'
+                            foreign_field: 'user_id'
+                            fields:
+                                - 'username'
 
                 instance_page: 'social-thread-instance.json'
 
@@ -218,6 +279,28 @@ modules:
                             - 'My favorite PNW hiking trails'
                             - 'Favorite programming languages'
                             - 'Tips for cooking'
+                        validation:
+                            call: 'eq'
+                            args:
+                                a:
+                                    call: 'key'
+                                    args:
+                                        key: 'total'
+                                        default_value: 0
+                                        object:
+                                            call: 'db.query'
+                                            args:
+                                                model_type: 'social.profile'
+                                                where:
+                                                    user_id:
+                                                        eq:
+                                                            call: 'key'
+                                                            args:
+                                                                key: 'id'
+                                                                object:
+                                                                    call: 'auth.current_user'
+                                b: 1
+                        validation_message: 'You must have a profile to create items'
                     
                     main_post_id:
                         name:
@@ -233,15 +316,28 @@ modules:
                             - "2"
                             - "3"
 
-
-
-
             post:
                 name:
                     lower_case: 'post'
 
                 auth:
                     require_login: true
+
+                db:
+                    indexes:
+                        - name: 'idx_social_post_reply_to'
+                          fields: ['reply_to']
+                        - name: 'idx_social_post_user_id'
+                          fields: ['user_id']
+                        - name: 'idx_social_post_forum_id'
+                          fields: ['forum_id']
+                    joins:
+                        profile:
+                            model_type: 'social.profile'
+                            local_field: 'user_id'
+                            foreign_field: 'user_id'
+                            fields:
+                                - 'username'
 
                 fields:
 
@@ -293,11 +389,34 @@ modules:
                         name:
                             lower_case: 'message'
                         type: str
-                        # rich_text: true
+                        rich_text: true
                         examples:
                             - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}] }'
                             - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'
                             - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'
+
+                        validation:
+                            call: 'eq'
+                            args:
+                                a:
+                                    call: 'key'
+                                    args:
+                                        key: 'total'
+                                        default_value: 0
+                                        object:
+                                            call: 'db.query'
+                                            args:
+                                                model_type: 'social.profile'
+                                                where:
+                                                    user_id:
+                                                        eq:
+                                                            call: 'key'
+                                                            args:
+                                                                key: 'id'
+                                                                object:
+                                                                    call: 'auth.current_user'
+                                b: 1
+                        validation_message: 'You must have a profile to create items'
 
                     attachments:
                         name:
@@ -375,6 +494,29 @@ modules:
                             - 'Hiking Trip'
                             - 'Book Club Meeting'
 
+                        validation:
+                            call: 'eq'
+                            args:
+                                a:
+                                    call: 'key'
+                                    args:
+                                        key: 'total'
+                                        default_value: 0
+                                        object:
+                                            call: 'db.query'
+                                            args:
+                                                model_type: 'social.profile'
+                                                where:
+                                                    user_id:
+                                                        eq:
+                                                            call: 'key'
+                                                            args:
+                                                                key: 'id'
+                                                                object:
+                                                                    call: 'auth.current_user'
+                                b: 1
+                        validation_message: 'You must have a profile to create items'
+
                     event_start_time:
                         name:
                             lower_case: 'event start time'
@@ -420,6 +562,16 @@ modules:
                     require_login: true
                     max_models_by_field:
                         post_id: 1 # only allow one reaction per user per post
+
+                db:
+                    indexes:
+                        - name: 'idx_social_reaction_post_id'
+                          fields: ['post_id']
+                        - name: 'idx_social_reaction_user_id_post_id'
+                          fields: ['user_id', 'post_id']
+                          unique: true
+                        - name: 'idx_social_reaction_post_id_reaction_type'
+                          fields: ['post_id', 'reaction_type']
 
                 fields:
 
@@ -661,11 +813,18 @@ modules:
                 name:
                     lower_case: 'get replies for post'
 
-                description: 'Get all replies for a post by post id'
+                description: 'Get all replies for a post by post id, including author username and reaction counts'
                 func:
                     type: struct
-                    value:
-                        replies:
+                    self:
+                        current_user_id:
+                            call: 'key'
+                            args:
+                                key: 'id'
+                                object:
+                                    call: 'auth.current_user'
+                                    args: {}
+                        replies_query:
                             call: 'db.query'
                             args:
                                 model_type: 'social.post'
@@ -673,10 +832,117 @@ modules:
                                     params: { offset: {} }
                                 size:
                                     params: { size: {} }
+                                sort:
+                                    - field: 'date_modified'
+                                      order: 'desc'
                                 where:
                                     reply_to:
                                         eq:
                                             params: { post_id: {} }
+                                include:
+                                    alias: 'profile'
+                                    model_type: 'social.profile'
+                                    local_field: 'user_id'
+                                    foreign_field: 'user_id'
+                                    fields:
+                                        - 'id'
+                                        - 'username'
+                                unique_counts:
+                                    type: list
+                                    value:
+                                        # for each reply row, count reactions where reaction.post_id == reply.id grouped by emoji
+                                        - alias: 'reaction_counts'
+                                          model_type: 'social.reaction'
+                                          source_field: 'id'
+                                          foreign_field: 'post_id'
+                                          group_by: 'reaction_type'
+                    value:
+                        replies:
+                            type: struct
+                            value:
+                                total:
+                                    call: 'key'
+                                    args:
+                                        object:
+                                            self: replies_query
+                                        key: 'total'
+                                items:
+                                    call: 'map'
+                                    args:
+                                        function:
+                                            type: struct
+                                            value:
+                                                id:
+                                                    call: 'key'
+                                                    args:
+                                                        object:
+                                                            self: item
+                                                        key: 'id'
+                                                date_modified:
+                                                    call: 'key'
+                                                    args:
+                                                        object:
+                                                            self: item
+                                                        key: 'date_modified'
+                                                message:
+                                                    call: 'key'
+                                                    args:
+                                                        object:
+                                                            self: item
+                                                        key: 'message'
+                                                profile:
+                                                    type: struct
+                                                    value:
+                                                        id:
+                                                            call: 'key'
+                                                            args:
+                                                                object:
+                                                                    self: item
+                                                                key: 'profile.id'
+                                                                default_value: '-1'
+                                                        username:
+                                                            call: 'key'
+                                                            args:
+                                                                object:
+                                                                    self: item
+                                                                key: 'profile.username'
+                                                                default_value: 'anonymous'
+                                                reaction_counts:
+                                                    call: 'key'
+                                                    args:
+                                                        object:
+                                                            self: item
+                                                        key: 'reaction_counts'
+                                                        default_value: []
+                                                user_reaction:
+                                                    call: 'key'
+                                                    args:
+                                                        object:
+                                                            call: 'db.query'
+                                                            args:
+                                                                model_type: 'social.reaction'
+                                                                size: 1
+                                                                where:
+                                                                    type: struct
+                                                                    value:
+                                                                        user_id:
+                                                                            eq:
+                                                                                self: current_user_id
+                                                                        post_id:
+                                                                            eq:
+                                                                                call: 'key'
+                                                                                args:
+                                                                                    object:
+                                                                                        self: item
+                                                                                    key: 'id'
+                                                        key: 'items.0.reaction_type'
+                                                        default_value: ''
+                                        iterable:
+                                            call: 'key'
+                                            args:
+                                                object:
+                                                    self: replies_query
+                                                key: 'items'
 
                 params:
                     post_id:
@@ -789,6 +1055,7 @@ modules:
                         name:
                             lower_case: 'message'
                         type: str
+                        rich_text: true
                         examples:
                             - "Welcome to the general discussion forum!"
                             - "Here are the latest announcements."
@@ -835,7 +1102,7 @@ modules:
             get_thread_and_post:
                 name:
                     lower_case: 'get thread and post'
-                description: 'Get a thread and its main post by thread id'
+                description: 'Get a thread and its main post by thread id, including owner username and reaction counts'
                 func:
                     type: struct
                     self:
@@ -845,6 +1112,13 @@ modules:
                                 model_id:
                                     params: { thread_id: {} }
                                 model_type: 'social.thread'
+                                include:
+                                    alias: 'profile'
+                                    model_type: 'social.profile'
+                                    local_field: 'user_id'
+                                    foreign_field: 'user_id'
+                                    fields:
+                                        - 'username'
                     value:
                         thread: {self: thread}
                         main_post:
@@ -857,6 +1131,56 @@ modules:
                                         object:
                                             self: thread
                                 model_type: 'social.post'
+                                include:
+                                    alias: 'profile'
+                                    model_type: 'social.profile'
+                                    local_field: 'user_id'
+                                    foreign_field: 'user_id'
+                                    fields:
+                                        - 'id'
+                                        - 'username'
+                        main_post_reaction_counts:
+                            call: 'db.unique_counts'
+                            args:
+                                model_type: 'social.reaction'
+                                group_by: 'reaction_type'
+                                filters:
+                                    type: struct
+                                    value:
+                                        post_id:
+                                            call: 'key'
+                                            args:
+                                                key: 'main_post_id'
+                                                object:
+                                                    self: thread
+                        current_user_main_post_reaction:
+                            call: 'key'
+                            args:
+                                object:
+                                    call: 'db.query'
+                                    args:
+                                        model_type: 'social.reaction'
+                                        size: 1
+                                        where:
+                                            type: struct
+                                            value:
+                                                post_id:
+                                                    eq:
+                                                        call: 'key'
+                                                        args:
+                                                            key: 'main_post_id'
+                                                            object:
+                                                                self: thread
+                                                user_id:
+                                                    eq:
+                                                        call: 'key'
+                                                        args:
+                                                            key: 'id'
+                                                            object:
+                                                                call: 'auth.current_user'
+                                                                args: {}
+                                key: 'items.0.reaction_type'
+                                default_value: ''
                         forum:
                             branch:
                                 - if:
@@ -913,3 +1237,287 @@ modules:
                             name:
                                 lower_case: 'main post'
                             type: struct
+                        main_post_reaction_counts:
+                            name:
+                                lower_case: 'main post reaction counts'
+                            type: list
+                            element_type: struct
+                        current_user_main_post_reaction:
+                            name:
+                                lower_case: 'current user main post reaction'
+                            type: str
+                        forum:
+                            name:
+                                lower_case: 'forum'
+                            type: struct
+
+            react_to_thread_main_post:
+                name:
+                    lower_case: 'react to thread main post'
+                description: 'Create or update current user reaction for the thread main post'
+                func:
+                    type: struct
+                    self:
+                        thread:
+                            call: 'db.read'
+                            args:
+                                model_id:
+                                    params: { thread_id: {} }
+                                model_type: 'social.thread'
+                        saved_reaction:
+                            call: 'db.upsert'
+                            args:
+                                model_type: 'social.reaction'
+                                conflict_fields: ['user_id', 'post_id']
+                                data:
+                                    user_id:
+                                        call: 'key'
+                                        args:
+                                            key: 'id'
+                                            object:
+                                                call: 'auth.current_user'
+                                                args: {}
+                                    post_id:
+                                        call: 'key'
+                                        args:
+                                            key: 'main_post_id'
+                                            object: { self: thread }
+                                    reaction_type:
+                                        params: { reaction_type: {} }
+                    value:
+                        acknowledged: true
+                        message:
+                            call: 'concat'
+                            args:
+                                items:
+                                    - 'Reaction '
+                                    - { params: { reaction_type: {} } }
+                                    - ' to thread saved'
+                params:
+                    thread_id:
+                        name:
+                            lower_case: 'thread id'
+                        type: foreign_key
+                        references:
+                            module: 'social'
+                            table: 'thread'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+                    reaction_type:
+                        name:
+                            lower_case: 'reaction type'
+                        type: str
+                        enum:
+                            - '🙂'
+                            - '❤️'
+                            - '😂'
+                            - '👍'
+                            - '👎'
+                            - '😢'
+                            - '😡'
+                            - '😬'
+                            - '🥱'
+                            - '😮'
+                            - '🤔'
+                        examples:
+                            - '🙂'
+                            - '❤️'
+                            - '😂'
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: 'acknowledged'
+                            type: bool
+                        message:
+                            name:
+                                lower_case: 'message'
+                            type: str
+
+            remove_reaction_from_thread_main_post:
+                name:
+                    lower_case: 'remove reaction from thread main post'
+                description: 'Remove current user reaction for the thread main post'
+                func:
+                    type: struct
+                    self:
+                        thread:
+                            call: 'db.read'
+                            args:
+                                model_id:
+                                    params: { thread_id: {} }
+                                model_type: 'social.thread'
+                    value:
+                        call: 'db.delete_where'
+                        args:
+                            model_type: 'social.reaction'
+                            message: 'Reaction removed from thread'
+                            where:
+                                user_id:
+                                    eq:
+                                        call: 'key'
+                                        args:
+                                            key: 'id'
+                                            object:
+                                                call: 'auth.current_user'
+                                                args: {}
+                                post_id:
+                                    eq:
+                                        call: 'key'
+                                        args:
+                                            key: 'main_post_id'
+                                            object: { self: thread }
+                params:
+                    thread_id:
+                        name:
+                            lower_case: 'thread id'
+                        type: foreign_key
+                        references:
+                            module: 'social'
+                            table: 'thread'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: 'acknowledged'
+                            type: bool
+                        message:
+                            name:
+                                lower_case: 'message'
+                            type: str
+
+            react_to_reply:
+                name:
+                    lower_case: 'react to reply'
+                description: 'Create or update current user reaction for a reply'
+                func:
+                    type: struct
+                    self:
+                        saved_reaction:
+                            call: 'db.upsert'
+                            args:
+                                model_type: 'social.reaction'
+                                conflict_fields: ['user_id', 'post_id']
+                                data:
+                                    user_id:
+                                        call: 'key'
+                                        args:
+                                            key: 'id'
+                                            object:
+                                                call: 'auth.current_user'
+                                                args: {}
+                                    post_id:
+                                        params: { post_id: {} }
+                                    reaction_type:
+                                        params: { reaction_type: {} }
+                    value:
+                        acknowledged: true
+                        message:
+                            call: 'concat'
+                            args:
+                                items:
+                                    - 'Reaction '
+                                    - { params: { reaction_type: {} } }
+                                    - ' to reply saved'
+                params:
+                    post_id:
+                        name:
+                            lower_case: 'post id'
+                        type: foreign_key
+                        references:
+                            module: 'social'
+                            table: 'post'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+                    reaction_type:
+                        name:
+                            lower_case: 'reaction type'
+                        type: str
+                        enum:
+                            - '🙂'
+                            - '❤️'
+                            - '😂'
+                            - '👍'
+                            - '👎'
+                            - '😢'
+                            - '😡'
+                            - '😬'
+                            - '🥱'
+                            - '😮'
+                            - '🤔'
+                        examples:
+                            - '🙂'
+                            - '❤️'
+                            - '😂'
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: 'acknowledged'
+                            type: bool
+                        message:
+                            name:
+                                lower_case: 'message'
+                            type: str
+
+            remove_reaction_from_reply:
+                name:
+                    lower_case: 'remove reaction from reply'
+                description: 'Remove current user reaction for a reply'
+                func:
+                    type: struct
+                    value:
+                        call: 'db.delete_where'
+                        args:
+                            model_type: 'social.reaction'
+                            message: 'Reaction removed from reply'
+                            where:
+                                user_id:
+                                    eq:
+                                        call: 'key'
+                                        args:
+                                            key: 'id'
+                                            object:
+                                                call: 'auth.current_user'
+                                                args: {}
+                                post_id:
+                                    eq:
+                                        params: { post_id: {} }
+                params:
+                    post_id:
+                        name:
+                            lower_case: 'post id'
+                        type: foreign_key
+                        references:
+                            module: 'social'
+                            table: 'post'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: 'acknowledged'
+                            type: bool
+                        message:
+                            name:
+                                lower_case: 'message'
+                            type: str
