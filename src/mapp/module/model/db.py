@@ -132,7 +132,7 @@ def db_model_create(ctx:MappContext, model_class: type, obj: object) -> object:
     # init #
 
     _validate_auto_timestamp_fields_not_set(obj)
-    validate_model(model_class, obj)
+    validate_model(model_class, obj, ctx)
     
     if obj.id is not None:
         raise ValueError('id must be null to create a new item')
@@ -307,7 +307,7 @@ def db_model_update(ctx:MappContext, model_class: type, obj: object):
         raise MappError('MODEL_ID_NOT_PROVIDED', 'id must be provided to update an item')
 
     _validate_auto_timestamp_fields_not_set(obj)
-    validate_model(model_class, obj)
+    validate_model(model_class, obj, ctx)
 
     model_spec = model_class._model_spec
     model_snake_case = model_spec['name']['snake_case']

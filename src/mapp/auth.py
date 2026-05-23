@@ -370,7 +370,16 @@ def current_user(ctx: MappContext) -> dict:
             email: str - The email of the current user.
             number_of_sessions: int - The number of active sessions for the current user.
     """
-    access_token = ctx.current_access_token()
+    try:
+        get_access_token = ctx.current_access_token
+    except AttributeError:
+        try:
+            get_access_token = ctx['current_access_token']
+        except KeyError:
+            ctx.log('Environment config error, no method to get current access token')
+            raise MappError('ENV_CONFIG_ERROR', 'Environment config error')
+            
+    access_token = get_access_token()
     
     if access_token is None or access_token == '':
         ctx.log('Not logged in - (a) - no access token found')

@@ -855,9 +855,9 @@ class TestLingoDbFunctions(unittest.TestCase):
 
         module_spec = _make_module_spec({'post': post_spec, 'profile': profile_spec, 'reaction': reaction_spec})
 
-        cls.post_class = new_model_class(post_spec, module_spec)
-        cls.profile_class = new_model_class(profile_spec, module_spec)
-        cls.reaction_class = new_model_class(reaction_spec, module_spec)
+        cls.post_class = new_model_class({}, post_spec, module_spec)
+        cls.profile_class = new_model_class({}, profile_spec, module_spec)
+        cls.reaction_class = new_model_class({}, reaction_spec, module_spec)
         cls.module_spec = module_spec
 
         cls.lingo_spec = {

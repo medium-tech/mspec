@@ -329,7 +329,7 @@ def _seed_foreign_model(ctx, spec: dict, ref_module_name: str, ref_table_name: s
 
 def _create_model(ctx, spec: dict, module: dict, model: dict, _depth: int = 0):
     """Build and POST a single random model. Returns the created model or None on error."""
-    model_class = new_model_class(model, module)
+    model_class = new_model_class(spec, model, module)
     data = {}
     for field_name, field in model['fields'].items():
         snake_name = field['name']['snake_case']

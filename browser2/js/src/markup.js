@@ -328,9 +328,14 @@ async function mediaIngestMasterImage(file) {
             return data;
             // You can handle the response data as needed, e.g., update the UI or store the media ID
         } else {
-            const errMsg = `Error ingesting master image: ${response.status} - ${response.statusText}`;
-            const responseText = await response.text();
-            console.error(errMsg, response, responseText);
+			const responseData = await response.json();
+			let errMsg = '';
+			if (responseData.hasOwnProperty('error') && responseData.error.hasOwnProperty('message')) {
+				errMsg = responseData.error.message
+			}else{
+            	errMsg = `Error ingesting master image: ${response.status} - ${response.statusText}`;
+			}
+            console.error(errMsg, response, responseData);
             return {'error': errMsg};
         }
 

@@ -388,9 +388,6 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
                     
                 if 'validation' in field:
                     
-                    if field_type != 'str':
-                        raise ValueError(f'only str fields can define validation, field {field_name} in model {model_path} has type {field_type}')
-                    
                     validation = field['validation']
                     if not isinstance(validation, dict):
                         raise ValueError(f'validation for field {field_name} in model {model_path} must be an object')

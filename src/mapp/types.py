@@ -233,7 +233,7 @@ class ModelListResult:
     items: list
     total: int
 
-def new_model_class(model_spec:dict, module_spec:Optional[dict]=None) -> type:
+def new_model_class(app_spec:dict, model_spec:dict, module_spec:Optional[dict]=None) -> type:
     """
     Dynamically creates a model class based on the provided model specification.
 
@@ -256,6 +256,10 @@ def new_model_class(model_spec:dict, module_spec:Optional[dict]=None) -> type:
     # copy because adding validation_callable below makes this
     # not json serializable
     _model_spec = deepcopy(model_spec)
+    # if 'fields' not in _model_spec:
+    #     print(f'WARNING: Model "{class_name}" is missing "fields" definition in its specification.')
+    #     print(str(_model_spec)[0:250] + '...') # print the spec for debugging, truncating if it's too long
+    
     
     for field in _model_spec['fields'].values():
 
@@ -268,12 +272,32 @@ def new_model_class(model_spec:dict, module_spec:Optional[dict]=None) -> type:
             # create validation callable #
 
             lingo_app = LingoApp(
-                {},
+                deepcopy(app_spec),
                 dict(),
                 dict(),
                 list()
             )
-            field['validation_callable'] = lambda value: unwrap_primitive(lingo_execute(lingo_app, deepcopy(validation), {'self': {'value': value}}))
+            def validation_callable(value, ctx):
+                if ctx is None:
+                    validate_ctx = {'self': {'value': value}}
+                elif isinstance(value, dict):
+                    validate_ctx = deepcopy(ctx)
+                    validate_ctx['self'] = {'value': value}
+                else:
+                    from mapp.context import MappContext
+                    validate_ctx = MappContext(
+                        server_port=ctx.server_port,
+                        client=ctx.client,
+                        db=ctx.db,
+                        log=ctx.log,
+                        current_access_token=ctx.current_access_token,
+                        self=deepcopy(ctx.self)
+                    )
+                    validate_ctx.self['value'] = value
+
+                return unwrap_primitive(lingo_execute(lingo_app, deepcopy(validation), validate_ctx))
+
+            field['validation_callable'] = validation_callable
 
     fields.extend(MODEL_TIMESTAMP_FIELDS)
     
@@ -623,14 +647,14 @@ def get_python_type_for_field(field_type:str) -> type:
         case _:
             raise ValueError(f'Unsupported field type: {field_type}')
 
-def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
+def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str, ctx=None) -> object:
     """
     Validates a model instance against its model class specification.
 
     Args:
         obj_class (type): The obj class to validate against.
         obj_instance (object): The obj instance to validate.
-        
+        ctx (dict, optional): The context for validation, if any.
         
     Returns:
         The obj instance
@@ -701,7 +725,7 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
 
                 if 'validation_callable' in field:
                     try:
-                        result = field['validation_callable'](value)
+                        result = field['validation_callable'](value, ctx)
                         if result is not True:
                             try:
                                 errors[field_name] = f'Field "{field_name}" is invalid: ' + field['validation_message']
@@ -768,21 +792,23 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
     
     return obj_instance
 
-def validate_model(model_class:type, model_instance:object) -> object:
+def validate_model(model_class:type, model_instance:object, ctx=None) -> object:
     return _validate_obj(
         model_class._model_spec['fields'], 
         model_instance,
-        f'Model Validation failed for: {model_class._model_spec["name"]["pascal_case"]}'
+        f'Model Validation failed for: {model_class._model_spec["name"]["pascal_case"]}',
+        ctx=ctx
     )
 
-def validate_op_params(op_class:type, op_params_instance:object) -> object:
+def validate_op_params(op_class:type, op_params_instance:object, ctx=None) -> object:
     return _validate_obj(
         op_class._op_spec['params'], 
         op_params_instance,
-        f'Op Params Validation failed for: {op_class._op_spec["name"]["pascal_case"]}'
+        f'Op Params Validation failed for: {op_class._op_spec["name"]["pascal_case"]}',
+        ctx=ctx
     )
 
-def validate_op_output(op_class:type, op_output_instance:object) -> object:
+def validate_op_output(op_class:type, op_output_instance:object, ctx=None) -> object:
     try:
         definition = {'result': op_class._op_spec['result']}
     except KeyError:
@@ -791,7 +817,8 @@ def validate_op_output(op_class:type, op_output_instance:object) -> object:
     return _validate_obj(
         definition, 
         op_output_instance,
-        f'Op {op_class._op_spec["name"]["pascal_case"]} returned an invalid output'
+        f'Op {op_class._op_spec["name"]["pascal_case"]} returned an invalid output',
+        ctx=ctx
     )
 
 #
@@ -978,7 +1005,7 @@ def redact_secure_fields(spec:dict, obj:object) -> object:
 
     for field_name, field in spec.items():
 
-        if field['type'] == 'struct':
+        if field['type'] == 'struct' and 'fields' in field:
             nested_spec = field['fields']
             nested_obj = getattr(obj, field_name)
             replacements[field_name] = redact_secure_fields(nested_spec, nested_obj)

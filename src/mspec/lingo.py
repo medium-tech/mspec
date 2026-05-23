@@ -421,7 +421,7 @@ def _get_model_class_from_type(app:LingoApp, model_type:str) -> type:
         model_spec = module_spec['models'][model_key]
     except KeyError:
         raise ValueError(f'db - model not found: {model_key} in module {module_key}')
-    return new_model_class(model_spec, module_spec)
+    return new_model_class(app.spec, model_spec, module_spec)
 
 def _resolve_expression_value(app:LingoApp, expression: Any, ctx:Optional[dict]=None) -> Any:
     if isinstance(expression, dict) and not ('type' in expression and 'value' in expression):
@@ -933,6 +933,7 @@ def struct_key(object:dict, key_name:str, default_value:Any=None) -> Any:
                 if default_value is not None:
                     return default_value
                 else:
+                    print('STRUCT - MISSING KEY:', key_name, object)
                     raise ValueError(f'struct_key - key not found in struct: {key_name} (missing: {key})')
         elif isinstance(current, list):
             try:
@@ -1722,7 +1723,7 @@ def render_value(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
                 if isinstance(field_value, dict):
                     try:
                         result_struct[field_name] = lingo_execute(app, field_value, ctx)
-                    except NotFoundError as e:
+                    except (NotFoundError, MappValidationError) as e:
                         raise e
                     except Exception as e:
                         raise ValueError(f'value - error processing struct field {field_name}') from e
