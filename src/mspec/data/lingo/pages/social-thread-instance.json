@@ -1274,29 +1274,18 @@
                     "params": {
                         "module_name": {}
                     }
-                },
-                "forum",
-                {
-                    "call": "key",
-                    "args": {
-                        "object": {
-                            "state": {
-                                "forum": {}
-                            }
-                        },
-                        "key": "id"
-                    }
                 }
             ]
         },
+		{
+			"text": " :: "
+		},
+		{
+			"link": "/social/forum",
+			"text": "forums"
+		},
         {
-            "break": 1
-        },
-        {
-            "text": "forum: ",
-            "style": {
-                "bold": true
-            }
+            "text": " :: "
         },
         {
             "link": {
@@ -1329,12 +1318,9 @@
         {
             "break": 1
         },
-        {
-            "text": "created by: ",
-            "style": {
-                "bold": true
-            }
-        },
+		{
+			"text": " \u25cf "
+		},
         {
             "link": {
                 "call": "concat",
@@ -1378,13 +1364,7 @@
             }
         },
         {
-            "break": 1
-        },
-        {
-            "text": "last modified: ",
-            "style": {
-                "bold": true
-            }
+            "text": " \u25cf "
         },
         {
             "lingo": {
@@ -1405,6 +1385,9 @@
                 }
             }
         },
+		{
+			"text": " \u25cf "
+		},
         {
             "break": 1
         },
@@ -1751,6 +1734,9 @@
                                                     "value": {
                                                         "reply": {
                                                             "block": [
+																{
+                                                                    "text": " \u25cf "
+                                                                },
                                                                 {
                                                                     "link": {
                                                                         "call": "concat",
@@ -1790,7 +1776,7 @@
                                                                     }
                                                                 },
                                                                 {
-                                                                    "text": " "
+                                                                    "text": " \u25cf "
                                                                 },
                                                                 {
                                                                     "lingo": {
@@ -1808,6 +1794,9 @@
                                                                             }
                                                                         }
                                                                     }
+                                                                },
+																{
+                                                                    "text": " \u25cf "
                                                                 },
                                                                 {
                                                                     "break": 1

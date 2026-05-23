@@ -575,20 +575,17 @@
                     "params": {
                         "module_name": {}
                     }
-                },
-                {
-                    "params": {
-                        "model_name": {}
-                    }
-                },
-                {
-                    "params": {
-                        "model_id": {}
-                    }
                 }
             ]
         },
-		{"break": 1},
+		{"text": " :: "},
+		{
+			"link": "/social/forum",
+			"text": "forums"
+		},
+		{
+			"break": 1
+		},
         {
             "lingo": { "state": {"forum": {"description": {}}}},
 			"rich_text": true
