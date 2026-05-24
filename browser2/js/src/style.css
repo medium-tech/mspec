@@ -107,16 +107,24 @@ table td {
     vertical-align: middle;
 }
 
+.form-container-inline {
+	display: inline-block;
+}
+
 /* Form table styles */
-.form-table {
+.form-table, .form-table-inline {
     border: none;
     border-collapse: collapse;
 }
 
-.form-table td {
+.form-table td, .form-table-inline td {
     border: none;
     padding: 5px 10px;
     vertical-align: top;
+}
+
+.form-table-inline td {
+	padding: 1px 1px;
 }
 
 .form-description {

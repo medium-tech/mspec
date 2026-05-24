@@ -2748,7 +2748,7 @@ function renderOp(app, expression, ctx = null) {
         const showSubmitButton = display.hasOwnProperty('show_submit_button') ? unwrapValue(lingoExecute(app, display.show_submit_button, ctx)) : true;
         const showStatusDisplay = display.hasOwnProperty('show_status_display') ? unwrapValue(lingoExecute(app, display.show_status_display, ctx)) : true;
 		const friendlyStatus = display.hasOwnProperty('friendly_status') ? unwrapValue(lingoExecute(app, display.friendly_status, ctx)) : false;
-        
+        const inLine = display.hasOwnProperty('in_line') ? unwrapValue(lingoExecute(app, display.in_line, ctx)) : false;
         // render op.auto_submit if provided, otherwise default to false
         let autoSubmit;
         if (expression.op.hasOwnProperty('auto_submit')) {
@@ -2852,6 +2852,7 @@ function renderOp(app, expression, ctx = null) {
 				show_submit_button: showSubmitButton,
 				show_status_display: showStatusDisplay,
 				friendly_status: friendlyStatus,
+				in_line: inLine,
                 action: {
                     set: {state: {[stateField]: listIndex !== null ? {_list_index: listIndex} : {}}},
                     to: {
@@ -5182,12 +5183,27 @@ function createRichTextInput(formData, fieldKey, initialValue) {
  */
 function createFormElement(app, element, ctx = null) {
 
-    // console.log('createFormElement()', app, element);
+	let inLine;
+	if(element.form.hasOwnProperty('in_line')) {
+		inLine = element.form.in_line;
+	}else{
+		inLine = false;
+	}
+
+	console.log(`createFormElement() in line: ${inLine}`, app, element);
 
     // init //
     const formContainer = document.createElement('div');
+	// formContainer.className = inLine ? 'form-container-inline' : 'form-container';
+	let tableClassName;
+	if(inLine) {
+		tableClassName = 'form-table-inline';
+		formContainer.style.display = 'inline-block';
+	}else{
+		tableClassName = 'form-table';
+	}
     const table = document.createElement('table');
-    table.className = 'form-table';
+    table.className = tableClassName;
 
     if (!element.form.hasOwnProperty('fields')) {
         throw new Error('createFormElement - missing form fields definition');

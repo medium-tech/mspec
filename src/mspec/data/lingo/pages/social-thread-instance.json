@@ -1464,7 +1464,8 @@
                 },
                 "display": {
                     "friendly_status": true,
-                    "show_result": false
+                    "show_result": false,
+					"in_line": true
                 },
                 "interactive": true,
                 "http": "/api/social/react-to-thread-main-post",
@@ -1473,10 +1474,38 @@
                         "params": {
                             "model_id": {}
                         }
-                    }
+                    },
+					"reaction_type": "👍"
                 },
                 "definition": "social.react_to_thread_main_post",
-                "submit_button_text": "react",
+                "submit_button_text": "👍",
+                "instruction": ""
+            }
+        },
+		{
+            "op": {
+                "bind": {
+                    "state": {
+                        "main_post_reaction_op_state": {}
+                    }
+                },
+                "display": {
+                    "friendly_status": true,
+                    "show_result": false,
+					"in_line": true
+                },
+                "interactive": true,
+                "http": "/api/social/react-to-thread-main-post",
+                "params": {
+                    "thread_id": {
+                        "params": {
+                            "model_id": {}
+                        }
+                    },
+					"reaction_type": "👎"
+                },
+                "definition": "social.react_to_thread_main_post",
+                "submit_button_text": "👎",
                 "instruction": ""
             }
         },
