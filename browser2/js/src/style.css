@@ -112,9 +112,16 @@ table td {
 }
 
 /* Form table styles */
-.form-table, .form-table-inline {
+.form-table {
     border: none;
     border-collapse: collapse;
+}
+
+.form-table-inline {
+    border: none;
+    border-collapse: collapse;
+	margin-top: 0px;
+	padding-top: 0px;
 }
 
 .form-table td, .form-table-inline td {
@@ -125,6 +132,7 @@ table td {
 
 .form-table-inline td {
 	padding: 1px 1px;
+	vertical-align: middle;
 }
 
 .form-description {

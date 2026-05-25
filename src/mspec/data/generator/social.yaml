@@ -1321,10 +1321,14 @@ modules:
                             call: 'concat'
                             args:
                                 items:
-                                    - 'Reaction '
-                                    - { params: { reaction_type: {} } }
-                                    - ' to thread saved'
-                                    - { self: result }
+                                    - branch:
+                                        - if:
+                                            call: 'eq'
+                                            args:
+                                                a: { params: { reaction_type: {} } }
+                                                b: ''
+                                          then: 'Reaction removed'
+                                        - else: 'Reaction added'
                 params:
                     thread_id:
                         name:

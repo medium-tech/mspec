@@ -918,12 +918,35 @@
                 }
             }
         },
+		"main_post_user_reaction_local": {
+            "type": "str",
+			"description": "After changing the reaction, this variable will contain the new reaction. this enables to UI to have the new reaction w/o making another call to the server",
+			"default": "initial"
+        },
         "main_post_user_reaction": {
             "type": "str",
             "calc": {
                 "branch": [
+					{
+						"if": {
+							"call": "ne",
+							"args": {
+								"a": {
+									"state": {
+										"main_post_user_reaction_local": {}
+									}
+								},
+								"b": "initial"
+							}
+						},
+						"then": {
+							"state": {
+								"main_post_user_reaction_local": {}
+							}
+						}
+					},
                     {
-                        "if": {
+                        "elif": {
                             "call": "eq",
                             "args": {
                                 "a": {
@@ -1477,11 +1500,14 @@
             "break": 1
         },
         {
-            "text": ":: reactions",
+            "text": ":: reactions ",
             "style": {
                 "bold": true
             }
         },
+		{
+			"state": {"main_post_reaction_counts_string": {}}
+		},
 		{
             "branch": [
                 {
@@ -1517,14 +1543,6 @@
                 }
             ]
         },
-		{"break": 1},
-        {
-            "lingo": {
-                "state": {
-                    "main_post_reaction_counts_string": {}
-                }
-            }
-        },
         {
             "break": 1
         },
@@ -1540,7 +1558,8 @@
 						"display": {
 							"friendly_status": true,
 							"show_result": false,
-							"in_line": true
+							"in_line": true,
+							"show_op_status_display": false
 						},
 						"interactive": true,
 						"http": "/api/social/react-to-thread-main-post",
@@ -1554,7 +1573,15 @@
 						},
 						"definition": "social.react_to_thread_main_post",
 						"submit_button_text": "👍",
-						"instruction": ""
+						"instruction": "",
+						"on_success": {
+							"set": {
+								"state": {
+									"main_post_user_reaction_local": {}
+								}
+							},
+							"to": "👍"
+						}
 					}
 				},
 				{
@@ -1567,7 +1594,8 @@
 						"display": {
 							"friendly_status": true,
 							"show_result": false,
-							"in_line": true
+							"in_line": true,
+							"show_op_status_display": false
 						},
 						"interactive": true,
 						"http": "/api/social/react-to-thread-main-post",
@@ -1581,7 +1609,15 @@
 						},
 						"definition": "social.react_to_thread_main_post",
 						"submit_button_text": "❤️",
-						"instruction": ""
+						"instruction": "",
+						"on_success": {
+							"set": {
+								"state": {
+									"main_post_user_reaction_local": {}
+								}
+							},
+							"to": "❤️"
+						}
 					}
 				},
 				{
@@ -1594,7 +1630,8 @@
 						"display": {
 							"friendly_status": true,
 							"show_result": false,
-							"in_line": true
+							"in_line": true,
+							"show_op_status_display": false
 						},
 						"interactive": true,
 						"http": "/api/social/react-to-thread-main-post",
@@ -1608,7 +1645,15 @@
 						},
 						"definition": "social.react_to_thread_main_post",
 						"submit_button_text": "😂",
-						"instruction": ""
+						"instruction": "",
+						"on_success": {
+							"set": {
+								"state": {
+									"main_post_user_reaction_local": {}
+								}
+							},
+							"to": "😂"
+						}
 					}
 				},
 				{
@@ -1621,7 +1666,8 @@
 						"display": {
 							"friendly_status": true,
 							"show_result": false,
-							"in_line": true
+							"in_line": true,
+							"show_op_status_display": false
 						},
 						"interactive": true,
 						"http": "/api/social/react-to-thread-main-post",
@@ -1635,7 +1681,15 @@
 						},
 						"definition": "social.react_to_thread_main_post",
 						"submit_button_text": "🔥",
-						"instruction": ""
+						"instruction": "",
+						"on_success": {
+							"set": {
+								"state": {
+									"main_post_user_reaction_local": {}
+								}
+							},
+							"to": "🔥"
+						}
 					}
 				},
 				{
@@ -1648,7 +1702,8 @@
 						"display": {
 							"friendly_status": true,
 							"show_result": false,
-							"in_line": true
+							"in_line": true,
+							"show_op_status_display": false
 						},
 						"interactive": true,
 						"http": "/api/social/react-to-thread-main-post",
@@ -1662,7 +1717,15 @@
 						},
 						"definition": "social.react_to_thread_main_post",
 						"submit_button_text": "😢",
-						"instruction": ""
+						"instruction": "",
+						"on_success": {
+							"set": {
+								"state": {
+									"main_post_user_reaction_local": {}
+								}
+							},
+							"to": "😢"
+						}
 					}
 				},
 				{
@@ -1675,7 +1738,8 @@
 						"display": {
 							"friendly_status": true,
 							"show_result": false,
-							"in_line": true
+							"in_line": true,
+							"show_op_status_display": false
 						},
 						"interactive": true,
 						"http": "/api/social/react-to-thread-main-post",
@@ -1689,35 +1753,71 @@
 						},
 						"definition": "social.react_to_thread_main_post",
 						"submit_button_text": "👎",
-						"instruction": ""
+						"instruction": "",
+						"on_success": {
+							"set": {
+								"state": {
+									"main_post_user_reaction_local": {}
+								}
+							},
+							"to": "👎"
+						}
 					}
 				},
 				{
-					"op": {
-						"bind": {
-							"state": {
-								"main_post_reaction_delete_state": {}
-							}
-						},
-						"display": {
-							"friendly_status": true,
-							"show_result": false,
-							"in_line": true
-						},
-						"interactive": true,
-						"http": "/api/social/react-to-thread-main-post",
-						"params": {
-							"thread_id": {
-								"params": {
-									"model_id": {}
+					"branch": [
+						{
+							"if": {
+								"call": "ne",
+								"args": {
+									"a": {
+										"state": {
+											"main_post_user_reaction": {}
+										}
+									},
+									"b": ""
 								}
 							},
-							"reaction_type": ""
+							"then": {
+								"op": {
+									"bind": {
+										"state": {
+											"main_post_reaction_delete_state": {}
+										}
+									},
+									"display": {
+										"friendly_status": true,
+										"show_result": false,
+										"in_line": true,
+										"show_op_status_display": false
+									},
+									"interactive": true,
+									"http": "/api/social/react-to-thread-main-post",
+									"params": {
+										"thread_id": {
+											"params": {
+												"model_id": {}
+											}
+										},
+										"reaction_type": ""
+									},
+									"definition": "social.react_to_thread_main_post",
+									"submit_button_text": "remove",
+									"on_success": {
+										"set": {
+											"state": {
+												"main_post_user_reaction_local": {}
+											}
+										},
+										"to": ""
+									}
+								}
+							}
 						},
-						"definition": "social.react_to_thread_main_post",
-						"submit_button_text": "remove",
-						"instruction": ""
-					}
+						{
+							"else": ""
+						}
+					]
 				}
             ]
         },
