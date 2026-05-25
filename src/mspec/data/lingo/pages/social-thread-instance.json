@@ -1413,9 +1413,6 @@
         {
             "break": 1
         },
-		{
-			"text": " \u25cf "
-		},
         {
             "link": {
                 "call": "concat",
@@ -1480,9 +1477,6 @@
                 }
             }
         },
-		{
-			"text": " \u25cf "
-		},
         {
             "break": 1
         },
@@ -2075,9 +2069,6 @@
                                                     "value": {
                                                         "reply": {
                                                             "block": [
-																{
-                                                                    "text": " \u25cf "
-                                                                },
                                                                 {
                                                                     "link": {
                                                                         "call": "concat",
@@ -2135,9 +2126,6 @@
                                                                             }
                                                                         }
                                                                     }
-                                                                },
-																{
-                                                                    "text": " \u25cf "
                                                                 },
                                                                 {
                                                                     "break": 1
