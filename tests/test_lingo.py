@@ -381,6 +381,32 @@ class TestLingoPages(unittest.TestCase):
         )
         self.assertIn('user_reaction', mapped_reply_fields)
 
+    def test_social_thread_reply_reaction_buttons_use_fixed_emojis(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        reply_reaction_ops = []
+
+        def collect_reply_reaction_ops(node):
+            if isinstance(node, list):
+                for item in node:
+                    collect_reply_reaction_ops(item)
+                return
+
+            if isinstance(node, dict):
+                op_spec = node.get('op')
+                if isinstance(op_spec, dict) and op_spec.get('definition') == 'social.react_to_reply':
+                    reply_reaction_ops.append(op_spec)
+
+                for value in node.values():
+                    collect_reply_reaction_ops(value)
+
+        collect_reply_reaction_ops(thread_spec['output'])
+
+        expected_emojis = ['👍', '❤️', '😂', '🔥', '😢', '👎']
+        self.assertEqual(len(reply_reaction_ops), len(expected_emojis))
+        for i, emoji in enumerate(expected_emojis):
+            self.assertEqual(reply_reaction_ops[i]['submit_button_text'], emoji)
+            self.assertEqual(reply_reaction_ops[i]['params']['reaction_type'], emoji)
+
     def test_sequence_functions(self):
         """Test sequence functions: len, range, slice, any, all, sum, sorted, count"""
         app = lingo_app(self.functions_sequence_spec)

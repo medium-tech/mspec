@@ -2253,37 +2253,224 @@
                                                                     "break": 1
                                                                 },
                                                                 {
-                                                                    "op": {
-                                                                        "bind": {
-                                                                            "state": {
-                                                                                "reply_reaction_op_state": {
-                                                                                    "index": {
-                                                                                        "self": "index"
+                                                                    "block": [
+                                                                        {
+                                                                            "op": {
+                                                                                "bind": {
+                                                                                    "state": {
+                                                                                        "reply_reaction_op_state": {
+                                                                                            "index": {
+                                                                                                "self": "index"
+                                                                                            }
+                                                                                        }
                                                                                     }
-                                                                                }
-                                                                            }
-                                                                        },
-                                                                        "display": {
-                                                                            "friendly_status": true,
-                                                                            "show_result": false
-                                                                        },
-                                                                        "interactive": true,
-                                                                        "http": "/api/social/react-to-reply",
-                                                                        "instruction": "",
-                                                                        "params": {
-                                                                            "post_id": {
-                                                                                "call": "key",
-                                                                                "args": {
-                                                                                    "object": {
-                                                                                        "self": "item"
+                                                                                },
+                                                                                "display": {
+                                                                                    "friendly_status": true,
+                                                                                    "show_result": false,
+                                                                                    "in_line": true,
+                                                                                    "show_op_status_display": false
+                                                                                },
+                                                                                "interactive": true,
+                                                                                "http": "/api/social/react-to-reply",
+                                                                                "instruction": "",
+                                                                                "params": {
+                                                                                    "post_id": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "id"
+                                                                                        }
                                                                                     },
-                                                                                    "key": "id"
-                                                                                }
+                                                                                    "reaction_type": "👍"
+                                                                                },
+                                                                                "definition": "social.react_to_reply",
+                                                                                "submit_button_text": "👍"
                                                                             }
                                                                         },
-                                                                        "definition": "social.react_to_reply",
-                                                                        "submit_button_text": "react"
-                                                                    }
+                                                                        {
+                                                                            "op": {
+                                                                                "bind": {
+                                                                                    "state": {
+                                                                                        "reply_reaction_op_state": {
+                                                                                            "index": {
+                                                                                                "self": "index"
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                "display": {
+                                                                                    "friendly_status": true,
+                                                                                    "show_result": false,
+                                                                                    "in_line": true,
+                                                                                    "show_op_status_display": false
+                                                                                },
+                                                                                "interactive": true,
+                                                                                "http": "/api/social/react-to-reply",
+                                                                                "instruction": "",
+                                                                                "params": {
+                                                                                    "post_id": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "id"
+                                                                                        }
+                                                                                    },
+                                                                                    "reaction_type": "❤️"
+                                                                                },
+                                                                                "definition": "social.react_to_reply",
+                                                                                "submit_button_text": "❤️"
+                                                                            }
+                                                                        },
+                                                                        {
+                                                                            "op": {
+                                                                                "bind": {
+                                                                                    "state": {
+                                                                                        "reply_reaction_op_state": {
+                                                                                            "index": {
+                                                                                                "self": "index"
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                "display": {
+                                                                                    "friendly_status": true,
+                                                                                    "show_result": false,
+                                                                                    "in_line": true,
+                                                                                    "show_op_status_display": false
+                                                                                },
+                                                                                "interactive": true,
+                                                                                "http": "/api/social/react-to-reply",
+                                                                                "instruction": "",
+                                                                                "params": {
+                                                                                    "post_id": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "id"
+                                                                                        }
+                                                                                    },
+                                                                                    "reaction_type": "😂"
+                                                                                },
+                                                                                "definition": "social.react_to_reply",
+                                                                                "submit_button_text": "😂"
+                                                                            }
+                                                                        },
+                                                                        {
+                                                                            "op": {
+                                                                                "bind": {
+                                                                                    "state": {
+                                                                                        "reply_reaction_op_state": {
+                                                                                            "index": {
+                                                                                                "self": "index"
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                "display": {
+                                                                                    "friendly_status": true,
+                                                                                    "show_result": false,
+                                                                                    "in_line": true,
+                                                                                    "show_op_status_display": false
+                                                                                },
+                                                                                "interactive": true,
+                                                                                "http": "/api/social/react-to-reply",
+                                                                                "instruction": "",
+                                                                                "params": {
+                                                                                    "post_id": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "id"
+                                                                                        }
+                                                                                    },
+                                                                                    "reaction_type": "🔥"
+                                                                                },
+                                                                                "definition": "social.react_to_reply",
+                                                                                "submit_button_text": "🔥"
+                                                                            }
+                                                                        },
+                                                                        {
+                                                                            "op": {
+                                                                                "bind": {
+                                                                                    "state": {
+                                                                                        "reply_reaction_op_state": {
+                                                                                            "index": {
+                                                                                                "self": "index"
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                "display": {
+                                                                                    "friendly_status": true,
+                                                                                    "show_result": false,
+                                                                                    "in_line": true,
+                                                                                    "show_op_status_display": false
+                                                                                },
+                                                                                "interactive": true,
+                                                                                "http": "/api/social/react-to-reply",
+                                                                                "instruction": "",
+                                                                                "params": {
+                                                                                    "post_id": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "id"
+                                                                                        }
+                                                                                    },
+                                                                                    "reaction_type": "😢"
+                                                                                },
+                                                                                "definition": "social.react_to_reply",
+                                                                                "submit_button_text": "😢"
+                                                                            }
+                                                                        },
+                                                                        {
+                                                                            "op": {
+                                                                                "bind": {
+                                                                                    "state": {
+                                                                                        "reply_reaction_op_state": {
+                                                                                            "index": {
+                                                                                                "self": "index"
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                "display": {
+                                                                                    "friendly_status": true,
+                                                                                    "show_result": false,
+                                                                                    "in_line": true,
+                                                                                    "show_op_status_display": false
+                                                                                },
+                                                                                "interactive": true,
+                                                                                "http": "/api/social/react-to-reply",
+                                                                                "instruction": "",
+                                                                                "params": {
+                                                                                    "post_id": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "id"
+                                                                                        }
+                                                                                    },
+                                                                                    "reaction_type": "👎"
+                                                                                },
+                                                                                "definition": "social.react_to_reply",
+                                                                                "submit_button_text": "👎"
+                                                                            }
+                                                                        }
+                                                                    ]
                                                                 }
                                                             ]
                                                         }
