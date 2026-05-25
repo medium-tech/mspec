@@ -428,6 +428,7 @@ class TestLingoPages(unittest.TestCase):
 
         self.assertGreaterEqual(text_values.count(':: reactions: '), 2)
         self.assertGreaterEqual(text_values.count(' :: yours: '), 2)
+        self.assertNotIn('reactions: ', text_values)
         self.assertNotIn(' ● your reaction: ', text_values)
 
     def test_sequence_functions(self):
