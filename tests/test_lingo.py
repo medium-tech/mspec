@@ -407,6 +407,29 @@ class TestLingoPages(unittest.TestCase):
             self.assertEqual(reply_reaction_ops[i]['submit_button_text'], emoji)
             self.assertEqual(reply_reaction_ops[i]['params']['reaction_type'], emoji)
 
+    def test_social_thread_reply_reaction_display_matches_main_post_style(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        text_values = []
+
+        def collect_text_values(node):
+            if isinstance(node, list):
+                for item in node:
+                    collect_text_values(item)
+                return
+
+            if isinstance(node, dict):
+                if 'text' in node and isinstance(node['text'], str):
+                    text_values.append(node['text'])
+
+                for value in node.values():
+                    collect_text_values(value)
+
+        collect_text_values(thread_spec['output'])
+
+        self.assertGreaterEqual(text_values.count(':: reactions: '), 2)
+        self.assertGreaterEqual(text_values.count(' :: yours: '), 2)
+        self.assertNotIn(' ● your reaction: ', text_values)
+
     def test_sequence_functions(self):
         """Test sequence functions: len, range, slice, any, all, sum, sorted, count"""
         app = lingo_app(self.functions_sequence_spec)

@@ -2146,7 +2146,7 @@
                                                                     "break": 1
                                                                 },
                                                                 {
-                                                                    "text": "reactions: ",
+                                                                    "text": ":: reactions: ",
                                                                     "style": {
                                                                         "bold": true
                                                                     }
@@ -2225,7 +2225,7 @@
                                                                             },
                                                                             "then": [
                                                                                 {
-                                                                                    "text": " \u25cf your reaction: ",
+                                                                                    "text": " :: yours: ",
                                                                                     "style": {
                                                                                         "bold": true
                                                                                     }
