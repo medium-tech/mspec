@@ -84,7 +84,7 @@
                 }
             }
         },
-        "main_post_reaction_op_state": {
+        "main_post_reaction_smile_state": {
             "type": "struct",
             "default": {
                 "state": "initial",
@@ -95,6 +95,178 @@
                     "value": null
                 }
             }
+        },
+        "main_post_reaction_heart_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "main_post_reaction_laugh_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "main_post_reaction_thumbs_up_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "main_post_reaction_thumbs_down_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "main_post_reaction_sad_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "main_post_reaction_angry_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "main_post_reaction_grimace_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "main_post_reaction_yawn_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "main_post_reaction_surprised_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "main_post_reaction_thinking_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "main_post_reaction_hundred_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "main_post_reaction_mending_heart_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "main_post_reaction_eyes_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "main_post_reaction_fire_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "display_all_main_post_reactions": {
+            "type": "bool",
+            "default": false
         },
         "reply_reaction_op_state": {
             "type": "list",
@@ -846,12 +1018,294 @@
                 }
             }
         },
+        "main_post_latest_submitted_reaction": {
+            "type": "str",
+            "calc": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "state": {
+                                        "main_post_reaction_smile_state": {
+                                            "state": {}
+                                        }
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": "🙂"
+                    },
+                    {
+                        "elif": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "state": {
+                                        "main_post_reaction_heart_state": {
+                                            "state": {}
+                                        }
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": "❤️"
+                    },
+                    {
+                        "elif": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "state": {
+                                        "main_post_reaction_laugh_state": {
+                                            "state": {}
+                                        }
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": "😂"
+                    },
+                    {
+                        "elif": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "state": {
+                                        "main_post_reaction_thumbs_up_state": {
+                                            "state": {}
+                                        }
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": "👍"
+                    },
+                    {
+                        "elif": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "state": {
+                                        "main_post_reaction_thumbs_down_state": {
+                                            "state": {}
+                                        }
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": "👎"
+                    },
+                    {
+                        "elif": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "state": {
+                                        "main_post_reaction_sad_state": {
+                                            "state": {}
+                                        }
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": "😢"
+                    },
+                    {
+                        "elif": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "state": {
+                                        "main_post_reaction_angry_state": {
+                                            "state": {}
+                                        }
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": "😡"
+                    },
+                    {
+                        "elif": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "state": {
+                                        "main_post_reaction_grimace_state": {
+                                            "state": {}
+                                        }
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": "😬"
+                    },
+                    {
+                        "elif": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "state": {
+                                        "main_post_reaction_yawn_state": {
+                                            "state": {}
+                                        }
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": "🥱"
+                    },
+                    {
+                        "elif": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "state": {
+                                        "main_post_reaction_surprised_state": {
+                                            "state": {}
+                                        }
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": "😮"
+                    },
+                    {
+                        "elif": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "state": {
+                                        "main_post_reaction_thinking_state": {
+                                            "state": {}
+                                        }
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": "🤔"
+                    },
+                    {
+                        "elif": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "state": {
+                                        "main_post_reaction_hundred_state": {
+                                            "state": {}
+                                        }
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": "💯"
+                    },
+                    {
+                        "elif": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "state": {
+                                        "main_post_reaction_mending_heart_state": {
+                                            "state": {}
+                                        }
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": "❤️‍🩹"
+                    },
+                    {
+                        "elif": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "state": {
+                                        "main_post_reaction_eyes_state": {
+                                            "state": {}
+                                        }
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": "👀"
+                    },
+                    {
+                        "elif": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "state": {
+                                        "main_post_reaction_fire_state": {
+                                            "state": {}
+                                        }
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": "🔥"
+                    },
+                    {
+                        "else": ""
+                    }
+                ]
+            }
+        },
+        "main_post_reaction_should_reload": {
+            "type": "bool",
+            "calc": {
+                "call": "ne",
+                "args": {
+                    "a": {
+                        "state": {
+                            "main_post_latest_submitted_reaction": {}
+                        }
+                    },
+                    "b": ""
+                }
+            }
+        },
         "main_post_user_reaction": {
             "type": "str",
             "calc": {
                 "branch": [
                     {
                         "if": {
+                            "call": "ne",
+                            "args": {
+                                "a": {
+                                    "state": {
+                                        "main_post_latest_submitted_reaction": {}
+                                    }
+                                },
+                                "b": ""
+                            }
+                        },
+                        "then": {
+                            "state": {
+                                "main_post_latest_submitted_reaction": {}
+                            }
+                        }
+                    },
+                    {
+                        "elif": {
                             "call": "eq",
                             "args": {
                                 "a": {
@@ -1165,9 +1619,54 @@
                 },
                 "to": "triggered"
             }
+        },
+        "toggle_main_post_reaction_drawer": {
+            "args": {},
+            "func": {
+                "set": {
+                    "state": {
+                        "display_all_main_post_reactions": {}
+                    }
+                },
+                "to": {
+                    "call": "not",
+                    "args": {
+                        "object": {
+                            "state": {
+                                "display_all_main_post_reactions": {}
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "timers": {
+        "watch_main_post_reaction_submit": {
+            "auto_start": true,
+            "func": {
+                "branch": [
+                    {
+                        "if": {
+                            "state": {
+                                "main_post_reaction_should_reload": {}
+                            }
+                        },
+                        "then": {
+                            "call": "client.reload",
+                            "args": {}
+                        }
+                    },
+                    {
+                        "else": {
+                            "type": "str",
+                            "value": "waiting_for_main_post_reaction"
+                        }
+                    }
+                ]
+            },
+            "interval": 0.25
+        },
         "auto_load_replies": {
             "description": "Auto load main post's replies after loading the main post",
             "auto_start": true,
@@ -1456,58 +1955,577 @@
             "break": 1
         },
         {
-            "op": {
-                "bind": {
-                    "state": {
-                        "main_post_reaction_op_state": {}
-                    }
-                },
-                "display": {
-                    "friendly_status": true,
-                    "show_result": false,
-					"in_line": true
-                },
-                "interactive": true,
-                "http": "/api/social/react-to-thread-main-post",
-                "params": {
-                    "thread_id": {
-                        "params": {
-                            "model_id": {}
+            "branch": [
+                {
+                    "if": {
+                        "state": {
+                            "display_all_main_post_reactions": {}
                         }
                     },
-					"reaction_type": "👍"
-                },
-                "definition": "social.react_to_thread_main_post",
-                "submit_button_text": "👍",
-                "instruction": ""
-            }
-        },
-		{
-            "op": {
-                "bind": {
-                    "state": {
-                        "main_post_reaction_op_state": {}
-                    }
-                },
-                "display": {
-                    "friendly_status": true,
-                    "show_result": false,
-					"in_line": true
-                },
-                "interactive": true,
-                "http": "/api/social/react-to-thread-main-post",
-                "params": {
-                    "thread_id": {
-                        "params": {
-                            "model_id": {}
+                    "then": [
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_smile_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "🙂"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "🙂",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_heart_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "❤️"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "❤️",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_laugh_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "😂"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "😂",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_thumbs_up_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "👍"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "👍",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_thumbs_down_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "👎"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "👎",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_sad_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "😢"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "😢",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_angry_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "😡"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "😡",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_grimace_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "😬"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "😬",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_yawn_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "🥱"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "🥱",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_surprised_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "😮"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "😮",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_thinking_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "🤔"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "🤔",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_hundred_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "💯"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "💯",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_mending_heart_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "❤️‍🩹"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "❤️‍🩹",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_eyes_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "👀"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "👀",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_fire_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "🔥"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "🔥",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "button": {
+                                "op": {
+                                    "toggle_main_post_reaction_drawer": {}
+                                }
+                            },
+                            "text": "less"
                         }
-                    },
-					"reaction_type": "👎"
+                    ]
                 },
-                "definition": "social.react_to_thread_main_post",
-                "submit_button_text": "👎",
-                "instruction": ""
-            }
+                {
+                    "else": [
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_thumbs_up_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "👍"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "👍",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_heart_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "❤️"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "❤️",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_laugh_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "😂"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "😂",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_fire_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "🔥"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "🔥",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "main_post_reaction_sad_state": {}
+                                    }
+                                },
+                                "display": {
+                                    "friendly_status": true,
+                                    "show_result": false,
+                                    "in_line": true
+                                },
+                                "interactive": true,
+                                "http": "/api/social/react-to-thread-main-post",
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "reaction_type": "😢"
+                                },
+                                "definition": "social.react_to_thread_main_post",
+                                "submit_button_text": "😢",
+                                "instruction": ""
+                            }
+                        },
+                        {
+                            "button": {
+                                "op": {
+                                    "toggle_main_post_reaction_drawer": {}
+                                }
+                            },
+                            "text": "more"
+                        }
+                    ]
+                }
+            ]
         },
         {
             "heading": ":: replies",

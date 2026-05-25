@@ -381,6 +381,125 @@ class TestLingoPages(unittest.TestCase):
         )
         self.assertIn('user_reaction', mapped_reply_fields)
 
+    def test_social_thread_main_post_reaction_drawer_uses_required_reactions(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        social_generator_path = SAMPLE_BROWSER2_SPEC_DIR.parent.parent / 'generator' / 'social.yaml'
+        with open(social_generator_path, 'r') as f:
+            social_spec = yaml.safe_load(f)
+
+        reaction_enum = (
+            social_spec['modules']['social']['ops']['react_to_thread_main_post']['params']['reaction_type']['enum']
+        )
+
+        drawer_branch = next(
+            element['branch']
+            for element in thread_spec['output']
+            if 'branch' in element
+            and any(
+                isinstance(case.get(key), list)
+                and any(
+                    item.get('op', {}).get('http') == '/api/social/react-to-thread-main-post'
+                    for item in case.get(key, [])
+                    if isinstance(item, dict)
+                )
+                for case in element['branch']
+                for key in ['then', 'else']
+            )
+        )
+
+        open_case = next(case for case in drawer_branch if 'if' in case)
+        closed_case = next(case for case in drawer_branch if 'else' in case)
+        open_reactions = [item['op']['submit_button_text'] for item in open_case['then'] if 'op' in item]
+        closed_reactions = [item['op']['submit_button_text'] for item in closed_case['else'] if 'op' in item]
+        open_bind_state_fields = [
+            next(iter(item['op']['bind']['state'].keys()))
+            for item in open_case['then']
+            if 'op' in item
+        ]
+
+        self.assertEqual(closed_reactions, ['👍', '❤️', '😂', '🔥', '😢'])
+        self.assertEqual(open_reactions, reaction_enum)
+        self.assertEqual(len(open_bind_state_fields), len(set(open_bind_state_fields)))
+        self.assertEqual(len(open_bind_state_fields), len(reaction_enum))
+        self.assertIn({'button': {'op': {'toggle_main_post_reaction_drawer': {}}}, 'text': 'more'}, closed_case['else'])
+        self.assertIn({'button': {'op': {'toggle_main_post_reaction_drawer': {}}}, 'text': 'less'}, open_case['then'])
+
+    def test_social_thread_main_post_reaction_drawer_toggle_op(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        app = lingo_app({
+            'params': {},
+            'state': {
+                'display_all_main_post_reactions': thread_spec['state']['display_all_main_post_reactions'],
+            },
+            'ops': {
+                'toggle_main_post_reaction_drawer': thread_spec['ops']['toggle_main_post_reaction_drawer'],
+            },
+            'output': [],
+        })
+
+        self.assertFalse(app.state['display_all_main_post_reactions'])
+        lingo_execute(app, {'op': {'toggle_main_post_reaction_drawer': {}}})
+        self.assertTrue(app.state['display_all_main_post_reactions'])
+        lingo_execute(app, {'op': {'toggle_main_post_reaction_drawer': {}}})
+        self.assertFalse(app.state['display_all_main_post_reactions'])
+
+    def test_social_thread_main_post_reaction_submission_updates_local_state(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        expected_reaction_state_fields = [
+            ('main_post_reaction_smile_state', '🙂'),
+            ('main_post_reaction_heart_state', '❤️'),
+            ('main_post_reaction_laugh_state', '😂'),
+            ('main_post_reaction_thumbs_up_state', '👍'),
+            ('main_post_reaction_thumbs_down_state', '👎'),
+            ('main_post_reaction_sad_state', '😢'),
+            ('main_post_reaction_angry_state', '😡'),
+            ('main_post_reaction_grimace_state', '😬'),
+            ('main_post_reaction_yawn_state', '🥱'),
+            ('main_post_reaction_surprised_state', '😮'),
+            ('main_post_reaction_thinking_state', '🤔'),
+            ('main_post_reaction_hundred_state', '💯'),
+            ('main_post_reaction_mending_heart_state', '❤️‍🩹'),
+            ('main_post_reaction_eyes_state', '👀'),
+            ('main_post_reaction_fire_state', '🔥'),
+        ]
+        latest_reaction_branch = thread_spec['state']['main_post_latest_submitted_reaction']['calc']['branch']
+        actual_reaction_state_fields = []
+        actual_reactions = []
+
+        for case in latest_reaction_branch[:-1]:
+            condition = case.get('if', case.get('elif'))
+            actual_reaction_state_fields.append(next(iter(condition['args']['a']['state'].keys())))
+            actual_reactions.append(case['then'])
+
+        self.assertEqual(actual_reaction_state_fields, [field for field, _ in expected_reaction_state_fields])
+        self.assertEqual(actual_reactions, [emoji for _, emoji in expected_reaction_state_fields])
+        self.assertEqual(latest_reaction_branch[-1], {'else': ''})
+
+        self.assertEqual(
+            thread_spec['state']['main_post_reaction_should_reload']['calc'],
+            {
+                'call': 'ne',
+                'args': {
+                    'a': {
+                        'state': {
+                            'main_post_latest_submitted_reaction': {}
+                        }
+                    },
+                    'b': ''
+                }
+            }
+        )
+
+        main_post_user_reaction_branch = thread_spec['state']['main_post_user_reaction']['calc']['branch']
+        self.assertEqual(
+            main_post_user_reaction_branch[0]['then'],
+            {
+                'state': {
+                    'main_post_latest_submitted_reaction': {}
+                }
+            }
+        )
+
     def test_sequence_functions(self):
         """Test sequence functions: len, range, slice, any, all, sum, sorted, count"""
         app = lingo_app(self.functions_sequence_spec)
