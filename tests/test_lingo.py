@@ -429,14 +429,14 @@ class TestLingoPages(unittest.TestCase):
                 {'self': 'index'}
             )
 
-    def test_social_thread_reply_reaction_display_uses_local_override_state(self):
+    def test_reply_reaction_prefers_local_state(self):
         thread_spec = load_browser2_spec('social-thread-instance.json')
         self.assertEqual(thread_spec['state']['reply_user_reaction_local']['type'], 'list')
         self.assertEqual(thread_spec['state']['reply_user_reaction_local']['item_type']['type'], 'str')
 
         output_as_text = json.dumps(thread_spec['output'])
         self.assertIn('reply_user_reaction_local', output_as_text)
-        self.assertIn('"default_value": "initial"', output_as_text)
+        self.assertIn('"default_value": "unset"', output_as_text)
 
     def test_social_thread_reply_reaction_display_matches_main_post_style(self):
         thread_spec = load_browser2_spec('social-thread-instance.json')

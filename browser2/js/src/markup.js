@@ -2329,7 +2329,7 @@ function renderSet(app, expression, ctx = null) {
                 } else if ('index' in setBindValue) {
                     const resolvedListIndex = unwrapValue(lingoExecute(app, setBindValue.index, ctx));
                     if (!Number.isInteger(resolvedListIndex) || resolvedListIndex < 0) {
-                        throw new Error(`set - state index must resolve to a non-negative integer for ${fieldName}`);
+                        throw new Error(`set - state index must resolve to a non-negative integer for ${fieldName}, got: ${resolvedListIndex}`);
                     }
                     setListIndex = resolvedListIndex;
                 }
