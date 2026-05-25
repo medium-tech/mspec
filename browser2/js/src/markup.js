@@ -2320,11 +2320,20 @@ function renderSet(app, expression, ctx = null) {
                 throw new Error(`set - state field not found: ${fieldName}`);
             }
 
-            // support list-indexed state: {fieldName: {_list_index: N}}
+            // support list-indexed state: {fieldName: {_list_index: N}} or {fieldName: {index: <expression>}}
             const setBindValue = target[fieldName];
-            const setListIndex = (setBindValue && typeof setBindValue === 'object' && '_list_index' in setBindValue)
-                ? setBindValue._list_index
-                : null;
+            let setListIndex = null;
+            if (setBindValue && typeof setBindValue === 'object') {
+                if ('_list_index' in setBindValue) {
+                    setListIndex = setBindValue._list_index;
+                } else if ('index' in setBindValue) {
+                    const resolvedListIndex = unwrapValue(lingoExecute(app, setBindValue.index, ctx));
+                    if (!Number.isInteger(resolvedListIndex) || resolvedListIndex < 0) {
+                        throw new Error(`set - state index must resolve to a non-negative integer for ${fieldName}`);
+                    }
+                    setListIndex = resolvedListIndex;
+                }
+            }
 
             if (setListIndex !== null) {
                 stateToSet = app.state[fieldName][setListIndex];
