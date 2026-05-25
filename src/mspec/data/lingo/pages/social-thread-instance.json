@@ -264,7 +264,7 @@
                 }
             }
         },
-        "display_all_main_post_reactions": {
+        "main_post_reaction_drawer_expanded": {
             "type": "bool",
             "default": false
         },
@@ -1625,7 +1625,7 @@
             "func": {
                 "set": {
                     "state": {
-                        "display_all_main_post_reactions": {}
+                        "main_post_reaction_drawer_expanded": {}
                     }
                 },
                 "to": {
@@ -1633,7 +1633,7 @@
                     "args": {
                         "object": {
                             "state": {
-                                "display_all_main_post_reactions": {}
+                                "main_post_reaction_drawer_expanded": {}
                             }
                         }
                     }
@@ -1665,7 +1665,7 @@
                     }
                 ]
             },
-            "interval": 0.25
+            "interval": 0.5
         },
         "auto_load_replies": {
             "description": "Auto load main post's replies after loading the main post",
@@ -1959,7 +1959,7 @@
                 {
                     "if": {
                         "state": {
-                            "display_all_main_post_reactions": {}
+                            "main_post_reaction_drawer_expanded": {}
                         }
                     },
                     "then": [

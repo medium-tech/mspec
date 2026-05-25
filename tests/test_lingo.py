@@ -429,7 +429,7 @@ class TestLingoPages(unittest.TestCase):
         app = lingo_app({
             'params': {},
             'state': {
-                'display_all_main_post_reactions': thread_spec['state']['display_all_main_post_reactions'],
+                'main_post_reaction_drawer_expanded': thread_spec['state']['main_post_reaction_drawer_expanded'],
             },
             'ops': {
                 'toggle_main_post_reaction_drawer': thread_spec['ops']['toggle_main_post_reaction_drawer'],
@@ -437,11 +437,11 @@ class TestLingoPages(unittest.TestCase):
             'output': [],
         })
 
-        self.assertFalse(app.state['display_all_main_post_reactions'])
+        self.assertFalse(app.state['main_post_reaction_drawer_expanded'])
         lingo_execute(app, {'op': {'toggle_main_post_reaction_drawer': {}}})
-        self.assertTrue(app.state['display_all_main_post_reactions'])
+        self.assertTrue(app.state['main_post_reaction_drawer_expanded'])
         lingo_execute(app, {'op': {'toggle_main_post_reaction_drawer': {}}})
-        self.assertFalse(app.state['display_all_main_post_reactions'])
+        self.assertFalse(app.state['main_post_reaction_drawer_expanded'])
 
     def test_social_thread_main_post_reaction_submission_updates_local_state(self):
         thread_spec = load_browser2_spec('social-thread-instance.json')
