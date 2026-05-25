@@ -2312,10 +2312,10 @@
                                                                                                                         }
                                                                                                                     }
                                                                                                                 },
-                                                                                                                "default_value": "__uninitialized_reply_reaction__"
+                                                                                                                "default_value": "initial"
                                                                                                             }
                                                                                                         },
-                                                                                                        "b": "__uninitialized_reply_reaction__"
+                                                                                                        "b": "initial"
                                                                                                     }
                                                                                                 },
                                                                                                 "then": {
@@ -2333,8 +2333,7 @@
                                                                                                                     "self": "index"
                                                                                                                 }
                                                                                                             }
-                                                                                                        },
-                                                                                                        "default_value": "__uninitialized_reply_reaction__"
+                                                                                                        }
                                                                                                     }
                                                                                                 }
                                                                                             },

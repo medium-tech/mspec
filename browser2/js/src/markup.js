@@ -2204,6 +2204,7 @@ function renderBranch(app, element, ctx = null) {
                     // console.log(`branch then result`, thenResult);
                     return thenResult;
                 } catch (error) {
+					console.error(`Error processing then expression for branch ${n}:`, error, element, then);
                     throw new Error(`branch ${n} - error processing then expression: ${error.message}`);
                 }
             }
@@ -2483,7 +2484,10 @@ function renderSet(app, expression, ctx = null) {
 
                 // rerender output after state update
                 renderLingoApp(app, document.getElementById('lingo-app'), ctx);
-            });
+            }).catch(error => {
+				console.error('set - error resolving promise:', error);
+				throw new Error(`set - error resolving promise: ${error.message}`);
+			});
             return value;
         }else{
             setValue();
