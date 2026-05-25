@@ -381,7 +381,7 @@ class TestLingoPages(unittest.TestCase):
         )
         self.assertIn('user_reaction', mapped_reply_fields)
 
-    def test_social_thread_reply_reaction_buttons_use_fixed_emojis(self):
+    def test_social_thread_reply_reaction_buttons_use_fixed_values(self):
         thread_spec = load_browser2_spec('social-thread-instance.json')
         reply_reaction_ops = []
 
@@ -401,17 +401,25 @@ class TestLingoPages(unittest.TestCase):
 
         collect_reply_reaction_ops(thread_spec['output'])
 
-        expected_emojis = ['👍', '❤️', '😂', '🔥', '😢', '👎']
-        self.assertEqual(len(reply_reaction_ops), len(expected_emojis))
-        for i, emoji in enumerate(expected_emojis):
-            self.assertEqual(reply_reaction_ops[i]['submit_button_text'], emoji)
-            self.assertEqual(reply_reaction_ops[i]['params']['reaction_type'], emoji)
+        expected_buttons = [
+            ('👍', '👍'),
+            ('❤️', '❤️'),
+            ('😂', '😂'),
+            ('🔥', '🔥'),
+            ('😢', '😢'),
+            ('👎', '👎'),
+            ('remove', ''),
+        ]
+        self.assertEqual(len(reply_reaction_ops), len(expected_buttons))
+        for i, (button_text, reaction_type) in enumerate(expected_buttons):
+            self.assertEqual(reply_reaction_ops[i]['submit_button_text'], button_text)
+            self.assertEqual(reply_reaction_ops[i]['params']['reaction_type'], reaction_type)
             bind_index = reply_reaction_ops[i]['bind']['state']['reply_reaction_op_state']['index']
             self.assertEqual(bind_index['call'], 'add')
             mul_op = bind_index['args']['a']
             self.assertEqual(mul_op['call'], 'mul')
             self.assertEqual(mul_op['args']['a']['self'], 'index')
-            self.assertEqual(mul_op['args']['b'], 6)
+            self.assertEqual(mul_op['args']['b'], 7)
             self.assertEqual(bind_index['args']['b'], i)
 
     def test_social_thread_reply_reaction_display_matches_main_post_style(self):
