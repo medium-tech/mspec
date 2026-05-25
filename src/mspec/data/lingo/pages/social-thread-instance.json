@@ -1494,7 +1494,7 @@
             "break": 1
         },
         {
-            "text": ":: reactions ",
+            "text": ":: reactions: ",
             "style": {
                 "bold": true
             }
