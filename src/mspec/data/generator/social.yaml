@@ -1488,6 +1488,7 @@ modules:
                             lower_case: 'reaction type'
                         type: str
                         enum:
+                            - ''                        
                             - '🙂'
                             - '❤️'
                             - '😂'
@@ -1499,6 +1500,10 @@ modules:
                             - '🥱'
                             - '😮'
                             - '🤔'
+                            - '💯'
+                            - '❤️‍🩹'
+                            - '👀'
+                            - '🔥'
                         examples:
                             - '🙂'
                             - '❤️'
