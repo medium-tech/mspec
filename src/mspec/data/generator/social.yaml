@@ -1268,35 +1268,67 @@ modules:
                                 model_id:
                                     params: { thread_id: {} }
                                 model_type: 'social.thread'
-                        saved_reaction:
-                            call: 'db.upsert'
-                            args:
-                                model_type: 'social.reaction'
-                                conflict_fields: ['user_id', 'post_id']
-                                data:
-                                    user_id:
-                                        call: 'key'
-                                        args:
-                                            key: 'id'
-                                            object:
-                                                call: 'auth.current_user'
-                                                args: {}
-                                    post_id:
-                                        call: 'key'
-                                        args:
-                                            key: 'main_post_id'
-                                            object: { self: thread }
-                                    reaction_type:
-                                        params: { reaction_type: {} }
+                        result:
+                            branch:
+                                - if:
+                                    call: 'eq'
+                                    args:
+                                        a: { params: { reaction_type: {} } }
+                                        b: ''
+                                  then:
+                                    call: 'db.delete_where'
+                                    args:
+                                            model_type: 'social.reaction'
+                                            message: 'Reaction removed from thread'
+                                            where:
+                                                user_id:
+                                                    eq:
+                                                        call: 'key'
+                                                        args:
+                                                            key: 'id'
+                                                            object:
+                                                                call: 'auth.current_user'
+                                                                args: {}
+                                                post_id:
+                                                    eq:
+                                                        call: 'key'
+                                                        args:
+                                                            key: 'main_post_id'
+                                                            object: { self: thread }
+                                - else:
+                                    call: 'db.upsert'
+                                    args:
+                                        model_type: 'social.reaction'
+                                        conflict_fields: ['user_id', 'post_id']
+                                        data:
+                                            user_id:
+                                                call: 'key'
+                                                args:
+                                                    key: 'id'
+                                                    object:
+                                                        call: 'auth.current_user'
+                                                        args: {}
+                                            post_id:
+                                                call: 'key'
+                                                args:
+                                                    key: 'main_post_id'
+                                                    object: { self: thread }
+                                            reaction_type:
+                                                params: { reaction_type: {} }
                     value:
                         acknowledged: true
                         message:
                             call: 'concat'
                             args:
                                 items:
-                                    - 'Reaction '
-                                    - { params: { reaction_type: {} } }
-                                    - ' to thread saved'
+                                    - branch:
+                                        - if:
+                                            call: 'eq'
+                                            args:
+                                                a: { params: { reaction_type: {} } }
+                                                b: ''
+                                          then: 'Reaction removed'
+                                        - else: 'Reaction added'
                 params:
                     thread_id:
                         name:
@@ -1315,6 +1347,7 @@ modules:
                             lower_case: 'reaction type'
                         type: str
                         enum:
+                            - ''                        
                             - '🙂'
                             - '❤️'
                             - '😂'
@@ -1455,6 +1488,7 @@ modules:
                             lower_case: 'reaction type'
                         type: str
                         enum:
+                            - ''                        
                             - '🙂'
                             - '❤️'
                             - '😂'
@@ -1466,6 +1500,10 @@ modules:
                             - '🥱'
                             - '😮'
                             - '🤔'
+                            - '💯'
+                            - '❤️‍🩹'
+                            - '👀'
+                            - '🔥'
                         examples:
                             - '🙂'
                             - '❤️'

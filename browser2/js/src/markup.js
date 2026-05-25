@@ -688,7 +688,7 @@ function _opHttpArgs(app, expression, ctx) {
         _getStateSlot(app, fieldName, listIndex).state = 'loading';
     }
     // console.log('op.http - url:', expression, url, 'params:', params);
-    return [url, params];
+    return [url, params, args.on_success || null];
 }
 
 // file system //
@@ -1483,7 +1483,7 @@ const lingoFunctionLookup = {
 
     'op': {
         'http': {
-            func: async (url, params) => {
+            func: async (url, params, on_success) => {
                 try {
                     const response = await fetch(url, {
                         method: 'POST',
@@ -1515,6 +1515,10 @@ const lingoFunctionLookup = {
                                 localStorage.removeItem('user_id');
                                 window.location.reload();
                             }
+							if(on_success) {
+								console.log('op.http - returning result for successful response', on_success);
+								on_success();
+							}
                             return {state: 'result', result: wrappedResult};
                         } else {
                             return {state: 'error', error: 'Response missing result field'};
@@ -2747,6 +2751,7 @@ function renderOp(app, expression, ctx = null) {
         const showResult = display.hasOwnProperty('show_result') ? unwrapValue(lingoExecute(app, display.show_result, ctx)) : true;
         const showSubmitButton = display.hasOwnProperty('show_submit_button') ? unwrapValue(lingoExecute(app, display.show_submit_button, ctx)) : true;
         const showStatusDisplay = display.hasOwnProperty('show_status_display') ? unwrapValue(lingoExecute(app, display.show_status_display, ctx)) : true;
+		const showOpStatusDisplay = display.hasOwnProperty('show_op_status_display') ? unwrapValue(lingoExecute(app, display.show_op_status_display, ctx)) : true;
 		const friendlyStatus = display.hasOwnProperty('friendly_status') ? unwrapValue(lingoExecute(app, display.friendly_status, ctx)) : false;
         const inLine = display.hasOwnProperty('in_line') ? unwrapValue(lingoExecute(app, display.in_line, ctx)) : false;
         // render op.auto_submit if provided, otherwise default to false
@@ -2836,6 +2841,13 @@ function renderOp(app, expression, ctx = null) {
 
         const submitButtonText = expression.op.submit_button_text ? unwrapValue(lingoExecute(app, expression.op.submit_button_text, ctx)) : 'Submit';
 
+		let onSuccessAction = null;
+		if(expression.op.hasOwnProperty('on_success')){
+			onSuccessAction = () => {
+				unwrapValue(lingoExecute(app, expression.op.on_success, ctx));
+			}
+		}
+
         // merge app.state[stateField].data and paramOverrides to create request body, with paramOverrides taking precedence
         const stateSlot = _getStateSlot(app, stateField, listIndex);
         let requestBody = stateSlot.data
@@ -2860,7 +2872,8 @@ function renderOp(app, expression, ctx = null) {
                         args: {
                             url: url,
                             data: requestBody,
-                            bind: resolvedBind
+                            bind: resolvedBind,
+							on_success: onSuccessAction,
                         }
                     }
                 }
@@ -2943,7 +2956,7 @@ function renderOp(app, expression, ctx = null) {
 
         let elements = [];
         elements.push(formElement);
-		if(showStatusDisplay) {
+		if(showStatusDisplay && showOpStatusDisplay) {
         	elements.push(...resultDisplayElements);
         }
         return elements;
@@ -5190,7 +5203,7 @@ function createFormElement(app, element, ctx = null) {
 		inLine = false;
 	}
 
-	console.log(`createFormElement() in line: ${inLine}`, app, element);
+	// console.log(`createFormElement() in line: ${inLine}`, app, element);
 
     // init //
     const formContainer = document.createElement('div');
@@ -5967,6 +5980,10 @@ function createFormElement(app, element, ctx = null) {
         const result = lingoExecute(app, element.form.action, {});
         // console.log('Form submission result:', result);
         renderLingoApp(app, document.getElementById('lingo-app'));
+		// setTimeout(() => {
+		// 	console.log('Form submission - re-rendering app after submitAction. Current state:', currentState.state);
+		// 	renderLingoApp(app, document.getElementById('lingo-app'), true);
+		// }, 0);
     };
 
     if ((autoSubmit === true && currentState.state === 'initial') || currentState.state === 'triggered') {
