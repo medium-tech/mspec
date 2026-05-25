@@ -1597,52 +1597,18 @@
             "break": 1
         },
         {
-            "text": "reactions: ",
+            "text": ":: reactions",
             "style": {
                 "bold": true
             }
         },
+		{"break": 1},
         {
             "lingo": {
                 "state": {
                     "main_post_reaction_counts_string": {}
                 }
             }
-        },
-        {
-            "branch": [
-                {
-                    "if": {
-                        "call": "ne",
-                        "args": {
-                            "a": {
-                                "state": {
-                                    "main_post_user_reaction": {}
-                                }
-                            },
-                            "b": ""
-                        }
-                    },
-                    "then": [
-                        {
-                            "text": " \u25cf your reaction: ",
-                            "style": {
-                                "bold": true
-                            }
-                        },
-                        {
-                            "lingo": {
-                                "state": {
-                                    "main_post_user_reaction": {}
-                                }
-                            }
-                        }
-                    ]
-                },
-                {
-                    "else": ""
-                }
-            ]
         },
         {
             "break": 1
@@ -2217,6 +2183,42 @@
                             "text": "more"
                         }
                     ]
+                }
+            ]
+        },
+		        {
+            "branch": [
+                {
+                    "if": {
+                        "call": "ne",
+                        "args": {
+                            "a": {
+                                "state": {
+                                    "main_post_user_reaction": {}
+                                }
+                            },
+                            "b": ""
+                        }
+                    },
+                    "then": [
+						{"break": 1},
+                        {
+                            "text": " :: yours: ",
+                            "style": {
+                                "bold": true
+                            }
+                        },
+                        {
+                            "lingo": {
+                                "state": {
+                                    "main_post_user_reaction": {}
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "else": ""
                 }
             ]
         },
