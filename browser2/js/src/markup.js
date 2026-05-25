@@ -602,7 +602,10 @@ function _getStateSlot(app, fieldName, listIndex) {
             if (stateSpec.item_type.default === undefined) {
                 throw new Error(`list state item_type.default not found for field: ${fieldName}`);
             }
-            stateList[listIndex] = JSON.parse(JSON.stringify(stateSpec.item_type.default));
+            const itemDefault = stateSpec.item_type.default;
+            stateList[listIndex] = (typeof structuredClone === 'function')
+                ? structuredClone(itemDefault)
+                : JSON.parse(JSON.stringify(itemDefault));
         }
         return stateList[listIndex];
     }
