@@ -595,11 +595,14 @@ function _getStateSlot(app, fieldName, listIndex) {
             throw new Error(`invalid list state index for ${fieldName}: ${listIndex}`);
         }
         if (stateList[listIndex] === undefined) {
-            const itemDefault = app.spec.state[fieldName]?.item_type?.default;
-            if (itemDefault === undefined) {
-                throw new Error(`list state item default not found for field: ${fieldName}`);
+            const stateSpec = app.spec.state[fieldName];
+            if (!stateSpec?.item_type) {
+                throw new Error(`list state item_type not found for field: ${fieldName}`);
             }
-            stateList[listIndex] = JSON.parse(JSON.stringify(itemDefault));
+            if (stateSpec.item_type.default === undefined) {
+                throw new Error(`list state item_type.default not found for field: ${fieldName}`);
+            }
+            stateList[listIndex] = JSON.parse(JSON.stringify(stateSpec.item_type.default));
         }
         return stateList[listIndex];
     }

@@ -408,9 +408,10 @@ class TestLingoPages(unittest.TestCase):
             self.assertEqual(reply_reaction_ops[i]['params']['reaction_type'], emoji)
             bind_index = reply_reaction_ops[i]['bind']['state']['reply_reaction_op_state']['index']
             self.assertEqual(bind_index['call'], 'add')
-            self.assertEqual(bind_index['args']['a']['call'], 'mul')
-            self.assertEqual(bind_index['args']['a']['args']['a']['self'], 'index')
-            self.assertEqual(bind_index['args']['a']['args']['b'], 6)
+            mul_op = bind_index['args']['a']
+            self.assertEqual(mul_op['call'], 'mul')
+            self.assertEqual(mul_op['args']['a']['self'], 'index')
+            self.assertEqual(mul_op['args']['b'], 6)
             self.assertEqual(bind_index['args']['b'], i)
 
     def test_social_thread_reply_reaction_display_matches_main_post_style(self):
