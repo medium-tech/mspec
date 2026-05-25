@@ -406,6 +406,12 @@ class TestLingoPages(unittest.TestCase):
         for i, emoji in enumerate(expected_emojis):
             self.assertEqual(reply_reaction_ops[i]['submit_button_text'], emoji)
             self.assertEqual(reply_reaction_ops[i]['params']['reaction_type'], emoji)
+            bind_index = reply_reaction_ops[i]['bind']['state']['reply_reaction_op_state']['index']
+            self.assertEqual(bind_index['call'], 'add')
+            self.assertEqual(bind_index['args']['a']['call'], 'mul')
+            self.assertEqual(bind_index['args']['a']['args']['a']['self'], 'index')
+            self.assertEqual(bind_index['args']['a']['args']['b'], 6)
+            self.assertEqual(bind_index['args']['b'], i)
 
     def test_social_thread_reply_reaction_display_matches_main_post_style(self):
         thread_spec = load_browser2_spec('social-thread-instance.json')

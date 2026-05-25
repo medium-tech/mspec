@@ -2260,7 +2260,19 @@
                                                                                     "state": {
                                                                                         "reply_reaction_op_state": {
                                                                                             "index": {
-                                                                                                "self": "index"
+                                                                                                "call": "add",
+                                                                                                "args": {
+                                                                                                    "a": {
+                                                                                                        "call": "mul",
+                                                                                                        "args": {
+                                                                                                            "a": {
+                                                                                                                "self": "index"
+                                                                                                            },
+                                                                                                            "b": 6
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "b": 0
+                                                                                                }
                                                                                             }
                                                                                         }
                                                                                     }
@@ -2296,7 +2308,19 @@
                                                                                     "state": {
                                                                                         "reply_reaction_op_state": {
                                                                                             "index": {
-                                                                                                "self": "index"
+                                                                                                "call": "add",
+                                                                                                "args": {
+                                                                                                    "a": {
+                                                                                                        "call": "mul",
+                                                                                                        "args": {
+                                                                                                            "a": {
+                                                                                                                "self": "index"
+                                                                                                            },
+                                                                                                            "b": 6
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "b": 1
+                                                                                                }
                                                                                             }
                                                                                         }
                                                                                     }
@@ -2332,7 +2356,19 @@
                                                                                     "state": {
                                                                                         "reply_reaction_op_state": {
                                                                                             "index": {
-                                                                                                "self": "index"
+                                                                                                "call": "add",
+                                                                                                "args": {
+                                                                                                    "a": {
+                                                                                                        "call": "mul",
+                                                                                                        "args": {
+                                                                                                            "a": {
+                                                                                                                "self": "index"
+                                                                                                            },
+                                                                                                            "b": 6
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "b": 2
+                                                                                                }
                                                                                             }
                                                                                         }
                                                                                     }
@@ -2368,7 +2404,19 @@
                                                                                     "state": {
                                                                                         "reply_reaction_op_state": {
                                                                                             "index": {
-                                                                                                "self": "index"
+                                                                                                "call": "add",
+                                                                                                "args": {
+                                                                                                    "a": {
+                                                                                                        "call": "mul",
+                                                                                                        "args": {
+                                                                                                            "a": {
+                                                                                                                "self": "index"
+                                                                                                            },
+                                                                                                            "b": 6
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "b": 3
+                                                                                                }
                                                                                             }
                                                                                         }
                                                                                     }
@@ -2404,7 +2452,19 @@
                                                                                     "state": {
                                                                                         "reply_reaction_op_state": {
                                                                                             "index": {
-                                                                                                "self": "index"
+                                                                                                "call": "add",
+                                                                                                "args": {
+                                                                                                    "a": {
+                                                                                                        "call": "mul",
+                                                                                                        "args": {
+                                                                                                            "a": {
+                                                                                                                "self": "index"
+                                                                                                            },
+                                                                                                            "b": 6
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "b": 4
+                                                                                                }
                                                                                             }
                                                                                         }
                                                                                     }
@@ -2440,7 +2500,19 @@
                                                                                     "state": {
                                                                                         "reply_reaction_op_state": {
                                                                                             "index": {
-                                                                                                "self": "index"
+                                                                                                "call": "add",
+                                                                                                "args": {
+                                                                                                    "a": {
+                                                                                                        "call": "mul",
+                                                                                                        "args": {
+                                                                                                            "a": {
+                                                                                                                "self": "index"
+                                                                                                            },
+                                                                                                            "b": 6
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "b": 5
+                                                                                                }
                                                                                             }
                                                                                         }
                                                                                     }

@@ -587,7 +587,21 @@ function _resolveBindState(app, bindState, ctx) {
  */
 function _getStateSlot(app, fieldName, listIndex) {
     if (listIndex !== null && listIndex !== undefined) {
-        return app.state[fieldName][listIndex];
+        const stateList = app.state[fieldName];
+        if (!Array.isArray(stateList)) {
+            throw new Error(`state field is not list-typed: ${fieldName}`);
+        }
+        if (!Number.isInteger(listIndex) || listIndex < 0) {
+            throw new Error(`invalid list state index for ${fieldName}: ${listIndex}`);
+        }
+        if (stateList[listIndex] === undefined) {
+            const itemDefault = app.spec.state[fieldName]?.item_type?.default;
+            if (itemDefault === undefined) {
+                throw new Error(`list state item default not found for field: ${fieldName}`);
+            }
+            stateList[listIndex] = JSON.parse(JSON.stringify(itemDefault));
+        }
+        return stateList[listIndex];
     }
     return app.state[fieldName];
 }
