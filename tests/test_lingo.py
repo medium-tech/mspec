@@ -436,7 +436,7 @@ class TestLingoPages(unittest.TestCase):
 
         output_as_text = json.dumps(thread_spec['output'])
         self.assertIn('reply_user_reaction_local', output_as_text)
-        self.assertIn('"default_value": "unset"', output_as_text)
+        self.assertIn('"default_value": "__uninitialized_reply_reaction__"', output_as_text)
 
     def test_social_thread_reply_reaction_display_matches_main_post_style(self):
         thread_spec = load_browser2_spec('social-thread-instance.json')

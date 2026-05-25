@@ -2239,10 +2239,10 @@
                                                                                                                         }
                                                                                                                     }
                                                                                                                 },
-                                                                                                                "default_value": "unset"
+                                                                                                                "default_value": "__uninitialized_reply_reaction__"
                                                                                                             }
                                                                                                         },
-                                                                                                        "b": "unset"
+                                                                                                        "b": "__uninitialized_reply_reaction__"
                                                                                                     }
                                                                                                 },
                                                                                                 "then": {
@@ -2261,7 +2261,7 @@
                                                                                                                 }
                                                                                                             }
                                                                                                         },
-                                                                                                        "default_value": "unset"
+                                                                                                        "default_value": "__uninitialized_reply_reaction__"
                                                                                                     }
                                                                                                 }
                                                                                             },
@@ -2312,10 +2312,10 @@
                                                                                                                         }
                                                                                                                     }
                                                                                                                 },
-                                                                                                                "default_value": "unset"
+                                                                                                                "default_value": "__uninitialized_reply_reaction__"
                                                                                                             }
                                                                                                         },
-                                                                                                        "b": "unset"
+                                                                                                        "b": "__uninitialized_reply_reaction__"
                                                                                                     }
                                                                                                 },
                                                                                                 "then": {
@@ -2334,7 +2334,7 @@
                                                                                                                 }
                                                                                                             }
                                                                                                         },
-                                                                                                        "default_value": "unset"
+                                                                                                        "default_value": "__uninitialized_reply_reaction__"
                                                                                                     }
                                                                                                 }
                                                                                             },
