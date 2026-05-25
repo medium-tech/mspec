@@ -5976,9 +5976,9 @@ function createFormElement(app, element, ctx = null) {
         if (currentState.error === 'Please fix field errors') {
             currentState.error = '';
         }
-        console.log('Submitting form with data:', formData);
+        // console.log('Submitting form with data:', formData);
         const result = lingoExecute(app, element.form.action, {});
-        console.log('Form submission result:', result);
+        // console.log('Form submission result:', result);
         renderLingoApp(app, document.getElementById('lingo-app'));
 		// setTimeout(() => {
 		// 	console.log('Form submission - re-rendering app after submitAction. Current state:', currentState.state);
