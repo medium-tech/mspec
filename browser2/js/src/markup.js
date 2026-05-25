@@ -188,6 +188,15 @@ function structKey(object, key, default_value = null) {
 		}
 	}
 
+	// treat undefined terminal values as missing keys so default_value can be used
+	if (typeof current === 'undefined') {
+		if (default_value === null) {
+			console.error('lingo function key - key resolved to undefined:', key, 'object:', object);
+			throw new Error(`lingo function key - key '${key}' resolved to undefined in object`);
+		}
+		return default_value;
+	}
+
 	return current;
 
 }
