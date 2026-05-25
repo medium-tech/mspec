@@ -184,6 +184,8 @@ def _seed_replies_in_first_thread(ctx, social_module: dict, users: list[dict], n
     print(f'  :: seeded {total_replies} replies ({num_replies} per {len(users)} users) in thread 1')
 
 
+available_reactions = ['👍', '❤️', '😂', '🔥', '😢', '👎']
+
 def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: int, num_replies: int):
     """Seed one random reaction per user for selected threads and replies."""
     get_threads_op = social_module['ops']['get_threads_for_forum']
@@ -197,7 +199,6 @@ def _seed_reactions(ctx, social_module: dict, users: list[dict], num_threads: in
 
     react_to_reply_op = social_module['ops']['react_to_reply']
     react_to_reply_params_class, react_to_reply_output_class = new_op_classes(react_to_reply_op, social_module)
-    available_reactions = react_to_thread_op['params']['reaction_type']['enum']
 
     ctx.client.set_bearer_token(users[0]['access_token'])
     get_threads_params = new_op_params(get_threads_params_class, {

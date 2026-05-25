@@ -84,7 +84,7 @@
                 }
             }
         },
-        "main_post_reaction_smile_state": {
+		"main_post_reaction_thumbs_up_state": {
             "type": "struct",
             "default": {
                 "state": "initial",
@@ -120,19 +120,7 @@
                 }
             }
         },
-        "main_post_reaction_thumbs_up_state": {
-            "type": "struct",
-            "default": {
-                "state": "initial",
-                "error": "",
-                "data": {},
-                "result": {
-                    "type": "any",
-                    "value": null
-                }
-            }
-        },
-        "main_post_reaction_thumbs_down_state": {
+		"main_post_reaction_fire_state": {
             "type": "struct",
             "default": {
                 "state": "initial",
@@ -156,7 +144,7 @@
                 }
             }
         },
-        "main_post_reaction_angry_state": {
+		"main_post_reaction_thumbs_down_state": {
             "type": "struct",
             "default": {
                 "state": "initial",
@@ -168,7 +156,7 @@
                 }
             }
         },
-        "main_post_reaction_grimace_state": {
+		"main_post_reaction_delete_state": {
             "type": "struct",
             "default": {
                 "state": "initial",
@@ -179,94 +167,6 @@
                     "value": null
                 }
             }
-        },
-        "main_post_reaction_yawn_state": {
-            "type": "struct",
-            "default": {
-                "state": "initial",
-                "error": "",
-                "data": {},
-                "result": {
-                    "type": "any",
-                    "value": null
-                }
-            }
-        },
-        "main_post_reaction_surprised_state": {
-            "type": "struct",
-            "default": {
-                "state": "initial",
-                "error": "",
-                "data": {},
-                "result": {
-                    "type": "any",
-                    "value": null
-                }
-            }
-        },
-        "main_post_reaction_thinking_state": {
-            "type": "struct",
-            "default": {
-                "state": "initial",
-                "error": "",
-                "data": {},
-                "result": {
-                    "type": "any",
-                    "value": null
-                }
-            }
-        },
-        "main_post_reaction_hundred_state": {
-            "type": "struct",
-            "default": {
-                "state": "initial",
-                "error": "",
-                "data": {},
-                "result": {
-                    "type": "any",
-                    "value": null
-                }
-            }
-        },
-        "main_post_reaction_mending_heart_state": {
-            "type": "struct",
-            "default": {
-                "state": "initial",
-                "error": "",
-                "data": {},
-                "result": {
-                    "type": "any",
-                    "value": null
-                }
-            }
-        },
-        "main_post_reaction_eyes_state": {
-            "type": "struct",
-            "default": {
-                "state": "initial",
-                "error": "",
-                "data": {},
-                "result": {
-                    "type": "any",
-                    "value": null
-                }
-            }
-        },
-        "main_post_reaction_fire_state": {
-            "type": "struct",
-            "default": {
-                "state": "initial",
-                "error": "",
-                "data": {},
-                "result": {
-                    "type": "any",
-                    "value": null
-                }
-            }
-        },
-        "main_post_reaction_drawer_expanded": {
-            "type": "bool",
-            "default": false
         },
         "reply_reaction_op_state": {
             "type": "list",
@@ -1337,26 +1237,6 @@
                 },
                 "to": "triggered"
             }
-        },
-        "toggle_main_post_reaction_drawer": {
-            "args": {},
-            "func": {
-                "set": {
-                    "state": {
-                        "main_post_reaction_drawer_expanded": {}
-                    }
-                },
-                "to": {
-                    "call": "not",
-                    "args": {
-                        "object": {
-                            "state": {
-                                "main_post_reaction_drawer_expanded": {}
-                            }
-                        }
-                    }
-                }
-            }
         }
     },
     "timers": {
@@ -1602,591 +1482,7 @@
                 "bold": true
             }
         },
-		{"break": 1},
-        {
-            "lingo": {
-                "state": {
-                    "main_post_reaction_counts_string": {}
-                }
-            }
-        },
-        {
-            "break": 1
-        },
-        {
-            "branch": [
-                {
-                    "if": {
-                        "state": {
-                            "main_post_reaction_drawer_expanded": {}
-                        }
-                    },
-                    "then": [
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_smile_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "🙂"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "🙂",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_heart_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "❤️"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "❤️",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_laugh_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "😂"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "😂",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_thumbs_up_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "👍"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "👍",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_thumbs_down_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "👎"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "👎",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_sad_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "😢"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "😢",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_angry_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "😡"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "😡",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_grimace_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "😬"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "😬",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_yawn_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "🥱"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "🥱",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_surprised_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "😮"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "😮",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_thinking_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "🤔"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "🤔",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_hundred_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "💯"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "💯",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_mending_heart_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "❤️‍🩹"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "❤️‍🩹",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_eyes_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "👀"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "👀",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_fire_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "🔥"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "🔥",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "button": {
-                                "op": {
-                                    "toggle_main_post_reaction_drawer": {}
-                                }
-                            },
-                            "text": "less"
-                        }
-                    ]
-                },
-                {
-                    "else": [
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_thumbs_up_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "👍"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "👍",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_heart_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "❤️"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "❤️",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_laugh_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "😂"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "😂",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_fire_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "🔥"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "🔥",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "op": {
-                                "bind": {
-                                    "state": {
-                                        "main_post_reaction_sad_state": {}
-                                    }
-                                },
-                                "display": {
-                                    "friendly_status": true,
-                                    "show_result": false,
-                                    "in_line": true
-                                },
-                                "interactive": true,
-                                "http": "/api/social/react-to-thread-main-post",
-                                "params": {
-                                    "thread_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "reaction_type": "😢"
-                                },
-                                "definition": "social.react_to_thread_main_post",
-                                "submit_button_text": "😢",
-                                "instruction": ""
-                            }
-                        },
-                        {
-                            "button": {
-                                "op": {
-                                    "toggle_main_post_reaction_drawer": {}
-                                }
-                            },
-                            "text": "more"
-                        }
-                    ]
-                }
-            ]
-        },
-		        {
+		{
             "branch": [
                 {
                     "if": {
@@ -2201,7 +1497,6 @@
                         }
                     },
                     "then": [
-						{"break": 1},
                         {
                             "text": " :: yours: ",
                             "style": {
@@ -2220,6 +1515,210 @@
                 {
                     "else": ""
                 }
+            ]
+        },
+		{"break": 1},
+        {
+            "lingo": {
+                "state": {
+                    "main_post_reaction_counts_string": {}
+                }
+            }
+        },
+        {
+            "break": 1
+        },
+        {
+            "block": [
+                {
+					"op": {
+						"bind": {
+							"state": {
+								"main_post_reaction_thumbs_up_state": {}
+							}
+						},
+						"display": {
+							"friendly_status": true,
+							"show_result": false,
+							"in_line": true
+						},
+						"interactive": true,
+						"http": "/api/social/react-to-thread-main-post",
+						"params": {
+							"thread_id": {
+								"params": {
+									"model_id": {}
+								}
+							},
+							"reaction_type": "👍"
+						},
+						"definition": "social.react_to_thread_main_post",
+						"submit_button_text": "👍",
+						"instruction": ""
+					}
+				},
+				{
+					"op": {
+						"bind": {
+							"state": {
+								"main_post_reaction_heart_state": {}
+							}
+						},
+						"display": {
+							"friendly_status": true,
+							"show_result": false,
+							"in_line": true
+						},
+						"interactive": true,
+						"http": "/api/social/react-to-thread-main-post",
+						"params": {
+							"thread_id": {
+								"params": {
+									"model_id": {}
+								}
+							},
+							"reaction_type": "❤️"
+						},
+						"definition": "social.react_to_thread_main_post",
+						"submit_button_text": "❤️",
+						"instruction": ""
+					}
+				},
+				{
+					"op": {
+						"bind": {
+							"state": {
+								"main_post_reaction_laugh_state": {}
+							}
+						},
+						"display": {
+							"friendly_status": true,
+							"show_result": false,
+							"in_line": true
+						},
+						"interactive": true,
+						"http": "/api/social/react-to-thread-main-post",
+						"params": {
+							"thread_id": {
+								"params": {
+									"model_id": {}
+								}
+							},
+							"reaction_type": "😂"
+						},
+						"definition": "social.react_to_thread_main_post",
+						"submit_button_text": "😂",
+						"instruction": ""
+					}
+				},
+				{
+					"op": {
+						"bind": {
+							"state": {
+								"main_post_reaction_fire_state": {}
+							}
+						},
+						"display": {
+							"friendly_status": true,
+							"show_result": false,
+							"in_line": true
+						},
+						"interactive": true,
+						"http": "/api/social/react-to-thread-main-post",
+						"params": {
+							"thread_id": {
+								"params": {
+									"model_id": {}
+								}
+							},
+							"reaction_type": "🔥"
+						},
+						"definition": "social.react_to_thread_main_post",
+						"submit_button_text": "🔥",
+						"instruction": ""
+					}
+				},
+				{
+					"op": {
+						"bind": {
+							"state": {
+								"main_post_reaction_sad_state": {}
+							}
+						},
+						"display": {
+							"friendly_status": true,
+							"show_result": false,
+							"in_line": true
+						},
+						"interactive": true,
+						"http": "/api/social/react-to-thread-main-post",
+						"params": {
+							"thread_id": {
+								"params": {
+									"model_id": {}
+								}
+							},
+							"reaction_type": "😢"
+						},
+						"definition": "social.react_to_thread_main_post",
+						"submit_button_text": "😢",
+						"instruction": ""
+					}
+				},
+				{
+					"op": {
+						"bind": {
+							"state": {
+								"main_post_reaction_thumbs_down_state": {}
+							}
+						},
+						"display": {
+							"friendly_status": true,
+							"show_result": false,
+							"in_line": true
+						},
+						"interactive": true,
+						"http": "/api/social/react-to-thread-main-post",
+						"params": {
+							"thread_id": {
+								"params": {
+									"model_id": {}
+								}
+							},
+							"reaction_type": "👎"
+						},
+						"definition": "social.react_to_thread_main_post",
+						"submit_button_text": "👎",
+						"instruction": ""
+					}
+				},
+				{
+					"op": {
+						"bind": {
+							"state": {
+								"main_post_reaction_delete_state": {}
+							}
+						},
+						"display": {
+							"friendly_status": true,
+							"show_result": false,
+							"in_line": true
+						},
+						"interactive": true,
+						"http": "/api/social/react-to-thread-main-post",
+						"params": {
+							"thread_id": {
+								"params": {
+									"model_id": {}
+								}
+							},
+							"reaction_type": ""
+						},
+						"definition": "social.react_to_thread_main_post",
+						"submit_button_text": "remove",
+						"instruction": ""
+					}
+				}
             ]
         },
         {
