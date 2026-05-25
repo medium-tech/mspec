@@ -1257,8 +1257,8 @@ modules:
 
             react_to_thread_main_post:
                 name:
-                    lower_case: 'react to thread main post'
-                description: 'Create or update current user reaction for the thread main post'
+                    lower_case: 'react_to_thread_main_post'
+                description: 'React to a thread main post by supplying a supported emoji as params.reaction_type, or supply an empty string as params.reaction_type to remove an existing reaction'
                 func:
                     type: struct
                     self:
@@ -1379,97 +1379,126 @@ modules:
                                 lower_case: 'message'
                             type: str
 
-            remove_reaction_from_thread_main_post:
-                name:
-                    lower_case: 'remove reaction from thread main post'
-                description: 'Remove current user reaction for the thread main post'
-                func:
-                    type: struct
-                    self:
-                        thread:
-                            call: 'db.read'
-                            args:
-                                model_id:
-                                    params: { thread_id: {} }
-                                model_type: 'social.thread'
-                    value:
-                        call: 'db.delete_where'
-                        args:
-                            model_type: 'social.reaction'
-                            message: 'Reaction removed from thread'
-                            where:
-                                user_id:
-                                    eq:
-                                        call: 'key'
-                                        args:
-                                            key: 'id'
-                                            object:
-                                                call: 'auth.current_user'
-                                                args: {}
-                                post_id:
-                                    eq:
-                                        call: 'key'
-                                        args:
-                                            key: 'main_post_id'
-                                            object: { self: thread }
-                params:
-                    thread_id:
-                        name:
-                            lower_case: 'thread id'
-                        type: foreign_key
-                        references:
-                            module: 'social'
-                            table: 'thread'
-                            field: 'id'
-                        examples:
-                            - "1"
-                            - "2"
-                            - "3"
-                result:
-                    type: struct
-                    fields:
-                        acknowledged:
-                            name:
-                                lower_case: 'acknowledged'
-                            type: bool
-                        message:
-                            name:
-                                lower_case: 'message'
-                            type: str
+            # remove_reaction_from_thread_main_post:
+            #     name:
+            #         lower_case: 'remove reaction from thread main post'
+            #     description: 'Remove current user reaction for the thread main post'
+            #     func:
+            #         type: struct
+            #         self:
+            #             thread:
+            #                 call: 'db.read'
+            #                 args:
+            #                     model_id:
+            #                         params: { thread_id: {} }
+            #                     model_type: 'social.thread'
+            #         value:
+            #             call: 'db.delete_where'
+            #             args:
+            #                 model_type: 'social.reaction'
+            #                 message: 'Reaction removed from thread'
+            #                 where:
+            #                     user_id:
+            #                         eq:
+            #                             call: 'key'
+            #                             args:
+            #                                 key: 'id'
+            #                                 object:
+            #                                     call: 'auth.current_user'
+            #                                     args: {}
+            #                     post_id:
+            #                         eq:
+            #                             call: 'key'
+            #                             args:
+            #                                 key: 'main_post_id'
+            #                                 object: { self: thread }
+            #     params:
+            #         thread_id:
+            #             name:
+            #                 lower_case: 'thread id'
+            #             type: foreign_key
+            #             references:
+            #                 module: 'social'
+            #                 table: 'thread'
+            #                 field: 'id'
+            #             examples:
+            #                 - "1"
+            #                 - "2"
+            #                 - "3"
+            #     result:
+            #         type: struct
+            #         fields:
+            #             acknowledged:
+            #                 name:
+            #                     lower_case: 'acknowledged'
+            #                 type: bool
+            #             message:
+            #                 name:
+            #                     lower_case: 'message'
+            #                 type: str
 
             react_to_reply:
                 name:
                     lower_case: 'react to reply'
-                description: 'Create or update current user reaction for a reply'
+                description: 'React to a reply by supplying a supported emoji as params.reaction_type, or supply an empty string as params.reaction_type to remove an existing reaction'
                 func:
                     type: struct
                     self:
-                        saved_reaction:
-                            call: 'db.upsert'
-                            args:
-                                model_type: 'social.reaction'
-                                conflict_fields: ['user_id', 'post_id']
-                                data:
-                                    user_id:
-                                        call: 'key'
-                                        args:
-                                            key: 'id'
-                                            object:
-                                                call: 'auth.current_user'
-                                                args: {}
-                                    post_id:
-                                        params: { post_id: {} }
-                                    reaction_type:
-                                        params: { reaction_type: {} }
+                        result:
+                            branch:
+                                - if:
+                                    call: 'eq'
+                                    args:
+                                        a: { params: { reaction_type: {} } }
+                                        b: ''
+                                  then:
+                                    call: 'db.delete_where'
+                                    args:
+                                            model_type: 'social.reaction'
+                                            message: 'Reaction removed from thread'
+                                            where:
+                                                user_id:
+                                                    eq:
+                                                        call: 'key'
+                                                        args:
+                                                            key: 'id'
+                                                            object:
+                                                                call: 'auth.current_user'
+                                                                args: {}
+                                                post_id:
+                                                    eq:
+                                                        params: { post_id: {} }
+                                - else:
+                                    call: 'db.upsert'
+                                    args:
+                                        model_type: 'social.reaction'
+                                        conflict_fields: ['user_id', 'post_id']
+                                        data:
+                                            user_id:
+                                                call: 'key'
+                                                args:
+                                                    key: 'id'
+                                                    object:
+                                                        call: 'auth.current_user'
+                                                        args: {}
+                                            post_id:
+                                                params: { post_id: {} }
+                                            reaction_type:
+                                                params: { reaction_type: {} }
                     value:
                         acknowledged: true
                         message:
                             call: 'concat'
                             args:
                                 items:
-                                    - 'Reaction '
-                                    - { params: { reaction_type: {} } }
-                                    - ' to reply saved'
+                                    - branch:
+                                        - if:
+                                            call: 'eq'
+                                            args:
+                                                a: { params: { reaction_type: {} } }
+                                                b: ''
+                                          then: 'Reaction removed'
+                                        - else: 'Reaction added'
                 params:
                     post_id:
                         name:
@@ -1520,50 +1549,50 @@ modules:
                                 lower_case: 'message'
                             type: str
 
-            remove_reaction_from_reply:
-                name:
-                    lower_case: 'remove reaction from reply'
-                description: 'Remove current user reaction for a reply'
-                func:
-                    type: struct
-                    value:
-                        call: 'db.delete_where'
-                        args:
-                            model_type: 'social.reaction'
-                            message: 'Reaction removed from reply'
-                            where:
-                                user_id:
-                                    eq:
-                                        call: 'key'
-                                        args:
-                                            key: 'id'
-                                            object:
-                                                call: 'auth.current_user'
-                                                args: {}
-                                post_id:
-                                    eq:
-                                        params: { post_id: {} }
-                params:
-                    post_id:
-                        name:
-                            lower_case: 'post id'
-                        type: foreign_key
-                        references:
-                            module: 'social'
-                            table: 'post'
-                            field: 'id'
-                        examples:
-                            - "1"
-                            - "2"
-                            - "3"
-                result:
-                    type: struct
-                    fields:
-                        acknowledged:
-                            name:
-                                lower_case: 'acknowledged'
-                            type: bool
-                        message:
-                            name:
-                                lower_case: 'message'
-                            type: str
+            # remove_reaction_from_reply:
+            #     name:
+            #         lower_case: 'remove reaction from reply'
+            #     description: 'Remove current user reaction for a reply'
+            #     func:
+            #         type: struct
+            #         value:
+            #             call: 'db.delete_where'
+            #             args:
+            #                 model_type: 'social.reaction'
+            #                 message: 'Reaction removed from reply'
+            #                 where:
+            #                     user_id:
+            #                         eq:
+            #                             call: 'key'
+            #                             args:
+            #                                 key: 'id'
+            #                                 object:
+            #                                     call: 'auth.current_user'
+            #                                     args: {}
+            #                     post_id:
+            #                         eq:
+            #                             params: { post_id: {} }
+            #     params:
+            #         post_id:
+            #             name:
+            #                 lower_case: 'post id'
+            #             type: foreign_key
+            #             references:
+            #                 module: 'social'
+            #                 table: 'post'
+            #                 field: 'id'
+            #             examples:
+            #                 - "1"
+            #                 - "2"
+            #                 - "3"
+            #     result:
+            #         type: struct
+            #         fields:
+            #             acknowledged:
+            #                 name:
+            #                     lower_case: 'acknowledged'
+            #                 type: bool
+            #             message:
+            #                 name:
+            #                     lower_case: 'message'
+            #                 type: str
