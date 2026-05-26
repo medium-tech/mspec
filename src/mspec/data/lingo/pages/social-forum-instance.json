@@ -550,6 +550,21 @@
 	},
     "output": [
         {
+            "breadcrumbs": [
+                "mtech",
+                {
+                    "params": {
+                        "module_name": {}
+                    }
+                }
+            ]
+        },
+		{"text": " :: "},
+		{
+			"link": "/social/forum",
+			"text": "forums"
+		},
+        {
             "heading": {
                 "call": "join",
                 "args": {
@@ -568,21 +583,6 @@
             },
             "level": 1
         },
-        {
-            "breadcrumbs": [
-                "mtech",
-                {
-                    "params": {
-                        "module_name": {}
-                    }
-                }
-            ]
-        },
-		{"text": " :: "},
-		{
-			"link": "/social/forum",
-			"text": "forums"
-		},
 		{
 			"break": 1
 		},

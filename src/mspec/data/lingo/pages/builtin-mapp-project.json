@@ -44,6 +44,9 @@
     },
     "ops": {},
     "output": [
+        {"breadcrumbs": [
+            {"params": {"project_name": {}}}
+        ]},
         {
             "heading": {
                 "state": {
@@ -52,9 +55,6 @@
             },
             "level": 1
         },
-        {"breadcrumbs": [
-            {"params": {"project_name": {}}}
-        ]},
         {
             "heading": ":: available modules",
             "level": 2
