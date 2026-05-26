@@ -381,6 +381,87 @@ class TestLingoPages(unittest.TestCase):
         )
         self.assertIn('user_reaction', mapped_reply_fields)
 
+    def test_social_thread_reply_reaction_buttons_use_fixed_values(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        reply_reaction_ops = []
+
+        def collect_reply_reaction_ops(node):
+            if isinstance(node, list):
+                for item in node:
+                    collect_reply_reaction_ops(item)
+                return
+
+            if isinstance(node, dict):
+                op_spec = node.get('op')
+                if isinstance(op_spec, dict) and op_spec.get('definition') == 'social.react_to_reply':
+                    reply_reaction_ops.append(op_spec)
+
+                for value in node.values():
+                    collect_reply_reaction_ops(value)
+
+        collect_reply_reaction_ops(thread_spec['output'])
+
+        expected_buttons = [
+            ('👍', '👍'),
+            ('❤️', '❤️'),
+            ('😂', '😂'),
+            ('🔥', '🔥'),
+            ('😢', '😢'),
+            ('👎', '👎'),
+            ('remove', ''),
+        ]
+        self.assertEqual(len(reply_reaction_ops), len(expected_buttons))
+        for i, (button_text, reaction_type) in enumerate(expected_buttons):
+            op = reply_reaction_ops[i]
+            self.assertEqual(op['submit_button_text'], button_text)
+            self.assertEqual(op['params']['reaction_type'], reaction_type)
+            bind_index = op['bind']['state']['reply_reaction_op_state']['index']
+            self.assertEqual(bind_index['call'], 'add')
+            mul_op = bind_index['args']['a']
+            self.assertEqual(mul_op['call'], 'mul')
+            self.assertEqual(mul_op['args']['a']['self'], 'index')
+            self.assertEqual(mul_op['args']['b'], 7)
+            self.assertEqual(bind_index['args']['b'], i)
+            on_success = op['on_success']
+            self.assertEqual(on_success['to'], reaction_type)
+            self.assertEqual(
+                on_success['set']['state']['reply_user_reaction_local']['index'],
+                {'self': 'index'}
+            )
+
+    def test_reply_reaction_prefers_local_state(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        self.assertEqual(thread_spec['state']['reply_user_reaction_local']['type'], 'list')
+        self.assertEqual(thread_spec['state']['reply_user_reaction_local']['item_type']['type'], 'str')
+
+        output_as_text = json.dumps(thread_spec['output'])
+        self.assertIn('reply_user_reaction_local', output_as_text)
+        self.assertIn('"default_value": "initial"', output_as_text)
+
+    def test_social_thread_reply_reaction_display_matches_main_post_style(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        text_values = []
+
+        def collect_text_values(node):
+            if isinstance(node, list):
+                for item in node:
+                    collect_text_values(item)
+                return
+
+            if isinstance(node, dict):
+                if 'text' in node and isinstance(node['text'], str):
+                    text_values.append(node['text'])
+
+                for value in node.values():
+                    collect_text_values(value)
+
+        collect_text_values(thread_spec['output'])
+
+        self.assertGreaterEqual(text_values.count(':: reactions: '), 2)
+        self.assertGreaterEqual(text_values.count(' :: yours: '), 2)
+        self.assertNotIn('reactions: ', text_values)
+        self.assertNotIn(' ● your reaction: ', text_values)
+
     def test_sequence_functions(self):
         """Test sequence functions: len, range, slice, any, all, sum, sorted, count"""
         app = lingo_app(self.functions_sequence_spec)

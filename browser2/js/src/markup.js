@@ -188,6 +188,15 @@ function structKey(object, key, default_value = null) {
 		}
 	}
 
+	// treat undefined terminal values as missing keys so default_value can be used
+	if (typeof current === 'undefined') {
+		if (default_value === null) {
+			console.error('lingo function key - key resolved to undefined:', key, 'object:', object);
+			throw new Error(`lingo function key - key '${key}' resolved to undefined in object`);
+		}
+		return default_value;
+	}
+
 	return current;
 
 }
@@ -587,7 +596,27 @@ function _resolveBindState(app, bindState, ctx) {
  */
 function _getStateSlot(app, fieldName, listIndex) {
     if (listIndex !== null && listIndex !== undefined) {
-        return app.state[fieldName][listIndex];
+        const stateList = app.state[fieldName];
+        if (!Array.isArray(stateList)) {
+            throw new Error(`state field is not list-typed: ${fieldName}`);
+        }
+        if (!Number.isInteger(listIndex) || listIndex < 0) {
+            throw new Error(`invalid list state index for ${fieldName}: ${listIndex}`);
+        }
+        if (stateList[listIndex] === undefined) {
+            const stateSpec = app.spec.state[fieldName];
+            if (!stateSpec?.item_type) {
+                throw new Error(`list state item_type not found for field: ${fieldName}`);
+            }
+            if (stateSpec.item_type.default === undefined) {
+                throw new Error(`list state item_type.default not found for field: ${fieldName}`);
+            }
+            const itemDefault = stateSpec.item_type.default;
+            stateList[listIndex] = (typeof structuredClone === 'function')
+                ? structuredClone(itemDefault)
+                : JSON.parse(JSON.stringify(itemDefault));
+        }
+        return stateList[listIndex];
     }
     return app.state[fieldName];
 }
@@ -2184,6 +2213,7 @@ function renderBranch(app, element, ctx = null) {
                     // console.log(`branch then result`, thenResult);
                     return thenResult;
                 } catch (error) {
+					console.error(`Error processing then expression for branch ${n}:`, error, element, then);
                     throw new Error(`branch ${n} - error processing then expression: ${error.message}`);
                 }
             }
@@ -2300,11 +2330,20 @@ function renderSet(app, expression, ctx = null) {
                 throw new Error(`set - state field not found: ${fieldName}`);
             }
 
-            // support list-indexed state: {fieldName: {_list_index: N}}
+            // support list-indexed state: {fieldName: {_list_index: N}} or {fieldName: {index: <expression>}}
             const setBindValue = target[fieldName];
-            const setListIndex = (setBindValue && typeof setBindValue === 'object' && '_list_index' in setBindValue)
-                ? setBindValue._list_index
-                : null;
+            let setListIndex = null;
+            if (setBindValue && typeof setBindValue === 'object') {
+                if ('_list_index' in setBindValue) {
+                    setListIndex = setBindValue._list_index;
+                } else if ('index' in setBindValue) {
+                    const resolvedListIndex = unwrapValue(lingoExecute(app, setBindValue.index, ctx));
+                    if (!Number.isInteger(resolvedListIndex) || resolvedListIndex < 0) {
+                        throw new Error(`set - state index must resolve to a non-negative integer for ${fieldName}`);
+                    }
+                    setListIndex = resolvedListIndex;
+                }
+            }
 
             if (setListIndex !== null) {
                 stateToSet = app.state[fieldName][setListIndex];
@@ -2454,7 +2493,10 @@ function renderSet(app, expression, ctx = null) {
 
                 // rerender output after state update
                 renderLingoApp(app, document.getElementById('lingo-app'), ctx);
-            });
+            }).catch(error => {
+				console.error('set - error resolving promise:', error);
+				throw new Error(`set - error resolving promise: ${error.message}`);
+			});
             return value;
         }else{
             setValue();

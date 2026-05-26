@@ -365,6 +365,13 @@
                 }
             ]
         },
+        "reply_user_reaction_local": {
+            "type": "list",
+            "item_type": {
+                "type": "str"
+            },
+            "default": []
+        },
         "overall_op_view_state": {
             "type": "str",
             "description": "state is either 'default', 'result' or 'error'. If thread_op_view_state and replies_op_view_state are result this will return result, if either are error it will return error, otherwise default",
@@ -2146,7 +2153,7 @@
                                                                     "break": 1
                                                                 },
                                                                 {
-                                                                    "text": "reactions: ",
+                                                                    "text": ":: reactions: ",
                                                                     "style": {
                                                                         "bold": true
                                                                     }
@@ -2211,35 +2218,138 @@
                                                                                 "call": "ne",
                                                                                 "args": {
                                                                                     "a": {
-                                                                                        "call": "key",
-                                                                                        "args": {
-                                                                                            "object": {
-                                                                                                "self": "item"
+                                                                                        "branch": [
+                                                                                            {
+                                                                                                "if": {
+                                                                                                    "call": "ne",
+                                                                                                    "args": {
+                                                                                                        "a": {
+                                                                                                            "call": "key",
+                                                                                                            "args": {
+                                                                                                                "object": {
+                                                                                                                    "state": {
+                                                                                                                        "reply_user_reaction_local": {}
+                                                                                                                    }
+                                                                                                                },
+                                                                                                                "key": {
+                                                                                                                    "call": "str",
+                                                                                                                    "args": {
+                                                                                                                        "object": {
+                                                                                                                            "self": "index"
+                                                                                                                        }
+                                                                                                                    }
+                                                                                                                },
+                                                                                                                "default_value": "initial"
+                                                                                                            }
+                                                                                                        },
+                                                                                                        "b": "initial"
+                                                                                                    }
+                                                                                                },
+                                                                                                "then": {
+                                                                                                    "call": "key",
+                                                                                                    "args": {
+                                                                                                        "object": {
+                                                                                                            "state": {
+                                                                                                                "reply_user_reaction_local": {}
+                                                                                                            }
+                                                                                                        },
+                                                                                                        "key": {
+                                                                                                            "call": "str",
+                                                                                                            "args": {
+                                                                                                                "object": {
+                                                                                                                    "self": "index"
+                                                                                                                }
+                                                                                                            }
+                                                                                                        },
+                                                                                                        "default_value": "initial"
+                                                                                                    }
+                                                                                                }
                                                                                             },
-                                                                                            "key": "user_reaction",
-                                                                                            "default_value": ""
-                                                                                        }
+                                                                                            {
+                                                                                                "else": {
+                                                                                                    "call": "key",
+                                                                                                    "args": {
+                                                                                                        "object": {
+                                                                                                            "self": "item"
+                                                                                                        },
+                                                                                                        "key": "user_reaction",
+                                                                                                        "default_value": ""
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                        ]
                                                                                     },
                                                                                     "b": ""
                                                                                 }
                                                                             },
                                                                             "then": [
                                                                                 {
-                                                                                    "text": " \u25cf your reaction: ",
+                                                                                    "text": " :: yours: ",
                                                                                     "style": {
                                                                                         "bold": true
                                                                                     }
                                                                                 },
                                                                                 {
                                                                                     "lingo": {
-                                                                                        "call": "key",
-                                                                                        "args": {
-                                                                                            "object": {
-                                                                                                "self": "item"
+                                                                                        "branch": [
+                                                                                            {
+                                                                                                "if": {
+                                                                                                    "call": "ne",
+                                                                                                    "args": {
+                                                                                                        "a": {
+                                                                                                            "call": "key",
+                                                                                                            "args": {
+                                                                                                                "object": {
+                                                                                                                    "state": {
+                                                                                                                        "reply_user_reaction_local": {}
+                                                                                                                    }
+                                                                                                                },
+                                                                                                                "key": {
+                                                                                                                    "call": "str",
+                                                                                                                    "args": {
+                                                                                                                        "object": {
+                                                                                                                            "self": "index"
+                                                                                                                        }
+                                                                                                                    }
+                                                                                                                },
+                                                                                                                "default_value": "initial"
+                                                                                                            }
+                                                                                                        },
+                                                                                                        "b": "initial"
+                                                                                                    }
+                                                                                                },
+                                                                                                "then": {
+                                                                                                    "call": "key",
+                                                                                                    "args": {
+                                                                                                        "object": {
+                                                                                                            "state": {
+                                                                                                                "reply_user_reaction_local": {}
+                                                                                                            }
+                                                                                                        },
+                                                                                                        "key": {
+                                                                                                            "call": "str",
+                                                                                                            "args": {
+                                                                                                                "object": {
+                                                                                                                    "self": "index"
+                                                                                                                }
+                                                                                                            }
+                                                                                                        }
+                                                                                                    }
+                                                                                                }
                                                                                             },
-                                                                                            "key": "user_reaction",
-                                                                                            "default_value": ""
-                                                                                        }
+                                                                                            {
+                                                                                                "else": {
+                                                                                                    "call": "key",
+                                                                                                    "args": {
+                                                                                                        "object": {
+                                                                                                            "self": "item"
+                                                                                                        },
+                                                                                                        "key": "user_reaction",
+                                                                                                        "default_value": ""
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                        ]
                                                                                     }
                                                                                 }
                                                                             ]
@@ -2253,37 +2363,428 @@
                                                                     "break": 1
                                                                 },
                                                                 {
-                                                                    "op": {
-                                                                        "bind": {
-                                                                            "state": {
-                                                                                "reply_reaction_op_state": {
-                                                                                    "index": {
-                                                                                        "self": "index"
+                                                                    "block": [
+                                                                        {
+                                                                            "op": {
+                                                                                "bind": {
+                                                                                    "state": {
+                                                                                        "reply_reaction_op_state": {
+                                                                                            "index": {
+                                                                                                "call": "add",
+                                                                                                "args": {
+                                                                                                    "a": {
+                                                                                                        "call": "mul",
+                                                                                                        "args": {
+                                                                                                            "a": {
+                                                                                                                "self": "index"
+                                                                                                            },
+                                                                                                            "b": 7
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "b": 0
+                                                                                                }
+                                                                                            }
+                                                                                        }
                                                                                     }
-                                                                                }
-                                                                            }
-                                                                        },
-                                                                        "display": {
-                                                                            "friendly_status": true,
-                                                                            "show_result": false
-                                                                        },
-                                                                        "interactive": true,
-                                                                        "http": "/api/social/react-to-reply",
-                                                                        "instruction": "",
-                                                                        "params": {
-                                                                            "post_id": {
-                                                                                "call": "key",
-                                                                                "args": {
-                                                                                    "object": {
-                                                                                        "self": "item"
+                                                                                },
+                                                                                "display": {
+                                                                                    "friendly_status": true,
+                                                                                    "show_result": false,
+                                                                                    "in_line": true,
+                                                                                    "show_op_status_display": false
+                                                                                },
+                                                                                "interactive": true,
+                                                                                "http": "/api/social/react-to-reply",
+                                                                                "instruction": "",
+                                                                                "params": {
+                                                                                    "post_id": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "id"
+                                                                                        }
                                                                                     },
-                                                                                    "key": "id"
+                                                                                    "reaction_type": "👍"
+                                                                                },
+                                                                                "definition": "social.react_to_reply",
+                                                                                "submit_button_text": "👍",
+                                                                                "on_success": {
+                                                                                    "set": {
+                                                                                        "state": {
+                                                                                            "reply_user_reaction_local": {
+                                                                                                "index": {
+                                                                                                    "self": "index"
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    },
+                                                                                    "to": "👍"
                                                                                 }
                                                                             }
                                                                         },
-                                                                        "definition": "social.react_to_reply",
-                                                                        "submit_button_text": "react"
-                                                                    }
+                                                                        {
+                                                                            "op": {
+                                                                                "bind": {
+                                                                                    "state": {
+                                                                                        "reply_reaction_op_state": {
+                                                                                            "index": {
+                                                                                                "call": "add",
+                                                                                                "args": {
+                                                                                                    "a": {
+                                                                                                        "call": "mul",
+                                                                                                        "args": {
+                                                                                                            "a": {
+                                                                                                                "self": "index"
+                                                                                                            },
+                                                                                                            "b": 7
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "b": 1
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                "display": {
+                                                                                    "friendly_status": true,
+                                                                                    "show_result": false,
+                                                                                    "in_line": true,
+                                                                                    "show_op_status_display": false
+                                                                                },
+                                                                                "interactive": true,
+                                                                                "http": "/api/social/react-to-reply",
+                                                                                "instruction": "",
+                                                                                "params": {
+                                                                                    "post_id": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "id"
+                                                                                        }
+                                                                                    },
+                                                                                    "reaction_type": "❤️"
+                                                                                },
+                                                                                "definition": "social.react_to_reply",
+                                                                                "submit_button_text": "❤️",
+                                                                                "on_success": {
+                                                                                    "set": {
+                                                                                        "state": {
+                                                                                            "reply_user_reaction_local": {
+                                                                                                "index": {
+                                                                                                    "self": "index"
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    },
+                                                                                    "to": "❤️"
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        {
+                                                                            "op": {
+                                                                                "bind": {
+                                                                                    "state": {
+                                                                                        "reply_reaction_op_state": {
+                                                                                            "index": {
+                                                                                                "call": "add",
+                                                                                                "args": {
+                                                                                                    "a": {
+                                                                                                        "call": "mul",
+                                                                                                        "args": {
+                                                                                                            "a": {
+                                                                                                                "self": "index"
+                                                                                                            },
+                                                                                                            "b": 7
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "b": 2
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                "display": {
+                                                                                    "friendly_status": true,
+                                                                                    "show_result": false,
+                                                                                    "in_line": true,
+                                                                                    "show_op_status_display": false
+                                                                                },
+                                                                                "interactive": true,
+                                                                                "http": "/api/social/react-to-reply",
+                                                                                "instruction": "",
+                                                                                "params": {
+                                                                                    "post_id": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "id"
+                                                                                        }
+                                                                                    },
+                                                                                    "reaction_type": "😂"
+                                                                                },
+                                                                                "definition": "social.react_to_reply",
+                                                                                "submit_button_text": "😂",
+                                                                                "on_success": {
+                                                                                    "set": {
+                                                                                        "state": {
+                                                                                            "reply_user_reaction_local": {
+                                                                                                "index": {
+                                                                                                    "self": "index"
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    },
+                                                                                    "to": "😂"
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        {
+                                                                            "op": {
+                                                                                "bind": {
+                                                                                    "state": {
+                                                                                        "reply_reaction_op_state": {
+                                                                                            "index": {
+                                                                                                "call": "add",
+                                                                                                "args": {
+                                                                                                    "a": {
+                                                                                                        "call": "mul",
+                                                                                                        "args": {
+                                                                                                            "a": {
+                                                                                                                "self": "index"
+                                                                                                            },
+                                                                                                            "b": 7
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "b": 3
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                "display": {
+                                                                                    "friendly_status": true,
+                                                                                    "show_result": false,
+                                                                                    "in_line": true,
+                                                                                    "show_op_status_display": false
+                                                                                },
+                                                                                "interactive": true,
+                                                                                "http": "/api/social/react-to-reply",
+                                                                                "instruction": "",
+                                                                                "params": {
+                                                                                    "post_id": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "id"
+                                                                                        }
+                                                                                    },
+                                                                                    "reaction_type": "🔥"
+                                                                                },
+                                                                                "definition": "social.react_to_reply",
+                                                                                "submit_button_text": "🔥",
+                                                                                "on_success": {
+                                                                                    "set": {
+                                                                                        "state": {
+                                                                                            "reply_user_reaction_local": {
+                                                                                                "index": {
+                                                                                                    "self": "index"
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    },
+                                                                                    "to": "🔥"
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        {
+                                                                            "op": {
+                                                                                "bind": {
+                                                                                    "state": {
+                                                                                        "reply_reaction_op_state": {
+                                                                                            "index": {
+                                                                                                "call": "add",
+                                                                                                "args": {
+                                                                                                    "a": {
+                                                                                                        "call": "mul",
+                                                                                                        "args": {
+                                                                                                            "a": {
+                                                                                                                "self": "index"
+                                                                                                            },
+                                                                                                            "b": 7
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "b": 4
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                "display": {
+                                                                                    "friendly_status": true,
+                                                                                    "show_result": false,
+                                                                                    "in_line": true,
+                                                                                    "show_op_status_display": false
+                                                                                },
+                                                                                "interactive": true,
+                                                                                "http": "/api/social/react-to-reply",
+                                                                                "instruction": "",
+                                                                                "params": {
+                                                                                    "post_id": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "id"
+                                                                                        }
+                                                                                    },
+                                                                                    "reaction_type": "😢"
+                                                                                },
+                                                                                "definition": "social.react_to_reply",
+                                                                                "submit_button_text": "😢",
+                                                                                "on_success": {
+                                                                                    "set": {
+                                                                                        "state": {
+                                                                                            "reply_user_reaction_local": {
+                                                                                                "index": {
+                                                                                                    "self": "index"
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    },
+                                                                                    "to": "😢"
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        {
+                                                                            "op": {
+                                                                                "bind": {
+                                                                                    "state": {
+                                                                                        "reply_reaction_op_state": {
+                                                                                            "index": {
+                                                                                                "call": "add",
+                                                                                                "args": {
+                                                                                                    "a": {
+                                                                                                        "call": "mul",
+                                                                                                        "args": {
+                                                                                                            "a": {
+                                                                                                                "self": "index"
+                                                                                                            },
+                                                                                                            "b": 7
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "b": 5
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                "display": {
+                                                                                    "friendly_status": true,
+                                                                                    "show_result": false,
+                                                                                    "in_line": true,
+                                                                                    "show_op_status_display": false
+                                                                                },
+                                                                                "interactive": true,
+                                                                                "http": "/api/social/react-to-reply",
+                                                                                "instruction": "",
+                                                                                "params": {
+                                                                                    "post_id": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "id"
+                                                                                        }
+                                                                                    },
+                                                                                    "reaction_type": "👎"
+                                                                                },
+                                                                                "definition": "social.react_to_reply",
+                                                                                "submit_button_text": "👎",
+                                                                                "on_success": {
+                                                                                    "set": {
+                                                                                        "state": {
+                                                                                            "reply_user_reaction_local": {
+                                                                                                "index": {
+                                                                                                    "self": "index"
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    },
+                                                                                    "to": "👎"
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        {
+                                                                            "op": {
+                                                                                "bind": {
+                                                                                    "state": {
+                                                                                        "reply_reaction_op_state": {
+                                                                                            "index": {
+                                                                                                "call": "add",
+                                                                                                "args": {
+                                                                                                    "a": {
+                                                                                                        "call": "mul",
+                                                                                                        "args": {
+                                                                                                            "a": {
+                                                                                                                "self": "index"
+                                                                                                            },
+                                                                                                            "b": 7
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "b": 6
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                "display": {
+                                                                                    "friendly_status": true,
+                                                                                    "show_result": false,
+                                                                                    "in_line": true,
+                                                                                    "show_op_status_display": false
+                                                                                },
+                                                                                "interactive": true,
+                                                                                "http": "/api/social/react-to-reply",
+                                                                                "instruction": "",
+                                                                                "params": {
+                                                                                    "post_id": {
+                                                                                        "call": "key",
+                                                                                        "args": {
+                                                                                            "object": {
+                                                                                                "self": "item"
+                                                                                            },
+                                                                                            "key": "id"
+                                                                                        }
+                                                                                    },
+                                                                                    "reaction_type": ""
+                                                                                },
+                                                                                "definition": "social.react_to_reply",
+                                                                                "submit_button_text": "remove",
+                                                                                "on_success": {
+                                                                                    "set": {
+                                                                                        "state": {
+                                                                                            "reply_user_reaction_local": {
+                                                                                                "index": {
+                                                                                                    "self": "index"
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    },
+                                                                                    "to": ""
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    ]
                                                                 }
                                                             ]
                                                         }
