@@ -1257,7 +1257,7 @@ modules:
 
             react_to_thread_main_post:
                 name:
-                    lower_case: 'react_to_thread_main_post'
+                    lower_case: 'react to thread main post'
                 description: 'React to a thread main post by supplying a supported emoji as params.reaction_type, or supply an empty string as params.reaction_type to remove an existing reaction'
                 func:
                     type: struct
