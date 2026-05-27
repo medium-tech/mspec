@@ -140,12 +140,12 @@
     },
     "ops": {},
     "output": [
-        {"heading": {"state": {"header": {}}},  "level": 1},
         {"breadcrumbs": [
             {"params": {"project_name": {}}},
             {"params": {"module_name": {}}},
             {"params": {"model_name": {}}}
         ]},
+        {"heading": {"state": {"header": {}}},  "level": 1},
         {"heading": ":: list of models", "level": 2},
         {"break": 1},
         {"model": {

@@ -120,12 +120,12 @@
     },
     "ops": {},
     "output": [
-        {"heading": {"state": {"header": {}}},  "level": 1},
         {"breadcrumbs": [
             {"params": {"project_name": {}}},
             {"params": {"module_name": {}}},
             {"params": {"op_name": {}}}
         ]},
+        {"heading": {"state": {"header": {}}},  "level": 1},
         {"op": {
             "bind": {"state": {"op_view_state": {}}},
             "interactive": true,

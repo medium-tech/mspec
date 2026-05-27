@@ -381,6 +381,37 @@ class TestLingoPages(unittest.TestCase):
         )
         self.assertIn('user_reaction', mapped_reply_fields)
 
+    def test_builtin_and_social_pages_render_breadcrumbs_before_main_header(self):
+        page_files = [
+            'builtin-mapp-model-instance.json',
+            'builtin-mapp-model.json',
+            'builtin-mapp-module.json',
+            'builtin-mapp-op.json',
+            'builtin-mapp-project.json',
+            'social-forum-instance.json',
+            'social-forums.json',
+            'social-thread-instance.json',
+        ]
+
+        for page_file in page_files:
+            with self.subTest(page_file=page_file):
+                page_spec = load_browser2_spec(page_file)
+                output = page_spec['output']
+
+                breadcrumb_index = next(
+                    i for i, item in enumerate(output)
+                    if isinstance(item, dict) and 'breadcrumbs' in item
+                )
+                header_index = next(
+                    i for i, item in enumerate(output)
+                    if isinstance(item, dict) and item.get('level') == 1 and 'heading' in item
+                )
+                self.assertLess(
+                    breadcrumb_index,
+                    header_index,
+                    f'Expected breadcrumbs before h1 in {page_file}'
+                )
+
     def test_social_thread_reply_reaction_buttons_use_fixed_values(self):
         thread_spec = load_browser2_spec('social-thread-instance.json')
         reply_reaction_ops = []

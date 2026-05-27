@@ -550,25 +550,6 @@
 	},
     "output": [
         {
-            "heading": {
-                "call": "join",
-                "args": {
-                    "separator": "",
-                    "items": [
-                        ":: ",
-                        {
-                            "params": {
-                                "model_name": {}
-                            }
-                        },
-                        " :: ",
-                        { "state": {"forum": {"topic": {}}}}
-                    ]
-                }
-            },
-            "level": 1
-        },
-        {
             "breadcrumbs": [
                 "mtech",
                 {
@@ -583,9 +564,20 @@
 			"link": "/social/forum",
 			"text": "forums"
 		},
+
 		{
-			"break": 1
-		},
+            "heading": {
+                "call": "join",
+                "args": {
+                    "separator": "",
+                    "items": [
+                        " :: ",
+                        { "state": {"forum": {"topic": {}}}}
+                    ]
+                }
+            },
+            "level": 1
+        },
         {
             "lingo": { "state": {"forum": {"description": {}}}},
 			"rich_text": true
@@ -602,6 +594,10 @@
                         }
                     },
                     "then": [
+						{
+							"heading": ":: create thread in forum",
+							"level": 3
+						},
                         {
                             "button": {
                                 "op": {
@@ -682,6 +678,10 @@
                 },
                 {
                     "else": [
+						{
+							"heading": ":: search threads in forum",
+							"level": 3
+						},
                         {
                             "button": {
                                 "op": {

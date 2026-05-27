@@ -42,6 +42,7 @@ params:
                     name:
                         lower_case: 'username'
                     type: str
+                    description: "Must be 25 characters or less and only contain letters, numbers, and underscores (_), hyphens (-), periods (.), and tildes (~). Cannot be the same as another user's username."
                 bio:
                     name:
                         lower_case: 'bio'
@@ -198,17 +199,12 @@ state:
 ops: {}
 
 output:
-    - heading: "social"
-      level: 1
 
     - breadcrumbs:
         - "mtech"
         - "social"
         - "profile"
         - "yours"
-
-    - heading: ":: your profile"
-      level: 2
 
     - branch:
           - if: {state: {is_logged_in: {}}}
@@ -243,6 +239,12 @@ output:
                                                 a: {state: {profile_total: {}}}
                                                 b: 0
                                     then:
+                                        - heading: ":: edit your profile"
+                                          level: 1
+                                        - text: ':: '
+                                        - link: {state: {model_item_ui_url: {}}}
+                                          text: 'view public profile'
+                                        - break: 1
                                         - model:
                                               bind: {state: {model_instance: {}}}
                                               display: read
@@ -250,12 +252,11 @@ output:
                                               model_id: {state: {user_profile_id: {}}}
                                               definition: {params: {model_definition: {}}}
                                         - break: 1
-                                        - text: ':: '
-                                        - link: {state: {model_item_ui_url: {}}}
-                                          text: 'view public profile'
+                                        
                                   - else:
-                                        - heading: ":: create profile"
-                                          level: 3
+                                        - heading: ":: create your profile"
+                                          level: 1
+                                        - break: 1
                                         - model:
                                               bind: {state: {create_profile_state: {}}}
                                               display: create

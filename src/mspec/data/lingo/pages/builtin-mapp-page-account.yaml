@@ -83,16 +83,13 @@ state:
                     value: false    
 
 output:
-    - heading: 'social'
-      level: 1
-
     - breadcrumbs:
           - "mtech"
           - "social"
           - "account"
 
-    - heading: ":: account"
-      level: 2
+    - heading: ":: account details"
+      level: 1
     
     - branch:
         - if:

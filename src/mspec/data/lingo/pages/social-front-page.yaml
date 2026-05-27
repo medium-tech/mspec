@@ -21,7 +21,25 @@ output:
     - heading: 'medium tech'
       level: 1
 
-    - text: ' --> '
-
+    - text: ' :: '
     - link: '/social'
-      text: 'enter social'
+      text: 'enter the social network'
+    # - text: ' ● '
+    # - link: '/social/profile'
+    #   text: 'profiles'
+    # - text: ' ● '
+    # - link: '/social/forum'
+    #   text: 'forums'
+    # - text: ' ● '
+    # - link: '/social/account'
+    #   text: 'account'
+    # - text: ' ● '
+    # - break: 1
+
+    - heading: 'what is medium tech?'
+      level: 3
+
+    - type: list
+      value:
+        - link: ''
+          text: 'placeholder'
