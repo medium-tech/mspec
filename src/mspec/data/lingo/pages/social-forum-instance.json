@@ -564,18 +564,13 @@
 			"link": "/social/forum",
 			"text": "forums"
 		},
-        {
+
+		{
             "heading": {
                 "call": "join",
                 "args": {
                     "separator": "",
                     "items": [
-                        ":: ",
-                        {
-                            "params": {
-                                "model_name": {}
-                            }
-                        },
                         " :: ",
                         { "state": {"forum": {"topic": {}}}}
                     ]
@@ -583,9 +578,6 @@
             },
             "level": 1
         },
-		{
-			"break": 1
-		},
         {
             "lingo": { "state": {"forum": {"description": {}}}},
 			"rich_text": true
@@ -602,6 +594,10 @@
                         }
                     },
                     "then": [
+						{
+							"heading": ":: create thread in forum",
+							"level": 3
+						},
                         {
                             "button": {
                                 "op": {
@@ -682,6 +678,10 @@
                 },
                 {
                     "else": [
+						{
+							"heading": ":: search threads in forum",
+							"level": 3
+						},
                         {
                             "button": {
                                 "op": {

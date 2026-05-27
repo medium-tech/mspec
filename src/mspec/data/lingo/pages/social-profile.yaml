@@ -93,16 +93,13 @@ state:
 ops: {}
 
 output:
-    - heading: "social"
-      level: 1
-
     - breadcrumbs:
         - "mtech"
         - "social"
         - "profile"
 
     - heading: ":: profiles"
-      level: 2
+      level: 1
       
     - text: ':: '
 
