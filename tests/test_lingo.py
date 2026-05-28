@@ -1227,7 +1227,7 @@ class TestLingoDbFunctions(unittest.TestCase):
         with self.assertRaises(NotFoundError):
             lingo_execute(app, expression, self.ctx)
 
-    # db.unique_counts tests #
+    # db.update tests #
 
     def test_db_update_sets_date_modified_after_date_created(self):
         original = db_model_read(self.ctx, self.post_class, '1')
