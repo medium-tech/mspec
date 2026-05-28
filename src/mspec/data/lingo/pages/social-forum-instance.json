@@ -597,7 +597,6 @@
 			"link": "/social/forum",
 			"text": "forums"
 		},
-
 		{
             "heading": {
                 "call": "join",
@@ -615,24 +614,58 @@
             "branch": [
                 {
                     "if": {
-                        "call": "auth.is_owner",
+                        "call": "and",
                         "args": {
-                            "model": {
-                                "state": {
-                                    "forum": {}
-                                }
-                            }
+                            "a": {
+								"call": "auth.is_owner",
+								"args": {
+									"model": {
+										"state": {
+											"forum": {}
+										}
+									}
+								}
+							},
+							"b": {"state": {"display_edit": {}}}
                         }
                     },
-                    "then": {
-                        "button": {
-                            "op": {
-                                "toggle_edit_view": {}
-                            }
-                        },
-                        "text": "edit"
-                    }
+                    "then": [
+						{
+							"button": {
+								"op": {
+									"toggle_edit_view": {}
+								}
+							},
+							"text": "close editor"
+						},
+						{"text": " (you own this forum)", "style": {"italic": true}},
+						{"break": 1}
+					]
                 },
+				{
+					"elif": {
+						"call": "auth.is_owner",
+						"args": {
+							"model": {
+								"state": {
+									"forum": {}
+								}
+							}
+						}
+					},
+					"then": [
+						{
+							"button": {
+								"op": {
+									"toggle_edit_view": {}
+								}
+							},
+							"text": "open editor"
+						},
+						{"text": " (you own this forum)", "style": {"italic": true}},
+						{"break": 1}
+					]
+				},
                 {
                     "else": {"text": ""}
                 }
@@ -748,46 +781,27 @@
                             "level": 3
                         },
                         {
-                            "button": {
-                                "op": {
-                                    "toggle_edit_view": {}
-                                }
-                            },
-                            "text": "back"
-                        },
-                        {
-                            "op": {
+                            "model": {
                                 "bind": {
                                     "state": {
-                                        "edit_forum_op_state": {}
+                                        "model_instance": {}
                                     }
                                 },
-                                "interactive": true,
-                                "http": "/api/social/update-forum",
+								"http": {
+									"call": "concat",
+									"args": {
+										"items": [
+											"/api/social/forum/",
+											{"params": {"model_id": {}}}
+										]
+									}
+								},
                                 "display": {
-                                    "show_result": false
+                                    "mode": "read"
                                 },
-                                "definition": "social.update_forum",
+                                "definition": {"params": {"model_definition": {}}},
+								"model_id": {"params": {"model_id": {}}},
                                 "params": {
-                                    "forum_id": {
-                                        "params": {
-                                            "model_id": {}
-                                        }
-                                    },
-                                    "topic": {
-                                        "state": {
-                                            "forum": {
-                                                "topic": {}
-                                            }
-                                        }
-                                    },
-                                    "description": {
-                                        "state": {
-                                            "forum": {
-                                                "description": {}
-                                            }
-                                        }
-                                    },
                                     "tags": {
                                         "state": {
                                             "forum": {
