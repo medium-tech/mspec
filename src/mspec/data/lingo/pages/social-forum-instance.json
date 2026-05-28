@@ -615,24 +615,11 @@
             "branch": [
                 {
                     "if": {
-                        "call": "eq",
+                        "call": "auth.is_owner",
                         "args": {
-                            "a": {
+                            "model": {
                                 "state": {
-                                    "forum": {
-                                        "user_id": {}
-                                    }
-                                }
-                            },
-                            "b": {
-                                "call": "key",
-                                "args": {
-                                    "object": {
-                                        "call": "auth.current_user",
-                                        "args": {}
-                                    },
-                                    "key": "id",
-                                    "default_value": "-1"
+                                    "forum": {}
                                 }
                             }
                         }
