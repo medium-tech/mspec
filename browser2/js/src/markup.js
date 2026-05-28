@@ -4423,7 +4423,7 @@ function createDOMElement(app, element, ctx = null) {
         return createViewerElement(app, element, ctx);
     } else if (Array.isArray(element)) {
         // If the element is an array, render each item and wrap in a div
-		console.log('createDOMElement - rendering block element with', element.length, 'sub-elements');
+		// console.log('createDOMElement - rendering block element with', element.length, 'sub-elements');
         const container = document.createElement('div');
 		// container.className = 'block-list-rendering';
 		container.style.display = 'inline-block';

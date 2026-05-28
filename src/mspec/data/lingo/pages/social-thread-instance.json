@@ -1087,6 +1087,19 @@
             "type": "int",
             "default": 1,
             "description": "Current page number"
+        },
+		"display_edit": {
+			"type": "bool",
+			"default": false
+		},
+		"model_instance": {
+            "type": "struct",
+            "default": {
+                "state": "pending",
+                "error": "",
+                "data": {},
+                "field_errors": {}
+            }
         }
     },
     "ops": {
@@ -1267,7 +1280,58 @@
                 },
                 "to": "triggered"
             }
-        }
+        },
+		"toggle_edit_view": {
+			"args": {},
+			"func": {
+				"set": {
+					"state": {
+						"display_edit": {}
+					}
+				},
+				"to": {
+					"call": "not",
+					"args": {
+						"object": {
+							"state": {
+								"display_edit": {}
+							}
+						}
+					}
+				}
+			}
+		},
+		"close_editor": {
+			"args": {},
+			"func": {
+				"branch": [
+					{
+						"if": {
+							"call": "eq",
+							"args": {
+								"a": {
+									"call": "key",
+									"args": {
+										"object": {"state": {"model_instance": {}}},
+										"key": "state"
+									}
+								},
+								"b": "edited"
+							}
+						},
+						"then": {
+							"call": "client.reload"
+						}
+					},
+					{
+						"else": {
+							"set": {"state": {"display_edit": {}}},
+							"to": false
+						}
+					}
+				]
+			}
+		}
     },
     "timers": {
         "auto_load_replies": {
@@ -1410,6 +1474,67 @@
                 }
             },
             "level": 1
+        },
+		{
+            "branch": [
+                {
+                    "if": {
+                        "call": "and",
+                        "args": {
+                            "a": {
+								"call": "auth.is_owner",
+								"args": {
+									"model": {
+										"state": {
+											"thread": {}
+										}
+									}
+								}
+							},
+							"b": {"state": {"display_edit": {}}}
+                        }
+                    },
+                    "then": [
+						{
+							"button": {
+								"op": {
+									"close_editor": {}
+								}
+							},
+							"text": "close editor"
+						},
+						{"text": " (you own this thread)", "style": {"italic": true}},
+						{"break": 1}
+					]
+                },
+				{
+					"elif": {
+						"call": "auth.is_owner",
+						"args": {
+							"model": {
+								"state": {
+									"thread": {}
+								}
+							}
+						}
+					},
+					"then": [
+						{
+							"button": {
+								"op": {
+									"toggle_edit_view": {}
+								}
+							},
+							"text": "open editor"
+						},
+						{"text": " (you own this thread)", "style": {"italic": true}},
+						{"break": 1}
+					]
+				},
+                {
+                    "else": {"text": ""}
+                }
+            ]
         },
         {
             "link": {
@@ -1829,6 +1954,45 @@
                 }
             ]
         },
+		{
+			"branch": [
+				{
+					"if": {"state": {"display_edit": {}}},
+					"then": [
+						{
+							"heading": ":: edit thread",
+							"level": 3
+						},
+						{
+                            "model": {
+                                "bind": {
+                                    "state": {
+                                        "model_instance": {}
+                                    }
+                                },
+								"http": {
+									"call": "concat",
+									"args": {
+										"items": [
+											"/api/social/thread/",
+											{"params": {"model_id": {}}}
+										]
+									}
+								},
+                                "display": {
+                                    "mode": "read"
+                                },
+                                "definition": {"params": {"model_definition": {}}},
+								"model_id": {"params": {"model_id": {}}}
+                            }
+                        }
+					]
+				},
+				{
+					"else": ""
+				}
+			]
+		},	
         {
             "heading": ":: replies to thread",
             "level": 3
@@ -2024,141 +2188,142 @@
                             "main_post_is_loaded": {}
                         }
                     },
-                    "then": [
-                        {
-                            "text": "total replies: ",
-                            "style": {
-                                "bold": true
-                            }
-                        },
-                        {
-                            "lingo": {
-                                "state": {
-                                    "total_replies": {}
-                                }
-                            }
-                        },
-                        {
-                            "text": " \u25cf page: ",
-                            "style": {
-                                "bold": true
-                            }
-                        },
-                        {
-                            "lingo": {
-                                "state": {
-                                    "page_number": {}
-                                }
-                            }
-                        },
-                        {
-                            "text": " of "
-                        },
-                        {
-                            "op": {
-                                "last_page": {}
-                            }
-                        },
-                        {
-                            "branch": [
-                                {
-                                    "if": {
-                                        "op": {
-                                            "is_replies_loaded": {}
-                                        }
-                                    },
-                                    "then": {
-                                        "type": "list",
-                                        "display": {
-                                            "format": "table",
-                                            "columns": [
-                                                "reply"
-                                            ]
-                                        },
-                                        "value": {
-                                            "call": "map",
-                                            "args": {
-                                                "function": {
-                                                    "type": "struct",
-                                                    "value": {
-                                                        "reply": {
-                                                            "block": [
-                                                                {
-                                                                    "link": {
-                                                                        "call": "concat",
-                                                                        "args": {
-                                                                            "items": [
-                                                                                "/social/profile/",
-                                                                                {
-                                                                                    "call": "key",
-                                                                                    "args": {
-                                                                                        "object": {
-                                                                                            "self": "item"
-                                                                                        },
-                                                                                        "key": "profile.value.id.value",
-                                                                                        "default_value": "-1"
-                                                                                    }
-                                                                                }
-                                                                            ]
-                                                                        }
-                                                                    },
-                                                                    "text": {
-                                                                        "call": "concat",
-                                                                        "args": {
-                                                                            "items": [
-                                                                                "@",
-                                                                                {
-                                                                                    "call": "key",
-                                                                                    "args": {
-                                                                                        "object": {
-                                                                                            "self": "item"
-                                                                                        },
-                                                                                        "key": "profile.value.username.value",
-                                                                                        "default_value": "anonymous"
-                                                                                    }
-                                                                                }
-                                                                            ]
-                                                                        }
-                                                                    }
-                                                                },
-                                                                {
-                                                                    "text": " \u25cf "
-                                                                },
-                                                                {
-                                                                    "lingo": {
-                                                                        "call": "datetime.format_friendly",
-                                                                        "args": {
-                                                                            "datetime": {
-                                                                                "call": "key",
-                                                                                "args": {
-                                                                                    "object": {
-                                                                                        "self": "item"
-                                                                                    },
-                                                                                    "key": "date_modified",
-                                                                                    "default_value": ""
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                },
-                                                                {
-                                                                    "break": 1
-                                                                },
-                                                                {
-                                                                    "lingo": {
-                                                                        "call": "key",
-                                                                        "args": {
-                                                                            "object": {
-                                                                                "self": "item"
-                                                                            },
-                                                                            "key": "message"
-                                                                        }
-                                                                    },
-                                                                    "rich_text": true
-                                                                },
-                                                                {
-                                                                    "break": 1
-                                                                },
+
+					"then": [
+						{
+							"text": "total replies: ",
+							"style": {
+								"bold": true
+							}
+						},
+						{
+							"lingo": {
+								"state": {
+									"total_replies": {}
+								}
+							}
+						},
+						{
+							"text": " \u25cf page: ",
+							"style": {
+								"bold": true
+							}
+						},
+						{
+							"lingo": {
+								"state": {
+									"page_number": {}
+								}
+							}
+						},
+						{
+							"text": " of "
+						},
+						{
+							"op": {
+								"last_page": {}
+							}
+						},
+						{
+							"branch": [
+								{
+									"if": {
+										"op": {
+											"is_replies_loaded": {}
+										}
+									},
+									"then": {
+										"type": "list",
+										"display": {
+											"format": "table",
+											"columns": [
+												"reply"
+											]
+										},
+										"value": {
+											"call": "map",
+											"args": {
+												"function": {
+													"type": "struct",
+													"value": {
+														"reply": {
+															"block": [
+																{
+																	"link": {
+																		"call": "concat",
+																		"args": {
+																			"items": [
+																				"/social/profile/",
+																				{
+																					"call": "key",
+																					"args": {
+																						"object": {
+																							"self": "item"
+																						},
+																						"key": "profile.value.id.value",
+																						"default_value": "-1"
+																					}
+																				}
+																			]
+																		}
+																	},
+																	"text": {
+																		"call": "concat",
+																		"args": {
+																			"items": [
+																				"@",
+																				{
+																					"call": "key",
+																					"args": {
+																						"object": {
+																							"self": "item"
+																						},
+																						"key": "profile.value.username.value",
+																						"default_value": "anonymous"
+																					}
+																				}
+																			]
+																		}
+																	}
+																},
+																{
+																	"text": " \u25cf "
+																},
+																{
+																	"lingo": {
+																		"call": "datetime.format_friendly",
+																		"args": {
+																			"datetime": {
+																				"call": "key",
+																				"args": {
+																					"object": {
+																						"self": "item"
+																					},
+																					"key": "date_modified",
+																					"default_value": ""
+																				}
+																			}
+																		}
+																	}
+																},
+																{
+																	"break": 1
+																},
+																{
+																	"lingo": {
+																		"call": "key",
+																		"args": {
+																			"object": {
+																				"self": "item"
+																			},
+																			"key": "message"
+																		}
+																	},
+																	"rich_text": true
+																},
+																{
+																	"break": 1
+																},
 																{
 																	"block": [
 																		{
@@ -2585,233 +2750,233 @@
 																},
 																{"break": 1},
 																{
-                                                                    "lingo": {
-                                                                        "call": "join",
-                                                                        "args": {
-                                                                            "separator": " ",
-                                                                            "items": {
-                                                                                "call": "map",
-                                                                                "args": {
-                                                                                    "function": {
-                                                                                        "call": "concat",
-                                                                                        "args": {
-                                                                                            "items": [
-                                                                                                {
-                                                                                                    "call": "key",
-                                                                                                    "args": {
-                                                                                                        "object": {
-                                                                                                            "self": "item"
-                                                                                                        },
-                                                                                                        "key": "group"
-                                                                                                    }
-                                                                                                },
-                                                                                                "x",
-                                                                                                {
-                                                                                                    "call": "str",
-                                                                                                    "args": {
-                                                                                                        "object": {
-                                                                                                            "call": "key",
-                                                                                                            "args": {
-                                                                                                                "object": {
-                                                                                                                    "self": "item"
-                                                                                                                },
-                                                                                                                "key": "count"
-                                                                                                            }
-                                                                                                        }
-                                                                                                    }
-                                                                                                }
-                                                                                            ]
-                                                                                        }
-                                                                                    },
-                                                                                    "iterable": {
-                                                                                        "call": "key",
-                                                                                        "args": {
-                                                                                            "object": {
-                                                                                                "self": "item"
-                                                                                            },
-                                                                                            "key": "reaction_counts"
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                },
-                                                                {
-                                                                    "branch": [
-                                                                        {
-                                                                            "if": {
-                                                                                "call": "ne",
-                                                                                "args": {
-                                                                                    "a": {
-                                                                                        "branch": [
-                                                                                            {
-                                                                                                "if": {
-                                                                                                    "call": "ne",
-                                                                                                    "args": {
-                                                                                                        "a": {
-                                                                                                            "call": "key",
-                                                                                                            "args": {
-                                                                                                                "object": {
-                                                                                                                    "state": {
-                                                                                                                        "reply_user_reaction_local": {}
-                                                                                                                    }
-                                                                                                                },
-                                                                                                                "key": {
-                                                                                                                    "call": "str",
-                                                                                                                    "args": {
-                                                                                                                        "object": {
-                                                                                                                            "self": "index"
-                                                                                                                        }
-                                                                                                                    }
-                                                                                                                },
-                                                                                                                "default_value": "initial"
-                                                                                                            }
-                                                                                                        },
-                                                                                                        "b": "initial"
-                                                                                                    }
-                                                                                                },
-                                                                                                "then": {
-                                                                                                    "call": "key",
-                                                                                                    "args": {
-                                                                                                        "object": {
-                                                                                                            "state": {
-                                                                                                                "reply_user_reaction_local": {}
-                                                                                                            }
-                                                                                                        },
-                                                                                                        "key": {
-                                                                                                            "call": "str",
-                                                                                                            "args": {
-                                                                                                                "object": {
-                                                                                                                    "self": "index"
-                                                                                                                }
-                                                                                                            }
-                                                                                                        },
-                                                                                                        "default_value": "initial"
-                                                                                                    }
-                                                                                                }
-                                                                                            },
-                                                                                            {
-                                                                                                "else": {
-                                                                                                    "call": "key",
-                                                                                                    "args": {
-                                                                                                        "object": {
-                                                                                                            "self": "item"
-                                                                                                        },
-                                                                                                        "key": "user_reaction",
-                                                                                                        "default_value": ""
-                                                                                                    }
-                                                                                                }
-                                                                                            }
-                                                                                        ]
-                                                                                    },
-                                                                                    "b": ""
-                                                                                }
-                                                                            },
-                                                                            "then": [
-                                                                                {
-                                                                                    "text": " :: yours: ",
-                                                                                    "style": {
-                                                                                        "bold": true
-                                                                                    }
-                                                                                },
-                                                                                {
-                                                                                    "lingo": {
-                                                                                        "branch": [
-                                                                                            {
-                                                                                                "if": {
-                                                                                                    "call": "ne",
-                                                                                                    "args": {
-                                                                                                        "a": {
-                                                                                                            "call": "key",
-                                                                                                            "args": {
-                                                                                                                "object": {
-                                                                                                                    "state": {
-                                                                                                                        "reply_user_reaction_local": {}
-                                                                                                                    }
-                                                                                                                },
-                                                                                                                "key": {
-                                                                                                                    "call": "str",
-                                                                                                                    "args": {
-                                                                                                                        "object": {
-                                                                                                                            "self": "index"
-                                                                                                                        }
-                                                                                                                    }
-                                                                                                                },
-                                                                                                                "default_value": "initial"
-                                                                                                            }
-                                                                                                        },
-                                                                                                        "b": "initial"
-                                                                                                    }
-                                                                                                },
-                                                                                                "then": {
-                                                                                                    "call": "key",
-                                                                                                    "args": {
-                                                                                                        "object": {
-                                                                                                            "state": {
-                                                                                                                "reply_user_reaction_local": {}
-                                                                                                            }
-                                                                                                        },
-                                                                                                        "key": {
-                                                                                                            "call": "str",
-                                                                                                            "args": {
-                                                                                                                "object": {
-                                                                                                                    "self": "index"
-                                                                                                                }
-                                                                                                            }
-                                                                                                        }
-                                                                                                    }
-                                                                                                }
-                                                                                            },
-                                                                                            {
-                                                                                                "else": {
-                                                                                                    "call": "key",
-                                                                                                    "args": {
-                                                                                                        "object": {
-                                                                                                            "self": "item"
-                                                                                                        },
-                                                                                                        "key": "user_reaction",
-                                                                                                        "default_value": ""
-                                                                                                    }
-                                                                                                }
-                                                                                            }
-                                                                                        ]
-                                                                                    }
-                                                                                }
-                                                                            ]
-                                                                        },
-                                                                        {
-                                                                            "else": ""
-                                                                        }
-                                                                    ]
-                                                                }
-                                                            ]
-                                                        }
-                                                    }
-                                                },
-                                                "iterable": {
-                                                    "call": "key",
-                                                    "args": {
-                                                        "object": {
-                                                            "state": {
-                                                                "replies_op_view_state": {}
-                                                            }
-                                                        },
-                                                        "key": "result.value.replies.value.items"
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                },
-                                {
-                                    "else": {
-                                        "text": "loading replies..."
-                                    }
-                                }
-                            ]
-                        }
-                    ]
+																	"lingo": {
+																		"call": "join",
+																		"args": {
+																			"separator": " ",
+																			"items": {
+																				"call": "map",
+																				"args": {
+																					"function": {
+																						"call": "concat",
+																						"args": {
+																							"items": [
+																								{
+																									"call": "key",
+																									"args": {
+																										"object": {
+																											"self": "item"
+																										},
+																										"key": "group"
+																									}
+																								},
+																								"x",
+																								{
+																									"call": "str",
+																									"args": {
+																										"object": {
+																											"call": "key",
+																											"args": {
+																												"object": {
+																													"self": "item"
+																												},
+																												"key": "count"
+																											}
+																										}
+																									}
+																								}
+																							]
+																						}
+																					},
+																					"iterable": {
+																						"call": "key",
+																						"args": {
+																							"object": {
+																								"self": "item"
+																							},
+																							"key": "reaction_counts"
+																						}
+																					}
+																				}
+																			}
+																		}
+																	}
+																},
+																{
+																	"branch": [
+																		{
+																			"if": {
+																				"call": "ne",
+																				"args": {
+																					"a": {
+																						"branch": [
+																							{
+																								"if": {
+																									"call": "ne",
+																									"args": {
+																										"a": {
+																											"call": "key",
+																											"args": {
+																												"object": {
+																													"state": {
+																														"reply_user_reaction_local": {}
+																													}
+																												},
+																												"key": {
+																													"call": "str",
+																													"args": {
+																														"object": {
+																															"self": "index"
+																														}
+																													}
+																												},
+																												"default_value": "initial"
+																											}
+																										},
+																										"b": "initial"
+																									}
+																								},
+																								"then": {
+																									"call": "key",
+																									"args": {
+																										"object": {
+																											"state": {
+																												"reply_user_reaction_local": {}
+																											}
+																										},
+																										"key": {
+																											"call": "str",
+																											"args": {
+																												"object": {
+																													"self": "index"
+																												}
+																											}
+																										},
+																										"default_value": "initial"
+																									}
+																								}
+																							},
+																							{
+																								"else": {
+																									"call": "key",
+																									"args": {
+																										"object": {
+																											"self": "item"
+																										},
+																										"key": "user_reaction",
+																										"default_value": ""
+																									}
+																								}
+																							}
+																						]
+																					},
+																					"b": ""
+																				}
+																			},
+																			"then": [
+																				{
+																					"text": " :: yours: ",
+																					"style": {
+																						"bold": true
+																					}
+																				},
+																				{
+																					"lingo": {
+																						"branch": [
+																							{
+																								"if": {
+																									"call": "ne",
+																									"args": {
+																										"a": {
+																											"call": "key",
+																											"args": {
+																												"object": {
+																													"state": {
+																														"reply_user_reaction_local": {}
+																													}
+																												},
+																												"key": {
+																													"call": "str",
+																													"args": {
+																														"object": {
+																															"self": "index"
+																														}
+																													}
+																												},
+																												"default_value": "initial"
+																											}
+																										},
+																										"b": "initial"
+																									}
+																								},
+																								"then": {
+																									"call": "key",
+																									"args": {
+																										"object": {
+																											"state": {
+																												"reply_user_reaction_local": {}
+																											}
+																										},
+																										"key": {
+																											"call": "str",
+																											"args": {
+																												"object": {
+																													"self": "index"
+																												}
+																											}
+																										}
+																									}
+																								}
+																							},
+																							{
+																								"else": {
+																									"call": "key",
+																									"args": {
+																										"object": {
+																											"self": "item"
+																										},
+																										"key": "user_reaction",
+																										"default_value": ""
+																									}
+																								}
+																							}
+																						]
+																					}
+																				}
+																			]
+																		},
+																		{
+																			"else": ""
+																		}
+																	]
+																}
+															]
+														}
+													}
+												},
+												"iterable": {
+													"call": "key",
+													"args": {
+														"object": {
+															"state": {
+																"replies_op_view_state": {}
+															}
+														},
+														"key": "result.value.replies.value.items"
+													}
+												}
+											}
+										}
+									}
+								},
+								{
+									"else": {
+										"text": "loading replies..."
+									}
+								}
+							]
+						}
+					]
                 },
                 {
                     "else": {
