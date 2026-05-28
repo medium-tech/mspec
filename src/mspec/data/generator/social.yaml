@@ -1490,3 +1490,86 @@ modules:
                             name:
                                 lower_case: 'message'
                             type: str
+
+            edit_thread:
+                name:
+                    lower_case: 'edit thread'
+                description: 'Edit a thread title and/or main post message. Only the thread creator can edit the thread.'
+                func:
+                    type: struct
+                    self:
+                        thread:
+                            call: 'db.read'
+                            args:
+                                model_id:
+                                    params: { thread_id: {} }
+                                model_type: 'social.thread'
+                        result:
+                            call: 'and'
+                            args: 
+                                a:
+                                    call: 'db.patch'
+                                    args:
+                                        model_id:
+                                            params: { thread_id: {} }
+                                        model_type: 'social.thread'
+                                        data:
+                                            title:
+                                                params: { title: {} }
+                                b:
+                                    call: 'db.patch'
+                                    args:
+                                        model_id:
+                                            call: 'key'
+                                            args:
+                                                key: 'main_post_id'
+                                                object:
+                                                    self: thread
+                                        model_type: 'social.post'
+                                        data:
+                                            message:
+                                                params: { message: {} }
+                params:
+                    thread_id:
+                        name:
+                            lower_case: 'thread id'
+                        type: foreign_key
+                        references:
+                            module: 'social'
+                            table: 'thread'
+                            field: 'id'
+                        examples:
+                            - "1"
+                            - "2"
+                            - "3"
+                    title:
+                        name:
+                            lower_case: 'title'
+                        type: str
+                        examples:
+                            - "Updated Thread Title"
+                            - "New Title for Thread"
+                            - "Edited Thread Name"
+                    
+                    message:
+                        name:
+                            lower_case: 'message'
+                        type: str
+                        rich_text: true
+                        examples:
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}] }'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'
+
+
+                result:
+                    type: struct
+                    fields:
+                        success:
+                            name:
+                                lower_case: 'success'
+                            type: bool
+                        message:
+                            name:
+                                lower_case: 'message'
+                            type: str
