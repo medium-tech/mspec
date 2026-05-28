@@ -419,6 +419,8 @@ function _aAndBArgs(app, expression, ctx) {
 	const a = unwrapValue(lingoExecute(app, expression.args.a, ctx));
 	const b = unwrapValue(lingoExecute(app, expression.args.b, ctx));
 
+	// console.log('_aAndBArgs - a:', a, 'b:', b, expression);
+
 	return [a, b];
 }
 
@@ -2137,7 +2139,7 @@ function renderOutput(app, ctx = null) {
  */
 function renderBlock(app, element, ctx = null) {
     const elements = [];
-    console.log('renderBlock()', element);
+    // console.log('renderBlock()', element);
     for (let n = 0; n < element.block.length; n++) {
         const childElement = element.block[n];
         try {
@@ -3301,6 +3303,7 @@ function _renderModelRead(app, element, ctx = null) {
         throw new Error('renderModelRead - missing model definition');
     }
     const definition = lingoExecute(app, element.model.definition, ctx);
+	// console.log('renderModelRead - model definition', definition);
 
     const stateField = stateKeys[0];
 
