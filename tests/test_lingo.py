@@ -1129,6 +1129,106 @@ class TestLingoDbFunctions(unittest.TestCase):
         result = lingo_execute(app, expression, self.ctx)
         self.assertEqual(result['value']['profile']['username'], 'alice')
 
+    # db.patch tests #
+
+    def test_db_patch_updates_specified_fields(self):
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': '1', 'type': 'str'},
+                'data': {
+                    'title': {'value': 'updated title', 'type': 'str'},
+                },
+            }
+        }
+        app = self._make_app()
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['type'], 'struct')
+        self.assertEqual(result['value']['id'], '1')
+        self.assertEqual(result['value']['title'], 'updated title')
+        self.assertEqual(result['value']['view_count'], 10)
+        self.assertEqual(result['value']['user_id'], '1')
+
+    def test_db_patch_returns_updated_struct(self):
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': '2', 'type': 'str'},
+                'data': {
+                    'view_count': {'value': 99, 'type': 'int'},
+                },
+            }
+        }
+        app = self._make_app()
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['value']['view_count'], 99)
+        self.assertEqual(result['value']['title'], 'world')
+
+        read_result = lingo_execute(app, {
+            'call': 'db.read',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': '2', 'type': 'str'},
+            }
+        }, self.ctx)
+        self.assertEqual(read_result['value']['view_count'], 99)
+        self.assertEqual(read_result['value']['title'], 'world')
+
+    def test_db_patch_raises_on_missing_model_type(self):
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_id': {'value': '1', 'type': 'str'},
+                'data': {'title': {'value': 'x', 'type': 'str'}},
+            }
+        }
+        app = self._make_app()
+        with self.assertRaises(ValueError):
+            lingo_execute(app, expression, self.ctx)
+
+    def test_db_patch_raises_on_missing_model_id(self):
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'data': {'title': {'value': 'x', 'type': 'str'}},
+            }
+        }
+        app = self._make_app()
+        with self.assertRaises(ValueError):
+            lingo_execute(app, expression, self.ctx)
+
+    def test_db_patch_raises_on_missing_data(self):
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': '1', 'type': 'str'},
+            }
+        }
+        app = self._make_app()
+        with self.assertRaises(ValueError):
+            lingo_execute(app, expression, self.ctx)
+
+    def test_db_patch_raises_on_not_found(self):
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': '999', 'type': 'str'},
+                'data': {
+                    'title': {'value': 'x', 'type': 'str'},
+                },
+            }
+        }
+        app = self._make_app()
+        with self.assertRaises(NotFoundError):
+            lingo_execute(app, expression, self.ctx)
+
+    # db.unique_counts tests #
+
     def test_db_update_sets_date_modified_after_date_created(self):
         original = db_model_read(self.ctx, self.post_class, '1')
         self.assertIsNotNone(original.date_created.tzinfo)
