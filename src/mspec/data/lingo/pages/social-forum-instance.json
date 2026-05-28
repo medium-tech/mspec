@@ -579,7 +579,38 @@
                     }
                 }
             }
-        }
+        },
+		"close_editor": {
+			"args": {},
+			"func": {
+				"branch": [
+					{
+						"if": {
+							"call": "eq",
+							"args": {
+								"a": {
+									"call": "key",
+									"args": {
+										"object": {"state": {"model_instance": {}}},
+										"key": "state"
+									}
+								},
+								"b": "edited"
+							}
+						},
+						"then": {
+							"call": "client.reload"
+						}
+					},
+					{
+						"else": {
+							"set": {"state": {"display_edit": {}}},
+							"to": false
+						}
+					}
+				]
+			}
+		}
 	},
     "output": [
         {
@@ -633,7 +664,7 @@
 						{
 							"button": {
 								"op": {
-									"toggle_edit_view": {}
+									"close_editor": {}
 								}
 							},
 							"text": "close editor"
@@ -800,16 +831,7 @@
                                     "mode": "read"
                                 },
                                 "definition": {"params": {"model_definition": {}}},
-								"model_id": {"params": {"model_id": {}}},
-                                "params": {
-                                    "tags": {
-                                        "state": {
-                                            "forum": {
-                                                "tags": {}
-                                            }
-                                        }
-                                    }
-                                }
+								"model_id": {"params": {"model_id": {}}}
                             }
                         }
                     ]
