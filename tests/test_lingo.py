@@ -412,6 +412,63 @@ class TestLingoPages(unittest.TestCase):
                     f'Expected breadcrumbs before h1 in {page_file}'
                 )
 
+    def test_social_forum_instance_has_owner_edit_view_branching(self):
+        forum_spec = load_browser2_spec('social-forum-instance.json')
+
+        self.assertEqual(forum_spec['state']['display_edit']['type'], 'bool')
+        self.assertFalse(forum_spec['state']['display_edit']['default'])
+
+        toggle_edit = forum_spec['ops']['toggle_edit_view']['func']
+        self.assertEqual(toggle_edit['set']['state'], {'display_edit': {}})
+        self.assertEqual(toggle_edit['to']['call'], 'not')
+
+        owner_edit_button_exists = False
+        update_forum_op_exists = False
+        create_edit_reply_branch = None
+
+        def scan(node):
+            nonlocal owner_edit_button_exists
+            nonlocal update_forum_op_exists
+            nonlocal create_edit_reply_branch
+
+            if isinstance(node, list):
+                for item in node:
+                    scan(item)
+                return
+
+            if not isinstance(node, dict):
+                return
+
+            if node.get('text') == 'edit':
+                button = node.get('button')
+                if isinstance(button, dict) and button.get('op') == {'toggle_edit_view': {}}:
+                    owner_edit_button_exists = True
+
+            if node.get('op', {}).get('definition') == 'social.update_forum':
+                if node['op'].get('http') == '/api/social/update-forum':
+                    update_forum_op_exists = True
+
+            branch = node.get('branch')
+            if isinstance(branch, list) and len(branch) == 3:
+                first_case = branch[0]
+                second_case = branch[1]
+                third_case = branch[2]
+                if (
+                    isinstance(first_case, dict) and first_case.get('if') == {'state': {'display_create': {}}}
+                    and isinstance(second_case, dict) and second_case.get('if') == {'state': {'display_edit': {}}}
+                    and isinstance(third_case, dict) and 'else' in third_case
+                ):
+                    create_edit_reply_branch = branch
+
+            for value in node.values():
+                scan(value)
+
+        scan(forum_spec['output'])
+
+        self.assertTrue(owner_edit_button_exists)
+        self.assertTrue(update_forum_op_exists)
+        self.assertIsNotNone(create_edit_reply_branch)
+
     def test_social_thread_reply_reaction_buttons_use_fixed_values(self):
         thread_spec = load_browser2_spec('social-thread-instance.json')
         reply_reaction_ops = []

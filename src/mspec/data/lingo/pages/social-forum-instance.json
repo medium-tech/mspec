@@ -134,6 +134,10 @@
             "type": "bool",
             "default": false
         },
+        "display_edit": {
+            "type": "bool",
+            "default": false
+        },
         "create_thread_op_definition": {
             "name": {
                 "lower_case": "create thread op definition"
@@ -217,6 +221,15 @@
             }
         },
         "create_thread_op_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {"type": "any", "value": null}
+            }
+        },
+        "edit_forum_op_state": {
             "type": "struct",
             "default": {
                 "state": "initial",
@@ -546,7 +559,27 @@
                     }
                 }
             }
-		}
+		},
+        "toggle_edit_view": {
+            "args": {},
+            "func": {
+                "set": {
+                    "state": {
+                        "display_edit": {}
+                    }
+                },
+                "to": {
+                    "call": "not",
+                    "args": {
+                        "object": {
+                            "state": {
+                                "display_edit": {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
 	},
     "output": [
         {
@@ -577,6 +610,46 @@
                 }
             },
             "level": 1
+        },
+        {
+            "branch": [
+                {
+                    "if": {
+                        "call": "eq",
+                        "args": {
+                            "a": {
+                                "state": {
+                                    "forum": {
+                                        "user_id": {}
+                                    }
+                                }
+                            },
+                            "b": {
+                                "call": "key",
+                                "args": {
+                                    "object": {
+                                        "call": "auth.current_user",
+                                        "args": {}
+                                    },
+                                    "key": "id",
+                                    "default_value": "-1"
+                                }
+                            }
+                        }
+                    },
+                    "then": {
+                        "button": {
+                            "op": {
+                                "toggle_edit_view": {}
+                            }
+                        },
+                        "text": "edit"
+                    }
+                },
+                {
+                    "else": {"text": ""}
+                }
+            ]
         },
         {
             "lingo": { "state": {"forum": {"description": {}}}},
@@ -673,6 +746,70 @@
                                     "else": {"text": ""}
                                 }
                             ]
+                        }
+                    ]
+                },
+                {
+                    "if": {
+                        "state": {
+                            "display_edit": {}
+                        }
+                    },
+                    "then": [
+                        {
+                            "heading": ":: edit forum",
+                            "level": 3
+                        },
+                        {
+                            "button": {
+                                "op": {
+                                    "toggle_edit_view": {}
+                                }
+                            },
+                            "text": "back"
+                        },
+                        {
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "edit_forum_op_state": {}
+                                    }
+                                },
+                                "interactive": true,
+                                "http": "/api/social/update-forum",
+                                "display": {
+                                    "show_result": false
+                                },
+                                "definition": "social.update_forum",
+                                "params": {
+                                    "forum_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "topic": {
+                                        "state": {
+                                            "forum": {
+                                                "topic": {}
+                                            }
+                                        }
+                                    },
+                                    "description": {
+                                        "state": {
+                                            "forum": {
+                                                "description": {}
+                                            }
+                                        }
+                                    },
+                                    "tags": {
+                                        "state": {
+                                            "forum": {
+                                                "tags": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     ]
                 },
