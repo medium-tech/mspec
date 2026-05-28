@@ -737,7 +737,7 @@
                     ]
                 },
                 {
-                    "if": {
+                    "elif": {
                         "state": {
                             "display_edit": {}
                         }

@@ -455,7 +455,7 @@ class TestLingoPages(unittest.TestCase):
                 third_case = branch[2]
                 if (
                     isinstance(first_case, dict) and first_case.get('if') == {'state': {'display_create': {}}}
-                    and isinstance(second_case, dict) and second_case.get('if') == {'state': {'display_edit': {}}}
+                    and isinstance(second_case, dict) and second_case.get('elif') == {'state': {'display_edit': {}}}
                     and isinstance(third_case, dict) and 'else' in third_case
                 ):
                     create_edit_reply_branch = branch
