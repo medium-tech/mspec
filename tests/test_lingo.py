@@ -445,7 +445,7 @@ class TestLingoPages(unittest.TestCase):
                     owner_edit_button_exists = True
 
             if node.get('op', {}).get('definition') == 'social.update_forum':
-                if node['op'].get('http') == '/api/social/update-forum':
+                if node.get('op', {}).get('http') == '/api/social/update-forum':
                     update_forum_op_exists = True
 
             branch = node.get('branch')
