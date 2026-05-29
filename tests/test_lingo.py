@@ -447,6 +447,10 @@ class TestLingoPages(unittest.TestCase):
         self.assertIn('/api/social/edit-thread', output_as_text)
         self.assertIn('edit_thread_op_view_state', output_as_text)
         self.assertIn('edit_thread_op_definition', output_as_text)
+        self.assertIn('"params": {"thread_id"', output_as_text)
+        self.assertIn('"initial_values"', output_as_text)
+        self.assertIn('"key": "title"', output_as_text)
+        self.assertIn('"key": "message"', output_as_text)
 
         self.assertEqual(
             thread_spec['ops']['close_editor']['func']['branch'][0]['if']['args']['a']['args']['object']['state'],

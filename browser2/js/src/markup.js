@@ -2841,6 +2841,35 @@ function renderOp(app, expression, ctx = null) {
         // console.log('renderOp() - interactive op param overrides', paramOverrides);
 
         //
+        // initial values
+        //
+
+        let initialValues = {};
+
+        if(op.hasOwnProperty('initial_values')){
+            const initialValuesExpr = expression.op.initial_values;
+
+            for(const [paramKey, paramValueExpr] of Object.entries(initialValuesExpr)){
+
+                if(!definition.params.hasOwnProperty(paramKey)){
+                    throw new Error(`op - initial_values param not found in definition: ${paramKey}`);
+                }
+
+                const paramDef = definition.params[paramKey];
+                const paramValue = lingoExecute(app, paramValueExpr, ctx);
+                const paramValueType = getTypeName(paramValue);
+
+                if(!typesMatch(paramValueType, paramDef.type)){
+                    throw new Error(`op - initial_values value type mismatch for ${paramKey}: ${paramDef.type} != ${paramValueType}`);
+                }
+
+                initialValues[paramKey] = unwrapValue(paramValue);
+            }
+        }
+
+        // console.log('renderOp() - interactive op initial values', initialValues);
+
+        //
         // fields
         //
 
@@ -2894,6 +2923,11 @@ function renderOp(app, expression, ctx = null) {
 
         // merge app.state[stateField].data and paramOverrides to create request body, with paramOverrides taking precedence
         const stateSlot = _getStateSlot(app, stateField, listIndex);
+        for (const [key, value] of Object.entries(initialValues)) {
+            if (typeof stateSlot.data[key] === 'undefined') {
+                stateSlot.data[key] = value;
+            }
+        }
         let requestBody = stateSlot.data
         for (const [key, value] of Object.entries(paramOverrides)) {
             requestBody[key] = value;

@@ -2033,7 +2033,9 @@
                                         "params": {
                                             "model_id": {}
                                         }
-                                    },
+                                    }
+                                },
+                                "initial_values": {
                                     "title": {
                                         "call": "key",
                                         "args": {
