@@ -811,6 +811,21 @@
                             "heading": ":: edit forum",
                             "level": 3
                         },
+						{
+							"text": "Click the edit button below to edit your thread",
+							"style": {
+								"italic": true
+							}
+						},
+						{"break": 1},
+						{
+							"button": {
+								"op": {
+									"close_editor": {}
+								}
+							},
+							"text": "close editor"
+						},
                         {
                             "model": {
                                 "bind": {

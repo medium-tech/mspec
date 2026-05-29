@@ -1353,37 +1353,6 @@
 					}
 				}
 			}
-		},
-		"close_editor": {
-			"args": {},
-			"func": {
-				"branch": [
-					{
-						"if": {
-							"call": "eq",
-							"args": {
-								"a": {
-									"call": "key",
-									"args": {
-										"object": {"state": {"edit_thread_op_view_state": {}}},
-										"key": "state"
-									}
-								},
-								"b": "result"
-							}
-						},
-						"then": {
-							"call": "client.reload"
-						}
-					},
-					{
-						"else": {
-							"set": {"state": {"display_edit": {}}},
-							"to": false
-						}
-					}
-				]
-			}
 		}
     },
     "timers": {
@@ -1551,7 +1520,7 @@
 						{
 							"button": {
 								"op": {
-									"close_editor": {}
+									"toggle_edit_view": {}
 								}
 							},
 							"text": "close editor"
@@ -1998,7 +1967,8 @@
                                 "interactive": true,
 								"http": "/api/social/edit-thread",
                                 "display": {
-                                    "show_result": false
+                                    "show_result": false,
+									"friendly_status": true
                                 },
                                 "params": {
                                     "thread_id": {
@@ -2037,7 +2007,11 @@
                                     "state": {
                                         "edit_thread_op_definition": {}
                                     }
-                                }
+                                },
+								"on_success": {
+									"call": "client.reload",
+									"args": {}
+								}
                             }
                         }
 					]
