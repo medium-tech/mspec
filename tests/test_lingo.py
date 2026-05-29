@@ -438,6 +438,25 @@ class TestLingoPages(unittest.TestCase):
         self.assertIn('reply_user_reaction_local', output_as_text)
         self.assertIn('"default_value": "initial"', output_as_text)
 
+    def test_thread_edit_uses_edit_thread_op_widget(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        self.assertIn('edit_thread_op_view_state', thread_spec['state'])
+        self.assertIn('edit_thread_op_definition', thread_spec['state'])
+
+        output_as_text = json.dumps(thread_spec['output'])
+        self.assertIn('/api/social/edit-thread', output_as_text)
+        self.assertIn('edit_thread_op_view_state', output_as_text)
+        self.assertIn('edit_thread_op_definition', output_as_text)
+
+        self.assertEqual(
+            thread_spec['ops']['close_editor']['func']['branch'][0]['if']['args']['a']['args']['object']['state'],
+            {'edit_thread_op_view_state': {}}
+        )
+        self.assertEqual(
+            thread_spec['ops']['close_editor']['func']['branch'][0]['if']['args']['b'],
+            'result'
+        )
+
     def test_sequence_functions(self):
         """Test sequence functions: len, range, slice, any, all, sum, sorted, count"""
         app = lingo_app(self.functions_sequence_spec)

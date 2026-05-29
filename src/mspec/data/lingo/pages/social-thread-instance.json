@@ -682,6 +682,56 @@
                 }
             }
         },
+        "edit_thread_op_definition": {
+            "name": {
+                "lower_case": "edit thread op definition"
+            },
+            "type": "op",
+            "default": {
+                "type": "op",
+                "value": {
+                    "name": {
+                        "lower_case": "edit thread"
+                    },
+                    "description": "Edit a thread title and/or main post message. Only the thread creator can edit the thread.",
+                    "func": {},
+                    "params": {
+                        "thread_id": {
+                            "name": {
+                                "lower_case": "thread id"
+                            },
+                            "type": "str"
+                        },
+                        "title": {
+                            "name": {
+                                "lower_case": "title"
+                            },
+                            "type": "str"
+                        },
+                        "message": {
+                            "name": {
+                                "lower_case": "message"
+                            },
+                            "type": "str",
+                            "rich_text": true
+                        }
+                    },
+                    "result": {
+                        "type": "struct",
+                        "value": {
+                            "success": {
+                                "type": "bool",
+                                "value": false
+                            },
+                            "message": {
+                                "type": "str",
+                                "value": ""
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "replies_op_definition": {
             "name": {
                 "lower_case": "replies op definition"
@@ -1092,13 +1142,16 @@
 			"type": "bool",
 			"default": false
 		},
-		"model_instance": {
+        "edit_thread_op_view_state": {
             "type": "struct",
             "default": {
-                "state": "pending",
+                "state": "initial",
                 "error": "",
                 "data": {},
-                "field_errors": {}
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
             }
         }
     },
@@ -1312,11 +1365,11 @@
 								"a": {
 									"call": "key",
 									"args": {
-										"object": {"state": {"model_instance": {}}},
+										"object": {"state": {"edit_thread_op_view_state": {}}},
 										"key": "state"
 									}
 								},
-								"b": "edited"
+								"b": "result"
 							}
 						},
 						"then": {
@@ -1964,26 +2017,53 @@
 							"level": 3
 						},
 						{
-                            "model": {
+                            "op": {
                                 "bind": {
                                     "state": {
-                                        "model_instance": {}
+                                        "edit_thread_op_view_state": {}
                                     }
                                 },
-								"http": {
-									"call": "concat",
-									"args": {
-										"items": [
-											"/api/social/thread/",
-											{"params": {"model_id": {}}}
-										]
-									}
-								},
+                                "interactive": true,
+								"http": "/api/social/edit-thread",
                                 "display": {
-                                    "mode": "read"
+                                    "show_result": false
                                 },
-                                "definition": {"params": {"model_definition": {}}},
-								"model_id": {"params": {"model_id": {}}}
+                                "params": {
+                                    "thread_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    },
+                                    "title": {
+                                        "call": "key",
+                                        "args": {
+                                            "object": {
+                                                "state": {
+                                                    "thread": {}
+                                                }
+                                            },
+                                            "key": "title",
+                                            "default_value": ""
+                                        }
+                                    },
+                                    "message": {
+                                        "call": "key",
+                                        "args": {
+                                            "object": {
+                                                "state": {
+                                                    "main_post": {}
+                                                }
+                                            },
+                                            "key": "message",
+                                            "default_value": ""
+                                        }
+                                    }
+                                },
+                                "definition": {
+                                    "state": {
+                                        "edit_thread_op_definition": {}
+                                    }
+                                }
                             }
                         }
 					]
