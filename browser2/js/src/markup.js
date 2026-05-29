@@ -2844,30 +2844,30 @@ function renderOp(app, expression, ctx = null) {
         // initial values
         //
 
-        let initialValues = {};
+        let evaluatedInitialValues = {};
 
-        if(op.hasOwnProperty('initial_values')){
-            const initialValuesExpr = expression.op.initial_values;
+        if('initial_values' in op){
+            const initialValuesExpr = op.initial_values;
 
-            for(const [paramKey, paramValueExpr] of Object.entries(initialValuesExpr)){
+            for(const [initialValueKey, paramValueExpr] of Object.entries(initialValuesExpr)){
 
-                if(!definition.params.hasOwnProperty(paramKey)){
-                    throw new Error(`op - initial_values param not found in definition: ${paramKey}`);
+                if(!definition.params.hasOwnProperty(initialValueKey)){
+                    throw new Error(`op - initial_values key not found in op parameter definitions: ${initialValueKey}`);
                 }
 
-                const paramDef = definition.params[paramKey];
+                const paramDef = definition.params[initialValueKey];
                 const paramValue = lingoExecute(app, paramValueExpr, ctx);
                 const paramValueType = getTypeName(paramValue);
 
                 if(!typesMatch(paramValueType, paramDef.type)){
-                    throw new Error(`op - initial_values value type mismatch for ${paramKey}: ${paramDef.type} != ${paramValueType}`);
+                    throw new Error(`op - initial_values value type mismatch for ${initialValueKey}: expected ${paramDef.type}, got ${paramValueType}`);
                 }
 
-                initialValues[paramKey] = unwrapValue(paramValue);
+                evaluatedInitialValues[initialValueKey] = unwrapValue(paramValue);
             }
         }
 
-        // console.log('renderOp() - interactive op initial values', initialValues);
+        // console.log('renderOp() - interactive op initial values', evaluatedInitialValues);
 
         //
         // fields
@@ -2923,8 +2923,8 @@ function renderOp(app, expression, ctx = null) {
 
         // merge app.state[stateField].data and paramOverrides to create request body, with paramOverrides taking precedence
         const stateSlot = _getStateSlot(app, stateField, listIndex);
-        for (const [key, value] of Object.entries(initialValues)) {
-            if (typeof stateSlot.data[key] === 'undefined') {
+        for (const [key, value] of Object.entries(evaluatedInitialValues)) {
+            if (!stateSlot.data.hasOwnProperty(key)) {
                 stateSlot.data[key] = value;
             }
         }
