@@ -84,6 +84,13 @@
                 }
             }
         },
+		"reply_delete_state": {
+			"type": "struct",
+			"default": {
+				"state": "initial",
+				"error": ""
+			}
+		},
 		"main_post_reaction_thumbs_up_state": {
             "type": "struct",
             "default": {
@@ -2336,6 +2343,59 @@
 																},
 																{
 																	"break": 1
+																},
+																{
+																	"branch": [
+																		{
+																			"if": {
+																				"call": "auth.is_owner",
+																				"args": {
+																					"model": {
+																						"self": "item"
+																					}
+																				}
+																			},
+																			"then": [
+																				{
+																					"model": {
+																						"bind": {
+																							"state": {
+																								"reply_delete_state": {}
+																							}
+																						},
+																						"display": "delete",
+																						"model_data": {
+																							"self": "item"
+																						},
+																						"http": "/api/social/post",
+																						"model_id": {
+																							"call": "key",
+																							"args": {
+																								"object": {
+																									"self": "item"
+																								},
+																								"key": "id"
+																							}
+																						}
+																					}
+																				},
+																				{
+																					"text": " (this is your reply)",
+																					"style": {
+																						"italic": true
+																					}
+																				},
+																				{
+																					"break": 1
+																				}
+																			]
+																		},
+																		{
+																			"else": {
+																				"text": ""
+																			}
+																		}
+																	]
 																},
 																{
 																	"lingo": {

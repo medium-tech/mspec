@@ -390,6 +390,15 @@ class TestLingoPages(unittest.TestCase):
         self.assertIn('reply_user_reaction_local', output_as_text)
         self.assertIn('"default_value": "initial"', output_as_text)
 
+    def test_reply_delete_widget_for_owned_replies(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        self.assertEqual(thread_spec['state']['reply_delete_state']['type'], 'struct')
+
+        output_as_text = json.dumps(thread_spec['output'])
+        self.assertIn('"display": "delete"', output_as_text)
+        self.assertIn('"model_data": {"self": "item"}', output_as_text)
+        self.assertIn('(this is your reply)', output_as_text)
+
     def test_sequence_functions(self):
         """Test sequence functions: len, range, slice, any, all, sum, sorted, count"""
         app = lingo_app(self.functions_sequence_spec)
