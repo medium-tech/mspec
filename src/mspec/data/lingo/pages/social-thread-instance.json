@@ -1848,41 +1848,48 @@
 									"b": ""
 								}
 							},
-							"then": {
-								"op": {
-									"bind": {
-										"state": {
-											"main_post_reaction_delete_state": {}
-										}
-									},
-									"display": {
-										"friendly_status": true,
-										"show_result": false,
-										"in_line": true,
-										"show_op_status_display": false
-									},
-									"interactive": true,
-									"http": "/api/social/react-to-thread-main-post",
-									"params": {
-										"thread_id": {
-											"params": {
-												"model_id": {}
-											}
-										},
-										"reaction_type": ""
-									},
-									"definition": "social.react_to_thread_main_post",
-									"submit_button_text": "remove",
-									"on_success": {
-										"set": {
+							"then": [
+								{
+									"op": {
+										"bind": {
 											"state": {
-												"main_post_user_reaction_local": {}
+												"main_post_reaction_delete_state": {}
 											}
 										},
-										"to": ""
+										"display": {
+											"friendly_status": true,
+											"show_result": false,
+											"in_line": true,
+											"show_op_status_display": false
+										},
+										"interactive": true,
+										"http": "/api/social/react-to-thread-main-post",
+										"params": {
+											"thread_id": {
+												"params": {
+													"model_id": {}
+												}
+											},
+											"reaction_type": ""
+										},
+										"definition": "social.react_to_thread_main_post",
+										"submit_button_text": {
+											"call": "concat",
+											"args": {
+												"items": ["unreact ", {"state": {"main_post_user_reaction": {}}}]
+											}
+										},
+										"on_success": {
+											"set": {
+												"state": {
+													"main_post_user_reaction_local": {}
+												}
+											},
+											"to": ""
+										}
 									}
 								}
-							}
+							]
 						},
 						{
 							"else": ""
@@ -1919,41 +1926,6 @@
 				}
 			]
 		},
-		{
-            "branch": [
-                {
-                    "if": {
-                        "call": "ne",
-                        "args": {
-                            "a": {
-                                "state": {
-                                    "main_post_user_reaction": {}
-                                }
-                            },
-                            "b": ""
-                        }
-                    },
-                    "then": [
-                        {
-                            "text": " :: yours: ",
-                            "style": {
-                                "bold": true
-                            }
-                        },
-                        {
-                            "lingo": {
-                                "state": {
-                                    "main_post_user_reaction": {}
-                                }
-                            }
-                        }
-                    ]
-                },
-                {
-                    "else": ""
-                }
-            ]
-        },
 		{
 			"branch": [
 				{
@@ -2731,7 +2703,7 @@
 																					"reaction_type": ""
 																				},
 																				"definition": "social.react_to_reply",
-																				"submit_button_text": "remove",
+																				"submit_button_text": "unreact",
 																				"on_success": {
 																					"set": {
 																						"state": {
