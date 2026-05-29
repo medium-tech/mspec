@@ -1504,31 +1504,31 @@ modules:
                                 model_id:
                                     params: { thread_id: {} }
                                 model_type: 'social.thread'
-                        result:
-                            call: 'and'
-                            args: 
-                                a:
-                                    call: 'db.patch'
+                    value:
+
+                        patched_thread:
+                            call: 'db.patch'
+                            args:
+                                model_id:
+                                    params: { thread_id: {} }
+                                model_type: 'social.thread'
+                                data:
+                                    title:
+                                        params: { title: {} }
+
+                        patched_main_post:
+                            call: 'db.patch'
+                            args:
+                                model_id:
+                                    call: 'key'
                                     args:
-                                        model_id:
-                                            params: { thread_id: {} }
-                                        model_type: 'social.thread'
-                                        data:
-                                            title:
-                                                params: { title: {} }
-                                b:
-                                    call: 'db.patch'
-                                    args:
-                                        model_id:
-                                            call: 'key'
-                                            args:
-                                                key: 'main_post_id'
-                                                object:
-                                                    self: thread
-                                        model_type: 'social.post'
-                                        data:
-                                            message:
-                                                params: { message: {} }
+                                        key: 'main_post_id'
+                                        object:
+                                            self: thread
+                                model_type: 'social.post'
+                                data:
+                                    message:
+                                        params: { message: {} }
                 params:
                     thread_id:
                         name:

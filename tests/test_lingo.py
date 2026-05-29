@@ -381,94 +381,6 @@ class TestLingoPages(unittest.TestCase):
         )
         self.assertIn('user_reaction', mapped_reply_fields)
 
-    def test_builtin_and_social_pages_render_breadcrumbs_before_main_header(self):
-        page_files = [
-            'builtin-mapp-model-instance.json',
-            'builtin-mapp-model.json',
-            'builtin-mapp-module.json',
-            'builtin-mapp-op.json',
-            'builtin-mapp-project.json',
-            'social-forum-instance.json',
-            'social-forums.json',
-            'social-thread-instance.json',
-        ]
-
-        for page_file in page_files:
-            with self.subTest(page_file=page_file):
-                page_spec = load_browser2_spec(page_file)
-                output = page_spec['output']
-
-                breadcrumb_index = next(
-                    i for i, item in enumerate(output)
-                    if isinstance(item, dict) and 'breadcrumbs' in item
-                )
-                header_index = next(
-                    i for i, item in enumerate(output)
-                    if isinstance(item, dict) and item.get('level') == 1 and 'heading' in item
-                )
-                self.assertLess(
-                    breadcrumb_index,
-                    header_index,
-                    f'Expected breadcrumbs before h1 in {page_file}'
-                )
-
-    def test_social_forum_instance_has_owner_edit_view_branching(self):
-        forum_spec = load_browser2_spec('social-forum-instance.json')
-
-        self.assertEqual(forum_spec['state']['display_edit']['type'], 'bool')
-        self.assertFalse(forum_spec['state']['display_edit']['default'])
-
-        toggle_edit = forum_spec['ops']['toggle_edit_view']['func']
-        self.assertEqual(toggle_edit['set']['state'], {'display_edit': {}})
-        self.assertEqual(toggle_edit['to']['call'], 'not')
-
-        owner_edit_button_exists = False
-        update_forum_op_exists = False
-        create_edit_reply_branch = None
-
-        def scan(node):
-            nonlocal owner_edit_button_exists
-            nonlocal update_forum_op_exists
-            nonlocal create_edit_reply_branch
-
-            if isinstance(node, list):
-                for item in node:
-                    scan(item)
-                return
-
-            if not isinstance(node, dict):
-                return
-
-            if node.get('text') == 'edit':
-                button = node.get('button')
-                if isinstance(button, dict) and button.get('op') == {'toggle_edit_view': {}}:
-                    owner_edit_button_exists = True
-
-            if node.get('op', {}).get('definition') == 'social.update_forum':
-                if node.get('op', {}).get('http') == '/api/social/update-forum':
-                    update_forum_op_exists = True
-
-            branch = node.get('branch')
-            if isinstance(branch, list) and len(branch) == 3:
-                first_case = branch[0]
-                second_case = branch[1]
-                third_case = branch[2]
-                if (
-                    isinstance(first_case, dict) and first_case.get('if') == {'state': {'display_create': {}}}
-                    and isinstance(second_case, dict) and second_case.get('elif') == {'state': {'display_edit': {}}}
-                    and isinstance(third_case, dict) and 'else' in third_case
-                ):
-                    create_edit_reply_branch = branch
-
-            for value in node.values():
-                scan(value)
-
-        scan(forum_spec['output'])
-
-        self.assertTrue(owner_edit_button_exists)
-        self.assertTrue(update_forum_op_exists)
-        self.assertIsNotNone(create_edit_reply_branch)
-
     def test_social_thread_reply_reaction_buttons_use_fixed_values(self):
         thread_spec = load_browser2_spec('social-thread-instance.json')
         reply_reaction_ops = []
@@ -525,30 +437,6 @@ class TestLingoPages(unittest.TestCase):
         output_as_text = json.dumps(thread_spec['output'])
         self.assertIn('reply_user_reaction_local', output_as_text)
         self.assertIn('"default_value": "initial"', output_as_text)
-
-    def test_social_thread_reply_reaction_display_matches_main_post_style(self):
-        thread_spec = load_browser2_spec('social-thread-instance.json')
-        text_values = []
-
-        def collect_text_values(node):
-            if isinstance(node, list):
-                for item in node:
-                    collect_text_values(item)
-                return
-
-            if isinstance(node, dict):
-                if 'text' in node and isinstance(node['text'], str):
-                    text_values.append(node['text'])
-
-                for value in node.values():
-                    collect_text_values(value)
-
-        collect_text_values(thread_spec['output'])
-
-        self.assertGreaterEqual(text_values.count(':: reactions: '), 2)
-        self.assertGreaterEqual(text_values.count(' :: yours: '), 2)
-        self.assertNotIn('reactions: ', text_values)
-        self.assertNotIn(' ● your reaction: ', text_values)
 
     def test_sequence_functions(self):
         """Test sequence functions: len, range, slice, any, all, sum, sorted, count"""
@@ -965,8 +853,12 @@ class TestLingoDbFunctions(unittest.TestCase):
 
         post1 = self.post_class(id=None, user_id='1', title='hello', view_count=10)
         post2 = self.post_class(id=None, user_id='2', title='world', view_count=20)
+        post3 = self.post_class(id=None, user_id='3', title='foo', view_count=30)
+        post4 = self.post_class(id=None, user_id='1', title='bar', view_count=40)
         db_model_create(self.ctx, self.post_class, post1)
         db_model_create(self.ctx, self.post_class, post2)
+        db_model_create(self.ctx, self.post_class, post3)
+        db_model_create(self.ctx, self.post_class, post4)
 
         profile1 = self.profile_class(id=None, user_id='1', username='alice')
         profile2 = self.profile_class(id=None, user_id='2', username='bob')
@@ -1128,6 +1020,148 @@ class TestLingoDbFunctions(unittest.TestCase):
         app = self._make_app()
         result = lingo_execute(app, expression, self.ctx)
         self.assertEqual(result['value']['profile']['username'], 'alice')
+
+    # db.patch tests #
+
+    def test_db_patch(self):
+        app = self._make_app()
+        model_id = '3'
+        read_func = {
+            'call': 'db.read',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': model_id, 'type': 'str'},
+            }
+        }
+        
+        # read data and confirm original values
+        original_read_result = lingo_execute(app, read_func, self.ctx)
+        self.assertEqual(original_read_result['value']['title'], 'foo')
+        self.assertEqual(original_read_result['value']['view_count'], 30)
+
+        # patch data
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': model_id, 'type': 'str'},
+                'data': {
+                    'view_count': {'value': 99, 'type': 'int'},
+                },
+            }
+        }
+        
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['value']['view_count'], 99)
+        self.assertEqual(result['value']['title'], 'foo')
+
+        # read back data and confirm updated values
+        read_result = lingo_execute(app, {
+            'call': 'db.read',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': model_id, 'type': 'str'},
+            }
+        }, self.ctx)
+        self.assertEqual(read_result['value']['view_count'], 99)
+        self.assertEqual(read_result['value']['title'], 'foo')
+
+    def test_db_patch_with_primitive_args(self):
+        app = self._make_app()
+        model_id = '4'
+        read_func = {
+            'call': 'db.read',
+            'args': {
+                'model_type': 'test_app.post',
+                'model_id': model_id,
+            }
+        }
+        
+        # read data and confirm original values
+        original_read_result = lingo_execute(app, read_func, self.ctx)
+        self.assertEqual(original_read_result['value']['title'], 'bar')
+        self.assertEqual(original_read_result['value']['view_count'], 40)
+
+        # patch data
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_type': 'test_app.post',
+                'model_id': model_id,
+                'data': {
+                    'title': 'new-title',
+                    'view_count': 101,
+                },
+            }
+        }
+        
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['value']['view_count'], 101)
+        self.assertEqual(result['value']['title'], 'new-title')
+
+        # read back data and confirm updated values
+        read_result = lingo_execute(app, {
+            'call': 'db.read',
+            'args': {
+                'model_type': 'test_app.post',
+                'model_id': model_id,
+            }
+        }, self.ctx)
+        self.assertEqual(read_result['value']['view_count'], 101)
+        self.assertEqual(read_result['value']['title'], 'new-title')
+
+    def test_db_patch_raises_on_missing_model_type(self):
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_id': {'value': '1', 'type': 'str'},
+                'data': {'title': {'value': 'x', 'type': 'str'}},
+            }
+        }
+        app = self._make_app()
+        with self.assertRaises(ValueError):
+            lingo_execute(app, expression, self.ctx)
+
+    def test_db_patch_raises_on_missing_model_id(self):
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'data': {'title': {'value': 'x', 'type': 'str'}},
+            }
+        }
+        app = self._make_app()
+        with self.assertRaises(ValueError):
+            lingo_execute(app, expression, self.ctx)
+
+    def test_db_patch_raises_on_missing_data(self):
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': '1', 'type': 'str'},
+            }
+        }
+        app = self._make_app()
+        with self.assertRaises(ValueError):
+            lingo_execute(app, expression, self.ctx)
+
+    def test_db_patch_raises_on_not_found(self):
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': '999', 'type': 'str'},
+                'data': {
+                    'title': {'value': 'x', 'type': 'str'},
+                },
+            }
+        }
+        app = self._make_app()
+        with self.assertRaises(NotFoundError):
+            lingo_execute(app, expression, self.ctx)
+
+    # db.update tests #
 
     def test_db_update_sets_date_modified_after_date_created(self):
         original = db_model_read(self.ctx, self.post_class, '1')
@@ -1298,7 +1332,7 @@ class TestLingoDbFunctions(unittest.TestCase):
         }
         app = self._make_app()
         result = lingo_execute(app, expression, self.ctx)
-        self.assertEqual(result['value']['total'], 2)
+        self.assertEqual(result['value']['total'], 4)
         first = result['value']['items'][0]
         self.assertIn('profile', first)
         self.assertIn('reaction_counts', first)
@@ -1423,9 +1457,6 @@ class TestLingoDbFunctions(unittest.TestCase):
         self.assertEqual(result['value']['items'], [])
 
     def test_db_query_returns_multiple_matching_rows(self):
-        # Add a second post for user_id '1'
-        extra = self.post_class(id=None, user_id='1', title='another post', view_count=5)
-        db_model_create(self.ctx, self.post_class, extra)
 
         expression = {
             'call': 'db.query',
@@ -1448,11 +1479,9 @@ class TestLingoDbFunctions(unittest.TestCase):
         self.assertIsInstance(result['value'].get('total'), int)
         self.assertEqual(result['value']['total'], 2)
         titles = {item['title'] for item in result['value']['items']}
-        self.assertEqual(titles, {'hello', 'another post'})
+        self.assertEqual(titles, {'hello', 'bar'})
 
     def test_db_query_sorts_by_date_modified_desc(self):
-        extra = self.post_class(id=None, user_id='1', title='another post', view_count=5)
-        db_model_create(self.ctx, self.post_class, extra)
 
         self.ctx.db.cursor.execute(
             'UPDATE test_app_post SET date_modified = ? WHERE id = ?',

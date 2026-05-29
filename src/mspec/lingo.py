@@ -650,6 +650,21 @@ def _db_create_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=
 
     return (ctx, model_class, data), {}
 
+def _db_patch_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+    try:
+        model_type_expr = expression['args']['model_type']
+        model_id_expr = expression['args']['model_id']
+        data_expr = expression['args']['data']
+    except KeyError as e:
+        raise ValueError(f'db.patch - missing arg: {e}')
+
+    model_type = _resolve_expression_value(app, model_type_expr, ctx)
+    model_id = _resolve_expression_value(app, model_id_expr, ctx)
+    model_class = _get_model_class_from_type(app, model_type)
+    data = _db_create_data_dict(app, data_expr, ctx)
+
+    return (ctx, model_class, str(model_id), data), {}
+
 def _db_upsert_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     try:
         model_type_expr = expression['args']['model_type']
@@ -805,6 +820,16 @@ def db_create(ctx, model_class, data:dict) -> str:
     model = convert_dict_to_model(model_class, data)
     model = db_model_create(ctx, model_class, model)
     return str(model.id)
+
+def db_patch(ctx, model_class, model_id:str, data:dict) -> dict:
+    existing = db_model_read(ctx, model_class, model_id)
+    updated_data = existing._asdict()
+    updated_data.update(data)
+    updated_data['date_created'] = None
+    updated_data['date_modified'] = None
+    model = convert_dict_to_model(model_class, updated_data)
+    saved_model = db_model_update(ctx, model_class, model)
+    return {'type': 'struct', 'value': saved_model._asdict()}
 
 def db_upsert(ctx, model_class, data:dict, conflict_fields:list[str]) -> dict:
     model_spec = model_class._model_spec
@@ -1176,6 +1201,7 @@ lingo_function_lookup = {
 
     'db': {
         'create': {'func': db_create, 'create_args': _db_create_function_args},
+        'patch': {'func': db_patch, 'create_args': _db_patch_function_args},
         'upsert': {'func': db_upsert, 'create_args': _db_upsert_function_args},
         'read': {'func': db_read, 'create_args': _db_read_function_args},
         'unique_counts': {'func': db_unique_counts, 'create_args': _db_unique_counts_function_args},
