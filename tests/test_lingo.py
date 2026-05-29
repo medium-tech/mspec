@@ -397,12 +397,19 @@ class TestLingoPages(unittest.TestCase):
         # The reply unreact button should use concat with "unreact " prefix
         self.assertIn('"unreact "', output_as_text)
 
-        # Navigate to the block containing the reply reaction buttons
+        # Navigate to the block containing the reply reaction buttons.
+        # output[25] - the branch containing the replies list (when main post is loaded)
+        # branch[0]['then'][6] - the branch for when replies are loaded
+        # branch[0]['then']['value']['args']['function']['value']['reply']['block'][6]
+        #   - the per-row block of reaction buttons (block[6] is the reactions block)
+        # ['block'] - the list of reaction op buttons: 👍 ❤️ 😂 🔥 😢 👎 and unreact (index 6)
         reply_block = (
             thread_spec['output'][25]['branch'][0]['then'][6]['branch'][0]
             ['then']['value']['args']['function']['value']['reply']['block'][6]['block']
         )
-        unreact_element = reply_block[6]
+        # Index 6 is the last button: the unreact (remove reaction) button
+        UNREACT_INDEX = 6
+        unreact_element = reply_block[UNREACT_INDEX]
 
         # The unreact element should now be wrapped in a branch (for show/hide)
         self.assertIn('branch', unreact_element)
