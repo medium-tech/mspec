@@ -390,6 +390,44 @@ class TestLingoPages(unittest.TestCase):
         self.assertIn('reply_user_reaction_local', output_as_text)
         self.assertIn('"default_value": "initial"', output_as_text)
 
+    def test_reply_unreact_button_text_and_visibility(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        output_as_text = json.dumps(thread_spec['output'])
+
+        # The reply unreact button should use concat with "unreact " prefix
+        self.assertIn('"unreact "', output_as_text)
+
+        # Navigate to the block containing the reply reaction buttons
+        reply_block = (
+            thread_spec['output'][25]['branch'][0]['then'][6]['branch'][0]
+            ['then']['value']['args']['function']['value']['reply']['block'][6]['block']
+        )
+        unreact_element = reply_block[6]
+
+        # The unreact element should now be wrapped in a branch (for show/hide)
+        self.assertIn('branch', unreact_element)
+        branch_cases = unreact_element['branch']
+        self.assertEqual(len(branch_cases), 2)
+
+        # The if condition should check the user reaction is not empty
+        if_case = branch_cases[0]
+        self.assertEqual(if_case['if']['call'], 'ne')
+        self.assertEqual(if_case['if']['args']['b'], '')
+
+        # The else case should hide the button (empty string)
+        else_case = branch_cases[1]
+        self.assertEqual(else_case['else'], '')
+
+        # The button inside should use concat for the text "unreact <emoji>"
+        op = if_case['then'][0]['op']
+        self.assertEqual(op['definition'], 'social.react_to_reply')
+        self.assertEqual(op['params']['reaction_type'], '')
+        self.assertEqual(op['submit_button_text']['call'], 'concat')
+        concat_items = op['submit_button_text']['args']['items']
+        self.assertEqual(concat_items[0], 'unreact ')
+        # The second item should be a branch expression for the user's current reaction
+        self.assertIn('branch', concat_items[1])
+
     def test_sequence_functions(self):
         """Test sequence functions: len, range, slice, any, all, sum, sorted, count"""
         app = lingo_app(self.functions_sequence_spec)
