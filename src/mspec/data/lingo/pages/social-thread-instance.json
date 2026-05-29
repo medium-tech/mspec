@@ -2763,8 +2763,7 @@
 																															"self": "index"
 																														}
 																													}
-																												},
-																												"default_value": "initial"
+																												}
 																											}
 																										}
 																									},
@@ -2775,8 +2774,7 @@
 																												"object": {
 																													"self": "item"
 																												},
-																												"key": "user_reaction",
-																												"default_value": ""
+																												"key": "user_reaction"
 																											}
 																										}
 																									}
@@ -2879,8 +2877,7 @@
 																																			"self": "index"
 																																		}
 																																	}
-																																},
-																																"default_value": "initial"
+																																}
 																															}
 																														}
 																													},
