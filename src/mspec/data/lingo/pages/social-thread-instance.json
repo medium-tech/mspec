@@ -2715,64 +2715,209 @@
 																			}
 																		},
 																		{
-																			"op": {
-																				"bind": {
-																					"state": {
-																						"reply_reaction_op_state": {
-																							"index": {
-																								"call": "add",
-																								"args": {
-																									"a": {
-																										"call": "mul",
-																										"args": {
-																											"a": {
-																												"self": "index"
-																											},
-																											"b": 7
+																			"branch": [
+																				{
+																					"if": {
+																						"call": "ne",
+																						"args": {
+																							"a": {
+																								"branch": [
+																									{
+																										"if": {
+																											"call": "ne",
+																											"args": {
+																												"a": {
+																													"call": "key",
+																													"args": {
+																														"object": {
+																															"state": {
+																																"reply_user_reaction_local": {}
+																															}
+																														},
+																														"key": {
+																															"call": "str",
+																															"args": {
+																																"object": {
+																																	"self": "index"
+																																}
+																															}
+																														},
+																														"default_value": "initial"
+																													}
+																												},
+																												"b": "initial"
+																											}
+																										},
+																										"then": {
+																											"call": "key",
+																											"args": {
+																												"object": {
+																													"state": {
+																														"reply_user_reaction_local": {}
+																													}
+																												},
+																												"key": {
+																													"call": "str",
+																													"args": {
+																														"object": {
+																															"self": "index"
+																														}
+																													}
+																												}
+																											}
 																										}
 																									},
-																									"b": 6
-																								}
-																							}
-																						}
-																					}
-																				},
-																				"display": {
-																					"friendly_status": true,
-																					"show_result": false,
-																					"in_line": true,
-																					"show_op_status_display": false
-																				},
-																				"interactive": true,
-																				"http": "/api/social/react-to-reply",
-																				"instruction": "",
-																				"params": {
-																					"post_id": {
-																						"call": "key",
-																						"args": {
-																							"object": {
-																								"self": "item"
+																									{
+																										"else": {
+																											"call": "key",
+																											"args": {
+																												"object": {
+																													"self": "item"
+																												},
+																												"key": "user_reaction"
+																											}
+																										}
+																									}
+																								]
 																							},
-																							"key": "id"
+																							"b": ""
 																						}
 																					},
-																					"reaction_type": ""
-																				},
-																				"definition": "social.react_to_reply",
-																				"submit_button_text": "unreact",
-																				"on_success": {
-																					"set": {
-																						"state": {
-																							"reply_user_reaction_local": {
-																								"index": {
-																									"self": "index"
+																					"then": [
+																						{
+																							"op": {
+																								"bind": {
+																									"state": {
+																										"reply_reaction_op_state": {
+																											"index": {
+																												"call": "add",
+																												"args": {
+																													"a": {
+																														"call": "mul",
+																														"args": {
+																															"a": {
+																																"self": "index"
+																															},
+																															"b": 7
+																														}
+																													},
+																													"b": 6
+																												}
+																											}
+																										}
+																									}
+																								},
+																								"display": {
+																									"friendly_status": true,
+																									"show_result": false,
+																									"in_line": true,
+																									"show_op_status_display": false
+																								},
+																								"interactive": true,
+																								"http": "/api/social/react-to-reply",
+																								"instruction": "",
+																								"params": {
+																									"post_id": {
+																										"call": "key",
+																										"args": {
+																											"object": {
+																												"self": "item"
+																											},
+																											"key": "id"
+																										}
+																									},
+																									"reaction_type": ""
+																								},
+																								"definition": "social.react_to_reply",
+																								"submit_button_text": {
+																									"call": "concat",
+																									"args": {
+																										"items": [
+																											"unreact ",
+																											{
+																												"branch": [
+																													{
+																														"if": {
+																															"call": "ne",
+																															"args": {
+																																"a": {
+																																	"call": "key",
+																																	"args": {
+																																		"object": {
+																																			"state": {
+																																				"reply_user_reaction_local": {}
+																																			}
+																																		},
+																																		"key": {
+																																			"call": "str",
+																																			"args": {
+																																				"object": {
+																																					"self": "index"
+																																				}
+																																			}
+																																		},
+																																		"default_value": "initial"
+																																	}
+																																},
+																																"b": "initial"
+																															}
+																														},
+																														"then": {
+																															"call": "key",
+																															"args": {
+																																"object": {
+																																	"state": {
+																																		"reply_user_reaction_local": {}
+																																	}
+																																},
+																																"key": {
+																																	"call": "str",
+																																	"args": {
+																																		"object": {
+																																			"self": "index"
+																																		}
+																																	}
+																																}
+																															}
+																														}
+																													},
+																													{
+																														"else": {
+																															"call": "key",
+																															"args": {
+																																"object": {
+																																	"self": "item"
+																																},
+																																"key": "user_reaction",
+																																"default_value": ""
+																															}
+																														}
+																													}
+																												]
+																											}
+																										]
+																									}
+																								},
+																								"on_success": {
+																									"set": {
+																										"state": {
+																											"reply_user_reaction_local": {
+																												"index": {
+																													"self": "index"
+																												}
+																											}
+																										}
+																									},
+																									"to": ""
 																								}
 																							}
 																						}
-																					},
-																					"to": ""
+																					]
+																				},
+																				{
+																					"else": ""
 																				}
-																			}
+																			]
 																		}
 																	]
 																},
