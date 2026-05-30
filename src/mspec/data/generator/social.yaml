@@ -882,6 +882,12 @@ modules:
                                                         object:
                                                             self: item
                                                         key: 'id'
+                                                user_id:
+                                                    call: 'key'
+                                                    args:
+                                                        object:
+                                                            self: item
+                                                        key: 'user_id'
                                                 date_modified:
                                                     call: 'key'
                                                     args:

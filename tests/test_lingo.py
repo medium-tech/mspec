@@ -379,6 +379,7 @@ class TestLingoPages(unittest.TestCase):
         mapped_reply_fields = (
             ops['get_replies_for_post']['func']['value']['replies']['value']['items']['args']['function']['value']
         )
+        self.assertIn('user_id', mapped_reply_fields)
         self.assertIn('user_reaction', mapped_reply_fields)
 
     def test_reply_reaction_prefers_local_state(self):
