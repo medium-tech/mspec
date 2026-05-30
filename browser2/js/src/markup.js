@@ -3303,12 +3303,15 @@ function renderModel(app, element, ctx = null) {
 function _isModelOwner(modelData) {
     // returns true if model has no user_id field (no auth restriction),
     // or if the logged-in user's id matches the model's user_id
+	// console.log('_isModelOwner()', modelData);
     if (!modelData || typeof modelData !== 'object' || !modelData.hasOwnProperty('user_id')) {
         return true;
     }
     try {
-        const userId = localStorage.getItem('user_id');
-        return !!(userId && String(modelData.user_id) === String(userId));
+        const loggedInUserId = localStorage.getItem('user_id');
+		const modelUserId = unwrapValue(modelData.user_id);
+		// console.log('_isModelOwner - user_id from localStorage', loggedInUserId, modelUserId);
+        return !!(loggedInUserId && String(modelUserId) === String(loggedInUserId));
     } catch (e) {
         return false;
     }
@@ -4460,6 +4463,7 @@ function createDOMElement(app, element, ctx = null) {
 		// console.log('createDOMElement - rendering block element with', element.length, 'sub-elements');
         const container = document.createElement('div');
 		// container.className = 'block-list-rendering';
+		// console.log('using inline-block display for block list rendering');
 		container.style.display = 'inline-block';
         for (const subElement of element) {
             // call createDomElement recursively for each subElement
@@ -5293,6 +5297,7 @@ function createFormElement(app, element, ctx = null) {
 	let tableClassName;
 	if(inLine) {
 		tableClassName = 'form-table-inline';
+		// console.log('using inline-block style for form container');
 		formContainer.style.display = 'inline-block';
 	}else{
 		tableClassName = 'form-table';
