@@ -3755,13 +3755,17 @@ function _renderModelRead(app, element, ctx = null) {
 }
 
 function _renderModelDelete(app, element, ctx = null) {
-    // console.log('renderModelDelete()', app, element, ctx);
+    console.log('renderModelDelete()', app, element, ctx);
     if(!element.model.hasOwnProperty('bind')){
         throw new Error('renderModelDelete - missing model bind definition');
     }
     if(!element.model.bind.hasOwnProperty('state')){
         throw new Error('renderModelDelete - model bind definition must bind to state');
     }
+
+	if(!element.model.hasOwnProperty('http')){
+		throw new Error('renderModelDelete - missing model http url');
+	}
 
     // get first (and only) field in bind.state
     const stateKeys = Object.keys(element.model.bind.state);
@@ -3792,6 +3796,8 @@ function _renderModelDelete(app, element, ctx = null) {
         }
     }
 
+	const url = unwrapValue(lingoExecute(app, element.model.http, ctx));
+
     const switchElement = {
         switch: {
             expression: { type: 'str', value: state.state },
@@ -3808,7 +3814,7 @@ function _renderModelDelete(app, element, ctx = null) {
                                     to: {
                                         call: 'crud.delete',
                                         args: {
-                                            http: { state: { base_url: {} } },
+                                            http: url,
                                             model_id: { params: { model_id: {} } }
                                         }
                                     }

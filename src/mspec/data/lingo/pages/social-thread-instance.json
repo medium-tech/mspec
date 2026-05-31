@@ -2367,7 +2367,23 @@
 																						"model_data": {
 																							"self": "item"
 																						},
-																						"http": "/api/social/post",
+																						"http": {
+																							"call": "concat",
+																							"args": {
+																								"items": [
+																									"/api/social/post/",
+																									{
+																										"call": "key",
+																										"args": {
+																											"object": {
+																												"self": "item"
+																											},
+																											"key": "id"
+																										}
+																									}
+																								]
+																							}
+																						},
 																						"model_id": {
 																							"call": "key",
 																							"args": {
@@ -2380,7 +2396,7 @@
 																					}
 																				},
 																				{
-																					"text": " (this is your reply)",
+																					"text": " (your reply)",
 																					"style": {
 																						"italic": true
 																					}
