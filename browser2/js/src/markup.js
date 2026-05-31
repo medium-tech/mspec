@@ -677,14 +677,8 @@ function _crudDeleteArgs(app, expression, ctx) {
     const args = expression.args || {};
     const url = unwrapValue(lingoExecute(app, args.http, ctx));
     if (expression.args.bind && expression.args.bind.state) {
-        const stateKeys = Object.keys(expression.args.bind.state);
-        if (stateKeys.length === 1) {
-            const stateField = stateKeys[0];
-            if (!app.state.hasOwnProperty(stateField)) {
-                throw new Error(`crud.delete - state field not found: ${stateField}`);
-            }
-            app.state[stateField].state = 'loading';
-        }
+        const {fieldName, listIndex} = _resolveBindState(app, expression.args.bind.state, ctx);
+        _getStateSlot(app, fieldName, listIndex).state = 'loading';
     }
     return [url];
 }
@@ -3303,12 +3297,15 @@ function renderModel(app, element, ctx = null) {
 function _isModelOwner(modelData) {
     // returns true if model has no user_id field (no auth restriction),
     // or if the logged-in user's id matches the model's user_id
+	// console.log('_isModelOwner()', modelData);
     if (!modelData || typeof modelData !== 'object' || !modelData.hasOwnProperty('user_id')) {
         return true;
     }
     try {
-        const userId = localStorage.getItem('user_id');
-        return !!(userId && String(modelData.user_id) === String(userId));
+        const loggedInUserId = localStorage.getItem('user_id');
+		const modelUserId = unwrapValue(modelData.user_id);
+		// console.log('_isModelOwner - user_id from localStorage', loggedInUserId, modelUserId);
+        return !!(loggedInUserId && String(modelUserId) === String(loggedInUserId));
     } catch (e) {
         return false;
     }
@@ -3752,7 +3749,7 @@ function _renderModelRead(app, element, ctx = null) {
 }
 
 function _renderModelDelete(app, element, ctx = null) {
-    // console.log('renderModelDelete()', app, element, ctx);
+    console.log('renderModelDelete()', app, element, ctx);
     if(!element.model.hasOwnProperty('bind')){
         throw new Error('renderModelDelete - missing model bind definition');
     }
@@ -3760,20 +3757,15 @@ function _renderModelDelete(app, element, ctx = null) {
         throw new Error('renderModelDelete - model bind definition must bind to state');
     }
 
-    // get first (and only) field in bind.state
-    const stateKeys = Object.keys(element.model.bind.state);
-    if( stateKeys.length !== 1 ){
-        throw new Error('renderModelDelete - model bind.state must have exactly one field');
-    }
+	if(!element.model.hasOwnProperty('http')){
+		throw new Error('renderModelDelete - missing model http url');
+	}
 
-    const stateField = stateKeys[0];
-
-    // ensure confirming_delete state exists
-    if (!app.state.hasOwnProperty(stateField)) {
-        throw new Error(`renderModelDelete - state field not found: ${stateField}`);
-    }
-
-    let state = app.state[stateField];
+    const {fieldName: stateField, listIndex} = _resolveBindState(app, element.model.bind.state, ctx);
+    let state = _getStateSlot(app, stateField, listIndex);
+    const resolvedBind = listIndex !== null
+        ? {state: {[stateField]: {_list_index: listIndex}}}
+        : element.model.bind;
 
     if (!state.hasOwnProperty('state')) state.state = 'initial';
     if (!state.hasOwnProperty('error')) state.error = '';
@@ -3789,6 +3781,8 @@ function _renderModelDelete(app, element, ctx = null) {
         }
     }
 
+	const url = unwrapValue(lingoExecute(app, element.model.http, ctx));
+
     const switchElement = {
         switch: {
             expression: { type: 'str', value: state.state },
@@ -3801,12 +3795,13 @@ function _renderModelDelete(app, element, ctx = null) {
                             { break: 1 },
                             {
                                 button: {
-                                    set: {state: {[stateField]: {}}},
+                                    set: {state: {[stateField]: listIndex !== null ? {_list_index: listIndex} : {}}},
                                     to: {
                                         call: 'crud.delete',
                                         args: {
-                                            http: { state: { base_url: {} } },
-                                            model_id: { params: { model_id: {} } }
+                                            http: url,
+                                            model_id: { params: { model_id: {} } },
+                                            bind: resolvedBind
                                         }
                                     }
                                 },
@@ -3815,7 +3810,7 @@ function _renderModelDelete(app, element, ctx = null) {
                             { text: ' ' },
                             {
                                 button: {
-                                    set: {state: {[stateField]: {state: {}}}},
+                                    set: {state: {[stateField]: listIndex !== null ? {_list_index: listIndex, state: {}} : {state: {}}}},
                                     to: 'initial'
                                 },
                                 text: 'cancel'
@@ -3839,7 +3834,7 @@ function _renderModelDelete(app, element, ctx = null) {
             ],
             default: isOwner ? {
                 button: {
-                    set: { state: { [stateField]: { state: {} } } },
+                    set: { state: { [stateField]: listIndex !== null ? {_list_index: listIndex, state: {}} : { state: {} } } },
                     to: 'confirming'
                 },
                 text: 'delete'
@@ -4460,6 +4455,7 @@ function createDOMElement(app, element, ctx = null) {
 		// console.log('createDOMElement - rendering block element with', element.length, 'sub-elements');
         const container = document.createElement('div');
 		// container.className = 'block-list-rendering';
+		// console.log('using inline-block display for block list rendering');
 		container.style.display = 'inline-block';
         for (const subElement of element) {
             // call createDomElement recursively for each subElement
@@ -5293,6 +5289,7 @@ function createFormElement(app, element, ctx = null) {
 	let tableClassName;
 	if(inLine) {
 		tableClassName = 'form-table-inline';
+		// console.log('using inline-block style for form container');
 		formContainer.style.display = 'inline-block';
 	}else{
 		tableClassName = 'form-table';

@@ -84,6 +84,17 @@
                 }
             }
         },
+		"reply_delete_state": {
+			"type": "list",
+			"item_type": {
+				"type": "struct",
+				"default": {
+					"state": "initial",
+					"error": ""
+				}
+			},
+			"default": []
+		},
 		"main_post_reaction_thumbs_up_state": {
             "type": "struct",
             "default": {
@@ -2337,6 +2348,77 @@
 																{
 																	"break": 1
 																},
+																{
+																	"branch": [
+																		{
+																			"if": {
+																				"call": "auth.is_owner",
+																				"args": {
+																					"model": {
+																						"self": "item"
+																					}
+																				}
+																			},
+																			"then": [
+																				{
+																					"model": {
+																						"bind": {
+																							"state": {
+																								"reply_delete_state": {
+																									"index": {
+																										"self": "index"
+																									}
+																								}
+																							}
+																						},
+																						"display": "delete",
+																						"model_data": {
+																							"self": "item"
+																						},
+																						"http": {
+																							"call": "concat",
+																							"args": {
+																								"items": [
+																									"/api/social/post/",
+																									{
+																										"call": "key",
+																										"args": {
+																											"object": {
+																												"self": "item"
+																											},
+																											"key": "id"
+																										}
+																									}
+																								]
+																							}
+																						},
+																						"model_id": {
+																							"call": "key",
+																							"args": {
+																								"object": {
+																									"self": "item"
+																								},
+																								"key": "id"
+																							}
+																						}
+																					}
+																				},
+																				{
+																					"text": " (your reply)",
+																					"style": {
+																						"italic": true
+																					}
+																				}
+																			]
+																		},
+																		{
+																			"else": {
+																				"text": ""
+																			}
+																		}
+																	]
+																},
+																{"break": 1},
 																{
 																	"lingo": {
 																		"call": "key",

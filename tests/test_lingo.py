@@ -379,6 +379,7 @@ class TestLingoPages(unittest.TestCase):
         mapped_reply_fields = (
             ops['get_replies_for_post']['func']['value']['replies']['value']['items']['args']['function']['value']
         )
+        self.assertIn('user_id', mapped_reply_fields)
         self.assertIn('user_reaction', mapped_reply_fields)
 
     def test_reply_reaction_prefers_local_state(self):
@@ -389,6 +390,16 @@ class TestLingoPages(unittest.TestCase):
         output_as_text = json.dumps(thread_spec['output'])
         self.assertIn('reply_user_reaction_local', output_as_text)
         self.assertIn('"default_value": "initial"', output_as_text)
+
+    def test_reply_delete_widget_for_owned_replies(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        self.assertEqual(thread_spec['state']['reply_delete_state']['type'], 'list')
+
+        output_as_text = json.dumps(thread_spec['output'])
+        self.assertIn('"display": "delete"', output_as_text)
+        self.assertIn('"reply_delete_state": {"index": {"self": "index"}}', output_as_text)
+        self.assertIn('"model_data": {"self": "item"}', output_as_text)
+        self.assertIn('(your reply)', output_as_text)
 
     def test_sequence_functions(self):
         """Test sequence functions: len, range, slice, any, all, sum, sorted, count"""
