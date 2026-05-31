@@ -29,9 +29,9 @@ This document focuses on implementation planning (not implementation).
 - This is enough to support local optimistic reaction-count state if we store counts in state.
 
 ### Gaps / constraints
-- `set` in Python renderer currently supports only full-field replacement (single top-level state field).
-- No built-in helper exists to directly "increment/decrement reaction count by emoji" in a counts list.
-- No documented way to set multiple *top-level* state fields in one `set` expression.
+- **Python renderer only:** `set` currently supports only full-field replacement (single top-level state field).
+- **Both renderers:** no built-in helper exists to directly "increment/decrement reaction count by emoji" in a counts list.
+- **Both renderers (documentation/runtime shape):** no documented way to set multiple *top-level* state fields in one `set` expression.
 
 ## Recommended implementation approach
 
@@ -45,7 +45,7 @@ This document focuses on implementation planning (not implementation).
 - On initial successful load:
   - seed `main_post_reaction_counts_local` from `main_post_reaction_counts`
   - seed `reply_reaction_counts_local[index]` from each reply item's `reaction_counts`
-- On page/offset refresh (`reset_reply_state` path), clear or reseed reply-local count state so row indexes stay aligned.
+- On page/offset refresh (`reset_reply_state` op in `social-thread-instance.json`), clear or reseed reply-local count state so row indexes stay aligned.
 
 ### 3) Centralize count adjustment logic in helper ops
 Create ops to update counts based on reaction transition:
@@ -73,12 +73,13 @@ Use these ops from each `on_success` handler.
 
 ## Framework updates needed?
 
-### Short term (likely no framework change required for Browser2)
-Because Browser2 already supports indexed set + struct/list updates, this feature can likely be implemented in page spec + helper ops only.
+### Short term (no Browser2 framework change required)
+Based on current Browser2 `set` behavior (indexed list updates plus struct/list writes), this can be implemented in `social-thread-instance.json` plus helper ops without changing Browser2 runtime code.
 
 ### Recommended follow-up framework hardening
 To reduce future complexity and parity risk:
-1. Add Python `render_set` support for indexed list and struct-field updates (to match Browser2 behavior).
+1. Extend the existing Python `render_set` function to support indexed list and struct-field updates (to match Browser2 behavior).
+   - `render_set` is the current Python state-assignment handler in `src/mspec/lingo.py`.
 2. Document Browser2 `set` features in docs (`index`, struct multi-set).
 3. Consider a first-class helper function/op for grouped reaction count mutation to avoid repeated complex branching logic in page specs.
 
