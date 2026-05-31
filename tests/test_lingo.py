@@ -393,12 +393,13 @@ class TestLingoPages(unittest.TestCase):
 
     def test_reply_delete_widget_for_owned_replies(self):
         thread_spec = load_browser2_spec('social-thread-instance.json')
-        self.assertEqual(thread_spec['state']['reply_delete_state']['type'], 'struct')
+        self.assertEqual(thread_spec['state']['reply_delete_state']['type'], 'list')
 
         output_as_text = json.dumps(thread_spec['output'])
         self.assertIn('"display": "delete"', output_as_text)
+        self.assertIn('"reply_delete_state": {"index": {"self": "index"}}', output_as_text)
         self.assertIn('"model_data": {"self": "item"}', output_as_text)
-        self.assertIn('(this is your reply)', output_as_text)
+        self.assertIn('(your reply)', output_as_text)
 
     def test_sequence_functions(self):
         """Test sequence functions: len, range, slice, any, all, sum, sorted, count"""

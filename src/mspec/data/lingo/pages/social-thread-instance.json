@@ -85,11 +85,15 @@
             }
         },
 		"reply_delete_state": {
-			"type": "struct",
-			"default": {
-				"state": "initial",
-				"error": ""
-			}
+			"type": "list",
+			"item_type": {
+				"type": "struct",
+				"default": {
+					"state": "initial",
+					"error": ""
+				}
+			},
+			"default": []
 		},
 		"main_post_reaction_thumbs_up_state": {
             "type": "struct",
@@ -2360,7 +2364,11 @@
 																					"model": {
 																						"bind": {
 																							"state": {
-																								"reply_delete_state": {}
+																								"reply_delete_state": {
+																									"index": {
+																										"self": "index"
+																									}
+																								}
 																							}
 																						},
 																						"display": "delete",

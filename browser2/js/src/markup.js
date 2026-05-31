@@ -677,14 +677,8 @@ function _crudDeleteArgs(app, expression, ctx) {
     const args = expression.args || {};
     const url = unwrapValue(lingoExecute(app, args.http, ctx));
     if (expression.args.bind && expression.args.bind.state) {
-        const stateKeys = Object.keys(expression.args.bind.state);
-        if (stateKeys.length === 1) {
-            const stateField = stateKeys[0];
-            if (!app.state.hasOwnProperty(stateField)) {
-                throw new Error(`crud.delete - state field not found: ${stateField}`);
-            }
-            app.state[stateField].state = 'loading';
-        }
+        const {fieldName, listIndex} = _resolveBindState(app, expression.args.bind.state, ctx);
+        _getStateSlot(app, fieldName, listIndex).state = 'loading';
     }
     return [url];
 }
@@ -3767,20 +3761,11 @@ function _renderModelDelete(app, element, ctx = null) {
 		throw new Error('renderModelDelete - missing model http url');
 	}
 
-    // get first (and only) field in bind.state
-    const stateKeys = Object.keys(element.model.bind.state);
-    if( stateKeys.length !== 1 ){
-        throw new Error('renderModelDelete - model bind.state must have exactly one field');
-    }
-
-    const stateField = stateKeys[0];
-
-    // ensure confirming_delete state exists
-    if (!app.state.hasOwnProperty(stateField)) {
-        throw new Error(`renderModelDelete - state field not found: ${stateField}`);
-    }
-
-    let state = app.state[stateField];
+    const {fieldName: stateField, listIndex} = _resolveBindState(app, element.model.bind.state, ctx);
+    let state = _getStateSlot(app, stateField, listIndex);
+    const resolvedBind = listIndex !== null
+        ? {state: {[stateField]: {_list_index: listIndex}}}
+        : element.model.bind;
 
     if (!state.hasOwnProperty('state')) state.state = 'initial';
     if (!state.hasOwnProperty('error')) state.error = '';
@@ -3810,12 +3795,13 @@ function _renderModelDelete(app, element, ctx = null) {
                             { break: 1 },
                             {
                                 button: {
-                                    set: {state: {[stateField]: {}}},
+                                    set: {state: {[stateField]: listIndex !== null ? {_list_index: listIndex} : {}}},
                                     to: {
                                         call: 'crud.delete',
                                         args: {
                                             http: url,
-                                            model_id: { params: { model_id: {} } }
+                                            model_id: { params: { model_id: {} } },
+                                            bind: resolvedBind
                                         }
                                     }
                                 },
@@ -3824,7 +3810,7 @@ function _renderModelDelete(app, element, ctx = null) {
                             { text: ' ' },
                             {
                                 button: {
-                                    set: {state: {[stateField]: {state: {}}}},
+                                    set: {state: {[stateField]: listIndex !== null ? {_list_index: listIndex, state: {}} : {state: {}}}},
                                     to: 'initial'
                                 },
                                 text: 'cancel'
@@ -3848,7 +3834,7 @@ function _renderModelDelete(app, element, ctx = null) {
             ],
             default: isOwner ? {
                 button: {
-                    set: { state: { [stateField]: { state: {} } } },
+                    set: { state: { [stateField]: listIndex !== null ? {_list_index: listIndex, state: {}} : { state: {} } } },
                     to: 'confirming'
                 },
                 text: 'delete'
