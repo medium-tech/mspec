@@ -193,188 +193,7 @@
                     }
                 }
             },
-            "default": [
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                },
-                {
-                    "state": "initial",
-                    "error": "",
-                    "data": {},
-                    "result": {
-                        "type": "any",
-                        "value": null
-                    }
-                }
-            ]
+            "default": []
         },
         "reply_user_reaction_local": {
             "type": "list",
@@ -1364,6 +1183,28 @@
 					}
 				}
 			}
+		},
+		"reset_reply_state": {
+			"args": {},
+			"func": {
+				"call": "all",
+				"args": {
+					"iterable": [
+						{
+							"set": {"state": {"reply_delete_state": {}}},
+							"to": []
+						},
+						{
+							"set": {"state": {"reply_reaction_op_state": {}}},
+							"to": []
+						},
+						{
+							"set": {"state": {"reply_user_reaction_local": {}}},
+							"to": []
+						}
+					]
+				}
+			}
 		}
     },
     "timers": {
@@ -2216,7 +2057,8 @@
                     "state": {
                         "replies_op_definition": {}
                     }
-                }
+                },
+				"on_success": {"op": {"reset_reply_state": {}}}
             }
         },
         {
