@@ -391,6 +391,29 @@ class TestLingoPages(unittest.TestCase):
         self.assertIn('reply_user_reaction_local', output_as_text)
         self.assertIn('"default_value": "initial"', output_as_text)
 
+    def test_main_post_reaction_counts_prefer_local_state(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        self.assertEqual(thread_spec['state']['main_post_reaction_counts_local']['type'], 'list')
+        self.assertEqual(thread_spec['state']['main_post_reaction_counts_local']['default'], [])
+        self.assertEqual(thread_spec['state']['main_post_reaction_counts_preferred']['type'], 'list')
+
+        preferred_calc_text = json.dumps(thread_spec['state']['main_post_reaction_counts_preferred'])
+        self.assertIn('"main_post_reaction_counts_local"', preferred_calc_text)
+        self.assertIn('"main_post_reaction_counts"', preferred_calc_text)
+
+        counts_string_text = json.dumps(thread_spec['state']['main_post_reaction_counts_string'])
+        self.assertIn('"main_post_reaction_counts_preferred"', counts_string_text)
+
+    def test_main_post_reaction_success_updates_local_counts(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        output_as_text = json.dumps(thread_spec['output'])
+
+        self.assertIn('"main_post_apply_reaction_transition"', output_as_text)
+        self.assertIn('"main_post_reaction_counts_local": {}', output_as_text)
+        self.assertIn('"main_post_reaction_counts_preferred": {}', output_as_text)
+        self.assertIn('"main_post_user_reaction_local": {}', output_as_text)
+        self.assertIn('"key": "result.value.main_post_reaction_counts.value"', output_as_text)
+
     def test_reply_delete_widget_for_owned_replies(self):
         thread_spec = load_browser2_spec('social-thread-instance.json')
         self.assertEqual(thread_spec['state']['reply_delete_state']['type'], 'list')
