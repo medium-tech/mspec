@@ -206,18 +206,6 @@
             "type": "list",
             "default": []
         },
-        "main_post_reaction_transition_old": {
-            "type": "str",
-            "default": ""
-        },
-        "main_post_reaction_transition_new": {
-            "type": "str",
-            "default": ""
-        },
-        "main_post_reaction_transition_existing_counts": {
-            "type": "list",
-            "default": []
-        },
         "overall_op_view_state": {
             "type": "str",
             "description": "state is either 'default', 'result' or 'error'. If thread_op_view_state and replies_op_view_state are result this will return result, if either are error it will return error, otherwise default",
@@ -1261,7 +1249,8 @@
 		},
         "main_post_count_for_reaction": {
             "args": {
-                "reaction": {"type": "str"}
+                "reaction": {"type": "str"},
+                "existing_counts": {"type": "list"}
             },
             "func": {
                 "call": "key",
@@ -1270,9 +1259,7 @@
                         "call": "filter",
                         "args": {
                             "iterable": {
-                                "state": {
-                                    "main_post_reaction_transition_existing_counts": {}
-                                }
+                                "args": "existing_counts"
                             },
                             "function": {
                                 "call": "eq",
@@ -1301,7 +1288,10 @@
         },
         "main_post_reaction_count_after_transition": {
             "args": {
-                "reaction": {"type": "str"}
+                "reaction": {"type": "str"},
+                "old_reaction": {"type": "str"},
+                "new_reaction": {"type": "str"},
+                "existing_counts": {"type": "list"}
             },
             "func": {
                 "branch": [
@@ -1315,13 +1305,13 @@
                                         "a": {
                                             "args": "reaction"
                                         },
-                                        "b": {"state": {"main_post_reaction_transition_new": {}}}
+                                        "b": {"args": "new_reaction"}
                                     }
                                 },
                                 "b": {
                                     "call": "ne",
                                     "args": {
-                                        "a": {"state": {"main_post_reaction_transition_new": {}}},
+                                        "a": {"args": "new_reaction"},
                                         "b": ""
                                     }
                                 }
@@ -1340,13 +1330,13 @@
                                                         "call": "eq",
                                                         "args": {
                                                             "a": {"args": "reaction"},
-                                                            "b": {"state": {"main_post_reaction_transition_old": {}}}
+                                                            "b": {"args": "old_reaction"}
                                                         }
                                                     },
                                                     "b": {
                                                         "call": "ne",
                                                         "args": {
-                                                            "a": {"state": {"main_post_reaction_transition_old": {}}},
+                                                            "a": {"args": "old_reaction"},
                                                             "b": ""
                                                         }
                                                     }
@@ -1361,7 +1351,8 @@
                                                             "a": {
                                                                 "op": {
                                                                     "main_post_count_for_reaction": {
-                                                                        "reaction": {"args": "reaction"}
+                                                                        "reaction": {"args": "reaction"},
+                                                                        "existing_counts": {"args": "existing_counts"}
                                                                     }
                                                                 }
                                                             },
@@ -1376,7 +1367,8 @@
                                             "else": {
                                                 "op": {
                                                     "main_post_count_for_reaction": {
-                                                        "reaction": {"args": "reaction"}
+                                                        "reaction": {"args": "reaction"},
+                                                        "existing_counts": {"args": "existing_counts"}
                                                     }
                                                 }
                                             }
@@ -1398,13 +1390,13 @@
                                                 "call": "eq",
                                                 "args": {
                                                     "a": {"args": "reaction"},
-                                                    "b": {"state": {"main_post_reaction_transition_old": {}}}
+                                                    "b": {"args": "old_reaction"}
                                                 }
                                             },
                                             "b": {
                                                 "call": "ne",
                                                 "args": {
-                                                    "a": {"state": {"main_post_reaction_transition_old": {}}},
+                                                    "a": {"args": "old_reaction"},
                                                     "b": ""
                                                 }
                                             }
@@ -1419,7 +1411,8 @@
                                                     "a": {
                                                         "op": {
                                                             "main_post_count_for_reaction": {
-                                                                "reaction": {"args": "reaction"}
+                                                                "reaction": {"args": "reaction"},
+                                                                "existing_counts": {"args": "existing_counts"}
                                                             }
                                                         }
                                                     },
@@ -1434,7 +1427,8 @@
                                     "else": {
                                         "op": {
                                             "main_post_count_for_reaction": {
-                                                "reaction": {"args": "reaction"}
+                                                "reaction": {"args": "reaction"},
+                                                "existing_counts": {"args": "existing_counts"}
                                             }
                                         }
                                     }
@@ -1446,7 +1440,11 @@
             }
         },
         "main_post_apply_reaction_transition": {
-            "args": {},
+            "args": {
+                "old_reaction": {"type": "str"},
+                "new_reaction": {"type": "str"},
+                "existing_counts": {"type": "list"}
+            },
             "func": {
                 "call": "filter",
                 "args": {
@@ -1465,7 +1463,10 @@
                                                         "main_post_reaction_count_after_transition": {
                                                             "reaction": {
                                                                 "self": "item"
-                                                            }
+                                                            },
+                                                            "old_reaction": {"args": "old_reaction"},
+                                                            "new_reaction": {"args": "new_reaction"},
+                                                            "existing_counts": {"args": "existing_counts"}
                                                         }
                                                     }
                                                 },
@@ -1479,7 +1480,10 @@
                                                     "main_post_reaction_count_after_transition": {
                                                         "reaction": {
                                                             "self": "item"
-                                                        }
+                                                        },
+                                                        "old_reaction": {"args": "old_reaction"},
+                                                        "new_reaction": {"args": "new_reaction"},
+                                                        "existing_counts": {"args": "existing_counts"}
                                                     }
                                                 }
                                             }
@@ -1821,44 +1825,25 @@
                                     {
                                         "set": {
                                             "state": {
-                                                "main_post_reaction_transition_old": {}
-                                            }
-                                        },
-                                        "to": {
-                                            "state": {
-                                                "main_post_user_reaction": {}
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
-                                                "main_post_reaction_transition_new": {}
-                                            }
-                                        },
-                                        "to": "👍"
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
-                                                "main_post_reaction_transition_existing_counts": {}
-                                            }
-                                        },
-                                        "to": {
-                                            "state": {
-                                                "main_post_reaction_counts_preferred": {}
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
                                                 "main_post_reaction_counts_local": {}
                                             }
                                         },
                                         "to": {
                                             "op": {
-                                                "main_post_apply_reaction_transition": {"self": {}}
+                                                "main_post_apply_reaction_transition": {
+                                                    "self": {},
+                                                    "old_reaction": {
+                                                        "state": {
+                                                            "main_post_user_reaction": {}
+                                                        }
+                                                    },
+                                                    "new_reaction": "👍",
+                                                    "existing_counts": {
+                                                        "state": {
+                                                            "main_post_reaction_counts_preferred": {}
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     },
@@ -1908,44 +1893,25 @@
                                     {
                                         "set": {
                                             "state": {
-                                                "main_post_reaction_transition_old": {}
-                                            }
-                                        },
-                                        "to": {
-                                            "state": {
-                                                "main_post_user_reaction": {}
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
-                                                "main_post_reaction_transition_new": {}
-                                            }
-                                        },
-                                        "to": "❤️"
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
-                                                "main_post_reaction_transition_existing_counts": {}
-                                            }
-                                        },
-                                        "to": {
-                                            "state": {
-                                                "main_post_reaction_counts_preferred": {}
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
                                                 "main_post_reaction_counts_local": {}
                                             }
                                         },
                                         "to": {
                                             "op": {
-                                                "main_post_apply_reaction_transition": {"self": {}}
+                                                "main_post_apply_reaction_transition": {
+                                                    "self": {},
+                                                    "old_reaction": {
+                                                        "state": {
+                                                            "main_post_user_reaction": {}
+                                                        }
+                                                    },
+                                                    "new_reaction": "❤️",
+                                                    "existing_counts": {
+                                                        "state": {
+                                                            "main_post_reaction_counts_preferred": {}
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     },
@@ -1995,44 +1961,25 @@
                                     {
                                         "set": {
                                             "state": {
-                                                "main_post_reaction_transition_old": {}
-                                            }
-                                        },
-                                        "to": {
-                                            "state": {
-                                                "main_post_user_reaction": {}
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
-                                                "main_post_reaction_transition_new": {}
-                                            }
-                                        },
-                                        "to": "😂"
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
-                                                "main_post_reaction_transition_existing_counts": {}
-                                            }
-                                        },
-                                        "to": {
-                                            "state": {
-                                                "main_post_reaction_counts_preferred": {}
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
                                                 "main_post_reaction_counts_local": {}
                                             }
                                         },
                                         "to": {
                                             "op": {
-                                                "main_post_apply_reaction_transition": {"self": {}}
+                                                "main_post_apply_reaction_transition": {
+                                                    "self": {},
+                                                    "old_reaction": {
+                                                        "state": {
+                                                            "main_post_user_reaction": {}
+                                                        }
+                                                    },
+                                                    "new_reaction": "😂",
+                                                    "existing_counts": {
+                                                        "state": {
+                                                            "main_post_reaction_counts_preferred": {}
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     },
@@ -2082,44 +2029,25 @@
                                     {
                                         "set": {
                                             "state": {
-                                                "main_post_reaction_transition_old": {}
-                                            }
-                                        },
-                                        "to": {
-                                            "state": {
-                                                "main_post_user_reaction": {}
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
-                                                "main_post_reaction_transition_new": {}
-                                            }
-                                        },
-                                        "to": "🔥"
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
-                                                "main_post_reaction_transition_existing_counts": {}
-                                            }
-                                        },
-                                        "to": {
-                                            "state": {
-                                                "main_post_reaction_counts_preferred": {}
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
                                                 "main_post_reaction_counts_local": {}
                                             }
                                         },
                                         "to": {
                                             "op": {
-                                                "main_post_apply_reaction_transition": {"self": {}}
+                                                "main_post_apply_reaction_transition": {
+                                                    "self": {},
+                                                    "old_reaction": {
+                                                        "state": {
+                                                            "main_post_user_reaction": {}
+                                                        }
+                                                    },
+                                                    "new_reaction": "🔥",
+                                                    "existing_counts": {
+                                                        "state": {
+                                                            "main_post_reaction_counts_preferred": {}
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     },
@@ -2169,44 +2097,25 @@
                                     {
                                         "set": {
                                             "state": {
-                                                "main_post_reaction_transition_old": {}
-                                            }
-                                        },
-                                        "to": {
-                                            "state": {
-                                                "main_post_user_reaction": {}
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
-                                                "main_post_reaction_transition_new": {}
-                                            }
-                                        },
-                                        "to": "😢"
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
-                                                "main_post_reaction_transition_existing_counts": {}
-                                            }
-                                        },
-                                        "to": {
-                                            "state": {
-                                                "main_post_reaction_counts_preferred": {}
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
                                                 "main_post_reaction_counts_local": {}
                                             }
                                         },
                                         "to": {
                                             "op": {
-                                                "main_post_apply_reaction_transition": {"self": {}}
+                                                "main_post_apply_reaction_transition": {
+                                                    "self": {},
+                                                    "old_reaction": {
+                                                        "state": {
+                                                            "main_post_user_reaction": {}
+                                                        }
+                                                    },
+                                                    "new_reaction": "😢",
+                                                    "existing_counts": {
+                                                        "state": {
+                                                            "main_post_reaction_counts_preferred": {}
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     },
@@ -2256,44 +2165,25 @@
                                     {
                                         "set": {
                                             "state": {
-                                                "main_post_reaction_transition_old": {}
-                                            }
-                                        },
-                                        "to": {
-                                            "state": {
-                                                "main_post_user_reaction": {}
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
-                                                "main_post_reaction_transition_new": {}
-                                            }
-                                        },
-                                        "to": "👎"
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
-                                                "main_post_reaction_transition_existing_counts": {}
-                                            }
-                                        },
-                                        "to": {
-                                            "state": {
-                                                "main_post_reaction_counts_preferred": {}
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "set": {
-                                            "state": {
                                                 "main_post_reaction_counts_local": {}
                                             }
                                         },
                                         "to": {
                                             "op": {
-                                                "main_post_apply_reaction_transition": {"self": {}}
+                                                "main_post_apply_reaction_transition": {
+                                                    "self": {},
+                                                    "old_reaction": {
+                                                        "state": {
+                                                            "main_post_user_reaction": {}
+                                                        }
+                                                    },
+                                                    "new_reaction": "👎",
+                                                    "existing_counts": {
+                                                        "state": {
+                                                            "main_post_reaction_counts_preferred": {}
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     },
@@ -2362,44 +2252,25 @@
                                                     {
                                                         "set": {
                                                             "state": {
-                                                                "main_post_reaction_transition_old": {}
-                                                            }
-                                                        },
-                                                        "to": {
-                                                            "state": {
-                                                                "main_post_user_reaction": {}
-                                                            }
-                                                        }
-                                                    },
-                                                    {
-                                                        "set": {
-                                                            "state": {
-                                                                "main_post_reaction_transition_new": {}
-                                                            }
-                                                        },
-                                                        "to": ""
-                                                    },
-                                                    {
-                                                        "set": {
-                                                            "state": {
-                                                                "main_post_reaction_transition_existing_counts": {}
-                                                            }
-                                                        },
-                                                        "to": {
-                                                            "state": {
-                                                                "main_post_reaction_counts_preferred": {}
-                                                            }
-                                                        }
-                                                    },
-                                                    {
-                                                        "set": {
-                                                            "state": {
                                                                 "main_post_reaction_counts_local": {}
                                                             }
                                                         },
                                                         "to": {
                                                             "op": {
-                                                                "main_post_apply_reaction_transition": {"self": {}}
+                                                                "main_post_apply_reaction_transition": {
+                                                                    "self": {},
+                                                                    "old_reaction": {
+                                                                        "state": {
+                                                                            "main_post_user_reaction": {}
+                                                                        }
+                                                                    },
+                                                                    "new_reaction": "",
+                                                                    "existing_counts": {
+                                                                        "state": {
+                                                                            "main_post_reaction_counts_preferred": {}
+                                                                        }
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     },

@@ -411,6 +411,9 @@ class TestLingoPages(unittest.TestCase):
         self.assertIn('"main_post_apply_reaction_transition"', output_as_text)
         self.assertIn('"main_post_reaction_counts_local": {}', output_as_text)
         self.assertIn('"main_post_reaction_counts_preferred": {}', output_as_text)
+        self.assertIn('"old_reaction"', output_as_text)
+        self.assertIn('"new_reaction"', output_as_text)
+        self.assertIn('"existing_counts"', output_as_text)
         self.assertIn('"main_post_user_reaction_local": {}', output_as_text)
         self.assertIn('"key": "result.value.main_post_reaction_counts.value"', output_as_text)
 
