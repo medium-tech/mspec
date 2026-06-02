@@ -782,12 +782,42 @@
                                             "call": "str",
                                             "args": {
                                                 "object": {
-                                                    "call": "key",
+                                                    "call": "add",
                                                     "args": {
-                                                        "object": {
-                                                            "self": "item"
-                                                        },
-                                                        "key": "count"
+                                                        "a": {
+															"call": "key",
+															"args": {
+																"object": {
+																	"self": "item"
+																},
+																"key": "count"
+															}
+														},
+														"b": {
+															"branch": [
+																{
+																	"if": {
+																		"call": "eq",
+																		"args": {
+																			"a": {
+																				"call": "key",
+																				"args": {
+																					"object": {
+																						"self": "item"
+																					},
+																					"key": "group"
+																				}
+																			},
+																			"b": {"state": {"main_post_user_reaction_local": {}}}
+																		}
+																	},
+																	"then": 1
+																},
+																{
+																	"else": 0
+																}
+															]
+														}
                                                     }
                                                 }
                                             }
