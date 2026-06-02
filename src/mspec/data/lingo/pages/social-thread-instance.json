@@ -2877,52 +2877,93 @@
 																},
 																{"break": 1},
 																{
-																	"lingo": {
-																		"call": "join",
-																		"args": {
-																			"separator": " ",
-																			"items": {
-																				"call": "map",
-																				"args": {
-																					"function": {
-																						"call": "concat",
-																						"args": {
-																							"items": [
-																								{
-																									"call": "key",
-																									"args": {
-																										"object": {
-																											"self": "item"
-																										},
-																										"key": "group"
-																									}
-																								},
-																								"x",
-																								{
-																									"call": "str",
-																									"args": {
-																										"object": {
-																											"call": "key",
-																											"args": {
-																												"object": {
-																													"self": "item"
-																												},
-																												"key": "count"
+																	"call": "join",
+																	"args": {
+																		"separator": " ",
+																		"items": {
+																			"call": "map",
+																			"args": {
+																				"function": {
+																					"call": "concat",
+																					"args": {
+																						"items": [
+																							{
+																								"call": "key",
+																								"args": {
+																									"object": {
+																										"self": "item"
+																									},
+																									"key": "group"
+																								}
+																							},
+																							"x",
+																							{
+																								"call": "str",
+																								"args": {
+																									"object": {
+																										"call": "add",
+																										"args": {
+																											"a": {
+																												"call": "key",
+																												"args": {
+																													"object": {
+																														"self": "item"
+																													},
+																													"key": "count"
+																												}
+																											},
+																											"b": {
+																												"branch": [
+																													{
+																														"if": {
+																															"call": "eq",
+																															"args": {
+																																"a": {
+																																	"call": "key",
+																																	"args": {
+																																		"object": {
+																																			"self": "item"
+																																		},
+																																		"key": "group"
+																																	}
+																																},
+																																"b": {
+																																	"call": "key",
+																																	"args": {
+																																		"object": {
+																																			"state": {
+																																				"reply_user_reaction_local": {}
+																																			}
+																																		},
+																																		"key": {
+																																			"self": "index"
+																																		},
+																																		"default_value": "-"
+																																	}
+																																}
+																															}
+																														},
+																														"then": 1
+																													},
+																													{
+																														"else": 0
+																													}
+																												]
 																											}
 																										}
 																									}
 																								}
-																							]
-																						}
-																					},
-																					"iterable": {
-																						"call": "key",
-																						"args": {
-																							"object": {
-																								"self": "item"
-																							},
-																							"key": "reaction_counts"
-																						}
+																							}
+																						]
+																					}
+																				},
+																				"iterable": {
+																					"call": "key",
+																					"args": {
+																						"object": {
+																							"self": "item"
+																						},
+																						"key": "reaction_counts"
 																					}
 																				}
 																			}

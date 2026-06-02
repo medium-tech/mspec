@@ -155,13 +155,21 @@ function structKey(object, key, default_value = null) {
 
 	*/
 
-	if (typeof key !== 'string' || key.startsWith('.') || key.endsWith('.')) {
-		console.error('lingo function key - invalid key format:', key);
-		throw new Error(`lingo function key - keys may not start or end with a dot: '${key}'`);
+	let keyParts = [];
+
+	// if key is a string
+	if(typeof key === 'string') {
+		if (key.startsWith('.') || key.endsWith('.')) {
+			console.error('lingo function key - invalid key format:', key);
+			throw new Error(`lingo function key - keys may not start or end with a dot: '${key}'`);
+		}
+		keyParts = key.split('.');
+	}else{
+		keyParts = [key];
 	}
 
-	const keySplit = key.split('.');
-	const numKeys = keySplit.length;
+	
+	const numKeys = keyParts.length;
 	if (numKeys > 10) {
 		console.error('lingo function key - key has too many levels:', key);
 		throw new Error(`lingo function key - keys may have a maximum of 10 dot-separated levels: '${key}'`);
@@ -171,8 +179,8 @@ function structKey(object, key, default_value = null) {
 	let current = object;
 	for (let i = 0; i < numKeys; i++) {
 		try{
-			if (current && typeof current === 'object' && keySplit[i] in current) {
-				current = current[keySplit[i]];
+			if (current && typeof current === 'object' && keyParts[i] in current) {
+				current = current[keyParts[i]];
 			} else {
 				if (default_value === null) {
 					console.error('lingo function key - key not found in object:', key, 'object:', object);
@@ -182,7 +190,7 @@ function structKey(object, key, default_value = null) {
 				}
 			}
 		} catch (error) {
-			const msg = `lingo function key - count not access: ${keySplit[i]} in ${key}`;
+			const msg = `lingo function key - count not access: ${keyParts[i]} in ${key}`;
 			console.error(msg, 'object:', object, 'error:', error);
 			throw new Error(msg);
 		}
@@ -1541,7 +1549,7 @@ const lingoFunctionLookup = {
                                 window.location.reload();
                             }
 							if(on_success) {
-								console.log('op.http - returning result for successful response', on_success);
+								// console.log('op.http - returning result for successful response', on_success);
 								on_success();
 							}
                             return {state: 'result', result: wrappedResult};
