@@ -391,6 +391,18 @@ class TestLingoPages(unittest.TestCase):
         self.assertIn('reply_user_reaction_local', output_as_text)
         self.assertIn('"default_value": "initial"', output_as_text)
 
+    def test_reply_reaction_counts_use_reply_index_arg(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        reaction_count_op = thread_spec['ops']['reply_reaction_counts_string']
+
+        reaction_count_op_text = json.dumps(reaction_count_op)
+        self.assertIn('"args": "reply_index"', reaction_count_op_text)
+        self.assertNotIn('"key": {"self": "index"}', reaction_count_op_text)
+        output_as_text = json.dumps(thread_spec['output'])
+        self.assertIn('"reply_reaction_counts_string"', output_as_text)
+        self.assertIn('"reply_index": {"self": "index"}', output_as_text)
+        self.assertIn('"reply": {"self": "item"}', output_as_text)
+
     def test_reply_delete_widget_for_owned_replies(self):
         thread_spec = load_browser2_spec('social-thread-instance.json')
         self.assertEqual(thread_spec['state']['reply_delete_state']['type'], 'list')
