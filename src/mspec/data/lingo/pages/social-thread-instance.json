@@ -1996,7 +1996,7 @@
 				},
 				{
 					"else": [
-						{"break": 1},
+						{"break": 1, "no_container": true},
 						{
 							"state": {
 								"main_post_reaction_counts_string": {}
@@ -3062,7 +3062,7 @@
 																		}
 																	]
 																},
-																{"break": 1},
+																{"break": 1, "no_container": true},
 																{
 																	"lingo": {
 																		"op": {

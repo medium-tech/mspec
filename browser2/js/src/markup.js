@@ -4881,13 +4881,17 @@ function createValueElement(app, element, ctx = null) {
  * Create break element
  */
 function createBreakElement(app, element, ctx = null) {
-    const container = document.createElement('div');
-    for (let i = 0; i < element.break; i++) {
-        container.appendChild(document.createElement('br'));
-    }
-    return container;
-}
 
+	if(element.hasOwnProperty('no_container') && element.no_container === true && element.break === 1) {
+		return document.createElement('br');
+	}else{
+		const container = document.createElement('div');
+		for (let i = 0; i < element.break; i++) {
+			container.appendChild(document.createElement('br'));
+		}
+		return container;
+	}
+}
 /**
  * Create button element
  */
