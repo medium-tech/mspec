@@ -163,7 +163,7 @@
 				},
 				{
 					"else": [
-						{"heading": ":: search forums", "level": 1},
+						{"heading": ":: forums", "level": 1},
 						{"button": {"op": {"flip_display": {}}}, "text": "create forum"},
 						{"model": {
 							"bind": {"state": {"model_list": {}}},

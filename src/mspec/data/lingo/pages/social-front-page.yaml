@@ -18,28 +18,26 @@ state:
 ops: {}
 
 output:
-    - heading: 'medium tech'
+    - breadcrumbs:
+          - "mtech"
+
+    - heading: ':: medium tech'
       level: 1
 
-    - text: ' :: '
+    - text: ' ● '
     - link: '/social'
-      text: 'enter the social network'
-    # - text: ' ● '
-    # - link: '/social/profile'
-    #   text: 'profiles'
-    # - text: ' ● '
-    # - link: '/social/forum'
-    #   text: 'forums'
-    # - text: ' ● '
-    # - link: '/social/account'
-    #   text: 'account'
-    # - text: ' ● '
-    # - break: 1
+      text: 'social network'
+    - text: ' ● '
+    - link: '/social/account'
+      text: 'account'
+    - text: ' ● '
 
-    - heading: 'what is medium tech?'
-      level: 3
+    - break: 1
 
-    - type: list
-      value:
-        - link: ''
-          text: 'placeholder'
+    - text: 'what is medium tech?'
+      style:
+        bold: true
+
+    - break: 1
+
+    - text: 'an experiment in crowd funded big tech infrastructure'
