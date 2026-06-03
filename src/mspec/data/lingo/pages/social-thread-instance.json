@@ -2987,13 +2987,15 @@
 																},
 																{"break": 1},
 																{
-																	"op": {
-																		"reply_reaction_counts_string": {
-																			"reply_index": {
-																				"self": "index"
-																			},
-																			"reply": {
-																				"self": "item"
+																	"lingo": {
+																		"op": {
+																			"reply_reaction_counts_string": {
+																				"reply_index": {
+																					"self": "index"
+																				},
+																				"reply": {
+																					"self": "item"
+																				}
 																			}
 																		}
 																	}

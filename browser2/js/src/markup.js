@@ -3052,7 +3052,17 @@ function renderOp(app, expression, ctx = null) {
             throw new Error('op - must have exactly one op field');
         }
         const opName = keys[0];
-        const opArgs = expression.op[opName];
+        let opArgs = {};
+
+		// execute and unwrap each arg
+		if (typeof expression.op[opName] === 'object' && expression.op[opName] !== null) {
+			for (const [argName, argExpr] of Object.entries(expression.op[opName])) {
+				opArgs[argName] = unwrapValue(lingoExecute(app, argExpr, ctx));
+			}
+		} else {
+			throw new Error('op - op arguments must be an object');
+		}
+
         
         if (!(opName in app.spec.ops)) {
             throw new Error(`op - undefined op: ${opName}`);
@@ -3067,7 +3077,7 @@ function renderOp(app, expression, ctx = null) {
 		// console.log(`Running op ${opName}`, opDef)
         
         const result = lingoExecute(app, opDef.func, opArgs);
-		// console.log('Op result', result);
+		console.log(`Op result - ${opName}`, expression, result);
 		return result;
     }
 }
