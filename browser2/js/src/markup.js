@@ -2800,6 +2800,7 @@ function renderOp(app, expression, ctx = null) {
 		const showOpStatusDisplay = display.hasOwnProperty('show_op_status_display') ? unwrapValue(lingoExecute(app, display.show_op_status_display, ctx)) : true;
 		const friendlyStatus = display.hasOwnProperty('friendly_status') ? unwrapValue(lingoExecute(app, display.friendly_status, ctx)) : false;
         const inLine = display.hasOwnProperty('in_line') ? unwrapValue(lingoExecute(app, display.in_line, ctx)) : false;
+		
         // render op.auto_submit if provided, otherwise default to false
         let autoSubmit;
         if (expression.op.hasOwnProperty('auto_submit')) {
@@ -2935,6 +2936,8 @@ function renderOp(app, expression, ctx = null) {
             requestBody[key] = value;
         }
 
+		const disabled = expression.op.hasOwnProperty('disabled') ? unwrapValue(lingoExecute(app, expression.op.disabled, ctx)) : false;
+
         const formElement = {
             form: {
                 fields: formFields,
@@ -2945,6 +2948,7 @@ function renderOp(app, expression, ctx = null) {
 				show_status_display: showStatusDisplay,
 				friendly_status: friendlyStatus,
 				in_line: inLine,
+				disabled: disabled,
                 action: {
                     set: {state: {[stateField]: listIndex !== null ? {_list_index: listIndex} : {}}},
                     to: {
@@ -6101,10 +6105,17 @@ function createFormElement(app, element, ctx = null) {
 		showSubmitButton = true;
 	}
 
+	// if element.form.disabled is set and evalutes to true, disable the submit button
+	let disableSwitch;
+	if (element.form.hasOwnProperty('disabled')) {
+		disableSwitch = unwrapValue(lingoExecute(app, element.form.disabled, ctx));
+	} else {
+		disableSwitch = false;
+	}
 
     const submitButtonText = element.form.submit_button_text || 'Submit';
     const submitButton = document.createElement('button');
-    submitButton.disabled = currentState.state === 'loading';
+    submitButton.disabled = currentState.state === 'loading' || disableSwitch;
     submitButton.textContent = submitButtonText;
     submitButton.addEventListener('click', submitAction);
 

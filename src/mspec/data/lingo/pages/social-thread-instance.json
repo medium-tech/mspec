@@ -1658,6 +1658,17 @@
 						"definition": "social.react_to_thread_main_post",
 						"submit_button_text": "👍",
 						"instruction": "",
+						"disabled": {
+							"call": "eq",
+							"args": {
+								"a": "👍",
+								"b": {
+									"state": {
+										"main_post_user_reaction": {}
+									}
+								}
+							}
+						},
 						"on_success": {
 							"set": {
 								"state": {
@@ -1694,6 +1705,17 @@
 						"definition": "social.react_to_thread_main_post",
 						"submit_button_text": "❤️",
 						"instruction": "",
+						"disabled": {
+							"call": "eq",
+							"args": {
+								"a": "❤️",
+								"b": {
+									"state": {
+										"main_post_user_reaction": {}
+									}
+								}
+							}
+						},
 						"on_success": {
 							"set": {
 								"state": {
@@ -1730,6 +1752,17 @@
 						"definition": "social.react_to_thread_main_post",
 						"submit_button_text": "😂",
 						"instruction": "",
+						"disabled": {
+							"call": "eq",
+							"args": {
+								"a": "😂",
+								"b": {
+									"state": {
+										"main_post_user_reaction": {}
+									}
+								}
+							}
+						},
 						"on_success": {
 							"set": {
 								"state": {
@@ -1766,6 +1799,17 @@
 						"definition": "social.react_to_thread_main_post",
 						"submit_button_text": "🔥",
 						"instruction": "",
+						"disabled": {
+							"call": "eq",
+							"args": {
+								"a": "🔥",
+								"b": {
+									"state": {
+										"main_post_user_reaction": {}
+									}
+								}
+							}
+						},
 						"on_success": {
 							"set": {
 								"state": {
@@ -1802,6 +1846,17 @@
 						"definition": "social.react_to_thread_main_post",
 						"submit_button_text": "😢",
 						"instruction": "",
+						"disabled": {
+							"call": "eq",
+							"args": {
+								"a": "😢",
+								"b": {
+									"state": {
+										"main_post_user_reaction": {}
+									}
+								}
+							}
+						},
 						"on_success": {
 							"set": {
 								"state": {
@@ -1838,6 +1893,17 @@
 						"definition": "social.react_to_thread_main_post",
 						"submit_button_text": "👎",
 						"instruction": "",
+						"disabled": {
+							"call": "eq",
+							"args": {
+								"a": "👎",
+								"b": {
+									"state": {
+										"main_post_user_reaction": {}
+									}
+								}
+							}
+						},
 						"on_success": {
 							"set": {
 								"state": {
@@ -2464,6 +2530,17 @@
 																				},
 																				"definition": "social.react_to_reply",
 																				"submit_button_text": "👍",
+																				"disabled": {
+																					"call": "eq",
+																					"args": {
+																						"a": "👍",
+																						"b": {
+																							"state": {
+																								"main_post_user_reaction": {}
+																							}
+																						}
+																					}
+																				},
 																				"on_success": {
 																					"set": {
 																						"state": {
@@ -2999,154 +3076,6 @@
 																			}
 																		}
 																	}
-																},
-																{
-																	"branch": [
-																		{
-																			"if": {
-																				"call": "ne",
-																				"args": {
-																					"a": {
-																						"branch": [
-																							{
-																								"if": {
-																									"call": "ne",
-																									"args": {
-																										"a": {
-																											"call": "key",
-																											"args": {
-																												"object": {
-																													"state": {
-																														"reply_user_reaction_local": {}
-																													}
-																												},
-																												"key": {
-																													"call": "str",
-																													"args": {
-																														"object": {
-																															"self": "index"
-																														}
-																													}
-																												},
-																												"default_value": "initial"
-																											}
-																										},
-																										"b": "initial"
-																									}
-																								},
-																								"then": {
-																									"call": "key",
-																									"args": {
-																										"object": {
-																											"state": {
-																												"reply_user_reaction_local": {}
-																											}
-																										},
-																										"key": {
-																											"call": "str",
-																											"args": {
-																												"object": {
-																													"self": "index"
-																												}
-																											}
-																										},
-																										"default_value": "initial"
-																									}
-																								}
-																							},
-																							{
-																								"else": {
-																									"call": "key",
-																									"args": {
-																										"object": {
-																											"self": "item"
-																										},
-																										"key": "user_reaction",
-																										"default_value": ""
-																									}
-																								}
-																							}
-																						]
-																					},
-																					"b": ""
-																				}
-																			},
-																			"then": [
-																				{
-																					"text": " :: yours: ",
-																					"style": {
-																						"bold": true
-																					}
-																				},
-																				{
-																					"lingo": {
-																						"branch": [
-																							{
-																								"if": {
-																									"call": "ne",
-																									"args": {
-																										"a": {
-																											"call": "key",
-																											"args": {
-																												"object": {
-																													"state": {
-																														"reply_user_reaction_local": {}
-																													}
-																												},
-																												"key": {
-																													"call": "str",
-																													"args": {
-																														"object": {
-																															"self": "index"
-																														}
-																													}
-																												},
-																												"default_value": "initial"
-																											}
-																										},
-																										"b": "initial"
-																									}
-																								},
-																								"then": {
-																									"call": "key",
-																									"args": {
-																										"object": {
-																											"state": {
-																												"reply_user_reaction_local": {}
-																											}
-																										},
-																										"key": {
-																											"call": "str",
-																											"args": {
-																												"object": {
-																													"self": "index"
-																												}
-																											}
-																										}
-																									}
-																								}
-																							},
-																							{
-																								"else": {
-																									"call": "key",
-																									"args": {
-																										"object": {
-																											"self": "item"
-																										},
-																										"key": "user_reaction",
-																										"default_value": ""
-																									}
-																								}
-																							}
-																						]
-																					}
-																				}
-																			]
-																		},
-																		{
-																			"else": ""
-																		}
-																	]
 																}
 															]
 														}
