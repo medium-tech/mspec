@@ -135,6 +135,17 @@ function strConcat(items) {
     return items.map(item => String(item)).join('');
 }
 
+// function structKeyArgs(app, expression, ctx) {
+// 	console.log('structKeyArgs - expression:', expression);
+// 	const args = expression.args || {};
+// 	if (!args.key) {
+// 		throw new Error('key - missing required arg: key');
+// 	}
+// 	// const key = unwrapValue(lingoExecute(app, args.key, ctx));
+// 	const defaultValue = args.default_value !== undefined ? lingoExecute(app, args.default_value, ctx) : null;
+// 	return [args.object, args.key, defaultValue];
+// }
+
 function structKey(object, key, default_value = null) {
 	/*
 	Return the key of a struct
@@ -157,6 +168,8 @@ function structKey(object, key, default_value = null) {
 
 	let keyParts = [];
 
+	// console.log('structKey - object:', object, 'key:', key, 'default_value:', default_value);
+
 	// if key is a string
 	if(typeof key === 'string') {
 		if (key.startsWith('.') || key.endsWith('.')) {
@@ -168,6 +181,7 @@ function structKey(object, key, default_value = null) {
 		keyParts = [key];
 	}
 
+	// console.log('structKey - keyParts:', keyParts);
 	
 	const numKeys = keyParts.length;
 	if (numKeys > 10) {
@@ -183,7 +197,7 @@ function structKey(object, key, default_value = null) {
 				current = current[keyParts[i]];
 			} else {
 				if (default_value === null) {
-					console.error('lingo function key - key not found in object:', key, 'object:', object);
+					console.error(`lingo function key - key not found: ${key} in`, typeof object, object);
 					throw new Error(`lingo function key - key '${key}' not found in object`);
 				} else {
 					return default_value;
@@ -1104,6 +1118,7 @@ const lingoFunctionLookup = {
     
     'key': {
         func: structKey,
+		// createArgs: structKeyArgs,
         args: {
             'object': {'type': 'struct'},
             'key': {'type': 'str'},
@@ -1550,7 +1565,11 @@ const lingoFunctionLookup = {
                             }
 							if(on_success) {
 								// console.log('op.http - returning result for successful response', on_success);
-								on_success();
+								setTimeout(() => {
+									// console.log('op.http - executing on_success callback');
+									on_success();
+								}, 0);
+								// on_success();
 							}
                             return {state: 'result', result: wrappedResult};
                         } else {
@@ -2402,15 +2421,15 @@ function renderSet(app, expression, ctx = null) {
                 // console.log('set - setting struct fields:', fieldName, outValue);
 
                 /*
-                there are 2 ways to set a struct field:
-                    1. single values
+                there are 3 ways to set a struct field:
+                    1. single values - hardcoded struct_field
                         set: {state: {my_struct_variable: {struct_field: {}}}}
                         to: 5
 
                         in set, you specify the state variable and struct field
                         and in to you provide a primitive value
 
-                    2. multiple fields at once
+                    2. multiple fields at once - hardcoded struct fields
                         set: {state: {my_struct_variable: {}}}
                         to: {struct_field1: 5, struct_field2: "hello"}
 
@@ -2418,25 +2437,47 @@ function renderSet(app, expression, ctx = null) {
                         and in to you provide an object with field names and values,
                         the fields that are provided will be updated and other fields
                         will remain unchanged
+
+					3. single field with dynamic struct field name by providing call expression
+						set: {state: {my_struct_variable: {"call": "...", "args": {...}}}}
+						to: 5
                 */
 
                 // struct field keys, excluding internal _list_index key used for list-indexed state
                 const structTargetKeys = Object.keys(target[fieldName]).filter(k => k !== '_list_index');
                 const numStructKeys = structTargetKeys.length;
+				let isDynamicFieldName = false;
                 let structSetType;
                 if (numStructKeys == 0) {
                     structSetType = 'multiple';
                 }else if (numStructKeys == 1) {
                     structSetType = 'single';
+				}else if (structTargetKeys.indexOf('call') !== 1) {
+					// even though this has multiple keys, it is a dynamic key name that will resolve to a single struct field
+					structSetType = 'single';
+					isDynamicFieldName = true;
                 }else{
+					console.error('set - invalid struct set expression, too many keys in target[fieldName]:', target[fieldName], 'structTargetKeys:', structTargetKeys, 'numStructKeys:', numStructKeys);
                     throw new Error('set - struct set must have either zero fields to use multi set or one field to use single set');
                 }
 
                 if(structSetType === 'single'){
-                    // struct field name is the only key in target[fieldName] (excluding _list_index)
-                    const structFieldName = structTargetKeys[0];
+
+					// console.log('set - single struct field set, isDynamicFieldName:', isDynamicFieldName, 'fieldName:', fieldName, 'target[fieldName]:', target[fieldName], structTargetKeys[0]);
+
+					let structFieldName;
+					if (isDynamicFieldName) {
+						structFieldName = unwrapValue(lingoExecute(app, target[fieldName], ctx));
+						if (typeof structFieldName !== 'string') {
+							console.error('set - dynamic struct field name must resolve to a string:', structFieldName);
+							throw new Error('set - dynamic struct field name must resolve to a string');
+						}
+					}else{
+						structFieldName = structTargetKeys[0];
+					}
 
                     if (!(structFieldName in stateToSet)) {
+						console.error(`set - struct field not found: ${fieldDisplayName}.${structFieldName}`, 'stateToSet:', stateToSet);
                         throw new Error(`set - struct field not found: ${fieldName}.${structFieldName}`);
                     }
 
@@ -2518,7 +2559,7 @@ function renderSet(app, expression, ctx = null) {
 function renderState(app, expression, ctx = null) {
     const fieldNames = Object.keys(expression.state);
     if (fieldNames.length !== 1) {
-        console.error('state - invalid expression, must have exactly one state field', expression);
+        console.error('state - invalid expression, must have exactly one state field', expression, fieldNames);
         throw new Error('state - must have exactly one state field');
     }
     const fieldName = fieldNames[0];
@@ -2535,6 +2576,7 @@ function renderState(app, expression, ctx = null) {
             const structFieldName = keys[0];
             return app.state[fieldName][structFieldName];
         }else if(keys.length > 1){
+			console.error('state - cannot access struct field, multiple fields found in expression', expression);
             throw new Error('state - cannot access struct field, multiple fields found in expression');
         }
     }
@@ -2921,6 +2963,7 @@ function renderOp(app, expression, ctx = null) {
 		if(expression.op.hasOwnProperty('on_success')){
 			onSuccessAction = () => {
 				unwrapValue(lingoExecute(app, expression.op.on_success, ctx));
+				renderLingoApp(app, document.getElementById('lingo-app'), true);
 			}
 		}
 
@@ -3081,7 +3124,7 @@ function renderOp(app, expression, ctx = null) {
 		// console.log(`Running op ${opName}`, opDef)
         
         const result = lingoExecute(app, opDef.func, opArgs);
-		console.log(`Op result - ${opName}`, expression, result);
+		// console.log(`Op result - ${opName}`, expression, result);
 		return result;
     }
 }
@@ -3091,7 +3134,7 @@ function renderOp(app, expression, ctx = null) {
  */
 function renderCall(app, expression, ctx = null) {
     const _args = expression.args || {};
-    
+
     const nameSplit = expression.call.split('.');
     const nameDepth = nameSplit.length;
     
@@ -3123,6 +3166,7 @@ function renderCall(app, expression, ctx = null) {
     // Handle functions with custom arg handling
     if (typeof definition.createArgs === 'function') {
         const args = definition.createArgs(app, expression, ctx);
+		// console.log('call - custom args created', expression, args);
         return definition.func(...args);
     }
     
@@ -3135,6 +3179,7 @@ function renderCall(app, expression, ctx = null) {
         }
         
         const value = lingoExecute(app, argExpression, ctx);
+		// console.log(`call - rendered arg ${argName}`, value);
         
         // If value is a list, we need to evaluate any dict expressions in it
         if (Array.isArray(value)) {
@@ -3171,7 +3216,10 @@ function renderCall(app, expression, ctx = null) {
         }
     }
 
-    // console.log('call - rendered args', expression.call, renderedArgs);
+	// if (expression.call === 'key' && typeof _args.key !== 'string') {
+	// 	console.log('renderCall() - rendering key access', expression);
+	// 	console.log('call - rendered args', expression.call, renderedArgs);
+	// }
     
     // Call function based on signature
     let returnValue;

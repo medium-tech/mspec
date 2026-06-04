@@ -712,8 +712,9 @@
                 ]
             }
         },
-        "main_post_reaction_counts": {
+        "main_post_reaction_counts_server": {
             "type": "list",
+			"description": "Raw response count from the server, not updated with local modifications",
             "calc": {
                 "branch": [
                     {
@@ -755,6 +756,22 @@
                 ]
             }
         },
+		"all_reactions": {
+			"type": "list",
+			"default":["👍", "❤️", "😂", "🔥", "😢", "👎"]
+		},
+		"main_post_reaction_counts_local": {
+			"type": "struct",
+			"description": "Initially seeded from the server and updated with local modifications (e.g. if the user adds a thumbs up reaction, the count for thumbs up in this variable will be increased by 1 even before we get the response from the server)",
+			"default": {
+				"👍": 0,
+				"❤️": 0,
+				"😂": 0,
+				"🔥": 0,
+				"😢": 0,
+				"👎": 0
+			}
+		},
         "main_post_reaction_counts_string": {
             "type": "str",
             "calc": {
@@ -768,58 +785,20 @@
                                 "call": "concat",
                                 "args": {
                                     "items": [
-                                        {
-                                            "call": "key",
-                                            "args": {
-                                                "object": {
-                                                    "self": "item"
-                                                },
-                                                "key": "group"
-                                            }
-                                        },
+                                        {"self": "item"},
                                         "x",
                                         {
                                             "call": "str",
                                             "args": {
                                                 "object": {
-                                                    "call": "add",
-                                                    "args": {
-                                                        "a": {
-															"call": "key",
-															"args": {
-																"object": {
-																	"self": "item"
-																},
-																"key": "count"
-															}
+													"call": "key",
+													"args": {
+														"object": {
+															"state": {"main_post_reaction_counts_local": {}}
 														},
-														"b": {
-															"branch": [
-																{
-																	"if": {
-																		"call": "eq",
-																		"args": {
-																			"a": {
-																				"call": "key",
-																				"args": {
-																					"object": {
-																						"self": "item"
-																					},
-																					"key": "group"
-																				}
-																			},
-																			"b": {"state": {"main_post_user_reaction_local": {}}}
-																		}
-																	},
-																	"then": 1
-																},
-																{
-																	"else": 0
-																}
-															]
-														}
-                                                    }
-                                                }
+														"key": {"self": "item"}
+													}
+												}
                                             }
                                         }
                                     ]
@@ -827,7 +806,7 @@
                             },
                             "iterable": {
                                 "state": {
-                                    "main_post_reaction_counts": {}
+                                    "all_reactions": {}
                                 }
                             }
                         }
@@ -835,69 +814,9 @@
                 }
             }
         },
-		"main_post_user_reaction_local": {
-            "type": "str",
-			"description": "After changing the reaction, this variable will contain the new reaction. this enables to UI to have the new reaction w/o making another call to the server",
-			"default": "initial"
-        },
         "main_post_user_reaction": {
             "type": "str",
-            "calc": {
-                "branch": [
-					{
-						"if": {
-							"call": "ne",
-							"args": {
-								"a": {
-									"state": {
-										"main_post_user_reaction_local": {}
-									}
-								},
-								"b": "initial"
-							}
-						},
-						"then": {
-							"state": {
-								"main_post_user_reaction_local": {}
-							}
-						}
-					},
-                    {
-                        "elif": {
-                            "call": "eq",
-                            "args": {
-                                "a": {
-                                    "call": "key",
-                                    "args": {
-                                        "object": {
-                                            "state": {
-                                                "thread_op_view_state": {}
-                                            }
-                                        },
-                                        "key": "state"
-                                    }
-                                },
-                                "b": "result"
-                            }
-                        },
-                        "then": {
-                            "call": "key",
-                            "args": {
-                                "object": {
-                                    "state": {
-                                        "thread_op_view_state": {}
-                                    }
-                                },
-                                "key": "result.value.current_user_main_post_reaction.value",
-                                "default_value": ""
-                            }
-                        }
-                    },
-                    {
-                        "else": ""
-                    }
-                ]
-            }
+            "default": ""
         },
         "forum": {
             "type": "struct",
@@ -1345,6 +1264,61 @@
 					]
 				}
 			}
+		},
+		"update_main_post_local_counts_from_server": {
+			"description": "Map over main_post_reaction_counts_server and update main_post_reaction_counts_local with the counts from the server.",
+			"args": {},
+			"func": {
+				"call": "all",
+				"args": {
+					"iterable": [
+						{
+							"call": "map",
+							"args": {
+								"iterable": {
+									"state": {
+										"main_post_reaction_counts_server": {}
+									}
+								},
+								"function": {
+									"set": {
+										"state": {
+											"main_post_reaction_counts_local": {
+												"call": "key",
+												"args": {
+													"object": {"self": "item"},
+													"key": "group"
+												}
+											}
+										}
+									},
+									"to": {
+										"call": "key",
+										"args": {
+											"object": {"self": "item"},
+											"key": "count"
+										}
+									}
+								}
+							}
+						},
+						{
+							"set": {"state": {"main_post_user_reaction": {}}},
+							"to": {
+								"call": "key",
+								"args": {
+									"object": {
+										"state": {
+											"thread_op_view_state": {}
+										}
+									},
+									"key": "result.value.current_user_main_post_reaction.value"
+								}
+							}
+						}
+					]
+				}
+			}
 		}
     },
     "timers": {
@@ -1670,12 +1644,39 @@
 							}
 						},
 						"on_success": {
-							"set": {
-								"state": {
-									"main_post_user_reaction_local": {}
-								}
-							},
-							"to": "👍"
+							"call": "all",
+							"args": {
+								"iterable": [
+									{
+										"set": {
+											"state": {
+												"main_post_user_reaction": {}
+											}
+										},
+										"to": "👍"
+									},
+									{
+										"set": {
+											"state": {
+												"main_post_reaction_counts_local": {"👍": {}}
+											}
+										},
+										"to": {
+											"call": "add",
+											"args": {
+												"a": {
+													"state": {
+														"main_post_reaction_counts_local": {
+															"👍": {}
+														}
+													}
+												},
+												"b": 1
+											}
+										}
+									}
+								]
+							}
 						}
 					}
 				},
@@ -1719,10 +1720,22 @@
 						"on_success": {
 							"set": {
 								"state": {
-									"main_post_user_reaction_local": {}
+									"main_post_reaction_counts_local": {"❤️": {}}
 								}
 							},
-							"to": "❤️"
+							"to": {
+								"call": "add",
+								"args": {
+									"a": {
+										"state": {
+											"main_post_reaction_counts_local": {
+												"❤️": {}
+											}
+										}
+									},
+									"b": 1
+								}
+							}
 						}
 					}
 				},
@@ -1766,10 +1779,22 @@
 						"on_success": {
 							"set": {
 								"state": {
-									"main_post_user_reaction_local": {}
+									"main_post_reaction_counts_local": {"😂": {}}
 								}
 							},
-							"to": "😂"
+							"to": {
+								"call": "add",
+								"args": {
+									"a": {
+										"state": {
+											"main_post_reaction_counts_local": {
+												"😂": {}
+											}
+										}
+									},
+									"b": 1
+								}
+							}
 						}
 					}
 				},
@@ -1813,10 +1838,22 @@
 						"on_success": {
 							"set": {
 								"state": {
-									"main_post_user_reaction_local": {}
+									"main_post_reaction_counts_local": {"🔥": {}}
 								}
 							},
-							"to": "🔥"
+							"to": {
+								"call": "add",
+								"args": {
+									"a": {
+										"state": {
+											"main_post_reaction_counts_local": {
+												"🔥": {}
+											}
+										}
+									},
+									"b": 1
+								}
+							}
 						}
 					}
 				},
@@ -1907,10 +1944,22 @@
 						"on_success": {
 							"set": {
 								"state": {
-									"main_post_user_reaction_local": {}
+									"main_post_reaction_counts_local": {"👎": {}}
 								}
 							},
-							"to": "👎"
+							"to": {
+								"call": "add",
+								"args": {
+									"a": {
+										"state": {
+											"main_post_reaction_counts_local": {
+												"👎": {}
+											}
+										}
+									},
+									"b": 1
+								}
+							}
 						}
 					}
 				},
@@ -1960,12 +2009,54 @@
 											}
 										},
 										"on_success": {
-											"set": {
-												"state": {
-													"main_post_user_reaction_local": {}
-												}
-											},
-											"to": ""
+											"call": "all",
+											"args": {
+												"iterable": [
+													{
+														"set": {
+															"state": {
+																"main_post_reaction_counts_local": {
+																	"call": "str",
+																	"args": {
+																		"object": {
+																			"state": {"main_post_user_reaction": {}}
+																		}
+																	}
+																}
+															}
+														},
+														"to": {
+															"call": "sub",
+															"args": {
+																"a": {
+																	"call": "key",
+																	"args": {
+																		"object": {
+																			"state": {
+																				"main_post_reaction_counts_local": {}
+																			}
+																		},
+																		"key": {
+																			"state": {
+																				"main_post_user_reaction": {}
+																			}
+																		}
+																	}
+																},
+																"b": 1
+															}
+														}
+													},
+													{
+														"set": {
+															"state": {
+																"main_post_user_reaction": {}
+															}
+														},
+														"to": ""
+													}
+												]
+											}
 										}
 									}
 								}
@@ -2188,7 +2279,7 @@
                 "display": {
                     "show_result": false,
                     "show_submit_button": false,
-                    "show_status_display": false
+                    "show_status_display": true
                 },
                 "interactive": true,
                 "http": "/api/social/get-thread-and-post",
@@ -2203,7 +2294,8 @@
                     "state": {
                         "thread_op_definition": {}
                     }
-                }
+                },
+				"on_success": {"op": {"update_main_post_local_counts_from_server": {}}}
             }
         },
         {
