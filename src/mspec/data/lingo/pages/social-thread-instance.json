@@ -1718,24 +1718,39 @@
 							}
 						},
 						"on_success": {
-							"set": {
-								"state": {
-									"main_post_reaction_counts_local": {"❤️": {}}
-								}
-							},
-							"to": {
-								"call": "add",
-								"args": {
-									"a": {
-										"state": {
-											"main_post_reaction_counts_local": {
-												"❤️": {}
-											}
-										}
-									},
-									"b": 1
-								}
-							}
+                            "call": "all",
+                            "args": {
+                                "iterable": [
+                                    {
+                                        "set": {
+                                            "state": {
+                                                "main_post_user_reaction": {}
+                                            }
+                                        },
+                                        "to": "❤️"
+                                    },
+                                    {
+                                        "set": {
+                                            "state": {
+                                                "main_post_reaction_counts_local": {"❤️": {}}
+                                            }
+                                        },
+                                        "to": {
+                                            "call": "add",
+                                            "args": {
+                                                "a": {
+                                                    "state": {
+                                                        "main_post_reaction_counts_local": {
+                                                            "❤️": {}
+                                                        }
+                                                    }
+                                                },
+                                                "b": 1
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
 						}
 					}
 				},
@@ -1777,24 +1792,39 @@
 							}
 						},
 						"on_success": {
-							"set": {
-								"state": {
-									"main_post_reaction_counts_local": {"😂": {}}
-								}
-							},
-							"to": {
-								"call": "add",
-								"args": {
-									"a": {
-										"state": {
-											"main_post_reaction_counts_local": {
-												"😂": {}
-											}
-										}
-									},
-									"b": 1
-								}
-							}
+                            "call": "all",
+                            "args": {
+                                "iterable": [
+                                    {
+                                        "set": {
+                                            "state": {
+                                                "main_post_user_reaction": {}
+                                            }
+                                        },
+                                        "to": "😂"
+                                    },
+                                    {
+                                        "set": {
+                                            "state": {
+                                                "main_post_reaction_counts_local": {"😂": {}}
+                                            }
+                                        },
+                                        "to": {
+                                            "call": "add",
+                                            "args": {
+                                                "a": {
+                                                    "state": {
+                                                        "main_post_reaction_counts_local": {
+                                                            "😂": {}
+                                                        }
+                                                    }
+                                                },
+                                                "b": 1
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
 						}
 					}
 				},
@@ -1836,24 +1866,39 @@
 							}
 						},
 						"on_success": {
-							"set": {
-								"state": {
-									"main_post_reaction_counts_local": {"🔥": {}}
-								}
-							},
-							"to": {
-								"call": "add",
-								"args": {
-									"a": {
-										"state": {
-											"main_post_reaction_counts_local": {
-												"🔥": {}
-											}
-										}
-									},
-									"b": 1
-								}
-							}
+                            "call": "all",
+                            "args": {
+                                "iterable": [
+                                    {
+                                        "set": {
+                                            "state": {
+                                                "main_post_user_reaction": {}
+                                            }
+                                        },
+                                        "to": "🔥"
+                                    },
+                                    {
+                                        "set": {
+                                            "state": {
+                                                "main_post_reaction_counts_local": {"🔥": {}}
+                                            }
+                                        },
+                                        "to": {
+                                            "call": "add",
+                                            "args": {
+                                                "a": {
+                                                    "state": {
+                                                        "main_post_reaction_counts_local": {
+                                                            "🔥": {}
+                                                        }
+                                                    }
+                                                },
+                                                "b": 1
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
 						}
 					}
 				},
@@ -1895,12 +1940,39 @@
 							}
 						},
 						"on_success": {
-							"set": {
-								"state": {
-									"main_post_user_reaction_local": {}
-								}
-							},
-							"to": "😢"
+                            "call": "all",
+                            "args": {
+                                "iterable": [
+                                    {
+                                        "set": {
+                                            "state": {
+                                                "main_post_user_reaction": {}
+                                            }
+                                        },
+                                        "to": "😢"
+                                    },
+                                    {
+                                        "set": {
+                                            "state": {
+                                                "main_post_reaction_counts_local": {"😢": {}}
+                                            }
+                                        },
+                                        "to": {
+                                            "call": "add",
+                                            "args": {
+                                                "a": {
+                                                    "state": {
+                                                        "main_post_reaction_counts_local": {
+                                                            "😢": {}
+                                                        }
+                                                    }
+                                                },
+                                                "b": 1
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
 						}
 					}
 				},
@@ -1942,24 +2014,39 @@
 							}
 						},
 						"on_success": {
-							"set": {
-								"state": {
-									"main_post_reaction_counts_local": {"👎": {}}
-								}
-							},
-							"to": {
-								"call": "add",
-								"args": {
-									"a": {
-										"state": {
-											"main_post_reaction_counts_local": {
-												"👎": {}
-											}
-										}
-									},
-									"b": 1
-								}
-							}
+                            "call": "all",
+                            "args": {
+                                "iterable": [
+                                    {
+                                        "set": {
+                                            "state": {
+                                                "main_post_user_reaction": {}
+                                            }
+                                        },
+                                        "to": "👎"
+                                    },
+                                    {
+                                        "set": {
+                                            "state": {
+                                                "main_post_reaction_counts_local": {"👎": {}}
+                                            }
+                                        },
+                                        "to": {
+                                            "call": "add",
+                                            "args": {
+                                                "a": {
+                                                    "state": {
+                                                        "main_post_reaction_counts_local": {
+                                                            "👎": {}
+                                                        }
+                                                    }
+                                                },
+                                                "b": 1
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
 						}
 					}
 				},
