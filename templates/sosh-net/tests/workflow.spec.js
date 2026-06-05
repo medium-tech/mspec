@@ -197,10 +197,12 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 	//
 
 	let userIndex = 0;
+	let userLoginPages = [];
 
 	for (const user of users) {
 		const userContext = await browser.newContext();
 		const page = await userContext.newPage();
+		userLoginPages.push(page);
 
 		//
 		// user account
@@ -253,6 +255,20 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 		await expect(page.locator('h3')).toContainText(':: replies to thread', { timeout: 10000 });
 
 		//
+		// forum
+		//
+
+		await page.goto(`${host}/social/forum/${forumId}`);
+		await expect(page.locator('h1')).toContainText(`:: ${forumTopic}`, { timeout: 10000 });
+		if (userIndex === 0) {
+			await expect(page.locator('#lingo-app')).toContainText('(you own this forum)', { timeout: 10000 });
+			await expect(page.getByRole('button', { name: 'open editor' })).toBeVisible({ timeout: 10000 });
+		}else{
+			await expect(page.locator('#lingo-app')).not.toContainText('(you own this forum)', { timeout: 10000 });
+			await expect(page.getByRole('button', { name: 'open editor' })).not.toBeVisible({ timeout: 10000 });
+		}
+
+		//
 		// thread main post
 		//
 
@@ -278,6 +294,15 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 		// back to thread
 		await page.goBack();
 		await expect(page.locator('h1')).toContainText(`:: ${threadTitle}`, { timeout: 10000 });
+
+		// if userIndex is 0, expect text "(you own this thread)" and button with text "open editor"
+		if (userIndex === 0) {
+			await expect(page.locator('#lingo-app')).toContainText('(you own this thread)', { timeout: 10000 });
+			await expect(page.getByRole('button', { name: 'open editor' })).toBeVisible({ timeout: 10000 });
+		}else{
+			await expect(page.locator('#lingo-app')).not.toContainText('(you own this thread)', { timeout: 10000 });
+			await expect(page.getByRole('button', { name: 'open editor' })).not.toBeVisible({ timeout: 10000 });
+		}
 
 		// create initial reaction on the main post
 		await page.getByRole('button', { name: '🔥' }).first().click();
@@ -306,11 +331,14 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 
 		const replyMessage = `This is a reply from user ${user.username}`;
 		await leaveReply(page, replyMessage);
-		await page.getByRole('button', { name: 'refresh' }).nth(userIndex).click();		// there are 2 refresh buttons and we can test them both
-																						// we test the first with user 1 and the second w user 2
+		await page.getByRole('button', { name: 'refresh' }).nth(userIndex).click();		// there are 2 refresh buttons and we test them both
+																						// userIndex 0 tests the first and userIndex 1 tests the second
 		
 		// there should now be a link to user 0's profile on the main thread and reply
 		await expect(page.getByRole('link', { name: `@${users[0].username}` })).toHaveCount(2, { timeout: 10000 });
+		// expect exactly 1 span element with text "(your reply)" and 1 button with text "delete"
+		await expect(page.locator('span', { hasText: '(your reply)' })).toHaveCount(1, { timeout: 10000 });
+		await expect(page.getByRole('button', { name: 'delete' })).toHaveCount(1, { timeout: 10000 });
 
 		// navigate to reply author's profile and back to thread
 		await page.getByRole('link', { name: `@${users[0].username}` }).nth(1).click();
@@ -362,51 +390,154 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 		await expect(page.locator('#lingo-app')).toContainText(`❤️x${emojiReplyCount}`, { timeout: 10000 });
 		await expect(page.getByRole('button', { name: 'unreact ❤️' })).toBeVisible({ timeout: 10000 });
 
-		//
-		// error checks when not logged in
-		// 
-
-		// logout
-		await logoutUser(page, host);
-
-		// profile list requires login
-		await page.goto(`${host}/social/profile`);
-		await expect(page.locator('#lingo-app')).toContainText('Error: Not logged in', { timeout: 10000, ignoreCase: true });
-
-		// profile instance requires login
-		await page.goto(`${host}/social/profile/1`);
-		await expect(page.locator('#lingo-app')).toContainText('Error: Not logged in', { timeout: 10000, ignoreCase: true });
-
-		// forum list requires login
-		await page.goto(`${host}/social/forum`);
-		await expect(page.locator('#lingo-app')).toContainText('Error: Not logged in', { timeout: 10000, ignoreCase: true });
-
-		// forum instance op returns a server error when not logged in
-		await page.goto(`${host}/social/forum/1`);
-		await expect(page.locator('#lingo-app')).toContainText('Contact support or check logs for details', { timeout: 10000, ignoreCase: true });
-
-		// thread instance op returns a server error when not logged in
-		await page.goto(`${host}/social/thread/1`);
-		await expect(page.locator('#lingo-app')).toContainText('Contact support or check logs for details', { timeout: 10000, ignoreCase: true });
-
-		await userContext.close();
-
 		userIndex++;
 	}
 
 	//
-	// phase 3: confirm user must have profile to create forums/threads/replies
+	// mutate data
 	//
 
-	// do this in this test because we already have seeded forums/threads to work with
-	// if done in another test we would need additional seeded data
+	const user0Page = userLoginPages[0];
+	const user1Page = userLoginPages[1];
+	const threadUrl = `${host}/social/thread/${threadId}`;
+
+	// delete user 1 reply //
+
+	await user1Page.goto(threadUrl);
+	await user1Page.getByRole('button', { name: 'delete' }).click();
+	await expect(user1Page.locator('#lingo-app')).toContainText('Are you sure you want to delete this model instance? This action cannot be undone.', { timeout: 10000 });
+	await user1Page.getByRole('button', { name: 'cancel' }).click();
+	await expect(user1Page.locator('#lingo-app')).not.toContainText('Are you sure you want to delete this model instance? This action cannot be undone.', { timeout: 10000 });
+	await user1Page.getByRole('button', { name: 'delete' }).click();
+	await user1Page.getByRole('button', { name: 'confirm delete' }).click();
+	await expect(user1Page.locator('#lingo-app')).toContainText('item deleted successfully', { timeout: 10000 });
+	await user1Page.getByRole('button', { name: 'refresh' }).first().click();
+	await expect(user1Page.getByRole('link', { name: `@${users[1].username}` })).not.toBeVisible({ timeout: 10000 });
+
+	// edit forum //
+
+	const newForumTopic = `${forumTopic} (edited)`;
+	const newForumDescription = 'I have changed the description of this forum!';
+
+	// change data
+	await user0Page.goto(`${host}/social/forum/${forumId}`);
+	await expect(user0Page.locator('h1')).toContainText(`:: ${forumTopic}`, { timeout: 10000 });
+	await user0Page.getByRole('button', { name: 'open editor' }).click();
+	await user0Page.getByRole('button', { name: 'edit', exact: true }).click();
+	await user0Page.getByRole('row', { name: 'topic:' }).getByRole('textbox').fill(newForumTopic);
+	const editor = await user0Page.getByRole('row', { name: 'description:' }).locator('div.rich-text-editor');
+	await editor.fill(newForumDescription);
+	await expect(editor).toContainText(newForumDescription, { timeout: 10000 });
+
+	// submit changes
+	await expect(user0Page.locator('#lingo-app')).toContainText('(modified)', { timeout: 10000 });
+	await user0Page.getByRole('button', { name: 'Submit' }).click();
+	await expect(user0Page.locator('#lingo-app')).toContainText('edited', { timeout: 10000 });
+	await user0Page.getByRole('button', { name: 'close editor' }).first().click();
+
+	// confirm changes
+	await user0Page.waitForLoadState('networkidle');
+	await expect(user0Page.locator('h1')).toContainText(`:: ${newForumTopic}`, { timeout: 10000 });
+	await expect(user0Page.locator('#lingo-app')).toContainText(newForumDescription, { timeout: 10000 });
+	await expect(user0Page.getByRole('button', { name: 'close editor' })).not.toBeVisible({ timeout: 10000 });
+	await expect(user0Page.getByRole('button', { name: 'open editor' })).toBeVisible({ timeout: 10000 });
+
+	// edit thread //
+
+	// change data
+	const newThreadTitle = `${threadTitle} (edited)`;
+	const newThreadMessage = 'I have changed the message of this thread!';
+	await user0Page.goto(`${host}/social/thread/${threadId}`);
+	await expect(user0Page.locator('h1')).toContainText(`:: ${threadTitle}`, { timeout: 10000 });
+	await user0Page.getByRole('button', { name: 'open editor' }).click();
+	await user0Page.getByRole('row', { name: 'title:' }).getByRole('textbox').fill(newThreadTitle);
+	await user0Page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor').first().fill(newThreadMessage);
+	await expect(user0Page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor').first()).toContainText(newThreadMessage, { timeout: 10000 });
+
+	// submit and confirm changes
+	await user0Page.getByRole('button', { name: 'Submit' }).first().click();
+	await user0Page.waitForLoadState('networkidle');
+	await expect(user0Page.locator('h1')).toContainText(`:: ${newThreadTitle}`, { timeout: 10000 });
+	await expect(user0Page.locator('#lingo-app')).toContainText(newThreadMessage, { timeout: 10000 });
+
+	await user1Page.close();
+	await user0Page.close();
+});
+
+test('test logged out session cannot view items', async ({ browser, crudEnv }) => {
+
+	//
+	// seed data so there is at least a forum and thread to navigate to
+	//
+
+	const host = crudEnv.host;
+
+	const uniqueId = Date.now() * 1000;
+	const initialContext = await browser.newContext();
+	const page = await initialContext.newPage();
+	const user = await createAccount(page, host, uniqueId);
+	await loginUser(page, host, user.email, user.password);
+	await createProfile(page, host, uniqueId);
+	const { forumId, forumTopic, threadId, threadTitle } = await createForumAndThread(page, host, uniqueId);
+
+	//
+	// error checks when not logged in
+	// 
+
+	// logout
+	await logoutUser(page, host);
+
+	// profile list requires login
+	await page.goto(`${host}/social/profile`);
+	await expect(page.locator('#lingo-app')).toContainText('Error: Not logged in', { timeout: 10000, ignoreCase: true });
+
+	// profile instance requires login
+	await page.goto(`${host}/social/profile/1`);
+	await expect(page.locator('#lingo-app')).toContainText('Error: Not logged in', { timeout: 10000, ignoreCase: true });
+
+	// forum list requires login
+	await page.goto(`${host}/social/forum`);
+	await expect(page.locator('#lingo-app')).toContainText('Error: Not logged in', { timeout: 10000, ignoreCase: true });
+
+	// forum instance op returns a server error when not logged in
+	await page.goto(`${host}/social/forum/${forumId}`);
+	await expect(page.locator('#lingo-app')).toContainText('Contact support or check logs for details', { timeout: 10000, ignoreCase: true });
+
+	// thread instance op returns a server error when not logged in
+	await page.goto(`${host}/social/thread/${threadId}`);
+	await expect(page.locator('#lingo-app')).toContainText('Contact support or check logs for details', { timeout: 10000, ignoreCase: true });
+
+	await initialContext.close();
+
+});
+
+test('test require profile to create items', async ({ browser, crudEnv }) => {
+
+	//
+	// seed data so there is at least a forum and thread to navigate to
+	//
+
+	const host = crudEnv.host;
+
+	const uniqueSeedId = Date.now() * 1000;
+	const seedContext = await browser.newContext();
+	const seedPage = await seedContext.newPage();
+	const seedUser = await createAccount(seedPage, host, uniqueSeedId);
+	await loginUser(seedPage, host, seedUser.email, seedUser.password);
+	await createProfile(seedPage, host, uniqueSeedId);
+	await createForumAndThread(seedPage, host, uniqueSeedId);
+
+	//
+	// confirm user must have profile to create forums/threads/replies
+	//
 
 	// create user w/o profile
-	const page = await initialContext.newPage();
+	const userContext = await browser.newContext();
+	const page = await userContext.newPage();
 	await page.goto(host);
 	const uniqueId = Date.now() * 1000;
-	const { email, password } = await createAccount(page, host, uniqueId);
-	await loginUser(page, host, email, password);
+	const user = await createAccount(page, host, uniqueId);
+	await loginUser(page, host, user.email, user.password);
 
 	// cannot create forum without profile
 	await page.goto(`${host}/social/forum`);
@@ -440,7 +571,7 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 	await page.getByRole('button', { name: 'Submit' }).click();
 	await expect(page.locator('#lingo-app')).toContainText('error');
 	await expect(page.locator('#lingo-app')).toContainText('You must have a profile to create items');
-	
+
 });
 
 test('test navigation links', async ({ browser, crudEnv }) => {
