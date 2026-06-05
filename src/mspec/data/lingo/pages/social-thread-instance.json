@@ -805,8 +805,8 @@
                                 }
                             },
                             "iterable": {
-                                "state": {
-                                    "all_reactions": {}
+                                "op": {
+                                    "get_non_zero_main_post_reactions": {}
                                 }
                             }
                         }
@@ -1379,6 +1379,37 @@
 						"else": {}
 					}
 				]
+			}
+		},
+		"get_non_zero_main_post_reactions": {
+			"description": "Get a list of reactions that have counts greater than 0 in main_post_reaction_counts_local",
+			"args": {},
+			"func": {
+				"call": "filter",
+				"args": {
+					"iterable": {
+						"state": {
+							"all_reactions": {}
+						}
+					},
+					"function": {
+						"call": "gt",
+						"args": {
+							"a": {
+								"call": "key",
+								"args": {
+									"object": {
+										"state": {
+											"main_post_reaction_counts_local": {}
+										}
+									},
+									"key": {"self": "item"}
+								}
+							},
+							"b": 0
+						}
+					}
+				}
 			}
 		}
     },
