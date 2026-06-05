@@ -130,7 +130,7 @@ output:
                           bold: true
                     - type: list
                       value:
-                        - text: 'get a verificaiton code'
+                        - text: 'get a verification code'
                           link: '/com/start-email-verification'
                         
                         - text: 'verify a code you received'
