@@ -2414,7 +2414,7 @@
                 "display": {
                     "show_result": false,
                     "show_submit_button": false,
-                    "show_status_display": true
+                    "show_status_display": false
                 },
                 "interactive": true,
                 "http": "/api/social/get-thread-and-post",
@@ -2454,7 +2454,9 @@
                 "display": {
                     "show_result": false,
                     "show_submit_button": false,
-                    "show_status_display": false
+                    "show_status_display": false,
+					"show_op_status_display": false,
+					"friendly_status": true
                 },
                 "interactive": true,
                 "http": "/api/social/get-replies-for-post",
