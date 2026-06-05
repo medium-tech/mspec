@@ -1413,80 +1413,6 @@
 			}
 		}
     },
-    "timers": {
-        "auto_load_replies": {
-            "description": "Auto load main post's replies after loading the main post",
-            "auto_start": true,
-            "func": {
-                "branch": [
-                    {
-                        "if": {
-                            "op": {
-                                "main_post_is_loaded": {}
-                            }
-                        },
-                        "then": {
-                            "set": {
-                                "state": {
-                                    "replies_op_view_state": {
-                                        "state": {}
-                                    }
-                                }
-                            },
-                            "to": "triggered"
-                        }
-                    },
-                    {
-                        "else": {
-                            "type": "str",
-                            "value": "post_not_loaded"
-                        }
-                    }
-                ]
-            },
-            "interval": {
-                "branch": [
-                    {
-                        "if": {
-                            "call": "or",
-                            "args": {
-                                "a": {
-                                    "call": "eq",
-                                    "args": {
-                                        "a": {
-                                            "self": "func_result"
-                                        },
-                                        "b": "triggered"
-                                    }
-                                },
-                                "b": {
-                                    "call": "eq",
-                                    "args": {
-                                        "a": {
-                                            "call": "key",
-                                            "args": {
-                                                "object": {
-                                                    "state": {
-                                                        "thread_op_view_state": {}
-                                                    }
-                                                },
-                                                "key": "state"
-                                            }
-                                        },
-                                        "b": "error"
-                                    }
-                                }
-                            }
-                        },
-                        "then": -1
-                    },
-                    {
-                        "else": 0.01
-                    }
-                ]
-            }
-        }
-    },
     "output": [
 		{
             "breadcrumbs": [
@@ -2504,7 +2430,18 @@
                         "thread_op_definition": {}
                     }
                 },
-				"on_success": {"op": {"update_main_post_local_counts_from_server": {}}}
+				"on_success": {
+					"call": "all",
+					"args": {
+						"iterable": [
+							{
+								"set": {"state": {"replies_op_view_state": {"state": {}}}},
+								"to": "triggered"
+							},
+							{"op": {"update_main_post_local_counts_from_server": {}}}
+						]
+					}
+				}
             }
         },
         {
