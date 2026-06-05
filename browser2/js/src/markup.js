@@ -2463,13 +2463,13 @@ function renderSet(app, expression, ctx = null) {
 
                 if(structSetType === 'single'){
 
-					// console.log('set - single struct field set, isDynamicFieldName:', isDynamicFieldName, 'fieldName:', fieldName, 'target[fieldName]:', target[fieldName], structTargetKeys[0]);
+					// console.log('set - single struct field set, isDynamicFieldName:', isDynamicFieldName, 'fieldName:', fieldName, 'target[fieldName]:', target[fieldName], structTargetKeys);
 
 					let structFieldName;
 					if (isDynamicFieldName) {
 						structFieldName = unwrapValue(lingoExecute(app, target[fieldName], ctx));
 						if (typeof structFieldName !== 'string') {
-							console.error('set - dynamic struct field name must resolve to a string:', structFieldName);
+							console.error('set - dynamic struct field name must resolve to a string:', expression, structFieldName);
 							throw new Error('set - dynamic struct field name must resolve to a string');
 						}
 					}else{
@@ -3819,7 +3819,7 @@ function _renderModelRead(app, element, ctx = null) {
 }
 
 function _renderModelDelete(app, element, ctx = null) {
-    console.log('renderModelDelete()', app, element, ctx);
+    // console.log('renderModelDelete()', app, element, ctx);
     if(!element.model.hasOwnProperty('bind')){
         throw new Error('renderModelDelete - missing model bind definition');
     }
