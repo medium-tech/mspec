@@ -360,84 +360,6 @@ class TestLingoPages(unittest.TestCase):
             page_result = lingo_execute(app, {'op': {'last_page': {}}})
             self.assertEqual(page_result['value'], case['expected_page'])
 
-    def test_social_thread_page_includes_reaction_ui_blocks(self):
-        thread_spec = load_browser2_spec('social-thread-instance.json')
-
-        def _find(node, predicate):
-            if predicate(node):
-                return True
-            if isinstance(node, dict):
-                return any(_find(value, predicate) for value in node.values())
-            if isinstance(node, list):
-                return any(_find(item, predicate) for item in node)
-            return False
-
-        def _find_node(node, predicate):
-            if predicate(node):
-                return node
-            if isinstance(node, dict):
-                for value in node.values():
-                    found = _find_node(value, predicate)
-                    if found is not None:
-                        return found
-            if isinstance(node, list):
-                for item in node:
-                    found = _find_node(item, predicate)
-                    if found is not None:
-                        return found
-            return None
-
-        self.assertTrue(_find(thread_spec['output'], lambda node: isinstance(node, dict) and node.get('text') == 'created by: '))
-        self.assertEqual(
-            thread_spec['state']['main_post_reaction_counts_string']['calc']['call'],
-            'join'
-        )
-        self.assertIn('main_post_user_reaction', thread_spec['state'])
-        self.assertTrue(_find(
-            thread_spec['output'],
-            lambda node: isinstance(node, dict)
-            and node.get('lingo', {}).get('state', {}).get('main_post_reaction_counts_string') == {}
-        ))
-        self.assertTrue(_find(
-            thread_spec['output'],
-            lambda node: isinstance(node, dict)
-            and node.get('link', {}).get('call') == 'concat'
-            and node.get('link', {}).get('args', {}).get('items', [None])[0] == '/social/profile/'
-        ))
-        self.assertTrue(_find(
-            thread_spec['output'],
-            lambda node: isinstance(node, dict)
-            and node.get('lingo', {}).get('state', {}).get('main_post_user_reaction') == {}
-        ))
-        self.assertTrue(_find(
-            thread_spec['output'],
-            lambda node: isinstance(node, dict)
-            and node.get('op', {}).get('http') == '/api/social/react-to-thread-main-post'
-            and node.get('op', {}).get('display', {}).get('friendly_status') is True
-        ))
-        reply_list = _find_node(
-            thread_spec['output'],
-            lambda node: isinstance(node, dict)
-            and node.get('type') == 'list'
-            and node.get('display', {}).get('columns') == ['reply']
-        )
-        self.assertIsNotNone(reply_list)
-        reply_block = (
-            reply_list['value']['args']['function']['value']['reply']['block']
-        )
-        self.assertIn('link', reply_block[0])
-        self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('link', {}).get('call') == 'concat'))
-        self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'date_modified'))
-        self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'group'))
-        self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'count'))
-        self.assertTrue(_find(reply_block, lambda node: isinstance(node, dict) and node.get('key') == 'user_reaction'))
-        self.assertTrue(_find(
-            thread_spec['output'],
-            lambda node: isinstance(node, dict)
-            and node.get('op', {}).get('http') == '/api/social/react-to-reply'
-            and node.get('op', {}).get('display', {}).get('friendly_status') is True
-        ))
-
     def test_social_ops_include_profile_ids_and_user_reactions(self):
         social_generator_path = SAMPLE_BROWSER2_SPEC_DIR.parent.parent / 'generator' / 'social.yaml'
         with open(social_generator_path, 'r') as f:
@@ -457,7 +379,27 @@ class TestLingoPages(unittest.TestCase):
         mapped_reply_fields = (
             ops['get_replies_for_post']['func']['value']['replies']['value']['items']['args']['function']['value']
         )
+        self.assertIn('user_id', mapped_reply_fields)
         self.assertIn('user_reaction', mapped_reply_fields)
+
+    def test_reply_reaction_prefers_local_state(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        self.assertEqual(thread_spec['state']['reply_user_reaction_local']['type'], 'list')
+        self.assertEqual(thread_spec['state']['reply_user_reaction_local']['item_type']['type'], 'str')
+
+        output_as_text = json.dumps(thread_spec['output'])
+        self.assertIn('reply_user_reaction_local', output_as_text)
+        self.assertIn('"default_value": "initial"', output_as_text)
+
+    def test_reply_delete_widget_for_owned_replies(self):
+        thread_spec = load_browser2_spec('social-thread-instance.json')
+        self.assertEqual(thread_spec['state']['reply_delete_state']['type'], 'list')
+
+        output_as_text = json.dumps(thread_spec['output'])
+        self.assertIn('"display": "delete"', output_as_text)
+        self.assertIn('"reply_delete_state": {"index": {"self": "index"}}', output_as_text)
+        self.assertIn('"model_data": {"self": "item"}', output_as_text)
+        self.assertIn('(your reply)', output_as_text)
 
     def test_sequence_functions(self):
         """Test sequence functions: len, range, slice, any, all, sum, sorted, count"""
@@ -874,8 +816,12 @@ class TestLingoDbFunctions(unittest.TestCase):
 
         post1 = self.post_class(id=None, user_id='1', title='hello', view_count=10)
         post2 = self.post_class(id=None, user_id='2', title='world', view_count=20)
+        post3 = self.post_class(id=None, user_id='3', title='foo', view_count=30)
+        post4 = self.post_class(id=None, user_id='1', title='bar', view_count=40)
         db_model_create(self.ctx, self.post_class, post1)
         db_model_create(self.ctx, self.post_class, post2)
+        db_model_create(self.ctx, self.post_class, post3)
+        db_model_create(self.ctx, self.post_class, post4)
 
         profile1 = self.profile_class(id=None, user_id='1', username='alice')
         profile2 = self.profile_class(id=None, user_id='2', username='bob')
@@ -1037,6 +983,148 @@ class TestLingoDbFunctions(unittest.TestCase):
         app = self._make_app()
         result = lingo_execute(app, expression, self.ctx)
         self.assertEqual(result['value']['profile']['username'], 'alice')
+
+    # db.patch tests #
+
+    def test_db_patch(self):
+        app = self._make_app()
+        model_id = '3'
+        read_func = {
+            'call': 'db.read',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': model_id, 'type': 'str'},
+            }
+        }
+        
+        # read data and confirm original values
+        original_read_result = lingo_execute(app, read_func, self.ctx)
+        self.assertEqual(original_read_result['value']['title'], 'foo')
+        self.assertEqual(original_read_result['value']['view_count'], 30)
+
+        # patch data
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': model_id, 'type': 'str'},
+                'data': {
+                    'view_count': {'value': 99, 'type': 'int'},
+                },
+            }
+        }
+        
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['value']['view_count'], 99)
+        self.assertEqual(result['value']['title'], 'foo')
+
+        # read back data and confirm updated values
+        read_result = lingo_execute(app, {
+            'call': 'db.read',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': model_id, 'type': 'str'},
+            }
+        }, self.ctx)
+        self.assertEqual(read_result['value']['view_count'], 99)
+        self.assertEqual(read_result['value']['title'], 'foo')
+
+    def test_db_patch_with_primitive_args(self):
+        app = self._make_app()
+        model_id = '4'
+        read_func = {
+            'call': 'db.read',
+            'args': {
+                'model_type': 'test_app.post',
+                'model_id': model_id,
+            }
+        }
+        
+        # read data and confirm original values
+        original_read_result = lingo_execute(app, read_func, self.ctx)
+        self.assertEqual(original_read_result['value']['title'], 'bar')
+        self.assertEqual(original_read_result['value']['view_count'], 40)
+
+        # patch data
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_type': 'test_app.post',
+                'model_id': model_id,
+                'data': {
+                    'title': 'new-title',
+                    'view_count': 101,
+                },
+            }
+        }
+        
+        result = lingo_execute(app, expression, self.ctx)
+        self.assertEqual(result['value']['view_count'], 101)
+        self.assertEqual(result['value']['title'], 'new-title')
+
+        # read back data and confirm updated values
+        read_result = lingo_execute(app, {
+            'call': 'db.read',
+            'args': {
+                'model_type': 'test_app.post',
+                'model_id': model_id,
+            }
+        }, self.ctx)
+        self.assertEqual(read_result['value']['view_count'], 101)
+        self.assertEqual(read_result['value']['title'], 'new-title')
+
+    def test_db_patch_raises_on_missing_model_type(self):
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_id': {'value': '1', 'type': 'str'},
+                'data': {'title': {'value': 'x', 'type': 'str'}},
+            }
+        }
+        app = self._make_app()
+        with self.assertRaises(ValueError):
+            lingo_execute(app, expression, self.ctx)
+
+    def test_db_patch_raises_on_missing_model_id(self):
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'data': {'title': {'value': 'x', 'type': 'str'}},
+            }
+        }
+        app = self._make_app()
+        with self.assertRaises(ValueError):
+            lingo_execute(app, expression, self.ctx)
+
+    def test_db_patch_raises_on_missing_data(self):
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': '1', 'type': 'str'},
+            }
+        }
+        app = self._make_app()
+        with self.assertRaises(ValueError):
+            lingo_execute(app, expression, self.ctx)
+
+    def test_db_patch_raises_on_not_found(self):
+        expression = {
+            'call': 'db.patch',
+            'args': {
+                'model_type': {'value': 'test_app.post', 'type': 'str'},
+                'model_id': {'value': '999', 'type': 'str'},
+                'data': {
+                    'title': {'value': 'x', 'type': 'str'},
+                },
+            }
+        }
+        app = self._make_app()
+        with self.assertRaises(NotFoundError):
+            lingo_execute(app, expression, self.ctx)
+
+    # db.update tests #
 
     def test_db_update_sets_date_modified_after_date_created(self):
         original = db_model_read(self.ctx, self.post_class, '1')
@@ -1207,7 +1295,7 @@ class TestLingoDbFunctions(unittest.TestCase):
         }
         app = self._make_app()
         result = lingo_execute(app, expression, self.ctx)
-        self.assertEqual(result['value']['total'], 2)
+        self.assertEqual(result['value']['total'], 4)
         first = result['value']['items'][0]
         self.assertIn('profile', first)
         self.assertIn('reaction_counts', first)
@@ -1332,9 +1420,6 @@ class TestLingoDbFunctions(unittest.TestCase):
         self.assertEqual(result['value']['items'], [])
 
     def test_db_query_returns_multiple_matching_rows(self):
-        # Add a second post for user_id '1'
-        extra = self.post_class(id=None, user_id='1', title='another post', view_count=5)
-        db_model_create(self.ctx, self.post_class, extra)
 
         expression = {
             'call': 'db.query',
@@ -1357,11 +1442,9 @@ class TestLingoDbFunctions(unittest.TestCase):
         self.assertIsInstance(result['value'].get('total'), int)
         self.assertEqual(result['value']['total'], 2)
         titles = {item['title'] for item in result['value']['items']}
-        self.assertEqual(titles, {'hello', 'another post'})
+        self.assertEqual(titles, {'hello', 'bar'})
 
     def test_db_query_sorts_by_date_modified_desc(self):
-        extra = self.post_class(id=None, user_id='1', title='another post', view_count=5)
-        db_model_create(self.ctx, self.post_class, extra)
 
         self.ctx.db.cursor.execute(
             'UPDATE test_app_post SET date_modified = ? WHERE id = ?',

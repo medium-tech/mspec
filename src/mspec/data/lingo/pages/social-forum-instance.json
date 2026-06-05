@@ -134,6 +134,10 @@
             "type": "bool",
             "default": false
         },
+        "display_edit": {
+            "type": "bool",
+            "default": false
+        },
         "create_thread_op_definition": {
             "name": {
                 "lower_case": "create thread op definition"
@@ -217,6 +221,15 @@
             }
         },
         "create_thread_op_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {"type": "any", "value": null}
+            }
+        },
+        "edit_forum_op_state": {
             "type": "struct",
             "default": {
                 "state": "initial",
@@ -546,21 +559,81 @@
                     }
                 }
             }
+		},
+        "toggle_edit_view": {
+            "args": {},
+            "func": {
+                "set": {
+                    "state": {
+                        "display_edit": {}
+                    }
+                },
+                "to": {
+                    "call": "not",
+                    "args": {
+                        "object": {
+                            "state": {
+                                "display_edit": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+		"close_editor": {
+			"args": {},
+			"func": {
+				"branch": [
+					{
+						"if": {
+							"call": "eq",
+							"args": {
+								"a": {
+									"call": "key",
+									"args": {
+										"object": {"state": {"model_instance": {}}},
+										"key": "state"
+									}
+								},
+								"b": "edited"
+							}
+						},
+						"then": {
+							"call": "client.reload"
+						}
+					},
+					{
+						"else": {
+							"set": {"state": {"display_edit": {}}},
+							"to": false
+						}
+					}
+				]
+			}
 		}
 	},
     "output": [
         {
+            "breadcrumbs": [
+                "mtech",
+                {
+                    "params": {
+                        "module_name": {}
+                    }
+                }
+            ]
+        },
+		{"text": " :: "},
+		{
+			"link": "/social/forum",
+			"text": "forums"
+		},
+		{
             "heading": {
                 "call": "join",
                 "args": {
                     "separator": "",
                     "items": [
-                        ":: ",
-                        {
-                            "params": {
-                                "model_name": {}
-                            }
-                        },
                         " :: ",
                         { "state": {"forum": {"topic": {}}}}
                     ]
@@ -569,26 +642,66 @@
             "level": 1
         },
         {
-            "breadcrumbs": [
-                "mtech",
+            "branch": [
                 {
-                    "params": {
-                        "module_name": {}
-                    }
+                    "if": {
+                        "call": "and",
+                        "args": {
+                            "a": {
+								"call": "auth.is_owner",
+								"args": {
+									"model": {
+										"state": {
+											"forum": {}
+										}
+									}
+								}
+							},
+							"b": {"state": {"display_edit": {}}}
+                        }
+                    },
+                    "then": [
+						{
+							"button": {
+								"op": {
+									"close_editor": {}
+								}
+							},
+							"text": "close editor"
+						},
+						{"text": " (you own this forum)", "style": {"italic": true}},
+						{"break": 1}
+					]
                 },
+				{
+					"elif": {
+						"call": "auth.is_owner",
+						"args": {
+							"model": {
+								"state": {
+									"forum": {}
+								}
+							}
+						}
+					},
+					"then": [
+						{
+							"button": {
+								"op": {
+									"toggle_edit_view": {}
+								}
+							},
+							"text": "open editor"
+						},
+						{"text": " (you own this forum)", "style": {"italic": true}},
+						{"break": 1}
+					]
+				},
                 {
-                    "params": {
-                        "model_name": {}
-                    }
-                },
-                {
-                    "params": {
-                        "model_id": {}
-                    }
+                    "else": {"text": ""}
                 }
             ]
         },
-		{"break": 1},
         {
             "lingo": { "state": {"forum": {"description": {}}}},
 			"rich_text": true
@@ -605,6 +718,10 @@
                         }
                     },
                     "then": [
+						{
+							"heading": ":: create thread in forum",
+							"level": 3
+						},
                         {
                             "button": {
                                 "op": {
@@ -684,7 +801,62 @@
                     ]
                 },
                 {
+                    "elif": {
+                        "state": {
+                            "display_edit": {}
+                        }
+                    },
+                    "then": [
+                        {
+                            "heading": ":: edit forum",
+                            "level": 3
+                        },
+						{
+							"text": "Click the edit button below to edit your thread",
+							"style": {
+								"italic": true
+							}
+						},
+						{"break": 1},
+						{
+							"button": {
+								"op": {
+									"close_editor": {}
+								}
+							},
+							"text": "close editor"
+						},
+                        {
+                            "model": {
+                                "bind": {
+                                    "state": {
+                                        "model_instance": {}
+                                    }
+                                },
+								"http": {
+									"call": "concat",
+									"args": {
+										"items": [
+											"/api/social/forum/",
+											{"params": {"model_id": {}}}
+										]
+									}
+								},
+                                "display": {
+                                    "mode": "read"
+                                },
+                                "definition": {"params": {"model_definition": {}}},
+								"model_id": {"params": {"model_id": {}}}
+                            }
+                        }
+                    ]
+                },
+                {
                     "else": [
+						{
+							"heading": ":: threads in forum",
+							"level": 3
+						},
                         {
                             "button": {
                                 "op": {

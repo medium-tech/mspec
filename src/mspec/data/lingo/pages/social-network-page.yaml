@@ -18,15 +18,12 @@ state:
 ops: {}
 
 output:
-    - heading: 'social'
-      level: 1
-
     - breadcrumbs:
           - "mtech"
           - "social"
 
-    - heading: ":: the network"
-      level: 2
+    - heading: ':: mtech social network'
+      level: 1
       
     - text: ' ● '
     - link: '/social/profile'
@@ -39,4 +36,4 @@ output:
       text: 'account'
     - text: ' ● '
     - break: 1
-    - text: this is social.
+    - text: where do you want to go?

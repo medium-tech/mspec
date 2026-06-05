@@ -18,10 +18,26 @@ state:
 ops: {}
 
 output:
-    - heading: 'medium tech'
+    - breadcrumbs:
+          - "mtech"
+
+    - heading: ':: medium tech'
       level: 1
 
-    - text: ' --> '
-
+    - text: ' ● '
     - link: '/social'
-      text: 'enter social'
+      text: 'social network'
+    - text: ' ● '
+    - link: '/social/account'
+      text: 'account'
+    - text: ' ● '
+
+    - break: 1
+
+    - text: 'what is medium tech?'
+      style:
+        bold: true
+
+    - break: 1
+
+    - text: 'an experiment in crowd funded big tech infrastructure'

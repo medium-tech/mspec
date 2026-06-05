@@ -604,6 +604,13 @@
       - **cardinality** `str` *(optional, default: `one`)* - `one` returns a single joined struct (lowest `id` match when multiple rows match), `many` returns a list
   - **return:** struct with all model fields
 
+`db.patch` - Update specific fields on an existing model instance by ID
+  - **args:**
+    - **model_type** `str` - dot-notation module.model (e.g. `sosh_net.thread`)
+    - **model_id** `str` - the record ID
+    - **data** `struct` - partial model field values to update (only provided fields are changed)
+  - **return:** struct of the updated model with all fields
+
 `db.unique_counts` - Return counts of unique values for a model field
   - **args:**
     - **model_type** `str` - dot-notation module.model

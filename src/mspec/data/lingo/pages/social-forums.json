@@ -127,16 +127,6 @@
                     ]
                 }
             }
-        },
-        "header": {
-            "type": "str",
-            "calc": {
-                "call": "join",
-                "args": {
-                    "separator": "",
-                    "items": [":: ",{"params": {"model_name": {}}}]
-                }
-            }
         }
     },
     "ops": {
@@ -149,7 +139,6 @@
 		}
 	},
     "output": [
-        {"heading": {"state": {"header": {}}},  "level": 1},
         {"breadcrumbs": [
             "mtech",
             {"params": {"module_name": {}}},
@@ -160,7 +149,7 @@
 				{
 					"if": {"state": {"display_create": {}}},
 					"then": [
-						{"heading": ":: create forum", "level": 2},
+						{"heading": ":: create forum", "level": 1},
 						{"button": {"op": {"flip_display": {}}}, "text": "back"},
 						{"model": {
 							"bind": {"state": {"create_model_state": {}}},
@@ -174,7 +163,7 @@
 				},
 				{
 					"else": [
-						{"heading": ":: search forums", "level": 2},
+						{"heading": ":: forums", "level": 1},
 						{"button": {"op": {"flip_display": {}}}, "text": "create forum"},
 						{"model": {
 							"bind": {"state": {"model_list": {}}},

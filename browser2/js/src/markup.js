@@ -135,6 +135,17 @@ function strConcat(items) {
     return items.map(item => String(item)).join('');
 }
 
+// function structKeyArgs(app, expression, ctx) {
+// 	console.log('structKeyArgs - expression:', expression);
+// 	const args = expression.args || {};
+// 	if (!args.key) {
+// 		throw new Error('key - missing required arg: key');
+// 	}
+// 	// const key = unwrapValue(lingoExecute(app, args.key, ctx));
+// 	const defaultValue = args.default_value !== undefined ? lingoExecute(app, args.default_value, ctx) : null;
+// 	return [args.object, args.key, defaultValue];
+// }
+
 function structKey(object, key, default_value = null) {
 	/*
 	Return the key of a struct
@@ -155,13 +166,24 @@ function structKey(object, key, default_value = null) {
 
 	*/
 
-	if (typeof key !== 'string' || key.startsWith('.') || key.endsWith('.')) {
-		console.error('lingo function key - invalid key format:', key);
-		throw new Error(`lingo function key - keys may not start or end with a dot: '${key}'`);
+	let keyParts = [];
+
+	// console.log('structKey - object:', object, 'key:', key, 'default_value:', default_value);
+
+	// if key is a string
+	if(typeof key === 'string') {
+		if (key.startsWith('.') || key.endsWith('.')) {
+			console.error('lingo function key - invalid key format:', key);
+			throw new Error(`lingo function key - keys may not start or end with a dot: '${key}'`);
+		}
+		keyParts = key.split('.');
+	}else{
+		keyParts = [key];
 	}
 
-	const keySplit = key.split('.');
-	const numKeys = keySplit.length;
+	// console.log('structKey - keyParts:', keyParts);
+	
+	const numKeys = keyParts.length;
 	if (numKeys > 10) {
 		console.error('lingo function key - key has too many levels:', key);
 		throw new Error(`lingo function key - keys may have a maximum of 10 dot-separated levels: '${key}'`);
@@ -171,21 +193,30 @@ function structKey(object, key, default_value = null) {
 	let current = object;
 	for (let i = 0; i < numKeys; i++) {
 		try{
-			if (current && typeof current === 'object' && keySplit[i] in current) {
-				current = current[keySplit[i]];
+			if (current && typeof current === 'object' && keyParts[i] in current) {
+				current = current[keyParts[i]];
 			} else {
 				if (default_value === null) {
-					console.error('lingo function key - key not found in object:', key, 'object:', object);
+					console.error(`lingo function key - key not found: ${key} in`, typeof object, object);
 					throw new Error(`lingo function key - key '${key}' not found in object`);
 				} else {
 					return default_value;
 				}
 			}
 		} catch (error) {
-			const msg = `lingo function key - count not access: ${keySplit[i]} in ${key}`;
+			const msg = `lingo function key - count not access: ${keyParts[i]} in ${key}`;
 			console.error(msg, 'object:', object, 'error:', error);
 			throw new Error(msg);
 		}
+	}
+
+	// treat undefined terminal values as missing keys so default_value can be used
+	if (typeof current === 'undefined') {
+		if (default_value === null) {
+			console.error('lingo function key - key resolved to undefined:', key, 'object:', object);
+			throw new Error(`lingo function key - key '${key}' resolved to undefined in object`);
+		}
+		return default_value;
 	}
 
 	return current;
@@ -410,6 +441,8 @@ function _aAndBArgs(app, expression, ctx) {
 	const a = unwrapValue(lingoExecute(app, expression.args.a, ctx));
 	const b = unwrapValue(lingoExecute(app, expression.args.b, ctx));
 
+	// console.log('_aAndBArgs - a:', a, 'b:', b, expression);
+
 	return [a, b];
 }
 
@@ -587,7 +620,27 @@ function _resolveBindState(app, bindState, ctx) {
  */
 function _getStateSlot(app, fieldName, listIndex) {
     if (listIndex !== null && listIndex !== undefined) {
-        return app.state[fieldName][listIndex];
+        const stateList = app.state[fieldName];
+        if (!Array.isArray(stateList)) {
+            throw new Error(`state field is not list-typed: ${fieldName}`);
+        }
+        if (!Number.isInteger(listIndex) || listIndex < 0) {
+            throw new Error(`invalid list state index for ${fieldName}: ${listIndex}`);
+        }
+        if (stateList[listIndex] === undefined) {
+            const stateSpec = app.spec.state[fieldName];
+            if (!stateSpec?.item_type) {
+                throw new Error(`list state item_type not found for field: ${fieldName}`);
+            }
+            if (stateSpec.item_type.default === undefined) {
+                throw new Error(`list state item_type.default not found for field: ${fieldName}`);
+            }
+            const itemDefault = stateSpec.item_type.default;
+            stateList[listIndex] = (typeof structuredClone === 'function')
+                ? structuredClone(itemDefault)
+                : JSON.parse(JSON.stringify(itemDefault));
+        }
+        return stateList[listIndex];
     }
     return app.state[fieldName];
 }
@@ -646,14 +699,8 @@ function _crudDeleteArgs(app, expression, ctx) {
     const args = expression.args || {};
     const url = unwrapValue(lingoExecute(app, args.http, ctx));
     if (expression.args.bind && expression.args.bind.state) {
-        const stateKeys = Object.keys(expression.args.bind.state);
-        if (stateKeys.length === 1) {
-            const stateField = stateKeys[0];
-            if (!app.state.hasOwnProperty(stateField)) {
-                throw new Error(`crud.delete - state field not found: ${stateField}`);
-            }
-            app.state[stateField].state = 'loading';
-        }
+        const {fieldName, listIndex} = _resolveBindState(app, expression.args.bind.state, ctx);
+        _getStateSlot(app, fieldName, listIndex).state = 'loading';
     }
     return [url];
 }
@@ -688,7 +735,7 @@ function _opHttpArgs(app, expression, ctx) {
         _getStateSlot(app, fieldName, listIndex).state = 'loading';
     }
     // console.log('op.http - url:', expression, url, 'params:', params);
-    return [url, params];
+    return [url, params, args.on_success || null];
 }
 
 // file system //
@@ -1071,6 +1118,7 @@ const lingoFunctionLookup = {
     
     'key': {
         func: structKey,
+		// createArgs: structKeyArgs,
         args: {
             'object': {'type': 'struct'},
             'key': {'type': 'str'},
@@ -1483,7 +1531,7 @@ const lingoFunctionLookup = {
 
     'op': {
         'http': {
-            func: async (url, params) => {
+            func: async (url, params, on_success) => {
                 try {
                     const response = await fetch(url, {
                         method: 'POST',
@@ -1515,6 +1563,14 @@ const lingoFunctionLookup = {
                                 localStorage.removeItem('user_id');
                                 window.location.reload();
                             }
+							if(on_success) {
+								// console.log('op.http - returning result for successful response', on_success);
+								setTimeout(() => {
+									// console.log('op.http - executing on_success callback');
+									on_success();
+								}, 0);
+								// on_success();
+							}
                             return {state: 'result', result: wrappedResult};
                         } else {
                             return {state: 'error', error: 'Response missing result field'};
@@ -2180,6 +2236,7 @@ function renderBranch(app, element, ctx = null) {
                     // console.log(`branch then result`, thenResult);
                     return thenResult;
                 } catch (error) {
+					console.error(`Error processing then expression for branch ${n}:`, error, element, then);
                     throw new Error(`branch ${n} - error processing then expression: ${error.message}`);
                 }
             }
@@ -2296,11 +2353,20 @@ function renderSet(app, expression, ctx = null) {
                 throw new Error(`set - state field not found: ${fieldName}`);
             }
 
-            // support list-indexed state: {fieldName: {_list_index: N}}
+            // support list-indexed state: {fieldName: {_list_index: N}} or {fieldName: {index: <expression>}}
             const setBindValue = target[fieldName];
-            const setListIndex = (setBindValue && typeof setBindValue === 'object' && '_list_index' in setBindValue)
-                ? setBindValue._list_index
-                : null;
+            let setListIndex = null;
+            if (setBindValue && typeof setBindValue === 'object') {
+                if ('_list_index' in setBindValue) {
+                    setListIndex = setBindValue._list_index;
+                } else if ('index' in setBindValue) {
+                    const resolvedListIndex = unwrapValue(lingoExecute(app, setBindValue.index, ctx));
+                    if (!Number.isInteger(resolvedListIndex) || resolvedListIndex < 0) {
+                        throw new Error(`set - state index must resolve to a non-negative integer for ${fieldName}`);
+                    }
+                    setListIndex = resolvedListIndex;
+                }
+            }
 
             if (setListIndex !== null) {
                 stateToSet = app.state[fieldName][setListIndex];
@@ -2355,15 +2421,15 @@ function renderSet(app, expression, ctx = null) {
                 // console.log('set - setting struct fields:', fieldName, outValue);
 
                 /*
-                there are 2 ways to set a struct field:
-                    1. single values
+                there are 3 ways to set a struct field:
+                    1. single values - hardcoded struct_field
                         set: {state: {my_struct_variable: {struct_field: {}}}}
                         to: 5
 
                         in set, you specify the state variable and struct field
                         and in to you provide a primitive value
 
-                    2. multiple fields at once
+                    2. multiple fields at once - hardcoded struct fields
                         set: {state: {my_struct_variable: {}}}
                         to: {struct_field1: 5, struct_field2: "hello"}
 
@@ -2371,25 +2437,47 @@ function renderSet(app, expression, ctx = null) {
                         and in to you provide an object with field names and values,
                         the fields that are provided will be updated and other fields
                         will remain unchanged
+
+					3. single field with dynamic struct field name by providing call expression
+						set: {state: {my_struct_variable: {"call": "...", "args": {...}}}}
+						to: 5
                 */
 
                 // struct field keys, excluding internal _list_index key used for list-indexed state
                 const structTargetKeys = Object.keys(target[fieldName]).filter(k => k !== '_list_index');
                 const numStructKeys = structTargetKeys.length;
+				let isDynamicFieldName = false;
                 let structSetType;
                 if (numStructKeys == 0) {
                     structSetType = 'multiple';
                 }else if (numStructKeys == 1) {
                     structSetType = 'single';
+				}else if (structTargetKeys.indexOf('call') !== 1) {
+					// even though this has multiple keys, it is a dynamic key name that will resolve to a single struct field
+					structSetType = 'single';
+					isDynamicFieldName = true;
                 }else{
+					console.error('set - invalid struct set expression, too many keys in target[fieldName]:', target[fieldName], 'structTargetKeys:', structTargetKeys, 'numStructKeys:', numStructKeys);
                     throw new Error('set - struct set must have either zero fields to use multi set or one field to use single set');
                 }
 
                 if(structSetType === 'single'){
-                    // struct field name is the only key in target[fieldName] (excluding _list_index)
-                    const structFieldName = structTargetKeys[0];
+
+					// console.log('set - single struct field set, isDynamicFieldName:', isDynamicFieldName, 'fieldName:', fieldName, 'target[fieldName]:', target[fieldName], structTargetKeys);
+
+					let structFieldName;
+					if (isDynamicFieldName) {
+						structFieldName = unwrapValue(lingoExecute(app, target[fieldName], ctx));
+						if (typeof structFieldName !== 'string') {
+							console.error('set - dynamic struct field name must resolve to a string:', expression, structFieldName);
+							throw new Error('set - dynamic struct field name must resolve to a string');
+						}
+					}else{
+						structFieldName = structTargetKeys[0];
+					}
 
                     if (!(structFieldName in stateToSet)) {
+						console.error(`set - struct field not found: ${fieldDisplayName}.${structFieldName}`, 'stateToSet:', stateToSet);
                         throw new Error(`set - struct field not found: ${fieldName}.${structFieldName}`);
                     }
 
@@ -2450,7 +2538,10 @@ function renderSet(app, expression, ctx = null) {
 
                 // rerender output after state update
                 renderLingoApp(app, document.getElementById('lingo-app'), ctx);
-            });
+            }).catch(error => {
+				console.error('set - error resolving promise:', error);
+				throw new Error(`set - error resolving promise: ${error.message}`);
+			});
             return value;
         }else{
             setValue();
@@ -2468,7 +2559,7 @@ function renderSet(app, expression, ctx = null) {
 function renderState(app, expression, ctx = null) {
     const fieldNames = Object.keys(expression.state);
     if (fieldNames.length !== 1) {
-        console.error('state - invalid expression, must have exactly one state field', expression);
+        console.error('state - invalid expression, must have exactly one state field', expression, fieldNames);
         throw new Error('state - must have exactly one state field');
     }
     const fieldName = fieldNames[0];
@@ -2485,6 +2576,7 @@ function renderState(app, expression, ctx = null) {
             const structFieldName = keys[0];
             return app.state[fieldName][structFieldName];
         }else if(keys.length > 1){
+			console.error('state - cannot access struct field, multiple fields found in expression', expression);
             throw new Error('state - cannot access struct field, multiple fields found in expression');
         }
     }
@@ -2747,8 +2839,10 @@ function renderOp(app, expression, ctx = null) {
         const showResult = display.hasOwnProperty('show_result') ? unwrapValue(lingoExecute(app, display.show_result, ctx)) : true;
         const showSubmitButton = display.hasOwnProperty('show_submit_button') ? unwrapValue(lingoExecute(app, display.show_submit_button, ctx)) : true;
         const showStatusDisplay = display.hasOwnProperty('show_status_display') ? unwrapValue(lingoExecute(app, display.show_status_display, ctx)) : true;
+		const showOpStatusDisplay = display.hasOwnProperty('show_op_status_display') ? unwrapValue(lingoExecute(app, display.show_op_status_display, ctx)) : true;
 		const friendlyStatus = display.hasOwnProperty('friendly_status') ? unwrapValue(lingoExecute(app, display.friendly_status, ctx)) : false;
-        
+        const inLine = display.hasOwnProperty('in_line') ? unwrapValue(lingoExecute(app, display.in_line, ctx)) : false;
+		
         // render op.auto_submit if provided, otherwise default to false
         let autoSubmit;
         if (expression.op.hasOwnProperty('auto_submit')) {
@@ -2790,6 +2884,35 @@ function renderOp(app, expression, ctx = null) {
         }
 
         // console.log('renderOp() - interactive op param overrides', paramOverrides);
+
+        //
+        // initial values
+        //
+
+        let evaluatedInitialValues = {};
+
+        if('initial_values' in op){
+            const initialValuesExpr = op.initial_values;
+
+            for(const [initialValueKey, paramValueExpr] of Object.entries(initialValuesExpr)){
+
+                if(!definition.params.hasOwnProperty(initialValueKey)){
+                    throw new Error(`op - initial_values key not found in op parameter definitions: ${initialValueKey}`);
+                }
+
+                const paramDef = definition.params[initialValueKey];
+                const paramValue = lingoExecute(app, paramValueExpr, ctx);
+                const paramValueType = getTypeName(paramValue);
+
+                if(!typesMatch(paramValueType, paramDef.type)){
+                    throw new Error(`op - initial_values value type mismatch for ${initialValueKey}: expected ${paramDef.type}, got ${paramValueType}`);
+                }
+
+                evaluatedInitialValues[initialValueKey] = unwrapValue(paramValue);
+            }
+        }
+
+        // console.log('renderOp() - interactive op initial values', evaluatedInitialValues);
 
         //
         // fields
@@ -2836,12 +2959,27 @@ function renderOp(app, expression, ctx = null) {
 
         const submitButtonText = expression.op.submit_button_text ? unwrapValue(lingoExecute(app, expression.op.submit_button_text, ctx)) : 'Submit';
 
+		let onSuccessAction = null;
+		if(expression.op.hasOwnProperty('on_success')){
+			onSuccessAction = () => {
+				unwrapValue(lingoExecute(app, expression.op.on_success, ctx));
+				renderLingoApp(app, document.getElementById('lingo-app'), true);
+			}
+		}
+
         // merge app.state[stateField].data and paramOverrides to create request body, with paramOverrides taking precedence
         const stateSlot = _getStateSlot(app, stateField, listIndex);
+        for (const [key, value] of Object.entries(evaluatedInitialValues)) {
+            if (!stateSlot.data.hasOwnProperty(key)) {
+                stateSlot.data[key] = value;
+            }
+        }
         let requestBody = stateSlot.data
         for (const [key, value] of Object.entries(paramOverrides)) {
             requestBody[key] = value;
         }
+
+		const disabled = expression.op.hasOwnProperty('disabled') ? unwrapValue(lingoExecute(app, expression.op.disabled, ctx)) : false;
 
         const formElement = {
             form: {
@@ -2852,6 +2990,8 @@ function renderOp(app, expression, ctx = null) {
 				show_submit_button: showSubmitButton,
 				show_status_display: showStatusDisplay,
 				friendly_status: friendlyStatus,
+				in_line: inLine,
+				disabled: disabled,
                 action: {
                     set: {state: {[stateField]: listIndex !== null ? {_list_index: listIndex} : {}}},
                     to: {
@@ -2859,7 +2999,8 @@ function renderOp(app, expression, ctx = null) {
                         args: {
                             url: url,
                             data: requestBody,
-                            bind: resolvedBind
+                            bind: resolvedBind,
+							on_success: onSuccessAction,
                         }
                     }
                 }
@@ -2942,7 +3083,7 @@ function renderOp(app, expression, ctx = null) {
 
         let elements = [];
         elements.push(formElement);
-		if(showStatusDisplay) {
+		if(showStatusDisplay && showOpStatusDisplay) {
         	elements.push(...resultDisplayElements);
         }
         return elements;
@@ -2958,7 +3099,17 @@ function renderOp(app, expression, ctx = null) {
             throw new Error('op - must have exactly one op field');
         }
         const opName = keys[0];
-        const opArgs = expression.op[opName];
+        let opArgs = {};
+
+		// execute and unwrap each arg
+		if (typeof expression.op[opName] === 'object' && expression.op[opName] !== null) {
+			for (const [argName, argExpr] of Object.entries(expression.op[opName])) {
+				opArgs[argName] = unwrapValue(lingoExecute(app, argExpr, ctx));
+			}
+		} else {
+			throw new Error('op - op arguments must be an object');
+		}
+
         
         if (!(opName in app.spec.ops)) {
             throw new Error(`op - undefined op: ${opName}`);
@@ -2973,7 +3124,7 @@ function renderOp(app, expression, ctx = null) {
 		// console.log(`Running op ${opName}`, opDef)
         
         const result = lingoExecute(app, opDef.func, opArgs);
-		// console.log('Op result', result);
+		// console.log(`Op result - ${opName}`, expression, result);
 		return result;
     }
 }
@@ -2983,7 +3134,7 @@ function renderOp(app, expression, ctx = null) {
  */
 function renderCall(app, expression, ctx = null) {
     const _args = expression.args || {};
-    
+
     const nameSplit = expression.call.split('.');
     const nameDepth = nameSplit.length;
     
@@ -3015,6 +3166,7 @@ function renderCall(app, expression, ctx = null) {
     // Handle functions with custom arg handling
     if (typeof definition.createArgs === 'function') {
         const args = definition.createArgs(app, expression, ctx);
+		// console.log('call - custom args created', expression, args);
         return definition.func(...args);
     }
     
@@ -3027,6 +3179,7 @@ function renderCall(app, expression, ctx = null) {
         }
         
         const value = lingoExecute(app, argExpression, ctx);
+		// console.log(`call - rendered arg ${argName}`, value);
         
         // If value is a list, we need to evaluate any dict expressions in it
         if (Array.isArray(value)) {
@@ -3063,7 +3216,10 @@ function renderCall(app, expression, ctx = null) {
         }
     }
 
-    // console.log('call - rendered args', expression.call, renderedArgs);
+	// if (expression.call === 'key' && typeof _args.key !== 'string') {
+	// 	console.log('renderCall() - rendering key access', expression);
+	// 	console.log('call - rendered args', expression.call, renderedArgs);
+	// }
     
     // Call function based on signature
     let returnValue;
@@ -3211,12 +3367,15 @@ function renderModel(app, element, ctx = null) {
 function _isModelOwner(modelData) {
     // returns true if model has no user_id field (no auth restriction),
     // or if the logged-in user's id matches the model's user_id
+	// console.log('_isModelOwner()', modelData);
     if (!modelData || typeof modelData !== 'object' || !modelData.hasOwnProperty('user_id')) {
         return true;
     }
     try {
-        const userId = localStorage.getItem('user_id');
-        return !!(userId && String(modelData.user_id) === String(userId));
+        const loggedInUserId = localStorage.getItem('user_id');
+		const modelUserId = unwrapValue(modelData.user_id);
+		// console.log('_isModelOwner - user_id from localStorage', loggedInUserId, modelUserId);
+        return !!(loggedInUserId && String(modelUserId) === String(loggedInUserId));
     } catch (e) {
         return false;
     }
@@ -3245,6 +3404,7 @@ function _renderModelRead(app, element, ctx = null) {
         throw new Error('renderModelRead - missing model definition');
     }
     const definition = lingoExecute(app, element.model.definition, ctx);
+	// console.log('renderModelRead - model definition', definition);
 
     const stateField = stateKeys[0];
 
@@ -3667,20 +3827,15 @@ function _renderModelDelete(app, element, ctx = null) {
         throw new Error('renderModelDelete - model bind definition must bind to state');
     }
 
-    // get first (and only) field in bind.state
-    const stateKeys = Object.keys(element.model.bind.state);
-    if( stateKeys.length !== 1 ){
-        throw new Error('renderModelDelete - model bind.state must have exactly one field');
-    }
+	if(!element.model.hasOwnProperty('http')){
+		throw new Error('renderModelDelete - missing model http url');
+	}
 
-    const stateField = stateKeys[0];
-
-    // ensure confirming_delete state exists
-    if (!app.state.hasOwnProperty(stateField)) {
-        throw new Error(`renderModelDelete - state field not found: ${stateField}`);
-    }
-
-    let state = app.state[stateField];
+    const {fieldName: stateField, listIndex} = _resolveBindState(app, element.model.bind.state, ctx);
+    let state = _getStateSlot(app, stateField, listIndex);
+    const resolvedBind = listIndex !== null
+        ? {state: {[stateField]: {_list_index: listIndex}}}
+        : element.model.bind;
 
     if (!state.hasOwnProperty('state')) state.state = 'initial';
     if (!state.hasOwnProperty('error')) state.error = '';
@@ -3696,6 +3851,8 @@ function _renderModelDelete(app, element, ctx = null) {
         }
     }
 
+	const url = unwrapValue(lingoExecute(app, element.model.http, ctx));
+
     const switchElement = {
         switch: {
             expression: { type: 'str', value: state.state },
@@ -3708,12 +3865,13 @@ function _renderModelDelete(app, element, ctx = null) {
                             { break: 1 },
                             {
                                 button: {
-                                    set: {state: {[stateField]: {}}},
+                                    set: {state: {[stateField]: listIndex !== null ? {_list_index: listIndex} : {}}},
                                     to: {
                                         call: 'crud.delete',
                                         args: {
-                                            http: { state: { base_url: {} } },
-                                            model_id: { params: { model_id: {} } }
+                                            http: url,
+                                            model_id: { params: { model_id: {} } },
+                                            bind: resolvedBind
                                         }
                                     }
                                 },
@@ -3722,7 +3880,7 @@ function _renderModelDelete(app, element, ctx = null) {
                             { text: ' ' },
                             {
                                 button: {
-                                    set: {state: {[stateField]: {state: {}}}},
+                                    set: {state: {[stateField]: listIndex !== null ? {_list_index: listIndex, state: {}} : {state: {}}}},
                                     to: 'initial'
                                 },
                                 text: 'cancel'
@@ -3746,7 +3904,7 @@ function _renderModelDelete(app, element, ctx = null) {
             ],
             default: isOwner ? {
                 button: {
-                    set: { state: { [stateField]: { state: {} } } },
+                    set: { state: { [stateField]: listIndex !== null ? {_list_index: listIndex, state: {}} : { state: {} } } },
                     to: 'confirming'
                 },
                 text: 'delete'
@@ -4364,7 +4522,11 @@ function createDOMElement(app, element, ctx = null) {
         return createViewerElement(app, element, ctx);
     } else if (Array.isArray(element)) {
         // If the element is an array, render each item and wrap in a div
+		// console.log('createDOMElement - rendering block element with', element.length, 'sub-elements');
         const container = document.createElement('div');
+		// container.className = 'block-list-rendering';
+		// console.log('using inline-block display for block list rendering');
+		container.style.display = 'inline-block';
         for (const subElement of element) {
             // call createDomElement recursively for each subElement
             const childDom = createDOMElement(app, subElement, ctx);
@@ -4767,13 +4929,17 @@ function createValueElement(app, element, ctx = null) {
  * Create break element
  */
 function createBreakElement(app, element, ctx = null) {
-    const container = document.createElement('div');
-    for (let i = 0; i < element.break; i++) {
-        container.appendChild(document.createElement('br'));
-    }
-    return container;
-}
 
+	if(element.hasOwnProperty('no_container') && element.no_container === true && element.break === 1) {
+		return document.createElement('br');
+	}else{
+		const container = document.createElement('div');
+		for (let i = 0; i < element.break; i++) {
+			container.appendChild(document.createElement('br'));
+		}
+		return container;
+	}
+}
 /**
  * Create button element
  */
@@ -5182,12 +5348,28 @@ function createRichTextInput(formData, fieldKey, initialValue) {
  */
 function createFormElement(app, element, ctx = null) {
 
-    // console.log('createFormElement()', app, element);
+	let inLine;
+	if(element.form.hasOwnProperty('in_line')) {
+		inLine = element.form.in_line;
+	}else{
+		inLine = false;
+	}
+
+	// console.log(`createFormElement() in line: ${inLine}`, app, element);
 
     // init //
     const formContainer = document.createElement('div');
+	// formContainer.className = inLine ? 'form-container-inline' : 'form-container';
+	let tableClassName;
+	if(inLine) {
+		tableClassName = 'form-table-inline';
+		// console.log('using inline-block style for form container');
+		formContainer.style.display = 'inline-block';
+	}else{
+		tableClassName = 'form-table';
+	}
     const table = document.createElement('table');
-    table.className = 'form-table';
+    table.className = tableClassName;
 
     if (!element.form.hasOwnProperty('fields')) {
         throw new Error('createFormElement - missing form fields definition');
@@ -5951,6 +6133,10 @@ function createFormElement(app, element, ctx = null) {
         const result = lingoExecute(app, element.form.action, {});
         // console.log('Form submission result:', result);
         renderLingoApp(app, document.getElementById('lingo-app'));
+		// setTimeout(() => {
+		// 	console.log('Form submission - re-rendering app after submitAction. Current state:', currentState.state);
+		// 	renderLingoApp(app, document.getElementById('lingo-app'), true);
+		// }, 0);
     };
 
     if ((autoSubmit === true && currentState.state === 'initial') || currentState.state === 'triggered') {
@@ -5971,10 +6157,17 @@ function createFormElement(app, element, ctx = null) {
 		showSubmitButton = true;
 	}
 
+	// if element.form.disabled is set and evalutes to true, disable the submit button
+	let disableSwitch;
+	if (element.form.hasOwnProperty('disabled')) {
+		disableSwitch = unwrapValue(lingoExecute(app, element.form.disabled, ctx));
+	} else {
+		disableSwitch = false;
+	}
 
     const submitButtonText = element.form.submit_button_text || 'Submit';
     const submitButton = document.createElement('button');
-    submitButton.disabled = currentState.state === 'loading';
+    submitButton.disabled = currentState.state === 'loading' || disableSwitch;
     submitButton.textContent = submitButtonText;
     submitButton.addEventListener('click', submitAction);
 

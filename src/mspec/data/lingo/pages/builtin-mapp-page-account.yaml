@@ -83,16 +83,13 @@ state:
                     value: false    
 
 output:
-    - heading: 'social'
-      level: 1
-
     - breadcrumbs:
           - "mtech"
           - "social"
           - "account"
 
-    - heading: ":: account"
-      level: 2
+    - heading: ":: account details"
+      level: 1
     
     - branch:
         - if:
@@ -133,7 +130,7 @@ output:
                           bold: true
                     - type: list
                       value:
-                        - text: 'get a verificaiton code'
+                        - text: 'get a verification code'
                           link: '/com/start-email-verification'
                         
                         - text: 'verify a code you received'
