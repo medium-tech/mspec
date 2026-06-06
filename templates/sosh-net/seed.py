@@ -186,12 +186,14 @@ def _seed_replies_in_first_thread(ctx, spec: dict, social_module: dict, users: l
 
 
 def _random_event_time_window() -> tuple[str, str]:
-    start = datetime.datetime.utcnow() + datetime.timedelta(
+    start = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
         days=random.randint(1, 45),
         hours=random.randint(0, 23),
     )
     end = start + datetime.timedelta(hours=random.randint(1, 6))
-    return start.replace(microsecond=0).isoformat(), end.replace(microsecond=0).isoformat()
+    start_iso = start.replace(microsecond=0).isoformat()
+    end_iso = end.replace(microsecond=0).isoformat()
+    return start_iso, end_iso
 
 
 def _seed_events(ctx, spec: dict, social_module: dict, users: list[dict], num_events: int) -> list[dict]:
@@ -220,7 +222,7 @@ def _seed_events(ctx, spec: dict, social_module: dict, users: list[dict], num_ev
             start_time, end_time = _random_event_time_window()
             event_data = {
                 'user_id': '-1',
-                'title': f'{random_str().title()}',
+                'title': random_str().title(),
                 'start_time': start_time,
                 'end_time': end_time,
                 'location': random_str().title(),
