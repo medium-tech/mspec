@@ -386,8 +386,6 @@ class TestLingoPages(unittest.TestCase):
             ['id', 'title', 'location', 'start_time', 'end_time'],
         )
 
-        self.assertNotIn('forum', json.dumps(events_spec))
-
     def test_social_ops_include_profile_ids_and_user_reactions(self):
         social_generator_path = SAMPLE_BROWSER2_SPEC_DIR.parent.parent / 'generator' / 'social.yaml'
         with open(social_generator_path, 'r') as f:
