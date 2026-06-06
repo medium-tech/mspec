@@ -2,7 +2,7 @@
     "lingo": {
         "version": "page-beta-1",
         "parent_url": "/api/spec",
-		"title": "social :: forums"
+		"title": "social :: events"
     },
     "params": {
         "project_name": {
@@ -26,7 +26,7 @@
                 "lower_case": "model name"
             },
             "type": "str",
-            "default": "my-model-a",
+            "default": "event",
             "description": "Name of the model"
         },
         "model_definition": {
@@ -36,36 +36,59 @@
             "type": "model",
             "value": {
                 "name": {
-                    "lower_case": "my model a"
+                    "lower_case": "event"
                 },
                 "fields": {
-                    "my_bool_field_a": {
+                    "user_id": {
                         "name": {
-                            "lower_case": "my bool field a"
+                            "lower_case": "user id"
                         },
-                        "type": "bool",
-                        "description": "A sample field"
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "auth",
+                            "table": "user",
+                            "field": "id"
+                        }
                     },
-                    "my_int_field_b": {
+                    "title": {
                         "name": {
-                            "lower_case": "my int field b"
-                        },
-                        "type": "int",
-                        "description": "Another sample field"
-                    },
-                    "my_float_field_c": {
-                        "name": {
-                            "lower_case": "my float field c"
-                        },
-                        "type": "float",
-                        "description": "Yet another sample field"
-                    },
-                    "my_str_field_d": {
-                        "name": {
-                            "lower_case": "my str field d"
+                            "lower_case": "event name"
                         },
                         "type": "str",
-                        "description": "A string sample field"
+                        "description": "The name of the event"
+                    },
+                    "start_time": {
+                        "name": {
+                            "lower_case": "event start time"
+                        },
+                        "type": "datetime",
+                        "description": "The start time of the event"
+                    },
+                    "end_time": {
+                        "name": {
+                            "lower_case": "event end time"
+                        },
+                        "type": "datetime",
+                        "description": "The end time of the event"
+                    },
+                    "location": {
+                        "name": {
+                            "lower_case": "location"
+                        },
+                        "type": "str",
+                        "description": "The location of the event"
+                    },
+                    "main_post_id": {
+                        "name": {
+                            "lower_case": "main post id"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "social",
+                            "table": "post",
+                            "field": "id"
+                        },
+                        "description": "The main post of the event"
                     }
                 }
             },
@@ -149,7 +172,7 @@
 				{
 					"if": {"state": {"display_create": {}}},
 					"then": [
-						{"heading": ":: create forum", "level": 1},
+						{"heading": ":: create event", "level": 1},
 						{"button": {"op": {"flip_display": {}}}, "text": "back"},
 						{"model": {
 							"bind": {"state": {"create_model_state": {}}},
@@ -163,15 +186,15 @@
 				},
 				{
 					"else": [
-						{"heading": ":: forums", "level": 1},
-						{"button": {"op": {"flip_display": {}}}, "text": "create forum"},
+						{"heading": ":: events", "level": 1},
+						{"button": {"op": {"flip_display": {}}}, "text": "create event"},
 						{"model": {
 							"bind": {"state": {"model_list": {}}},
 							"display": "list",
 							"http": {"state": {"model_item_api_url": {}}},
 							"definition": {"params": {"model_definition": {}}},
 							"instance_url": {"state": {"model_item_url": {}}},
-							"fields": ["id", "topic", "tags"]
+							"fields": ["id", "title", "location", "start_time", "end_time"]
 						}}
 					]
 				}

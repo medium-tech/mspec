@@ -360,6 +360,34 @@ class TestLingoPages(unittest.TestCase):
             page_result = lingo_execute(app, {'op': {'last_page': {}}})
             self.assertEqual(page_result['value'], case['expected_page'])
 
+    def test_social_events_page_uses_event_labels_and_fields(self):
+        events_spec = load_browser2_spec('social-events.json')
+
+        self.assertEqual(events_spec['lingo']['title'], 'social :: events')
+        self.assertEqual(events_spec['params']['model_name']['default'], 'event')
+
+        model_definition = events_spec['params']['model_definition']['value']
+        self.assertEqual(model_definition['name']['lower_case'], 'event')
+        self.assertEqual(
+            list(model_definition['fields'].keys()),
+            ['user_id', 'title', 'start_time', 'end_time', 'location', 'main_post_id'],
+        )
+        self.assertEqual(model_definition['fields']['start_time']['type'], 'datetime')
+        self.assertEqual(model_definition['fields']['end_time']['type'], 'datetime')
+
+        create_branch = events_spec['output'][1]['branch'][0]['then']
+        self.assertEqual(create_branch[0]['heading'], ':: create event')
+
+        list_branch = events_spec['output'][1]['branch'][1]['else']
+        self.assertEqual(list_branch[0]['heading'], ':: events')
+        self.assertEqual(list_branch[1]['text'], 'create event')
+        self.assertEqual(
+            list_branch[2]['model']['fields'],
+            ['id', 'title', 'location', 'start_time', 'end_time'],
+        )
+
+        self.assertNotIn('forum', json.dumps(events_spec))
+
     def test_social_ops_include_profile_ids_and_user_reactions(self):
         social_generator_path = SAMPLE_BROWSER2_SPEC_DIR.parent.parent / 'generator' / 'social.yaml'
         with open(social_generator_path, 'r') as f:
