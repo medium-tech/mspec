@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 import random
+import datetime
 
 from random import shuffle
 from itertools import repeat
@@ -7,7 +8,7 @@ from itertools import repeat
 from dotenv import load_dotenv
 
 from mapp.context import get_context_from_env, spec_from_env
-from mapp.module.model.http import http_model_create, http_model_read
+from mapp.module.model.http import http_model_create, http_model_read, http_model_update
 from mapp.module.op.http import http_run_op
 from mapp.types import new_model, new_model_class, new_op_classes, new_op_params
 
@@ -184,6 +185,98 @@ def _seed_replies_in_first_thread(ctx, spec: dict, social_module: dict, users: l
     print(f'  :: seeded {total_replies} replies ({num_replies} per {len(users)} users) in thread 1')
 
 
+def _random_event_time_window() -> tuple[str, str]:
+    start = datetime.datetime.utcnow() + datetime.timedelta(
+        days=random.randint(1, 45),
+        hours=random.randint(0, 23),
+    )
+    end = start + datetime.timedelta(hours=random.randint(1, 6))
+    return start.replace(microsecond=0).isoformat(), end.replace(microsecond=0).isoformat()
+
+
+def _seed_events(ctx, spec: dict, social_module: dict, users: list[dict], num_events: int) -> list[dict]:
+    event_model = social_module['models']['event']
+    post_model = social_module['models']['post']
+    event_class = new_model_class(spec, event_model, social_module)
+    post_class = new_model_class(spec, post_model, social_module)
+
+    events = []
+    for user in users:
+        ctx.client.set_bearer_token(user['access_token'])
+        for _ in range(num_events):
+            main_post_data = {
+                'user_id': '-1',
+                'forum_id': '-1',
+                'event_id': '-1',
+                'reply_to': '-1',
+                'message': random_str_rich_text(color_options=RICH_TEXT_COLORS),
+                'attachments': [],
+                'images': [],
+                'related_posts': [],
+            }
+            main_post = new_model(post_class, main_post_data)
+            created_main_post = http_model_create(ctx, post_class, main_post)
+
+            start_time, end_time = _random_event_time_window()
+            event_data = {
+                'user_id': '-1',
+                'title': f'{random_str().title()}',
+                'start_time': start_time,
+                'end_time': end_time,
+                'location': random_str().title(),
+                'main_post_id': str(created_main_post.id),
+            }
+            event = new_model(event_class, event_data)
+            created_event = http_model_create(ctx, event_class, event)
+
+            created_main_post.event_id = str(created_event.id)
+            http_model_update(ctx, post_class, str(created_main_post.id), created_main_post)
+
+            events.append({
+                'id': str(created_event.id),
+                'main_post_id': str(created_main_post.id),
+            })
+
+    return events
+
+
+def _seed_replies_in_first_event(ctx, spec: dict, social_module: dict, users: list[dict], num_replies: int, events: list[dict]):
+    if not events:
+        print('  :: no events found for event reply seeding')
+        return
+
+    post_model = social_module['models']['post']
+    post_class = new_model_class(spec, post_model, social_module)
+
+    first_event = events[0]
+    main_post_id = first_event['main_post_id']
+    event_id = first_event['id']
+
+    reply_seeds = []
+    for user in users:
+        reply_seeds.extend(repeat(user, times=num_replies))
+    shuffle(reply_seeds)
+
+    total_replies = 0
+    for user in reply_seeds:
+        ctx.client.set_bearer_token(user['access_token'])
+        reply_data = {
+            'user_id': '-1',
+            'forum_id': '-1',
+            'event_id': event_id,
+            'reply_to': main_post_id,
+            'message': random_str_rich_text(color_options=RICH_TEXT_COLORS),
+            'attachments': [],
+            'images': [],
+            'related_posts': [],
+        }
+        reply = new_model(post_class, reply_data)
+        http_model_create(ctx, post_class, reply)
+        total_replies += 1
+
+    print(f'  :: seeded {total_replies} replies ({num_replies} per {len(users)} users) in first event')
+
+
 available_reactions = ['👍', '❤️', '😂', '🔥', '😢', '👎']
 
 def _seed_reactions(ctx, spec: dict, social_module: dict, users: list[dict], num_threads: int, num_replies: int):
@@ -276,10 +369,16 @@ def seed():
     print(f':: round 3/5: creating {ITEMS_PER_ROUND} threads per user in forum 1...')
     _seed_threads_in_forum_1(ctx, social_module, users, ITEMS_PER_ROUND)
 
-    print(f':: round 4/5: creating {ITEMS_PER_ROUND} replies per user in the first thread of forum 1...')
+    print(f':: round 4/7: creating {ITEMS_PER_ROUND} replies per user in the first thread of forum 1...')
     _seed_replies_in_first_thread(ctx, spec, social_module, users, ITEMS_PER_ROUND)
 
-    print(f':: round 5/5: creating 1 random reaction per user for first {ITEMS_PER_ROUND} threads and first {ITEMS_PER_ROUND} replies in thread 1...')
+    print(f':: round 5/7: creating {ITEMS_PER_ROUND} events per user...')
+    events = _seed_events(ctx, spec, social_module, users, ITEMS_PER_ROUND)
+
+    print(f':: round 6/7: creating {ITEMS_PER_ROUND} replies per user in the first event...')
+    _seed_replies_in_first_event(ctx, spec, social_module, users, ITEMS_PER_ROUND, events)
+
+    print(f':: round 7/7: creating 1 random reaction per user for first {ITEMS_PER_ROUND} threads and first {ITEMS_PER_ROUND} replies in thread 1...')
     _seed_reactions(ctx, spec, social_module, users, ITEMS_PER_ROUND, ITEMS_PER_ROUND)
 
     print(':: seed workflow complete')
