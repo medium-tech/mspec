@@ -501,6 +501,7 @@ modules:
                             fields:
                                 - 'username'
 
+                page: 'social-events.json'
                 instance_page: 'social-event-instance.json'
 
                 fields:
