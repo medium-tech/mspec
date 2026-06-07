@@ -521,7 +521,7 @@ modules:
 
                     title:
                         name:
-                            lower_case: 'event name'
+                            lower_case: 'title'
                         type: str
                         examples:
                             - 'Birthday Party'
@@ -553,7 +553,7 @@ modules:
 
                     start_time:
                         name:
-                            lower_case: 'event start time'
+                            lower_case: 'start time'
                         type: datetime
                         examples:
                             - '2023-10-15T18:00:00'
@@ -562,7 +562,7 @@ modules:
 
                     end_time:
                         name:
-                            lower_case: 'event end time'
+                            lower_case: 'end time'
                         type: datetime
                         examples:
                             - '2023-10-15T21:00:00'

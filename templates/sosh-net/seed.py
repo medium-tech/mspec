@@ -186,14 +186,12 @@ def _seed_replies_in_first_thread(ctx, spec: dict, social_module: dict, users: l
 
 
 def _random_event_time_window() -> tuple[str, str]:
-    start = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
+    start = (datetime.datetime.now() + datetime.timedelta(
         days=random.randint(1, 45),
         hours=random.randint(0, 23),
-    )
+    )).replace(minute=0, second=0, microsecond=0)
     end = start + datetime.timedelta(hours=random.randint(1, 6))
-    start_iso = start.replace(microsecond=0).isoformat()
-    end_iso = end.replace(microsecond=0).isoformat()
-    return start_iso, end_iso
+    return start, end
 
 
 def _seed_events(ctx, spec: dict, social_module: dict, users: list[dict], num_events: int) -> list[dict]:
@@ -228,12 +226,9 @@ def _seed_events(ctx, spec: dict, social_module: dict, users: list[dict], num_ev
                 'location': random_str().title(),
                 'main_post_id': str(created_main_post.id),
             }
+
             event = new_model(event_class, event_data)
             created_event = http_model_create(ctx, event_class, event)
-
-            created_main_post.event_id = str(created_event.id)
-            http_model_update(ctx, post_class, str(created_main_post.id), created_main_post)
-
             events.append({
                 'id': str(created_event.id),
                 'main_post_id': str(created_main_post.id),
@@ -243,9 +238,6 @@ def _seed_events(ctx, spec: dict, social_module: dict, users: list[dict], num_ev
 
 
 def _seed_replies_in_first_event(ctx, spec: dict, social_module: dict, users: list[dict], num_replies: int, events: list[dict]):
-    if not events:
-        print('  :: no events found for event reply seeding')
-        return
 
     post_model = social_module['models']['post']
     post_class = new_model_class(spec, post_model, social_module)
@@ -377,7 +369,7 @@ def seed():
     print(f':: round 5/7: creating {ITEMS_PER_ROUND} events per user...')
     events = _seed_events(ctx, spec, social_module, users, ITEMS_PER_ROUND)
 
-    print(f':: round 6/7: creating {ITEMS_PER_ROUND} replies per user in the first event...')
+    print(f':: round 6/7: creating {ITEMS_PER_ROUND} replies per user in the first event (id {events[0]["id"]})...')
     _seed_replies_in_first_event(ctx, spec, social_module, users, ITEMS_PER_ROUND, events)
 
     print(f':: round 7/7: creating 1 random reaction per user for first {ITEMS_PER_ROUND} threads and first {ITEMS_PER_ROUND} replies in thread 1...')
