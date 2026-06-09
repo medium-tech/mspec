@@ -377,6 +377,14 @@ class TestLingoPages(unittest.TestCase):
 
         create_branch = events_spec['output'][1]['branch'][0]['then']
         self.assertEqual(create_branch[0]['heading'], ':: create event')
+        self.assertIn('create_event_op_definition', events_spec['state'])
+        self.assertEqual(create_branch[2]['op']['http'], '/api/social/create-event')
+        self.assertTrue(create_branch[2]['op']['interactive'])
+        self.assertEqual(
+            list(create_branch[2]['op']['params'].keys()),
+            ['attachments', 'images'],
+        )
+        self.assertEqual(create_branch[3]['branch'][0]['then']['text'], 'view event')
 
         list_branch = events_spec['output'][1]['branch'][1]['else']
         self.assertEqual(list_branch[0]['heading'], ':: events')
@@ -384,6 +392,22 @@ class TestLingoPages(unittest.TestCase):
         self.assertEqual(
             list_branch[2]['model']['fields'],
             ['id', 'title', 'location', 'start_time', 'end_time'],
+        )
+
+    def test_social_create_event_op_creates_event_and_main_post(self):
+        social_generator_path = SAMPLE_BROWSER2_SPEC_DIR.parent.parent / 'generator' / 'social.yaml'
+        with open(social_generator_path, 'r') as f:
+            social_spec = yaml.safe_load(f)
+
+        create_event = social_spec['modules']['social']['ops']['create_event']
+        self.assertEqual(create_event['func']['value']['event_id']['args']['model_type'], 'social.event')
+        self.assertEqual(
+            create_event['func']['value']['event_id']['args']['data']['main_post_id']['args']['model_type'],
+            'social.post',
+        )
+        self.assertEqual(
+            list(create_event['params'].keys()),
+            ['title', 'start_time', 'end_time', 'location', 'message', 'attachments', 'images'],
         )
 
     def test_social_ops_include_profile_ids_and_user_reactions(self):
