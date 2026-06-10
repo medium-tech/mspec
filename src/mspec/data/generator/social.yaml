@@ -1105,9 +1105,9 @@ modules:
                         type: str
                         rich_text: true
                         examples:
-                            - "Welcome to the general discussion forum!"
-                            - "Here are the latest announcements."
-                            - "We value your feedback and suggestions."
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}] }'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'
                     
                     attachments:
                         name:
@@ -1230,9 +1230,9 @@ modules:
                         type: str
                         rich_text: true
                         examples:
-                            - "Looking forward to seeing everyone there."
-                            - "Meet at the trailhead 15 minutes early."
-                            - "Bring your current book for discussion."
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}] }'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "lorem ipsum", "style": {"bold": true, "color": "green"}}]}'
+                            - '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "hello.world"}, {"break": 1}, {"text": "this.is.a.test"}]}'
 
                     attachments:
                         name:
