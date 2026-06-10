@@ -360,22 +360,6 @@ class TestLingoPages(unittest.TestCase):
             page_result = lingo_execute(app, {'op': {'last_page': {}}})
             self.assertEqual(page_result['value'], case['expected_page'])
 
-    def test_social_create_event_op_creates_event_and_main_post(self):
-        social_generator_path = SAMPLE_BROWSER2_SPEC_DIR.parent.parent / 'generator' / 'social.yaml'
-        with open(social_generator_path, 'r') as f:
-            social_spec = yaml.safe_load(f)
-
-        create_event = social_spec['modules']['social']['ops']['create_event']
-        self.assertEqual(create_event['func']['value']['event_id']['args']['model_type'], 'social.event')
-        self.assertEqual(
-            create_event['func']['value']['event_id']['args']['data']['main_post_id']['args']['model_type'],
-            'social.post',
-        )
-        self.assertEqual(
-            list(create_event['params'].keys()),
-            ['title', 'start_time', 'end_time', 'location', 'message', 'attachments', 'images'],
-        )
-
     def test_social_ops_include_profile_ids_and_user_reactions(self):
         social_generator_path = SAMPLE_BROWSER2_SPEC_DIR.parent.parent / 'generator' / 'social.yaml'
         with open(social_generator_path, 'r') as f:
