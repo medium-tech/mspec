@@ -4170,10 +4170,13 @@ function _renderModelList(app, element, ctx = null) {
 					console.error(`Error parsing rich text content for field ${name} in item:`, e, 'content:', rawItem);
 					throw new Error(`Invalid rich text content for field ${name} in item: ${e.message}`);
 				}
+			}else if(fieldDef.type === 'datetime') {
+				itemForTable.value[field.name.snake_case] = formatModelTimestampLocal(rawItem.value[name]);
 			}
 		}
 
         for (const timestampField of modelTimestampFields) {
+			
             if (itemForTable.value && Object.prototype.hasOwnProperty.call(itemForTable.value, timestampField)) {
                 itemForTable.value[timestampField] = formatModelTimestampLocal(itemForTable.value[timestampField]);
             }
