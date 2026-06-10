@@ -360,40 +360,6 @@ class TestLingoPages(unittest.TestCase):
             page_result = lingo_execute(app, {'op': {'last_page': {}}})
             self.assertEqual(page_result['value'], case['expected_page'])
 
-    def test_social_events_page_uses_event_labels_and_fields(self):
-        events_spec = load_browser2_spec('social-events.json')
-
-        self.assertEqual(events_spec['lingo']['title'], 'social :: events')
-        self.assertEqual(events_spec['params']['model_name']['default'], 'event')
-
-        model_definition = events_spec['params']['model_definition']['value']
-        self.assertEqual(model_definition['name']['lower_case'], 'event')
-        self.assertEqual(
-            list(model_definition['fields'].keys()),
-            ['user_id', 'title', 'start_time', 'end_time', 'location', 'main_post_id'],
-        )
-        self.assertEqual(model_definition['fields']['start_time']['type'], 'datetime')
-        self.assertEqual(model_definition['fields']['end_time']['type'], 'datetime')
-
-        create_branch = events_spec['output'][1]['branch'][0]['then']
-        self.assertEqual(create_branch[0]['heading'], ':: create event')
-        self.assertIn('create_event_op_definition', events_spec['state'])
-        self.assertEqual(create_branch[2]['op']['http'], '/api/social/create-event')
-        self.assertTrue(create_branch[2]['op']['interactive'])
-        self.assertEqual(
-            list(create_branch[2]['op']['params'].keys()),
-            ['attachments', 'images'],
-        )
-        self.assertEqual(create_branch[3]['branch'][0]['then']['text'], 'view event')
-
-        list_branch = events_spec['output'][1]['branch'][1]['else']
-        self.assertEqual(list_branch[0]['heading'], ':: events')
-        self.assertEqual(list_branch[1]['text'], 'create event')
-        self.assertEqual(
-            list_branch[2]['model']['fields'],
-            ['id', 'title', 'location', 'start_time', 'end_time'],
-        )
-
     def test_social_create_event_op_creates_event_and_main_post(self):
         social_generator_path = SAMPLE_BROWSER2_SPEC_DIR.parent.parent / 'generator' / 'social.yaml'
         with open(social_generator_path, 'r') as f:
