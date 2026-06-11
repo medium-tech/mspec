@@ -477,7 +477,7 @@
                     "name": {
                         "lower_case": "get event and post"
                     },
-                    "description": "Get a event and its main post by event id",
+                    "description": "Get an event and its main post by event id",
                     "func": {},
                     "params": {
                         "event_id": {
@@ -519,7 +519,7 @@
                     "name": {
                         "lower_case": "edit event"
                     },
-                    "description": "Edit a event title and/or main post message. Only the event creator can edit the event.",
+                    "description": "Edit an event title and/or main post message. Only the event creator can edit the event.",
                     "func": {},
                     "params": {
                         "event_id": {
