@@ -401,6 +401,21 @@ class TestLingoPages(unittest.TestCase):
         self.assertIn('"model_data": {"self": "item"}', output_as_text)
         self.assertIn('(your reply)', output_as_text)
 
+    def test_social_event_instance_uses_event_ops_and_fields(self):
+        event_spec = load_browser2_spec('social-event-instance.json')
+        output_as_text = json.dumps(event_spec['output'])
+
+        self.assertIn('/api/social/get-event-and-post', output_as_text)
+        self.assertIn('/api/social/edit-event', output_as_text)
+        self.assertNotIn('/api/social/get-thread-and-post', output_as_text)
+        self.assertNotIn('/api/social/edit-thread', output_as_text)
+        self.assertNotIn('/api/social/react-to-event-main-post', output_as_text)
+
+        edit_params = event_spec['state']['edit_event_op_definition']['default']['value']['params']
+        self.assertIn('start_time', edit_params)
+        self.assertIn('end_time', edit_params)
+        self.assertIn('location', edit_params)
+
     def test_sequence_functions(self):
         """Test sequence functions: len, range, slice, any, all, sum, sorted, count"""
         app = lingo_app(self.functions_sequence_spec)
