@@ -108,6 +108,38 @@ async function createForumAndThread(page, host, uniqueId) {
 	return { forumId, forumTopic, threadId, threadTitle };
 }
 
+async function createEvent(page, host, uniqueId) {
+	const eventTitle = `My Event Title ${uniqueId}`;
+	const eventStart = '2030-12-31T21:00:00';
+	const eventEnd = '2031-01-01T09:00:00';
+	const eventLocation = `Somewhere`;
+
+	await page.goto(`${host}/social/event`);
+	await page.getByRole('button', { name: 'create event' }).click();
+
+	await page.getByRole('row', { name: 'title: Title of the event' }).getByRole('textbox').fill(eventTitle);
+	await page.getByRole('row', { name: 'start time:' }).locator('input[type="datetime-local"]').fill(eventStart.substring(0, 16));
+	await page.getByRole('row', { name: 'end time:' }).locator('input[type="datetime-local"]').fill(eventEnd.substring(0, 16));
+	await page.getByRole('row', { name: 'location:' }).getByRole('textbox').fill(eventLocation);
+
+	const editor = page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor');
+	await editor.fill(`This is a test event!`);
+
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.getByRole('table')).toContainText('result');
+	await page.getByRole('link', { name: 'view event' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('(you own this event)');
+	await expect(page.locator('h1')).toContainText(`:: ${eventTitle}`, { timeout: 10000 });
+
+	// extract event id from url
+	const eventUrl = page.url();
+	// expects /social/event/{id}
+	const eventIdMatch = eventUrl.match(/\/event\/(\d+)/);
+	const eventId = eventIdMatch ? eventIdMatch[1] : null;
+
+	return { eventId, eventTitle };
+}
+
 async function logoutUser(page, host) {
 	await page.goto(`${host}/social/account`);
 	await page.waitForSelector('#lingo-app');
@@ -479,6 +511,7 @@ test('test logged out session cannot view items', async ({ browser, crudEnv }) =
 	await loginUser(page, host, user.email, user.password);
 	await createProfile(page, host, uniqueId);
 	const { forumId, forumTopic, threadId, threadTitle } = await createForumAndThread(page, host, uniqueId);
+	const { eventId, eventTitle } = await createEvent(page, host, uniqueId);
 
 	//
 	// error checks when not logged in
@@ -507,6 +540,14 @@ test('test logged out session cannot view items', async ({ browser, crudEnv }) =
 	await page.goto(`${host}/social/thread/${threadId}`);
 	await expect(page.locator('#lingo-app')).toContainText('Contact support or check logs for details', { timeout: 10000, ignoreCase: true });
 
+	// event list requires login
+	await page.goto(`${host}/social/event`);
+	await expect(page.locator('#lingo-app')).toContainText('Error: Not logged in', { timeout: 10000, ignoreCase: true });
+
+	// event instance op returns a server error when not logged in
+	await page.goto(`${host}/social/event/${eventId}`);
+	await expect(page.locator('#lingo-app')).toContainText('Contact support or check logs for details', { timeout: 10000, ignoreCase: true });
+
 	await initialContext.close();
 
 });
@@ -526,6 +567,7 @@ test('test require profile to create items', async ({ browser, crudEnv }) => {
 	await loginUser(seedPage, host, seedUser.email, seedUser.password);
 	await createProfile(seedPage, host, uniqueSeedId);
 	await createForumAndThread(seedPage, host, uniqueSeedId);
+	await createEvent(seedPage, host, uniqueSeedId);
 
 	//
 	// confirm user must have profile to create forums/threads/replies
@@ -566,6 +608,30 @@ test('test require profile to create items', async ({ browser, crudEnv }) => {
 	await page.goto(`${host}/social/forum`);
 	await page.locator('tr').nth(1).click();
 	await page.locator('tr').nth(2).click();
+	await page.locator('.rich-text-editor').fill('I can\'t reply without a profile!');
+	await expect(page.locator('.rich-text-editor')).toContainText('I can\'t reply without a profile!', { timeout: 10000 });
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('error');
+	await expect(page.locator('#lingo-app')).toContainText('You must have a profile to create items');
+
+	// cannot create event without profile
+	await page.goto(`${host}/social/event`);
+	await page.getByRole('button', { name: 'create event' }).click();
+	await page.getByRole('row', { name: 'title: Title of the event' }).getByRole('textbox').fill('Can\'t Create an Event');
+	await page.getByRole('row', { name: 'start time:' }).locator('input[type="datetime-local"]').fill('2030-12-31T21:00');
+	await page.getByRole('row', { name: 'end time:' }).locator('input[type="datetime-local"]').fill('2031-01-01T09:00');
+	await page.getByRole('row', { name: 'location:' }).getByRole('textbox').fill('Nowhere');
+	const editor = page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor');
+	await editor.fill('Because I don\'t have a profile!');
+
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.getByRole('table')).toContainText('error');
+	await expect(page.locator('#lingo-app')).toContainText('Model Validation failed');
+	await expect(page.getByRole('table')).toContainText('You must have a profile to create items');
+
+	// cannot reply to event without profile
+	await page.goto(`${host}/social/event`);
+	await page.locator('tr').nth(1).click();
 	await page.locator('.rich-text-editor').fill('I can\'t reply without a profile!');
 	await expect(page.locator('.rich-text-editor')).toContainText('I can\'t reply without a profile!', { timeout: 10000 });
 	await page.getByRole('button', { name: 'Submit' }).click();
@@ -1072,7 +1138,7 @@ test('test validation errors', async ({ browser, crudEnv }) => {
 	await expect(page.locator('#lingo-app')).toContainText('Field "tags" exceeds max length of 10 items.', { ignoreCase: true });
 
 	//
-	// create forum and thread so we have at least 1 item to response to
+	// create forum and thread so we have at least 1 item to respond to
 	//
 
 	await createForumAndThread(page, host, uniqueId);
@@ -1113,5 +1179,67 @@ test('test validation errors', async ({ browser, crudEnv }) => {
 	// await expect(page.locator('h1')).toContainText(':: Workflow Forum ::');
 	// await page.locator('tr').nth(2).click();
 	// await expect(page.locator('#lingo-app')).toContainText(':: thread ::', { ignoreCase: true });
+
+	//
+	// create invalid event
+	//
+
+	// long title
+	await page.goto(`${host}/social/event`);
+	await page.getByRole('button', { name: 'create event' }).click();
+	await page.getByRole('row', { name: 'title: Title of the event' }).getByRole('textbox').fill(longStr);
+	await page.getByRole('row', { name: 'start time:' }).locator('input[type="datetime-local"]').fill('2030-12-31T21:00');
+	await page.getByRole('row', { name: 'end time:' }).locator('input[type="datetime-local"]').fill('2031-01-01T09:00');
+	await page.getByRole('row', { name: 'location:' }).getByRole('textbox').fill('Nowhere');
+	await page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor').fill('This is a message.');
+	await expect(page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor')).toContainText('This is a message.', { timeout: 10000 });
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('Field "title" exceeds max length of 1000 characters.', { ignoreCase: true });
+
+	// no start time
+	await page.reload();
+	await page.getByRole('button', { name: 'create event' }).click();
+	await page.getByRole('row', { name: 'title: Title of the event' }).getByRole('textbox').fill(`Valid Event Title ${uniqueId}`);
+	await page.getByRole('row', { name: 'end time:' }).locator('input[type="datetime-local"]').fill('2031-01-01T09:00');
+	await page.getByRole('row', { name: 'location:' }).getByRole('textbox').fill('Nowhere');
+	await page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor').fill('This is a message.');
+	await expect(page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor')).toContainText('This is a message.', { timeout: 10000 });
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('(required field)', { ignoreCase: true });
+
+	// no end time
+	await page.reload();
+	await page.getByRole('button', { name: 'create event' }).click();
+	await page.getByRole('row', { name: 'title: Title of the event' }).getByRole('textbox').fill(`Valid Event Title ${uniqueId}`);
+	await page.getByRole('row', { name: 'start time:' }).locator('input[type="datetime-local"]').fill('2030-12-31T21:00');
+	await page.getByRole('row', { name: 'location:' }).getByRole('textbox').fill('Nowhere');
+	await page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor').fill('This is a message.');
+	await expect(page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor')).toContainText('This is a message.', { timeout: 10000 });
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('(required field)', { ignoreCase: true });
+
+	// long location
+	await page.reload();
+	await page.getByRole('button', { name: 'create event' }).click();
+	await page.getByRole('row', { name: 'title: Title of the event' }).getByRole('textbox').fill(`Valid Event Title ${uniqueId}`);
+	await page.getByRole('row', { name: 'start time:' }).locator('input[type="datetime-local"]').fill('2030-12-31T21:00');
+	await page.getByRole('row', { name: 'end time:' }).locator('input[type="datetime-local"]').fill('2031-01-01T09:00');
+	await page.getByRole('row', { name: 'location:' }).getByRole('textbox').fill(longStr);
+	await page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor').fill('This is a message.');
+	await expect(page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor')).toContainText('This is a message.', { timeout: 10000 });
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('Field "location" exceeds max length of 1000 characters.', { ignoreCase: true });
+
+	// long message - rich text tests are not reliable
+	// await page.reload();
+	// await page.getByRole('button', { name: 'create event' }).click();
+	// await page.getByRole('row', { name: 'title: Title of the event' }).getByRole('textbox').fill(`Valid Event Title ${uniqueId}`);
+	// await page.getByRole('row', { name: 'start time:' }).locator('input[type="datetime-local"]').fill('2030-12-31T21:00');
+	// await page.getByRole('row', { name: 'end time:' }).locator('input[type="datetime-local"]').fill('2031-01-01T09:00');
+	// await page.getByRole('row', { name: 'location:' }).getByRole('textbox').fill('Nowhere');
+	// await page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor').fill(longRichText);
+	// await expect(page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor')).toContainText(longRichText.slice(0, 20), { timeout: 10000 });
+	// await page.getByRole('button', { name: 'Submit' }).click();
+	// await expect(page.locator('#lingo-app')).toContainText('Field "message" exceeds max length of 25000 characters.', { ignoreCase: true });
 
 });
