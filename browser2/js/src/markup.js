@@ -4956,6 +4956,7 @@ function createButtonElement(app, element, ctx) {
     if (element.hasOwnProperty('disabled')) {
         const disabled = unwrapValue(lingoExecute(app, element.disabled, ctx));
         button.disabled = disabled;
+		console.log('createButtonElement - setting disabled state:', disabled, element);
     }
 
     let onClick;

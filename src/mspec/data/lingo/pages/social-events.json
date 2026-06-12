@@ -321,7 +321,25 @@
 				{
 					"else": [
 						{"heading": ":: events", "level": 1},
-						{"button": {"op": {"flip_display": {}}}, "text": "create event"},
+						{
+							"button": {"op": {"flip_display": {}}}, 
+							"text": "create event",
+							"disabled": {
+								"call": "not",
+								"args": {
+									"object": {
+										"call": "key",
+										"args": {
+											"object": {
+												"call": "auth.is_logged_in",
+												"args": {}
+											},
+											"key": "logged_in"
+										}
+									}
+								}
+							}
+						},
 						{"model": {
 							"bind": {"state": {"model_list": {}}},
 							"display": "list",

@@ -496,7 +496,7 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 	await user0Page.close();
 });
 
-test('test logged out session cannot view items', async ({ browser, crudEnv }) => {
+test('test logged out session cannot view or create items', async ({ browser, crudEnv }) => {
 
 	//
 	// seed data so there is at least a forum and thread to navigate to
@@ -531,22 +531,39 @@ test('test logged out session cannot view items', async ({ browser, crudEnv }) =
 	// forum list requires login
 	await page.goto(`${host}/social/forum`);
 	await expect(page.locator('#lingo-app')).toContainText('Error: Not logged in', { timeout: 10000, ignoreCase: true });
+	await expect(page.getByRole('button', { name: 'create forum' })).toBeDisabled({ timeout: 10000 });
 
 	// forum instance op returns a server error when not logged in
 	await page.goto(`${host}/social/forum/${forumId}`);
 	await expect(page.locator('#lingo-app')).toContainText('🔴 Not logged in', { timeout: 10000, ignoreCase: true });
+	await expect(page.getByRole('button', { name: 'create thread' })).toBeDisabled({ timeout: 10000 });
 
 	// thread instance op returns a server error when not logged in
 	await page.goto(`${host}/social/thread/${threadId}`);
 	await expect(page.locator('#lingo-app')).toContainText('🔴 Not logged in', { timeout: 10000, ignoreCase: true });
+	
+	// cannot reply to thread when not logged in
+	await expect(page.locator('#lingo-app')).not.toContainText('error', { timeout: 10000, ignoreCase: true });
+	const editor = page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor');
+	await editor.fill(`cannot reply because not logged in`);
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('error', { timeout: 10000, ignoreCase: true });
 
 	// event list requires login
 	await page.goto(`${host}/social/event`);
 	await expect(page.locator('#lingo-app')).toContainText('Error: Not logged in', { timeout: 10000, ignoreCase: true });
+	await expect(page.getByRole('button', { name: 'create event' })).toBeDisabled({ timeout: 10000 });
 
 	// event instance op returns a server error when not logged in
 	await page.goto(`${host}/social/event/${eventId}`);
 	await expect(page.locator('#lingo-app')).toContainText('🔴 Not logged in', { timeout: 10000, ignoreCase: true });
+
+	// cannot reply to event when not logged in
+	await expect(page.locator('#lingo-app')).not.toContainText('error', { timeout: 10000, ignoreCase: true });
+	const editorEvent = page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor');
+	await editorEvent.fill(`cannot reply because not logged in`);
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('error', { timeout: 10000, ignoreCase: true });
 
 	await initialContext.close();
 

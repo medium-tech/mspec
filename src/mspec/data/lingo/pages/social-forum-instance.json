@@ -863,7 +863,22 @@
                                     "toggle_create_view": {}
                                 }
                             },
-                            "text": "create thread"
+                            "text": "create thread",
+							"disabled": {
+								"call": "not",
+								"args": {
+									"object": {
+										"call": "key",
+										"args": {
+											"object": {
+												"call": "auth.is_logged_in",
+												"args": {}
+											},
+											"key": "logged_in"
+										}
+									}
+								}
+							}
                         },
                         {
                             "text": " ● "
