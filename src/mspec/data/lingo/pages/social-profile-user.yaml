@@ -270,6 +270,7 @@ output:
                               style: {italic: true}
 
           - else:
+                - break: 1
                 - text: 'please '
                 - link: '/social/account'
                   text: 'login or create an account'

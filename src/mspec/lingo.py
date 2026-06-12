@@ -3,7 +3,6 @@ import operator
 import re
 
 from copy import deepcopy
-from collections import namedtuple
 from dataclasses import dataclass
 from datetime import datetime
 from random import randint
@@ -15,7 +14,7 @@ from mapp.auth import create_user, login_user, is_logged_in, current_user, logou
 from mapp.com import send_email, start_email_verification, verify_email_address
 from mapp.context import MappContext
 from mapp.file_system import get_file_content, ingest_start, list_files, get_part_content, list_parts, process_file
-from mapp.errors import NotFoundError, MappValidationError
+from mapp.errors import NotFoundError, MappValidationError, AuthenticationError
 from mapp.media import create_image, get_image, get_master_image, get_media_file_content, ingest_master_image, list_images, list_master_images
 from mapp.module.model.db import db_model_create, db_model_read, db_model_update, db_model_delete, db_model_unique_counts, db_model_query
 from mapp.types import get_python_type_for_field, new_model_class, convert_dict_to_model
@@ -1393,6 +1392,8 @@ def render_branch(app:LingoApp, element: dict, ctx:Optional[dict]=None) -> None:
             try:
                 value = lingo_execute(app, then, ctx)
                 return value
+            except AuthenticationError:
+                raise
             except Exception as e:
                 raise ValueError(f'branch {n} - error processing then expression') from e
 
@@ -1744,6 +1745,8 @@ def render_value(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
             for self_key, self_expr in expression['self'].items():
                 ctx.self[self_key] = lingo_execute(app, self_expr, ctx)
                 self_keys.append(self_key)
+        except AuthenticationError:
+            raise
         except Exception as e:
             raise ValueError(f'value - error processing self expression for key: {self_key}') from e
         
@@ -1787,8 +1790,8 @@ def render_value(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> Any
                 if isinstance(field_value, dict):
                     try:
                         result_struct[field_name] = lingo_execute(app, field_value, ctx)
-                    except (NotFoundError, MappValidationError) as e:
-                        raise e
+                    except (NotFoundError, MappValidationError, AuthenticationError):
+                        raise
                     except Exception as e:
                         raise ValueError(f'value - error processing struct field {field_name}') from e
                 else:

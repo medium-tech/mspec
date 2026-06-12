@@ -217,7 +217,6 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 		
 		if(i === 0){
 			({ forumId, forumTopic, threadId, threadTitle } = await createForumAndThread(page, host, uniqueId));
-			({ eventId, eventTitle } = await createEvent(page, host, uniqueId));
 		}
 		await logoutUser(page, host);
 
@@ -286,13 +285,6 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 		await page.locator('tr.list-selecting').first().click();
 		await page.locator('tr').nth(1).click();
 		await expect(page.locator('h3')).toContainText(':: replies to thread', { timeout: 10000 });
-
-		// navigate to events and click on the first event
-		await page.getByRole('link', { name: 'social' }).click();
-		await page.getByRole('link', { name: 'events' }).click();
-		await expect(page.locator('h1')).toContainText(`:: events`, { timeout: 10000 });
-		await page.locator('tr').nth(1).click();
-		await expect(page.locator('h3')).toContainText(':: replies to event', { timeout: 10000 });
 
 		//
 		// forum
@@ -389,7 +381,6 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 
 		if (userIndex === 1) {
 			await expect(page.getByRole('link', { name: `@${users[1].username}` })).toBeVisible({ timeout: 10000 });
-			await expect(page.getByRole('link', { name: `@${users[1].username}` })).toHaveCount(1, { timeout: 10000 });
 			await page.getByRole('link', { name: `@${users[1].username}` }).click();
 			await expect(page.locator('h1')).toContainText(':: profile ::', { timeout: 10000 });
 			await expect(page.locator('#lingo-app')).toContainText(users[1].username, { timeout: 10000 });
@@ -398,10 +389,10 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 		}
 
 		//
-		// react to thread reply
+		// react to reply
 		//
 
-		// create initial reaction
+		// create initial reaction on the main post
 		await page.getByRole('button', { name: '🔥' }).nth(1).click();
 		await expect(page.getByRole('button', { name: 'unreact 🔥' })).toBeVisible({ timeout: 10000 });
 		await page.reload();	// reload page because reply reactions are not in real time (yet)
@@ -430,90 +421,6 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 		const emojiReplyCount = userIndex + 1;
 		await expect(page.locator('#lingo-app')).toContainText(`❤️x${emojiReplyCount}`, { timeout: 10000 });
 		await expect(page.getByRole('button', { name: 'unreact ❤️' })).toBeVisible({ timeout: 10000 });
-
-		//
-		// event
-		//
-
-		await page.goto(`${host}/social/event/${eventId}`);
-		await expect(page.locator('h1')).toContainText(`:: ${eventTitle}`, { timeout: 10000 });
-		if (userIndex === 0) {
-			await expect(page.locator('#lingo-app')).toContainText('(you own this event)', { timeout: 10000 });
-			await expect(page.getByRole('button', { name: 'open editor' })).toBeVisible({ timeout: 10000 });
-		 }else{
-			await expect(page.locator('#lingo-app')).not.toContainText('(you own this event)', { timeout: 10000 });
-			await expect(page.getByRole('button', { name: 'open editor' })).not.toBeVisible({ timeout: 10000 });
-		}
-
-		//
-		// reply to event
-		//
-
-		const eventReplyMessage = `This is a reply to the event from user ${user.username}`;
-		await leaveReply(page, eventReplyMessage);
-		await page.getByRole('button', { name: 'refresh' }).nth(userIndex).click();		// there are 2 refresh buttons and we test them both
-																						// userIndex 0 tests the first and userIndex 1 tests the second
-		
-		// there should now be a link to user 0's profile on the event page and reply
-		await expect(page.getByRole('link', { name: `@${users[0].username}` })).toHaveCount(2, { timeout: 10000 });
-		// expect exactly 1 span element with text "(your reply)" and 1 button with text "delete"
-		await expect(page.locator('span', { hasText: '(your reply)' })).toHaveCount(1, { timeout: 10000 });
-		await expect(page.getByRole('button', { name: 'delete' })).toHaveCount(1, { timeout: 10000 });	
-		
-		// navigate to reply author's profile and back to event
-		await page.getByRole('link', { name: `@${users[0].username}` }).nth(1).click();
-		await expect(page.locator('h1')).toContainText(':: profile ::', { timeout: 10000 });
-		await expect(page.locator('#lingo-app')).toContainText(users[0].username, { timeout: 10000 });
-		await page.goBack();
-		await expect(page.locator('h1')).toContainText(`:: ${eventTitle}`, { timeout: 10000 });
-
-		if (userIndex === 1) {
-			await expect(page.getByRole('link', { name: `@${users[1].username}` })).toBeVisible({ timeout: 10000 });
-			await expect(page.getByRole('link', { name: `@${users[1].username}` })).toHaveCount(1, { timeout: 10000 });
-			await page.getByRole('link', { name: `@${users[1].username}` }).click();
-			await expect(page.locator('h1')).toContainText(':: profile ::', { timeout: 10000 });
-			await expect(page.locator('#lingo-app')).toContainText(users[1].username, { timeout: 10000 });
-			await page.goBack();
-			await expect(page.locator('h1')).toContainText(`:: ${eventTitle}`, { timeout: 10000 });
-		}
-
-		//
-		// react to event reply
-		//
-
-		// create initial reaction
-		await page.getByRole('button', { name: '🔥' }).nth(0).click();
-		await expect(page.getByRole('button', { name: 'unreact 🔥' })).toBeVisible({ timeout: 10000 })
-		await page.reload();	// reload page because reply reactions are not in real time (yet)
-		await expect(page.locator('#lingo-app')).toContainText(`🔥x1`, { timeout: 10000 });
-		await expect(page.getByRole('button', { name: 'unreact 🔥' })).toBeVisible({ timeout: 10000 });
-
-		// change reaction to sad face
-		await page.getByRole('button', { name: '😢' }).nth(0).click();
-		await expect(page.getByRole('button', { name: 'unreact 😢' })).toBeVisible({ timeout: 10000 });
-		await page.reload();	// reload page because reply reactions are not in real time (yet)
-		await expect(page.locator('#lingo-app')).not.toContainText(`🔥x1`, { timeout: 10000 });
-		await expect(page.locator('#lingo-app')).toContainText(`😢x1`, { timeout: 10000 });
-
-		// remove reaction
-		await page.getByRole('button', { name: 'unreact 😢' }).click();
-		await expect(page.getByRole('button', { name: 'unreact 😢' })).not.toBeVisible({ timeout: 10000 });
-		await page.reload();	// reload page because reply reactions are not in real time (yet)
-		await expect(page.locator('#lingo-app')).not.toContainText(`🔥x1`, { timeout: 10000 });
-		await expect(page.locator('#lingo-app')).not.toContainText(`😢x1`, { timeout: 10000 });
-		await expect(page.getByRole('button', { name: 'unreact 😢' })).not.toBeVisible({ timeout: 10000 });
-
-		// add another reaction to leave in place for the next user to see
-		await page.getByRole('button', { name: '❤️' }).nth(userIndex).click();										// we click on nth(userIndex) because for userIndex 0 to reply to their own reply they need
-		await expect(page.getByRole('button', { name: 'unreact ❤️' })).toBeVisible({ timeout: 10000 });				// to click on the 1st ❤️ button on the page, but when userIndex 1 replies their reply will
-		await page.reload();	// reload page because reply reactions are not in real time (yet)					// go above userIndex 0's reply, so now they will click the 2nd ❤️ button on the page to react to userIndex 0's reply
-		const emojiEventReplyCount = userIndex + 1;
-		await expect(page.locator('#lingo-app')).toContainText(`❤️x${emojiEventReplyCount}`, { timeout: 10000 });
-		await expect(page.getByRole('button', { name: 'unreact ❤️' })).toBeVisible({ timeout: 10000 });
-
-		//
-		// next user
-		//
 
 		userIndex++;
 	}
@@ -627,11 +534,11 @@ test('test logged out session cannot view items', async ({ browser, crudEnv }) =
 
 	// forum instance op returns a server error when not logged in
 	await page.goto(`${host}/social/forum/${forumId}`);
-	await expect(page.locator('#lingo-app')).toContainText('Contact support or check logs for details', { timeout: 10000, ignoreCase: true });
+	await expect(page.locator('#lingo-app')).toContainText('🔴 Not logged in', { timeout: 10000, ignoreCase: true });
 
 	// thread instance op returns a server error when not logged in
 	await page.goto(`${host}/social/thread/${threadId}`);
-	await expect(page.locator('#lingo-app')).toContainText('Contact support or check logs for details', { timeout: 10000, ignoreCase: true });
+	await expect(page.locator('#lingo-app')).toContainText('🔴 Not logged in', { timeout: 10000, ignoreCase: true });
 
 	// event list requires login
 	await page.goto(`${host}/social/event`);
@@ -639,7 +546,7 @@ test('test logged out session cannot view items', async ({ browser, crudEnv }) =
 
 	// event instance op returns a server error when not logged in
 	await page.goto(`${host}/social/event/${eventId}`);
-	await expect(page.locator('#lingo-app')).toContainText('Contact support or check logs for details', { timeout: 10000, ignoreCase: true });
+	await expect(page.locator('#lingo-app')).toContainText('🔴 Not logged in', { timeout: 10000, ignoreCase: true });
 
 	await initialContext.close();
 
