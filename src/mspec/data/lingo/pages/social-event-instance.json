@@ -1067,10 +1067,6 @@
 			"text": "events"
 		},
         {
-            "text": " :: "
-        },
-        {"text": ""},
-        {
             "heading": {
                 "call": "join",
                 "args": {
