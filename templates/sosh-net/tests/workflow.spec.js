@@ -656,6 +656,7 @@ test('test navigation links', async ({ browser, crudEnv }) => {
 	await loginUser(page, host, email, password);
 	await createProfile(page, host, uniqueId);
 	const { forumId, forumTopic, threadId, threadTitle } = await createForumAndThread(page, host, uniqueId);
+	const { eventId, eventTitle } = await createEvent(page, host, uniqueId);
 
 	//
 	// constants
@@ -666,8 +667,10 @@ test('test navigation links', async ({ browser, crudEnv }) => {
 	const profilesUrl = `${host}/social/profile`;
 	const yourProfileUrl = `${host}/social/profile/yours`;
 	const forumsUrl = `${host}/social/forum`;
+	const eventsUrl = `${host}/social/event`;
 	const forumInstanceUrl = `${host}/social/forum/${forumId}`;
 	const threadInstanceUrl = `${host}/social/thread/${threadId}`;
+	const eventInstanceUrl = `${host}/social/event/${eventId}`;
 	const accountUrl = `${host}/social/account`;
 
 	const indexPageHeading = ':: medium tech';
@@ -677,8 +680,10 @@ test('test navigation links', async ({ browser, crudEnv }) => {
 	const profileInstanceHeading = ':: profile ::';
 	const yourProfileHeading = ':: edit your profile';
 	const forumsPageHeading = ':: forums';
+	const eventsPageHeading = ':: events';
 	const forumInstanceHeading = `:: ${forumTopic}`;
 	const threadInstanceHeading = `:: ${threadTitle}`;
+	const eventInstanceHeading = `:: ${eventTitle}`;
 
 	//
 	// index page
@@ -725,6 +730,10 @@ test('test navigation links', async ({ browser, crudEnv }) => {
 	await page.goto(socialUrl);
 	await page.getByRole('link', { name: 'forums' }).click();
 	await expect(page.locator('h1')).toContainText(forumsPageHeading);
+
+	await page.goto(socialUrl);
+	await page.getByRole('link', { name: 'events' }).click();
+	await expect(page.locator('h1')).toContainText(eventsPageHeading, { timeout: 10000 });
 
 	await page.goto(socialUrl);
 	await page.getByRole('link', { name: 'account' }).click();
@@ -844,6 +853,49 @@ test('test navigation links', async ({ browser, crudEnv }) => {
 	
 	await page.goto(threadInstanceUrl);
 	await expect(page.locator('h1')).toContainText(threadInstanceHeading);
+	await page.getByRole('link', { name: 'mtech' }).click();
+	await expect(page.locator('h1')).toContainText(indexPageHeading);
+
+	//
+	// events
+	//
+
+	await page.goto(eventsUrl);
+	await expect(page.locator('h1')).toContainText(eventsPageHeading);
+
+	// breadcrumbs //
+	await page.getByRole('link', { name: 'event' }).click();
+	await page.waitForLoadState('networkidle');
+	await expect(page.locator('h1')).toContainText(eventsPageHeading);
+
+	await page.goto(eventsUrl);
+	await expect(page.locator('h1')).toContainText(eventsPageHeading);
+	await page.getByRole('link', { name: 'social' }).click();
+	await expect(page.locator('h1')).toContainText(socialModuleHeading);
+	
+	await page.goto(eventsUrl);
+	await expect(page.locator('h1')).toContainText(eventsPageHeading);
+	await page.getByRole('link', { name: 'mtech' }).click();
+	await expect(page.locator('h1')).toContainText(indexPageHeading);
+
+	//
+	// event instance
+	//
+
+	await page.goto(eventInstanceUrl);
+	await expect(page.locator('h1')).toContainText(eventInstanceHeading);
+
+	// breadcrumbs //
+	await page.getByRole('link', { name: 'events' }).click();
+	await expect(page.locator('h1')).toContainText(eventsPageHeading);
+
+	await page.goto(eventInstanceUrl);
+	await expect(page.locator('h1')).toContainText(eventInstanceHeading);
+	await page.getByRole('link', { name: 'social' }).click();
+	await expect(page.locator('h1')).toContainText(socialModuleHeading);
+	
+	await page.goto(eventInstanceUrl);
+	await expect(page.locator('h1')).toContainText(eventInstanceHeading);
 	await page.getByRole('link', { name: 'mtech' }).click();
 	await expect(page.locator('h1')).toContainText(indexPageHeading);
 
