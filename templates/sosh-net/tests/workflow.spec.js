@@ -108,6 +108,38 @@ async function createForumAndThread(page, host, uniqueId) {
 	return { forumId, forumTopic, threadId, threadTitle };
 }
 
+async function createEvent(page, host, uniqueId) {
+	const eventTitle = `My Event Title ${uniqueId}`;
+	const eventStart = '2030-12-31T21:00:00';
+	const eventEnd = '2031-01-01T09:00:00';
+	const eventLocation = `Somewhere`;
+
+	await page.goto(`${host}/social/event`);
+	await page.getByRole('button', { name: 'create event' }).click();
+
+	await page.getByRole('row', { name: 'title: Title of the event' }).getByRole('textbox').fill(eventTitle);
+	await page.getByRole('row', { name: 'start time:' }).locator('input[type="datetime-local"]').fill(eventStart.substring(0, 16));
+	await page.getByRole('row', { name: 'end time:' }).locator('input[type="datetime-local"]').fill(eventEnd.substring(0, 16));
+	await page.getByRole('row', { name: 'location:' }).getByRole('textbox').fill(eventLocation);
+
+	const editor = page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor');
+	await editor.fill(`This is a test event!`);
+
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.getByRole('table')).toContainText('result');
+	await page.getByRole('link', { name: 'view event' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('(you own this event)');
+	await expect(page.locator('h1')).toContainText(`:: ${eventTitle}`, { timeout: 10000 });
+
+	// extract event id from url
+	const eventUrl = page.url();
+	// expects /social/event/{id}
+	const eventIdMatch = eventUrl.match(/\/event\/(\d+)/);
+	const eventId = eventIdMatch ? eventIdMatch[1] : null;
+
+	return { eventId, eventTitle };
+}
+
 async function logoutUser(page, host) {
 	await page.goto(`${host}/social/account`);
 	await page.waitForSelector('#lingo-app');
@@ -166,11 +198,11 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 	// await initialContext.close();
 
 	//
-	// phase 1: create 2 users with profiles, first user will create a forum and thread for interacting with
+	// phase 1: create 2 users with profiles, first user will create a forum, thread and event for interacting with
 	//
 
 	const users = [];
-	let forumId = null, forumTopic = null, threadId = null, threadTitle = null;
+	let forumId = null, forumTopic = null, threadId = null, threadTitle = null, eventId = null, eventTitle = null;
 
 	for (let i = 0; i < 2; i++) {
 		// multiply by 1000 and add i to guarantee uniqueness even within the same millisecond
@@ -185,6 +217,7 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 		
 		if(i === 0){
 			({ forumId, forumTopic, threadId, threadTitle } = await createForumAndThread(page, host, uniqueId));
+			({ eventId, eventTitle } = await createEvent(page, host, uniqueId));
 		}
 		await logoutUser(page, host);
 
@@ -253,6 +286,13 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 		await page.locator('tr.list-selecting').first().click();
 		await page.locator('tr').nth(1).click();
 		await expect(page.locator('h3')).toContainText(':: replies to thread', { timeout: 10000 });
+
+		// navigate to events and click on the first event
+		await page.getByRole('link', { name: 'social' }).click();
+		await page.getByRole('link', { name: 'events' }).click();
+		await expect(page.locator('h1')).toContainText(`:: events`, { timeout: 10000 });
+		await page.locator('tr').nth(1).click();
+		await expect(page.locator('h3')).toContainText(':: replies to event', { timeout: 10000 });
 
 		//
 		// forum
@@ -349,6 +389,7 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 
 		if (userIndex === 1) {
 			await expect(page.getByRole('link', { name: `@${users[1].username}` })).toBeVisible({ timeout: 10000 });
+			await expect(page.getByRole('link', { name: `@${users[1].username}` })).toHaveCount(1, { timeout: 10000 });
 			await page.getByRole('link', { name: `@${users[1].username}` }).click();
 			await expect(page.locator('h1')).toContainText(':: profile ::', { timeout: 10000 });
 			await expect(page.locator('#lingo-app')).toContainText(users[1].username, { timeout: 10000 });
@@ -357,10 +398,10 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 		}
 
 		//
-		// react to reply
+		// react to thread reply
 		//
 
-		// create initial reaction on the main post
+		// create initial reaction
 		await page.getByRole('button', { name: '🔥' }).nth(1).click();
 		await expect(page.getByRole('button', { name: 'unreact 🔥' })).toBeVisible({ timeout: 10000 });
 		await page.reload();	// reload page because reply reactions are not in real time (yet)
@@ -389,6 +430,90 @@ test('test user workflow', async ({ browser, crudEnv }) => {
 		const emojiReplyCount = userIndex + 1;
 		await expect(page.locator('#lingo-app')).toContainText(`❤️x${emojiReplyCount}`, { timeout: 10000 });
 		await expect(page.getByRole('button', { name: 'unreact ❤️' })).toBeVisible({ timeout: 10000 });
+
+		//
+		// event
+		//
+
+		await page.goto(`${host}/social/event/${eventId}`);
+		await expect(page.locator('h1')).toContainText(`:: ${eventTitle}`, { timeout: 10000 });
+		if (userIndex === 0) {
+			await expect(page.locator('#lingo-app')).toContainText('(you own this event)', { timeout: 10000 });
+			await expect(page.getByRole('button', { name: 'open editor' })).toBeVisible({ timeout: 10000 });
+		 }else{
+			await expect(page.locator('#lingo-app')).not.toContainText('(you own this event)', { timeout: 10000 });
+			await expect(page.getByRole('button', { name: 'open editor' })).not.toBeVisible({ timeout: 10000 });
+		}
+
+		//
+		// reply to event
+		//
+
+		const eventReplyMessage = `This is a reply to the event from user ${user.username}`;
+		await leaveReply(page, eventReplyMessage);
+		await page.getByRole('button', { name: 'refresh' }).nth(userIndex).click();		// there are 2 refresh buttons and we test them both
+																						// userIndex 0 tests the first and userIndex 1 tests the second
+		
+		// there should now be a link to user 0's profile on the event page and reply
+		await expect(page.getByRole('link', { name: `@${users[0].username}` })).toHaveCount(2, { timeout: 10000 });
+		// expect exactly 1 span element with text "(your reply)" and 1 button with text "delete"
+		await expect(page.locator('span', { hasText: '(your reply)' })).toHaveCount(1, { timeout: 10000 });
+		await expect(page.getByRole('button', { name: 'delete' })).toHaveCount(1, { timeout: 10000 });	
+		
+		// navigate to reply author's profile and back to event
+		await page.getByRole('link', { name: `@${users[0].username}` }).nth(1).click();
+		await expect(page.locator('h1')).toContainText(':: profile ::', { timeout: 10000 });
+		await expect(page.locator('#lingo-app')).toContainText(users[0].username, { timeout: 10000 });
+		await page.goBack();
+		await expect(page.locator('h1')).toContainText(`:: ${eventTitle}`, { timeout: 10000 });
+
+		if (userIndex === 1) {
+			await expect(page.getByRole('link', { name: `@${users[1].username}` })).toBeVisible({ timeout: 10000 });
+			await expect(page.getByRole('link', { name: `@${users[1].username}` })).toHaveCount(1, { timeout: 10000 });
+			await page.getByRole('link', { name: `@${users[1].username}` }).click();
+			await expect(page.locator('h1')).toContainText(':: profile ::', { timeout: 10000 });
+			await expect(page.locator('#lingo-app')).toContainText(users[1].username, { timeout: 10000 });
+			await page.goBack();
+			await expect(page.locator('h1')).toContainText(`:: ${eventTitle}`, { timeout: 10000 });
+		}
+
+		//
+		// react to event reply
+		//
+
+		// create initial reaction
+		await page.getByRole('button', { name: '🔥' }).nth(0).click();
+		await expect(page.getByRole('button', { name: 'unreact 🔥' })).toBeVisible({ timeout: 10000 })
+		await page.reload();	// reload page because reply reactions are not in real time (yet)
+		await expect(page.locator('#lingo-app')).toContainText(`🔥x1`, { timeout: 10000 });
+		await expect(page.getByRole('button', { name: 'unreact 🔥' })).toBeVisible({ timeout: 10000 });
+
+		// change reaction to sad face
+		await page.getByRole('button', { name: '😢' }).nth(0).click();
+		await expect(page.getByRole('button', { name: 'unreact 😢' })).toBeVisible({ timeout: 10000 });
+		await page.reload();	// reload page because reply reactions are not in real time (yet)
+		await expect(page.locator('#lingo-app')).not.toContainText(`🔥x1`, { timeout: 10000 });
+		await expect(page.locator('#lingo-app')).toContainText(`😢x1`, { timeout: 10000 });
+
+		// remove reaction
+		await page.getByRole('button', { name: 'unreact 😢' }).click();
+		await expect(page.getByRole('button', { name: 'unreact 😢' })).not.toBeVisible({ timeout: 10000 });
+		await page.reload();	// reload page because reply reactions are not in real time (yet)
+		await expect(page.locator('#lingo-app')).not.toContainText(`🔥x1`, { timeout: 10000 });
+		await expect(page.locator('#lingo-app')).not.toContainText(`😢x1`, { timeout: 10000 });
+		await expect(page.getByRole('button', { name: 'unreact 😢' })).not.toBeVisible({ timeout: 10000 });
+
+		// add another reaction to leave in place for the next user to see
+		await page.getByRole('button', { name: '❤️' }).nth(userIndex).click();										// we click on nth(userIndex) because for userIndex 0 to reply to their own reply they need
+		await expect(page.getByRole('button', { name: 'unreact ❤️' })).toBeVisible({ timeout: 10000 });				// to click on the 1st ❤️ button on the page, but when userIndex 1 replies their reply will
+		await page.reload();	// reload page because reply reactions are not in real time (yet)					// go above userIndex 0's reply, so now they will click the 2nd ❤️ button on the page to react to userIndex 0's reply
+		const emojiEventReplyCount = userIndex + 1;
+		await expect(page.locator('#lingo-app')).toContainText(`❤️x${emojiEventReplyCount}`, { timeout: 10000 });
+		await expect(page.getByRole('button', { name: 'unreact ❤️' })).toBeVisible({ timeout: 10000 });
+
+		//
+		// next user
+		//
 
 		userIndex++;
 	}
@@ -479,6 +604,7 @@ test('test logged out session cannot view items', async ({ browser, crudEnv }) =
 	await loginUser(page, host, user.email, user.password);
 	await createProfile(page, host, uniqueId);
 	const { forumId, forumTopic, threadId, threadTitle } = await createForumAndThread(page, host, uniqueId);
+	const { eventId, eventTitle } = await createEvent(page, host, uniqueId);
 
 	//
 	// error checks when not logged in
@@ -507,6 +633,14 @@ test('test logged out session cannot view items', async ({ browser, crudEnv }) =
 	await page.goto(`${host}/social/thread/${threadId}`);
 	await expect(page.locator('#lingo-app')).toContainText('Contact support or check logs for details', { timeout: 10000, ignoreCase: true });
 
+	// event list requires login
+	await page.goto(`${host}/social/event`);
+	await expect(page.locator('#lingo-app')).toContainText('Error: Not logged in', { timeout: 10000, ignoreCase: true });
+
+	// event instance op returns a server error when not logged in
+	await page.goto(`${host}/social/event/${eventId}`);
+	await expect(page.locator('#lingo-app')).toContainText('Contact support or check logs for details', { timeout: 10000, ignoreCase: true });
+
 	await initialContext.close();
 
 });
@@ -526,6 +660,7 @@ test('test require profile to create items', async ({ browser, crudEnv }) => {
 	await loginUser(seedPage, host, seedUser.email, seedUser.password);
 	await createProfile(seedPage, host, uniqueSeedId);
 	await createForumAndThread(seedPage, host, uniqueSeedId);
+	await createEvent(seedPage, host, uniqueSeedId);
 
 	//
 	// confirm user must have profile to create forums/threads/replies
@@ -572,6 +707,30 @@ test('test require profile to create items', async ({ browser, crudEnv }) => {
 	await expect(page.locator('#lingo-app')).toContainText('error');
 	await expect(page.locator('#lingo-app')).toContainText('You must have a profile to create items');
 
+	// cannot create event without profile
+	await page.goto(`${host}/social/event`);
+	await page.getByRole('button', { name: 'create event' }).click();
+	await page.getByRole('row', { name: 'title: Title of the event' }).getByRole('textbox').fill('Can\'t Create an Event');
+	await page.getByRole('row', { name: 'start time:' }).locator('input[type="datetime-local"]').fill('2030-12-31T21:00');
+	await page.getByRole('row', { name: 'end time:' }).locator('input[type="datetime-local"]').fill('2031-01-01T09:00');
+	await page.getByRole('row', { name: 'location:' }).getByRole('textbox').fill('Nowhere');
+	const editor = page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor');
+	await editor.fill('Because I don\'t have a profile!');
+
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.getByRole('table')).toContainText('error');
+	await expect(page.locator('#lingo-app')).toContainText('Model Validation failed');
+	await expect(page.getByRole('table')).toContainText('You must have a profile to create items');
+
+	// cannot reply to event without profile
+	await page.goto(`${host}/social/event`);
+	await page.locator('tr').nth(1).click();
+	await page.locator('.rich-text-editor').fill('I can\'t reply without a profile!');
+	await expect(page.locator('.rich-text-editor')).toContainText('I can\'t reply without a profile!', { timeout: 10000 });
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('error');
+	await expect(page.locator('#lingo-app')).toContainText('You must have a profile to create items');
+
 });
 
 test('test navigation links', async ({ browser, crudEnv }) => {
@@ -590,6 +749,7 @@ test('test navigation links', async ({ browser, crudEnv }) => {
 	await loginUser(page, host, email, password);
 	await createProfile(page, host, uniqueId);
 	const { forumId, forumTopic, threadId, threadTitle } = await createForumAndThread(page, host, uniqueId);
+	const { eventId, eventTitle } = await createEvent(page, host, uniqueId);
 
 	//
 	// constants
@@ -600,8 +760,10 @@ test('test navigation links', async ({ browser, crudEnv }) => {
 	const profilesUrl = `${host}/social/profile`;
 	const yourProfileUrl = `${host}/social/profile/yours`;
 	const forumsUrl = `${host}/social/forum`;
+	const eventsUrl = `${host}/social/event`;
 	const forumInstanceUrl = `${host}/social/forum/${forumId}`;
 	const threadInstanceUrl = `${host}/social/thread/${threadId}`;
+	const eventInstanceUrl = `${host}/social/event/${eventId}`;
 	const accountUrl = `${host}/social/account`;
 
 	const indexPageHeading = ':: medium tech';
@@ -611,8 +773,10 @@ test('test navigation links', async ({ browser, crudEnv }) => {
 	const profileInstanceHeading = ':: profile ::';
 	const yourProfileHeading = ':: edit your profile';
 	const forumsPageHeading = ':: forums';
+	const eventsPageHeading = ':: events';
 	const forumInstanceHeading = `:: ${forumTopic}`;
 	const threadInstanceHeading = `:: ${threadTitle}`;
+	const eventInstanceHeading = `:: ${eventTitle}`;
 
 	//
 	// index page
@@ -659,6 +823,10 @@ test('test navigation links', async ({ browser, crudEnv }) => {
 	await page.goto(socialUrl);
 	await page.getByRole('link', { name: 'forums' }).click();
 	await expect(page.locator('h1')).toContainText(forumsPageHeading);
+
+	await page.goto(socialUrl);
+	await page.getByRole('link', { name: 'events' }).click();
+	await expect(page.locator('h1')).toContainText(eventsPageHeading, { timeout: 10000 });
 
 	await page.goto(socialUrl);
 	await page.getByRole('link', { name: 'account' }).click();
@@ -778,6 +946,49 @@ test('test navigation links', async ({ browser, crudEnv }) => {
 	
 	await page.goto(threadInstanceUrl);
 	await expect(page.locator('h1')).toContainText(threadInstanceHeading);
+	await page.getByRole('link', { name: 'mtech' }).click();
+	await expect(page.locator('h1')).toContainText(indexPageHeading);
+
+	//
+	// events
+	//
+
+	await page.goto(eventsUrl);
+	await expect(page.locator('h1')).toContainText(eventsPageHeading);
+
+	// breadcrumbs //
+	await page.getByRole('link', { name: 'event' }).click();
+	await page.waitForLoadState('networkidle');
+	await expect(page.locator('h1')).toContainText(eventsPageHeading);
+
+	await page.goto(eventsUrl);
+	await expect(page.locator('h1')).toContainText(eventsPageHeading);
+	await page.getByRole('link', { name: 'social' }).click();
+	await expect(page.locator('h1')).toContainText(socialModuleHeading);
+	
+	await page.goto(eventsUrl);
+	await expect(page.locator('h1')).toContainText(eventsPageHeading);
+	await page.getByRole('link', { name: 'mtech' }).click();
+	await expect(page.locator('h1')).toContainText(indexPageHeading);
+
+	//
+	// event instance
+	//
+
+	await page.goto(eventInstanceUrl);
+	await expect(page.locator('h1')).toContainText(eventInstanceHeading);
+
+	// breadcrumbs //
+	await page.getByRole('link', { name: 'events' }).click();
+	await expect(page.locator('h1')).toContainText(eventsPageHeading);
+
+	await page.goto(eventInstanceUrl);
+	await expect(page.locator('h1')).toContainText(eventInstanceHeading);
+	await page.getByRole('link', { name: 'social' }).click();
+	await expect(page.locator('h1')).toContainText(socialModuleHeading);
+	
+	await page.goto(eventInstanceUrl);
+	await expect(page.locator('h1')).toContainText(eventInstanceHeading);
 	await page.getByRole('link', { name: 'mtech' }).click();
 	await expect(page.locator('h1')).toContainText(indexPageHeading);
 
@@ -1072,7 +1283,7 @@ test('test validation errors', async ({ browser, crudEnv }) => {
 	await expect(page.locator('#lingo-app')).toContainText('Field "tags" exceeds max length of 10 items.', { ignoreCase: true });
 
 	//
-	// create forum and thread so we have at least 1 item to response to
+	// create forum and thread so we have at least 1 item to respond to
 	//
 
 	await createForumAndThread(page, host, uniqueId);
@@ -1113,5 +1324,67 @@ test('test validation errors', async ({ browser, crudEnv }) => {
 	// await expect(page.locator('h1')).toContainText(':: Workflow Forum ::');
 	// await page.locator('tr').nth(2).click();
 	// await expect(page.locator('#lingo-app')).toContainText(':: thread ::', { ignoreCase: true });
+
+	//
+	// create invalid event
+	//
+
+	// long title
+	await page.goto(`${host}/social/event`);
+	await page.getByRole('button', { name: 'create event' }).click();
+	await page.getByRole('row', { name: 'title: Title of the event' }).getByRole('textbox').fill(longStr);
+	await page.getByRole('row', { name: 'start time:' }).locator('input[type="datetime-local"]').fill('2030-12-31T21:00');
+	await page.getByRole('row', { name: 'end time:' }).locator('input[type="datetime-local"]').fill('2031-01-01T09:00');
+	await page.getByRole('row', { name: 'location:' }).getByRole('textbox').fill('Nowhere');
+	await page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor').fill('This is a message.');
+	await expect(page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor')).toContainText('This is a message.', { timeout: 10000 });
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('Field "title" exceeds max length of 1000 characters.', { ignoreCase: true });
+
+	// no start time
+	await page.reload();
+	await page.getByRole('button', { name: 'create event' }).click();
+	await page.getByRole('row', { name: 'title: Title of the event' }).getByRole('textbox').fill(`Valid Event Title ${uniqueId}`);
+	await page.getByRole('row', { name: 'end time:' }).locator('input[type="datetime-local"]').fill('2031-01-01T09:00');
+	await page.getByRole('row', { name: 'location:' }).getByRole('textbox').fill('Nowhere');
+	await page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor').fill('This is a message.');
+	await expect(page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor')).toContainText('This is a message.', { timeout: 10000 });
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('(required field)', { ignoreCase: true });
+
+	// no end time
+	await page.reload();
+	await page.getByRole('button', { name: 'create event' }).click();
+	await page.getByRole('row', { name: 'title: Title of the event' }).getByRole('textbox').fill(`Valid Event Title ${uniqueId}`);
+	await page.getByRole('row', { name: 'start time:' }).locator('input[type="datetime-local"]').fill('2030-12-31T21:00');
+	await page.getByRole('row', { name: 'location:' }).getByRole('textbox').fill('Nowhere');
+	await page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor').fill('This is a message.');
+	await expect(page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor')).toContainText('This is a message.', { timeout: 10000 });
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('(required field)', { ignoreCase: true });
+
+	// long location
+	await page.reload();
+	await page.getByRole('button', { name: 'create event' }).click();
+	await page.getByRole('row', { name: 'title: Title of the event' }).getByRole('textbox').fill(`Valid Event Title ${uniqueId}`);
+	await page.getByRole('row', { name: 'start time:' }).locator('input[type="datetime-local"]').fill('2030-12-31T21:00');
+	await page.getByRole('row', { name: 'end time:' }).locator('input[type="datetime-local"]').fill('2031-01-01T09:00');
+	await page.getByRole('row', { name: 'location:' }).getByRole('textbox').fill(longStr);
+	await page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor').fill('This is a message.');
+	await expect(page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor')).toContainText('This is a message.', { timeout: 10000 });
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('Field "location" exceeds max length of 1000 characters.', { ignoreCase: true });
+
+	// long message - rich text tests are not reliable
+	// await page.reload();
+	// await page.getByRole('button', { name: 'create event' }).click();
+	// await page.getByRole('row', { name: 'title: Title of the event' }).getByRole('textbox').fill(`Valid Event Title ${uniqueId}`);
+	// await page.getByRole('row', { name: 'start time:' }).locator('input[type="datetime-local"]').fill('2030-12-31T21:00');
+	// await page.getByRole('row', { name: 'end time:' }).locator('input[type="datetime-local"]').fill('2031-01-01T09:00');
+	// await page.getByRole('row', { name: 'location:' }).getByRole('textbox').fill('Nowhere');
+	// await page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor').fill(longRichText);
+	// await expect(page.getByRole('row', { name: 'message:' }).locator('div.rich-text-editor')).toContainText(longRichText.slice(0, 20), { timeout: 10000 });
+	// await page.getByRole('button', { name: 'Submit' }).click();
+	// await expect(page.locator('#lingo-app')).toContainText('Field "message" exceeds max length of 25000 characters.', { ignoreCase: true });
 
 });

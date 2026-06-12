@@ -1,0 +1,338 @@
+{
+    "lingo": {
+        "version": "page-beta-1",
+        "parent_url": "/api/spec",
+		"title": "social :: events"
+    },
+    "params": {
+        "project_name": {
+            "name": {
+                "lower_case": "project name"
+            },
+            "type": "str",
+            "default": "My Lingo Project",
+            "description": "Name of the Lingo project"
+        },
+        "module_name": {
+            "name": {
+                "lower_case": "module name"
+            },
+            "type": "str",
+            "default": "my-module-a",
+            "description": "Name of the module"
+        },
+        "model_name": {
+            "name": {
+                "lower_case": "model name"
+            },
+            "type": "str",
+            "default": "event",
+            "description": "Name of the model"
+        },
+        "model_definition": {
+            "name": {
+                "lower_case": "model definition"
+            },
+            "type": "model",
+            "value": {
+                "name": {
+                    "lower_case": "event"
+                },
+                "fields": {
+                    "user_id": {
+                        "name": {
+                            "lower_case": "user id"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "auth",
+                            "table": "user",
+                            "field": "id"
+                        }
+                    },
+                    "title": {
+                        "name": {
+                            "lower_case": "event name"
+                        },
+                        "type": "str",
+                        "description": "The name of the event"
+                    },
+                    "start_time": {
+                        "name": {
+                            "lower_case": "event start time"
+                        },
+                        "type": "datetime",
+                        "description": "The start time of the event"
+                    },
+                    "end_time": {
+                        "name": {
+                            "lower_case": "event end time"
+                        },
+                        "type": "datetime",
+                        "description": "The end time of the event"
+                    },
+                    "location": {
+                        "name": {
+                            "lower_case": "location"
+                        },
+                        "type": "str",
+                        "description": "The location of the event"
+                    },
+                    "main_post_id": {
+                        "name": {
+                            "lower_case": "main post id"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "social",
+                            "table": "post",
+                            "field": "id"
+                        },
+                        "description": "The main post of the event"
+                    }
+                }
+            },
+            "description": "Definition of the model"
+        }
+    },
+    "state": {
+        "display_create": {
+            "type": "bool",
+            "default": false
+        },
+        "create_event_op_definition": {
+            "name": {
+                "lower_case": "create event op definition"
+            },
+            "type": "op",
+            "default": {
+                "type": "op",
+                "value": {
+                    "name": {
+                        "lower_case": "create event"
+                    },
+                    "description": "Create a new event and main post",
+                    "func": {},
+                    "params": {
+                        "title": {
+                            "name": {
+                                "lower_case": "title"
+                            },
+                            "type": "str",
+                            "description": "Title of the event"
+                        },
+                        "start_time": {
+                            "name": {
+                                "lower_case": "start time"
+                            },
+                            "type": "datetime",
+                            "description": "Start time of the event"
+                        },
+                        "end_time": {
+                            "name": {
+                                "lower_case": "end time"
+                            },
+                            "type": "datetime",
+                            "description": "End time of the event"
+                        },
+                        "location": {
+                            "name": {
+                                "lower_case": "location"
+                            },
+                            "type": "str",
+                            "description": "Location of the event"
+                        },
+                        "message": {
+                            "name": {
+                                "lower_case": "message"
+                            },
+                            "type": "str",
+                            "description": "Main post message for the event",
+                            "rich_text": true
+                        },
+                        "attachments": {
+                            "name": {
+                                "lower_case": "attachments"
+                            },
+                            "type": "list",
+                            "element_type": "foreign_key",
+                            "references": {
+                                "module": "file_system",
+                                "table": "file",
+                                "field": "id"
+                            }
+                        },
+                        "images": {
+                            "name": {
+                                "lower_case": "images"
+                            },
+                            "type": "list",
+                            "element_type": "foreign_key",
+                            "references": {
+                                "module": "media",
+                                "table": "master_image",
+                                "field": "id"
+                            }
+                        }
+                    },
+                    "result": {
+                        "type": "struct",
+                        "value": {
+                            "event_id": {
+                                "type": "str",
+                                "value": "-1"
+                            }
+                        },
+                        "tests": {
+                            "test_cases": []
+                        }
+                    }
+                }
+            }
+        },
+        "create_event_op_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {"type": "any", "value": null}
+            }
+        },
+        "model_list": {
+            "type": "struct",
+            "default": {
+                "items": [],
+                "total": 0,
+                "showing": 0,
+                "offset": 0,
+                "size": 25,
+                "state": "pending",
+                "error": ""
+            }
+        },
+        "model_item_api_url": {
+            "type": "str",
+            "calc": {
+                "call": "concat",
+                "args": {
+                    "items": [
+                        "/api/",
+                        {"params": {"module_name": {}}},
+                        "/",
+                        {"params": {"model_name": {}}}
+                    ]
+                }
+            }
+        },
+        "model_item_url": {
+            "type": "str",
+            "calc": {
+                "call": "concat",
+                "args": {
+                    "items": [
+                        "/",
+                        {"params": {"module_name": {}}},
+                        "/",
+                        {"params": {"model_name": {}}},
+                        "/"
+                    ]
+                }
+            }
+        }
+    },
+    "ops": {
+		"flip_display": {
+			"args": {},
+			"func": {
+				"set": {"state": {"display_create": {}}},
+				"to": {"call": "not", "args": {"object": {"state": {"display_create": {}}}}}
+			}
+		}
+	},
+    "output": [
+        {"breadcrumbs": [
+            "mtech",
+            {"params": {"module_name": {}}},
+            {"params": {"model_name": {}}}
+        ]},
+		{
+			"branch": [
+				{
+					"if": {"state": {"display_create": {}}},
+					"then": [
+						{"heading": ":: create event", "level": 1},
+						{"button": {"op": {"flip_display": {}}}, "text": "back"},
+						{"op": {
+							"bind": {"state": {"create_event_op_state": {}}},
+							"interactive": true,
+							"http": "/api/social/create-event",
+							"display": {
+								"show_result": false
+							},
+							"definition": {"state": {"create_event_op_definition": {}}},
+							"params": {
+								"attachments": [],
+								"images": []
+							}
+						}},
+						{
+							"branch": [
+								{
+									"if": {
+										"call": "eq",
+										"args": {
+											"a": {
+												"call": "key",
+												"args": {
+													"object": {"state": {"create_event_op_state": {}}},
+													"key": "state"
+												}
+											},
+											"b": "result"
+										}
+									},
+									"then": {
+										"link": {
+											"call": "concat",
+											"args": {
+												"items": [
+													"/social/event/",
+													{
+														"call": "key",
+														"args": {
+															"object": {"state": {"create_event_op_state": {"result": {}}}},
+															"key": "event_id"
+														}
+													}
+												]
+											}
+										},
+										"text": "view event"
+									}
+								},
+								{
+									"else": {"text": ""}
+								}
+							]
+						}
+					]
+				},
+				{
+					"else": [
+						{"heading": ":: events", "level": 1},
+						{"button": {"op": {"flip_display": {}}}, "text": "create event"},
+						{"model": {
+							"bind": {"state": {"model_list": {}}},
+							"display": "list",
+							"http": {"state": {"model_item_api_url": {}}},
+							"definition": {"params": {"model_definition": {}}},
+							"instance_url": {"state": {"model_item_url": {}}},
+							"fields": ["id", "title", "location", "start_time", "end_time"]
+						}}
+					]
+				}
+			]
+		}
+    ]
+}
