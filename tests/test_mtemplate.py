@@ -253,6 +253,7 @@ class TestSimpleSocialSpec(BaseMSpecTest):
         .gitignore
         package.json
         uwsgi.yaml
+        uwsgi-linux.yaml
         root.py
         test.sh
         mapp.yaml

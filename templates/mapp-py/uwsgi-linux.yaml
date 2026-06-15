@@ -1,0 +1,16 @@
+# vars :: {"3003": "server.port"}
+uwsgi:
+    plugin: python3
+    pythonpath: /home/sosh/mspec/.venv/lib/python3.12/site-packages
+    http-socket: :8008
+    wsgi-file: server.py
+    master: true
+    safe-pidfile: app/server.pid
+    stats: app/stats.socket
+    log-master: true
+    processes: 4
+    lazy-apps: true
+    py-autoreload: 0
+    touch-workers-reload: app/touch-to-reload
+    logformat: "%('    ') :: RESP :: %(status) :: %(method) %(uri) :: %(size) bytes in %(msecs) msecs :: %(request_id)"
+    log-maxsize: 104857600
