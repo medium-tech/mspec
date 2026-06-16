@@ -1,3 +1,4 @@
+import email
 import os
 import re
 import time
@@ -7,6 +8,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 import jwt
+from more_itertools import one
 
 from mapp.context import MappContext, MAPP_APP_PATH, cli_delete_session
 from mapp.errors import AuthenticationError, MappError, MappValidationError
@@ -20,6 +22,7 @@ from mapp.types import User, PasswordHash
 
 MAPP_AUTH_SECRET_KEY = os.environ.get('MAPP_AUTH_SECRET_KEY')   # openssl rand -hex 32
 MAPP_AUTH_LOGIN_EXPIRATION_MINUTES = os.environ.get('MAPP_AUTH_LOGIN_EXPIRATION_MINUTES', 60 * 24 * 7)
+MAPP_AUTH_MAX_USER_ACCOUNTS = int(os.environ.get('MAPP_AUTH_MAX_USER_ACCOUNTS', -1))		# limit the total number of user accounts that can be created, -1 for no limit
 
 __all__ = [
     'User',
@@ -180,6 +183,7 @@ def _parse_access_token(ctx:dict, token:str) -> tuple[User, str]:
     )
 
     return user, jti
+
 #
 # external
 #
@@ -211,6 +215,19 @@ def create_user(ctx: MappContext, name: str, email: str, password: str, password
     email = email.strip().lower()
     password = password
     password_confirm = password_confirm
+    
+    # check if we can create a new account #
+    
+    if MAPP_AUTH_MAX_USER_ACCOUNTS > -1:
+        user_count_result = ctx.db.cursor.execute(
+            'SELECT COUNT(*) FROM auth_user'
+        ).fetchone()
+
+        user_count = user_count_result[0] if user_count_result else 0
+
+        if user_count >= MAPP_AUTH_MAX_USER_ACCOUNTS:
+            ctx.log(f'Could not create user, max user accounts limit reached - {user_count=} {MAPP_AUTH_MAX_USER_ACCOUNTS=}')
+            raise AuthenticationError(f'{err_msg}: max user accounts limit reached')
 
     # validate input #
 
