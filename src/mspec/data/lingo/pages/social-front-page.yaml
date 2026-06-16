@@ -32,12 +32,27 @@ output:
       text: 'account'
     - text: ' ● '
 
-    - break: 1
+    - break: 2
 
     - text: 'what is medium tech?'
       style:
         bold: true
 
+    - break: 2
+
+    - text: ':: medium tech is the unshittifier - through crowd funding, medium tech will reverse enshittification to create an objectively better product.'
+
     - break: 1
 
-    - text: 'an experiment in crowd funded big tech infrastructure'
+    - text: ':: medium tech is big tech without big finance and big algorithm.'
+
+    - break: 1
+
+    - text: ':: stay tuned for more information.'
+
+    - break: 2
+
+    - text: ':: contact :: '
+
+    - text: 'admin@medium.technology'
+      link: 'mailto:admin@medium.technology'
