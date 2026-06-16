@@ -275,8 +275,7 @@ table td {
     }
 
     button {
-        width: 25%;
-        padding: 8px 0;
+        padding: 8px 4px 8px 4px;
     }
 
     input[type="text"],
