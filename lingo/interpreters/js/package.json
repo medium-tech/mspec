@@ -1,0 +1,12 @@
+{
+  "name": "lingolib",
+  "version": "0.1.0",
+  "description": "Lingo JavaScript interpreter bootstrap package",
+  "main": "src/lingolib/index.js",
+  "bin": {
+    "lingolib": "src/lingolib/index.js"
+  },
+  "scripts": {
+    "start": "node ."
+  }
+}

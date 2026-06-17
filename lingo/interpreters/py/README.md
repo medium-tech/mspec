@@ -1,4 +1,4 @@
-# python bootstrap
+# python bootstrap package
 
 ## os setup
 
@@ -9,11 +9,13 @@
 ## run
 
 ```bash
-python main.py
+cd src
+python -m lingolib
 ```
 
 On Windows you can also use:
 
 ```powershell
-py main.py
+cd src
+py -m lingolib
 ```

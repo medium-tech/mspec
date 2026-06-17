@@ -1,4 +1,4 @@
-# c bootstrap
+# c bootstrap package
 
 ## os setup
 
@@ -9,13 +9,13 @@
 ## build
 
 ```bash
-gcc -o hello-world main.c
+gcc -Iinclude -o lingolib app/main.c src/lingolib.c
 ```
 
 ## run
 
 ```bash
-./hello-world
+./lingolib
 ```
 
-On Windows, run `hello-world.exe`.
+On Windows, run `lingolib.exe`.
