@@ -18,3 +18,4 @@ unittest*.log
 server.pid
 *.so
 *.h
+!lingo/interpreters/c/include/lingolib.h
