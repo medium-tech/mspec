@@ -18,8 +18,7 @@ class TestHelloWorldScripts(unittest.TestCase):
         return Path(build_dir) / f'{name}{suffix}'
 
     def _require_command(self, command: str, message: str) -> None:
-        if shutil.which(command) is None:
-            self.skipTest(message)
+        self.assertIsNotNone(shutil.which(command), message)
 
     def _run_command(self, command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -85,8 +84,7 @@ class TestHelloWorldScripts(unittest.TestCase):
 
     def test_c_hello_world(self):
         compiler = shutil.which('gcc') or shutil.which('cc')
-        if compiler is None:
-            self.skipTest('A C compiler is required to run the C beta bootstrap.')
+        self.assertIsNotNone(compiler, 'A C compiler (gcc or cc) is required to run the C beta bootstrap.')
 
         script_dir = LINGO_SRC_DIR / 'c'
         with tempfile.TemporaryDirectory() as build_dir:
