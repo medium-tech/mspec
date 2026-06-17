@@ -2,6 +2,7 @@ import random
 import io
 import datetime
 import argparse
+import json
 
 from PIL import Image, ImageDraw
 
@@ -23,6 +24,9 @@ __all__ = [
     'random_int',
     'random_float',
     'random_str',
+    'random_word',
+    'random_list_of_words',
+    'random_str_rich_text',
     'random_str_enum',
     'random_list',
     'random_datetime',
@@ -31,6 +35,7 @@ __all__ = [
     'random_thing_name',
     'random_email',
     'random_phone_number',
+    'random_image',
 
     'seed',
     'main',
@@ -58,6 +63,46 @@ def random_float(min:float=-100.0, max:float=100.0, round_to=2) -> float:
 
 def random_str() -> str:
     return ' '.join(random.choices(random_words, k=random.randint(1, 5)))
+
+def random_word() -> str:
+    return random.choice(random_words)
+
+def random_list_of_words(min:int=1, max:int=5) -> list[str]:
+    return [random_word() for _ in range(random.randint(min, max))]
+
+def random_str_rich_text(color_options=None) -> str:
+    all_colors = [
+        'red', 'orange', 'yellow', 'green', 'blue', 'indigo',
+        'violet', 'pink', 'brown', 'black', 'gray', 'white',
+    ]
+    color_options = color_options or all_colors
+    num_sentences = random.randint(1, 5)
+    blocks = []
+
+    for sentence_index in range(num_sentences):
+        sentence = ' '.join(random.choices(random_words, k=random.randint(3, 10))).capitalize() + '.'
+        if sentence_index < num_sentences - 1:
+            sentence += ' '
+        style = {}
+
+        if random_bool():
+            style['bold'] = True
+
+        if random.randint(0, 2) == 0:
+            style['color'] = random.choice(color_options)
+
+        if not style:
+            blocks.append({'text': sentence})
+        else:
+            blocks.append({'text': sentence, 'style': style})
+
+        if sentence_index < num_sentences - 1 and random.randint(0, 2) == 0:
+            blocks.append({'break': random.randint(1, 2)})
+
+    return json.dumps({
+        'lingo': {'version': 'rich-text-beta-1'},
+        'block': blocks,
+    })
 
 def random_str_enum(enum:list) -> str:
     return random.choice(enum)
@@ -105,12 +150,16 @@ def random_person_name() -> str:
 
     return name
 
-def random_user_name() -> str:
+def random_user_name_seperator() -> str:
+    return random.choice(['', '_', '.', '-', '~'])
+
+def random_user_name(max_length: int=25) -> str:
     num = random.randint(1, 4)
+    sep = random_user_name_seperator
     if num == 1:
-        name = random.choice(random_adjectives) + ' ' + random.choice(random_nouns)
+        name = random.choice(random_adjectives) + sep() + random.choice(random_nouns)
     elif num == 2:
-        name = ('The ' + random.choice(random_nouns) + ' ' + random.choice(random_nouns)).title()
+        name = (f'The{sep()}' + random.choice(random_nouns) + sep() + random.choice(random_nouns)).title()
     elif num == 3:
         name = random.choice(random_words).title()
         if random.randint(0, 2) == 0:
@@ -126,9 +175,9 @@ def random_user_name() -> str:
                 _words.append(_word)
 
         random.shuffle(_words)
-        name = ' '.join(_words)
+        name = sep().join(_words)
 
-    return name
+    return name[0:max_length]
 
 def random_thing_name() -> str:
     words = []
@@ -140,7 +189,7 @@ def random_thing_name() -> str:
     return ' '.join(words)
 
 def random_email() -> str:
-    user_name = random_user_name().replace(' ', '_')
+    user_name = random_user_name().replace('~', '-')
     domain = random.choice(random_words)
     tld = random.choice(['com', 'net', 'org', 'io', 'ai'])
     return f'{user_name}@{domain}.{tld}'
@@ -161,7 +210,7 @@ _SKIP_MODULES = {'auth', 'file_system', 'media'}
 _MEDIA_INGEST_TABLES = {'file', 'image', 'master_image'}
 
 
-def _make_minimal_png() -> bytes:
+def random_image() -> bytes:
     """Create a 500x500 PNG with random text placed at random positions."""
     if random.choice([True, False]):
         bg_color = (255, 255, 255)
@@ -221,7 +270,7 @@ def _ingest_for_table(ctx, spec: dict, ref_table_name: str):
             media_module = spec['modules']['media']
             op = media_module['ops']['create_image']
             params_class, output_class = new_op_classes(op, media_module)
-            content = _make_minimal_png()
+            content = random_image()
             filename = 'seed-image.png'
             ctx.self['file_input'] = content
             ctx.self['file_input_name'] = filename
@@ -236,7 +285,7 @@ def _ingest_for_table(ctx, spec: dict, ref_table_name: str):
             media_module = spec['modules']['media']
             op = media_module['ops']['ingest_master_image']
             params_class, output_class = new_op_classes(op, media_module)
-            content = _make_minimal_png()
+            content = random_image()
             filename = 'seed-master-image.png'
             ctx.self['file_input'] = content
             ctx.self['file_input_name'] = filename
@@ -280,7 +329,7 @@ def _seed_foreign_model(ctx, spec: dict, ref_module_name: str, ref_table_name: s
 
 def _create_model(ctx, spec: dict, module: dict, model: dict, _depth: int = 0):
     """Build and POST a single random model. Returns the created model or None on error."""
-    model_class = new_model_class(model, module)
+    model_class = new_model_class(spec, model, module)
     data = {}
     for field_name, field in model['fields'].items():
         snake_name = field['name']['snake_case']

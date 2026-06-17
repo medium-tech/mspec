@@ -15,6 +15,106 @@
         "test_concat": {
             "type": "str",
             "calc": {"call": "concat", "args": {"items": ["hello", " ", "world"]}}
+        },
+        "test_casefold": {
+            "type": "str",
+            "calc": {"call": "casefold", "args": {"string": "Hello World"}}
+        },
+        "test_ljust": {
+            "type": "str",
+            "calc": {"call": "ljust", "args": {"string": "hi", "width": 5}}
+        },
+        "test_ljust_fillchar": {
+            "type": "str",
+            "calc": {"call": "ljust", "args": {"string": "hi", "width": 5, "fillchar": "*"}}
+        },
+        "test_rjust": {
+            "type": "str",
+            "calc": {"call": "rjust", "args": {"string": "hi", "width": 5}}
+        },
+        "test_rjust_fillchar": {
+            "type": "str",
+            "calc": {"call": "rjust", "args": {"string": "hi", "width": 5, "fillchar": "*"}}
+        },
+        "test_center": {
+            "type": "str",
+            "calc": {"call": "center", "args": {"string": "hi", "width": 6}}
+        },
+        "test_center_fillchar": {
+            "type": "str",
+            "calc": {"call": "center", "args": {"string": "hi", "width": 6, "fillchar": "*"}}
+        },
+        "test_strip": {
+            "type": "str",
+            "calc": {"call": "strip", "args": {"string": "  hello  "}}
+        },
+        "test_strip_chars": {
+            "type": "str",
+            "calc": {"call": "strip", "args": {"string": "***hello***", "chars": "*"}}
+        },
+        "test_rstrip": {
+            "type": "str",
+            "calc": {"call": "rstrip", "args": {"string": "hello   "}}
+        },
+        "test_rstrip_chars": {
+            "type": "str",
+            "calc": {"call": "rstrip", "args": {"string": "hello***", "chars": "*"}}
+        },
+        "test_lstrip": {
+            "type": "str",
+            "calc": {"call": "lstrip", "args": {"string": "   hello"}}
+        },
+        "test_lstrip_chars": {
+            "type": "str",
+            "calc": {"call": "lstrip", "args": {"string": "***hello", "chars": "*"}}
+        },
+        "test_removeprefix": {
+            "type": "str",
+            "calc": {"call": "removeprefix", "args": {"string": "hello world", "prefix": "hello "}}
+        },
+        "test_removeprefix_no_match": {
+            "type": "str",
+            "calc": {"call": "removeprefix", "args": {"string": "hello world", "prefix": "bye "}}
+        },
+        "test_removesuffix": {
+            "type": "str",
+            "calc": {"call": "removesuffix", "args": {"string": "hello world", "suffix": " world"}}
+        },
+        "test_removesuffix_no_match": {
+            "type": "str",
+            "calc": {"call": "removesuffix", "args": {"string": "hello world", "suffix": " earth"}}
+        },
+        "test_startswith_true": {
+            "type": "bool",
+            "calc": {"call": "startswith", "args": {"string": "hello world", "prefix": "hello"}}
+        },
+        "test_startswith_false": {
+            "type": "bool",
+            "calc": {"call": "startswith", "args": {"string": "hello world", "prefix": "world"}}
+        },
+        "test_endswith_true": {
+            "type": "bool",
+            "calc": {"call": "endswith", "args": {"string": "hello world", "suffix": "world"}}
+        },
+        "test_endswith_false": {
+            "type": "bool",
+            "calc": {"call": "endswith", "args": {"string": "hello world", "suffix": "hello"}}
+        },
+        "test_replace": {
+            "type": "str",
+            "calc": {"call": "replace", "args": {"string": "hello world", "old": "world", "new": "there"}}
+        },
+        "test_replace_count": {
+            "type": "str",
+            "calc": {"call": "replace", "args": {"string": "aaa", "old": "a", "new": "b", "count": 2}}
+        },
+        "test_re_match_true": {
+            "type": "bool",
+            "calc": {"call": "re_match", "args": {"pattern": "^[a-zA-Z0-9._-]+$", "string": "alice_123"}}
+        },
+        "test_re_match_false": {
+            "type": "bool",
+            "calc": {"call": "re_match", "args": {"pattern": "^[a-zA-Z0-9._-]+$", "string": "invalid name!"}}
         }
     },
     "ops": {},
@@ -23,7 +123,32 @@
         {"block": [
             {"text": "str(123) = "}, {"lingo": {"state": {"test_str": {}}}}, {"break": 1},
             {"text": "join('-', ['a','b','c']) = "}, {"lingo": {"state": {"test_join": {}}}}, {"break": 1},
-            {"text": "concat(['hello', ' ', 'world']) = "}, {"lingo": {"state": {"test_concat": {}}}}, {"break": 1}
+            {"text": "concat(['hello', ' ', 'world']) = "}, {"lingo": {"state": {"test_concat": {}}}}, {"break": 1},
+            {"text": "casefold('Hello World') = "}, {"lingo": {"state": {"test_casefold": {}}}}, {"break": 1},
+            {"text": "ljust('hi', 5) = "}, {"lingo": {"state": {"test_ljust": {}}}}, {"break": 1},
+            {"text": "ljust('hi', 5, '*') = "}, {"lingo": {"state": {"test_ljust_fillchar": {}}}}, {"break": 1},
+            {"text": "rjust('hi', 5) = "}, {"lingo": {"state": {"test_rjust": {}}}}, {"break": 1},
+            {"text": "rjust('hi', 5, '*') = "}, {"lingo": {"state": {"test_rjust_fillchar": {}}}}, {"break": 1},
+            {"text": "center('hi', 6) = "}, {"lingo": {"state": {"test_center": {}}}}, {"break": 1},
+            {"text": "center('hi', 6, '*') = "}, {"lingo": {"state": {"test_center_fillchar": {}}}}, {"break": 1},
+            {"text": "strip('  hello  ') = "}, {"lingo": {"state": {"test_strip": {}}}}, {"break": 1},
+            {"text": "strip('***hello***', '*') = "}, {"lingo": {"state": {"test_strip_chars": {}}}}, {"break": 1},
+            {"text": "rstrip('hello   ') = "}, {"lingo": {"state": {"test_rstrip": {}}}}, {"break": 1},
+            {"text": "rstrip('hello***', '*') = "}, {"lingo": {"state": {"test_rstrip_chars": {}}}}, {"break": 1},
+            {"text": "lstrip('   hello') = "}, {"lingo": {"state": {"test_lstrip": {}}}}, {"break": 1},
+            {"text": "lstrip('***hello', '*') = "}, {"lingo": {"state": {"test_lstrip_chars": {}}}}, {"break": 1},
+            {"text": "removeprefix('hello world', 'hello ') = "}, {"lingo": {"state": {"test_removeprefix": {}}}}, {"break": 1},
+            {"text": "removeprefix('hello world', 'bye ') = "}, {"lingo": {"state": {"test_removeprefix_no_match": {}}}}, {"break": 1},
+            {"text": "removesuffix('hello world', ' world') = "}, {"lingo": {"state": {"test_removesuffix": {}}}}, {"break": 1},
+            {"text": "removesuffix('hello world', ' earth') = "}, {"lingo": {"state": {"test_removesuffix_no_match": {}}}}, {"break": 1},
+            {"text": "startswith('hello world', 'hello') = "}, {"lingo": {"state": {"test_startswith_true": {}}}}, {"break": 1},
+            {"text": "startswith('hello world', 'world') = "}, {"lingo": {"state": {"test_startswith_false": {}}}}, {"break": 1},
+            {"text": "endswith('hello world', 'world') = "}, {"lingo": {"state": {"test_endswith_true": {}}}}, {"break": 1},
+            {"text": "endswith('hello world', 'hello') = "}, {"lingo": {"state": {"test_endswith_false": {}}}}, {"break": 1},
+            {"text": "replace('hello world', 'world', 'there') = "}, {"lingo": {"state": {"test_replace": {}}}}, {"break": 1},
+            {"text": "replace('aaa', 'a', 'b', count=2) = "}, {"lingo": {"state": {"test_replace_count": {}}}}, {"break": 1},
+            {"text": "re_match('^[a-zA-Z0-9._-]+$', 'alice_123') = "}, {"lingo": {"state": {"test_re_match_true": {}}}}, {"break": 1},
+            {"text": "re_match('^[a-zA-Z0-9._-]+$', 'invalid name!') = "}, {"lingo": {"state": {"test_re_match_false": {}}}}, {"break": 1}
         ]}
     ]
 }

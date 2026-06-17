@@ -1,7 +1,7 @@
 lingo:
     version: page-beta-1
     parent_url: '/api/spec'
-    title: "sosh net :: account"
+    title: "social :: account"
 
 params: {}
 
@@ -83,16 +83,13 @@ state:
                     value: false    
 
 output:
-    - heading: 'shosh net'
-      level: 1
-
     - breadcrumbs:
           - "mtech"
-          - "sosh-net"
+          - "social"
           - "account"
 
-    - heading: ":: account"
-      level: 2
+    - heading: ":: account details"
+      level: 1
     
     - branch:
         - if:
@@ -133,7 +130,7 @@ output:
                           bold: true
                     - type: list
                       value:
-                        - text: 'get a verificaiton code'
+                        - text: 'get a verification code'
                           link: '/com/start-email-verification'
                         
                         - text: 'verify a code you received'
@@ -142,7 +139,7 @@ output:
                     text: ''
             - heading: ':: your profile'
               level: 4
-            - link: '/sosh-net/profile/yours'
+            - link: '/social/profile/yours'
               text: 'create or edit'
         - else:
 
@@ -157,7 +154,7 @@ output:
                     http: '/api/auth/login-user'
                     definition: 'auth.login_user'
                     submit_button_text: login
-                    instruction: 'login to access all features of sosh net'
+                    instruction: 'login to access all features of social'
 
             - heading: ':: create account'
               level: 4
@@ -169,5 +166,5 @@ output:
                     interactive: true
                     http: '/api/auth/create-user'
                     definition: 'auth.create_user'
-                    instruction: 'create a new account to access all features of sosh net'
+                    instruction: 'create a new account to access all features of social'
                     submit_button_text: create account

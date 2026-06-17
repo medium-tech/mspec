@@ -1,3 +1,4 @@
+import email
 import os
 import re
 import time
@@ -7,6 +8,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 import jwt
+from more_itertools import one
 
 from mapp.context import MappContext, MAPP_APP_PATH, cli_delete_session
 from mapp.errors import AuthenticationError, MappError, MappValidationError
@@ -20,6 +22,7 @@ from mapp.types import User, PasswordHash
 
 MAPP_AUTH_SECRET_KEY = os.environ.get('MAPP_AUTH_SECRET_KEY')   # openssl rand -hex 32
 MAPP_AUTH_LOGIN_EXPIRATION_MINUTES = os.environ.get('MAPP_AUTH_LOGIN_EXPIRATION_MINUTES', 60 * 24 * 7)
+MAPP_AUTH_MAX_USER_ACCOUNTS = int(os.environ.get('MAPP_AUTH_MAX_USER_ACCOUNTS', -1))		# limit the total number of user accounts that can be created, -1 for no limit
 
 __all__ = [
     'User',
@@ -180,11 +183,23 @@ def _parse_access_token(ctx:dict, token:str) -> tuple[User, str]:
     )
 
     return user, jti
+
 #
 # external
 #
 
 EMAIL_REGEX = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+ALLOWED_TEST_ADDRESSES = ['localhost', '127.0.0.1']
+
+if os.environ.get('MAPP_ALLOW_SIMPLE_PASSWORDS_FOR_TESTING') == 'true':
+    if os.environ.get('MAPP_SERVER_DEVELOPMENT_MODE') != 'true':
+        raise RuntimeError(f'Must be in development mode to allow simple passwords')
+    verification_url = os.environ.get('MAPP_EMAIL_VERIFICATION_URL', 'not-set')
+    if not any(addr in verification_url for addr in ALLOWED_TEST_ADDRESSES):
+        raise RuntimeError(f'Must be using local address (localhost or 127.0.0.1) when using simple passwords, but got {verification_url} for MAPP_EMAIL_VERIFICATION_URL')
+    PASSWORD_MIN_LENGTH = 3
+else:
+    PASSWORD_MIN_LENGTH = 10
 
 def create_user(ctx: MappContext, name: str, email: str, password: str, password_confirm: str) -> dict:
     err_msg = 'Could not create user'
@@ -200,6 +215,19 @@ def create_user(ctx: MappContext, name: str, email: str, password: str, password
     email = email.strip().lower()
     password = password
     password_confirm = password_confirm
+    
+    # check if we can create a new account #
+    
+    if MAPP_AUTH_MAX_USER_ACCOUNTS > -1:
+        user_count_result = ctx.db.cursor.execute(
+            'SELECT COUNT(*) FROM auth_user'
+        ).fetchone()
+
+        user_count = user_count_result[0] if user_count_result else 0
+
+        if user_count >= MAPP_AUTH_MAX_USER_ACCOUNTS:
+            ctx.log(f'Could not create user, max user accounts limit reached - {user_count=} {MAPP_AUTH_MAX_USER_ACCOUNTS=}')
+            raise AuthenticationError(f'{err_msg}: max user accounts limit reached')
 
     # validate input #
 
@@ -211,11 +239,14 @@ def create_user(ctx: MappContext, name: str, email: str, password: str, password
     if not re.match(EMAIL_REGEX, email):
         field_errors['email'] = 'Invalid email format'
     
-    if password == '' or password is None:
+    if password is None:
         field_errors['password'] = 'Password cannot be empty'
+    
+    if len(password) < PASSWORD_MIN_LENGTH:
+        field_errors['password'] = f'Password must be at least {PASSWORD_MIN_LENGTH} characters long'
 
     if password != password_confirm:
-        field_errors['password_confirm'] = 'Password confirmation does not match password'
+        field_errors['password_confirm'] = 'Confirmation does not match'
 
     if field_errors:
         raise MappValidationError(err_msg, field_errors)
@@ -356,7 +387,16 @@ def current_user(ctx: MappContext) -> dict:
             email: str - The email of the current user.
             number_of_sessions: int - The number of active sessions for the current user.
     """
-    access_token = ctx.current_access_token()
+    try:
+        get_access_token = ctx.current_access_token
+    except AttributeError:
+        try:
+            get_access_token = ctx['current_access_token']
+        except KeyError:
+            ctx.log('Environment config error, no method to get current access token')
+            raise MappError('ENV_CONFIG_ERROR', 'Environment config error')
+            
+    access_token = get_access_token()
     
     if access_token is None or access_token == '':
         ctx.log('Not logged in - (a) - no access token found')

@@ -1,0 +1,277 @@
+lingo:
+    version: page-beta-1
+    parent_url: '/api/spec'
+    title: "social :: your profile"
+
+params:
+    project_name:
+        name:
+            lower_case: 'project name'
+        type: str
+        default: 'social'
+
+    module_name:
+        name:
+            lower_case: 'module name'
+        type: str
+        default: 'social'
+
+    model_name:
+        name:
+            lower_case: 'model name'
+        type: str
+        default: 'profile'
+
+    model_definition:
+        name:
+            lower_case: 'model definition'
+        type: model
+        default:
+            name:
+                lower_case: 'profile'
+            fields:
+                user_id:
+                    name:
+                        lower_case: 'user id'
+                    type: foreign_key
+                    references:
+                        module: auth
+                        table: user
+                        field: id
+                username:
+                    name:
+                        lower_case: 'username'
+                    type: str
+                    description: "Must be 25 characters or less and only contain letters, numbers, and underscores (_), hyphens (-), periods (.), and tildes (~). Cannot be the same as another user's username."
+                bio:
+                    name:
+                        lower_case: 'bio'
+                    type: str
+                    rich_text: true
+                profile_picture:
+                    name:
+                        lower_case: 'profile picture'
+                    type: foreign_key
+                    references:
+                        module: media
+                        table: master_image
+                        field: id
+
+state:
+    is_logged_in:
+        type: bool
+        calc:
+            call: key
+            args:
+                object:
+                    call: auth.is_logged_in
+                    args: {}
+                key: logged_in
+
+    op_profile_state:
+        type: struct
+        default:
+            state: initial
+            error: ''
+            data: {}
+            result:
+                type: any
+                value: null
+
+    op_definition:
+        type: op
+        default:
+            type: op
+            value:
+                name:
+                    lower_case: 'get current user profile'
+                description: 'Get the profile of the currently logged in user'
+                func: {}
+                params: {}
+                result:
+                    type: struct
+                    value: {}
+
+    profile_total:
+        type: int
+        calc:
+            branch:
+                - if:
+                      call: eq
+                      args:
+                          a:
+                              call: key
+                              args:
+                                  object: {state: {op_profile_state: {}}}
+                                  key: state
+                          b: 'result'
+                  then:
+                      call: key
+                      args:
+                          object: {state: {op_profile_state: {}}}
+                          key: 'result.value.profile.value.total'
+                - else:
+                      type: int
+                      value: -1
+
+    user_profile_id:
+        type: str
+        calc:
+            branch:
+                - if:
+                      call: gt
+                      args:
+                          a: {state: {profile_total: {}}}
+                          b: 0
+                  then:
+                      call: key
+                      args:
+                          object: {state: {op_profile_state: {}}}
+                          key: 'result.value.profile.value.items.0.id'
+                - else: '-1'
+
+    model_item_api_url:
+        type: str
+        calc:
+            call: concat
+            args:
+                items:
+                    - '/api/'
+                    - params: {module_name: {}}
+                    - '/'
+                    - params: {model_name: {}}
+    
+    model_item_ui_url:
+        type: str
+        calc:
+            call: concat
+            args:
+                items:
+                    - '/'
+                    - params: {module_name: {}}
+                    - '/'
+                    - params: {model_name: {}}
+                    - '/'
+                    - state: {user_profile_id: {}}
+
+    profile_base_url:
+        type: str
+        calc:
+            call: concat
+            args:
+                items:
+                    - '/api/'
+                    - params: {module_name: {}}
+                    - '/'
+                    - params: {model_name: {}}
+                    - '/'
+                    - state: {user_profile_id: {}}
+
+    model_item_url:
+        type: str
+        calc:
+            call: concat
+            args:
+                items:
+                    - '/'
+                    - params: {module_name: {}}
+                    - '/'
+                    - params: {model_name: {}}
+                    - '/'
+
+    create_profile_state:
+        type: struct
+        default:
+            state: initial
+            error: ''
+            item_id: ''
+            data: {}
+            field_errors: {}
+
+    model_instance:
+        type: struct
+        default:
+            state: pending
+            error: ''
+            data: {}
+            field_errors: {}
+
+ops: {}
+
+output:
+
+    - breadcrumbs:
+        - "mtech"
+        - "social"
+        - "profile"
+        - "yours"
+
+    - branch:
+          - if: {state: {is_logged_in: {}}}
+            then:
+                - op:
+                      bind: {state: {op_profile_state: {}}}
+                      auto_submit: true
+                      interactive: true
+                      http: '/api/social/get-current-user-profile'
+                      display:
+                          show_result: false
+                          show_submit_button: false
+                          show_status_display: false
+                      definition: {state: {op_definition: {}}}
+                      params: {}
+
+                - branch:
+                      - if:
+                              call: eq
+                              args:
+                                  a:
+                                      call: key
+                                      args:
+                                          object: {state: {op_profile_state: {}}}
+                                          key: state
+                                  b: 'result'
+                        then:
+                            - branch:
+                                  - if:
+                                            call: gt
+                                            args:
+                                                a: {state: {profile_total: {}}}
+                                                b: 0
+                                    then:
+                                        - heading: ":: edit your profile"
+                                          level: 1
+                                        - text: ':: '
+                                        - link: {state: {model_item_ui_url: {}}}
+                                          text: 'view public profile'
+                                        - break: 1
+                                        - model:
+                                              bind: {state: {model_instance: {}}}
+                                              display: read
+                                              http: {state: {profile_base_url: {}}}
+                                              model_id: {state: {user_profile_id: {}}}
+                                              definition: {params: {model_definition: {}}}
+                                        - break: 1
+                                        
+                                  - else:
+                                        - heading: ":: create your profile"
+                                          level: 1
+                                        - break: 1
+                                        - model:
+                                              bind: {state: {create_profile_state: {}}}
+                                              display: create
+                                              http: {state: {model_item_api_url: {}}}
+                                              instance_url: {state: {model_item_url: {}}}
+                                              definition: {params: {model_definition: {}}}
+                                              params:
+                                                  user_id: '-1'
+                      - else:
+                            - text: 'loading...'
+                              style: {italic: true}
+
+          - else:
+                - break: 1
+                - text: 'please '
+                - link: '/social/account'
+                  text: 'login or create an account'
+                - text: ' to view or edit your profile'

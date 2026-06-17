@@ -1,0 +1,58 @@
+lingo:
+    version: page-beta-1
+    title: "social :: front page"
+
+params: {}
+
+state:
+    is_logged_in:
+        type: bool
+        calc:
+            call: key
+            args:
+                object:
+                    call: auth.is_logged_in
+                    args: {}
+                key: logged_in
+
+ops: {}
+
+output:
+    - breadcrumbs:
+          - "mtech"
+
+    - heading: ':: medium tech'
+      level: 1
+
+    - text: ' ● '
+    - link: '/social'
+      text: 'social network'
+    - text: ' ● '
+    - link: '/social/account'
+      text: 'account'
+    - text: ' ● '
+
+    - break: 2
+
+    - text: 'what is medium tech?'
+      style:
+        bold: true
+
+    - break: 2
+
+    - text: ':: medium tech is the unshittifier - through crowd funding, medium tech will reverse enshittification to create an objectively better product.'
+
+    - break: 1
+
+    - text: ':: medium tech is big tech without big finance and big algorithm.'
+
+    - break: 1
+
+    - text: ':: stay tuned for more information.'
+
+    - break: 2
+
+    - text: ':: contact :: '
+
+    - text: 'admin@medium.technology'
+      link: 'mailto:admin@medium.technology'

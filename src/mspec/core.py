@@ -307,6 +307,12 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
                     if key not in field['name']:
                         field['name'][key] = value
 
+                field_snake_case = field['name']['snake_case']
+                if field_snake_case in ('date_created', 'date_modified'):
+                    raise ValueError(
+                        f'{field_snake_case} is a reserved model field and is set automatically in model {model_path}'
+                    )
+
                 try:
                     field['default']
                     field['required'] = False
@@ -381,9 +387,6 @@ def init_generator_spec(spec:dict, source_path:Path) -> dict:
                     field['rich_text'] = False
                     
                 if 'validation' in field:
-                    
-                    if field_type != 'str':
-                        raise ValueError(f'only str fields can define validation, field {field_name} in model {model_path} has type {field_type}')
                     
                     validation = field['validation']
                     if not isinstance(validation, dict):

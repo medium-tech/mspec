@@ -13,7 +13,7 @@ __all__ = [
 
 def add_model_subparser(subparsers, spec:dict, module: dict, model:dict):
 
-    model_class = new_model_class(model, module)
+    model_class = new_model_class(spec, model, module)
 
     # 
     # init model cli

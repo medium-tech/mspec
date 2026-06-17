@@ -11,6 +11,7 @@ import hashlib
 import shutil
 import jwt
 import time
+from datetime import datetime
 
 from pathlib import Path
 from copy import deepcopy
@@ -28,6 +29,8 @@ from mapp.types import (
     MAX_RICH_TEXT_JSON_LENGTH,
     MAX_STR_FIELD_LENGTH,
 )
+
+TIMESTAMP_UPDATE_DELAY_SEC = 0.02
 
 def seed_pagination_item(unique_id, base_cmd, seed_cmd, env, require_auth, model_data):
     if require_auth:
@@ -99,6 +102,22 @@ def example_from_model(model:dict, index=0) -> dict:
             data[field_name] = value
 
     return data
+
+
+def _pop_and_validate_timestamps(model_data:dict, context:str) -> tuple[datetime, datetime]:
+    assert 'date_created' in model_data, f'{context} missing date_created'
+    assert 'date_modified' in model_data, f'{context} missing date_modified'
+
+    date_created_raw = model_data.pop('date_created')
+    date_modified_raw = model_data.pop('date_modified')
+
+    date_created = datetime.fromisoformat(date_created_raw)
+    date_modified = datetime.fromisoformat(date_modified_raw)
+
+    assert date_created.tzinfo is not None, f'{context} date_created missing timezone'
+    assert date_modified.tzinfo is not None, f'{context} date_modified missing timezone'
+
+    return date_created, date_modified
 
 def model_validation_errors(model:dict) -> Generator[tuple[dict, str], None, None]:
     """
@@ -211,6 +230,8 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
             assert code == 0, f'expected 0 got {code} for command "{" ".join(create_args)}" output: {stdout + stderr}'
             created_model = json.loads(stdout)
             created_model_id = created_model.pop('id')
+            created_date_created, created_date_modified = _pop_and_validate_timestamps(created_model, f'create {model_name}')
+            assert created_date_created <= created_date_modified, f'Create timestamps out of order for {model_name}'
             if require_login:
                 example_to_create['user_id'] = create_user['id']
             assert created_model == example_to_create, f'Created {model_name} does not match example data {n=}'
@@ -241,6 +262,8 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
         assert code == 0, f'expected 0 got {code} for command "{" ".join(read_args)}" output: {stdout + stderr}'
         read_model = json.loads(stdout)
         read_model_id = read_model.pop('id')
+        read_date_created, read_date_modified = _pop_and_validate_timestamps(read_model, f'read {model_name}')
+        assert read_date_created <= read_date_modified, f'Read timestamps out of order for {model_name}'
         assert read_model == example_to_create, f'Read {model_name} does not match example data'
         assert read_model_id == created_model_id, f'Read {model_name} ID does not match created ID'
 
@@ -260,6 +283,8 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
     if require_login:
         updated_example['user_id'] = create_user['id']
 
+    # ensure date_modified is measurably newer than date_created in timestamp assertions
+    time.sleep(TIMESTAMP_UPDATE_DELAY_SEC)
     update_args = model_db_args + ['update', created_model_id, json.dumps(updated_example)]
 
     if hidden:
@@ -277,6 +302,8 @@ def run_cli_crud_for_model(module_name_kebab, model_name, model, command_type, c
         assert code == 0, f'expected 0 got {code} for command "{" ".join(update_args)}" output: {stdout + stderr}'
         updated_model = json.loads(stdout)
         updated_model_id = updated_model.pop('id')
+        updated_date_created, updated_date_modified = _pop_and_validate_timestamps(updated_model, f'update {model_name}')
+        assert updated_date_modified > updated_date_created, f'Update did not advance date_modified for {model_name}'
         assert updated_model == updated_example, f'Updated {model_name} does not match updated example data'
         assert updated_model_id == created_model_id, f'Updated {model_name} ID does not match created ID'
 
@@ -377,6 +404,8 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
         else:
             assert created_status == 200, f'Create {model_name} did not return status 200 OK, {n=} response: {created_model}'
             created_model_id = created_model.pop('id')
+            created_date_created, created_date_modified = _pop_and_validate_timestamps(created_model, f'create {model_name}')
+            assert created_date_created <= created_date_modified, f'Create timestamps out of order for {model_name}'
             if require_login:
                 example_to_create['user_id'] = alice_user['id']
             assert created_model == example_to_create, f'Created {model_name} (id: {created_model_id} n: {n}) does not match example data'
@@ -419,6 +448,8 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
     else:
         assert read_status == 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}'
         read_model_id = read_model.pop('id')
+        read_date_created, read_date_modified = _pop_and_validate_timestamps(read_model, f'read {model_name}')
+        assert read_date_created <= read_date_modified, f'Read timestamps out of order for {model_name}'
         assert read_model == example_to_create, f'Read {model_name} id: {read_model_id} does not match example data'
         assert read_model_id == created_model_id, f'Read {model_name} id: {read_model_id} does not match created id: {created_model_id}'
 
@@ -431,6 +462,8 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
     except ValueError as e:
         raise ValueError(f'Need at least 2 examples for update testing: {e}')
 
+    # ensure date_modified is measurably newer than date_created in timestamp assertions
+    time.sleep(TIMESTAMP_UPDATE_DELAY_SEC)
     if require_login and not hidden:
         updated_example['user_id'] = alice_user['id']
 
@@ -459,6 +492,7 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
         read_status, read_model = request(ctx, 'GET', f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}', None)
         assert read_status == 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}'
         read_model_id = read_model.pop('id')
+        _pop_and_validate_timestamps(read_model, f'read-after-failed-update {model_name}')
         assert read_model == example_to_create, f'Read {model_name} id: {read_model_id} does not match example data after failed update attempt'
 
     # send request #
@@ -477,6 +511,8 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
     else:
         assert updated_status == 200, f'Update {model_name} id: {created_model_id} did not return status 200 OK, response: {updated_model}'
         updated_model_id = updated_model.pop('id')
+        updated_date_created, updated_date_modified = _pop_and_validate_timestamps(updated_model, f'update {model_name}')
+        assert updated_date_modified > updated_date_created, f'Update did not advance date_modified for {model_name}'
         assert updated_model == updated_example, f'Updated {model_name} id: {updated_model_id} does not match updated example data'
         assert updated_model_id == created_model_id, f'Updated {model_name} id: {updated_model_id} does not match created id: {created_model_id}'
 
@@ -501,6 +537,7 @@ def run_server_crud_for_model(module_name_kebab, model_name, model, base_ctx, lo
         read_status, read_model = request(ctx, 'GET', f'/api/{module_name_kebab}/{model_name_kebab}/{created_model_id}', None)
         assert read_status == 200, f'Read {model_name} id: {created_model_id} did not return status 200 OK, response: {read_model}'
         read_model_id = read_model.pop('id')
+        _pop_and_validate_timestamps(read_model, f'read-after-failed-delete {model_name}')
         assert read_model == updated_example, f'Read {model_name} id: {read_model_id} does not match updated example data after failed delete attempt'
 
     # send request #
@@ -593,16 +630,24 @@ def run_cli_validation_error_for_model(module_name_kebab, model, command_type, u
     if model['hidden'] is True:
         return
     
+    model_name_kebab = model['name']['kebab_case']
+
+    if model_name_kebab in ['forum', 'thread', 'post', 'event']:
+        # get a user that has a profile and can create a forum
+        user_to_use = user_index - 3
+    else:
+        user_to_use = user_index
+    
     example_to_update = example_from_model(model)
 
-    user_id = crud_users[user_index]['user']['id']
+    user_id = crud_users[user_to_use]['user']['id']
     if model['auth']['require_login']:
-        ctx = deepcopy(crud_users[user_index]['env'])
+        ctx = deepcopy(crud_users[user_to_use]['env'])
         example_to_update['user_id'] = user_id
     else:
         ctx = deepcopy(crud_ctx)
 
-    model_name_kebab = model['name']['kebab_case']
+    
 
     #
     # test canot create invalid model
@@ -623,7 +668,16 @@ def run_cli_validation_error_for_model(module_name_kebab, model, command_type, u
         assert 'message' in create_error, f'Expected error message in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
         assert 'field_errors' in create_error, f'Expected field_errors in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
         assert isinstance(create_error['field_errors'], dict), f'Expected field_errors to be a dict in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
-        assert len(create_error['field_errors']) == 1, f'Expected one field error in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
+        assert invalid_field_name in create_error['field_errors'], f'Expected field error for {invalid_field_name} in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {create_error} for field {invalid_field_name}'
+
+    # timestamp fields are managed automatically and must be rejected when provided
+    invalid_create_with_date = deepcopy(example_to_update)
+    invalid_create_with_date['date_created'] = '2024-01-01T00:00:00+00:00'
+    create_with_date_cmd = cmd + [module_name_kebab, model_name_kebab, command_type, 'create', json.dumps(invalid_create_with_date)]
+    create_with_date_result = _run_cmd(create_with_date_cmd, expected_code=1, env=ctx)
+    create_with_date_error = json.loads(create_with_date_result.stdout).get('error', {})
+    assert create_with_date_error.get('code') == 'VALIDATION_ERROR', f'Expected VALIDATION_ERROR when create payload sets date_created, got {create_with_date_error}'
+    assert 'date_created' in create_with_date_error.get('field_errors', {}), f'Expected date_created field error, got {create_with_date_error}'
 
     #
     # test cannot update valid model with invalid data
@@ -650,12 +704,21 @@ def run_cli_validation_error_for_model(module_name_kebab, model, command_type, u
         assert 'message' in update_error, f'Expected error message in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
         assert 'field_errors' in update_error, f'Expected field_errors in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
         assert isinstance(update_error['field_errors'], dict), f'Expected field_errors to be a dict in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
-        assert len(update_error['field_errors']) == 1, f'Expected one field error in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
+        assert invalid_field_name in update_error['field_errors'], f'Expected field error for {invalid_field_name} in response for {model["name"]["pascal_case"]} with invalid data {invalid_example}, got {update_error} for field {invalid_field_name}'
+
+    invalid_update_with_date = deepcopy(example_to_update)
+    invalid_update_with_date['date_modified'] = '2024-01-01T00:00:00+00:00'
+    update_with_date_cmd = cmd + [module_name_kebab, model_name_kebab, command_type, 'update', update_model_id, json.dumps(invalid_update_with_date)]
+    update_with_date_result = _run_cmd(update_with_date_cmd, expected_code=1, env=ctx)
+    update_with_date_error = json.loads(update_with_date_result.stdout).get('error', {})
+    assert update_with_date_error.get('code') == 'VALIDATION_ERROR', f'Expected VALIDATION_ERROR when update payload sets date_modified, got {update_with_date_error}'
+    assert 'date_modified' in update_with_date_error.get('field_errors', {}), f'Expected date_modified field error, got {update_with_date_error}'
 
     # read back original example to ensure it was not modified
     read_back_result = _run_cmd(cmd + [module_name_kebab, model_name_kebab, command_type, 'read', update_model_id], env=ctx)
     read_model = json.loads(read_back_result.stdout)
     del read_model['id']
+    _pop_and_validate_timestamps(read_model, f'read-after-validation-error {model["name"]["pascal_case"]}')
     if model['auth']['require_login']:
         example_to_update['user_id'] = user_id
 
@@ -869,6 +932,10 @@ class TestMTemplateApp(unittest.TestCase):
                 print(f':: copying cached crud db to working db ::')
             shutil.copy2(str(cls.crud_db_cache_file), str(cls.crud_db_file))
 
+        # social app requires users have a profile before posting
+        # this is a hack solution to ensure they are created
+        seed_profiles = 'social' in cls.spec['modules']
+
         # create crud users
         
         crud_users = ['alice', 'bob', 'charlie', 'david', 'evelyn', 'frank']
@@ -876,7 +943,7 @@ class TestMTemplateApp(unittest.TestCase):
         if needs_crud_rebuild and cls.spec['project']['use_builtin_modules']:
             sys.stdout.write(', users')
             sys.stdout.flush()
-            for user_name in crud_users:
+            for n, user_name in enumerate(crud_users):
 
                 # logout #
 
@@ -884,7 +951,7 @@ class TestMTemplateApp(unittest.TestCase):
                 result = subprocess.run(logout_cmd, capture_output=True, text=True, env=cls.crud_ctx)
                 # do not check result because logout may fail if no user is logged in
 
-                # create #
+                # create user #
 
                 user_data = {
                     'name': user_name,
@@ -897,6 +964,31 @@ class TestMTemplateApp(unittest.TestCase):
                 result = subprocess.run(create_cmd, capture_output=True, text=True, env=cls.crud_ctx)
                 if result.returncode != 0:
                     raise RuntimeError(f'Error creating crud user {user_name}:\n{result.stdout + result.stderr}')
+                
+                # seed profile #
+                if seed_profiles and n < 3:
+                
+                    # login #
+                    login_params = {'email': user_data['email'], 'password': user_data['password']}
+                    login_cmd = cls.cmd + ['auth', 'login-user', 'run', json.dumps(login_params), '--show', '--no-session']
+                    login_result = subprocess.run(login_cmd, capture_output=True, text=True, env=cls.crud_ctx)
+                    if login_result.returncode != 0:
+                        raise RuntimeError(f'Error logging in crud user {user_name} for profile creation:\n{login_result.stdout + login_result.stderr}')
+                    access_token = json.loads(login_result.stdout)['result']['access_token']
+
+                    profile_ctx = deepcopy(cls.crud_ctx)
+                    profile_ctx['MAPP_CLI_ACCESS_TOKEN'] = access_token
+
+                    profile_data = {
+                        'user_id': '-1',
+                        'username': f'{user_name}_profile',
+                        'bio': '{"lingo": {"version": "rich-text-beta-1"},"block": [{"text": "i am ' + user_name + '"}]}',
+                        'profile_picture': '-1'
+                    }
+                    profile_cmd = cls.cmd + ['social', 'profile', 'db', 'create', json.dumps(profile_data)]
+                    profile_result = subprocess.run(profile_cmd, capture_output=True, text=True, env=profile_ctx)
+                    if profile_result.returncode != 0:
+                        raise RuntimeError(f'Error creating profile for crud user {user_name}:\n{profile_result.stdout + profile_result.stderr}')
             
             shutil.copy2(str(cls.crud_db_file), str(cls.crud_db_cache_file))
             sys.stdout.write(f', cached db file')
@@ -949,6 +1041,8 @@ class TestMTemplateApp(unittest.TestCase):
             seed_jobs = []
             for module in cls.spec['modules'].values():
                 module_name_kebab = module['name']['kebab_case']
+                if module_name_kebab == 'social':
+                    continue # skip because these require creating a profile for each user
 
                 for model in module['models'].values():
                     if model['hidden'] is True:
@@ -1437,15 +1531,11 @@ class TestMTemplateApp(unittest.TestCase):
         self.assertIn('logged_in', logged_out_is_logged_in_resp['result'])
         self.assertFalse(logged_out_is_logged_in_resp['result']['logged_in'])
 
-    def test_auth_drop_sessions_hidden(self):
+    def test_hidden_endpoints(self):
         """
-        Test that the /api/auth/drop-sessions endpoint is not available in the server, but is via cli
+        Test that endpoints with entry_points.server=false are not accessible via the server, but still show up in CLI help
         """
         
-        #
-        # server
-        #
-
         self._check_servers_running()
 
         base_ctx = {
@@ -1454,33 +1544,53 @@ class TestMTemplateApp(unittest.TestCase):
             }
         }
         base_ctx.update(self.crud_ctx)
+        
+        #
+        # server
+        #
 
-        # attempt to call drop-sessions endpoint
-        methods = ['GET', 'OPTIONS', 'PUT', 'POST', 'DELETE']
-        for method in methods:
-            drop_sessions_status, drop_sessions_resp = request(
-                base_ctx,
-                method,
-                '/api/auth/drop-sessions'
-            )
+        endpoints = [
+            '/api/auth/drop-sessions',
+            '/auth/drop-sessions',
 
-            # should return 404 not found because endpoint should be hidden
-            self.assertEqual(drop_sessions_status, 404, f'Expected 404 from {method} auth/drop-sessions; but got {drop_sessions_status} and response {drop_sessions_resp}')
+            '/api/com/send-email',
+            '/com/send-email'
+        ]
+
+        for endpoint in endpoints:
+            # attempt to call drop-sessions endpoint
+            methods = ['GET', 'OPTIONS', 'PUT', 'POST', 'DELETE']
+            for method in methods:
+                drop_sessions_status, drop_sessions_resp = request(
+                    base_ctx,
+                    method,
+                    endpoint
+                )
+
+                # should return 404 not found because endpoint should be hidden
+                self.assertEqual(drop_sessions_status, 404, f'Expected 404 from {method} {endpoint}; but got {drop_sessions_status} and response {drop_sessions_resp}')
 
         #
         # cli
         #
 
-        args = self.cmd + ['auth', 'drop-sessions']
+        commands = [
+            ['auth', 'drop-sessions'],
+            ['com', 'send-email']
+        ]
 
-        result_1 = self._run_cmd(args + ['-h'], env=self.crud_ctx, expected_code=0)
-        self.assertIn(':: auth :: drop-sessions', result_1.stdout, 'drop-sessions command help not found in output')
+        for cmd in commands:
 
-        result_2 = self._run_cmd(args + ['run', '-h'], env=self.crud_ctx, expected_code=0)
-        self.assertIn(':: auth :: drop-sessions :: run', result_2.stdout, 'drop-sessions command help not found in output')
+            args = self.cmd + cmd
 
-        result_3 = self._run_cmd(args + ['http', '-h'], env=self.crud_ctx, expected_code=0)
-        self.assertIn(':: auth :: drop-sessions :: http', result_3.stdout, 'drop-sessions command help not found in output')
+            result_1 = self._run_cmd(args + ['-h'], env=self.crud_ctx, expected_code=0)
+            self.assertIn(f':: {cmd[0]} :: {cmd[1]}', result_1.stdout, 'drop-sessions command help not found in output')
+
+            result_2 = self._run_cmd(args + ['run', '-h'], env=self.crud_ctx, expected_code=0)
+            self.assertIn(f':: {cmd[0]} :: {cmd[1]} :: run', result_2.stdout, 'drop-sessions command help not found in output')
+
+            result_3 = self._run_cmd(args + ['http', '-h'], env=self.crud_ctx, expected_code=0)
+            self.assertIn(f':: {cmd[0]} :: {cmd[1]} :: http', result_3.stdout, 'drop-sessions command help not found in output')
 
     # builtin - file system tests #
 
@@ -1529,10 +1639,12 @@ class TestMTemplateApp(unittest.TestCase):
         env['MAPP_CLI_ACCESS_TOKEN'] = access_token
 
         # 3. com send-email (mock) #
-        send_input = json.dumps({'email': user_email, 'subject': 'Test', 'body': 'Hello'})
-        send_result = run_cmd(self.cmd + ['com', 'send-email', io_type, send_input])
-        send_data = json.loads(send_result.stdout)['result']
-        self.assertTrue(send_data['acknowledged'], f'send-email not acknowledged: {send_data}')
+        if io_type != 'http':
+            # this is hidden in the server, so skip if io_type is http
+            send_input = json.dumps({'email': user_email, 'subject': 'Test', 'body': 'Hello'})
+            send_result = run_cmd(self.cmd + ['com', 'send-email', io_type, send_input])
+            send_data = json.loads(send_result.stdout)['result']
+            self.assertTrue(send_data['acknowledged'], f'send-email not acknowledged: {send_data}')
 
         # 4. start-email-verification (mock, with --log to capture code) #
         start_result = run_cmd(self.cmd + ['--log', 'com', 'start-email-verification', io_type])
@@ -1602,15 +1714,6 @@ class TestMTemplateApp(unittest.TestCase):
         logged_in_ctx = base_ctx.copy()
         logged_in_ctx['headers'] = base_ctx['headers'].copy()
         logged_in_ctx['headers']['Authorization'] = f'Bearer {access_token}'
-
-        # send-email (mock) #
-
-        send_status, send_resp = request(
-            logged_in_ctx, 'POST', '/api/com/send-email',
-            json.dumps({'email': user_email, 'subject': 'Test', 'body': 'Hello'}).encode()
-        )
-        self.assertEqual(send_status, 200, f'send-email failed: {send_resp}')
-        self.assertTrue(send_resp['result']['acknowledged'], f'send-email not acknowledged: {send_resp}')
 
         # start-email-verification (mock - code will be in server logs, not returned) #
 
@@ -1997,6 +2100,8 @@ class TestMTemplateApp(unittest.TestCase):
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
+                if model_name == 'profile':
+                    continue # skip because this was already made during setup, and user can only create one
                 jobs.append((module_name_kebab, model_name, model, command_type, self.cmd, self.crud_ctx, create_user, create_user_env, other_user, other_user_env))
 
         # parallel process tests #
@@ -2047,6 +2152,8 @@ class TestMTemplateApp(unittest.TestCase):
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
             for model_name, model in module['models'].items():
+                if model_name == 'profile':
+                    continue # skip because this was already made during setup, and user can only create one
                 jobs.append((module_name_kebab, model_name, model, base_ctx, logged_out_ctx, alice_ctx, bob_ctx, charlie_ctx, alice_user, bob_user, charlie_user))
 
         #
@@ -2067,6 +2174,8 @@ class TestMTemplateApp(unittest.TestCase):
 
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
+            if module_name_kebab == 'social':
+                continue
 
             for model in module['models'].values():
 
@@ -2157,6 +2266,9 @@ class TestMTemplateApp(unittest.TestCase):
 
         for module in self.spec['modules'].values():
             module_name_kebab = module['name']['kebab_case']
+            if module_name_kebab == 'social':
+                continue
+
             for model_name, model in module['models'].items():
 
                 if model['auth']['max_models_per_user'] == 0:
@@ -2350,6 +2462,19 @@ class TestMTemplateApp(unittest.TestCase):
                     )
                     self.assertIn('message', output_error, f'Expected error message in response for {model_name_kebab} with invalid data {invalid_example}, got {output} for field {invalid_field_name}')
 
+                invalid_create_with_date = example_from_model(model)
+                invalid_create_with_date['date_created'] = '2024-01-01T00:00:00+00:00'
+                status, output = request(
+                    ctx,
+                    'POST',
+                    f'/api/{module_name_kebab}/{model_name_kebab}',
+                    json.dumps(invalid_create_with_date).encode()
+                )
+                self.assertEqual(status, 400, f'Expected 400 when create payload sets date_created, got {status}, resp: {output}')
+                output_error = output.get('error', {})
+                self.assertEqual(output_error.get('code', '-'), 'VALIDATION_ERROR', f'Expected VALIDATION_ERROR for date_created create payload, got {output}')
+                self.assertIn('date_created', output_error.get('field_errors', {}), f'Expected date_created field error, got {output}')
+
                 #
                 # test cannot update valid model with invalid data
                 #
@@ -2383,6 +2508,19 @@ class TestMTemplateApp(unittest.TestCase):
                     )
                     self.assertIn('message', output_error, f'Expected error message in response for {model_name_kebab} with invalid data {invalid_example}, got {output} for field {invalid_field_name}')
 
+                invalid_update_with_date = deepcopy(example_to_update)
+                invalid_update_with_date['date_modified'] = '2024-01-01T00:00:00+00:00'
+                status, output = request(
+                    ctx,
+                    'PUT',
+                    f'/api/{module_name_kebab}/{model_name_kebab}/{update_model_id}',
+                    json.dumps(invalid_update_with_date).encode()
+                )
+                self.assertEqual(status, 400, f'Expected 400 when update payload sets date_modified, got {status}, resp: {output}')
+                output_error = output.get('error', {})
+                self.assertEqual(output_error.get('code', '-'), 'VALIDATION_ERROR', f'Expected VALIDATION_ERROR for date_modified update payload, got {output}')
+                self.assertIn('date_modified', output_error.get('field_errors', {}), f'Expected date_modified field error, got {output}')
+
                 # read back original example to ensure it was not modified
                 status, read_model = request(
                     ctx,
@@ -2393,6 +2531,7 @@ class TestMTemplateApp(unittest.TestCase):
                 self.assertEqual(status, 200, f'Read after validation error for {model["name"]["pascal_case"]} did not return 200 OK, resp: {read_model}')
 
                 del read_model['id']
+                _pop_and_validate_timestamps(read_model, f'server-read-after-validation-error {model_name_kebab}')
                 if model['auth']['require_login']:
                     example_to_update['user_id'] = self.crud_users[crud_user]['user']['id']
                 

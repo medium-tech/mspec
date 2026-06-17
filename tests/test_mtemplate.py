@@ -14,7 +14,7 @@ test_num = 0
 TEST_CLEANUP = os.getenv('TEST_CLEANUP', '1') == '1'
 
 def should_have_jinja(filepath:str) -> bool:
-    if os.path.splitext(filepath)[1] in ['.jpg', '.png', '.pdf']:
+    if os.path.splitext(filepath)[1] in ['.jpg', '.png', '.pdf', '.tiff']:
         return False
     elif filepath.endswith('mapp.yaml'):
         return False
@@ -218,7 +218,7 @@ class BaseMSpecTest(unittest.TestCase):
 class TestSimpleSocialSpec(BaseMSpecTest):
     '''Test the complete app generation workflow'''
 
-    spec_file = REPO_ROOT / 'src' / 'mspec' / 'data' / 'generator' / 'sosh-net.yaml'
+    spec_file = REPO_ROOT / 'src' / 'mspec' / 'data' / 'generator' / 'social.yaml'
     
     def test_cache(self):
         self._test_cache(self.spec_file)
@@ -232,32 +232,34 @@ class TestSimpleSocialSpec(BaseMSpecTest):
         self._render(self.spec_file)
 
         expected_files = """
-		seed.sh
-		server.py
-		tests/crud.spec.js
-		tests/op.spec.js
-		tests/README.md
-		tests/samples/splash-high.jpg
-		tests/samples/lorem-document.pdf
-		tests/samples/splash-orig.png
-		tests/samples/splash-low.jpg
-		tests/auth.spec.js
-		tests/fixtures.js
-		tests/app.spec.js
-		tests/pagination.spec.js
-		playwright.config.js
-		run.sh
-		README.md
-		server.sh
-		.gitignore
-		package.json
-		uwsgi.yaml
-		root.py
-		test.sh
+        seed.sh
+        server.py
+        tests/crud.spec.js
+        tests/op.spec.js
+        tests/README.md
+        tests/samples/splash-high.jpg
+        tests/samples/large-image.tiff
+        tests/samples/lorem-document.pdf
+        tests/samples/splash-orig.png
+        tests/samples/splash-low.jpg
+        tests/auth.spec.js
+        tests/fixtures.js
+        tests/app.spec.js
+        tests/pagination.spec.js
+        playwright.config.js
+        run.sh
+        README.md
+        server.sh
+        .gitignore
+        package.json
+        uwsgi.yaml
+        uwsgi-linux.yaml
+        root.py
+        test.sh
         mapp.yaml
         .env.example
         .env
-		"""
+        """
 
         expected_files = sorted([line.strip() for line in expected_files.strip().splitlines()])
         actual_files = sorted([str(p.relative_to(self.test_dir)) for p in self.test_dir.rglob('*') if p.is_file()])

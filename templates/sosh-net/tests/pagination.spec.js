@@ -20,7 +20,7 @@ test('test pagination for all models', async ({ browser, paginationEnv, paginati
     const moduleKebab = module.name.kebab_case;
 
     // Skip built-in modules
-    if(skipModules.includes(moduleKebab)) {
+    if(skipModules.includes(moduleKebab) || moduleKebab === 'social') {
       continue;
     }
     

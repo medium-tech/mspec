@@ -1,0 +1,2468 @@
+{
+    "lingo": {
+        "version": "page-beta-1",
+        "parent_url": "/api/spec",
+        "title": "social :: event"
+    },
+    "params": {
+        "project_name": {
+            "name": {
+                "lower_case": "project name"
+            },
+            "type": "str",
+            "default": "My Lingo Project",
+            "description": "Name of the Lingo project"
+        },
+        "module_name": {
+            "name": {
+                "lower_case": "module name"
+            },
+            "type": "str",
+            "default": "my-module-a",
+            "description": "Name of the module"
+        },
+        "model_definition": {
+            "name": {
+                "lower_case": "model definition"
+            },
+            "type": "model",
+            "value": {
+                "name": {
+                    "lower_case": "my model a"
+                },
+                "fields": {
+                    "user_id": {
+                        "name": {
+                            "lower_case": "user id"
+                        },
+                        "type": "str",
+                        "description": "ID of the user who created the event"
+                    }
+                }
+            },
+            "description": "placeholder"
+        },
+        "model_id": {
+            "name": {
+                "lower_case": "model id"
+            },
+            "type": "str",
+            "default": "my-model-a",
+            "description": "ID of the model to use for the event"
+        },
+        "model_name": {
+            "name": {
+                "lower_case": "model name"
+            },
+            "type": "str",
+            "default": "my-model-a",
+            "description": "Name of the model"
+        }
+    },
+    "state": {
+        "event_op_view_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+        "replies_op_view_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        },
+		"reply_delete_state": {
+			"type": "list",
+			"item_type": {
+				"type": "struct",
+				"default": {
+					"state": "initial",
+					"error": ""
+				}
+			},
+			"default": []
+		},
+        "reply_reaction_op_state": {
+            "type": "list",
+            "item_type": {
+                "type": "struct",
+                "default": {
+                    "state": "initial",
+                    "error": "",
+                    "data": {},
+                    "result": {
+                        "type": "any",
+                        "value": null
+                    }
+                }
+            },
+            "default": []
+        },
+        "reply_user_reaction_local": {
+            "type": "list",
+            "item_type": {
+                "type": "str"
+            },
+            "default": []
+        },
+        "overall_op_view_state": {
+            "type": "str",
+            "description": "state is either 'default', 'result' or 'error'. If event_op_view_state and replies_op_view_state are result this will return result, if either are error it will return error, otherwise default",
+            "calc": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "and",
+                            "args": {
+                                "a": {
+                                    "call": "eq",
+                                    "args": {
+                                        "a": {
+                                            "call": "key",
+                                            "args": {
+                                                "object": {
+                                                    "state": {
+                                                        "event_op_view_state": {}
+                                                    }
+                                                },
+                                                "key": "state"
+                                            }
+                                        },
+                                        "b": "result"
+                                    }
+                                },
+                                "b": {
+                                    "call": "eq",
+                                    "args": {
+                                        "a": {
+                                            "call": "key",
+                                            "args": {
+                                                "object": {
+                                                    "state": {
+                                                        "replies_op_view_state": {}
+                                                    }
+                                                },
+                                                "key": "state"
+                                            }
+                                        },
+                                        "b": "result"
+                                    }
+                                }
+                            }
+                        },
+                        "then": "result"
+                    },
+                    {
+                        "elif": {
+                            "call": "or",
+                            "args": {
+                                "a": {
+                                    "call": "eq",
+                                    "args": {
+                                        "a": {
+                                            "call": "key",
+                                            "args": {
+                                                "object": {
+                                                    "state": {
+                                                        "event_op_view_state": {}
+                                                    }
+                                                },
+                                                "key": "state"
+                                            }
+                                        },
+                                        "b": "error"
+                                    }
+                                },
+                                "b": {
+                                    "call": "eq",
+                                    "args": {
+                                        "a": {
+                                            "call": "key",
+                                            "args": {
+                                                "object": {
+                                                    "state": {
+                                                        "replies_op_view_state": {}
+                                                    }
+                                                },
+                                                "key": "state"
+                                            }
+                                        },
+                                        "b": "error"
+                                    }
+                                }
+                            }
+                        },
+                        "then": "error"
+                    },
+                    {
+                        "else": "default"
+                    }
+                ]
+            }
+        },
+        "error_message": {
+            "type": "str",
+            "description": "if state.overall_op_view_state is error, this will return the error message from either event_op_view_state or replies_op_view_state",
+            "default": "",
+            "calc": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "event_op_view_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "error"
+                            }
+                        },
+                        "then": {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "event_op_view_state": {}
+                                    }
+                                },
+                                "key": "error"
+                            }
+                        }
+                    },
+                    {
+                        "elif": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "replies_op_view_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "error"
+                            }
+                        },
+                        "then": {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "replies_op_view_state": {}
+                                    }
+                                },
+                                "key": "error"
+                            }
+                        }
+                    },
+                    {
+                        "else": "no error"
+                    }
+                ]
+            }
+        },
+        "create_reply_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "item_id": "",
+                "data": {},
+                "field_errors": {}
+            }
+        },
+        "post_model_definition": {
+            "type": "model",
+            "default": {
+                "name": {
+                    "lower_case": "post"
+                },
+                "fields": {
+                    "user_id": {
+                        "name": {
+                            "lower_case": "user id"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "auth",
+                            "table": "user",
+                            "field": "id"
+                        }
+                    },
+                    "event_id": {
+                        "name": {
+                            "lower_case": "event id"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "social",
+                            "table": "event",
+                            "field": "id"
+                        }
+                    },
+                    "reply_to": {
+                        "name": {
+                            "lower_case": "reply to"
+                        },
+                        "type": "foreign_key",
+                        "references": {
+                            "module": "social",
+                            "table": "post",
+                            "field": "id"
+                        }
+                    },
+                    "message": {
+                        "name": {
+                            "lower_case": "message"
+                        },
+                        "type": "str",
+                        "rich_text": true,
+                        "description": "Content of the post, supports rich text format"
+                    },
+                    "attachments": {
+                        "name": {
+                            "lower_case": "attachments"
+                        },
+                        "type": "list",
+                        "element_type": "foreign_key",
+                        "references": {
+                            "module": "file_system",
+                            "table": "file",
+                            "field": "id"
+                        }
+                    },
+                    "images": {
+                        "name": {
+                            "lower_case": "images"
+                        },
+                        "type": "list",
+                        "element_type": "foreign_key",
+                        "references": {
+                            "module": "media",
+                            "table": "master_image",
+                            "field": "id"
+                        }
+                    },
+                    "related_posts": {
+                        "name": {
+                            "lower_case": "related posts"
+                        },
+                        "type": "list",
+                        "element_type": "foreign_key",
+                        "references": {
+                            "module": "social",
+                            "table": "post",
+                            "field": "id"
+                        }
+                    }
+                }
+            }
+        },
+        "event_op_definition": {
+            "name": {
+                "lower_case": "event op definition"
+            },
+            "type": "op",
+            "default": {
+                "type": "op",
+                "value": {
+                    "name": {
+                        "lower_case": "get event and post"
+                    },
+                    "description": "Get an event and its main post by event id",
+                    "func": {},
+                    "params": {
+                        "event_id": {
+                            "name": {
+                                "lower_case": "event id"
+                            },
+                            "type": "str",
+                            "default": "-1",
+                            "description": "ID of the event to get"
+                        }
+                    },
+                    "result": {
+                        "type": "struct",
+                        "value": {
+                            "event": {
+                                "type": "struct",
+                                "value": {}
+                            },
+                            "main_post": {
+                                "type": "struct",
+                                "value": {}
+                            }
+                        },
+                        "tests": {
+                            "test_cases": []
+                        }
+                    }
+                }
+            }
+        },
+        "edit_event_op_definition": {
+            "name": {
+                "lower_case": "edit event op definition"
+            },
+            "type": "op",
+            "default": {
+                "type": "op",
+                "value": {
+                    "name": {
+                        "lower_case": "edit event"
+                    },
+                    "description": "Edit an event title and/or main post message. Only the event creator can edit the event.",
+                    "func": {},
+                    "params": {
+                        "event_id": {
+                            "name": {
+                                "lower_case": "event id"
+                            },
+                            "type": "str"
+                        },
+                        "title": {
+                            "name": {
+                                "lower_case": "title"
+                            },
+                            "type": "str"
+                        },
+                        "start_time": {
+                            "name": {
+                                "lower_case": "start time"
+                            },
+                            "type": "datetime"
+                        },
+                        "end_time": {
+                            "name": {
+                                "lower_case": "end time"
+                            },
+                            "type": "datetime"
+                        },
+                        "location": {
+                            "name": {
+                                "lower_case": "location"
+                            },
+                            "type": "str"
+                        },
+                        "message": {
+                            "name": {
+                                "lower_case": "message"
+                            },
+                            "type": "str",
+                            "rich_text": true
+                        }
+                    },
+                    "result": {
+                        "type": "struct",
+                        "value": {
+                            "success": {
+                                "type": "bool",
+                                "value": false
+                            },
+                            "message": {
+                                "type": "str",
+                                "value": ""
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "replies_op_definition": {
+            "name": {
+                "lower_case": "replies op definition"
+            },
+            "type": "op",
+            "default": {
+                "type": "op",
+                "value": {
+                    "name": {
+                        "lower_case": "get replies for post"
+                    },
+                    "description": "Get all replies for a post by post id",
+                    "func": {},
+                    "params": {
+                        "post_id": {
+                            "name": {
+                                "lower_case": "post id"
+                            },
+                            "type": "str",
+                            "default": "-1",
+                            "description": "ID of the post to get replies for"
+                        },
+                        "offset": {
+                            "name": {
+                                "lower_case": "offset"
+                            },
+                            "type": "int",
+                            "default": 0,
+                            "description": "Pagination offset for replies"
+                        },
+                        "size": {
+                            "name": {
+                                "lower_case": "size"
+                            },
+                            "type": "int",
+                            "default": 25,
+                            "description": "Page size for replies"
+                        }
+                    },
+                    "result": {
+                        "type": "struct",
+                        "value": {
+                            "replies": {
+                                "type": "list",
+                                "value": []
+                            }
+                        },
+                        "tests": {
+                            "test_cases": []
+                        }
+                    }
+                }
+            }
+        },
+        "event": {
+            "type": "struct",
+            "calc": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "event_op_view_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "event_op_view_state": {}
+                                    }
+                                },
+                                "key": "result.value.event.value"
+                            }
+                        }
+                    },
+                    {
+                        "else": {
+                            "type": "struct",
+                            "value": {
+                                "id": "-1",
+                                "title": "..."
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "main_post": {
+            "type": "struct",
+            "calc": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "event_op_view_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "event_op_view_state": {}
+                                    }
+                                },
+                                "key": "result.value.main_post.value"
+                            }
+                        }
+                    },
+                    {
+                        "else": {
+                            "type": "struct",
+                            "value": {
+                                "id": "-1",
+                                "profile": {
+                                    "id": "-1",
+                                    "username": "Loading..."
+                                },
+                                "message": "{\"lingo\": {\"version\": \"rich-text-beta-1\"},\"block\": [{\"text\": \"Loading...\"}]}"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+		"all_reactions": {
+			"type": "list",
+			"default":["👍", "❤️", "😂", "🔥", "😢", "👎"]
+		},
+        "total_replies": {
+            "type": "int",
+            "calc": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "replies_op_view_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "replies_op_view_state": {}
+                                    }
+                                },
+                                "key": "result.value.replies.value.total"
+                            }
+                        }
+                    },
+                    {
+                        "else": {
+                            "type": "int",
+                            "value": 0
+                        }
+                    }
+                ]
+            }
+        },
+        "page_size": {
+            "type": "int",
+            "default": 20,
+            "description": "Number of items per page"
+        },
+        "page_number": {
+            "type": "int",
+            "default": 1,
+            "description": "Current page number"
+        },
+		"display_edit": {
+			"type": "bool",
+			"default": false
+		},
+        "edit_event_op_view_state": {
+            "type": "struct",
+            "default": {
+                "state": "initial",
+                "error": "",
+                "data": {},
+                "result": {
+                    "type": "any",
+                    "value": null
+                }
+            }
+        }
+    },
+    "ops": {
+        "main_post_is_loaded": {
+            "args": {},
+            "func": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "event_op_view_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": true
+                    },
+                    {
+                        "else": false
+                    }
+                ]
+            }
+        },
+        "is_replies_loaded": {
+            "args": {},
+            "func": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "replies_op_view_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "result"
+                            }
+                        },
+                        "then": true
+                    },
+                    {
+                        "else": false
+                    }
+                ]
+            }
+        },
+        "prev_page": {
+            "args": {},
+            "func": {
+                "call": "all",
+                "args": {
+                    "iterable": [
+                        {
+                            "set": {
+                                "state": {
+                                    "page_number": {}
+                                }
+                            },
+                            "to": {
+                                "call": "sub",
+                                "args": {
+                                    "a": {
+                                        "state": {
+                                            "page_number": {}
+                                        }
+                                    },
+                                    "b": 1
+                                }
+                            }
+                        },
+                        {
+                            "set": {
+                                "state": {
+                                    "replies_op_view_state": {
+                                        "state": {}
+                                    }
+                                }
+                            },
+                            "to": "triggered"
+                        }
+                    ]
+                }
+            }
+        },
+        "next_page": {
+            "args": {},
+            "func": {
+                "call": "all",
+                "args": {
+                    "iterable": [
+                        {
+                            "set": {
+                                "state": {
+                                    "page_number": {}
+                                }
+                            },
+                            "to": {
+                                "call": "add",
+                                "args": {
+                                    "a": {
+                                        "state": {
+                                            "page_number": {}
+                                        }
+                                    },
+                                    "b": 1
+                                }
+                            }
+                        },
+                        {
+                            "set": {
+                                "state": {
+                                    "replies_op_view_state": {
+                                        "state": {}
+                                    }
+                                }
+                            },
+                            "to": "triggered"
+                        }
+                    ]
+                }
+            }
+        },
+        "last_page": {
+            "args": {},
+            "func": {
+                "call": "max",
+                "args": {
+                    "a": {
+                        "call": "ceil",
+                        "args": {
+                            "number": {
+                                "call": "div",
+                                "args": {
+                                    "a": {
+                                        "state": {
+                                            "total_replies": {}
+                                        }
+                                    },
+                                    "b": {
+                                        "state": {
+                                            "page_size": {}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "b": 1
+                }
+            }
+        },
+        "refresh": {
+            "args": {},
+            "func": {
+                "set": {
+                    "state": {
+                        "replies_op_view_state": {
+                            "state": {}
+                        }
+                    }
+                },
+                "to": "triggered"
+            }
+        },
+		"toggle_edit_view": {
+			"args": {},
+			"func": {
+				"set": {
+					"state": {
+						"display_edit": {}
+					}
+				},
+				"to": {
+					"call": "not",
+					"args": {
+						"object": {
+							"state": {
+								"display_edit": {}
+							}
+						}
+					}
+				}
+			}
+		},
+		"reply_reaction_counts_string": {
+			"args": {
+				"reply_index": {
+					"type": "int"
+				},
+				"reply": {
+					"type": "any"
+				}
+			},
+			"func": {
+				"call": "join",
+				"args": {
+					"separator": " ",
+					"items": {
+						"call": "map",
+						"args": {
+							"function": {
+								"call": "concat",
+								"args": {
+									"items": [
+										{
+											"call": "key",
+											"args": {
+												"object": {
+													"self": "item"
+												},
+												"key": "group"
+											}
+										},
+										"x",
+										{
+											"call": "str",
+											"args": {
+												"object": {
+													"call": "add",
+													"args": {
+														"a": {
+															"call": "key",
+															"args": {
+																"object": {
+																	"self": "item"
+																},
+																"key": "count"
+															}
+														},
+														"b": {
+															"branch": [
+																{
+																	"if": {
+																		"call": "eq",
+																		"args": {
+																			"a": {
+																				"call": "key",
+																				"args": {
+																					"object": {
+																						"self": "item"
+																					},
+																					"key": "group"
+																				}
+																			},
+																			"b": {
+																				"call": "key",
+																				"args": {
+																					"object": {
+																						"state": {
+																							"reply_user_reaction_local": {}
+																						}
+																					},
+																					"key": {
+																						"call": "str",
+																						"args": {
+																							"object": {
+																								"args": "reply_index"
+																							}
+																						}
+																					},
+																					"default_value": "-"
+																				}
+																			}
+																		}
+																	},
+																	"then": 1
+																},
+																{
+																	"else": 0
+																}
+															]
+														}
+													}
+												}
+											}
+										}
+									]
+								}
+							},
+							"iterable": {
+								"call": "key",
+								"args": {
+									"object": {
+										"args": "reply"
+									},
+									"key": "reaction_counts",
+									"default_value": []
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"reset_reply_state": {
+			"args": {},
+			"func": {
+				"call": "all",
+				"args": {
+					"iterable": [
+						{
+							"set": {"state": {"reply_delete_state": {}}},
+							"to": []
+						},
+						{
+							"set": {"state": {"reply_reaction_op_state": {}}},
+							"to": []
+						},
+						{
+							"set": {"state": {"reply_user_reaction_local": {}}},
+							"to": []
+						}
+					]
+				}
+			}
+		}
+    },
+    "output": [
+		{
+            "breadcrumbs": [
+                "mtech",
+                {
+                    "params": {
+                        "module_name": {}
+                    }
+                }
+            ]
+        },
+		{
+			"text": " :: "
+		},
+		{
+			"link": "/social/event",
+			"text": "events"
+		},
+        {
+            "heading": {
+                "call": "join",
+                "args": {
+                    "separator": "",
+                    "items": [
+                        ":: ",
+                        {
+                            "state": {
+                                "event": {
+                                    "title": {}
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "level": 1
+        },
+		{
+            "branch": [
+                {
+                    "if": {
+                        "call": "and",
+                        "args": {
+                            "a": {
+								"call": "auth.is_owner",
+								"args": {
+									"model": {
+										"state": {
+											"event": {}
+										}
+									}
+								}
+							},
+							"b": {"state": {"display_edit": {}}}
+                        }
+                    },
+                    "then": [
+						{
+							"button": {
+								"op": {
+									"toggle_edit_view": {}
+								}
+							},
+							"text": "close editor"
+						},
+						{"text": " (you own this event)", "style": {"italic": true}},
+						{"break": 1}
+					]
+                },
+				{
+					"elif": {
+						"call": "auth.is_owner",
+						"args": {
+							"model": {
+								"state": {
+									"event": {}
+								}
+							}
+						}
+					},
+					"then": [
+						{
+							"button": {
+								"op": {
+									"toggle_edit_view": {}
+								}
+							},
+							"text": "open editor"
+						},
+						{"text": " (you own this event)", "style": {"italic": true}},
+						{"break": 1}
+					]
+				},
+                {
+                    "else": {"text": ""}
+                }
+            ]
+        },
+        {
+            "link": {
+                "call": "concat",
+                "args": {
+                    "items": [
+                        "/social/profile/",
+                        {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "main_post": {}
+                                    }
+                                },
+                                "key": "profile.id",
+                                "default_value": "-1"
+                            }
+                        }
+                    ]
+                }
+            },
+            "text": {
+                "call": "concat",
+                "args": {
+                    "items": [
+                        "@",
+                        {
+                            "call": "key",
+                            "args": {
+                                "object": {
+                                    "state": {
+                                        "main_post": {}
+                                    }
+                                },
+                                "key": "profile.username",
+                                "default_value": "anonymous"
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "text": " \u25cf "
+        },
+        {
+            "lingo": {
+                "call": "datetime.format_friendly",
+                "args": {
+                    "datetime": {
+                        "call": "key",
+                        "args": {
+                            "object": {
+                                "state": {
+                                    "main_post": {}
+                                }
+                            },
+                            "key": "date_modified",
+                            "default_value": ""
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "break": 1
+        },
+        {
+            "lingo": {
+                "state": {
+                    "main_post": {
+                        "message": {}
+                    }
+                }
+            },
+            "rich_text": true
+        },
+        {
+            "break": 1
+        },
+        {
+            "block": []
+        },
+		{
+			"branch": [
+				{
+					"if": {"state": {"display_edit": {}}},
+					"then": [
+						{
+							"heading": ":: edit event",
+							"level": 3
+						},
+						{
+                            "op": {
+                                "bind": {
+                                    "state": {
+                                        "edit_event_op_view_state": {}
+                                    }
+                                },
+                                "interactive": true,
+								"http": "/api/social/edit-event",
+                                "display": {
+                                    "show_result": false,
+									"friendly_status": true
+                                },
+                                "params": {
+                                    "event_id": {
+                                        "params": {
+                                            "model_id": {}
+                                        }
+                                    }
+                                },
+                                "initial_values": {
+                                    "title": {
+                                        "call": "key",
+                                        "args": {
+                                            "object": {
+                                                "state": {
+                                                    "event": {}
+                                                }
+                                            },
+                                            "key": "title",
+                                            "default_value": ""
+                                        }
+                                    },
+                                    "message": {
+                                        "call": "key",
+                                        "args": {
+                                            "object": {
+                                                "state": {
+                                                    "main_post": {}
+                                                }
+                                            },
+                                            "key": "message",
+                                            "default_value": ""
+                                        }
+                                    },
+                                    "start_time": {
+                                        "call": "key",
+                                        "args": {
+                                            "object": {
+                                                "state": {
+                                                    "event": {}
+                                                }
+                                            },
+                                            "key": "start_time",
+                                            "default_value": ""
+                                        }
+                                    },
+                                    "end_time": {
+                                        "call": "key",
+                                        "args": {
+                                            "object": {
+                                                "state": {
+                                                    "event": {}
+                                                }
+                                            },
+                                            "key": "end_time",
+                                            "default_value": ""
+                                        }
+                                    },
+                                    "location": {
+                                        "call": "key",
+                                        "args": {
+                                            "object": {
+                                                "state": {
+                                                    "event": {}
+                                                }
+                                            },
+                                            "key": "location",
+                                            "default_value": ""
+                                        }
+                                    }
+                                },
+                                "definition": {
+                                    "state": {
+                                        "edit_event_op_definition": {}
+                                    }
+                                },
+								"on_success": {
+									"call": "client.reload",
+									"args": {}
+								}
+                            }
+                        }
+					]
+				},
+				{
+					"else": ""
+				}
+			]
+		},	
+        {
+            "heading": ":: replies to event",
+            "level": 3
+        },
+        {
+            "button": {
+                "op": {
+                    "prev_page": {}
+                }
+            },
+            "text": "prev",
+            "disabled": {
+                "call": "eq",
+                "args": {
+                    "a": {
+                        "state": {
+                            "page_number": {}
+                        }
+                    },
+                    "b": 1
+                }
+            }
+        },
+        {
+            "button": {
+                "op": {
+                    "next_page": {}
+                }
+            },
+            "text": "next",
+            "disabled": {
+                "call": "ge",
+                "args": {
+                    "a": {
+                        "state": {
+                            "page_number": {}
+                        }
+                    },
+                    "b": {
+                        "op": {
+                            "last_page": {}
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "text": " \u25cf "
+        },
+        {
+            "button": {
+                "op": {
+                    "refresh": {}
+                }
+            },
+            "text": "refresh"
+        },
+        {
+            "text": " "
+        },
+        {
+            "switch": {
+                "expression": {
+                    "state": {
+                        "overall_op_view_state": {}
+                    }
+                },
+                "cases": [
+                    {
+                        "case": "result",
+                        "then": {
+                            "text": "\ud83d\udfe2"
+                        }
+                    },
+                    {
+                        "case": "error",
+                        "then": [
+                            {
+                                "text": "\ud83d\udd34 "
+                            },
+                            {
+                                "text": {
+                                    "state": {
+                                        "error_message": {}
+                                    }
+                                },
+                                "style": {
+                                    "color": "red"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "default": {
+                    "text": "\ud83d\udfe1"
+                }
+            }
+        },
+        {
+            "op": {
+                "bind": {
+                    "state": {
+                        "event_op_view_state": {}
+                    }
+                },
+                "auto_submit": true,
+                "display": {
+                    "show_result": false,
+                    "show_submit_button": false,
+                    "show_status_display": false
+                },
+                "interactive": true,
+                "http": "/api/social/get-event-and-post",
+                "params": {
+                    "event_id": {
+                        "params": {
+                            "model_id": {}
+                        }
+                    }
+                },
+                "definition": {
+                    "state": {
+                        "event_op_definition": {}
+                    }
+                },
+				"on_success": {
+					"call": "all",
+					"args": {
+						"iterable": [
+							{
+								"set": {"state": {"replies_op_view_state": {"state": {}}}},
+								"to": "triggered"
+							}
+						]
+					}
+				}
+            }
+        },
+        {
+            "op": {
+                "bind": {
+                    "state": {
+                        "replies_op_view_state": {}
+                    }
+                },
+                "display": {
+                    "show_result": false,
+                    "show_submit_button": false,
+                    "show_status_display": false,
+					"show_op_status_display": false,
+					"friendly_status": true
+                },
+                "interactive": true,
+                "http": "/api/social/get-replies-for-post",
+                "params": {
+                    "post_id": {
+                        "call": "key",
+                        "args": {
+                            "object": {
+                                "state": {
+                                    "main_post": {}
+                                }
+                            },
+                            "key": "id"
+                        }
+                    },
+                    "size": {
+                        "state": {
+                            "page_size": {}
+                        }
+                    },
+                    "offset": {
+                        "call": "mul",
+                        "args": {
+                            "a": {
+                                "state": {
+                                    "page_size": {}
+                                }
+                            },
+                            "b": {
+                                "call": "sub",
+                                "args": {
+                                    "a": {
+                                        "state": {
+                                            "page_number": {}
+                                        }
+                                    },
+                                    "b": 1
+                                }
+                            }
+                        }
+                    }
+                },
+                "definition": {
+                    "state": {
+                        "replies_op_definition": {}
+                    }
+                },
+				"on_success": {"op": {"reset_reply_state": {}}}
+            }
+        },
+        {
+            "branch": [
+                {
+                    "if": {
+                        "op": {
+                            "main_post_is_loaded": {}
+                        }
+                    },
+
+					"then": [
+						{
+							"text": "total replies: ",
+							"style": {
+								"bold": true
+							}
+						},
+						{
+							"lingo": {
+								"state": {
+									"total_replies": {}
+								}
+							}
+						},
+						{
+							"text": " \u25cf page: ",
+							"style": {
+								"bold": true
+							}
+						},
+						{
+							"lingo": {
+								"state": {
+									"page_number": {}
+								}
+							}
+						},
+						{
+							"text": " of "
+						},
+						{
+							"op": {
+								"last_page": {}
+							}
+						},
+						{
+							"branch": [
+								{
+									"if": {
+										"op": {
+											"is_replies_loaded": {}
+										}
+									},
+									"then": {
+										"type": "list",
+										"display": {
+											"format": "table",
+											"columns": [
+												"reply"
+											]
+										},
+										"value": {
+											"call": "map",
+											"args": {
+												"function": {
+													"type": "struct",
+													"value": {
+														"reply": {
+															"block": [
+																{
+																	"link": {
+																		"call": "concat",
+																		"args": {
+																			"items": [
+																				"/social/profile/",
+																				{
+																					"call": "key",
+																					"args": {
+																						"object": {
+																							"self": "item"
+																						},
+																						"key": "profile.value.id.value",
+																						"default_value": "-1"
+																					}
+																				}
+																			]
+																		}
+																	},
+																	"text": {
+																		"call": "concat",
+																		"args": {
+																			"items": [
+																				"@",
+																				{
+																					"call": "key",
+																					"args": {
+																						"object": {
+																							"self": "item"
+																						},
+																						"key": "profile.value.username.value",
+																						"default_value": "anonymous"
+																					}
+																				}
+																			]
+																		}
+																	}
+																},
+																{
+																	"text": " \u25cf "
+																},
+																{
+																	"lingo": {
+																		"call": "datetime.format_friendly",
+																		"args": {
+																			"datetime": {
+																				"call": "key",
+																				"args": {
+																					"object": {
+																						"self": "item"
+																					},
+																					"key": "date_modified",
+																					"default_value": ""
+																				}
+																			}
+																		}
+																	}
+																},
+																{
+																	"break": 1
+																},
+																{
+																	"branch": [
+																		{
+																			"if": {
+																				"call": "auth.is_owner",
+																				"args": {
+																					"model": {
+																						"self": "item"
+																					}
+																				}
+																			},
+																			"then": [
+																				{
+																					"model": {
+																						"bind": {
+																							"state": {
+																								"reply_delete_state": {
+																									"index": {
+																										"self": "index"
+																									}
+																								}
+																							}
+																						},
+																						"display": "delete",
+																						"model_data": {
+																							"self": "item"
+																						},
+																						"http": {
+																							"call": "concat",
+																							"args": {
+																								"items": [
+																									"/api/social/post/",
+																									{
+																										"call": "key",
+																										"args": {
+																											"object": {
+																												"self": "item"
+																											},
+																											"key": "id"
+																										}
+																									}
+																								]
+																							}
+																						},
+																						"model_id": {
+																							"call": "key",
+																							"args": {
+																								"object": {
+																									"self": "item"
+																								},
+																								"key": "id"
+																							}
+																						}
+																					}
+																				},
+																				{
+																					"text": " (your reply)",
+																					"style": {
+																						"italic": true
+																					}
+																				}
+																			]
+																		},
+																		{
+																			"else": {
+																				"text": ""
+																			}
+																		}
+																	]
+																},
+																{"break": 1},
+																{
+																	"lingo": {
+																		"call": "key",
+																		"args": {
+																			"object": {
+																				"self": "item"
+																			},
+																			"key": "message"
+																		}
+																	},
+																	"rich_text": true
+																},
+																{
+																	"break": 1
+																},
+																{
+																	"block": [
+																		{
+																			"op": {
+																				"bind": {
+																					"state": {
+																						"reply_reaction_op_state": {
+																							"index": {
+																								"call": "add",
+																								"args": {
+																									"a": {
+																										"call": "mul",
+																										"args": {
+																											"a": {
+																												"self": "index"
+																											},
+																											"b": 7
+																										}
+																									},
+																									"b": 0
+																								}
+																							}
+																						}
+																					}
+																				},
+																				"display": {
+																					"friendly_status": true,
+																					"show_result": false,
+																					"in_line": true,
+																					"show_op_status_display": false
+																				},
+																				"interactive": true,
+																				"http": "/api/social/react-to-reply",
+																				"instruction": "",
+																				"params": {
+																					"post_id": {
+																						"call": "key",
+																						"args": {
+																							"object": {
+																								"self": "item"
+																							},
+																							"key": "id"
+																						}
+																					},
+																					"reaction_type": "👍"
+																				},
+																				"definition": "social.react_to_reply",
+																				"submit_button_text": "👍",
+																				"on_success": {
+																					"set": {
+																						"state": {
+																							"reply_user_reaction_local": {
+																								"index": {
+																									"self": "index"
+																								}
+																							}
+																						}
+																					},
+																					"to": "👍"
+																				}
+																			}
+																		},
+																		{
+																			"op": {
+																				"bind": {
+																					"state": {
+																						"reply_reaction_op_state": {
+																							"index": {
+																								"call": "add",
+																								"args": {
+																									"a": {
+																										"call": "mul",
+																										"args": {
+																											"a": {
+																												"self": "index"
+																											},
+																											"b": 7
+																										}
+																									},
+																									"b": 1
+																								}
+																							}
+																						}
+																					}
+																				},
+																				"display": {
+																					"friendly_status": true,
+																					"show_result": false,
+																					"in_line": true,
+																					"show_op_status_display": false
+																				},
+																				"interactive": true,
+																				"http": "/api/social/react-to-reply",
+																				"instruction": "",
+																				"params": {
+																					"post_id": {
+																						"call": "key",
+																						"args": {
+																							"object": {
+																								"self": "item"
+																							},
+																							"key": "id"
+																						}
+																					},
+																					"reaction_type": "❤️"
+																				},
+																				"definition": "social.react_to_reply",
+																				"submit_button_text": "❤️",
+																				"on_success": {
+																					"set": {
+																						"state": {
+																							"reply_user_reaction_local": {
+																								"index": {
+																									"self": "index"
+																								}
+																							}
+																						}
+																					},
+																					"to": "❤️"
+																				}
+																			}
+																		},
+																		{
+																			"op": {
+																				"bind": {
+																					"state": {
+																						"reply_reaction_op_state": {
+																							"index": {
+																								"call": "add",
+																								"args": {
+																									"a": {
+																										"call": "mul",
+																										"args": {
+																											"a": {
+																												"self": "index"
+																											},
+																											"b": 7
+																										}
+																									},
+																									"b": 2
+																								}
+																							}
+																						}
+																					}
+																				},
+																				"display": {
+																					"friendly_status": true,
+																					"show_result": false,
+																					"in_line": true,
+																					"show_op_status_display": false
+																				},
+																				"interactive": true,
+																				"http": "/api/social/react-to-reply",
+																				"instruction": "",
+																				"params": {
+																					"post_id": {
+																						"call": "key",
+																						"args": {
+																							"object": {
+																								"self": "item"
+																							},
+																							"key": "id"
+																						}
+																					},
+																					"reaction_type": "😂"
+																				},
+																				"definition": "social.react_to_reply",
+																				"submit_button_text": "😂",
+																				"on_success": {
+																					"set": {
+																						"state": {
+																							"reply_user_reaction_local": {
+																								"index": {
+																									"self": "index"
+																								}
+																							}
+																						}
+																					},
+																					"to": "😂"
+																				}
+																			}
+																		},
+																		{
+																			"op": {
+																				"bind": {
+																					"state": {
+																						"reply_reaction_op_state": {
+																							"index": {
+																								"call": "add",
+																								"args": {
+																									"a": {
+																										"call": "mul",
+																										"args": {
+																											"a": {
+																												"self": "index"
+																											},
+																											"b": 7
+																										}
+																									},
+																									"b": 3
+																								}
+																							}
+																						}
+																					}
+																				},
+																				"display": {
+																					"friendly_status": true,
+																					"show_result": false,
+																					"in_line": true,
+																					"show_op_status_display": false
+																				},
+																				"interactive": true,
+																				"http": "/api/social/react-to-reply",
+																				"instruction": "",
+																				"params": {
+																					"post_id": {
+																						"call": "key",
+																						"args": {
+																							"object": {
+																								"self": "item"
+																							},
+																							"key": "id"
+																						}
+																					},
+																					"reaction_type": "🔥"
+																				},
+																				"definition": "social.react_to_reply",
+																				"submit_button_text": "🔥",
+																				"on_success": {
+																					"set": {
+																						"state": {
+																							"reply_user_reaction_local": {
+																								"index": {
+																									"self": "index"
+																								}
+																							}
+																						}
+																					},
+																					"to": "🔥"
+																				}
+																			}
+																		},
+																		{
+																			"op": {
+																				"bind": {
+																					"state": {
+																						"reply_reaction_op_state": {
+																							"index": {
+																								"call": "add",
+																								"args": {
+																									"a": {
+																										"call": "mul",
+																										"args": {
+																											"a": {
+																												"self": "index"
+																											},
+																											"b": 7
+																										}
+																									},
+																									"b": 4
+																								}
+																							}
+																						}
+																					}
+																				},
+																				"display": {
+																					"friendly_status": true,
+																					"show_result": false,
+																					"in_line": true,
+																					"show_op_status_display": false
+																				},
+																				"interactive": true,
+																				"http": "/api/social/react-to-reply",
+																				"instruction": "",
+																				"params": {
+																					"post_id": {
+																						"call": "key",
+																						"args": {
+																							"object": {
+																								"self": "item"
+																							},
+																							"key": "id"
+																						}
+																					},
+																					"reaction_type": "😢"
+																				},
+																				"definition": "social.react_to_reply",
+																				"submit_button_text": "😢",
+																				"on_success": {
+																					"set": {
+																						"state": {
+																							"reply_user_reaction_local": {
+																								"index": {
+																									"self": "index"
+																								}
+																							}
+																						}
+																					},
+																					"to": "😢"
+																				}
+																			}
+																		},
+																		{
+																			"op": {
+																				"bind": {
+																					"state": {
+																						"reply_reaction_op_state": {
+																							"index": {
+																								"call": "add",
+																								"args": {
+																									"a": {
+																										"call": "mul",
+																										"args": {
+																											"a": {
+																												"self": "index"
+																											},
+																											"b": 7
+																										}
+																									},
+																									"b": 5
+																								}
+																							}
+																						}
+																					}
+																				},
+																				"display": {
+																					"friendly_status": true,
+																					"show_result": false,
+																					"in_line": true,
+																					"show_op_status_display": false
+																				},
+																				"interactive": true,
+																				"http": "/api/social/react-to-reply",
+																				"instruction": "",
+																				"params": {
+																					"post_id": {
+																						"call": "key",
+																						"args": {
+																							"object": {
+																								"self": "item"
+																							},
+																							"key": "id"
+																						}
+																					},
+																					"reaction_type": "👎"
+																				},
+																				"definition": "social.react_to_reply",
+																				"submit_button_text": "👎",
+																				"on_success": {
+																					"set": {
+																						"state": {
+																							"reply_user_reaction_local": {
+																								"index": {
+																									"self": "index"
+																								}
+																							}
+																						}
+																					},
+																					"to": "👎"
+																				}
+																			}
+																		},
+																		{
+																			"branch": [
+																				{
+																					"if": {
+																						"call": "ne",
+																						"args": {
+																							"a": {
+																								"branch": [
+																									{
+																										"if": {
+																											"call": "ne",
+																											"args": {
+																												"a": {
+																													"call": "key",
+																													"args": {
+																														"object": {
+																															"state": {
+																																"reply_user_reaction_local": {}
+																															}
+																														},
+																														"key": {
+																															"call": "str",
+																															"args": {
+																																"object": {
+																																	"self": "index"
+																																}
+																															}
+																														},
+																														"default_value": "initial"
+																													}
+																												},
+																												"b": "initial"
+																											}
+																										},
+																										"then": {
+																											"call": "key",
+																											"args": {
+																												"object": {
+																													"state": {
+																														"reply_user_reaction_local": {}
+																													}
+																												},
+																												"key": {
+																													"call": "str",
+																													"args": {
+																														"object": {
+																															"self": "index"
+																														}
+																													}
+																												}
+																											}
+																										}
+																									},
+																									{
+																										"else": {
+																											"call": "key",
+																											"args": {
+																												"object": {
+																													"self": "item"
+																												},
+																												"key": "user_reaction"
+																											}
+																										}
+																									}
+																								]
+																							},
+																							"b": ""
+																						}
+																					},
+																					"then": [
+																						{
+																							"op": {
+																								"bind": {
+																									"state": {
+																										"reply_reaction_op_state": {
+																											"index": {
+																												"call": "add",
+																												"args": {
+																													"a": {
+																														"call": "mul",
+																														"args": {
+																															"a": {
+																																"self": "index"
+																															},
+																															"b": 7
+																														}
+																													},
+																													"b": 6
+																												}
+																											}
+																										}
+																									}
+																								},
+																								"display": {
+																									"friendly_status": true,
+																									"show_result": false,
+																									"in_line": true,
+																									"show_op_status_display": false
+																								},
+																								"interactive": true,
+																								"http": "/api/social/react-to-reply",
+																								"instruction": "",
+																								"params": {
+																									"post_id": {
+																										"call": "key",
+																										"args": {
+																											"object": {
+																												"self": "item"
+																											},
+																											"key": "id"
+																										}
+																									},
+																									"reaction_type": ""
+																								},
+																								"definition": "social.react_to_reply",
+																								"submit_button_text": {
+																									"call": "concat",
+																									"args": {
+																										"items": [
+																											"unreact ",
+																											{
+																												"branch": [
+																													{
+																														"if": {
+																															"call": "ne",
+																															"args": {
+																																"a": {
+																																	"call": "key",
+																																	"args": {
+																																		"object": {
+																																			"state": {
+																																				"reply_user_reaction_local": {}
+																																			}
+																																		},
+																																		"key": {
+																																			"call": "str",
+																																			"args": {
+																																				"object": {
+																																					"self": "index"
+																																				}
+																																			}
+																																		},
+																																		"default_value": "initial"
+																																	}
+																																},
+																																"b": "initial"
+																															}
+																														},
+																														"then": {
+																															"call": "key",
+																															"args": {
+																																"object": {
+																																	"state": {
+																																		"reply_user_reaction_local": {}
+																																	}
+																																},
+																																"key": {
+																																	"call": "str",
+																																	"args": {
+																																		"object": {
+																																			"self": "index"
+																																		}
+																																	}
+																																}
+																															}
+																														}
+																													},
+																													{
+																														"else": {
+																															"call": "key",
+																															"args": {
+																																"object": {
+																																	"self": "item"
+																																},
+																																"key": "user_reaction",
+																																"default_value": ""
+																															}
+																														}
+																													}
+																												]
+																											}
+																										]
+																									}
+																								},
+																								"on_success": {
+																									"set": {
+																										"state": {
+																											"reply_user_reaction_local": {
+																												"index": {
+																													"self": "index"
+																												}
+																											}
+																										}
+																									},
+																									"to": ""
+																								}
+																							}
+																						}
+																					]
+																				},
+																				{
+																					"else": ""
+																				}
+																			]
+																		}
+																	]
+																},
+																{"break": 1, "no_container": true},
+																{
+																	"lingo": {
+																		"op": {
+																			"reply_reaction_counts_string": {
+																				"reply_index": {
+																					"self": "index"
+																				},
+																				"reply": {
+																					"self": "item"
+																				}
+																			}
+																		}
+																	}
+																}
+															]
+														}
+													}
+												},
+												"iterable": {
+													"call": "key",
+													"args": {
+														"object": {
+															"state": {
+																"replies_op_view_state": {}
+															}
+														},
+														"key": "result.value.replies.value.items"
+													}
+												}
+											}
+										}
+									}
+								},
+								{
+									"else": {
+										"text": "loading replies..."
+									}
+								}
+							]
+						}
+					]
+                },
+                {
+                    "else": {
+                        "text": "loading event..."
+                    }
+                }
+            ]
+        },
+        {
+            "break": 1
+        },
+        {
+            "heading": ":: add reply",
+            "level": 5
+        },
+        {
+            "model": {
+                "bind": {
+                    "state": {
+                        "create_reply_state": {}
+                    }
+                },
+                "display": {
+                    "mode": "create",
+                    "show_model_state": false
+                },
+                "http": "/api/social/post",
+                "instance_url": "/social/post/",
+                "definition": {
+                    "state": {
+                        "post_model_definition": {}
+                    }
+                },
+                "params": {
+                    "user_id": "-1",
+                    "event_id": {
+                        "call": "key",
+                        "args": {
+                            "object": {
+                                "state": {
+                                    "event": {}
+                                }
+                            },
+                            "key": "id"
+                        }
+                    },
+                    "reply_to": {
+                        "call": "key",
+                        "args": {
+                            "object": {
+                                "state": {
+                                    "main_post": {}
+                                }
+                            },
+                            "key": "id"
+                        }
+                    },
+                    "attachments": [],
+                    "images": [],
+                    "related_posts": []
+                }
+            },
+            "comment": {
+                "branch": [
+                    {
+                        "if": {
+                            "call": "eq",
+                            "args": {
+                                "a": {
+                                    "call": "key",
+                                    "args": {
+                                        "object": {
+                                            "state": {
+                                                "create_reply_state": {}
+                                            }
+                                        },
+                                        "key": "state"
+                                    }
+                                },
+                                "b": "success"
+                            }
+                        },
+                        "then": {
+                            "button": {
+                                "op": {
+                                    "refresh": {}
+                                }
+                            },
+                            "text": "refresh"
+                        }
+                    },
+                    {
+                        "else": {
+                            "text": ""
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}

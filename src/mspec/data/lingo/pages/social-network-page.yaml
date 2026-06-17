@@ -1,0 +1,42 @@
+lingo:
+    version: page-beta-1
+    title: "social :: the network"
+
+params: {}
+
+state:
+    is_logged_in:
+        type: bool
+        calc:
+            call: key
+            args:
+                object:
+                    call: auth.is_logged_in
+                    args: {}
+                key: logged_in
+
+ops: {}
+
+output:
+    - breadcrumbs:
+          - "mtech"
+          - "social"
+
+    - heading: ':: mtech social network'
+      level: 1
+      
+    - text: ' ● '
+    - link: '/social/profile'
+      text: 'profiles'
+    - text: ' ● '
+    - link: '/social/event'
+      text: 'events'
+    - text: ' ● '
+    - link: '/social/forum'
+      text: 'forums'
+    - text: ' ● '
+    - link: '/social/account'
+      text: 'account'
+    - text: ' ● '
+    - break: 1
+    - text: where do you want to go?

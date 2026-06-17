@@ -62,11 +62,13 @@ __all__ = [
 #
 
 DATETIME_FORMAT_STR = '%Y-%m-%dT%H:%M:%S'
+MODEL_TIMESTAMP_FIELDS = ('date_created', 'date_modified')
 MAX_STR_FIELD_LENGTH = 1000
 MAX_RICH_TEXT_JSON_LENGTH = 25000
 MAX_LIST_FIELD_ITEMS = 10
 MAX_LIST_STR_TOTAL_LENGTH = 1000
 
+# for model field's with type: datetime
 def datetime_now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -82,6 +84,12 @@ def datetime_for_db(dt:datetime) -> str:
 def datetime_from_db(date_str:str) -> datetime:
     return datetime.fromisoformat(date_str)
 
+# for auto timestamp fields: date_created / date_modified
+def model_timestamp_from_str(date_str:str) -> datetime:
+    return datetime.fromisoformat(date_str)
+
+def model_timestamp_to_str(dt:datetime) -> str:
+    return dt.isoformat()
 
 class Acknowledgment:
     def __init__(self, message: str = 'No additional information') -> None:
@@ -225,7 +233,7 @@ class ModelListResult:
     items: list
     total: int
 
-def new_model_class(model_spec:dict, module_spec:Optional[dict]=None) -> type:
+def new_model_class(app_spec:dict, model_spec:dict, module_spec:Optional[dict]=None) -> type:
     """
     Dynamically creates a model class based on the provided model specification.
 
@@ -248,6 +256,10 @@ def new_model_class(model_spec:dict, module_spec:Optional[dict]=None) -> type:
     # copy because adding validation_callable below makes this
     # not json serializable
     _model_spec = deepcopy(model_spec)
+    # if 'fields' not in _model_spec:
+    #     print(f'WARNING: Model "{class_name}" is missing "fields" definition in its specification.')
+    #     print(str(_model_spec)[0:250] + '...') # print the spec for debugging, truncating if it's too long
+    
     
     for field in _model_spec['fields'].values():
 
@@ -256,27 +268,40 @@ def new_model_class(model_spec:dict, module_spec:Optional[dict]=None) -> type:
 
         if 'validation' in field:
             validation = field['validation']
-            try:
-                # only allowed validation currently is length of string validation
-                # eventually more of the lingo scripting spec will be enabled
-                assert validation['call'] == 'le'
-                validation['args']['a']['call'] == 'len'
-                validation['args']['a']['args']['object']['self'] == 'value'
-                assert isinstance(validation['args']['b'], int)
-            except (KeyError, AssertionError):
-                raise ValueError(f'validation for field {field_name} in model {class_name} is invalid, currently only supports string length validation')
             
             # create validation callable #
 
             lingo_app = LingoApp(
-                {},
+                deepcopy(app_spec),
                 dict(),
                 dict(),
                 list()
             )
-            field['validation_callable'] = lambda value: unwrap_primitive(lingo_execute(lingo_app, deepcopy(validation), {'self': {'value': value}}))
+            def validation_callable(value, ctx):
+                if ctx is None:
+                    validate_ctx = {'self': {'value': value}}
+                elif isinstance(value, dict):
+                    validate_ctx = deepcopy(ctx)
+                    validate_ctx['self'] = {'value': value}
+                else:
+                    from mapp.context import MappContext
+                    validate_ctx = MappContext(
+                        server_port=ctx.server_port,
+                        client=ctx.client,
+                        db=ctx.db,
+                        log=ctx.log,
+                        current_access_token=ctx.current_access_token,
+                        self=deepcopy(ctx.self)
+                    )
+                    validate_ctx.self['value'] = value
+
+                return unwrap_primitive(lingo_execute(lingo_app, deepcopy(validation), validate_ctx))
+
+            field['validation_callable'] = validation_callable
+
+    fields.extend(MODEL_TIMESTAMP_FIELDS)
     
-    new_class = namedtuple(class_name, fields)
+    new_class = namedtuple(class_name, fields, defaults=[None] * len(MODEL_TIMESTAMP_FIELDS))
     new_class._model_spec = _model_spec
     new_class._module_spec = deepcopy(module_spec)
     return new_class
@@ -299,6 +324,10 @@ def new_model(model_class:type, data:dict):
 
     if 'id' not in data:
         data['id'] = None
+    if 'date_created' not in data:
+        data['date_created'] = None
+    if 'date_modified' not in data:
+        data['date_modified'] = None
 
     for field in model_class._model_spec['fields'].values():
         field_name = field['name']['snake_case']
@@ -545,6 +574,21 @@ def convert_dict_to_model(model_class:type, data:dict):
     except KeyError:
         pass
 
+    for field_name in MODEL_TIMESTAMP_FIELDS:
+        try:
+            field_value = data[field_name]
+        except KeyError:
+            continue
+
+        if field_value is None:
+            converted_data[field_name] = None
+        elif isinstance(field_value, datetime):
+            converted_data[field_name] = field_value
+        elif isinstance(field_value, str):
+            converted_data[field_name] = model_timestamp_from_str(field_value)
+        else:
+            raise ValueError(f'Model field "{field_name}" must be datetime, str, or None')
+
     return new_model(model_class, converted_data)
 
 def convert_dict_to_op_params(op_class:type, data:dict):
@@ -603,14 +647,14 @@ def get_python_type_for_field(field_type:str) -> type:
         case _:
             raise ValueError(f'Unsupported field type: {field_type}')
 
-def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
+def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str, ctx=None) -> object:
     """
     Validates a model instance against its model class specification.
 
     Args:
         obj_class (type): The obj class to validate against.
         obj_instance (object): The obj instance to validate.
-        
+        ctx (dict, optional): The context for validation, if any.
         
     Returns:
         The obj instance
@@ -681,7 +725,7 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
 
                 if 'validation_callable' in field:
                     try:
-                        result = field['validation_callable'](value)
+                        result = field['validation_callable'](value, ctx)
                         if result is not True:
                             try:
                                 errors[field_name] = f'Field "{field_name}" is invalid: ' + field['validation_message']
@@ -748,21 +792,23 @@ def _validate_obj(data_spec:dict, obj_instance:object, err_msg:str) -> object:
     
     return obj_instance
 
-def validate_model(model_class:type, model_instance:object) -> object:
+def validate_model(model_class:type, model_instance:object, ctx=None) -> object:
     return _validate_obj(
         model_class._model_spec['fields'], 
         model_instance,
-        f'Model Validation failed for: {model_class._model_spec["name"]["pascal_case"]}'
+        f'Model Validation failed for: {model_class._model_spec["name"]["pascal_case"]}',
+        ctx=ctx
     )
 
-def validate_op_params(op_class:type, op_params_instance:object) -> object:
+def validate_op_params(op_class:type, op_params_instance:object, ctx=None) -> object:
     return _validate_obj(
         op_class._op_spec['params'], 
         op_params_instance,
-        f'Op Params Validation failed for: {op_class._op_spec["name"]["pascal_case"]}'
+        f'Op Params Validation failed for: {op_class._op_spec["name"]["pascal_case"]}',
+        ctx=ctx
     )
 
-def validate_op_output(op_class:type, op_output_instance:object) -> object:
+def validate_op_output(op_class:type, op_output_instance:object, ctx=None) -> object:
     try:
         definition = {'result': op_class._op_spec['result']}
     except KeyError:
@@ -771,7 +817,8 @@ def validate_op_output(op_class:type, op_output_instance:object) -> object:
     return _validate_obj(
         definition, 
         op_output_instance,
-        f'Op {op_class._op_spec["name"]["pascal_case"]} returned an invalid output'
+        f'Op {op_class._op_spec["name"]["pascal_case"]} returned an invalid output',
+        ctx=ctx
     )
 
 #
@@ -782,7 +829,10 @@ class MappJsonEncoder(json.JSONEncoder):
 
     def default(self, obj):
         if isinstance(obj, datetime):
-            return obj.strftime(DATETIME_FORMAT_STR)
+            if obj.tzinfo is not None:
+                return model_timestamp_to_str(obj)
+            else:
+                return obj.strftime(DATETIME_FORMAT_STR)
         elif isinstance(obj, ModelListResult):
             return {
                 'items': [item._asdict() for item in obj.items],
@@ -826,6 +876,9 @@ def json_to_model(json_str:str, model_class:type, model_id:Optional[str]=None) -
             # id provided as arg and not in json, set it
             if model_id is not None:
                 data['id'] = model_id
+
+        for field_name in MODEL_TIMESTAMP_FIELDS:
+            data[field_name] = model_timestamp_from_str(data[field_name])
 
         return new_model(model_class, data)
     
@@ -873,7 +926,11 @@ def json_to_model_w_convert(model_class:type, json_str:str, model_id:Optional[st
 def model_list_from_json(json_str:str, model_class:type) -> 'ModelListResult':
     try:
         data = json.loads(json_str)
-        items = [model_class(**item) for item in data['items']]
+        items = []
+        for item in data['items']:
+            for field_name in MODEL_TIMESTAMP_FIELDS:
+                item[field_name] = model_timestamp_from_str(item[field_name])
+            items.append(model_class(**item))
         total = data['total']
         return ModelListResult(items=items, total=total)
     
@@ -948,7 +1005,7 @@ def redact_secure_fields(spec:dict, obj:object) -> object:
 
     for field_name, field in spec.items():
 
-        if field['type'] == 'struct':
+        if field['type'] == 'struct' and 'fields' in field:
             nested_spec = field['fields']
             nested_obj = getattr(obj, field_name)
             replacements[field_name] = redact_secure_fields(nested_spec, nested_obj)

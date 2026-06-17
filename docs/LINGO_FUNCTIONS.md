@@ -7,6 +7,7 @@
   - [Int](#int-functions)
   - [Float](#float-functions)
   - [Str](#str-functions)
+  - [Struct](#struct-functions)
   - [Math](#math-functions)
   - [Sequence](#sequence-functions)
   - [Sequence Ops](#sequence-ops-functions)
@@ -123,6 +124,29 @@
     - **ndigits** `int` (optional)
   - **return:** `float`
 
+`floor` - return the floor of a number (largest integer <= number)
+  - **args:**
+    - **number** `int|float`
+  - **return:** `int`
+
+`ceil` - return the ceiling of a number (smallest integer >= number)
+  - **args:**
+    - **number** `int|float`
+  - **return:** `int`
+
+`trunc` - truncate a number to an integer (toward zero)
+  - **args:**
+    - **number** `int|float`
+  - **return:** `int`
+
+`isclose` - return true if two values are close to each other
+  - **args:**
+    - **a** `float`
+    - **b** `float`
+    - **rel_tol** `float` (default: 1e-09)
+    - **abs_tol** `float` (default: 0.0)
+  - **return:** `bool`
+
 ### Str Functions
 `str` - convert to string
   - **args:**
@@ -134,6 +158,104 @@
     - **separator** `str`
     - **items** `list`
   - **return:** `str`
+
+`concat` - concatenate a list of strings
+  - **args:**
+    - **items** `list`
+  - **return:** `str`
+
+`casefold` - return a casefolded copy of the string for caseless matching
+
+**NOTE:** Python has robust casefolding for international case-insensitive matching, but Javascript lacks this. The JS interpreter will return a normal lower case string.
+  - **args:**
+    - **string** `str`
+  - **return:** `str`
+
+`ljust` - left-justify string in a field of given width
+  - **args:**
+    - **string** `str`
+    - **width** `int`
+    - **fillchar** `str` (default: `' '`)
+  - **return:** `str`
+
+`rjust` - right-justify string in a field of given width
+  - **args:**
+    - **string** `str`
+    - **width** `int`
+    - **fillchar** `str` (default: `' '`)
+  - **return:** `str`
+
+`center` - center string in a field of given width
+  - **args:**
+    - **string** `str`
+    - **width** `int`
+    - **fillchar** `str` (default: `' '`)
+  - **return:** `str`
+
+`strip` - return a copy of the string with leading and trailing whitespace (or given chars) removed
+  - **args:**
+    - **string** `str`
+    - **chars** `str` (optional)
+  - **return:** `str`
+
+`rstrip` - return a copy of the string with trailing whitespace (or given chars) removed
+  - **args:**
+    - **string** `str`
+    - **chars** `str` (optional)
+  - **return:** `str`
+
+`lstrip` - return a copy of the string with leading whitespace (or given chars) removed
+  - **args:**
+    - **string** `str`
+    - **chars** `str` (optional)
+  - **return:** `str`
+
+`removeprefix` - return the string with the given prefix removed (if present)
+  - **args:**
+    - **string** `str`
+    - **prefix** `str`
+  - **return:** `str`
+
+`removesuffix` - return the string with the given suffix removed (if present)
+  - **args:**
+    - **string** `str`
+    - **suffix** `str`
+  - **return:** `str`
+
+`startswith` - return true if the string starts with the given prefix
+  - **args:**
+    - **string** `str`
+    - **prefix** `str`
+  - **return:** `bool`
+
+`endswith` - return true if the string ends with the given suffix
+  - **args:**
+    - **string** `str`
+    - **suffix** `str`
+  - **return:** `bool`
+
+`replace` - return a copy of the string with occurrences of `old` replaced by `new`
+  - **args:**
+    - **string** `str`
+    - **old** `str`
+    - **new** `str`
+    - **count** `int` (default: -1, meaning replace all occurrences)
+  - **return:** `str`
+
+`re_match` - return true if the string matches the regular expression pattern
+
+**NOTE:** Use `^` and `$` anchors for full-string matching. Only use regex syntax compatible with both Python and JavaScript.
+  - **args:**
+    - **pattern** `str`
+    - **string** `str`
+  - **return:** `bool`
+
+### Struct Functions
+`key` - return the value of `key` from `object`. Key may use dot notationt to access sub objects and even lists, ex: `my.nested.key`, `works.on.0.lists` also! Argument `key` may access up to 10 levels, it must not start or end with a period.
+  - **args:**
+    - **key** `str`
+	- **object** `struct`
+	- **default_value** `any`
 
 ### Math Functions
 `add` - perform addition on `a` and `b` and return the result
@@ -237,11 +359,17 @@
     - **iterable** `list`
   - **return:** `list`
 
+`count` - return the number of occurrences of a value in a string or list
+  - **args:**
+    - **source** `str|list`
+    - **value** `str|int|float`
+  - **return:** `int`
+
 ### Sequence Ops Functions
 `map` - apply a function to each item in a list and return a new list
   - **args:**
     - **iterable** `list`
-    - **function** `expression`
+    - **function** `expression` - evaluated for each item; the current item is accessible as `self.item` and the zero-based position as `self.index`
   - **return:** `list`
 
 `filter` - filter a list by a function, returning items where the function is true
@@ -287,6 +415,13 @@
   - **args:**
     - *(none)*
   - **return:** `datetime`
+
+`datetime.format_friendly` - return a friendly formatted datetime string in the user's local timezone/offset
+
+**NOTE:** This function is currently implemented in the JavaScript Browser2 renderer only.
+  - **args:**
+    - **datetime** `datetime`
+  - **return:** `str`
 
 `current.weekday` - return the current weekday as an integer (0=Monday, 6=Sunday)
   - **args:**
@@ -447,11 +582,34 @@
     - **data** `struct` - model field values
   - **return:** `str` model ID
 
+`db.upsert` - Create or update a model instance using one or more conflict fields
+  - **args:**
+    - **model_type** `str` - dot-notation module.model
+    - **data** `struct` - model field values
+    - **conflict_fields** `list[str]` - field names used to detect conflicts (e.g. `['user_id', 'post_id']`)
+  - **conflict behavior:** if a conflict is found, all non-conflict fields in `data` are updated on the matched row
+  - **constraint requirement:** each `conflict_fields` set must match a unique index in the model definition, otherwise return a validation error
+  - **return:** struct of the created/updated model
+
 `db.read` - Read a single model instance by ID
   - **args:**
     - **model_type** `str` - dot-notation module.model (e.g. `sosh_net.post`)
     - **model_id** `str` - the record ID
+    - **include** `struct` *(optional)* - join request:
+      - **alias** `str` - output key name
+      - **model_type** `str` - joined model type
+      - **local_field** `str` - source field in the base model
+      - **foreign_field** `str` - target field in the joined model
+      - **fields** `list[str]` - joined fields to project (e.g. `['username']`)
+      - **cardinality** `str` *(optional, default: `one`)* - `one` returns a single joined struct (lowest `id` match when multiple rows match), `many` returns a list
   - **return:** struct with all model fields
+
+`db.patch` - Update specific fields on an existing model instance by ID
+  - **args:**
+    - **model_type** `str` - dot-notation module.model (e.g. `sosh_net.thread`)
+    - **model_id** `str` - the record ID
+    - **data** `struct` - partial model field values to update (only provided fields are changed)
+  - **return:** struct of the updated model with all fields
 
 `db.unique_counts` - Return counts of unique values for a model field
   - **args:**
@@ -463,9 +621,30 @@
 `db.query` - Return all rows matching a set of field equality filters
   - **args:**
     - **model_type** `str` - dot-notation module.model (e.g. `sosh_net.profile`)
-    - **fields** `struct` - `{field_name: value}` equality filters; only `str` and `foreign_key` field types are supported
+    - **where** `struct` - `{field_name: {eq: value}}` filter expressions (currently only the `eq` operator is supported for filters)
+    - **fields** `struct` *(legacy alias, optional)* - backward-compatible equality filter input from existing specs; maps to `where`
+      - if both `where` and `fields` are provided in one call, return a validation error
+    - **offset** `int` *(optional)* - pagination offset
+    - **size** `int` *(optional)* - pagination size
+    - **sort** `list[struct]` *(optional)* - ordered sort specs. Each item must include:
+      - **field** `str` - sortable field name (e.g. `date_modified`)
+      - **order** `str` - `asc` or `desc`
+    - **include** `struct` *(optional)* - same join syntax as `db.read`
+    - **unique_counts** `list[struct]` *(optional)* - attach grouped counts for each returned row. Each item supports:
+      - **alias** `str` - output key name
+      - **model_type** `str` - model to aggregate
+      - **source_field** `str` - field from row being queried
+      - **foreign_field** `str` - field in aggregate model matched to `source_field`
+      - **group_by** `str` - grouped field in aggregate model (e.g. `reaction_type`)
   - **return:** list of matching model structs (same format as `db.read`)
   - **errors:** Raises a `ValueError` if a filter key is an unsupported field type (e.g. `int`, `bool`)
+
+`db.delete_where` - Delete model rows by filter criteria
+  - **args:**
+    - **model_type** `str` - dot-notation module.model
+    - **where** `struct` - same filter format as `db.query`
+    - **message** `str` *(optional)* - custom success message
+  - **return:** struct with `acknowledged=true` and `message`
 
 ## Control Flow
 

@@ -204,11 +204,15 @@ test('test redacted fields', async ({ browser, crudEnv }) => {
 
 });
 
-test('test auth drop sessions is hidden', async ({ browser, crudEnv }) => {
-
-	const { host: crudHost } = crudEnv;
+test('test create user with duplicate email', async ({ crudEnv, browser }) => {
 
 	// init //
+
+	const uniqueId = new Date().getTime();
+	const email = `dupe-${uniqueId}@email.com`;
+	const testPassword = 'test-password-123';
+
+	const { host: crudHost } = crudEnv;
 	const context = await browser.newContext();
 	const page = await context.newPage();
 	await page.goto(crudHost);
@@ -221,12 +225,62 @@ test('test auth drop sessions is hidden', async ({ browser, crudEnv }) => {
 	}]);
 	await page.reload();
 	await page.goto(crudHost);
-
+	
+	// go to form and fill out //
 	await page.getByRole('link', { name: 'auth' }).click();
-  	await expect(page.locator('#lingo-app')).not.toContainText('drop-sessions');
+	await page.getByRole('link', { name: 'create-user' }).click();
+	await page.getByRole('row', { name: 'name:' }).getByRole('textbox').fill('Dupe Email Test');
+	await page.getByRole('row', { name: 'email:' }).getByRole('textbox').fill(email);
+	await page.getByRole('row', { name: 'password:' }).getByRole('textbox').fill(testPassword);
+	await page.getByRole('row', { name: 'password confirm:' }).getByRole('textbox').fill(testPassword);
 
-	const response = await page.goto(`${crudHost}/auth/drop-sessions`);
-	expect(response.status()).toBe(404);
-  	await expect(page.locator('pre')).toContainText('{"code": "NOT_FOUND", "message": "not found: /auth/drop-sessions"}');
+	// create user //
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.locator('#lingo-app')).toContainText('success');
 
+	// attempt to create user again with same email //
+	await page.getByRole('button', { name: 'Submit' }).click();
+	await expect(page.getByRole('table')).toContainText('Could not create user: email already exists');
+	
+});
+
+test('test create user with bad passwords', async ({ crudEnv, browser }) => {
+
+	// init //
+
+	const uniqueId = new Date().getTime();
+	const email = `bad-pw-${uniqueId}@email.com`;
+
+	const { host: crudHost } = crudEnv;
+	const context = await browser.newContext();
+	const page = await context.newPage();
+	await page.goto(crudHost);
+	await context.addCookies([{ 
+		name: 'protocol_mode', 
+		value: 'true', 
+		path: '/',
+		domain: new URL(crudHost).hostname,
+		secure: false,
+	}]);
+	await page.reload();
+	await page.goto(crudHost);
+	
+	// go to form and fill out //
+	await page.getByRole('link', { name: 'auth' }).click();
+	await page.getByRole('link', { name: 'create-user' }).click();
+	await page.getByRole('row', { name: 'name:' }).getByRole('textbox').fill('Bad Pass Test');
+	await page.getByRole('row', { name: 'email:' }).getByRole('textbox').fill(email);
+	
+	// short password
+	await page.getByRole('row', { name: 'password:' }).getByRole('textbox').fill('1');
+	await page.getByRole('row', { name: 'password confirm:' }).getByRole('textbox').fill('1');
+	await page.getByRole('button', { name: 'Submit' }).click();
+  	await expect(page.getByRole('table')).toContainText('Could not create user password: Password must be at least');
+
+	// mismatched password confirmation
+	await page.getByRole('row', { name: 'password:' }).getByRole('textbox').fill('1234567890123');
+	await page.getByRole('row', { name: 'password confirm:' }).getByRole('textbox').fill('0234567890123');
+	await page.getByRole('button', { name: 'Submit' }).click();
+  	await expect(page.getByRole('table')).toContainText('Could not create user password_confirm: Confirmation does not match');
+	
 });

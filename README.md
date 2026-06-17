@@ -271,10 +271,10 @@ Tests will run their own servers, with own sqlite file, on different ports that 
         * test generator: `./test.sh --npm-run test-gen`
     * use cached test data: `./test.sh --use-cache --npm-run`
 
-### sosh net app
-The sosh net app is an implementation of the mapp framework to build a social media network. It is generated with this command:
+### social app
+The social app is an implementation of the mapp framework to build a social media network. It is generated with this command:
 
-    python -m mtemplate render --output templates/sosh-net --spec sosh-net.yaml --as-builtin --no-cache
+    python -m mtemplate render --output templates/sosh-net --spec social.yaml --as-builtin --no-cache
 
 For development you can run the build script form the roots of the repo which does the above command plus sync the ui files:
 

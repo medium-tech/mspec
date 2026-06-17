@@ -18,11 +18,11 @@ __all__ = [
 # router
 #
 
-def create_model_routes(module_spec:dict, model_spec:dict) -> tuple[callable, type]:
+def create_model_routes(app_spec:dict, module_spec:dict, model_spec:dict) -> tuple[callable, type]:
     """
     Take a module and model spec and return a route resolver function for that model along with the model class.
     """
-    model_class = new_model_class(model_spec, module_spec)
+    model_class = new_model_class(app_spec, model_spec, module_spec)
     model_kebab_case = model_spec['name']['kebab_case']
     module_kebab_case = module_spec['name']['kebab_case']
 
