@@ -22,5 +22,6 @@ digital ocean notes
 
 ## deployment steps
 * pull new changes
+* activate venv
 * run pip install again for mspec repo to install new version
 * restart server
