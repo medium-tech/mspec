@@ -1,4 +1,3 @@
-import email
 import os
 import re
 import time
@@ -8,9 +7,8 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 import jwt
-from more_itertools import one
 
-from mapp.context import MappContext, MAPP_APP_PATH, cli_delete_session
+from mapp.context import MappContext, MAPP_APP_PATH
 from mapp.errors import AuthenticationError, MappError, MappValidationError
 from mapp.types import User, PasswordHash
 
