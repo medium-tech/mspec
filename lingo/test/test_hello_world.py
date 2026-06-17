@@ -4,11 +4,10 @@ import subprocess
 import sys
 import tempfile
 import unittest
-
 from pathlib import Path
 
 
-HELLO_WORLD = 'hello.world'
+EXPECTED_OUTPUT = 'hello.world'
 LINGO_SRC_DIR = Path(__file__).resolve().parents[1] / 'src'
 
 
@@ -32,7 +31,7 @@ class TestHelloWorldScripts(unittest.TestCase):
 
     def _assert_run_result(self, result: subprocess.CompletedProcess[str]) -> None:
         self.assertEqual(result.returncode, 0, msg=result.stderr or result.stdout)
-        self.assertEqual(result.stdout.strip(), HELLO_WORLD, msg=result.stdout)
+        self.assertEqual(result.stdout.strip(), EXPECTED_OUTPUT, msg=result.stdout)
         self.assertEqual(result.stderr.strip(), '')
 
     def test_python_hello_world(self):
