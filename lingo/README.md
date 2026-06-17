@@ -11,10 +11,10 @@ language-specific hello-world entry point.
 ```text
 lingo/
 ├── README.md
-├── src/
+├── interpreters/
 │   ├── c/
 │   ├── go/
-│   ├── h/
+│   ├── hs/
 │   ├── js/
 │   └── py/
 └── test/

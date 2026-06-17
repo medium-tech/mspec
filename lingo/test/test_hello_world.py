@@ -63,7 +63,7 @@ class TestHelloWorldScripts(unittest.TestCase):
     def test_haskell_hello_world(self):
         self._require_command('ghc', 'GHC is required to run the Haskell beta bootstrap.')
 
-        script_dir = LINGO_SRC_DIR / 'h'
+        script_dir = LINGO_SRC_DIR / 'hs'
         with tempfile.TemporaryDirectory() as build_dir:
             binary_path = self._binary_path(build_dir, 'hello-world-hs')
             build_result = self._run_command(
