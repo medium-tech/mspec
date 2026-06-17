@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 EXPECTED_OUTPUT = 'hello.world'
-LINGO_SRC_DIR = Path(__file__).resolve().parents[1] / 'src'
+LINGO_SRC_DIR = Path(__file__).resolve().parents[1] / 'interpreters'
 
 
 class TestHelloWorldScripts(unittest.TestCase):
