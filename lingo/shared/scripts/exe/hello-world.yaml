@@ -1,0 +1,6 @@
+lingo:
+    spec: 'exe'
+    version: '0.1.0b'
+
+main:
+    str: 'hello.world'

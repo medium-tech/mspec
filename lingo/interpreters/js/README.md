@@ -1,4 +1,4 @@
-# javascript bootstrap
+# javascript bootstrap package
 
 ## os setup
 
@@ -9,5 +9,5 @@
 ## run
 
 ```bash
-node main.js
+node .
 ```

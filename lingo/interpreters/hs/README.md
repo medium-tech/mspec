@@ -1,4 +1,4 @@
-# haskell bootstrap
+# haskell bootstrap package
 
 ## os setup
 
@@ -9,13 +9,13 @@
 ## build
 
 ```bash
-ghc -o hello-world main.hs
+ghc -isrc -o lingolib app/Main.hs
 ```
 
 ## run
 
 ```bash
-./hello-world
+./lingolib
 ```
 
-On Windows, run `hello-world.exe`.
+On Windows, run `lingolib.exe`.

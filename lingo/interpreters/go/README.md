@@ -1,4 +1,4 @@
-# go bootstrap
+# go bootstrap package
 
 ## os setup
 
@@ -9,13 +9,13 @@
 ## build
 
 ```bash
-go build -o hello-world main.go
+go build -o lingolib ./cmd/lingolib
 ```
 
 ## run
 
 ```bash
-./hello-world
+./lingolib
 ```
 
-On Windows, run `hello-world.exe`.
+On Windows, run `lingolib.exe`.

@@ -35,14 +35,14 @@ class TestHelloWorldScripts(unittest.TestCase):
 
     def test_python_hello_world(self):
         script_dir = LINGO_SRC_DIR / 'py'
-        result = self._run_command([sys.executable, 'main.py'], script_dir)
+        result = self._run_command([sys.executable, '-m', 'lingolib'], script_dir / 'src')
         self._assert_run_result(result)
 
     def test_javascript_hello_world(self):
         self._require_command('node', 'Node.js is required to run the JavaScript beta bootstrap.')
 
         script_dir = LINGO_SRC_DIR / 'js'
-        result = self._run_command(['node', 'main.js'], script_dir)
+        result = self._run_command(['node', '.'], script_dir)
         self._assert_run_result(result)
 
     def test_go_hello_world(self):
@@ -52,7 +52,7 @@ class TestHelloWorldScripts(unittest.TestCase):
         with tempfile.TemporaryDirectory() as build_dir:
             binary_path = self._binary_path(build_dir, 'hello-world-go')
             build_result = self._run_command(
-                ['go', 'build', '-o', str(binary_path), 'main.go'],
+                ['go', 'build', '-o', str(binary_path), './cmd/lingolib'],
                 script_dir,
             )
             self.assertEqual(build_result.returncode, 0, msg=build_result.stderr or build_result.stdout)
@@ -71,9 +71,10 @@ class TestHelloWorldScripts(unittest.TestCase):
                     'ghc',
                     '-outputdir',
                     build_dir,
+                    '-isrc',
                     '-o',
                     str(binary_path),
-                    'main.hs',
+                    'app/Main.hs',
                 ],
                 script_dir,
             )
@@ -90,7 +91,7 @@ class TestHelloWorldScripts(unittest.TestCase):
         with tempfile.TemporaryDirectory() as build_dir:
             binary_path = self._binary_path(build_dir, 'hello-world-c')
             build_result = self._run_command(
-                [compiler, '-o', str(binary_path), 'main.c'],
+                [compiler, '-Iinclude', '-o', str(binary_path), 'app/main.c', 'src/lingolib.c'],
                 script_dir,
             )
             self.assertEqual(build_result.returncode, 0, msg=build_result.stderr or build_result.stdout)
