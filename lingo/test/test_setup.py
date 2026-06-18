@@ -29,6 +29,12 @@ class TestLanguageSetup(unittest.TestCase):
             'GHC (ghc) is required to build and run the Haskell interpreter.',
         )
 
+    def test_haskell_cabal_setup(self):
+        self.assertIsNotNone(
+            shutil.which('cabal'),
+            'cabal is required to build the Haskell interpreter (cabal >= 3.4); install via ghcup: https://www.haskell.org/ghcup/',
+        )
+
     def test_c_setup(self):
         compiler = shutil.which('gcc') or shutil.which('cc')
         self.assertIsNotNone(

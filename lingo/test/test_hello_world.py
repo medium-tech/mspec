@@ -9,6 +9,7 @@ from pathlib import Path
 
 EXPECTED_OUTPUT = 'hello.world'
 LINGO_SRC_DIR = Path(__file__).resolve().parents[1] / 'interpreters'
+HELLO_WORLD_SCRIPT = Path(__file__).resolve().parents[1] / 'shared' / 'scripts' / 'exe' / 'hello-world.yaml'
 
 
 class TestHelloWorldScripts(unittest.TestCase):
@@ -35,14 +36,22 @@ class TestHelloWorldScripts(unittest.TestCase):
 
     def test_python_hello_world(self):
         script_dir = LINGO_SRC_DIR / 'py'
-        result = self._run_command([sys.executable, '-m', 'lingolib'], script_dir / 'src')
+        result = self._run_command(
+            [sys.executable, '-m', 'lingolib', 'exe', str(HELLO_WORLD_SCRIPT)],
+            script_dir / 'src',
+        )
         self._assert_run_result(result)
 
     def test_javascript_hello_world(self):
         self._require_command('node', 'Node.js is required to run the JavaScript beta bootstrap.')
 
         script_dir = LINGO_SRC_DIR / 'js'
-        result = self._run_command(['node', '.'], script_dir)
+        install_result = self._run_command(['npm', 'install'], script_dir)
+        self.assertEqual(install_result.returncode, 0, msg=install_result.stderr)
+        result = self._run_command(
+            ['node', 'bin/lingolib.js', 'exe', str(HELLO_WORLD_SCRIPT)],
+            script_dir,
+        )
         self._assert_run_result(result)
 
     def test_go_hello_world(self):
@@ -50,38 +59,38 @@ class TestHelloWorldScripts(unittest.TestCase):
 
         script_dir = LINGO_SRC_DIR / 'go'
         with tempfile.TemporaryDirectory() as build_dir:
-            binary_path = self._binary_path(build_dir, 'hello-world-go')
+            binary_path = self._binary_path(build_dir, 'lingolib-go')
             build_result = self._run_command(
                 ['go', 'build', '-o', str(binary_path), './cmd/lingolib'],
                 script_dir,
             )
             self.assertEqual(build_result.returncode, 0, msg=build_result.stderr or build_result.stdout)
 
-            run_result = self._run_command([str(binary_path)], script_dir)
+            run_result = self._run_command(
+                [str(binary_path), 'exe', str(HELLO_WORLD_SCRIPT)],
+                script_dir,
+            )
             self._assert_run_result(run_result)
 
     def test_haskell_hello_world(self):
-        self._require_command('ghc', 'GHC is required to run the Haskell beta bootstrap.')
+        if not shutil.which('cabal'):
+            self.skipTest('cabal not found; install via ghcup (https://www.haskell.org/ghcup/) to run Haskell tests')
 
         script_dir = LINGO_SRC_DIR / 'hs'
-        with tempfile.TemporaryDirectory() as build_dir:
-            binary_path = self._binary_path(build_dir, 'hello-world-hs')
-            build_result = self._run_command(
-                [
-                    'ghc',
-                    '-outputdir',
-                    build_dir,
-                    '-isrc',
-                    '-o',
-                    str(binary_path),
-                    'app/Main.hs',
-                ],
-                script_dir,
-            )
-            self.assertEqual(build_result.returncode, 0, msg=build_result.stderr or build_result.stdout)
 
-            run_result = self._run_command([str(binary_path)], script_dir)
-            self._assert_run_result(run_result)
+        build_result = self._run_command(['cabal', 'build'], script_dir)
+        self.assertEqual(build_result.returncode, 0, msg=build_result.stderr or build_result.stdout)
+
+        # locate the compiled binary (requires cabal >= 3.4)
+        list_result = self._run_command(['cabal', 'list-bin', 'lingolib'], script_dir)
+        self.assertEqual(list_result.returncode, 0, msg=list_result.stderr)
+        binary_path = list_result.stdout.strip()
+
+        run_result = self._run_command(
+            [binary_path, 'exe', str(HELLO_WORLD_SCRIPT)],
+            script_dir,
+        )
+        self._assert_run_result(run_result)
 
     def test_c_hello_world(self):
         compiler = shutil.which('gcc') or shutil.which('cc')
@@ -89,15 +98,35 @@ class TestHelloWorldScripts(unittest.TestCase):
 
         script_dir = LINGO_SRC_DIR / 'c'
         with tempfile.TemporaryDirectory() as build_dir:
-            binary_path = self._binary_path(build_dir, 'hello-world-c')
+            binary_path = self._binary_path(build_dir, 'lingolib-c')
+            # requires libyaml: brew install libyaml  /  apt install libyaml-dev
+            extra_flags = self._libyaml_flags()
             build_result = self._run_command(
-                [compiler, '-Iinclude', '-o', str(binary_path), 'app/main.c', 'src/lingolib.c'],
+                [compiler, '-Iinclude'] + extra_flags + ['-o', str(binary_path), 'app/main.c', 'src/lingolib.c', '-lyaml'],
                 script_dir,
             )
             self.assertEqual(build_result.returncode, 0, msg=build_result.stderr or build_result.stdout)
 
-            run_result = self._run_command([str(binary_path)], script_dir)
+            run_result = self._run_command(
+                [str(binary_path), 'exe', str(HELLO_WORLD_SCRIPT)],
+                script_dir,
+            )
             self._assert_run_result(run_result)
+
+    @staticmethod
+    def _libyaml_flags() -> list[str]:
+        """Return extra compiler flags for libyaml when headers/libs are in a
+        non-default prefix (e.g. Homebrew on Apple Silicon)."""
+        import platform
+        flags: list[str] = []
+        candidates = ['/opt/homebrew', '/usr/local']
+        for prefix in candidates:
+            header = Path(prefix) / 'include' / 'yaml.h'
+            lib = Path(prefix) / 'lib'
+            if header.exists():
+                flags += [f'-I{prefix}/include', f'-L{lib}']
+                break
+        return flags
 
 
 if __name__ == '__main__':

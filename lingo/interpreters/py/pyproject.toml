@@ -4,9 +4,10 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = 'lingolib'
-version = '0.1.0'
-description = 'Lingo Python interpreter bootstrap package'
+version = '0.1.0b'
+description = 'Lingo Python interpreter'
 requires-python = '>=3.9'
+dependencies = ['pyyaml==6.0.2']
 
 [project.scripts]
-lingolib = 'lingolib.__main__:main'
+lingolib = 'lingolib.cli:main'

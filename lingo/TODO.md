@@ -29,11 +29,13 @@ Planned implementation scope by interpreter:
 
 | Language | `exe` parse+execute | `lib` import | `app` runtime | `page` runtime | `rich-text` runtime |
 |---|---|---|---|---|---|
-| Python | 🟡 | 🟡 | 🔴 | 🔴 | 🔴 |
-| JavaScript | 🔴 | 🔴 | n/a | 🔴 | 🔴 |
-| Go | 🔴 | 🔴 | 🔴 | n/a | n/a |
-| Haskell | 🔴 | 🔴 | n/a | n/a | n/a |
-| C | 🔴 | 🔴 | n/a | n/a | n/a |
+| Python | 🟡 | 🔴 | 🔴 | 🔴 | 🔴 |
+| JavaScript | 🟡 | 🔴 | n/a | 🔴 | 🔴 |
+| Go | 🟡 | 🔴 | 🔴 | n/a | n/a |
+| Haskell | 🟡* | 🔴 | n/a | n/a | n/a |
+| C | 🟡 | 🔴 | n/a | n/a | n/a |
+
+*Haskell requires `cabal` (install via [ghcup](https://www.haskell.org/ghcup/)); test skips when absent.
 
 Notes:
 
@@ -195,12 +197,14 @@ Rules:
 
 ### M1 - `exe` hello world parity
 
-* 🔴 add YAML parser dependency in each interpreter package
-* 🔴 implement `parse_file` and minimal `exe` dispatch in all five languages
-* 🔴 implement standardized CLI:
-    * 🔴 `lingo --help`
-    * 🔴 `lingo exe <path>`
-* 🔴 execute `lingo/shared/scripts/exe/hello-world.yaml` in all languages
+* 🟢 add YAML parser dependency in each interpreter package
+* 🟡 implement `parse_file` and minimal `exe` dispatch in all five languages
+* 🟡 implement standardized CLI:
+    * 🟡 `lingo --help`
+    * 🟡 `lingo exe <path>`
+* 🟡 execute `lingo/shared/scripts/exe/hello-world.yaml` in all languages
+    * 🟢 Python, JavaScript, Go, C passing
+    * 🟡 Haskell — code written; requires `cabal` to build (install via ghcup)
 
 ### M2 - `lib` support for `exe`
 
@@ -220,9 +224,9 @@ Rules:
 
 ## Priority Backlog
 
-* 🔴 P0 create `lingo/shared/` with scripts, fixtures, expected outputs
-* 🔴 P0 implement YAML parse pipeline and envelope validation in all languages
-* 🔴 P0 implement common CLI help/usage behavior in all languages
+* 🟢 P0 create `lingo/shared/` with scripts, fixtures, expected outputs
+* 🟡 P0 implement YAML parse pipeline and envelope validation in all languages
+* 🟡 P0 implement common CLI help/usage behavior in all languages
 * 🔴 P1 define and freeze public `api` module/function names per interpreter
 * 🔴 P1 add cross-language contract tests for help, exe success/failure, exit codes
 * 🔴 P1 add native parser+executor tests in each interpreter package

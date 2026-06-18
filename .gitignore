@@ -17,5 +17,4 @@ src/mspec/data/mapp-ui/
 unittest*.log
 server.pid
 *.so
-*.h
-!lingo/interpreters/c/include/lingolib.h
+lingo/interpreters/hs/dist-newstyle/
