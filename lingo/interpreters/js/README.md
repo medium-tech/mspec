@@ -7,20 +7,29 @@
 - Linux: install Node.js with your package manager, for example `sudo apt install nodejs`
 
 ### npm setup
+
 ```bash
-npm run install
+npm install
 ```
 
 ## run
 
-### run with standard cli:
+### run with standard cli
 
 ```bash
 ./lingo.sh --help
 ./lingo.sh exe ../../shared/scripts/exe/hello-world.yaml
 ```
 
-### manual run:
+wrapper binary overrides:
+
+```bash
+LINGO_JS_BIN=/absolute/path/to/node ./lingo.sh exe ../../shared/scripts/exe/hello-world.yaml
+```
+
+global fallback is also supported: `LINGO_BIN`.
+
+### manual run
 
 ```bash
 node bin/lingolib.js -h

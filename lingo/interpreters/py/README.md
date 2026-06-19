@@ -8,12 +8,23 @@
 
 ### venv setup
 
-editable for dev testing
+create and activate a virtual environment (recommended), then install editable for dev testing:
+
 ```bash
+python -m venv .venv
+source .venv/bin/activate
 python -m pip install -e .
 ```
 
-## run 
+On Windows (PowerShell):
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e .
+```
+
+## run
 
 ### with standard cli
 
@@ -22,9 +33,16 @@ python -m pip install -e .
 ./lingo.sh exe ../../shared/scripts/exe/hello-world.yaml
 ```
 
-### manual run
+wrapper binary overrides:
 
 ```bash
-cd src
+LINGO_PY_BIN=/absolute/path/to/python ./lingo.sh exe ../../shared/scripts/exe/hello-world.yaml
+```
+
+global fallback is also supported: `LINGO_BIN`.
+
+### manual run
+must be in `./src` or have `lingolib` installed in your venv
+```bash
 python -m lingolib exe ../../../shared/scripts/exe/hello-world.yaml
 ```
