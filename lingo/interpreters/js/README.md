@@ -1,5 +1,5 @@
 # javascript lingo interpreter
-This is the Javascript interpreter and library for the lingo language.
+This is the JavaScript interpreter and library for the lingo language.
 
 ## setup
 
@@ -20,7 +20,10 @@ npm install
 ```bash
 ./lingo.sh --help
 ./lingo.sh exe ../../shared/scripts/exe/hello-world.yaml
+./lingo.sh -v exe ../../shared/scripts/exe/hello-world.yaml
 ```
+
+`build` is intentionally unsupported for JavaScript wrappers (source execution only).
 
 wrapper binary overrides:
 
@@ -29,6 +32,11 @@ LINGO_JS_BIN=/absolute/path/to/node ./lingo.sh exe ../../shared/scripts/exe/hell
 ```
 
 global fallback is also supported: `LINGO_BIN`.
+
+Verbose logging:
+
+- use `--verbose` or `-v`
+- log format: `:: INFO :: <msg>`
 
 ### manual run
 

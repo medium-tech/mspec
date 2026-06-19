@@ -27,12 +27,15 @@ python -m pip install -e .
 
 ## run
 
-### with standard cli
+### run with standard cli
 
 ```bash
 ./lingo.sh --help
 ./lingo.sh exe ../../shared/scripts/exe/hello-world.yaml
+./lingo.sh -v exe ../../shared/scripts/exe/hello-world.yaml
 ```
+
+`build` is intentionally unsupported for Python wrappers (source execution only).
 
 wrapper binary overrides:
 
@@ -42,8 +45,14 @@ LINGO_PY_BIN=/absolute/path/to/python ./lingo.sh exe ../../shared/scripts/exe/he
 
 global fallback is also supported: `LINGO_BIN`.
 
+Verbose logging:
+
+- use `--verbose` or `-v`
+- log format: `:: INFO :: <msg>`
+
 ### manual run
 must be in `./src` or have `lingolib` installed in your venv
 ```bash
+cd src
 python -m lingolib exe ../../../shared/scripts/exe/hello-world.yaml
 ```

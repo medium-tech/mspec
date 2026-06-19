@@ -17,6 +17,8 @@ After a successful build, generate a freeze file with exact dependency versions:
 cabal freeze
 ```
 
+## run
+
 ### run with standard cli
 By default this will use `cabal run` for dev testing:
 
@@ -28,7 +30,7 @@ By default this will use `cabal run` for dev testing:
 We can use `lingo.sh` to use `cabal build` to build a binary and then tell `lingo.sh` to use that via cli args or env variables.
 
 ```bash
-# lingo's 'go build' wrapper
+# lingo's 'cabal build' wrapper
 ./lingo.sh build
 
 # and then supply --run-mode (or -r) to use the pre-built binary 
@@ -37,7 +39,7 @@ We can use `lingo.sh` to use `cabal build` to build a binary and then tell `ling
 # or use env vars to control run mode
 LINGO_HS_RUN_MODE=built ./lingo.sh exe ../../shared/scripts/exe/hello-world.yaml
 
-# verbose logging for debugg paths and run mode
+# verbose logging for debug paths and run mode
 ./lingo.sh -v exe ../../shared/scripts/exe/hello-world.yaml
 ```
 

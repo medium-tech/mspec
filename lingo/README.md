@@ -48,6 +48,7 @@ Each interpreter directory should expose the same wrapper entrypoint:
 - `./lingo.sh --help`
 - `./lingo.sh exe <path>`
 - `./lingo.sh --verbose <command> [args]` (or `-v`)
+- `./lingo.sh --run-mode <dev|built> <command> [args]` (or `-r`, for interpreters that support build/run modes)
 
 Build command support:
 
@@ -71,6 +72,7 @@ Optional configuration knobs for wrappers:
 
 - language-specific run mode: `LINGO_GO_RUN_MODE`, `LINGO_HS_RUN_MODE`, `LINGO_C_RUN_MODE` (`dev|built`)
 - language-specific binary override: `LINGO_GO_BIN`, `LINGO_HS_BIN`, `LINGO_C_BIN`, `LINGO_PY_BIN`, `LINGO_JS_BIN`
+- C compiler override: `LINGO_C_CC`
 - C libyaml discovery override: `LINGO_C_LIBYAML_PREFIX=<prefix>`
 - optional global fallbacks (for ad-hoc usage): `LINGO_RUN_MODE`, `LINGO_BIN`
 

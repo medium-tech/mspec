@@ -43,6 +43,13 @@ LINGO_C_RUN_MODE=dev|built
 LINGO_C_BIN=/absolute/path/to/lingolib
 ```
 
+Compiler and libyaml overrides:
+
+```bash
+LINGO_C_CC=clang
+LINGO_C_LIBYAML_PREFIX=/opt/homebrew
+```
+
 Global fallbacks are also supported: `LINGO_RUN_MODE`, `LINGO_BIN`.
 
 Precedence for run mode selection:
@@ -51,6 +58,11 @@ Precedence for run mode selection:
 2. `LINGO_C_RUN_MODE`
 3. `LINGO_RUN_MODE`
 4. wrapper default (`dev`)
+
+Verbose logging:
+
+- use `--verbose` or `-v`
+- log format: `:: INFO :: <msg>`
 
 ### compiler and libyaml overrides
 

@@ -29,11 +29,23 @@ We can use `lingo.sh` to use `go build` to build a binary and then tell `lingo.s
 # or use env vars to control run mode
 LINGO_GO_RUN_MODE=built ./lingo.sh exe ../../shared/scripts/exe/hello-world.yaml
 
-# verbose logging for debugg paths and run mode
+# binary override for built mode
+LINGO_GO_BIN=/absolute/path/to/lingolib ./lingo.sh --run-mode built exe ../../shared/scripts/exe/hello-world.yaml
+
+# verbose logging for debug paths and run mode
 ./lingo.sh -v exe ../../shared/scripts/exe/hello-world.yaml
 ```
 
 You can force run mode per command with `--run-mode <dev|built>` (or `-r <dev|built>`).
+
+Run mode and binary overrides:
+
+```bash
+LINGO_GO_RUN_MODE=dev|built
+LINGO_GO_BIN=/absolute/path/to/lingolib
+```
+
+Global fallbacks are also supported: `LINGO_RUN_MODE`, `LINGO_BIN`.
 
 Precedence for run mode selection:
 
@@ -42,8 +54,10 @@ Precedence for run mode selection:
 3. `LINGO_RUN_MODE`
 4. wrapper default (`dev`)
 
-### binary path
-By default `./lingolib` is used as the binary path but you can override it with env variable `LINGO_GO_BIN` or `LINGO_BIN` as the global fallback.
+Verbose logging:
+
+- use `--verbose` or `-v`
+- log format: `:: INFO :: <msg>`
 
 ### manual build & run
 
