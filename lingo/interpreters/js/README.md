@@ -9,5 +9,6 @@
 ## run
 
 ```bash
-node .
+node bin/lingolib.js -h
+node bin/lingolib.js exe ../../shared/scripts/exe/hello-world.yaml 
 ```

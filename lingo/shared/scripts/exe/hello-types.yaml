@@ -1,0 +1,27 @@
+lingo:
+    spec: 'exe'
+    version: '0.1.0b'
+    description: 'Implementation of primitive types, it returns a long string of concatenated values of different types converted to string with various expected argument types'
+
+main:
+    concat:
+        - 'lingo primitive '
+        - type: str
+          value: 'testing :: bools '
+        - str: true
+        - ', '
+        - str:
+            type: bool
+            value: false
+        - ' :: ints '
+        - str:
+            type: int
+            value: 42
+        - ', '
+        - str: 24
+        - ' :: floats '
+        - str:
+            type: float
+            value: 3.14
+        - ', '
+        - str: 2.718

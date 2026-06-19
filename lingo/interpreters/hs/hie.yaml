@@ -1,0 +1,6 @@
+cradle:
+  cabal:
+    - path: './app/Main.hs'
+      component: 'lingolib:exe:lingolib'
+    - path: './src/Lingolib.hs'
+      component: 'lingolib:lib:lingolib'

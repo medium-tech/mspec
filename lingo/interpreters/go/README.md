@@ -15,7 +15,12 @@ go build -o lingolib ./cmd/lingolib
 ## run
 
 ```bash
-./lingolib
+./lingolib exe ../../shared/scripts/exe/hello-world.yaml
+```
+
+## build and run for dev testing
+```bash
+go run ./cmd/lingolib exe ../../shared/scripts/exe/hello-world.yaml
 ```
 
 On Windows, run `lingolib.exe`.

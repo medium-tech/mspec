@@ -17,9 +17,9 @@ Design around beta spec families:
 
 ### status colors
 
-|not started|in progress|finished|
-|--|--|--|
-|🔴|🟡|🟢|
+|not started|in progress|working but no test coverage|finished with test coverage|
+|--|--|--|--|
+|🔴|🟡|🟠|🟢|
 
 ---
 
@@ -198,13 +198,11 @@ Rules:
 ### M1 - `exe` hello world parity
 
 * 🟢 add YAML parser dependency in each interpreter package
-* 🟡 implement `parse_file` and minimal `exe` dispatch in all five languages
-* 🟡 implement standardized CLI:
-    * 🟡 `lingo --help`
-    * 🟡 `lingo exe <path>`
-* 🟡 execute `lingo/shared/scripts/exe/hello-world.yaml` in all languages
-    * 🟢 Python, JavaScript, Go, C passing
-    * 🟡 Haskell — code written; requires `cabal` to build (install via ghcup)
+* 🟢 implement `parse_file` and minimal `exe` dispatch in all five languages
+* 🟢 implement standardized CLI:
+    * 🟢 `lingo --help`
+    * 🟢 `lingo exe <path>`
+* 🟢 execute `lingo/shared/scripts/exe/hello-world.yaml` in all languages
 
 ### M2 - `lib` support for `exe`
 

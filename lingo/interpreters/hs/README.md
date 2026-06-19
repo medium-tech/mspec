@@ -36,3 +36,6 @@ On Windows (PowerShell):
 & (cabal list-bin lingolib) --help
 & (cabal list-bin lingolib) exe ..\..\shared\scripts\exe\hello-world.yaml
 ```
+
+## vs code extension
+First install `ghcup` on your machine, then extensions "Haskell" and "Haskell Syntax Highlighting" from the Haskell publisher.
