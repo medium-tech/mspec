@@ -7,6 +7,7 @@ README_PATH="$SCRIPT_DIR/README.md"
 CALLER_DIR="$PWD"
 DEFAULT_BIN="$SCRIPT_DIR/lingolib"
 VERBOSE=0
+RUN_MODE_OVERRIDE=''
 
 
 log_info() {
@@ -18,15 +19,40 @@ log_info() {
 
 parse_wrapper_flags() {
     local parsed=()
-    local arg
-
-    for arg in "$@"; do
-        case "$arg" in
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
             --verbose|-v)
                 VERBOSE=1
+                shift
+                ;;
+            --run-mode)
+                if [[ $# -lt 2 ]]; then
+                    echo 'error: --run-mode requires a value (dev|built)' >&2
+                    exit 1
+                fi
+                RUN_MODE_OVERRIDE="$2"
+                shift 2
+                ;;
+            -r)
+                if [[ $# -lt 2 ]]; then
+                    echo 'error: -r requires a value (dev|built)' >&2
+                    exit 1
+                fi
+                RUN_MODE_OVERRIDE="$2"
+                shift 2
+                ;;
+            --run-mode=*)
+                RUN_MODE_OVERRIDE="${1#--run-mode=}"
+                shift
+                ;;
+            --)
+                shift
+                parsed+=("$@")
+                break
                 ;;
             *)
-                parsed+=("$arg")
+                parsed+=("$1")
+                shift
                 ;;
         esac
     done
@@ -47,6 +73,12 @@ resolve_exe_path() {
 
 
 resolve_run_mode() {
+    if [[ -n "$RUN_MODE_OVERRIDE" ]]; then
+        log_info "Using command-line run mode override: $RUN_MODE_OVERRIDE"
+        echo "$RUN_MODE_OVERRIDE"
+        return
+    fi
+
     log_info 'Checking environment variable LINGO_GO_RUN_MODE'
     if [[ -n "${LINGO_GO_RUN_MODE:-}" ]]; then
         log_info "Using LINGO_GO_RUN_MODE: $LINGO_GO_RUN_MODE"

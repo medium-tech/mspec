@@ -1,4 +1,5 @@
-# python bootstrap package
+# python lingo interpreter
+This is the Python interpreter and library for the lingo language.
 
 ## setup
 

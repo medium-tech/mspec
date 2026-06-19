@@ -1,4 +1,5 @@
-# javascript bootstrap package
+# javascript lingo interpreter
+This is the Javascript interpreter and library for the lingo language.
 
 ## setup
 

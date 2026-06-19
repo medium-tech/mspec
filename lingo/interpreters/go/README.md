@@ -1,4 +1,5 @@
-# go bootstrap package
+# go lingo interpreter
+This is the Go interpreter and library for the lingo language.
 
 ## setup
 
@@ -9,21 +10,40 @@
 ## run
 
 ### run with standard cli
+By default this will use `go run` for dev testing:
 
 ```bash
-./lingo.sh build
-./lingo.sh --help
 ./lingo.sh exe ../../shared/scripts/exe/hello-world.yaml
 ```
 
-Run mode and binary overrides:
+### run mode
+We can use `lingo.sh` to use `go build` to build a binary and then tell `lingo.sh` to use that via cli args or env variables.
 
 ```bash
-LINGO_GO_RUN_MODE=dev|built
-LINGO_GO_BIN=/absolute/path/to/lingolib
+# lingo's 'go build' wrapper
+./lingo.sh build
+
+# and then supply --run-mode (or -r) to use the pre-built binary 
+./lingo.sh --run-mode built exe ../../shared/scripts/exe/hello-world.yaml
+
+# or use env vars to control run mode
+LINGO_GO_RUN_MODE=built ./lingo.sh exe ../../shared/scripts/exe/hello-world.yaml
+
+# verbose logging for debugg paths and run mode
+./lingo.sh -v exe ../../shared/scripts/exe/hello-world.yaml
 ```
 
-Global fallbacks are also supported: `LINGO_RUN_MODE`, `LINGO_BIN`.
+You can force run mode per command with `--run-mode <dev|built>` (or `-r <dev|built>`).
+
+Precedence for run mode selection:
+
+1. `--run-mode <dev|built>` / `-r <dev|built>` command-line flag
+2. `LINGO_GO_RUN_MODE`
+3. `LINGO_RUN_MODE`
+4. wrapper default (`dev`)
+
+### binary path
+By default `./lingolib` is used as the binary path but you can override it with env variable `LINGO_GO_BIN` or `LINGO_BIN` as the global fallback.
 
 ### manual build & run
 

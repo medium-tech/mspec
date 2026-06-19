@@ -1,4 +1,5 @@
-# c bootstrap package
+# c lingo interpreter
+This is the C interpreter and library for the lingo language.
 
 ## os setup
 
