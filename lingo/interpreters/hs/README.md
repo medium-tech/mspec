@@ -1,4 +1,5 @@
-# haskell bootstrap package
+# haskell lingo interpreter
+This is the Haskell interpreter and library for the lingo language.
 
 ## setup
 
