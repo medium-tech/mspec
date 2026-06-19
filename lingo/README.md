@@ -41,6 +41,45 @@ Notes:
 - keep CLI behavior standardized across languages
 - avoid large CLI frameworks for now; use small manual parsing for parity
 
+## standardized entrypoint contract (lingo.sh)
+
+Each interpreter directory should expose the same wrapper entrypoint:
+
+- `./lingo.sh --help`
+- `./lingo.sh exe <path>`
+
+Build command support:
+
+- Python: no `build` command (runs source directly)
+- JavaScript: no `build` command (runs source directly)
+- Go: supports `./lingo.sh build` (and `exe` via `go run` or built binary)
+- Haskell: supports `./lingo.sh build` (cabal build)
+- C: supports `./lingo.sh build` (native compile)
+
+Wrapper behavior requirements:
+
+- normalize command names and usage text across languages
+- print clear, language-specific toolchain prerequisites in `--help`
+- fail with actionable next steps and point to interpreter README when build/run is unavailable on the current OS
+- keep beta caveats explicit: not all build paths are expected to work on every OS/toolchain combination
+
+Optional configuration knobs for wrappers:
+
+- language-specific run mode: `LINGO_GO_RUN_MODE`, `LINGO_HS_RUN_MODE`, `LINGO_C_RUN_MODE` (`dev|built`)
+- language-specific binary override: `LINGO_GO_BIN`, `LINGO_HS_BIN`, `LINGO_C_BIN`, `LINGO_PY_BIN`, `LINGO_JS_BIN`
+- C libyaml discovery override: `LINGO_C_LIBYAML_PREFIX=<prefix>`
+- optional global fallbacks (for ad-hoc usage): `LINGO_RUN_MODE`, `LINGO_BIN`
+
+Precedence order for wrapper configuration:
+
+- command-line flag
+- language-specific environment variable
+- global fallback environment variable
+- wrapper default
+
+The goal is one muscle-memory interface for daily work while preserving
+language-native build and execution details under each interpreter package.
+
 ## layout
 
 ```text
