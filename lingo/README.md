@@ -47,6 +47,7 @@ Each interpreter directory should expose the same wrapper entrypoint:
 
 - `./lingo.sh --help`
 - `./lingo.sh exe <path>`
+- `./lingo.sh --verbose <command> [args]` (or `-v`)
 
 Build command support:
 
@@ -62,6 +63,9 @@ Wrapper behavior requirements:
 - print clear, language-specific toolchain prerequisites in `--help`
 - fail with actionable next steps and point to interpreter README when build/run is unavailable on the current OS
 - keep beta caveats explicit: not all build paths are expected to work on every OS/toolchain combination
+- support wrapper troubleshooting logs with `--verbose` / `-v`
+- verbose log format must be: `:: INFO :: <msg>`
+- verbose logging should include: env var checks, selected binary/toolchain, selected run mode, and key build/run steps
 
 Optional configuration knobs for wrappers:
 
