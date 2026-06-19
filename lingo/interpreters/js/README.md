@@ -9,6 +9,13 @@
 ## run
 
 ```bash
+./lingo.sh --help
+./lingo.sh exe ../../shared/scripts/exe/hello-world.yaml
+```
+
+Legacy/manual run:
+
+```bash
 node bin/lingolib.js -h
-node bin/lingolib.js exe ../../shared/scripts/exe/hello-world.yaml 
+node bin/lingolib.js exe ../../shared/scripts/exe/hello-world.yaml
 ```
