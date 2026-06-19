@@ -6,6 +6,34 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 README_PATH="$SCRIPT_DIR/README.md"
 CALLER_DIR="$PWD"
 DEFAULT_BIN="$SCRIPT_DIR/lingolib"
+VERBOSE=0
+
+
+log_info() {
+    if [[ "$VERBOSE" == '1' ]]; then
+        echo ":: INFO :: $*" >&2
+    fi
+}
+
+
+parse_wrapper_flags() {
+    local parsed=()
+    local arg
+
+    for arg in "$@"; do
+        case "$arg" in
+            --verbose|-v)
+                VERBOSE=1
+                ;;
+            *)
+                parsed+=("$arg")
+                ;;
+        esac
+    done
+
+    set -- "${parsed[@]}"
+    WRAPPER_ARGS=("$@")
+}
 
 
 resolve_exe_path() {
@@ -19,37 +47,57 @@ resolve_exe_path() {
 
 
 resolve_run_mode() {
+    log_info 'Checking environment variable LINGO_GO_RUN_MODE'
     if [[ -n "${LINGO_GO_RUN_MODE:-}" ]]; then
+        log_info "Using LINGO_GO_RUN_MODE: $LINGO_GO_RUN_MODE"
         echo "$LINGO_GO_RUN_MODE"
         return
     fi
+
+    log_info 'Checking environment variable LINGO_RUN_MODE'
     if [[ -n "${LINGO_RUN_MODE:-}" ]]; then
+        log_info "Using LINGO_RUN_MODE fallback: $LINGO_RUN_MODE"
         echo "$LINGO_RUN_MODE"
         return
     fi
+
+    log_info 'No run mode env var set; defaulting to dev'
     echo 'dev'
 }
 
 
 resolve_binary_path() {
+    log_info 'Checking environment variable LINGO_GO_BIN'
     if [[ -n "${LINGO_GO_BIN:-}" ]]; then
+        log_info "Using LINGO_GO_BIN: $LINGO_GO_BIN"
         echo "$LINGO_GO_BIN"
         return
     fi
+
+    log_info 'Checking environment variable LINGO_BIN'
     if [[ -n "${LINGO_BIN:-}" ]]; then
+        log_info "Using LINGO_BIN fallback: $LINGO_BIN"
         echo "$LINGO_BIN"
         return
     fi
+
+    log_info "Using default Go binary path: $DEFAULT_BIN"
     echo "$DEFAULT_BIN"
 }
 
 
 run_dev() {
+    log_info 'Execution mode selected: dev (go run)'
+    log_info 'Checking PATH for go toolchain'
     if ! command -v go >/dev/null 2>&1; then
+        log_info 'Go toolchain not found on PATH'
         echo 'error: Go toolchain not found (expected `go` on PATH).' >&2
         echo "See: $README_PATH" >&2
         exit 1
     fi
+
+    log_info 'Go toolchain found; running go run ./cmd/lingolib'
+    log_info "Executing: go run ./cmd/lingolib $*"
 
     (
         cd "$SCRIPT_DIR"
@@ -62,19 +110,28 @@ run_built() {
     local bin_path
     bin_path="$(resolve_binary_path)"
 
+    log_info 'Execution mode selected: built (prebuilt binary)'
+    log_info "Resolved built binary path: $bin_path"
+
     if [[ ! -x "$bin_path" ]]; then
+        log_info 'Built binary missing or not executable'
         echo "error: built binary not found or not executable: $bin_path" >&2
         echo 'hint: run `./lingo.sh build` or set LINGO_GO_BIN to a valid binary path.' >&2
         echo "See: $README_PATH" >&2
         exit 1
     fi
 
+    log_info "Executing prebuilt binary: $bin_path $*"
+
     "$bin_path" "$@"
 }
 
 
 build_binary() {
+    log_info 'Build command requested'
+    log_info 'Checking PATH for go toolchain'
     if ! command -v go >/dev/null 2>&1; then
+        log_info 'Go toolchain not found on PATH'
         echo 'error: Go toolchain not found (expected `go` on PATH).' >&2
         echo "See: $README_PATH" >&2
         exit 1
@@ -82,6 +139,9 @@ build_binary() {
 
     local bin_path
     bin_path="$(resolve_binary_path)"
+
+    log_info "Build output binary path: $bin_path"
+    log_info "Executing build: go build -o $bin_path ./cmd/lingolib"
 
     (
         cd "$SCRIPT_DIR"
@@ -91,8 +151,14 @@ build_binary() {
 
 
 main() {
+    parse_wrapper_flags "$@"
+    set -- "${WRAPPER_ARGS[@]}"
+
     local command="${1:---help}"
     local run_mode
+
+    log_info "Wrapper cwd: $CALLER_DIR"
+    log_info "Wrapper script dir: $SCRIPT_DIR"
 
     if [[ "$command" == 'build' ]]; then
         build_binary
@@ -101,12 +167,15 @@ main() {
 
     if [[ "$command" == 'exe' && $# -ge 2 ]]; then
         local exe_path
+        log_info "Resolving exe path argument: $2"
         exe_path="$(resolve_exe_path "$2")"
+        log_info "Resolved exe path: $exe_path"
         shift 2
         set -- exe "$exe_path" "$@"
     fi
 
     run_mode="$(resolve_run_mode)"
+    log_info "Selected run mode: $run_mode"
     case "$run_mode" in
         dev)
             run_dev "$@"
