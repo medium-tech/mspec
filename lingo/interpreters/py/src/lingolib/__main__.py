@@ -1,3 +1,5 @@
 from lingolib.cli import main
+from lingolib.context import LingoContext
 
-main()
+ctx = LingoContext()
+main(ctx)

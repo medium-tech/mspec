@@ -1,6 +1,8 @@
 lingo:
     spec: 'exe'
     version: '0.1.0b'
+
+meta:
     description: 'Implementation of primitive types, it returns a long string of concatenated values of different types converted to string with various expected argument types'
 
 main:
