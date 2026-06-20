@@ -1,9 +1,8 @@
 import sys
-from pprint import pprint
 
 from lingolib.api import execute_file, ast_from_file
 from lingolib.context import LingoContext
-from lingolib.parsing import print_lingo_ast
+from lingolib.parsing import lingo_ast_to_string
 HELP = (
     'usage: lingolib [--help] <command> [args]\n'
     '\n'
@@ -37,7 +36,7 @@ def main(ctx: LingoContext):
             sys.exit(1)
         try:
             ast = ast_from_file(ctx, args[1])
-            print_lingo_ast(ast)
+            print(lingo_ast_to_string(ast))
 
         except Exception as e:
             print(f'error: {e.__class__.__name__}: {e}', file=sys.stderr)

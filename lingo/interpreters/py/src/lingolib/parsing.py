@@ -141,7 +141,7 @@ def create_expression_ast_from_dict(ctx: LingoContext, data: dict) -> symbols.Ex
 # misc
 #
 
-def print_lingo_ast(spec: LingoASTSpec, indent=0):
+def lingo_ast_to_string(spec: LingoASTSpec, indent=0):
 	"""
 	recursively print a lingo AST spec in a human-readable format
 
@@ -150,18 +150,22 @@ def print_lingo_ast(spec: LingoASTSpec, indent=0):
 		if the attr value name starts with 'L_SYM' print it with indent
 	"""
 	attr_names = filter(lambda name: not name.startswith('_') and not name.startswith('L_SYM'), dir(spec))
+	output = []
 	for name in attr_names:
 		value = getattr(spec, name)
 		if hasattr(value, 'L_SYM_NAME'):
-			print('  ' * indent + f'L_SYM_{value.L_SYM_NAME}')
-			print_lingo_ast(value, indent + 1)
+			output.append('  ' * indent + f'L_SYM_{value.L_SYM_NAME}')
+			output.append(lingo_ast_to_string(value, indent + 1))
+
 		elif isinstance(value, list):
-			print('  ' * indent + f'{name}:')
+			output.append('  ' * indent + f'{name}:')
 			for item in value:
 				if hasattr(item, 'L_SYM_NAME'):
-					print('  ' * (indent + 1) + f'L_SYM_{item.L_SYM_NAME}')
-					print_lingo_ast(item, indent + 2)
+					output.append('  ' * (indent + 1) + f'L_SYM_{item.L_SYM_NAME}')
+					output.append(lingo_ast_to_string(item, indent + 2))
 				else:
-					print('  ' * (indent + 1) + f'{item!r}')
+					output.append('  ' * (indent + 1) + f'{item!r}')
 		elif isinstance(value, (str, int, float, bool)):
-			print('  ' * indent + f'{name}: {value!r}')
+			output.append('  ' * indent + f'{name}: {value!r}')
+			
+	return '\n'.join(output)
