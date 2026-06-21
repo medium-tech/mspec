@@ -3,14 +3,14 @@ from typing import Any
 from lingolib import symbols
 from lingolib.context import LingoContext
 from lingolib.errors import LingoError, LingoTypeError
-from lingolib.types import expression, LingoPrimitiveTypes, LingoLiteralTypes
+from lingolib.types import expression, LingoPrimitiveTypes, LingoLiteralTypes, LingoValue
 
 
 def execute_expression(ctx: LingoContext, expr):
     try:
         expr_callable = globals()[f'L_EXPR_{expr.L_SYM_NAME}']
     except AttributeError:
-        if isinstance(expr, LingoPrimitiveTypes):
+        if isinstance(expr, (LingoPrimitiveTypes, LingoValue)):
             return expr
         # elif isinstance(expr, list):
         #     return [execute_expression(ctx, item) for item in expr]
@@ -32,25 +32,41 @@ def unwrap_value(ctx, expr:LingoPrimitiveTypes|symbols.L_SYM_value) -> Any:
             return expr.value
         else:
             return unwrap_value(ctx, L_EXPR_value(ctx, expr.value))
+    elif isinstance(expr, LingoValue):
+        if isinstance(expr.value, LingoPrimitiveTypes):
+            return expr.value
+        else:
+            return unwrap_value(ctx, L_EXPR_value(ctx, symbols.L_SYM_value(type=expr.type, value=expr.value)))
     else:
         raise LingoTypeError(f'could not unwrap: {type(expr).__name__}')
+    
+def unwrap_expr(ctx, expr):
+    return unwrap_value(ctx, execute_expression(ctx, expr))
     
 #
 # expression executors
 #
 
 def L_EXPR_value(ctx, symbol:symbols.L_SYM_value):
-    return symbols.L_SYM_value(
+    # return symbols.L_SYM_value(
+    #     type=symbol.type, 
+    #     value=unwrap_value(ctx, execute_expression(ctx, symbol.value))
+    # )
+    
+    return LingoValue(
         type=symbol.type, 
-        value=unwrap_value(ctx, execute_expression(ctx, symbol.value))
+        value=unwrap_expr(ctx, symbol.value)
     )
 
 def L_EXPR_str(ctx, symbol:symbols.L_SYM_str):
-    primitive = unwrap_value(ctx, symbol.object)
+    primitive = unwrap_expr(ctx, symbol.object)
     if isinstance(primitive, bool):
-        return 'true' if primitive else 'false'
+        result = 'true' if primitive else 'false'
     else:
-        return str(primitive)
+        result = str(primitive)
+
+    return LingoValue(type='str', value=result)
 
 def L_EXPR_concat(ctx, symbol:symbols.L_SYM_concat):
-    return ''.join(unwrap_value(ctx, execute_expression(ctx, item)) for item in symbol.items)
+    result = ''.join(unwrap_expr(ctx, item) for item in symbol.items)
+    return LingoValue(type='str', value=result)

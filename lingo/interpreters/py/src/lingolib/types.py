@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import NamedTuple
 
 
 class expression:
@@ -15,3 +16,8 @@ LingoLiteralTypes = LingoPrimitiveTypes | list | dict
 
 LingoPrimitiveTypeNames = {'bool', 'int', 'str', 'float'}
 LingoLiteralTypeNames = LingoPrimitiveTypeNames | {'list', 'dict'}
+
+
+class LingoValue(NamedTuple):
+	type: ValueTypesEnum
+	value: LingoLiteralTypes
