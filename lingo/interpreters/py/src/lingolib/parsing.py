@@ -2,18 +2,20 @@ from dataclasses import dataclass
 import lingolib.symbols as symbols
 
 from lingolib.context import LingoContext
-from lingolib.errors import LingoSyntaxError, SymbolNotFoundError
+from lingolib.errors import LingoSyntaxError
 from lingolib.types import LingoPrimitiveTypeNames, LingoPrimitiveTypes, LingoLiteralTypes
+
 
 #
 # definitions
 #
 
+
 def _get_symbol_by_name(name: str):
 	try:
 		return getattr(symbols, f'L_SYM_{name}')
 	except AttributeError:
-		raise SymbolNotFoundError(f'no symbol found for name: {name!r}')
+		raise LingoSyntaxError(f'no symbol found for name: {name!r}')
 
 @dataclass
 class LingoASTExeSpec:
@@ -29,6 +31,7 @@ LingoASTSpec = LingoASTExeSpec | LingoASTLibSpec
 @dataclass
 class LingoASTExpression:
 	expression: symbols.ExpressionSymbols
+
 
 #
 # ast creation - specs
@@ -84,9 +87,11 @@ def spec_exe_ast_from_dict(ctx: LingoContext, lingo: symbols.L_SYM_lingo, data: 
 
 	return LingoASTExeSpec(lingo=lingo, main=main)
 
+
 #
 # ast creation - reusables
 #
+
 
 def create_expression_ast(ctx: LingoContext, data: LingoLiteralTypes) -> symbols.ExpressionSymbols:
 
@@ -137,9 +142,11 @@ def create_expression_ast_from_dict(ctx: LingoContext, data: dict) -> symbols.Ex
 	else:
 		raise LingoSyntaxError(f'unsupported expression dict: {data!r}')
 	
+
 #
 # misc
 #
+
 
 def lingo_ast_to_string(spec: LingoASTSpec, indent=0):
 	"""
@@ -167,5 +174,5 @@ def lingo_ast_to_string(spec: LingoASTSpec, indent=0):
 					output.append('  ' * (indent + 1) + f'{item!r}')
 		elif isinstance(value, (str, int, float, bool)):
 			output.append('  ' * indent + f'{name}: {value!r}')
-			
+
 	return '\n'.join(output)

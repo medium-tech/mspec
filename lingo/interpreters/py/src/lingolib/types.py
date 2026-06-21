@@ -11,7 +11,7 @@ class ValueTypesEnum(StrEnum):
 	float = 'float'
 
 LingoPrimitiveTypes = bool | int | str | float
-LingoLiteralTypes = LingoPrimitiveTypes | dict
+LingoLiteralTypes = LingoPrimitiveTypes | list | dict
 
 LingoPrimitiveTypeNames = {'bool', 'int', 'str', 'float'}
 LingoLiteralTypeNames = LingoPrimitiveTypeNames | {'list', 'dict'}

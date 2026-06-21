@@ -24,12 +24,10 @@ def main(ctx: LingoContext):
         if len(args) < 2:
             print('error: exe requires a path argument', file=sys.stderr)
             sys.exit(1)
-        try:
-            result = execute_file(args[1])
-            print(result)
-        except Exception as e:
-            print(f'error: {e}', file=sys.stderr)
-            sys.exit(1)
+    
+        result = execute_file(ctx, args[1])
+        print(result)
+
     elif command == 'ast':
         if len(args) < 2:
             print('error: ast requires a path argument', file=sys.stderr)

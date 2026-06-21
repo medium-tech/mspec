@@ -1,5 +1,8 @@
-class SymbolNotFoundError(Exception):
+class LingoError(Exception):
 	pass
 
-class LingoSyntaxError(Exception):
+class LingoSyntaxError(LingoError):
+	pass
+
+class LingoTypeError(LingoError):
 	pass
