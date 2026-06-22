@@ -240,8 +240,8 @@ def create_expression_ast_from_dict(ctx: LingoContext, data: dict, L_SRC: str) -
 
     if keys == {'handle'}:
         return symbols.L_SYM_handle(
-            expr=create_expression_ast(ctx, data['handle']), 
             L_SRC=f'{L_SRC}.handle',
+            expr=create_expression_ast(ctx, data['handle'], f'{L_SRC}.handle.expr'), 
             L_FILE=ctx.interpreter.file,
             L_LINE=get_yaml_line(data['handle'])
         )
@@ -375,6 +375,25 @@ def create_expression_ast_from_dict(ctx: LingoContext, data: dict, L_SRC: str) -
             )
         else:
             raise LingoSyntaxError(f'concat symbol must have a list {src_info()}')
+    
+    elif keys == {'join'}:
+        ctx.log.debug(f'create_expression_ast_from_dict - join expression: {data}')
+        args = {
+            'L_SRC': f'{L_SRC}.join', 
+            'L_FILE': ctx.interpreter.file, 
+            'L_LINE': get_yaml_line(data)
+        }
+
+        for arg in data['join'].keys():
+            match arg:
+                case 'items':
+                    args['items'] = create_expression_ast(ctx, data['join']['items'], f'{L_SRC}.join.items')
+                case 'separator':
+                    args['separator'] = create_expression_ast(ctx, data['join']['separator'], f'{L_SRC}.join.separator')
+                case _:
+                    raise LingoSyntaxError(f'join symbol does not support key: {arg!r}{src_info()}')
+
+        return symbols.L_SYM_join(**args)
     
     else:
         

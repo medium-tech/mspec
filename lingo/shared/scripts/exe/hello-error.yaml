@@ -25,7 +25,3 @@ main:
                     - 'i am '
                     - 100
                     - ' years old'
-            # - handle:
-            #     list:
-            #         - 'all elements but be the same type'
-            #         - true

@@ -197,10 +197,27 @@ class L_SYM_concat(NamedTuple):
 	@property
 	def L_SYM_TYPE(self):
 		return 'expression'
+	
+class L_SYM_join(NamedTuple):
+	"""symbol for the join function"""
+
+	L_SRC: str
+	items: list[str|expression]
+	separator: str|expression = ', '
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'join'
+	
+	@property
+	def L_SYM_TYPE(self):
+		return 'expression'
 
 # each line corresponds to a function group
 ExpressionSymbols = \
 	L_SYM_value | L_SYM_error | L_SYM_handle \
 	| L_SYM_eq \
 	| L_SYM_int | L_SYM_add \
-	| L_SYM_str | L_SYM_concat
+	| L_SYM_str | L_SYM_concat | L_SYM_join

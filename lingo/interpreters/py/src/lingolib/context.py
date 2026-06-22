@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 
-DEFAULT_LOG_LEVEL_NAME = os.environ.get('LINGO_LOG_LEVEL', 'DEBUG').upper()
+DEFAULT_LOG_LEVEL_NAME = os.environ.get('LINGO_LOG_LEVEL', 'INFO').upper()
 DEFAULT_LOG_LEVEL = getattr(logging, DEFAULT_LOG_LEVEL_NAME)
 
 def init_logger(level=DEFAULT_LOG_LEVEL):

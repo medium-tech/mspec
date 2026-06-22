@@ -6,25 +6,33 @@ from lingolib.errors import LingoLibError, LingoTypeError
 from lingolib.types import expression, LingoPrimitiveTypes, LingoLiteralTypes, LingoValue, LingoLanguageError
 
 
-# class LingoErrorPassThrough(Exception):
-#     """
-#     The lingo languge has an error symbol used similarly to Go's error handling, where instead of throwing an exception, a function can return an error value.
-#     in lingo, if any function/symbol arg is an error it will automatically pass that through as its return value without executing the function/symbol's main logic.
-#     The only lingo function that will not pass it through is the handle symbol, which converts the error to a string value and returns that.
+class LingoErrorPassThrough(Exception):
+    """
+    The lingo languge has an error symbol used similarly to Go's error handling, where instead of throwing an exception, a function can return an error value.
+    in lingo, if any function/symbol arg is an error it will automatically pass that through as its return value without executing the function/symbol's main logic.
+    The only lingo function that will not pass it through is the handle symbol, which converts the error to a string value and returns that.
 
-#     But in the python interpreter, we actually use exception throwing to implement this error pass through behavior from function to function.
-#     This exception class is used to accomplish that. The actual lingo error is passed around as LingoLanguageError which is a NamedTuple,
-#     These are different than LingoLibError and its subclasses which are used for actual exceptions in the interpreter implementation, and should not be confused with LingoLanguageError.
-#     """
+    But in the python interpreter, we actually use exception throwing to implement this error pass through behavior from function to function.
+    This exception class is used to accomplish that. The actual lingo error is passed around as LingoLanguageError which is a NamedTuple,
+    These are different than LingoLibError and its subclasses which are used for actual exceptions in the interpreter implementation, and should not be confused with LingoLanguageError.
+    """
 
-#     def __init__(self, error: LingoLanguageError):
-#         self.error = error
+    def __init__(self, error: LingoLanguageError):
+        self.error = error
 
 def get_language_error(errors: list[Any]) -> LingoLanguageError | None:
+    """find and return the first error, useful for short lists"""
     for error in errors:
         if isinstance(error, LingoLanguageError):
             return error
     return None
+
+def raise_error(item: Any) -> Any:
+    """useful for iterating over long sequences, to avoid multiple iterations to check for errors"""
+    if isinstance(item, LingoLanguageError):
+        raise LingoErrorPassThrough(item)
+    else:
+        return item
 
 def execute_expression(ctx: LingoContext, expr):
     if isinstance(expr, LingoLanguageError):
@@ -79,7 +87,7 @@ def L_EXPR_value(ctx, symbol:symbols.L_SYM_value):
             value=result
         )
 
-def L_EXPR_error(ctx, symbol:symbols.L_SYM_error):
+def L_EXPR_error(ctx:LingoContext, symbol:symbols.L_SYM_error):
     if not isinstance(symbol.error, str) or not isinstance(symbol.code, str):
         return LingoLanguageError(f'error and code fields of error symbol must be literal str values', code='TYPE_ERROR')
     else:
@@ -89,7 +97,7 @@ def L_EXPR_handle(ctx, symbol:symbols.L_SYM_handle):
     result = execute_expression(ctx, symbol.expr)
     
     if isinstance(result, LingoLanguageError):
-        return f'ERROR :: {result.code} {result.error}'
+        return f'LINGO_ERROR [{result.code}] - {result.error}'
     else:
         return result
     
@@ -104,7 +112,7 @@ def L_EXPR_eq(ctx, symbol:symbols.L_SYM_eq):
     if error:
         return error
     else:
-        return a == b
+        return LingoValue(type='bool', value=a == b)
 
 # int
 
@@ -120,14 +128,14 @@ def L_EXPR_int(ctx, symbol:symbols.L_SYM_int):
     elif isinstance(number, int):
         if base == 10:
             try:
-                return int(number)
+                return LingoValue(type='int', value=number)
             except (TypeError, ValueError) as e:
                 return LingoLanguageError(f'cannot convert {number!r} to int: {e}')
         else:
             return LingoLanguageError(f'Must provide number as str to use base other than 10')
     elif isinstance(number, str):
         try:
-            return int(number, base=base)
+            return LingoValue(type='int', value=int(number, base=base))
         except (TypeError, ValueError) as e:
             return LingoLanguageError(f'cannot convert {number!r} to int with base {base}: {e}')
     else:
@@ -142,7 +150,10 @@ def L_EXPR_add(ctx, symbol:symbols.L_SYM_add):
     if error:
         return error
     elif isinstance(a, (int, float)) and isinstance(b, (int, float)):
-        return a + b
+        return LingoValue(
+            type='int' if isinstance(a, int) and isinstance(b, int) else 'float', 
+            value=a + b
+        )
     else:
         return LingoLanguageError(f'args must be int or float for add symbol, got a: {type(a).__name__} and b: {type(b).__name__}', code='TYPE_ERROR')
 
@@ -170,5 +181,20 @@ def L_EXPR_concat(ctx, symbol:symbols.L_SYM_concat):
     try:
         return LingoValue(type='str', value=''.join(items))
     except TypeError as e:
-        ctx.log.error(f'error concatenating items: {e.__class__.__name__}: {e}')
+        ctx.log.debug(f'error concatenating items: {e.__class__.__name__}: {e}')
         return LingoLanguageError(f'all items for concat symbol must be str')
+    
+def L_EXPR_join(ctx, symbol:symbols.L_SYM_join):
+    try:
+        items = [raise_error(unwrap_expression(ctx, item)) for item in symbol.items]
+        separator = raise_error(unwrap_expression(ctx, symbol.separator))
+    except LingoErrorPassThrough as e:
+        return e.error
+    
+    try:
+        sep = separator.replace(r"\n", "\n").replace(r"\t", "\t")
+        return LingoValue(type='str', value=sep.join(items))
+    
+    except TypeError as e:
+        ctx.log.debug(f'error joining items: {e.__class__.__name__}: {e}')
+        return LingoLanguageError(f'separator and all items for join symbol must be str')
