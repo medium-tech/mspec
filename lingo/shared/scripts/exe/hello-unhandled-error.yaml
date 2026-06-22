@@ -6,8 +6,12 @@ meta:
     description: 'Confirm the type error from add is propogated through other functions instead of being converted by str'
 
 main:
-    list:
-        - str:
-            add:
-                a: '1'
-                b: '2'
+    # concat:
+    #     - str:
+    #         add:
+    #             a: '1'
+    #             b: '2'
+    str:
+        add:
+            a: '1'
+            b: '2'

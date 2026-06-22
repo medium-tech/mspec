@@ -26,6 +26,7 @@ def main(ctx: LingoContext):
             sys.exit(1)
     
         result = execute_file(ctx, args[1])
+        ctx.log.debug(f'exe return type: {type(result).__name__}')
         print(result)
 
     elif command == 'ast':

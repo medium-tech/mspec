@@ -2,9 +2,13 @@ from typing import Optional, NamedTuple
 
 from lingolib.types import expression, ValueTypesEnum
 
+#####
+#
 #
 # spec symbols
 #
+#
+#####
 
 class L_SYM_lingo(NamedTuple):
 
@@ -41,9 +45,16 @@ class L_SYM_main(NamedTuple):
 	@property
 	def L_SYM_TYPE(self):
 		return 'spec'
-
+#####
+#
 #
 # expression symbols
+#
+#
+#####
+
+#
+# uncategorized
 #
 
 class L_SYM_value(NamedTuple):
@@ -95,7 +106,9 @@ class L_SYM_handle(NamedTuple):
 	def L_SYM_TYPE(self):
 		return 'expression'
 
+#
 # comparison
+#
 
 class L_SYM_eq(NamedTuple):
 
@@ -113,7 +126,9 @@ class L_SYM_eq(NamedTuple):
 	def L_SYM_TYPE(self):
 		return 'expression'
 
+#
 # int
+#
 
 class L_SYM_int(NamedTuple):
 
@@ -147,8 +162,9 @@ class L_SYM_add(NamedTuple):
 	def L_SYM_TYPE(self):
 		return 'expression'
 
-
+#
 # str
+#
 
 class L_SYM_str(NamedTuple):
 	"""symbolt for the str function"""

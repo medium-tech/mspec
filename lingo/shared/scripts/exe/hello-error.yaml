@@ -7,23 +7,25 @@ meta:
 
 main:
     join:
-        - handle:
-            error: 'i am a test error'
-        - handle:
-            error: 'i am an error w a code'
-            code: 'ERROR_W_CODE'
-        - handle:
-            add:
-                a: '1'
-                b: '2'
-        - handle:
-            int: 'i am not a number'
-        - handle:
-            concat: 
-                - 'i am '
-                - 100
-                - ' years old'
-        # - handle:
-        #     list:
-        #         - 'all elements but be the same type'
-        #         - true
+        separator: '\n'
+        items:
+            - handle:
+                error: 'i am a test error'
+            - handle:
+                error: 'i am an error w a code'
+                code: 'ERROR_W_CODE'
+            - handle:
+                add:
+                    a: '1'
+                    b: '2'
+            - handle:
+                int: 'i am not a number'
+            - handle:
+                concat: 
+                    - 'i am '
+                    - 100
+                    - ' years old'
+            # - handle:
+            #     list:
+            #         - 'all elements but be the same type'
+            #         - true

@@ -141,7 +141,8 @@ def spec_exe_ast_from_dict(ctx: LingoContext, lingo: symbols.L_SYM_lingo, data: 
     
     try:
         main_expr = create_expression_ast(ctx, main_dict, 'main')
-
+    except LingoSyntaxError:
+        raise
     except Exception as e:
         raise LingoSyntaxError(f'error creating main expression AST: {e.__class__.__name__}: {e}')
     
@@ -227,6 +228,16 @@ def create_expression_ast_from_dict(ctx: LingoContext, data: dict, L_SRC: str) -
     keys = set(data.keys())
     ctx.log.debug(f'create_expression_ast_from_dict - keys: {keys!r}')
 
+    line_no = get_yaml_line(data)
+
+    def src_info():
+        msg = f"; '{L_SRC}'"
+        if ctx.interpreter.file:
+            msg += f' in file {ctx.interpreter.file!r}'
+            if line_no != -1:
+                msg += f' at line {line_no}'
+        return msg
+
     if keys == {'handle'}:
         return symbols.L_SYM_handle(
             expr=create_expression_ast(ctx, data['handle']), 
@@ -247,23 +258,23 @@ def create_expression_ast_from_dict(ctx: LingoContext, data: dict, L_SRC: str) -
                     if isinstance(data['error'], str):
                         args['error'] = data['error']
                     else:
-                        raise LingoSyntaxError(f'error field of error symbol must be a literal str value, expressions that return str are not supported')
+                        raise LingoSyntaxError(f'error field of error symbol must be a literal str value, expressions that return str are not supported{src_info()}')
                 case 'code':
                     if isinstance(data['code'], str):
                         args['code'] = data['code']
                     else:
-                        raise LingoSyntaxError(f'code field of error symbol must be a literal str value, expressions that return str are not supported')
+                        raise LingoSyntaxError(f'code field of error symbol must be a literal str value, expressions that return str are not supported{src_info()}')
                 case _:
-                    raise LingoSyntaxError(f'error symbol does not support key: {key!r}')
+                    raise LingoSyntaxError(f'error symbol does not support key: {key!r}{src_info()}')
         return symbols.L_SYM_error(**args)
 
     elif keys == {'type', 'value'}:
 
         if data['type'] not in LingoPrimitiveTypeNames:
-            raise LingoSyntaxError(f'invalid type for value symbol: {data["type"]!r}')
+            raise LingoSyntaxError(f'invalid type for value symbol: {data["type"]!r}{src_info()}')
         
         elif isinstance(data['value'], LingoPrimitiveTypes) and type(data['value']).__name__ != data['type']:
-            raise LingoSyntaxError(f'value type mismatch: expected {data["type"]!r}, got {type(data["value"]).__name__!r}')
+            raise LingoSyntaxError(f'value type mismatch: expected {data["type"]!r}, got {type(data["value"]).__name__!r}{src_info()}')
         
         else:
             if isinstance(data['value'], LingoPrimitiveTypes):
@@ -290,10 +301,10 @@ def create_expression_ast_from_dict(ctx: LingoContext, data: dict, L_SRC: str) -
             a_expr = data['eq']['a']
             b_expr = data['eq']['b']
         except KeyError as e:
-            raise LingoSyntaxError(f'eq symbol missing key: {e}') from None
+            raise LingoSyntaxError(f'eq symbol missing key: {e}{src_info()}') from None
         
         if len(keys) != 1:
-            raise LingoSyntaxError(f'eq symbol does not support keys other than eq')
+            raise LingoSyntaxError(f'eq symbol does not support keys other than eq{src_info()}')
         else:
             return symbols.L_SYM_eq(
                 a=create_expression_ast(ctx, a_expr, f'{L_SRC}.eq.a'),
@@ -319,7 +330,7 @@ def create_expression_ast_from_dict(ctx: LingoContext, data: dict, L_SRC: str) -
                 case 'base':
                     args['base'] = create_expression_ast(ctx, data['base'], f'{L_SRC}.int.base')
                 case _:
-                    raise LingoSyntaxError(f'int symbol does not support key: {key!r}')
+                    raise LingoSyntaxError(f'int symbol does not support key: {key!r}{src_info()}')
 
         return symbols.L_SYM_int(**args)
     
@@ -328,12 +339,12 @@ def create_expression_ast_from_dict(ctx: LingoContext, data: dict, L_SRC: str) -
             a_expr = data['add']['a']
             b_expr = data['add']['b']
         except KeyError as e:
-            raise LingoSyntaxError(f'add symbol missing arg key: {e}') from None
+            raise LingoSyntaxError(f'add symbol missing arg key: {e}{src_info()}') from None
         
         if len(keys) != 1:
-            raise LingoSyntaxError(f'add symbol does not support root keys other than add, got: {keys!r}')
+            raise LingoSyntaxError(f'add symbol does not support root keys other than add, got: {keys!r}{src_info()}')
         elif len(data['add'].keys()) != 2:
-            raise LingoSyntaxError(f'add symbol requires exactly two arg keys: a and b, got: {list(data["add"].keys())!r}')
+            raise LingoSyntaxError(f'add symbol requires exactly two arg keys: a and b, got: {list(data["add"].keys())!r}{src_info()}')
         else:
             return symbols.L_SYM_add(
                 a=create_expression_ast(ctx, a_expr, f'{L_SRC}.add.a'),
@@ -363,12 +374,12 @@ def create_expression_ast_from_dict(ctx: LingoContext, data: dict, L_SRC: str) -
                 L_LINE=get_yaml_line(data['concat'])
             )
         else:
-            raise LingoSyntaxError(f'concat symbol must have a list')
+            raise LingoSyntaxError(f'concat symbol must have a list {src_info()}')
     
     else:
-        raise LingoSyntaxError(f'unsupported expression dict: {data!r}')
+        
+        raise LingoSyntaxError(f'Unknown symbol: {", ".join(keys)}{src_info()}')
     
-
 #
 # misc
 #
