@@ -3,13 +3,13 @@ lingo:
     version: '0.1.0b'
 
 meta:
-    description: 'Implementation of primitive types, it returns a long string of concatenated values of different types converted to string with various expected argument types'
+    description: 'Hello world for strings, casting various types to str and concatenating them together.'
 
 main:
     concat:
-        - 'lingo primitive '
+        - 'lingo str testing'
         - type: str
-          value: 'testing :: bools '
+          value: ' :: bools '
         - str: true
         - ', '
         - str:

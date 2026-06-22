@@ -1,8 +1,8 @@
-class LingoError(Exception):
+class LingoLibError(Exception):
 	pass
 
-class LingoSyntaxError(LingoError):
+class LingoSyntaxError(LingoLibError):
 	pass
 
-class LingoTypeError(LingoError):
+class LingoTypeError(LingoLibError):
 	pass

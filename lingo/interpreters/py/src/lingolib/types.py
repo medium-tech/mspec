@@ -17,7 +17,17 @@ LingoLiteralTypes = LingoPrimitiveTypes | list | dict
 LingoPrimitiveTypeNames = {'bool', 'int', 'str', 'float'}
 LingoLiteralTypeNames = LingoPrimitiveTypeNames | {'list', 'dict'}
 
+class LingoScriptSpecsEnum(StrEnum):
+	exe = 'exe'
+	lib = 'lib'
+
+LingoScriptSpecs = [spec.value for spec in LingoScriptSpecsEnum]
+
 
 class LingoValue(NamedTuple):
 	type: ValueTypesEnum
 	value: LingoLiteralTypes
+
+class LingoLanguageError(NamedTuple):
+	error: str
+	code: str = 'ERROR'

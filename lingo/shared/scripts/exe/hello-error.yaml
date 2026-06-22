@@ -1,0 +1,29 @@
+lingo:
+    spec: 'exe'
+    version: '0.1.0b'
+
+meta:
+    description: 'Hello world for error handling'
+
+main:
+    join:
+        - handle:
+            error: 'i am a test error'
+        - handle:
+            error: 'i am an error w a code'
+            code: 'ERROR_W_CODE'
+        - handle:
+            add:
+                a: '1'
+                b: '2'
+        - handle:
+            int: 'i am not a number'
+        - handle:
+            concat: 
+                - 'i am '
+                - 100
+                - ' years old'
+        # - handle:
+        #     list:
+        #         - 'all elements but be the same type'
+        #         - true

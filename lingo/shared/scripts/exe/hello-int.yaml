@@ -1,0 +1,23 @@
+lingo:
+    spec: 'exe'
+    version: '0.1.0b'
+
+meta:
+    description: 'Hello world for integers'
+
+main:
+    eq:
+        a: 
+            add:
+                a: 0
+                b: 
+                    int:
+                        type: str
+                        value: '1'
+        b: 
+            add:
+                a: 
+                    int: '0'
+                b: 
+                    type: int
+                    value: 1

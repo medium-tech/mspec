@@ -1,0 +1,13 @@
+lingo:
+    spec: 'exe'
+    version: '0.1.0b'
+
+meta:
+    description: 'Confirm the type error from add is propogated through other functions instead of being converted by str'
+
+main:
+    list:
+        - str:
+            add:
+                a: '1'
+                b: '2'

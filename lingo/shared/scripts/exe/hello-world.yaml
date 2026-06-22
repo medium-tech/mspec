@@ -2,5 +2,6 @@ lingo:
     spec: 'exe'
     version: '0.1.0b'
 
-main:
+main: 
     str: 'hello.world'
+
