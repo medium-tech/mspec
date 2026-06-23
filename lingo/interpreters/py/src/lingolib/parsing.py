@@ -205,8 +205,11 @@ def create_expression_ast(ctx: LingoContext, data: LingoLiteralTypes, L_SRC: str
 
     if isinstance(data, LingoPrimitiveTypes):
         ctx.log.debug(f'create_expression_ast - literal: {data!r}')
+        type_name = type(data).__name__
+        value = data.replace(r"\n", "\n").replace(r"\t", "\t") if type_name == 'str' else data
         return symbols.L_SYM_value(
-            type=type(data).__name__, value=data, 
+            type=type_name, 
+            value=value, 
             L_SRC=f'{L_SRC}.literal',
             L_FILE=ctx.interpreter.file,
             L_LINE=get_yaml_line(data)
@@ -278,9 +281,10 @@ def create_expression_ast_from_dict(ctx: LingoContext, data: dict, L_SRC: str) -
         
         else:
             if isinstance(data['value'], LingoPrimitiveTypes):
+                value = data['value'].replace(r"\n", "\n").replace(r"\t", "\t") if data['type'] == 'str' else data['value']
                 return symbols.L_SYM_value(
                     type=data['type'], 
-                    value=data['value'], 
+                    value=value, 
                     L_SRC=f'{L_SRC}.value',
                     L_FILE=ctx.interpreter.file,
                     L_LINE=get_yaml_line(data['value'])

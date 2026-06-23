@@ -192,8 +192,7 @@ def L_EXPR_join(ctx, symbol:symbols.L_SYM_join):
         return e.error
     
     try:
-        sep = separator.replace(r"\n", "\n").replace(r"\t", "\t")
-        return LingoValue(type='str', value=sep.join(items))
+        return LingoValue(type='str', value=separator.join(items))
     
     except TypeError as e:
         ctx.log.debug(f'error joining items: {e.__class__.__name__}: {e}')
