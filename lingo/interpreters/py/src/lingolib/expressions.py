@@ -12,20 +12,13 @@ class LingoErrorPassThrough(Exception):
     in lingo, if any function/symbol arg is an error it will automatically pass that through as its return value without executing the function/symbol's main logic.
     The only lingo function that will not pass it through is the handle symbol, which converts the error to a string value and returns that.
 
-    But in the python interpreter, we actually use exception throwing to implement this error pass through behavior from function to function.
-    This exception class is used to accomplish that. The actual lingo error is passed around as LingoLanguageError which is a NamedTuple,
+    But in the python interpreter, sometimes its better to raise and catch exceptions, and for that we use this exception.
+    The actual lingo error is passed around as LingoLanguageError which is a NamedTuple,
     These are different than LingoLibError and its subclasses which are used for actual exceptions in the interpreter implementation, and should not be confused with LingoLanguageError.
     """
 
     def __init__(self, error: LingoLanguageError):
         self.error = error
-
-def get_language_error(errors: list[Any]) -> LingoLanguageError | None:
-    """find and return the first error, useful for short lists"""
-    for error in errors:
-        if isinstance(error, LingoLanguageError):
-            return error
-    return None
 
 def raise_error(item: Any) -> Any:
     """useful for iterating over long sequences, to avoid multiple iterations to check for errors"""
@@ -104,28 +97,24 @@ def L_EXPR_handle(ctx, symbol:symbols.L_SYM_handle):
 # comparison
 
 def L_EXPR_eq(ctx, symbol:symbols.L_SYM_eq):
-
-    a = unwrap_expression(ctx, symbol.a)
-    b = unwrap_expression(ctx, symbol.b)
+    try:
+        a = raise_error(unwrap_expression(ctx, symbol.a))
+        b = raise_error(unwrap_expression(ctx, symbol.b))
+    except LingoErrorPassThrough as e:
+        return e.error
     
-    error = get_language_error([a, b])
-    if error:
-        return error
-    else:
-        return LingoValue(type='bool', value=a == b)
+    return LingoValue(type='bool', value=a == b)
 
 # int
 
 def L_EXPR_int(ctx, symbol:symbols.L_SYM_int):
-
-    number = unwrap_expression(ctx, symbol.number)
-    base = unwrap_expression(ctx, symbol.base)
-
-    error = get_language_error([number, base])
-    if error:
-        return error
-
-    elif isinstance(number, int):
+    try:
+        number = raise_error(unwrap_expression(ctx, symbol.number))
+        base = raise_error(unwrap_expression(ctx, symbol.base))
+    except LingoErrorPassThrough as e:
+        return e.error
+    
+    if isinstance(number, int):
         if base == 10:
             try:
                 return LingoValue(type='int', value=number)
@@ -142,14 +131,13 @@ def L_EXPR_int(ctx, symbol:symbols.L_SYM_int):
         return LingoLanguageError(f'Number must be int or str, got {type(number).__name__}')
     
 def L_EXPR_add(ctx, symbol:symbols.L_SYM_add):
+    try:
+        a = raise_error(unwrap_expression(ctx, symbol.a))
+        b = raise_error(unwrap_expression(ctx, symbol.b))
+    except LingoErrorPassThrough as e:
+        return e.error
 
-    a = unwrap_expression(ctx, symbol.a)
-    b = unwrap_expression(ctx, symbol.b)
-    error = get_language_error([a, b])
-
-    if error:
-        return error
-    elif isinstance(a, (int, float)) and isinstance(b, (int, float)):
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
         return LingoValue(
             type='int' if isinstance(a, int) and isinstance(b, int) else 'float', 
             value=a + b
@@ -173,11 +161,11 @@ def L_EXPR_str(ctx, symbol:symbols.L_SYM_str):
     return LingoValue(type='str', value=result)
 
 def L_EXPR_concat(ctx, symbol:symbols.L_SYM_concat):
+    try:
+        items = [raise_error(unwrap_expression(ctx, item)) for item in symbol.items]
+    except LingoErrorPassThrough as e:
+        return e.error
     
-    items = [unwrap_expression(ctx, item) for item in symbol.items]
-    error = get_language_error(items)
-    if error:
-        return error
     try:
         return LingoValue(type='str', value=''.join(items))
     except TypeError as e:
