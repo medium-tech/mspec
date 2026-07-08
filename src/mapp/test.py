@@ -835,6 +835,7 @@ class TestMTemplateApp(unittest.TestCase):
         crud_env['MAPP_FILE_SYSTEM_REPO'] = str(crud_fs_path.resolve())
         crud_env['MAPP_SERVER_DEVELOPMENT_MODE'] = 'true'
         crud_env['MAPP_CLI_SESSION_FILE'] = os.path.join(cls.test_dir, 'crud-env-test-session.json')
+        crud_env['MAPP_AUTH_NEW_ACCOUNT_BY_INVITE_ONLY'] = 'false'
 
         try:
             os.remove(crud_env['MAPP_CLI_SESSION_FILE'])
@@ -863,6 +864,7 @@ class TestMTemplateApp(unittest.TestCase):
         pagination_env['MAPP_DB_URL'] = str(cls.pagination_db_file.resolve())
         pagination_env['MAPP_FILE_SYSTEM_REPO'] = str((Path(cls.test_dir) / 'pagination_file_system').resolve())
         pagination_env['MAPP_CLI_SESSION_FILE'] = os.path.join(cls.test_dir, 'pagination-env-test-session.json')
+        pagination_env['MAPP_AUTH_NEW_ACCOUNT_BY_INVITE_ONLY'] = 'false'
         try:
             os.remove(pagination_env['MAPP_CLI_SESSION_FILE'])
         except FileNotFoundError:

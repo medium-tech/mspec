@@ -171,35 +171,6 @@ modules:
                                 lower_case: "email"
                             type: str
                             description: "Email of the created user"
-            
-            invite_user:
-                name:
-                    lower_case: "invite user"
-                description: "Invite a new user with email"
-                func:
-                    call: "auth.invite_user"
-                    args:
-                        email:
-                            params: {email: {}}
-                params:
-                    email:
-                        name:
-                            lower_case: "email"
-                        type: str
-                        description: "Email of the user to invite"
-                result:
-                    type: struct
-                    fields:
-                        acknowledged:
-                            name:
-                                lower_case: "acknowledged"
-                            type: bool
-                            description: "Always true, indicates the operation was successful"
-                        message:
-                            name:
-                                lower_case: "message"
-                            type: str
-                            description: "Acknowledgement message"
 
             login_user:
                 name:
@@ -2252,6 +2223,35 @@ modules:
                                 lower_case: "acknowledged"
                             type: bool
                             description: "Whether the email address was verified successfully"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message"
+
+            invite_user:
+                name:
+                    lower_case: "invite user"
+                description: "Invite a new user with email"
+                func:
+                    call: "com.invite_user"
+                    args:
+                        email:
+                            params: {email: {}}
+                params:
+                    email:
+                        name:
+                            lower_case: "email"
+                        type: str
+                        description: "Email of the user to invite"
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: "acknowledged"
+                            type: bool
+                            description: "Always true, indicates the operation was successful"
                         message:
                             name:
                                 lower_case: "message"

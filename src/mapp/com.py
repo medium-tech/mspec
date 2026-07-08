@@ -1,4 +1,5 @@
 import os
+import re
 import secrets
 import smtplib
 
@@ -6,9 +7,16 @@ from datetime import datetime, timezone
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-from mapp.auth import current_user, _get_password_hash, _verify_password
+from mapp.auth import (
+    current_user, 
+    _get_password_hash, 
+    _verify_password,
+    EMAIL_REGEX,
+    MAPP_AUTH_NEW_ACCOUNT_BY_INVITE_ONLY,
+    MAPP_AUTH_INVITE_USER_ACL_FILE
+)
 from mapp.context import MappContext
-from mapp.errors import AuthenticationError, MappError
+from mapp.errors import AuthenticationError, MappError, MappValidationError
 from mapp.types import datetime_from_db, datetime_for_db
 
 __all__ = [
@@ -33,8 +41,8 @@ MAPP_SMTP_PASSWORD = os.environ.get('MAPP_SMTP_PASSWORD', '')
 MAPP_EMAIL_VERIFICATION_EXPIRATION = int(os.environ.get('MAPP_EMAIL_VERIFICATION_EXPIRATION', 600))
 MAPP_EMAIL_VERIFICATION_SUBJECT = os.environ.get('MAPP_EMAIL_VERIFICATION_SUBJECT', 'Your Email Verification Code')
 MAPP_EMAIL_VERIFICATION_URL = os.environ.get('MAPP_EMAIL_VERIFICATION_URL', None)
-
-
+MAPP_EMAIL_INVITE_USER_URL = os.environ.get('MAPP_EMAIL_INVITE_USER_URL', None)
+MAPP_EMAIL_INVITE_USER_SUBJECT = os.environ.get('MAPP_EMAIL_INVITE_USER_SUBJECT', 'You are invited to create a new user account')
 #
 # internal
 #
@@ -204,5 +212,86 @@ def verify_email_address(ctx: MappContext, code: str) -> dict:
         'value': {
             'acknowledged': True,
             'message': 'Email address verified successfully'
+        }
+    }
+
+def invite_user(ctx: MappContext, email: str) -> dict:
+    """
+    Invite an email address to create a new user account.
+    - add email address to auth_user_invitation table (allows that email to create an account)
+    - sends the email address an invitation email to create an account
+        the email will contain a link to the url defined in env variable MAPP_EMAIL_INVITE_USER_URL
+    """
+
+    # check that invitations are allowed #
+
+    if not MAPP_AUTH_NEW_ACCOUNT_BY_INVITE_ONLY:
+        raise AuthenticationError('Inviting new users is not enabled in this app')
+    
+    logged_in_user = current_user(ctx)
+    logged_in_email = logged_in_user['value']['email']
+
+
+    with open(MAPP_AUTH_INVITE_USER_ACL_FILE, 'r', encoding='utf-8') as f:
+        logged_in_user_can_invite = logged_in_email in f.read()
+
+
+    if not logged_in_user_can_invite:
+        ctx.log(f'Could not invite user, logged in user {logged_in_email} is not allowed to invite new users')
+        raise AuthenticationError('logged in user is not allowed to invite new users')
+
+    if MAPP_EMAIL_INVITE_USER_URL is None:
+        ctx.log(f'Could not invite user, MAPP_EMAIL_INVITE_USER_URL is not set')
+        raise MappError('INTERNAL_ERROR', 'Could not invite user, MAPP_EMAIL_INVITE_USER_URL is not set')
+
+    # validate input #
+
+    field_errors = {}
+
+    if not re.match(EMAIL_REGEX, email):
+        field_errors['email'] = 'Invalid email format'
+
+    if field_errors:
+        raise MappValidationError('Could not invite user', field_errors)
+    
+    # check if user is already invited #
+
+    invitation_already_exists = ctx.db.cursor.execute(
+        'SELECT id FROM auth_user_invitation WHERE email = ?', (email,)
+    ).fetchone()
+
+    if invitation_already_exists:
+        raise AuthenticationError('User is already invited')
+    
+    # check if user exists #
+
+    email_already_exists = ctx.db.cursor.execute(
+        'SELECT id FROM auth_user WHERE email = ?', (email,)
+    ).fetchone()
+
+    if email_already_exists:
+        raise AuthenticationError('Could not invite user: email already has a user account')
+
+    # insert invation into db #
+
+    result = ctx.db.cursor.execute(
+        'INSERT INTO auth_user_invitation (email) VALUES (?)',
+        (email,)
+    )
+    ctx.db.commit()
+    invitation_id = result.lastrowid
+    ctx.log(f'User invited successfully: {email} by {logged_in_email} (invitation_id={invitation_id})')
+
+    # send email to invited user #
+
+    email_msg = f'Please visit the following URL to create your account:\n{MAPP_EMAIL_INVITE_USER_URL}'
+    
+    send_email(ctx, email, MAPP_EMAIL_INVITE_USER_SUBJECT, email_msg)
+
+    return {
+        'type': 'struct',
+        'value': {
+            'acknowledged': True,
+            'message': 'User invited successfully'
         }
     }
