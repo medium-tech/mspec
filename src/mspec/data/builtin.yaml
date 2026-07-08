@@ -99,6 +99,20 @@ modules:
                             - "1"
                             - "2"
 
+            user_invitation:
+                hidden: true
+                name:
+                    lower_case: "user invitation"
+
+                fields:
+                    email:
+                        name:
+                            lower_case: "email"
+                        type: str
+                        examples:
+                            - "alice@example.com"
+                            - "bob@example.com"
+            
         ops:
 
             create_user:
@@ -157,6 +171,35 @@ modules:
                                 lower_case: "email"
                             type: str
                             description: "Email of the created user"
+            
+            invite_user:
+                name:
+                    lower_case: "invite user"
+                description: "Invite a new user with email"
+                func:
+                    call: "auth.invite_user"
+                    args:
+                        email:
+                            params: {email: {}}
+                params:
+                    email:
+                        name:
+                            lower_case: "email"
+                        type: str
+                        description: "Email of the user to invite"
+                result:
+                    type: struct
+                    fields:
+                        acknowledged:
+                            name:
+                                lower_case: "acknowledged"
+                            type: bool
+                            description: "Always true, indicates the operation was successful"
+                        message:
+                            name:
+                                lower_case: "message"
+                            type: str
+                            description: "Acknowledgement message"
 
             login_user:
                 name:

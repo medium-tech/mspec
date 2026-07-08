@@ -10,7 +10,7 @@ from typing import Any, Optional
 from itertools import dropwhile, takewhile, islice, accumulate
 from functools import reduce
 
-from mapp.auth import create_user, login_user, is_logged_in, current_user, logout_user, delete_user, drop_sessions
+from mapp.auth import create_user, login_user, invite_user, is_logged_in, current_user, logout_user, delete_user, drop_sessions
 from mapp.com import send_email, start_email_verification, verify_email_address
 from mapp.context import MappContext
 from mapp.file_system import get_file_content, ingest_start, list_files, get_part_content, list_parts, process_file
@@ -191,6 +191,16 @@ def _login_user_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]
     password = unwrap_primitive(lingo_execute(app, password_expr, ctx))
 
     return (ctx, email, password), {}
+
+def _invite_user_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
+	try:
+		email_expr = expression['args']['email']
+	except KeyError as e:
+		raise ValueError(f'invite_user - missing arg: {e}')
+
+	email = unwrap_primitive(lingo_execute(app, email_expr, ctx))
+
+	return (ctx, email), {}
 
 def _is_logged_in_function_args(app:LingoApp, expression: dict, ctx:Optional[dict]=None) -> tuple[tuple, dict]:
     confirm_expr = expression['args'].get('confirm', False)
@@ -1158,6 +1168,7 @@ lingo_function_lookup = {
     'auth': {
         'create_user': {'func': create_user, 'create_args': _create_user_function_args},
         'login_user': {'func': login_user, 'create_args': _login_user_function_args},
+        'invite_user': {'func': invite_user, 'create_args': _invite_user_function_args},
         'is_logged_in': {'func': is_logged_in, 'create_args': _is_logged_in_function_args},
         'current_user': {'func': current_user, 'create_args': _current_user_function_args},
         'logout_user': {'func': logout_user, 'create_args': _logout_user_function_args},

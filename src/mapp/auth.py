@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 
 from mapp.context import MappContext, MAPP_APP_PATH
-from mapp.errors import AuthenticationError, MappError, MappValidationError
+from mapp.errors import AuthenticationError, MappError, MappValidationError, ServerError
 from mapp.types import User, PasswordHash
 
 """
@@ -21,6 +21,8 @@ from mapp.types import User, PasswordHash
 MAPP_AUTH_SECRET_KEY = os.environ.get('MAPP_AUTH_SECRET_KEY')   # openssl rand -hex 32
 MAPP_AUTH_LOGIN_EXPIRATION_MINUTES = os.environ.get('MAPP_AUTH_LOGIN_EXPIRATION_MINUTES', 60 * 24 * 7)
 MAPP_AUTH_MAX_USER_ACCOUNTS = int(os.environ.get('MAPP_AUTH_MAX_USER_ACCOUNTS', -1))		# limit the total number of user accounts that can be created, -1 for no limit
+MAPP_AUTH_NEW_ACCOUNT_BY_INVITE_ONLY = os.environ.get('MAPP_AUTH_NEW_ACCOUNT_BY_INVITE_ONLY', 'false').lower() == 'true'	# if true, new accounts can only be created by invitation
+MAPP_AUTH_INVITE_USER_ACL_FILE = os.environ.get('MAPP_AUTH_INVITE_USER_ACL_FILE', './app/auth_invite_user_acl.txt')	# path to a file containing email addresses that are allowed to invite new users
 
 __all__ = [
     'User',
@@ -215,6 +217,18 @@ def create_user(ctx: MappContext, name: str, email: str, password: str, password
     password_confirm = password_confirm
     
     # check if we can create a new account #
+
+    if MAPP_AUTH_NEW_ACCOUNT_BY_INVITE_ONLY:
+
+        # check if email address has an invitation #
+
+        invitation_result = ctx.db.cursor.execute(
+            'SELECT id FROM auth_user_invitation WHERE email = ?', (email,)
+        ).fetchone()
+
+        if invitation_result is None:
+            ctx.log(f'Could not create user, no invitation found for email: {email}')
+            raise AuthenticationError(f'{err_msg}: no invitation found for email')
     
     if MAPP_AUTH_MAX_USER_ACCOUNTS > -1:
         user_count_result = ctx.db.cursor.execute(
@@ -301,6 +315,73 @@ def create_user(ctx: MappContext, name: str, email: str, password: str, password
             'id': str(user_id),
             'name': name,
             'email': email
+        }
+    }
+
+def invite_user(ctx: MappContext, email: str) -> dict:
+    """
+    Invite a new user in the auth module.
+    """
+
+    
+    # check that invitations are allowed #
+
+    if not MAPP_AUTH_NEW_ACCOUNT_BY_INVITE_ONLY:
+        raise AuthenticationError('Inviting new users is not enabled in this app')
+    
+    logged_in_user = current_user(ctx)
+    logged_in_email = logged_in_user['value']['email']
+
+
+    with open(MAPP_AUTH_INVITE_USER_ACL_FILE, 'r', encoding='utf-8') as f:
+        logged_in_user_can_invite = logged_in_email in f.read()
+
+
+    if not logged_in_user_can_invite:
+        ctx.log(f'Could not invite user, logged in user {logged_in_email} is not allowed to invite new users')
+        raise AuthenticationError('logged in user is not allowed to invite new users')
+            
+    # validate input #
+
+    field_errors = {}
+
+    if not re.match(EMAIL_REGEX, email):
+        field_errors['email'] = 'Invalid email format'
+
+    if field_errors:
+        raise MappValidationError('Could not invite user', field_errors)
+    
+    # check if user is already invited #
+
+    invitation_already_exists = ctx.db.cursor.execute(
+        'SELECT id FROM auth_user_invitation WHERE email = ?', (email,)
+    ).fetchone()
+
+    if invitation_already_exists:
+        raise AuthenticationError('User is already invited')
+    
+    # check if user exists #
+
+    email_already_exists = ctx.db.cursor.execute(
+        'SELECT id FROM auth_user WHERE email = ?', (email,)
+    ).fetchone()
+
+    if email_already_exists:
+        raise AuthenticationError('Could not invite user: email already has a user account')
+
+    result = ctx.db.cursor.execute(
+        'INSERT INTO auth_user_invitation (email) VALUES (?)',
+        (email,)
+    )
+    ctx.db.commit()
+    invitation_id = result.lastrowid
+    ctx.log(f'User invited successfully: {email} by {logged_in_email} (invitation_id={invitation_id})')
+
+    return {
+        'type': 'struct',
+        'value': {
+            'acknowledged': True,
+            'message': 'User invited successfully'
         }
     }
 
