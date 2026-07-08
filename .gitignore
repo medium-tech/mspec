@@ -18,3 +18,6 @@ unittest*.log
 server.pid
 *.so
 *.h
+lingo/interpreters/hs/dist-newstyle/
+lingo/interpreters/c/lingolib
+lingo/interpreters/go/lingolib
