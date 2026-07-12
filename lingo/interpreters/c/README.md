@@ -62,7 +62,7 @@ Precedence for run mode selection:
 Verbose logging:
 
 - use `--verbose` or `-v`
-- log format: `:: INFO :: <msg>`
+- log format: `:: DEBUG :: <msg>`
 
 ### compiler and libyaml overrides
 

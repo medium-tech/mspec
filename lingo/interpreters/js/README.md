@@ -36,7 +36,7 @@ global fallback is also supported: `LINGO_BIN`.
 Verbose logging:
 
 - use `--verbose` or `-v`
-- log format: `:: INFO :: <msg>`
+- log format: `:: DEBUG :: <msg>`
 
 ### manual run
 
