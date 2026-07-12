@@ -22,6 +22,8 @@ digital ocean notes
 	* proxy mode --> disabled
 
 ## deployment steps
+* from /home/sosh/mspec
+* activate venv
 * pull new changes
 * run pip install again for mspec repo to install new version
 * restart server
