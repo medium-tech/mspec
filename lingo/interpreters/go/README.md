@@ -17,7 +17,12 @@ By default this will use `go run` for dev testing:
 ```
 
 ### run mode
-We can use `lingo.sh` to use `go build` to build a binary and then tell `lingo.sh` to use that via cli args or env variables.
+
+Teh `lingo.sh` script has two run modes for the go interpreter:
+* `dev` - uses `go run` for development testing, this is the default mode [shown above](#run-with-standard-cli)
+* `built` - uses a go binary built with `go build`
+
+We can use  to use `go build` to build a binary and then tell `lingo.sh` to use that via cli args or env variables.
 
 ```bash
 # lingo's 'go build' wrapper
@@ -52,7 +57,7 @@ Precedence for run mode selection:
 1. `--run-mode <dev|built>` / `-r <dev|built>` command-line flag
 2. `LINGO_GO_RUN_MODE`
 3. `LINGO_RUN_MODE`
-4. wrapper default (`dev`)
+4. `lingo.sh` default value: `dev`
 
 Verbose logging:
 

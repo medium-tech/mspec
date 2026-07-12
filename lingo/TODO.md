@@ -1,5 +1,19 @@
 # Lingo TODO
 
+## finish reviewing package refactor before merging
+* 🟢 review and test hello world to package refactor
+	* 🟢 py
+	* 🟢 js
+	* 🟢 go
+	* 🟢 hs
+	* 🟢 c
+* 🟡 initial interpreter implementation (update hardcoded `str` functions)
+	* 🟡 py
+	* 🔴 js
+	* 🔴 go
+	* 🔴 hs
+	* 🔴 c
+
 ## Goal
 
 Build each interpreter as both:
@@ -17,9 +31,9 @@ Design around beta spec families:
 
 ### status colors
 
-|not started|in progress|working but no test coverage|finished with test coverage|
-|--|--|--|--|
-|🔴|🟡|🟠|🟢|
+|not started|in progress|working but no test coverage|finished with test coverage|not planned|
+|--|--|--|--| --|
+|🔴|🟡|🟠|🟢|n/a|
 
 ---
 
