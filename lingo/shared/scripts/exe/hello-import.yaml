@@ -1,0 +1,20 @@
+lingo:
+    spec: 'exe'
+    version: '0.1.0b'
+
+meta:
+    description: 'Hello world for error handling'
+
+main:
+    call: 'hello_ns.say_hello'
+    args:
+        name:
+            get:
+                field: 'name'
+                from:
+                    validate:
+                        item:
+                            get:
+                                field: 'sample_person'
+                                from: 'hello_ns'
+                        against: 'hello_ns.person'

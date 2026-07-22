@@ -10,15 +10,22 @@
 * 🟡 initial interpreter implementation (update hardcoded `str` functions)
 	* 🟡 py
 		* 🟢 verbose logging
-		* 🟢 exe/hello-world.yaml
-		* 🟢 exe/hello-str.yaml
-		* 🟢 exe/hello-int.yaml
-		* 🟢 exe/hello-error.yaml
-		* 🟢 exe/hello-unhandled-error.yaml
-		* 🔴 exe/hello-call.yaml (call a function imported for a lib)
-		* 🔴 lib/hello-function.yaml
-		* 🔴 app/hello-app.yaml
-		* 🔴 ui/hello-ui.yaml
+		* 🟡 exe scripts
+			* 🟢 hello-world.yaml
+			* 🟢 hello-str.yaml
+			* 🟢 hello-int.yaml
+			* 🔴 hello-list.yaml
+			* 🔴 hello-struct.yaml
+			* 🟢 hello-error.yaml
+			* 🟢 hello-unhandled-error.yaml
+			* 🔴 hello-validate.yaml
+			* 🔴 hello-import.yaml
+		* 🔴 app scripts
+			* 🔴 hello-app.yaml
+		* 🔴 ui scripts
+			* 🔴 hello-ui.yaml
+			* 🔴 hello-front-end.yaml
+			* 🔴 hello-rich-text.yaml
 	* 🔴 js
 	* 🔴 go
 	* 🔴 hs

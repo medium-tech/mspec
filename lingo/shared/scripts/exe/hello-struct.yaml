@@ -1,0 +1,24 @@
+lingo:
+    spec: 'exe'
+    version: '0.1.0b'
+
+meta:
+    description: 'Hello world for strings'
+
+main:
+    join:
+        separator: '\n'
+        items:
+            - get:
+                field: 'name'
+                from: 
+                    name: 'Joe'
+                    age: 42
+            - str:
+                get:
+                    field: 'age'
+                    from: 
+                        type: struct
+                        value:
+                            name: 'Joe'
+                            age: 42

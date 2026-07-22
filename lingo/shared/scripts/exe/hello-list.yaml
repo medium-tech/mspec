@@ -1,0 +1,24 @@
+lingo:
+    spec: 'exe'
+    version: '0.1.0b'
+
+meta:
+    description: 'Hello world for lists, prepending and appending items to lists.'
+
+main:
+    prepend:
+        item: 0
+        to:
+            prepend:
+                items: [1, 2]
+                to:
+                    append:
+                        items: 
+                            type: list
+                            element_type: int
+                            value: [7, 8]
+                        to:
+                            append:
+                                item: 6
+                                to:
+                                    list: [3, 4, 5]

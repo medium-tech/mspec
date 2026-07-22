@@ -1,0 +1,90 @@
+lingo:
+    spec: 'exe'
+    version: '0.1.0b'
+
+meta:
+    description: 'Hello world for error handling'
+
+main:
+    join:
+        separator: '\n'
+        items:
+
+            #
+            # valid items
+            #
+
+            - validate:
+                item: true
+                against:
+                    define: bool
+
+            - validate:
+                item:
+                    type: bool
+                    value: false
+                against:
+                    define: bool
+
+            - validate:
+                item: 2
+                against:
+                    define: int
+
+            - validate:
+                item: 3.5
+                against:
+                    define: float
+
+            - validate:
+                item: 'i am a string'
+                against:
+                    define: str
+
+            - validate:
+                item: [1, 2, 3]
+                against:
+                    define: list
+                    element_type: int
+
+            - validate:
+                item:
+                    name: 'Joe'
+                    age: 42
+                against:
+                    define: struct
+                    fields:
+                        name:
+                            define: str
+                        age:
+                            define: int
+
+            #
+            # invalid items
+            #
+
+            - handle:
+                validate:
+                    item: 'i am not boolean'
+                    against:
+                        define: bool
+
+            - handle:
+                validate:
+                    item: [1, '2', 3]
+                    against:
+                        define: list
+                        element_type: int
+            
+            - handle:
+                validate:
+                    item:
+                        name: 'Joe'
+                        age: '42'
+                    against:
+                        define: struct
+                        fields:
+                            name:
+                                define: str
+                            age:
+                                define: int

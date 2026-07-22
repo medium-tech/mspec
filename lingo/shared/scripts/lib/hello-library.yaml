@@ -1,0 +1,39 @@
+lingo:
+    spec: 'lib'
+    version: '0.1.0b'
+
+modules:
+    hello_ns:
+
+        person:
+            define:
+                type: struct
+                fields:
+                    name:
+                        define: str
+                    age:
+                        define: int
+        
+        sample_person:
+            type: struct
+            value:
+                name: 'Zoe'
+                age: 38
+
+        say_hello:
+            description: 'Say hello to the world.'
+            args:
+                name:
+                    type: str
+                    description: 'The name to greet.'
+                    default: 'World'
+
+            return:
+                type: str
+                description: 'A greeting message.'
+            
+            func:
+                concat:
+                    - 'Hello, '
+                    - args: name
+                    - '! Welcome to the world of Lingo.'
