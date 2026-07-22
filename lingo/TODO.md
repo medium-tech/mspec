@@ -9,6 +9,12 @@
 	* 🟢 c
 * 🟡 initial interpreter implementation (update hardcoded `str` functions)
 	* 🟡 py
+		* 🟢 hello-world.yaml
+		* 🟢 hello-str.yaml
+		* 🟢 hello-int.yaml
+		* 🟢 hello-error.yaml
+		* 🟢 hello-unhandled-error.yaml
+		* 🟢 verbose logging
 	* 🔴 js
 	* 🔴 go
 	* 🔴 hs

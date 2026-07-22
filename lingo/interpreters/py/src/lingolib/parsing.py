@@ -4,7 +4,7 @@ import lingolib.symbols as symbols
 
 from lingolib.context import LingoContext, LingoInterpreterContext
 from lingolib.errors import LingoSyntaxError
-from lingolib.types import LingoPrimitiveTypeNames, LingoPrimitiveTypes, LingoLiteralTypes, LingoScriptSpecs
+from lingolib.types import LingoLanguageError, LingoPrimitiveTypeNames, LingoPrimitiveTypes, LingoLiteralTypes, LingoScriptSpecs
 
 import yaml
 
@@ -207,12 +207,35 @@ def create_expression_ast(ctx: LingoContext, data: LingoLiteralTypes, L_SRC: str
         ctx.log.debug(f'create_expression_ast - literal: {data!r}')
         type_name = type(data).__name__
         value = data.replace(r"\n", "\n").replace(r"\t", "\t") if type_name == 'str' else data
+        try:
+            l_file = ctx.interpreter.file
+            l_line = get_yaml_line(data)
+        except AttributeError:
+            l_file = ''
+            l_line = -1
+
         return symbols.L_SYM_value(
             type=type_name, 
             value=value, 
             L_SRC=f'{L_SRC}.literal',
-            L_FILE=ctx.interpreter.file,
-            L_LINE=get_yaml_line(data)
+            L_FILE=l_file,
+            L_LINE=l_line
+        )
+    elif isinstance(data, LingoLanguageError):
+        ctx.log.debug(f'create_expression_ast - error: {data!r}')
+        try:
+            l_file = ctx.interpreter.file
+            l_line = get_yaml_line(data)
+        except AttributeError:
+            l_file = ''
+            l_line = -1
+
+        return symbols.L_SYM_error(
+            error=data.error,
+            code=data.code,
+            L_SRC=f'{L_SRC}.error',
+            L_FILE=l_file,
+            L_LINE=l_line
         )
 
     elif isinstance(data, list):
