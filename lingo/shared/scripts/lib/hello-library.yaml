@@ -6,13 +6,12 @@ modules:
     hello_ns:
 
         person:
-            define:
-                type: struct
-                fields:
-                    name:
-                        define: str
-                    age:
-                        define: int
+            define: struct
+            fields:
+                name:
+                    define: str
+                age:
+                    define: int
         
         sample_person:
             type: struct
@@ -21,7 +20,7 @@ modules:
                 age: 38
 
         say_hello:
-            description: 'Say hello to the world.'
+            description: 'Say hello to a person.'
             args:
                 name:
                     type: str

@@ -1,0 +1,29 @@
+lingo:
+    spec: 'ui'
+    version: '0.1.0b'
+
+state:
+    counter:
+        define: int
+        default: 0
+
+ops:
+    increment_counter:
+        description: 'Increment the counter by 1.'
+
+        return:
+            type: int
+            description: 'The new counter value after incrementing.'
+
+        func:
+            add:
+                a:
+                    state: counter
+                b: 1
+
+output:
+    - button:
+        func: 'increment_counter'
+        text: 'increment count'
+    - 'total count: '
+    - str: {state: counter}

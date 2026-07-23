@@ -3,7 +3,7 @@ lingo:
     version: '0.1.0b'
 
 meta:
-    description: 'Hello world for error handling'
+    description: 'Hello world for validation'
 
 main:
     join:

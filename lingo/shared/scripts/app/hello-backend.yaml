@@ -1,0 +1,36 @@
+lingo:
+    spec: 'app'
+    version: '0.1.0b'
+
+meta:
+    description: 'Hello world for a backend application'
+
+import:
+    - 'hello-library.yaml'
+
+modules:
+    my_app:
+        ops:
+            say_hello: 'hello_ns.say_hello'
+
+            say_goodbye:
+                description: 'Say goodbye to a person.'
+                args:
+                    name:
+                        type: str
+                        description: 'The name to bid farewell.'
+                        default: 'World'
+
+                return:
+                    type: str
+                    description: 'A farewell message.'
+
+                func:
+                    concat:
+                        - 'Goodbye, '
+                        - args: name
+                        - '! See you next time in the world of Lingo.'
+        
+        models:
+            person:
+                model: 'hello_ns.person'

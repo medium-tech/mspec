@@ -1,0 +1,12 @@
+lingo:
+    spec: 'ui'
+    version: '0.1.0b'
+
+backend: 'hello-backend.yaml'
+
+state: {}
+
+ops: {}
+
+output:
+    - heading: 'Create Person'

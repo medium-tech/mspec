@@ -3,7 +3,7 @@ lingo:
     version: '0.1.0b'
 
 meta:
-    description: 'Hello world for strings'
+    description: 'Hello world for structs, creating and accessing fields'
 
 main:
     join:

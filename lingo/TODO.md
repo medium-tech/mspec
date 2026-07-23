@@ -22,9 +22,12 @@
 			* 🔴 hello-import.yaml
 		* 🔴 app scripts
 			* 🔴 hello-app.yaml
+			* 🔴 hello-backend.yaml
 		* 🔴 ui scripts
 			* 🔴 hello-ui.yaml
-			* 🔴 hello-front-end.yaml
+			* 🔴 hello-form.yaml
+			* 🔴 hello-type-display.yaml
+			* 🔴 hello-frontend.yaml
 			* 🔴 hello-rich-text.yaml
 	* 🔴 js
 	* 🔴 go
@@ -43,7 +46,7 @@ Design around beta spec families:
 - `exe`
 - `app`
 - `page`
-- `rich-text`
+- `text`
 - `lib`
 
 ### status colors
