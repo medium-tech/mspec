@@ -71,49 +71,6 @@ Planned implementation scope by interpreter:
 
 ---
 
-## Target Project Layout
-
-Add a shared cross-language assets folder for built-in scripts and test data.
-
-```text
-lingo/
-├── README.md
-├── TODO.md
-├── interpreters/
-│   ├── c/
-│   ├── go/
-│   ├── hs/
-│   ├── js/
-│   └── py/
-├── specs/
-│   ├── exe/
-│   ├── app/
-│   ├── page/
-│   ├── rich-text/
-│   └── lib/
-├── shared/
-│   ├── scripts/
-│   │   ├── exe/
-│   │   ├── lib/
-│   │   ├── app/
-│   │   ├── page/
-│   │   └── rich-text/
-│   ├── fixtures/
-│   │   ├── cli/
-│   │   ├── parser/
-│   │   └── executor/
-│   └── expected/
-│       ├── stdout/
-│       ├── stderr/
-│       └── exit-codes/
-└── test/
-```
-
-`shared/` is the common source for built-in examples and conformance data used
-by every interpreter test suite.
-
----
-
 ## Parser Dependencies (YAML)
 
 Each interpreter package should explicitly include a YAML parser dependency.
