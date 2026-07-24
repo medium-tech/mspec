@@ -1,6 +1,18 @@
 # python lingo interpreter
 This is the Python interpreter and library for the lingo language.
 
+## table of contents
+
+- [setup](#setup)
+	- [venv setup](#venv-setup)
+- [run](#run)
+	- [run with standard cli](#run-with-standard-cli)
+	- [manual run](#manual-run)
+- [development](#development)
+	- [lingolib layout overview](#lingolib-layout-overview)
+	- [add a new symbol](#add-a-new-symbol)
+	- [add a new spec](#add-a-new-spec-appuilib)
+
 ## setup
 
 - macOS: install Python 3 with Homebrew: `brew install python`
@@ -59,37 +71,85 @@ python -m lingolib exe ../../../shared/scripts/exe/hello-world.yaml
 
 ## development
 
+### lingolib layout overview
+
+The Python interpreter library lives in `./src/lingolib` and is split by responsibility:
+
+- `symbols.py`
+  - AST symbol definitions (`L_SYM_*`) for both `spec` and `expression` symbols.
+- `types.py`
+  - shared value/type aliases and supported spec names (`app`, `exe`, `lib`, `ui`).
+- `parsing/`
+  - YAML line tracking + parser entrypoints + expression/spec parsing.
+  - `state.py`: `YamlLocationLoader` and `get_yaml_line(...)`.
+  - `envelope.py`: top-level `lingo` parsing and spec dispatch.
+  - `spec_exe.py`: `exe` spec parser.
+  - `expr_entry.py`, `expr_core.py`, `expr_numeric.py`, `expr_text.py`: expression parsing.
+  - `ast.py`: AST dataclasses and `lingo_ast_to_string(...)`.
+- `expressions.py`
+  - expression execution functions (`L_EXPR_*`) and `EXPRESSION_HANDLERS` dispatch registry.
+- `api.py`
+  - parse file -> AST -> execute for supported specs.
+- `cli.py`
+  - CLI command handling and debug pathways.
+
 ### add a new symbol
 
-This interpreter converts python dicts (parsed from yaml and possibly json) to symbols for the lingo ast. These will be referred to as **source objects**. This section explains how to implement a new symbol to the interpter. A symbol comes from the **source object** and represents an element of the language, either the base features of the lingo script (`spec`), or a dynamic element such as a function or value (`expression`).
+This section is for adding a new **expression symbol** (for example `mul`, `lower`, etc.).
 
-1. Create symbol's `NamedTuple` in `./linglib/symbols.py` - used to build the lingo ast
-	* place it in the file in the same section as others in its function group - use comments for section headers
-	* class name name uses format `L_SYM_<name>` - short for "lingo symbol <name>"
-	* define fields in this order:
-		* first property: `L_SRC: str`	- during parsing, will be populated w/ path from source structure (dict/yaml)
-		* then all fields needed to parse source dict (created from yaml)
-		* then 2 fields:
-			* `L_FILE: str = ''`	- if parsed from a file, the abs path to it
-			* `L_LINE: int = -1`	- if available, the line from the file (not be available if not from a yaml file)
-	* `@property` methods
-		* `L_SYM_NAME` - the same as the key name in yaml
-		* `L_SYM_TYPE` - the type of symbol, current choices:
-			* `spec` - root level fields defining the basic features of a spec
-			* `expression` - anything that could be used to calculate something
-	* add type to `ExpressionSymbols` - there is a line for each function group
-1. Add parsing logic in `./linglib/parsing.py`
-	* For `L_SYM_TYPE=spec`:
-		* conversion from source object to `L_SYM_<name>` is done in an ast creation function. This process will vary for each new spec, but see existing ones for patterns:
-			* `lingo` - global spec symbol parsed in `create_spec_ast_from_dict` function
-			* `main` - specific to `exe` spec in `spec_exe_ast_from_dict`
-	* For `L_SYM_TYPE=expression` the process is more mechanical than for `spec`s
-		* add mapping from source object keys in `create_expression_ast_from_dict` to `L_SYM_<name>`
-			* place it in the file in the same section as others in its function group - use comments for section headers
-		* add expression logic in `./linglib/expressions.py`
-			* place it in the file in the same section as others in its function group - use comments for section headers
-			* function name uses format `L_EXPR_<name>` for "lingo expression <name>"
-				* accepts `c`tx:LingoContext, symbol:symbols.L_SYM_<name>` arguments
-				* perform argument checking
-					* **return** `LingoLanguageError` if wrong types or other errors encountered
-				* perform calculation and return result
+1. Add the symbol type in `./src/lingolib/symbols.py`
+	- Create `L_SYM_<name>(NamedTuple)`.
+	- Keep field order consistent:
+	  - `L_SRC: str`
+	  - symbol-specific fields
+	  - `L_FILE: str = ''`
+	  - `L_LINE: int = -1`
+	- Add `L_SYM_NAME` and `L_SYM_TYPE` properties (`'expression'`).
+	- Add the symbol to `ExpressionSymbols`.
+
+1. Add parser support in `./src/lingolib/parsing`
+	- Route by key in `expr_core.py` (`parse_expression_ast_from_dict`).
+	- Implement parser helper in the appropriate file:
+	  - numeric: `expr_numeric.py`
+	  - text: `expr_text.py`
+	  - or create a new `expr_<group>.py` module if needed.
+	- Return an instance of your new `L_SYM_<name>` with `L_FILE` and `L_LINE` populated.
+
+1. Add executor support in `./src/lingolib/expressions.py`
+	- Implement `L_EXPR_<name>(ctx, symbol)`.
+	- Validate input and return `LingoLanguageError(...)` for language-level errors.
+	- Register it in `EXPRESSION_HANDLERS` with key `<name>`.
+
+1. Add tests
+	- Prefer shared contract tests in `../../shared/tests/exe` + Python adapter tests in `../../test`.
+	- Run: `python -m unittest lingo.test.test_exe_contract_py -v`.
+
+### add a new spec (app/ui/lib)
+
+Specs are parsed at the top level, then executed by the API layer.
+
+1. Add AST dataclass in `./src/lingolib/parsing/ast.py`
+	- Create `LingoAST<name>Spec` with the required symbol fields.
+	- Include it in `LingoASTSpec` union.
+
+1. Add spec parser module in `./src/lingolib/parsing`
+	- Create a new module `spec_<name>.py`
+	- Implement `spec_<name>_ast_from_dict(ctx, lingo, data, create_expression_ast)`.
+	- Parse required top-level symbols and return your new AST dataclass.
+
+1. Wire spec dispatch in `./src/lingolib/parsing/envelope.py`
+	- Import your new parser.
+	- Extend `create_spec_ast_from_dict(...)`:
+	  - `if lingo.spec == '<name>': return spec_<name>_ast_from_dict(...)`
+	  - same pattern for `ui` or `lib`.
+
+1. Add execution path in `./src/lingolib/api.py`
+	- Add an executor function for the new AST (`execute_<name>_spec`, etc.).
+	- Extend `execute_file(...)` type dispatch to call it.
+
+1. Add CLI behavior as needed in `./src/lingolib/cli.py`
+	- will need a new command `<name>`, for each spec, currently only `exe` is implemented
+
+1. Add tests
+	- Add parser/execution tests for the new spec.
+	- Add/extend shared contracts if the spec has cross-interpreter behavior.
