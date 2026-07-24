@@ -1,0 +1,16 @@
+lingo_test:
+    spec: 'exe'
+    version: '0.1.0b'
+
+script: 'scripts/exe/hello-unhandled-error.yaml'
+
+tags:
+    - smoke
+    - error
+
+cases:
+    - name: 'default'
+      params: {}
+      expect:
+          exit_code: 0
+          stdout: 'LINGO_ERROR [TYPE_ERROR] - args must be int or float for add symbol, got a: str and b: str'

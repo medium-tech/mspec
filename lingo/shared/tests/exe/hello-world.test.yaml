@@ -1,0 +1,15 @@
+lingo_test:
+    spec: 'exe'
+    version: '0.1.0b'
+
+script: 'scripts/exe/hello-world.yaml'
+
+tags:
+    - smoke
+
+cases:
+    - name: 'default'
+      params: {}
+      expect:
+          exit_code: 0
+          stdout: 'hello.world'
