@@ -1,0 +1,57 @@
+lingo:
+    spec: 'lib'
+    version: '0.1.0b'
+
+modules:
+
+    lingo:
+        op_call:
+            define: struct
+            fields:
+                status:
+                    define: str
+                    default: 'initial'
+                form:
+                    define: struct
+                    default: {}
+                form_errors:
+                    define: struct
+                    default: {}
+                result:
+                    define: any
+                    default: ''
+
+        model_create:
+            define: struct
+            fields:
+                status:
+                    define: str
+                    default: 'initial'
+                form:
+                    define: struct
+                    default: {}
+                form_errors:
+                    define: struct
+                    default: {}
+                result:
+                    define: any
+                    default: ''
+        
+        model_list:
+            define: struct
+            fields:
+                status:
+                    define: str
+                    default: 'initial'
+                offset:
+                    define: int
+                    default: 0
+                size:
+                    define: int
+                    default: 10
+                total:
+                    define: int
+                    default: -1
+                result:
+                    define: list
+                    default: []

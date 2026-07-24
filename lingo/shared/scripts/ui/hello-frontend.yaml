@@ -4,9 +4,30 @@ lingo:
 
 backend: 'hello-backend.yaml'
 
-state: {}
+state:
+    say_hello:
+        define: 'lingo.op_call'
+
+    create_person:
+        define: 'lingo.model_create'
+    
+    view_people: 'lingo.model_list' # equivalent to: view_people.define: 'lingo.model_list'
 
 ops: {}
 
 output:
+    - heading: 'Say Hello'
+    - widget:
+        bind: 'say_hello'
+        op: 'my_app.say_hello'
+        
     - heading: 'Create Person'
+    - widget:
+        bind: 'create_person'
+        model: 'my_app.person'
+        display: 'create'
+
+    - heading: 'View People'
+    - widget:
+        model: 'my_app.person'
+        display: 'list'
