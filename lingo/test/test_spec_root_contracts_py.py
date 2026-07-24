@@ -22,7 +22,7 @@ class TestSpecRootContractsPython(unittest.TestCase):
             )
         )
     
-    def test_exe_still_parses_with_valid_root(self):
+    def test_exe_well_formed_with_only_required_fields(self):
         doc = {
             'lingo': {'spec': 'exe', 'version': '0.0.1'},
             'main': {
@@ -34,6 +34,117 @@ class TestSpecRootContractsPython(unittest.TestCase):
         ast = create_spec_ast_from_dict(self._ctx(), doc)
 
         self.assertEqual(ast.lingo.spec, 'exe')
+
+    def test_exe_well_formed_with_all_available_fields(self):
+        doc = {
+            'lingo': {'spec': 'exe', 'version': '0.0.1'},
+            'main': {
+                'type': 'str',
+                'value': 'hello.world',
+            },
+            'meta': {
+                'name': 'hello-world',
+            },
+            'import': [
+                {'path': './shared/lib/math.yaml'},
+            ],
+        }
+
+        ast = create_spec_ast_from_dict(self._ctx(), doc)
+
+        self.assertEqual(ast.lingo.spec, 'exe')
+
+    def test_exe_bad_spec_unknown_root_field(self):
+        doc = {
+            'lingo': {'spec': 'exe', 'version': '0.0.1'},
+            'main': {
+                'type': 'str',
+                'value': 'hello.world',
+            },
+            'unknown_field': 'oops',
+        }
+
+        with self.assertRaises(LingoSyntaxError) as e:
+            create_spec_ast_from_dict(self._ctx(), doc)
+
+        self.assertIn("unsupported top-level key(s) for spec 'exe': unknown_field", str(e.exception))
+
+    def test_exe_bad_spec_missing_each_required_field(self):
+        docs = {
+            'missing_lingo': {
+                'main': {
+                    'type': 'str',
+                    'value': 'hello.world',
+                },
+            },
+            'missing_main': {
+                'lingo': {'spec': 'exe', 'version': '0.0.1'},
+            },
+        }
+
+        expected_errors = {
+            'missing_lingo': 'missing required top-level key for all specs: lingo',
+            'missing_main': "missing required top-level key(s) for spec 'exe': main",
+        }
+
+        for case_name, doc in docs.items():
+            with self.subTest(case=case_name):
+                with self.assertRaises(LingoSyntaxError) as e:
+                    create_spec_ast_from_dict(self._ctx(), doc)
+
+                self.assertIn(expected_errors[case_name], str(e.exception))
+
+    def test_exe_bad_lingo_block_unknown_field(self):
+        doc = {
+            'lingo': {
+                'spec': 'exe',
+                'version': '0.0.1',
+                'unknown_field': 'oops',
+            },
+            'main': {
+                'type': 'str',
+                'value': 'hello.world',
+            },
+        }
+
+        with self.assertRaises(LingoSyntaxError) as e:
+            create_spec_ast_from_dict(self._ctx(), doc)
+
+        self.assertIn("unsupported key in lingo symbol: 'unknown_field'", str(e.exception))
+
+    def test_exe_bad_lingo_block_missing_spec_field(self):
+        doc = {
+            'lingo': {
+                'version': '0.0.1',
+            },
+            'main': {
+                'type': 'str',
+                'value': 'hello.world',
+            },
+        }
+
+        with self.assertRaises(LingoSyntaxError) as e:
+            create_spec_ast_from_dict(self._ctx(), doc)
+
+        self.assertIn('error creating lingo symbol', str(e.exception))
+        self.assertIn('spec', str(e.exception))
+
+    def test_exe_bad_lingo_block_missing_version_field(self):
+        doc = {
+            'lingo': {
+                'spec': 'exe',
+            },
+            'main': {
+                'type': 'str',
+                'value': 'hello.world',
+            },
+        }
+
+        with self.assertRaises(LingoSyntaxError) as e:
+            create_spec_ast_from_dict(self._ctx(), doc)
+
+        self.assertIn('error creating lingo symbol', str(e.exception))
+        self.assertIn('version', str(e.exception))
 
 
 if __name__ == '__main__':
