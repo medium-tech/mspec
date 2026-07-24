@@ -11,7 +11,7 @@ state:
     create_person:
         define: 'lingo.model_create'
     
-    view_people: 'lingo.model_list' # equivalent to: view_people.define: 'lingo.model_list'
+    view_people: 'lingo.model_list'
 
 ops: {}
 

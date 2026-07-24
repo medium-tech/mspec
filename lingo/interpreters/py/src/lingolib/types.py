@@ -18,8 +18,10 @@ LingoPrimitiveTypeNames = {'bool', 'int', 'str', 'float'}
 LingoLiteralTypeNames = LingoPrimitiveTypeNames | {'list', 'dict'}
 
 class LingoScriptSpecsEnum(StrEnum):
+	app = 'app'
 	exe = 'exe'
 	lib = 'lib'
+	ui = 'ui'
 
 LingoScriptSpecs = [spec.value for spec in LingoScriptSpecsEnum]
 
