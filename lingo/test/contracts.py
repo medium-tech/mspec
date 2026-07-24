@@ -34,9 +34,6 @@ class ExeContract:
 
 # helpers #
 
-def _normalize_output(text: str) -> str:
-    return text.rstrip('\n')
-
 
 def _require_mapping(value, field_name: str, file_path: Path) -> dict:
     if not isinstance(value, dict):
@@ -66,14 +63,14 @@ def _parse_case(case_data: dict, file_path: Path) -> ExeContractCase:
     if not isinstance(exit_code, int):
         raise ValueError(f'{file_path}: case {name}.expect.exit_code must be an int')
 
-    stdout = expect_data.get('stdout', '')
+    stdout = expect_data.get('stdout')
     if not isinstance(stdout, str):
         raise ValueError(f'{file_path}: case {name}.expect.stdout must be a string')
 
     return ExeContractCase(
         name=name,
         params=params,
-        expect=ExeCaseExpectation(exit_code=exit_code, stdout=_normalize_output(stdout)),
+        expect=ExeCaseExpectation(exit_code=exit_code, stdout=stdout + '\n'),
     )
 
 

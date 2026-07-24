@@ -31,6 +31,6 @@ def run_exe_with_python(script_path: Path, params: dict) -> AdapterResult:
 
     return AdapterResult(
         exit_code=result.returncode,
-        stdout=result.stdout.rstrip('\n'),
-        stderr=result.stderr.rstrip('\n'),
+        stdout=result.stdout,
+        stderr=result.stderr,
     )

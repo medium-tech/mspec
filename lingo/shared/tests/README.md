@@ -35,4 +35,4 @@ cases:
 - `tags`: used for filtering (`smoke`, `error`, etc).
 - `cases`: one or more execution cases.
 - `params`: reserved for future CLI params support.
-- `expect.stdout`: compared as exact text after trailing newline normalization.
+- `expect.stdout`: compared as exact text, interpreter must print a newline after the output, `expect.stdout` should not contain the trailing newline as it is appended when the yaml is parsed.
