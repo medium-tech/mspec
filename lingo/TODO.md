@@ -64,18 +64,10 @@ Planned implementation scope by interpreter:
 | Language | `exe` parse+execute | `lib` import | `app` runtime | `page` runtime | `rich-text` runtime |
 |---|---|---|---|---|---|
 | Python | 🟡 | 🔴 | 🔴 | 🔴 | 🔴 |
-| JavaScript | 🟡 | 🔴 | n/a | 🔴 | 🔴 |
-| Go | 🟡 | 🔴 | 🔴 | n/a | n/a |
-| Haskell | 🟡* | 🔴 | n/a | n/a | n/a |
-| C | 🟡 | 🔴 | n/a | n/a | n/a |
-
-*Haskell requires `cabal` (install via [ghcup](https://www.haskell.org/ghcup/)); test skips when absent.
-
-Notes:
-
-- all five languages must support `exe` + `lib`
-- `app` is Python and Go only
-- `page` and `rich-text` are Python and JavaScript only
+| JavaScript | 🔴 | 🔴 | n/a | 🔴 | 🔴 |
+| Go | 🔴 | 🔴 | 🔴 | n/a | n/a |
+| Haskell | 🔴 | 🔴 | n/a | n/a | n/a |
+| C | 🔴 | 🔴 | n/a | n/a | n/a |
 
 ---
 
@@ -282,7 +274,7 @@ Why this helps:
 - easier to test unsupported symbols
 - safer refactors when splitting files
 
-### 2) Split expression parsing into small parser modules
+### 2) 🟢 Split expression parsing into small parser modules
 
 Current pattern (single long chain):
 
