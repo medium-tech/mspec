@@ -13,7 +13,7 @@ cases:
       params: {}
       expect:
           exit_code: 0
-          stdout: |
+          stdout: |-
               LINGO_ERROR [ERROR] - i am a test error
               LINGO_ERROR [ERROR_W_CODE] - i am an error w a code
               LINGO_ERROR [TYPE_ERROR] - args must be int or float for add symbol, got a: str and b: str
