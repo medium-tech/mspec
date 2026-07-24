@@ -32,14 +32,12 @@ def execute_expression(ctx: LingoContext, expr):
         return expr
     else:
         try:
-            expr_callable = globals()[f'L_EXPR_{expr.L_SYM_NAME}']
+            expr_callable = get_expression_handler(expr.L_SYM_NAME)
         except AttributeError:
             if isinstance(expr, (LingoPrimitiveTypes, LingoValue)):
                 return expr
             else:
                 raise LingoTypeError(f'expected expression to be symbol, got: {type(expr).__name__}') from None
-        except KeyError:
-            raise LingoLibError(f'unsupported expression symbol: {expr.L_SYM_NAME!r}')
         
         try:
             return expr_callable(ctx, expr)
@@ -185,3 +183,23 @@ def L_EXPR_join(ctx, symbol:symbols.L_SYM_join):
     except TypeError as e:
         ctx.log.debug(f'error joining items: {e.__class__.__name__}: {e}')
         return LingoLanguageError(f'separator and all items for join symbol must be str')
+
+
+EXPRESSION_HANDLERS = {
+    'value': L_EXPR_value,
+    'error': L_EXPR_error,
+    'handle': L_EXPR_handle,
+    'eq': L_EXPR_eq,
+    'int': L_EXPR_int,
+    'add': L_EXPR_add,
+    'str': L_EXPR_str,
+    'concat': L_EXPR_concat,
+    'join': L_EXPR_join,
+}
+
+
+def get_expression_handler(sym_name: str):
+    try:
+        return EXPRESSION_HANDLERS[sym_name]
+    except KeyError:
+        raise LingoLibError(f'unsupported expression symbol: {sym_name!r}')

@@ -232,7 +232,7 @@ Rules:
 Goal: keep existing `exe` behavior stable while restructuring internals so
 `lib`, `app`, and `ui` can be added without large rewrites.
 
-### 1) Replace dynamic expression dispatch with explicit registry
+### 1) 🟢 Replace dynamic expression dispatch with explicit registry
 
 Current pattern (works, but gets fragile as symbol count grows):
 
