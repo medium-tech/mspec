@@ -375,7 +375,7 @@ Why this helps:
 - same coercion behavior for `int`, `validate`, models, and state updates
 - prevents drift across symbol implementations
 
-### 4) Add explicit spec root contracts (even before execution support)
+### 4) 🟢 Add explicit spec root contracts (even before execution support)
 
 Current pattern (`exe` works, other roots not contract-validated yet):
 
