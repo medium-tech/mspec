@@ -1,9 +1,10 @@
 import lingolib.symbols as symbols
 
 from lingolib.errors import LingoSyntaxError
+from .state import get_yaml_line
 
 
-def parse_expr_eq(ctx, data: dict, L_SRC: str, create_expression_ast, get_yaml_line, src_info):
+def parse_expr_eq(ctx, data: dict, L_SRC: str, create_expression_ast, src_info):
     try:
         a_expr = data['eq']['a']
         b_expr = data['eq']['b']
@@ -19,7 +20,7 @@ def parse_expr_eq(ctx, data: dict, L_SRC: str, create_expression_ast, get_yaml_l
     )
 
 
-def parse_expr_int(ctx, data: dict, L_SRC: str, create_expression_ast, get_yaml_line, src_info):
+def parse_expr_int(ctx, data: dict, L_SRC: str, create_expression_ast, src_info):
     keys = set(data.keys())
     args = {
         'L_SRC': f'{L_SRC}.int',
@@ -39,7 +40,7 @@ def parse_expr_int(ctx, data: dict, L_SRC: str, create_expression_ast, get_yaml_
     return symbols.L_SYM_int(**args)
 
 
-def parse_expr_add(ctx, data: dict, L_SRC: str, create_expression_ast, get_yaml_line, src_info):
+def parse_expr_add(ctx, data: dict, L_SRC: str, create_expression_ast, src_info):
     keys = set(data.keys())
 
     try:

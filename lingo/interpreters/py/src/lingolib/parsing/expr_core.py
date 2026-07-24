@@ -5,9 +5,10 @@ from lingolib.types import LingoPrimitiveTypeNames, LingoPrimitiveTypes
 
 from .expr_numeric import parse_expr_add, parse_expr_eq, parse_expr_int
 from .expr_text import parse_expr_concat, parse_expr_join, parse_expr_str
+from .state import get_yaml_line
 
 
-def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str, create_expression_ast, get_yaml_line):
+def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str, create_expression_ast):
     keys = set(data.keys())
     ctx.log.debug(f'create_expression_ast_from_dict - keys: {keys!r}')
 
@@ -79,22 +80,22 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str, create_expressio
                 )
 
     elif keys == {'eq'}:
-        return parse_expr_eq(ctx, data, L_SRC, create_expression_ast, get_yaml_line, src_info)
+        return parse_expr_eq(ctx, data, L_SRC, create_expression_ast, src_info)
 
     elif 'int' in keys:
-        return parse_expr_int(ctx, data, L_SRC, create_expression_ast, get_yaml_line, src_info)
+        return parse_expr_int(ctx, data, L_SRC, create_expression_ast, src_info)
 
     elif keys == {'add'}:
-        return parse_expr_add(ctx, data, L_SRC, create_expression_ast, get_yaml_line, src_info)
+        return parse_expr_add(ctx, data, L_SRC, create_expression_ast, src_info)
 
     elif keys == {'str'}:
-        return parse_expr_str(ctx, data, L_SRC, create_expression_ast, get_yaml_line)
+        return parse_expr_str(ctx, data, L_SRC, create_expression_ast)
 
     elif keys == {'concat'}:
-        return parse_expr_concat(ctx, data, L_SRC, create_expression_ast, get_yaml_line, src_info)
+        return parse_expr_concat(ctx, data, L_SRC, create_expression_ast, src_info)
 
     elif keys == {'join'}:
-        return parse_expr_join(ctx, data, L_SRC, create_expression_ast, get_yaml_line, src_info)
+        return parse_expr_join(ctx, data, L_SRC, create_expression_ast, src_info)
 
     else:
         raise LingoSyntaxError(f'Unknown symbol: {", ".join(keys)}{src_info()}')

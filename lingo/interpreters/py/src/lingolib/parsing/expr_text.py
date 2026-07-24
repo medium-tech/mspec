@@ -1,9 +1,10 @@
 import lingolib.symbols as symbols
 
 from lingolib.errors import LingoSyntaxError
+from .state import get_yaml_line
 
 
-def parse_expr_str(ctx, data: dict, L_SRC: str, create_expression_ast, get_yaml_line):
+def parse_expr_str(ctx, data: dict, L_SRC: str, create_expression_ast):
     return symbols.L_SYM_str(
         object=create_expression_ast(ctx, data['str'], f'{L_SRC}.str.object'),
         L_SRC=f'{L_SRC}.str',
@@ -12,7 +13,7 @@ def parse_expr_str(ctx, data: dict, L_SRC: str, create_expression_ast, get_yaml_
     )
 
 
-def parse_expr_concat(ctx, data: dict, L_SRC: str, create_expression_ast, get_yaml_line, src_info):
+def parse_expr_concat(ctx, data: dict, L_SRC: str, create_expression_ast, src_info):
     if isinstance(data['concat'], list):
         ctx.log.debug(f'create_expression_ast_from_dict - concat expression: {data["concat"]!r}')
         return symbols.L_SYM_concat(
@@ -25,7 +26,7 @@ def parse_expr_concat(ctx, data: dict, L_SRC: str, create_expression_ast, get_ya
         raise LingoSyntaxError(f'concat symbol must have a list {src_info()}')
 
 
-def parse_expr_join(ctx, data: dict, L_SRC: str, create_expression_ast, get_yaml_line, src_info):
+def parse_expr_join(ctx, data: dict, L_SRC: str, create_expression_ast, src_info):
     ctx.log.debug(f'create_expression_ast_from_dict - join expression: {data}')
     args = {
         'L_SRC': f'{L_SRC}.join',

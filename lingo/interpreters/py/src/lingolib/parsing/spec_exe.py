@@ -4,6 +4,7 @@ from lingolib.context import LingoContext
 from lingolib.errors import LingoSyntaxError
 
 from .ast import LingoASTExeSpec
+from .state import get_yaml_line
 
 
 def spec_exe_ast_from_dict(
@@ -11,7 +12,6 @@ def spec_exe_ast_from_dict(
     lingo: symbols.L_SYM_lingo,
     data: dict,
     create_expression_ast,
-    get_yaml_line,
 ) -> LingoASTExeSpec:
 
     ctx.log.debug(f'spec_exe_ast_from_dict')

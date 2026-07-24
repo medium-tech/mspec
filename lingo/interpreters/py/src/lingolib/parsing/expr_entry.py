@@ -5,13 +5,13 @@ from lingolib.errors import LingoSyntaxError
 from lingolib.types import LingoLanguageError, LingoLiteralTypes, LingoPrimitiveTypes
 
 from .expr_core import parse_expression_ast_from_dict
+from .state import get_yaml_line
 
 
 def create_expression_ast(
     ctx: LingoContext,
     data: LingoLiteralTypes,
     L_SRC: str,
-    get_yaml_line,
 ) -> symbols.ExpressionSymbols:
 
     if isinstance(data, LingoPrimitiveTypes):
@@ -52,20 +52,14 @@ def create_expression_ast(
 
     elif isinstance(data, list):
         ctx.log.debug(f'create_expression_ast - list: {data!r}')
-        return [create_expression_ast(ctx, item, f'{L_SRC}[{i}]', get_yaml_line) for i, item in enumerate(data)]
+        return [create_expression_ast(ctx, item, f'{L_SRC}[{i}]') for i, item in enumerate(data)]
 
     elif isinstance(data, dict):
         return parse_expression_ast_from_dict(
             ctx=ctx,
             data=data,
             L_SRC=L_SRC,
-            create_expression_ast=lambda inner_ctx, inner_data, inner_src: create_expression_ast(
-                inner_ctx,
-                inner_data,
-                inner_src,
-                get_yaml_line,
-            ),
-            get_yaml_line=get_yaml_line,
+            create_expression_ast=create_expression_ast,
         )
 
     else:
@@ -77,12 +71,10 @@ def create_expression_ast_from_dict(
     data: dict,
     L_SRC: str,
     create_expression_ast,
-    get_yaml_line,
 ) -> symbols.ExpressionSymbols:
     return parse_expression_ast_from_dict(
         ctx=ctx,
         data=data,
         L_SRC=L_SRC,
         create_expression_ast=create_expression_ast,
-        get_yaml_line=get_yaml_line,
     )
