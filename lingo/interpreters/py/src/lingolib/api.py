@@ -2,7 +2,7 @@ import os
 
 from lingolib.context import LingoContext, LingoInterpreterContext
 from lingolib.errors import LingoSyntaxError
-from lingolib.expressions import unwrap_expression
+from lingolib.runtime.expressions import unwrap_expression
 from lingolib.parsing import LingoASTSpec, create_spec_ast_from_dict, LingoASTExeSpec, YamlLocationLoader
 
 import yaml
