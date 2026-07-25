@@ -42,7 +42,7 @@ lingo/interpreters/py/src/lingolib/
 * 🟡 initial interpreter implementation (update hardcoded `str` functions)
 	* 🟡 py
 		* 🟢 verbose logging
-		* 🟡 exe scripts
+		* 🟡 exe
 			* 🟢 hello-world.yaml
 			* 🟢 hello-str.yaml
 			* 🟢 hello-int.yaml
@@ -54,18 +54,23 @@ lingo/interpreters/py/src/lingolib/
 			* 🔴 hello-struct.yaml
 			* 🔴 hello-validate.yaml
 			* 🔴 hello-import.yaml
-		* 🔴 app scripts
+		* 🔴 app
 			* 🔴 hello-app.yaml
 			* 🔴 hello-backend.yaml
-		* 🔴 ui scripts
+		* 🔴 ui
 			* 🔴 hello-ui.yaml
 			* 🔴 hello-frontend.yaml
 			* 🔴 hello-inputs.yaml
 		* 🔴 lib
 			* 🔴 imports
-		* 🔴 text scripts
+		* 🔴 text
 			* 🔴 hello-text.yaml
 			* 🔴 text-formatting.yaml
+		* 🔴 super
+			* 🔴 hello-super.yaml
+		* 🔴 data
+			* 🔴 hello-data.yaml
+			* 🔴 hello-anonymous-data.yaml
 	* 🔴 js
 	* 🔴 go
 	* 🔴 hs

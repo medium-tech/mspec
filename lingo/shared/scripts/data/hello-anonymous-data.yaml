@@ -1,0 +1,39 @@
+lingo:
+    spec: 'data'
+    version: '0.1.0b'
+
+meta:
+    description: 'The data spec is used to serialize data.'
+    development_notes: |
+        The anonymous variation of the data spec is for serializing data apart from a backend spec.
+        You can reference a struct spec via an imported path (`hello-library.yaml` in this example)
+        or also via a locally defined struct (`favorites` in this example).
+
+import:
+    - 'hello-library.yaml'
+
+models:
+    favorites:
+        define: struct
+        fields:
+            color:
+                define: str
+            number:
+                define: int
+data:
+    hello_ns:
+        person:
+            - name: 'Alice'
+              age: 30
+            - name: 'Bob'
+              age: 25
+            - name: 'Charlie'
+              age: 35
+    
+    favorites:
+        - color: 'blue'
+          number: 7
+        - color: 'green'
+          number: 42
+        - color: 'red'
+          number: 13

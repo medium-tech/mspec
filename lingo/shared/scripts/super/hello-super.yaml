@@ -1,0 +1,13 @@
+lingo:
+    spec: 'super'
+    version: '0.1.0b'
+
+meta:
+    description: 'Hello world for super spec with multiple sub-specs.'
+
+specs:
+    - lingo-stdlib.yaml
+    - hello-library.yaml
+    - hello-data.yaml
+    - hello-frontend.yaml
+    - hello-backend.yaml

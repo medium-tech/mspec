@@ -4,6 +4,14 @@ lingo:
 
 backend: 'hello-backend.yaml'
 
+meta:
+    description: 'Hello world for a frontend application.'
+    development_notes: |
+        Note that in the widget.model or widget.op field we reference the path via the 
+        backend path (my_app.<name>) even though it's available at hello_ns.person
+        as well. Using the backend path is required because that path is how to derive
+        the url endpoint.
+
 state:
     say_hello:
         define: 'lingo.op_call'

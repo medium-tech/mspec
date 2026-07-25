@@ -1,0 +1,33 @@
+lingo:
+    spec: 'data'
+    version: '0.1.0b'
+
+meta:
+    description: 'The data spec is used to serialize data; useful for caching or front-to-backend communication.'
+    development_notes: |
+        In this example, we have data connected to a backend app spec. The data is stored below under 'data.my_app.person'
+        which maps to the backend path 'my_app.person'. This allows the data spec to be used
+        with an app spec for caching, storing and transferring data between the frontend and backend.
+
+        See 'hello-anonymous-data.yaml' for an example of a data spec that is not connected to a backend app spec.
+
+backend: 'hello-backend.yaml'
+
+data:
+    my_app:
+        person:
+            - id: '1'
+              name: 'Alice'
+              age: 30
+            - id: '2'
+              name: 'Bob'
+              age: 25
+            - id: '3'
+              name: 'Charlie'
+              age: 35
+            - id: '4'
+              name: 'Diana'
+              age: 28
+            - id: '5'
+              name: 'Ethan'
+              age: 40
