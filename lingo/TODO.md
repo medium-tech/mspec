@@ -46,10 +46,10 @@ lingo/interpreters/py/src/lingolib/
 			* 🟢 hello-world.yaml
 			* 🟢 hello-str.yaml
 			* 🟢 hello-int.yaml
-			* 🔴 hello-list.yaml
-			* 🔴 hello-struct.yaml
 			* 🟢 hello-error.yaml
 			* 🟢 hello-unhandled-error.yaml
+			* 🔴 hello-list.yaml
+			* 🔴 hello-struct.yaml
 			* 🔴 hello-validate.yaml
 			* 🔴 hello-import.yaml
 		* 🔴 app scripts
@@ -57,10 +57,13 @@ lingo/interpreters/py/src/lingolib/
 			* 🔴 hello-backend.yaml
 		* 🔴 ui scripts
 			* 🔴 hello-ui.yaml
-			* 🔴 hello-form.yaml
-			* 🔴 hello-type-display.yaml
 			* 🔴 hello-frontend.yaml
-			* 🔴 hello-rich-text.yaml
+			* 🔴 hello-inputs.yaml
+		* 🔴 lib
+			* 🔴 imports
+		* 🔴 text scripts
+			* 🔴 hello-text.yaml
+			* 🔴 text-formatting.yaml
 	* 🔴 js
 	* 🔴 go
 	* 🔴 hs
@@ -85,7 +88,7 @@ Design around beta spec families:
 
 Planned implementation scope by interpreter:
 
-| Language | `exe` parse+execute | `lib` import | `app` runtime | `page` runtime | `rich-text` runtime |
+| Language | `exe` parse+execute | `lib` import | `app` runtime | `page` runtime | `text` runtime |
 |---|---|---|---|---|---|
 | Python | 🟡 | 🔴 | 🔴 | 🔴 | 🔴 |
 | JavaScript | 🔴 | 🔴 | n/a | 🔴 | 🔴 |
@@ -111,7 +114,7 @@ Parser contract for all languages:
 
 - parse YAML file from disk
 - validate minimal envelope (`lingo.spec`, `lingo.version`)
-- dispatch by spec type (`exe`, `app`, `page`, `rich-text`, `lib`)
+- dispatch by spec type (`exe`, `app`, `page`, `text`, `lib`)
 - return consistent parser errors with line/context when available
 
 ---

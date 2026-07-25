@@ -1,0 +1,6 @@
+lingo:
+    spec: 'text'
+    version: '0.1.0b'
+
+block:
+    - text: 'hello.world'
