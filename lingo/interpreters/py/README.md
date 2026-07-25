@@ -89,7 +89,7 @@ The Python interpreter library lives in `./src/lingolib` and is split by respons
 - `parsing/`
   - YAML line tracking + parser entrypoints + expression/spec parsing.
   - `state.py`: `YamlLocationLoader` and `get_yaml_line(...)`.
-  - `envelope.py`: top-level `lingo` parsing and spec dispatch.
+  - `lingo.py`: top-level `lingo` parsing and spec dispatch.
   - `spec_exe.py`: `exe` spec parser.
   - `expr_entry.py`, `expr_core.py`, `expr_numeric.py`, `expr_text.py`: expression parsing.
   - `ast.py`: AST dataclasses and `lingo_ast_to_string(...)`.
@@ -144,7 +144,7 @@ Specs are parsed at the top level, then executed by the API layer.
 	- Implement `spec_<name>_ast_from_dict(ctx, lingo, data, create_expression_ast)`.
 	- Parse required top-level symbols and return your new AST dataclass.
 
-1. Wire spec dispatch in `./src/lingolib/parsing/envelope.py`
+1. Wire spec dispatch in `./src/lingolib/parsing/lingo.py`
 	- Import your new parser.
 	- Extend `create_spec_ast_from_dict(...)`:
 	  - `if lingo.spec == '<name>': return spec_<name>_ast_from_dict(...)`
