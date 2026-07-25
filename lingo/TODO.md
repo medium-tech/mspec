@@ -48,6 +48,8 @@ lingo/interpreters/py/src/lingolib/
 			* 🟢 hello-int.yaml
 			* 🟢 hello-error.yaml
 			* 🟢 hello-unhandled-error.yaml
+			* 🔴 hello-flow-control.yaml
+			* 🔴 hello-params.yaml
 			* 🔴 hello-list.yaml
 			* 🔴 hello-struct.yaml
 			* 🔴 hello-validate.yaml

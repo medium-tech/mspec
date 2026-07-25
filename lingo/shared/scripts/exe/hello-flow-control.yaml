@@ -1,0 +1,43 @@
+lingo:
+    spec: 'exe'
+    version: '0.1.0b'
+
+meta:
+    description: 'Hello world for flow control with branch and switch.'
+
+main:
+    switch:
+        expression:
+            branch:
+                - if:
+                      lt:
+                          a:
+                              add:
+                                  a: 2
+                                  b: 2
+                          b: 3
+                  then:
+                      str: 'small'
+                - elif:
+                      eq:
+                          a:
+                              add:
+                                  a: 1
+                                  b: 1
+                          b: 2
+                  then:
+                      str: 'medium'
+                - else:
+                      str: 'large'
+        cases:
+            - case: 'small'
+              then:
+                  str: 'Branch result: small'
+            - case: 'medium'
+              then:
+                  str: 'Branch result: medium'
+            - case: 'large'
+              then:
+                  str: 'Branch result: large'
+        default:
+            str: 'Branch result: unknown'

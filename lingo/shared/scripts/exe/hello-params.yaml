@@ -1,0 +1,40 @@
+lingo:
+    spec: 'exe'
+    version: '0.1.0b'
+
+meta:
+    description: 'Hello world for user input params (bool, int, str).'
+
+params:
+    is_enabled:
+        define: bool
+        default: false
+
+    count:
+        define: int
+        default: 0
+
+    name:
+        define: str
+        default: 'World'
+
+main:
+    join:
+        separator: '\n'
+        items:
+            - concat:
+                - 'is_enabled: '
+                - str:
+                    params: is_enabled
+
+            - concat:
+                - 'count plus 1: '
+                - str:
+                    add:
+                        a:
+                            params: count
+                        b: 1
+
+            - concat:
+                - 'hello, '
+                - params: name
