@@ -3,7 +3,8 @@ import unittest
 from lingo.test.adapters import run_exe_with_python
 from lingo.test.contracts import (
     filter_contracts_by_tags,
-    load_all_exe_contracts,
+    list_exe_contract_files,
+    load_exe_contracts,
     parse_tag_filter_from_env,
 )
 
@@ -17,9 +18,16 @@ class TestExeContractPython(unittest.TestCase):
 
     def test_exe_contracts(self):
         tag_filter = parse_tag_filter_from_env()
-        all_contracts = load_all_exe_contracts()
-        all_contracts_len = len(all_contracts)
 
+        all_contracts = []
+        for contract_file in list_exe_contract_files():
+            try:
+                loaded = load_exe_contracts(contract_file)
+            except Exception as e:
+                self.fail(str(e))
+            all_contracts.extend(loaded)
+
+        all_contracts_len = len(all_contracts)
         filtered_contracts = filter_contracts_by_tags(all_contracts, tag_filter)
         filtered_contracts_len = len(filtered_contracts)
 
@@ -28,7 +36,7 @@ class TestExeContractPython(unittest.TestCase):
 
         for contract in filtered_contracts:
             for case in contract.cases:
-                with self.subTest(contract=contract.file_path.name, case=case.name):
+                with self.subTest(contract=contract.file_path.name, entry=contract.entry_index, case=case.name):
                     result = run_exe_with_python(contract.script_path, case.params)
 
                     self.assertEqual(
@@ -45,7 +53,7 @@ class TestExeContractPython(unittest.TestCase):
                         result.stdout,
                         case.expect.stdout,
                         msg=(
-                            f'Unexpected stdout for {contract.file_path.name}:{case.name}\n'
+                            f'Unexpected stdout for {contract.file_path.name}:tests[{contract.entry_index}]:{case.name}\n'
                             f'expected:\n{case.expect.stdout}\n'
                             f'actual:\n{result.stdout}\n'
                             f'stderr:\n{result.stderr}'

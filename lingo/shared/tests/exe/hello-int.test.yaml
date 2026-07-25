@@ -1,15 +1,14 @@
-lingo_test:
-    spec: 'exe'
+lingo:
+    spec: 'test'
     version: '0.1.0b'
 
-script: 'scripts/exe/hello-int.yaml'
-
-tags:
-    - smoke
-
-cases:
-    - name: 'default'
-      params: {}
-      expect:
-          exit_code: 0
-          stdout: 'true'
+tests:
+    - spec: 'scripts/exe/hello-int.yaml'
+      tags:
+        - smoke
+      cases:
+        - name: 'default'
+          params: {}
+          expect:
+              exit_code: 0
+              stdout: 'true'

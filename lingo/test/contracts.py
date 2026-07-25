@@ -27,6 +27,7 @@ class ExeContractCase:
 @dataclass(frozen=True)
 class ExeContract:
     file_path: Path
+    entry_index: int
     script_path: Path
     tags: tuple[str, ...]
     cases: tuple[ExeContractCase, ...]
@@ -74,50 +75,69 @@ def _parse_case(case_data: dict, file_path: Path) -> ExeContractCase:
     )
 
 
-# public api #
+def _parse_test_entry(entry_data: dict, file_path: Path, entry_index: int) -> ExeContract:
+    entry_name = f'tests[{entry_index}]'
+    entry_data = _require_mapping(entry_data, entry_name, file_path)
 
-def load_exe_contract(contract_file: Path) -> ExeContract:
-    with contract_file.open('r') as f:
-        doc = yaml.safe_load(f)
-
-    doc = _require_mapping(doc, 'root', contract_file)
-
-    envelope = _require_mapping(doc.get('lingo_test'), 'lingo_test', contract_file)
-    if envelope.get('spec') != 'exe':
-        raise ValueError(f"{contract_file}: expected lingo_test.spec='exe'")
-
-    script_ref = doc.get('script')
+    script_ref = entry_data.get('spec')
     if not isinstance(script_ref, str) or not script_ref:
-        raise ValueError(f'{contract_file}: script must be a non-empty string')
+        raise ValueError(f'{file_path}: {entry_name}.spec must be a non-empty string')
 
     script_path = SHARED_DIR / script_ref
     if not script_path.exists():
-        raise ValueError(f'{contract_file}: script path does not exist: {script_path}')
+        raise ValueError(f'{file_path}: {entry_name}.spec path does not exist: {script_path}')
 
-    tags = _require_list(doc.get('tags', []), 'tags', contract_file)
+    tags = _require_list(entry_data.get('tags', []), f'{entry_name}.tags', file_path)
     normalized_tags = []
     for tag in tags:
         if not isinstance(tag, str) or not tag:
-            raise ValueError(f'{contract_file}: tags must contain only non-empty strings')
+            raise ValueError(f'{file_path}: {entry_name}.tags must contain only non-empty strings')
         normalized_tags.append(tag)
 
-    case_docs = _require_list(doc.get('cases', []), 'cases', contract_file)
+    case_docs = _require_list(entry_data.get('cases', []), f'{entry_name}.cases', file_path)
     if not case_docs:
-        raise ValueError(f'{contract_file}: must define at least one case')
+        raise ValueError(f'{file_path}: {entry_name} must define at least one case')
 
-    cases = tuple(_parse_case(case_doc, contract_file) for case_doc in case_docs)
+    cases = tuple(_parse_case(case_doc, file_path) for case_doc in case_docs)
 
     return ExeContract(
-        file_path=contract_file,
+        file_path=file_path,
+        entry_index=entry_index,
         script_path=script_path,
         tags=tuple(normalized_tags),
         cases=cases,
     )
 
 
+# public api #
+
+def list_exe_contract_files() -> list[Path]:
+    return sorted(EXE_CONTRACT_DIR.glob('*.test.yaml'))
+
+
+def load_exe_contracts(contract_file: Path) -> list[ExeContract]:
+    with contract_file.open('r') as f:
+        doc = yaml.safe_load(f)
+
+    doc = _require_mapping(doc, 'root', contract_file)
+
+    envelope = _require_mapping(doc.get('lingo'), 'lingo', contract_file)
+    if envelope.get('spec') != 'test':
+        raise ValueError(f"{contract_file}: expected lingo.spec='test'")
+
+    tests = _require_list(doc.get('tests', []), 'tests', contract_file)
+    if not tests:
+        raise ValueError(f'{contract_file}: must define at least one tests[] entry')
+
+    return [_parse_test_entry(entry_data, contract_file, i) for i, entry_data in enumerate(tests)]
+
+
 def load_all_exe_contracts() -> list[ExeContract]:
-    files = sorted(EXE_CONTRACT_DIR.glob('*.test.yaml'))
-    return [load_exe_contract(file_path) for file_path in files]
+    files = list_exe_contract_files()
+    contracts: list[ExeContract] = []
+    for file_path in files:
+        contracts.extend(load_exe_contracts(file_path))
+    return contracts
 
 
 def filter_contracts_by_tags(contracts: list[ExeContract], tags: set[str] | None) -> list[ExeContract]:

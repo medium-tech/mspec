@@ -16,8 +16,10 @@ Beta naming and intent:
 - `exe`: execute a `main` function and return a value
 - `app`: backend and admin CLI definition (renamed from `generator`)
 - `page`: UI spec that can talk to an `app` backend
-- `rich-text`: subset of `page` for formatted text payloads
+- `text`: subset of `page` for formatted text payloads
 - `lib`: reusable function/module definitions importable by other scripts
+- `test`: reusable test cases for lingo interpreter and specs
+- `super`: for embedding many spec files into one
 
 ## implementation scope by language
 
@@ -27,7 +29,7 @@ Current target scope:
 - `exe` supports importing `lib`
 - `py` and `go` implement `app`
 - `py` and `js` implement `page`
-- `rich-text` is implemented with the `page` stack (`py`, `js`)
+- `text` is implemented with the `page` stack (`py`, `js`)
 
 ## standardized cli contract
 
