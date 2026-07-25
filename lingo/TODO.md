@@ -6,11 +6,7 @@
 |--|--|--|--| --|
 |🔴|🟡|🟠|🟢|n/a|
 
-## To do
-
-* 🟢 move `lingolib/expressions.py` to `lingolib/runtime/expressions.py`
-* 🟢 move `lingolib/symbols.py` to `lingolib/parsing/symbols.py`
-* 🔴 move execution functions to `lingolib/runtime/execute.py` and `lingolib/runtime/eval_exe.py`
+## outline of python module
 
 ```text
 lingo/interpreters/py/src/lingolib/
