@@ -12,6 +12,12 @@ meta:
         as well. Using the backend path is required because that path is how to derive
         the url endpoint.
 
+params:
+    person_id:
+        define: str
+        description: 'The ID of the person to view.'
+        default: '-1'
+
 state:
     say_hello:
         define: 'lingo.op_call'
@@ -21,21 +27,35 @@ state:
     
     view_people: 'lingo.model_list'
 
-ops: {}
-
 output:
+    - heading: 'App Ops'
+
     - heading: 'Say Hello'
+      level: 2
     - widget:
         bind: 'say_hello'
         op: 'my_app.say_hello'
-        
+
+    - heading: 'App Models'
+
+    - heading: 'View Person'
+      level: 2
+    - widget:
+        model: 'my_app.person'
+        display: 'view'
+        model_id: 
+            params: person_id
+
     - heading: 'Create Person'
+      level: 2
     - widget:
         bind: 'create_person'
         model: 'my_app.person'
         display: 'create'
 
-    - heading: 'View People'
+    - heading: 'Person List'
+      level: 2
     - widget:
         model: 'my_app.person'
         display: 'list'
+    

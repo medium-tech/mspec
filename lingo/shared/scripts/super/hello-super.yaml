@@ -11,3 +11,8 @@ specs:
     - hello-data.yaml
     - hello-frontend.yaml
     - hello-backend.yaml
+
+run:
+    spec: 'hello-frontend.yaml'
+    params:
+        person_id: '1'
