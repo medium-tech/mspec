@@ -3,7 +3,7 @@ from typing import Any
 from lingolib import symbols
 from lingolib.context import LingoContext
 from lingolib.errors import LingoLibError, LingoTypeError
-from lingolib.types import expression, LingoPrimitiveTypes, LingoLiteralTypes, LingoValue, LingoLanguageError
+from lingolib.types import LingoPrimitiveTypes, LingoValue, LingoLanguageError, error_to_str, value_to_str
 
 
 class LingoErrorPassThrough(Exception):
@@ -72,6 +72,8 @@ def L_EXPR_value(ctx, symbol:symbols.L_SYM_value):
     result = unwrap_expression(ctx, symbol.value)
     if isinstance(result, LingoLanguageError):
         return result
+    elif type(result).__name__ != symbol.type:
+        return LingoLanguageError(f'value type mismatch: expected {symbol.type!r}, got {type(result).__name__!r}', code='TYPE_ERROR')
     else:
         return LingoValue(
             type=symbol.type, 
@@ -88,7 +90,7 @@ def L_EXPR_handle(ctx, symbol:symbols.L_SYM_handle):
     result = execute_expression(ctx, symbol.expr)
     
     if isinstance(result, LingoLanguageError):
-        return f'LINGO_ERROR [{result.code}] - {result.error}'
+        return error_to_str(result)
     else:
         return result
     
@@ -151,12 +153,9 @@ def L_EXPR_str(ctx, symbol:symbols.L_SYM_str):
 
     if isinstance(primitive, LingoLanguageError):
         return primitive
-    elif isinstance(primitive, bool):
-        result = 'true' if primitive else 'false'
-    else:
-        result = str(primitive)
 
-    return LingoValue(type='str', value=result)
+    else:
+        return LingoValue(type='str', value=value_to_str(primitive))
 
 def L_EXPR_concat(ctx, symbol:symbols.L_SYM_concat):
     try:

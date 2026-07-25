@@ -4,9 +4,8 @@ from itertools import takewhile
 
 from lingolib.api import execute_file, ast_from_file
 from lingolib.context import LingoContext
-from lingolib.expressions import L_EXPR_str, L_EXPR_handle
-from lingolib.parsing import create_expression_ast, lingo_ast_to_string
-from lingolib.symbols import L_SYM_str, L_SYM_handle
+from lingolib.parsing import lingo_ast_to_string
+from lingolib.types import value_to_str, error_to_str
 
 HELP = (
     'usage: lingolib [--help] <command> [args]\n'
@@ -62,20 +61,10 @@ def parse_cli(ctx: LingoContext):
             print(result)
             
         elif result_type == 'LingoLanguageError':
-            result_symbol = L_SYM_handle(
-                expr=create_expression_ast(ctx, result, f'lingolib.exe.result.expr'),
-                L_SRC=f'lingolib.exe.result.handle'
-            )
-            
-            print(L_EXPR_handle(ctx, result_symbol))
+            print(error_to_str(result))
             
         else:
-            result_symbol = L_SYM_str(
-                object=create_expression_ast(ctx, result, f'lingolib.exe.result.object'),
-                L_SRC=f'lingolib.exe.result.str'
-            )
-            
-            print(L_EXPR_str(ctx, result_symbol).value)
+            print(value_to_str(result))
 
     elif command == 'ast':
         if len(remaining_args) != 1:

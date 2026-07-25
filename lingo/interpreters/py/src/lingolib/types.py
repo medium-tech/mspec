@@ -33,3 +33,12 @@ class LingoValue(NamedTuple):
 class LingoLanguageError(NamedTuple):
 	error: str
 	code: str = 'ERROR'
+
+def value_to_str(value:LingoLiteralTypes) -> str:
+	if isinstance(value, bool):
+		return 'true' if value else 'false'
+	else:
+		return str(value)
+
+def error_to_str(error:LingoLanguageError) -> str:
+	return f'LINGO_ERROR [{error.code}] - {error.error}'
