@@ -9,6 +9,7 @@ This is the Python interpreter and library for the lingo language.
 	- [run with standard cli](#run-with-standard-cli)
 	- [manual run](#manual-run)
 - [development](#development)
+	- [testing](#testing)
 	- [lingolib layout overview](#lingolib-layout-overview)
 	- [add a new symbol](#add-a-new-symbol)
 	- [add a new spec](#add-a-new-spec-appuilib)
@@ -70,6 +71,12 @@ python -m lingolib exe ../../../shared/scripts/exe/hello-world.yaml
 ```
 
 ## development
+
+### testing
+From root of repository:
+
+	python -m unittest lingo.test.test_exe_contract_py
+	python -m unittest lingo.test.test_spec_root_contracts_py
 
 ### lingolib layout overview
 

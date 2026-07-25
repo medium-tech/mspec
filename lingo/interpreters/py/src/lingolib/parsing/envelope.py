@@ -31,8 +31,9 @@ SPEC_ROOT_RULES = {
 
 
 def validate_spec_root(spec_name: str, doc: dict) -> None:
-    rules = SPEC_ROOT_RULES.get(spec_name)
-    if rules is None:
+    try:
+        rules = SPEC_ROOT_RULES[spec_name]
+    except KeyError:
         raise LingoSyntaxError(f'no root rules registered for spec: {spec_name!r}')
 
     top_level_keys = set(doc.keys())
@@ -106,4 +107,5 @@ def create_spec_ast_from_dict(ctx: LingoContext, data: dict) -> LingoASTSpec:
             create_expression_ast=create_expression_ast,
         )
 
-    raise LingoSyntaxError(f'spec {lingo.spec!r} passed root validation, but AST parser is not implemented yet')
+    else:
+        raise LingoSyntaxError(f'spec {lingo.spec!r} passed root validation, but AST parser is not implemented yet')
