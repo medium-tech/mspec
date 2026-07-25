@@ -8,9 +8,9 @@
 
 ## To do
 
-* move `lingolib/expressions.py` to `lingolib/runtime/expressions.py`
-* move `lingolib/symbols.py` to `lingolib/parsing/symbols.py`
-* move execution functions to `lingolib/runtime/execute.py` and `lingolib/runtime/eval_exe.py`
+* 🔴 move `lingolib/expressions.py` to `lingolib/runtime/expressions.py`
+* 🔴 move `lingolib/symbols.py` to `lingolib/parsing/symbols.py`
+* 🔴 move execution functions to `lingolib/runtime/execute.py` and `lingolib/runtime/eval_exe.py`
 
 ```text
 lingo/interpreters/py/src/lingolib/

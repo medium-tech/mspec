@@ -1,6 +1,6 @@
 from typing import Any
 
-from lingolib import symbols
+from lingolib.parsing import symbols
 from lingolib.context import LingoContext
 from lingolib.errors import LingoLibError, LingoTypeError
 from lingolib.types import LingoPrimitiveTypes, LingoValue, LingoLanguageError, error_to_str, value_to_str

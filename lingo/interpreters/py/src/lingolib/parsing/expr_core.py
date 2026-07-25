@@ -1,4 +1,4 @@
-import lingolib.symbols as symbols
+import lingolib.parsing.symbols as symbols
 
 from lingolib.errors import LingoSyntaxError
 from lingolib.types import LingoPrimitiveTypeNames, LingoPrimitiveTypes
