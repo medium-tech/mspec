@@ -1,6 +1,12 @@
 # Lingo TODO
 
-To do
+### status colors
+
+|not started|in progress|working but no test coverage|finished with test coverage|not planned|
+|--|--|--|--| --|
+|🔴|🟡|🟠|🟢|n/a|
+
+## To do
 
 * move `lingolib/expressions.py` to `lingolib/runtime/expressions.py`
 * move `lingolib/symbols.py` to `lingolib/parsing/symbols.py`
@@ -78,14 +84,6 @@ Design around beta spec families:
 - `page`
 - `text`
 - `lib`
-
-### status colors
-
-|not started|in progress|working but no test coverage|finished with test coverage|not planned|
-|--|--|--|--| --|
-|🔴|🟡|🟠|🟢|n/a|
-
----
 
 ## Scope Matrix
 
