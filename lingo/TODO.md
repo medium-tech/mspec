@@ -1,12 +1,42 @@
 # Lingo TODO
 
-## finish reviewing package refactor before merging
-* 🟢 review and test hello world to package refactor
-	* 🟢 py
-	* 🟢 js
-	* 🟢 go
-	* 🟢 hs
-	* 🟢 c
+To do
+
+* move `lingolib/expressions.py` to `lingolib/runtime/expressions.py`
+* move `lingolib/symbols.py` to `lingolib/parsing/symbols.py`
+* move execution functions to `lingolib/runtime/execute.py` and `lingolib/runtime/eval_exe.py`
+
+```text
+lingo/interpreters/py/src/lingolib/
+  api.py
+  cli.py
+  context.py
+  errors.py
+  types.py
+  parsing/
+	__init__.py
+	envelope.py
+	symbols.py
+	expr_core.py
+	expr_numeric.py
+	expr_text.py
+	expr_data.py
+	spec_exe.py
+	spec_lib.py
+	spec_app.py
+	spec_ui.py
+  runtime/
+	__init__.py
+	execute.py
+	expressions.py
+	resolver.py	(for imports)
+	eval_exe.py
+	eval_lib.py
+	eval_app.py
+	eval_ui.py
+```
+
+
 * 🟡 initial interpreter implementation (update hardcoded `str` functions)
 	* 🟡 py
 		* 🟢 verbose logging
@@ -162,35 +192,3 @@ Each interpreter validates parser/evaluator internals natively:
 - parser unit tests
 - executor unit tests
 - `lib` import resolution tests
-
-### Proposed Python Internal Layout
-
-```text
-lingo/interpreters/py/src/lingolib/
-  api.py
-  cli.py
-  context.py
-  errors.py
-  types.py
-  symbols.py
-  parsing/
-	__init__.py
-	envelope.py
-	expr_core.py
-	expr_numeric.py
-	expr_text.py
-	expr_data.py      # list/struct/get/validate/call
-	spec_exe.py
-	spec_lib.py
-	spec_app.py
-	spec_ui.py
-  runtime/
-	__init__.py
-	execute.py
-	registry.py
-	resolver.py
-	eval_exe.py
-	eval_lib.py
-	eval_app.py
-	eval_ui.py
-```
