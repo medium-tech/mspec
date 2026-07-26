@@ -38,6 +38,12 @@ lingo/interpreters/py/src/lingolib/
 	eval_ui.py
 ```
 
+* python interpreter
+	* arrange functions into groups
+	* create lingo docs
+		* spec docs
+		* function docs
+
 
 * 🟡 initial interpreter implementation (update hardcoded `str` functions)
 	* 🟡 py

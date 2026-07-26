@@ -14,12 +14,13 @@ interpreter packages. Each interpreter should support:
 Beta naming and intent:
 
 - `exe`: execute a `main` function and return a value
-- `app`: backend and admin CLI definition (renamed from `generator`)
-- `page`: UI spec that can talk to an `app` backend
+- `app`: backend and admin CLI definition
+- `ui`: UI spec that can talk to an `app` backend
 - `text`: subset of `page` for formatted text payloads
 - `lib`: reusable function/module definitions importable by other scripts
 - `test`: reusable test cases for lingo interpreter and specs
 - `super`: for embedding many spec files into one
+- `data`: for serializing lingo data, can be tied to a backend or anonymous
 
 ## implementation scope by language
 
