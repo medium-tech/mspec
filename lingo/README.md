@@ -9,29 +9,6 @@ interpreter packages. Each interpreter should support:
 - a library API for embedding
 - a CLI for script execution
 
-## beta specs
-
-Beta naming and intent:
-
-- `exe`: execute a `main` function and return a value
-- `app`: backend and admin CLI definition
-- `ui`: UI spec that can talk to an `app` backend
-- `text`: subset of `page` for formatted text payloads
-- `lib`: reusable function/module definitions importable by other scripts
-- `test`: reusable test cases for lingo interpreter and specs
-- `super`: for embedding many spec files into one
-- `data`: for serializing lingo data, can be tied to a backend or anonymous
-
-## implementation scope by language
-
-Current target scope:
-
-- all interpreters (`py`, `js`, `go`, `hs`, `c`) parse and execute `exe`
-- `exe` supports importing `lib`
-- `py` and `go` implement `app`
-- `py` and `js` implement `page`
-- `text` is implemented with the `page` stack (`py`, `js`)
-
 ## standardized cli contract
 
 `lingo` below stands in for each language binary.
@@ -68,7 +45,7 @@ Wrapper behavior requirements:
 - fail with actionable next steps and point to interpreter README when build/run is unavailable on the current OS
 - keep beta caveats explicit: not all build paths are expected to work on every OS/toolchain combination
 - support wrapper troubleshooting logs with `--verbose` / `-v`
-- verbose log format must be: `:: INFO :: <msg>`
+- verbose log format must be: `:: DEBUG :: <msg>`
 - verbose logging should include: env var checks, selected binary/toolchain, selected run mode, and key build/run steps
 
 Optional configuration knobs for wrappers:

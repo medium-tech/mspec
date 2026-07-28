@@ -38,13 +38,6 @@ lingo/interpreters/py/src/lingolib/
 	eval_ui.py
 ```
 
-* python interpreter
-	* arrange functions into groups
-	* create lingo docs
-		* spec docs
-		* function docs
-
-
 * 🟡 initial interpreter implementation (update hardcoded `str` functions)
 	* 🟡 py
 		* 🟢 verbose logging
@@ -88,47 +81,6 @@ Build each interpreter as both:
 
 - an embeddable library for host-language usage
 - a public CLI for running Lingo scripts
-
-Design around beta spec families:
-
-- `exe`
-- `app`
-- `page`
-- `text`
-- `lib`
-
-## Scope Matrix
-
-Planned implementation scope by interpreter:
-
-| Language | `exe` parse+execute | `lib` import | `app` runtime | `page` runtime | `text` runtime |
-|---|---|---|---|---|---|
-| Python | 🟡 | 🔴 | 🔴 | 🔴 | 🔴 |
-| JavaScript | 🔴 | 🔴 | n/a | 🔴 | 🔴 |
-| Go | 🔴 | 🔴 | 🔴 | n/a | n/a |
-| Haskell | 🔴 | 🔴 | n/a | n/a | n/a |
-| C | 🔴 | 🔴 | n/a | n/a | n/a |
-
----
-
-## Parser Dependencies (YAML)
-
-Each interpreter package should explicitly include a YAML parser dependency.
-
-| Language | Dependency | Task |
-|---|---|---|
-| Python | `PyYAML` | ensure installed and pinned in package metadata |
-| JavaScript | `yaml` | add to `dependencies` in `package.json` |
-| Go | `gopkg.in/yaml.v3` | add module dependency in `go.mod` |
-| Haskell | `yaml` | add to `build-depends` in `.cabal` |
-| C | `libyaml` | add build/install notes and compile/link flags |
-
-Parser contract for all languages:
-
-- parse YAML file from disk
-- validate minimal envelope (`lingo.spec`, `lingo.version`)
-- dispatch by spec type (`exe`, `app`, `page`, `text`, `lib`)
-- return consistent parser errors with line/context when available
 
 ---
 
