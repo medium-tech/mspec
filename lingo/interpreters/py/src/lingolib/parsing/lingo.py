@@ -7,6 +7,7 @@ from lingolib.types import LingoScriptSpecs
 from .ast import LingoASTSpec
 from .expr_entry import create_expression_ast
 from .spec_exe import spec_exe_ast_from_dict
+from .spec_text import spec_text_ast_from_dict
 from .state import get_yaml_line
 
 
@@ -26,6 +27,10 @@ SPEC_ROOT_RULES = {
     'ui': {
         'required': {'lingo', 'state', 'ops', 'output'},
         'optional': {'meta', 'backend', 'import'},
+    },
+    'text': {
+        'required': {'lingo', 'block'},
+        'optional': {'meta'},
     },
 }
 
@@ -101,6 +106,14 @@ def create_spec_ast_from_dict(ctx: LingoContext, data: dict) -> LingoASTSpec:
 
     if lingo.spec == 'exe':
         return spec_exe_ast_from_dict(
+            ctx=ctx,
+            lingo=lingo,
+            data=data,
+            create_expression_ast=create_expression_ast,
+        )
+
+    if lingo.spec == 'text':
+        return spec_text_ast_from_dict(
             ctx=ctx,
             lingo=lingo,
             data=data,

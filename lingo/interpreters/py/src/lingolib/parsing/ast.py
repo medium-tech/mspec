@@ -17,11 +17,16 @@ class LingoASTUISpec:
     pass
 
 @dataclass
+class LingoASTTextSpec:
+    lingo: symbols.L_SYM_lingo
+    block: symbols.L_SYM_block
+
+@dataclass
 class LingoASTLibSpec:
     pass
 
 
-LingoASTSpec = LingoASTExeSpec | LingoASTLibSpec | LingoASTAppSpec | LingoASTUISpec
+LingoASTSpec = LingoASTExeSpec | LingoASTLibSpec | LingoASTAppSpec | LingoASTUISpec | LingoASTTextSpec
 
 
 @dataclass

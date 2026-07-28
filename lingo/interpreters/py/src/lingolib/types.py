@@ -21,6 +21,7 @@ class LingoScriptSpecsEnum(StrEnum):
 	app = 'app'
 	exe = 'exe'
 	lib = 'lib'
+	text = 'text'
 	ui = 'ui'
 
 LingoScriptSpecs = [spec.value for spec in LingoScriptSpecsEnum]

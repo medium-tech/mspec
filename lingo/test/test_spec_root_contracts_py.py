@@ -146,6 +146,38 @@ class TestSpecRootContractsPython(unittest.TestCase):
         self.assertIn('error creating lingo symbol', str(e.exception))
         self.assertIn('version', str(e.exception))
 
+    def test_text_spec_parses_block_items(self):
+        doc = {
+            'lingo': {'spec': 'text', 'version': '0.0.1'},
+            'block': [
+                {'text': 'hello.world'},
+            ],
+        }
+
+        ast = create_spec_ast_from_dict(self._ctx(), doc)
+
+        self.assertEqual(ast.lingo.spec, 'text')
+        self.assertEqual(ast.block.items[0].text.value, 'hello.world')
+
+    def test_text_spec_bad_block(self):
+        doc = {
+            'lingo': {'spec': 'text', 'version': '0.0.1'},
+            'block': {'text': 'hello.world'}
+        }
+
+        with self.assertRaises(LingoSyntaxError) as e:
+            create_spec_ast_from_dict(self._ctx(), doc)
+            self.assertIn('block symbol must be a list', str(e.exception))
+
+    def test_text_spec_missing_block(self):
+        doc = {
+            'lingo': {'spec': 'text', 'version': '0.0.1'},
+        }
+
+        with self.assertRaises(LingoSyntaxError) as e:
+            create_spec_ast_from_dict(self._ctx(), doc)
+            self.assertIn('missing block symbol', str(e.exception))
+
 
 if __name__ == '__main__':
     unittest.main()

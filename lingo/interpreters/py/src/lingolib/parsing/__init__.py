@@ -4,6 +4,7 @@ from .ast import (
 	LingoASTLibSpec, 
 	LingoASTAppSpec,
 	LingoASTUISpec,
+	LingoASTTextSpec,
 	LingoASTSpec, 
 	lingo_ast_to_string
 )

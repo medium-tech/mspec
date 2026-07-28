@@ -4,7 +4,6 @@ from itertools import takewhile
 
 from lingolib.api import execute_file, debug_file
 from lingolib.context import LingoContext
-from lingolib.parsing import lingo_ast_to_string
 from lingolib.types import value_to_str, error_to_str
 
 HELP = (

@@ -45,6 +45,38 @@ class L_SYM_main(NamedTuple):
 	@property
 	def L_SYM_TYPE(self):
 		return 'spec'
+
+
+class L_SYM_block(NamedTuple):
+
+	L_SRC: str
+	items: list[expression]
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'block'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'spec'
+
+
+class L_SYM_text(NamedTuple):
+
+	L_SRC: str
+	text: expression
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'text'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'expression'
 #####
 #
 #
@@ -220,4 +252,4 @@ ExpressionSymbols = \
 	L_SYM_value | L_SYM_error | L_SYM_handle \
 	| L_SYM_eq \
 	| L_SYM_int | L_SYM_add \
-	| L_SYM_str | L_SYM_concat | L_SYM_join
+	| L_SYM_str | L_SYM_concat | L_SYM_join | L_SYM_text
