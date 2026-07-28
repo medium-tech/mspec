@@ -8,13 +8,20 @@ class LingoASTExeSpec:
     lingo: symbols.L_SYM_lingo
     main: symbols.L_SYM_main
 
+@dataclass
+class LingoASTAppSpec:
+    pass
+
+@dataclass
+class LingoASTUISpec:
+    pass
 
 @dataclass
 class LingoASTLibSpec:
     pass
 
 
-LingoASTSpec = LingoASTExeSpec | LingoASTLibSpec
+LingoASTSpec = LingoASTExeSpec | LingoASTLibSpec | LingoASTAppSpec | LingoASTUISpec
 
 
 @dataclass

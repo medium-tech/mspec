@@ -2,7 +2,7 @@ import sys
 
 from itertools import takewhile
 
-from lingolib.api import execute_file, ast_from_file
+from lingolib.api import execute_file, debug_file
 from lingolib.context import LingoContext
 from lingolib.parsing import lingo_ast_to_string
 from lingolib.types import value_to_str, error_to_str
@@ -12,7 +12,7 @@ HELP = (
     '\n'
     'commands:\n'
     '  exe <path>    load, parse, execute an exe spec and print result\n'
-    '  ast <path>    load, parse, print the AST for a spec\n'
+    '  debug <path>  load, parse, print the AST for a spec\n'
     '\n'
     'supported specs: exe\n'
 )
@@ -66,12 +66,11 @@ def parse_cli(ctx: LingoContext):
         else:
             print(value_to_str(result))
 
-    elif command == 'ast':
+    elif command == 'debug':
         if len(remaining_args) != 1:
-            raise LingoCLIParseError('ast command requires only a path argument')
+            raise LingoCLIParseError('debug command requires only a path argument')
         try:
-            ast = ast_from_file(ctx, remaining_args[0])
-            print(lingo_ast_to_string(ast))
+            debug_file(ctx, remaining_args[0])
 
         except Exception as e:
             ctx.log.error(f'error generating AST: {e}', exc_info=True)
