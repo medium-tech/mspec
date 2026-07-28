@@ -2,7 +2,7 @@ import sys
 
 from itertools import takewhile
 
-from lingolib.api import execute_file, debug_file
+from lingolib.api import execute_file, debug_file, display_file
 from lingolib.context import LingoContext
 from lingolib.types import value_to_str, error_to_str
 
@@ -64,6 +64,17 @@ def parse_cli(ctx: LingoContext):
             
         else:
             print(value_to_str(result))
+
+    elif command == 'display':
+        if len(remaining_args) != 1:
+            raise LingoCLIParseError('display command requires only a path argument')
+        
+        try:
+            display_file(ctx, remaining_args[0])
+
+        except Exception as e:
+            ctx.log.error(f'error displaying spec: {e}', exc_info=True)
+            sys.exit(1)
 
     elif command == 'debug':
         if len(remaining_args) != 1:

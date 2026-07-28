@@ -10,9 +10,14 @@ from lingolib.parsing import (
 	LingoASTExeSpec, 
 	LingoASTAppSpec, 
 	LingoASTUISpec,
-	LingoASTLibSpec
+	LingoASTLibSpec,
+    LingoASTTextSpec
 )
-from lingolib.runtime.evaluate import evaluate_exe_spec
+
+from lingolib.runtime.evaluate import (
+	evaluate_exe_spec,
+	evaluate_text_spec
+)
 
 import yaml
 
@@ -37,6 +42,10 @@ def execute_file(ctx: LingoContext, path: str):
     lingo_ast = create_ast_from_file(ctx, path)
     return execute_ast(ctx, lingo_ast)
 
+def display_file(ctx: LingoContext, path: str):
+    lingo_ast = create_ast_from_file(ctx, path)
+    return display_ast(ctx, lingo_ast)
+
 # ast commands #
 
 def debug_ast(ctx: LingoContext, ast: LingoASTSpec):
@@ -58,7 +67,7 @@ def serve_ast(ctx: LingoContext, ast: LingoASTSpec):
         raise LingoSyntaxError(f'Cannot serve spec type: {ast.lingo.spec!r}')
 
 def display_ast(ctx: LingoContext, ast: LingoASTSpec):
-    if isinstance(ast, LingoASTUISpec):
-        raise NotImplementedError('ui spec execution not yet implemented')
+    if isinstance(ast, (LingoASTUISpec, LingoASTTextSpec)):
+        evaluate_text_spec(ctx, ast)
     else:
         raise LingoSyntaxError(f'Cannot display spec type: {ast.lingo.spec!r}')
