@@ -12,7 +12,7 @@ from lingolib.parsing import (
 	LingoASTUISpec,
 	LingoASTLibSpec
 )
-from lingolib.runtime.evaluate import execute_exe_spec
+from lingolib.runtime.evaluate import evaluate_exe_spec
 
 import yaml
 
@@ -47,7 +47,7 @@ def debug_ast(ctx: LingoContext, ast: LingoASTSpec):
     
 def execute_ast(ctx: LingoContext, ast: LingoASTSpec):
     if isinstance(ast, LingoASTExeSpec):
-        return execute_exe_spec(ctx, ast)
+        return evaluate_exe_spec(ctx, ast)
     else:
         raise LingoSyntaxError(f'Cannot execute spec type: {ast.lingo.spec!r}')
     
