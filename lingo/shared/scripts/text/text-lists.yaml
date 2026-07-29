@@ -38,7 +38,9 @@ block:
           - 'Second item'
           - 'Third item'
 
-    - text: 'And of course, tables; which are lists of structs.'
+    - text: 'A list of uniform structs can be displayed as a table with headers:'
+      style:
+            bold: true
     - type: 'list'
       display:
           format: 'table'
@@ -60,7 +62,7 @@ block:
             amount: 0
             in_stock: false
 
-    - text: 'Tables can be made without headers:'
+    - text: 'Tables can also be made without headers:'
     - type: 'list'
       display:
           format: 'table'

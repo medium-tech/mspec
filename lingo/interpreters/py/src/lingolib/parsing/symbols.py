@@ -1,6 +1,6 @@
 from typing import Optional, NamedTuple
 
-from lingolib.types import expression, ValueTypesEnum, LingoStyleOptions
+from lingolib.types import LingoListDisplayOptions, expression, ValueTypesEnum, LingoStyleOptions
 
 #####
 #
@@ -149,6 +149,7 @@ class L_SYM_value(NamedTuple):
 	type: ValueTypesEnum
 	value: expression
 	element_type: str = ''
+	display: LingoListDisplayOptions|None = None
 	L_FILE: str = ''
 	L_LINE: int = -1
 

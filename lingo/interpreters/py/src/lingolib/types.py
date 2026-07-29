@@ -32,6 +32,14 @@ LingoTypesToPythonTypeNames = {
 	'list': 'list',
 	'struct': 'dict'
 }
+PythonTypeNamesToLingoTypes = {
+	'bool': 'bool',
+	'int': 'int',
+	'str': 'str',
+	'float': 'float',
+	'list': 'list',
+	'dict': 'struct'
+}
 
 class LingoScriptSpecsEnum(StrEnum):
 	app = 'app'
@@ -105,3 +113,65 @@ class LingoStyleOptions(NamedTuple):
 			raise ValueError(f'Invalid color: {self.color}')
 
 		return self
+
+class LingoListDisplayFormats(StrEnum):
+	numbers = 'numbers'
+	bullets = 'bullets'
+	table = 'table'
+
+class LingoTableHeader(NamedTuple):
+	text: str
+	field: str
+
+class LingoListDisplayOptions(NamedTuple):
+	format: LingoListDisplayFormats = LingoListDisplayFormats.bullets
+	headers: list[LingoTableHeader] = []
+	columns: list[str] = []
+
+	def validate(self) -> 'LingoListDisplayOptions':
+		if not isinstance(self.format, LingoListDisplayFormats):
+			raise ValueError(f'Invalid value for format: {self.format}')
+		
+		if not isinstance(self.headers, list):
+			raise ValueError(f'Invalid value for headers: {self.headers}')
+		
+		for n, header in enumerate(self.headers):
+			if not isinstance(header, LingoTableHeader):
+				raise ValueError(f'Invalid header at index {n}: {str(header)[0:50]}')
+			
+		if not isinstance(self.columns, list):
+			raise ValueError(f'Invalid value for columns: {self.columns}')
+		
+		for column in self.columns:
+			if not isinstance(column, str):
+				raise ValueError(f'Invalid column: {column}')
+
+		if self.format == LingoListDisplayFormats.table:
+			len_headers = len(self.headers)
+			len_columns = len(self.columns)
+			if len_headers > 0 and len_columns > 0:
+				raise ValueError(f'Cannot specify both headers and columns for table display format.')
+			if len_headers == 0 and len_columns == 0:
+				raise ValueError(f'Must specify either headers or columns for table display format.')
+
+		return self
+
+	@classmethod
+	def from_dict(cls, data: dict) -> 'LingoListDisplayOptions':
+
+		for key in data.keys():
+			if key not in {'format', 'headers', 'columns'}:
+				raise ValueError(f'unsupported key in lingo list display options: {key!r}')
+
+		parsed_data = {}
+
+		format_raw = data.get('format', LingoListDisplayFormats.bullets)
+		if isinstance(format_raw, str):
+			parsed_data['format'] = LingoListDisplayFormats(format_raw)
+		else:
+			parsed_data['format'] = format_raw
+
+		parsed_data['headers'] = [LingoTableHeader(**header) for header in data.get('headers', [])]
+		parsed_data['columns'] = data.get('columns', [])
+
+		return cls(**parsed_data).validate()
