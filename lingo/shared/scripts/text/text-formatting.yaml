@@ -3,6 +3,10 @@ lingo:
     version: '0.1.0b'
 
 block:
+    - heading: 'Text Formatting'
+      level: 1
+    - heading: 'Rich Text'
+      level: 2
     - text: 'This is an example of a rich text document. It can define line breaks.'
     - break: 1
     - text: 'It can define formatting like '

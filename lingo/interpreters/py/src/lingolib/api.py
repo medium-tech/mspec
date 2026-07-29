@@ -14,7 +14,7 @@ from lingolib.parsing import (
     LingoASTTextSpec
 )
 
-from lingolib.runtime.evaluate import (
+from lingolib.runtime.eval import (
 	evaluate_exe_spec,
 	evaluate_text_spec
 )
