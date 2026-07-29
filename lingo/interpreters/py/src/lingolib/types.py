@@ -15,7 +15,23 @@ LingoPrimitiveTypes = bool | int | str | float
 LingoLiteralTypes = LingoPrimitiveTypes | list | dict
 
 LingoPrimitiveTypeNames = {'bool', 'int', 'str', 'float'}
-LingoLiteralTypeNames = LingoPrimitiveTypeNames | {'list', 'dict'}
+LingoLiteralTypeNames = LingoPrimitiveTypeNames | {'list', 'struct'}
+LingoTypesToPythonTypes = {
+	'bool': bool,
+	'int': int,
+	'str': str,
+	'float': float,
+	'list': list,
+	'struct': dict
+}
+LingoTypesToPythonTypeNames = {
+	'bool': 'bool',
+	'int': 'int',
+	'str': 'str',
+	'float': 'float',
+	'list': 'list',
+	'struct': 'dict'
+}
 
 class LingoScriptSpecsEnum(StrEnum):
 	app = 'app'

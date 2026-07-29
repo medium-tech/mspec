@@ -4,7 +4,7 @@ import lingolib.parsing.symbols as symbols
 from lingolib.context import LingoContext
 from lingolib.errors import LingoSyntaxError
 import lingolib.parsing.symbols as symbols
-from lingolib.types import LingoPrimitiveTypeNames, LingoLanguageError, LingoLiteralTypes, LingoPrimitiveTypes
+from lingolib.types import LingoLiteralTypeNames, LingoLanguageError, LingoLiteralTypes, LingoPrimitiveTypes
 
 
 from .state import get_yaml_line
@@ -129,9 +129,9 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
                     raise LingoSyntaxError(f'error symbol does not support key: {key!r}{src_info()}')
         return symbols.L_SYM_error(**args)
 
-    elif {'type', 'value'} <= keys:
+    elif 'value' in keys:
 
-        if data['type'] not in LingoPrimitiveTypeNames:
+        if data['type'] not in LingoLiteralTypeNames:
             raise LingoSyntaxError(f'invalid type for value symbol: {data["type"]!r}{src_info()}')
 
         elif isinstance(data['value'], LingoPrimitiveTypes) and type(data['value']).__name__ != data['type']:
@@ -147,6 +147,41 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
                     L_FILE=ctx.interpreter.file,
                     L_LINE=get_yaml_line(data['value'])
                 )
+            elif data['type'] == 'list':
+                if not isinstance(data['value'], list):
+                    raise LingoSyntaxError(f'value type mismatch: expected list, got {type(data["value"]).__name__!r}{src_info()}')
+
+                element_types = list(map(lambda x: type(x).__name__, data['value']))
+
+                if len(set(element_types)) > 1:
+                    raise LingoSyntaxError(f'value type mismatch: expected list of uniform types, got {element_types}{src_info()}')
+
+                else:
+                    return symbols.L_SYM_value(
+                        type=data['type'],
+                        value=data['value'],
+                        element_type=element_types[0],
+                        L_SRC=f'{L_SRC}.value',
+                        L_FILE=ctx.interpreter.file,
+                        L_LINE=get_yaml_line(data['value'])
+                    )
+
+            elif data['type'] == 'struct':
+                if not isinstance(data['value'], dict):
+                    raise LingoSyntaxError(f'value type mismatch: expected struct, got {type(data["value"]).__name__!r}{src_info()}')
+
+                for key in data['value'].keys():
+                    if not isinstance(key, str):
+                        raise LingoSyntaxError(f'value type mismatch: expected struct with string keys, got key of type {type(key).__name__!r}{src_info()}')
+
+                return symbols.L_SYM_value(
+                    type=data['type'],
+                    value=data['value'],
+                    L_SRC=f'{L_SRC}.value',
+                    L_FILE=ctx.interpreter.file,
+                    L_LINE=get_yaml_line(data['value'])
+                )
+
             else:
                 return symbols.L_SYM_value(
                     type=data['type'],

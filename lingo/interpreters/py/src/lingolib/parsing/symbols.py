@@ -131,6 +131,7 @@ class L_SYM_value(NamedTuple):
 	L_SRC: str
 	type: ValueTypesEnum
 	value: expression
+	element_type: str = ''
 	L_FILE: str = ''
 	L_LINE: int = -1
 
