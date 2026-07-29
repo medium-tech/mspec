@@ -8,6 +8,7 @@ from lingolib.constants import (
     MAX_HEADING_LEVEL,
     HEADING_FONTS,
     TEXT_FONT,
+    MONOSPACE_FONT,
 )
 from lingolib.context import LingoContext
 from lingolib.parsing import LingoASTTextSpec
@@ -96,8 +97,11 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
                     text_widget.insert('end', '\n')
                     if item.value:
                         max_key_length = max(len(str(key)) for key in item.value.keys())
+                        struct_tag = 'struct-monospace'
+                        if struct_tag not in text_widget.tag_names():
+                            text_widget.tag_configure(struct_tag, font=MONOSPACE_FONT)
                         for key, value in item.value.items():
-                            text_widget.insert('end', f'{str(key):<{max_key_length + 2}} {value_to_str(value)}\n')
+                            text_widget.insert('end', f'{str(key):<{max_key_length + 2}} {value_to_str(value)}\n', (struct_tag,))
                 else:
                     raise RuntimeError(f'Cannot render value type in text spec with type: {item.type} and element type: {item.element_type}')
 
