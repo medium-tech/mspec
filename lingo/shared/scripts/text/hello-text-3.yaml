@@ -1,0 +1,41 @@
+lingo:
+    spec: 'text'
+    version: '0.1.0b'
+
+block:
+    - heading: 'Text Formatting'
+      level: 1
+    - heading: 'A Few more examples'
+      level: 2
+    
+    - text: ' We can do links: '
+
+    - link: 'https://www.wikipedia.org'
+      text: 'Wikipedia'
+
+    - text: ' or as the raw url: '
+    - link: 'https://www.wikipedia.org'
+
+    - text: '. Or basic lists of strings (shown as a bulleted list):'
+    - type: 'list'
+      value:
+        - "a hardcoded string"
+        - text: 'a text block with a style'
+          style:
+            bold: true
+            color: 'blue'
+        - text: 'or a link to wikipedia'
+          link: 'https://www.wikipedia.org'
+
+    - text: 'A struct displays as a 2 column table of its fields and values:'
+    - type: 'struct'
+      value:
+        hardcoded: 'i am a hardcoded string'
+        styled_text:
+            text: 'i am a text block with a style'
+            style:
+                bold: true
+                color: 'blue'
+        link_to_wikipedia:
+            text: 'i am a link to wikipedia'
+            link: 'https://www.wikipedia.org'

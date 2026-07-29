@@ -72,13 +72,18 @@ def L_EXPR_value(ctx, symbol:symbols.L_SYM_value):
     result = unwrap_expression(ctx, symbol.value)
     if isinstance(result, LingoLanguageError):
         return result
-    elif type(result).__name__ != symbol.type:
+    if type(result).__name__ != symbol.type:
         return LingoLanguageError(f'value type mismatch: expected {symbol.type!r}, got {type(result).__name__!r}', code='TYPE_ERROR')
-    else:
-        return LingoValue(
-            type=symbol.type, 
-            value=result
-        )
+
+    if symbol.type == 'list':
+        verify_element_type = lambda x: type(x).__name__ != symbol.element_type
+        if any(verify_element_type(item) for item in result):
+            return LingoLanguageError(f'value type mismatch: expected list of {symbol.element_type!r}, got {[type(item).__name__ for item in result]}', code='TYPE_ERROR')
+    
+    return LingoValue(
+        type=symbol.type, 
+        value=result
+    )
 
 def L_EXPR_error(ctx:LingoContext, symbol:symbols.L_SYM_error):
     if not isinstance(symbol.error, str) or not isinstance(symbol.code, str):

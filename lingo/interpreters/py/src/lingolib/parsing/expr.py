@@ -153,16 +153,20 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
                 if not isinstance(data['value'], list):
                     raise LingoSyntaxError(f'value type mismatch: expected list, got {type(data["value"]).__name__!r}{src_info()}')
 
-                element_types = list(map(lambda x: type(x).__name__, data['value']))
+                try:
+                    element_type = type(data['value'][0]).__name__
+                    
+                except IndexError as e:
+                    raise LingoSyntaxError(f'could not determine element type for empty list, supply with "element_type" key in value symbol: {e}{src_info()}') from None
 
-                if len(set(element_types)) > 1:
-                    raise LingoSyntaxError(f'value type mismatch: expected list of uniform types, got {element_types}{src_info()}')
+                if not isinstance(data['value'][0], LingoPrimitiveTypes):
+                    raise LingoSyntaxError(f'value type mismatch: expected list of primitive types, got {element_type!r}{src_info()}')
 
                 else:
                     return symbols.L_SYM_value(
                         type=data['type'],
                         value=data['value'],
-                        element_type=element_types[0],
+                        element_type=element_type,
                         L_SRC=f'{L_SRC}.value',
                         L_FILE=ctx.interpreter.file,
                         L_LINE=get_yaml_line(data['value'])
