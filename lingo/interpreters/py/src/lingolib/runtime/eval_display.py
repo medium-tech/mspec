@@ -1,6 +1,8 @@
 import tkinter
 import webbrowser
 
+from dataclasses import dataclass
+
 from lingolib.constants import (
     MIN_LINE_BREAKS,
     MAX_LINE_BREAKS,
@@ -14,9 +16,23 @@ from lingolib.context import LingoContext
 from lingolib.parsing import LingoASTTextSpec
 from lingolib.runtime.expressions import unwrap_expression
 from lingolib.types import LingoStyleOptions, value_to_str
+from lingolib.parsing.symbols import *
 
+@dataclass(slots=True)
+class LingoTKinterContext:
+    root: tkinter.Tk
+    text_widget: tkinter.Text
+    lingo: LingoContext
+    main_block_index: int = 0
+    in_text_block: bool = False
 
-def _configure_text_style(text_widget: tkinter.Text, style: LingoStyleOptions) -> str:
+DisplayRuntimeSymbols = L_SYM_break | L_SYM_heading | L_SYM_text | L_SYM_link | L_SYM_value
+
+#
+# helpers
+#
+
+def _configure_text_style(tk_ctx: LingoTKinterContext, style: LingoStyleOptions) -> str:
     tag_name = f'text-bold-{style.bold}-italic-{style.italic}-underline-{style.underline}-color-{style.color}'
 
     
@@ -38,96 +54,123 @@ def _configure_text_style(text_widget: tkinter.Text, style: LingoStyleOptions) -
 
     text_opts.update(TEXT_FONT.get('options', {}))
 
-    if tag_name not in text_widget.tag_names():
-        text_widget.tag_configure(tag_name, **text_opts)
+    if tag_name not in tk_ctx.text_widget.tag_names():
+        tk_ctx.text_widget.tag_configure(tag_name, **text_opts)
 
     return tag_name
 
-
-def _configure_link_style(text_widget: tkinter.Text, url: str) -> str:
+def _configure_link_style(tk_ctx: LingoTKinterContext, url: str) -> str:
     tag_name = f'link-{url}'
 
-    if tag_name not in text_widget.tag_names():
-        text_widget.tag_configure(tag_name, foreground='blue', underline=True)
-        text_widget.tag_bind(tag_name, '<Button-1>', lambda _event, target=url: webbrowser.open_new_tab(target))
+    if tag_name not in tk_ctx.text_widget.tag_names():
+        tk_ctx.text_widget.tag_configure(tag_name, foreground='blue', underline=True)
+        tk_ctx.text_widget.tag_bind(tag_name, '<Button-1>', lambda _event, target=url: webbrowser.open_new_tab(target))
 
     return tag_name
 
+def _configure_heading_styles(tk_ctx: LingoTKinterContext):
+    for level in range(MIN_HEADING_LEVEL, MAX_HEADING_LEVEL + 1):
+            heading = HEADING_FONTS[level]
+            heading_opts = {'font': (heading['font']['family'], heading['font']['size'])}
+            heading_opts.update(heading.get('options', {}))
+            tk_ctx.text_widget.tag_configure(f'heading-{level}', **heading_opts)
+
+#
+# symbol evaluators
+#
+
+def _eval_break(tk_ctx: LingoTKinterContext, symbol: L_SYM_break):
+    num_breaks = max(MIN_LINE_BREAKS, min(MAX_LINE_BREAKS, symbol.breaks))
+    tk_ctx.text_widget.insert('end', '\n' * num_breaks)
+
+def _eval_header(tk_ctx: LingoTKinterContext, symbol: L_SYM_heading):
+    text_value = unwrap_expression(tk_ctx.lingo, symbol.text)
+    level_value = max(MIN_HEADING_LEVEL, min(MAX_HEADING_LEVEL, symbol.level))
+    pre_spacer = '\n' if tk_ctx.main_block_index != 0 else ''
+    tk_ctx.text_widget.insert('end', f'{pre_spacer}{text_value}', (f'heading-{level_value}',))
+
+def _eval_text(tk_ctx: LingoTKinterContext, symbol: L_SYM_text):
+    if not tk_ctx.in_text_block and tk_ctx.main_block_index != 0:
+        tk_ctx.text_widget.insert('end', '\n')
+
+    text_value = unwrap_expression(tk_ctx.lingo, symbol.text)
+    assert isinstance(symbol.style, LingoStyleOptions)
+
+    tag_name = _configure_text_style(tk_ctx, symbol.style)
+    tk_ctx.text_widget.insert('end', text_value, (tag_name,))
+
+def _eval_link(tk_ctx: LingoTKinterContext, symbol: L_SYM_link):
+    text_value = unwrap_expression(tk_ctx.lingo, symbol.text) if symbol.text else unwrap_expression(tk_ctx.lingo, symbol.link)
+    link_value = unwrap_expression(tk_ctx.lingo, symbol.link)
+    tag_name = _configure_link_style(tk_ctx, link_value)
+    tk_ctx.text_widget.insert('end', text_value, (tag_name,))
+
+def _eval_value(tk_ctx: LingoTKinterContext, symbol: L_SYM_value):
+    if symbol.type == 'list' and symbol.element_type == 'str':
+        tk_ctx.text_widget.insert('end', '\n')
+        for element in symbol.value:
+            tk_ctx.text_widget.insert('end', f'• {element}\n')
+
+    elif symbol.type == 'struct':
+        tk_ctx.text_widget.insert('end', '\n')
+        if symbol.value:
+            max_key_length = max(len(str(key)) for key in symbol.value.keys())
+            struct_tag = 'struct-monospace'
+            if struct_tag not in tk_ctx.text_widget.tag_names():
+                tk_ctx.text_widget.tag_configure(struct_tag, font=MONOSPACE_FONT)
+            for key, value in symbol.value.items():
+                tk_ctx.text_widget.insert('end', f'{str(key):<{max_key_length + 2}} {value_to_str(value)}\n', (struct_tag,))
+
+    else:
+        raise RuntimeError(f'Cannot render value type in text spec with type: {symbol.type} and element type: {symbol.element_type}')
+
+def _eval_display_runtime_symbol(tk_ctx: LingoTKinterContext, symbol: DisplayRuntimeSymbols):
+    match symbol.L_SYM_NAME:
+        case 'break':
+            _eval_break(tk_ctx, symbol)
+        case 'heading':
+            _eval_header(tk_ctx, symbol)
+        case 'text':
+            _eval_text(tk_ctx, symbol)
+        case 'link':
+            _eval_link(tk_ctx, symbol)
+        case 'value':
+            _eval_value(tk_ctx, symbol)
+        case _:
+            raise RuntimeError(f'Cannot render symbol in text spec: {symbol.L_SYM_NAME}')
+
+#
+# spec evaluators
+#
 
 def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
-    root = tkinter.Tk()
+
+    tkinter_ctx = LingoTKinterContext(
+        root=tkinter.Tk(),
+        text_widget=tkinter.Text(wrap='word', padx=12, pady=12, font=(TEXT_FONT['font']['family'], TEXT_FONT['font']['size'])),
+        lingo=ctx,
+    )
+
+    root = tkinter_ctx.root
     root.title('Lingo Text Spec')
     root.geometry('700x400')
 
-    text_widget = tkinter.Text(root, wrap='word', padx=12, pady=12, font=('Verdana', 12))
+    text_widget = tkinter_ctx.text_widget
     text_widget.pack(fill='both', expand=True)
 
-    for level in range(MIN_HEADING_LEVEL, MAX_HEADING_LEVEL + 1):
-        heading = HEADING_FONTS[level]
-        heading_opts = {'font': (heading['font']['family'], heading['font']['size'])}
-        heading_opts.update(heading.get('options', {}))
-        text_widget.tag_configure(f'heading-{level}', **heading_opts)
+    _configure_heading_styles(tkinter_ctx)
 
-    in_text_block = False
+    tkinter_ctx.in_text_block = False
 
-    for n, item in enumerate(ast.block.items):
+    for item in ast.block.items:
         try:
-            if item.L_SYM_NAME == 'break':
-
-                num_breaks = max(MIN_LINE_BREAKS, min(MAX_LINE_BREAKS, item.breaks))
-                text_widget.insert('end', '\n' * num_breaks)
-
-            elif item.L_SYM_NAME == 'heading':
-
-                text_value = unwrap_expression(ctx, item.text)
-                level_value = max(MIN_HEADING_LEVEL, min(MAX_HEADING_LEVEL, item.level))
-                pre_spacer = '\n' if n != 0 else ''
-                text_widget.insert('end', f'{pre_spacer}{text_value}', (f'heading-{level_value}',))
-
-            elif item.L_SYM_NAME == 'text':
-
-                if not in_text_block and n != 0:
-                    text_widget.insert('end', '\n')
-
-                text_value = unwrap_expression(ctx, item.text)
-                assert isinstance(item.style, LingoStyleOptions)
-
-                tag_name = _configure_text_style(text_widget, item.style)
-                text_widget.insert('end', text_value, (tag_name,))
-
-            elif item.L_SYM_NAME == 'link':
-
-                text_value = unwrap_expression(ctx, item.text) if item.text else unwrap_expression(ctx, item.link)
-                link_value = unwrap_expression(ctx, item.link)
-                tag_name = _configure_link_style(text_widget, link_value)
-                text_widget.insert('end', text_value, (tag_name,))
-
-            elif item.L_SYM_NAME == 'value':
-
-                if item.type == 'list' and item.element_type == 'str':
-                    text_widget.insert('end', '\n')
-                    for element in item.value:
-                        text_widget.insert('end', f'• {element}\n')
-
-                elif item.type == 'struct':
-                    text_widget.insert('end', '\n')
-                    if item.value:
-                        max_key_length = max(len(str(key)) for key in item.value.keys())
-                        struct_tag = 'struct-monospace'
-                        if struct_tag not in text_widget.tag_names():
-                            text_widget.tag_configure(struct_tag, font=MONOSPACE_FONT)
-                        for key, value in item.value.items():
-                            text_widget.insert('end', f'{str(key):<{max_key_length + 2}} {value_to_str(value)}\n', (struct_tag,))
-                else:
-                    raise RuntimeError(f'Cannot render value type in text spec with type: {item.type} and element type: {item.element_type}')
-
-            else:
-                raise RuntimeError(f'Cannot render symbol in text spec: {item.L_SYM_NAME}')
+            _eval_display_runtime_symbol(tkinter_ctx, item)
 
         except Exception as exc:
-            raise RuntimeError(f'Error evaluating text block item {n}: {exc}') from exc
+            raise RuntimeError(f'Error evaluating text block item {tkinter_ctx.main_block_index}: {exc}') from exc
 
-        in_text_block = item.L_SYM_NAME in ('text', 'link')
-
+        tkinter_ctx.in_text_block = item.L_SYM_NAME in ('text', 'link')
+        tkinter_ctx.main_block_index += 1
+        
     text_widget.configure(state='disabled')
     root.mainloop()

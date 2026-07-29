@@ -18,15 +18,13 @@ def init_logger(level=DEFAULT_LOG_LEVEL):
 	logger.addHandler(ch)
 	return logger
 
-
-
-@dataclass
+@dataclass(slots=True)
 class LingoContext:
 	log: logging.Logger = field(default_factory=init_logger)
 	interpreter: Optional['LingoInterpreterContext'] = None
 
 
-@dataclass
+@dataclass(slots=True)
 class LingoInterpreterContext:
 	src: str = ''
 	file: str = ''
