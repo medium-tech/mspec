@@ -1,3 +1,9 @@
+from lingolib.constants import (
+    MIN_LINE_BREAKS,
+    MAX_LINE_BREAKS,
+    MIN_HEADING_LEVEL,
+    MAX_HEADING_LEVEL,
+)
 import lingolib.parsing.symbols as symbols
 
 
@@ -8,12 +14,6 @@ from lingolib.types import LingoLiteralTypeNames, LingoLanguageError, LingoLiter
 
 
 from .state import get_yaml_line
-
-
-MIN_LINE_BREAKS = 1
-MAX_LINE_BREAKS = 5
-MIN_HEADING_LEVEL = 1
-MAX_HEADING_LEVEL = 6
 
 
 def create_expression_ast(
