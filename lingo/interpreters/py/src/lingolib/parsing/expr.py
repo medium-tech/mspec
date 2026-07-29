@@ -12,6 +12,8 @@ from .state import get_yaml_line
 
 MIN_LINE_BREAKS = 1
 MAX_LINE_BREAKS = 5
+MIN_HEADING_LEVEL = 1
+MAX_HEADING_LEVEL = 6
 
 
 def create_expression_ast(
@@ -219,6 +221,18 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
                     )
         else:
             raise LingoSyntaxError(f'break must be int value between {MIN_LINE_BREAKS} and {MAX_LINE_BREAKS}, got: {data["break"]!r} at {src_info()}')
+
+    elif 'heading' in keys:
+        level = data.get('level', 1)
+        if not isinstance(level, int) or not (MIN_HEADING_LEVEL <= level <= MAX_HEADING_LEVEL):
+            raise LingoSyntaxError(f'heading level must be an int between {MIN_HEADING_LEVEL} and {MAX_HEADING_LEVEL}, got: {level!r} at {src_info()}')
+        return symbols.L_SYM_heading(
+            L_SRC=f'{L_SRC}.heading',
+            text=create_expression_ast(ctx, data['heading'], f'{L_SRC}.heading.text'),
+            level=level,
+            L_FILE=ctx.interpreter.file,
+            L_LINE=get_yaml_line(data['heading']),
+        )
 
     elif 'link' in keys:
         try:

@@ -113,6 +113,23 @@ class L_SYM_link(NamedTuple):
 		return 'expression'
 
 
+class L_SYM_heading(NamedTuple):
+
+	L_SRC: str
+	text: expression | None = None
+	level: int = 1
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'heading'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'expression'
+
+
 #####
 #
 #
