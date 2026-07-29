@@ -1,0 +1,85 @@
+lingo:
+    spec: 'text'
+    version: '0.1.0b'
+
+block:
+    - heading: 'Text Formatting'
+      level: 1
+    - heading: 'List Examples'
+      level: 2
+
+    - text: 'Here is a list of strings as a bulleted list:'
+      style:
+            bold: true
+
+    - type: 'list'
+      value:
+          - 'i am a string literal'
+          - type: str
+            value: 'i am a typed string value'
+          - text: 'i am a text block'
+          - text: 'i am a text block with styling'
+            style:
+                bold: true
+                color: 'blue'
+          - text: 'i am a link to wikipedia'
+            link: 'https://www.wikipedia.org'
+          - link: 'https://www.wikipedia.org'
+
+    - text: 'An ordered list:'
+      style:
+            bold: true
+
+    - type: 'list'
+      display:
+          format: 'numbers'
+      value:
+          - 'First item'
+          - 'Second item'
+          - 'Third item'
+
+    - text: 'And of course, tables; which are lists of structs.'
+    - type: 'list'
+      display:
+          format: 'table'
+          headers:
+              - text: 'Color'
+                field: 'color'
+              - text: 'Amount'
+                field: 'amount'
+              - text: 'In Stock'
+                field: 'in_stock'
+      value:
+          - color: 'red'
+            amount: 10
+            in_stock: true
+          - color: 'green'
+            amount: 21
+            in_stock: true
+          - color: 'blue'
+            amount: 0
+            in_stock: false
+
+    - text: 'Tables can be made without headers:'
+    - type: 'list'
+      display:
+          format: 'table'
+          columns:
+              - 'column1'
+              - 'column2'
+              - 'column3'
+              - 'column4'
+      value:
+          - column1: 'Arbitrary information'
+            column2:
+                text: 'Arbitrary information in italic'
+                style:
+                    italic: true
+            column3: 'Even more arbitrary information'
+            column4: 'This is the last column of arbitrary information'
+          - column1: 'Space astronauts are cool'
+            column2: 'Rainbows and unicorns are also cool'
+            column3:
+                link: 'https://en.wikipedia.org/wiki/Turtle#/media/File:Turtle_diversity.jpg'
+                text: 'i like turtles'
+            column4: 'This is the last column of arbitrary information'
