@@ -11,3 +11,5 @@ HEADING_FONTS = {
     5: ('Verdana', 18),
     6: ('Verdana', 16),
 }
+
+TEXT_FONT = ('Verdana', 12)

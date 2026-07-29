@@ -5,11 +5,39 @@ from lingolib.constants import (
     MAX_LINE_BREAKS,
     MIN_HEADING_LEVEL,
     MAX_HEADING_LEVEL,
-    HEADING_FONTS
+    HEADING_FONTS,
+    TEXT_FONT,
 )
 from lingolib.context import LingoContext
 from lingolib.parsing import LingoASTTextSpec
 from lingolib.runtime.expressions import unwrap_expression
+from lingolib.types import LingoStyleOptions
+
+
+def _configure_text_style(text_widget: tkinter.Text, style: LingoStyleOptions) -> str:
+    tag_name = f'style-text-bold-{style.bold}-italic-{style.italic}-underline-{style.underline}-color-{style.color}'
+
+    font_family, font_size = TEXT_FONT
+    weight = 'bold' if style.bold else 'normal'
+    slant = 'italic' if style.italic else 'roman'
+
+    tag_config = {
+        'font': (font_family, font_size, weight, slant),
+    }
+
+    if style.underline:
+        tag_config['underline'] = 1
+
+    if style.color:
+        tag_config['foreground'] = style.color
+
+    if style.color == 'white':
+        tag_config['background'] = 'black'
+
+    if tag_name not in text_widget.tag_names():
+        text_widget.tag_configure(tag_name, **tag_config)
+
+    return tag_name
 
 
 def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
@@ -22,6 +50,8 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
 
     for level in range(MIN_HEADING_LEVEL, MAX_HEADING_LEVEL + 1):
         text_widget.tag_configure(f'heading-{level}', font=HEADING_FONTS[level])
+
+    style_tag_count = 0
 
     for n, item in enumerate(ast.block.items):
         try:
@@ -38,9 +68,17 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
 
             elif item.L_SYM_NAME == 'text':
                 text_value = unwrap_expression(ctx, item.text)
-                text_widget.insert('end', f'{text_value}\n')
-                
-            else: 
+                assert isinstance(item.style, LingoStyleOptions)
+                tags = ()
+
+                tag_name = f'style-{style_tag_count}'
+                tag_name = _configure_text_style(text_widget, item.style)
+                tags = (tag_name,)
+                style_tag_count += 1
+
+                text_widget.insert('end', f'{text_value}\n', tags)
+
+            else:
                 raise RuntimeError(f'Cannot render symbol in text spec: {item.L_SYM_NAME}')
 
         except Exception as exc:
