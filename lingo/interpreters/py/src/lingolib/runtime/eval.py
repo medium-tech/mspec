@@ -3,7 +3,7 @@ import tkinter
 from lingolib.context import LingoContext
 from lingolib.runtime.expressions import unwrap_expression
 from lingolib.runtime.eval_display import evaluate_text_spec
-from lingolib.parsing import LingoASTExeSpec, LingoASTTextSpec
+from lingolib.parsing import LingoASTExeSpec
 
 __all__ = [
 	'evaluate_exe_spec',
