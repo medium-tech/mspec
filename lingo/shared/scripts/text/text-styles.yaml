@@ -1,0 +1,122 @@
+lingo:
+    spec: 'text'
+    version: '0.1.0b'
+
+block:
+    - heading: 'Demo of Text Block Style Options'
+      level: 1
+
+    - heading: 'Text Styles'
+      level: 2
+
+    - text: 'bold text '
+      style: 
+        bold: true
+
+    - text: 'italic text '
+      style:
+        italic: true
+    - text: 'underlined text '
+      style:
+        underline: true
+
+    - break: 1
+
+    - text: 'bold and italic '
+      style:
+        bold: true
+        italic: true
+
+    - text: 'bold and underlined '
+      style:
+        bold: true
+        underline: true
+
+    - break: 1
+    
+    - text: 'bold, italic, and underlined '
+      style:
+        bold: true
+        italic: true
+        underline: true
+    
+    - break: 1
+
+    - heading: 'Text Colors'
+      level: 2
+    
+    - heading: 'The Rainbow'
+      level: 3
+    
+    - text: 'red '
+      style:
+        bold: true
+        color: 'red'
+    - text: 'orange '
+      style:
+        bold: true
+        color: 'orange'
+    - text: 'yellow '
+      style:
+        bold: true
+        color: 'yellow'
+    - text: 'green '
+      style:
+        bold: true
+        color: 'green'
+    - text: 'blue '
+      style:
+        bold: true
+        color: 'blue'
+    - text: 'indigo '
+      style:
+        bold: true
+        color: 'indigo'
+    - text: 'violet '
+      style:
+        bold: true
+        color: 'violet'
+    
+    - heading: 'Primary Colors of Print (CMYK)'
+      level: 3
+    
+    - text: 'cyan '
+      style:
+        bold: true
+        color: 'cyan'
+    - text: 'magenta '
+      style:
+        bold: true
+        color: 'magenta'
+    - text: 'yellow '
+      style:
+        bold: true
+        color: 'yellow'
+    - text: 'black '
+      style:
+        bold: true
+        color: 'black'
+    
+    - heading: 'Shades of Gray'
+      level: 3
+    
+    - text: 'white '
+      style:
+        bold: true
+        color: 'white'
+    - text: 'light gray '
+      style:
+        bold: true
+        color: 'light_gray'
+    - text: 'gray '
+      style:
+        bold: true
+        color: 'gray'
+    - text: 'dark gray '
+      style:
+        bold: true
+        color: 'dark_gray'
+    - text: 'black '
+      style:
+        bold: true
+        color: 'black'
