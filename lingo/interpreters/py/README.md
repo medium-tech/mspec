@@ -115,14 +115,11 @@ This section is for adding a new **expression symbol** (for example `mul`, `lowe
 	- Add the symbol to `ExpressionSymbols`.
 
 1. Add parser support in `./src/lingolib/parsing`
-	- Route by key in `expr_core.py` (`parse_expression_ast_from_dict`).
-	- Implement parser helper in the appropriate file:
-	  - numeric: `expr_numeric.py`
-	  - text: `expr_text.py`
-	  - or create a new `expr_<group>.py` module if needed.
+	- Route by key in `expr.py` (`parse_expression_ast_from_dict`).
+	- Implement parser helper `expr.py`, (ex: `parse_expr_eq` for `eq` symbol)
 	- Return an instance of your new `L_SYM_<name>` with `L_FILE` and `L_LINE` populated.
 
-1. Add executor support in `./src/lingolib/expressions.py`
+1. Add executor support in `./src/lingolib/runtime/expressions.py`
 	- Implement `L_EXPR_<name>(ctx, symbol)`.
 	- Validate input and return `LingoLanguageError(...)` for language-level errors.
 	- Register it in `EXPRESSION_HANDLERS` with key `<name>`.
@@ -141,10 +138,10 @@ Specs are parsed at the top level, then executed by the API layer.
 
 1. Add spec parser module in `./src/lingolib/parsing`
 	- Create a new module `spec_<name>.py`
-	- Implement `spec_<name>_ast_from_dict(ctx, lingo, data, create_expression_ast)`.
+	- Implement `spec_<name>_ast_from_dict(ctx, lingo, data)`.
 	- Parse required top-level symbols and return your new AST dataclass.
 
-1. Wire spec dispatch in `./src/lingolib/parsing/lingo.py`
+1. Wire spec dispatch in `./src/lingolib/parsing/spec.py`
 	- Import your new parser.
 	- Extend `create_spec_ast_from_dict(...)`:
 	  - `if lingo.spec == '<name>': return spec_<name>_ast_from_dict(...)`

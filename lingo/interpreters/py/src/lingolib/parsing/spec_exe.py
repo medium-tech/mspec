@@ -5,13 +5,13 @@ from lingolib.errors import LingoSyntaxError
 
 from .ast import LingoASTExeSpec
 from .state import get_yaml_line
+from .expr import create_expression_ast
 
 
 def spec_exe_ast_from_dict(
     ctx: LingoContext,
     lingo: symbols.L_SYM_lingo,
     data: dict,
-    create_expression_ast,
 ) -> LingoASTExeSpec:
 
     ctx.log.debug(f'spec_exe_ast_from_dict')

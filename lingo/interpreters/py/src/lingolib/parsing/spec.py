@@ -5,7 +5,6 @@ from lingolib.errors import LingoSyntaxError
 from lingolib.types import LingoScriptSpecs
 
 from .ast import LingoASTSpec
-from .expr_entry import create_expression_ast
 from .spec_exe import spec_exe_ast_from_dict
 from .spec_text import spec_text_ast_from_dict
 from .state import get_yaml_line
@@ -108,16 +107,14 @@ def create_spec_ast_from_dict(ctx: LingoContext, data: dict) -> LingoASTSpec:
         return spec_exe_ast_from_dict(
             ctx=ctx,
             lingo=lingo,
-            data=data,
-            create_expression_ast=create_expression_ast,
+            data=data
         )
 
     if lingo.spec == 'text':
         return spec_text_ast_from_dict(
             ctx=ctx,
             lingo=lingo,
-            data=data,
-            create_expression_ast=create_expression_ast,
+            data=data
         )
 
     else:
