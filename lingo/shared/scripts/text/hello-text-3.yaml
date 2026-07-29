@@ -8,7 +8,7 @@ block:
     - heading: 'A Few more examples'
       level: 2
     
-    - text: ' We can do links: '
+    - text: 'We can do links: '
 
     - link: 'https://www.wikipedia.org'
       text: 'Wikipedia'
