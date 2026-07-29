@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from lingolib.types import LingoStyleOptions
 import lingolib.parsing.symbols as symbols
 
 
@@ -59,6 +60,9 @@ def lingo_ast_to_string(spec: LingoASTSpec, indent=0):
                 else:
                     output.append('  ' * (indent + 1) + f'{item!r}')
         elif isinstance(value, (str, int, float, bool)):
+            output.append('  ' * indent + f'{name}: {value!r}')
+
+        elif isinstance(value, LingoStyleOptions):
             output.append('  ' * indent + f'{name}: {value!r}')
 
     return '\n'.join(output)

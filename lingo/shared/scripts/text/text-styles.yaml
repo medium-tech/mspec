@@ -107,7 +107,7 @@ block:
     - text: 'light gray '
       style:
         bold: true
-        color: 'light_gray'
+        color: 'lightgray'
     - text: 'gray '
       style:
         bold: true
@@ -115,7 +115,7 @@ block:
     - text: 'dark gray '
       style:
         bold: true
-        color: 'dark_gray'
+        color: 'darkgray'
     - text: 'black '
       style:
         bold: true

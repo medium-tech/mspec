@@ -10,7 +10,7 @@ import lingolib.parsing.symbols as symbols
 from lingolib.context import LingoContext
 from lingolib.errors import LingoSyntaxError
 import lingolib.parsing.symbols as symbols
-from lingolib.types import LingoLiteralTypeNames, LingoLanguageError, LingoLiteralTypes, LingoPrimitiveTypes
+from lingolib.types import LingoLiteralTypeNames, LingoLanguageError, LingoLiteralTypes, LingoPrimitiveTypes, LingoStyleOptions
 
 
 from .state import get_yaml_line
@@ -248,10 +248,15 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
             L_LINE=get_yaml_line(data['link']),
         )
     elif 'text' in keys:
+        try:
+            style = LingoStyleOptions(**data['style']).validate()
+        except KeyError:
+            style = LingoStyleOptions()
+
         return symbols.L_SYM_text(
             L_SRC=f'{L_SRC}.text',
             text=create_expression_ast(ctx, data['text'], f'{L_SRC}.text'),
-            style={},
+            style=style,
             L_FILE=ctx.interpreter.file,
             L_LINE=get_yaml_line(data['text']),
         )

@@ -60,7 +60,7 @@ def value_to_str(value:LingoLiteralTypes) -> str:
 def error_to_str(error:LingoLanguageError) -> str:
 	return f'LINGO_ERROR [{error.code}] - {error.error}'
 
-def LingoStyleColors(StrEnum):
+class LingoStyleColors(StrEnum):
 
 	# shades of gray
 	white = 'white'
@@ -86,13 +86,13 @@ def LingoStyleColors(StrEnum):
 
 LingoStyleColorsList = [color.value for color in LingoStyleColors]
 
-def LingoStyleBlock(NamedTuple):
+class LingoStyleOptions(NamedTuple):
 	bold: bool = False
 	italic: bool = False
 	underline: bool = False
 	color: str = 'black'
 
-	def validate(self):
+	def validate(self) -> 'LingoStyleOptions':
 		if not isinstance(self.bold, bool):
 			raise ValueError(f'Invalid value for bold: {self.bold}')
 		if not isinstance(self.italic, bool):
@@ -103,3 +103,5 @@ def LingoStyleBlock(NamedTuple):
 			raise ValueError(f'Invalid value for color: {self.color}')
 		if self.color not in LingoStyleColorsList:
 			raise ValueError(f'Invalid color: {self.color}')
+
+		return self
