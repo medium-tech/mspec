@@ -13,3 +13,4 @@ HEADING_FONTS = {
 }
 
 TEXT_FONT = ('Verdana', 12)
+MONOSPACE_FONT = ('Courier New', 12)
