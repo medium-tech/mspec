@@ -73,13 +73,11 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
     for n, item in enumerate(ast.block.items):
         try:
             if item.L_SYM_NAME == 'break':
-                in_text_block = False
 
                 num_breaks = max(MIN_LINE_BREAKS, min(MAX_LINE_BREAKS, item.breaks))
                 text_widget.insert('end', '\n' * num_breaks)
 
             elif item.L_SYM_NAME == 'heading':
-                in_text_block = False
 
                 text_value = unwrap_expression(ctx, item.text)
                 level_value = max(MIN_HEADING_LEVEL, min(MAX_HEADING_LEVEL, item.level))
@@ -91,8 +89,6 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
                 if not in_text_block and n != 0:
                     text_widget.insert('end', '\n')
 
-                in_text_block = True
-
                 text_value = unwrap_expression(ctx, item.text)
                 assert isinstance(item.style, LingoStyleOptions)
 
@@ -100,7 +96,6 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
                 text_widget.insert('end', text_value, (tag_name,))
 
             elif item.L_SYM_NAME == 'link':
-                in_text_block = True
 
                 text_value = unwrap_expression(ctx, item.text) if item.text else unwrap_expression(ctx, item.link)
                 link_value = unwrap_expression(ctx, item.link)
@@ -108,7 +103,7 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
                 text_widget.insert('end', text_value, (tag_name,))
 
             elif item.L_SYM_NAME == 'value':
-                in_text_block = False
+
                 if item.type == 'list' and item.element_type == 'str':
                     text_widget.insert('end', '\n')
                     for element in item.value:
@@ -131,6 +126,8 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
 
         except Exception as exc:
             raise RuntimeError(f'Error evaluating text block item {n}: {exc}') from exc
+
+        in_text_block = item.L_SYM_NAME in ('text', 'link')
 
     text_widget.configure(state='disabled')
     root.mainloop()
