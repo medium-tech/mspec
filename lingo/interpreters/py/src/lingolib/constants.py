@@ -3,14 +3,68 @@ MAX_LINE_BREAKS = 5
 MIN_HEADING_LEVEL = 1
 MAX_HEADING_LEVEL = 6
 
+PRIMARY_FONT_FAMILY = 'Verdana'
+
+# https://docs.python.org/3/library/tkinter.html#tkinter.Text.tag_configure
 HEADING_FONTS = {
-    1: ('Verdana', 35),
-    2: ('Verdana', 30),
-    3: ('Verdana', 25),
-    4: ('Verdana', 20),
-    5: ('Verdana', 18),
-    6: ('Verdana', 16),
+	1: {
+		'font': {'family': PRIMARY_FONT_FAMILY, 'size': 35},
+		'options': {
+			'spacing1': 0,
+			'spacing2': 0,
+			'spacing3': 0,
+		}
+	},
+	2: {
+		'font': {'family': PRIMARY_FONT_FAMILY, 'size': 30},
+		'options': {
+			'spacing1': 0,
+			'spacing2': 0,
+			'spacing3': 0,
+		}
+	},
+	3: {
+		'font': {'family': PRIMARY_FONT_FAMILY, 'size': 25},
+		'options': {
+			'spacing1': 0,
+			'spacing2': 0,
+			'spacing3': 0,
+		}
+	},
+	4: {
+		'font': {'family': PRIMARY_FONT_FAMILY, 'size': 20},
+		'options': {
+			'spacing1': 0,
+			'spacing2': 0,
+			'spacing3': 0,
+		}
+	},
+	5: {
+		'font': {'family': PRIMARY_FONT_FAMILY, 'size': 18},
+		'options': {
+			'spacing1': 0,
+			'spacing2': 0,
+			'spacing3': 0,
+		}
+	},
+	6: {
+		'font': {'family': PRIMARY_FONT_FAMILY, 'size': 16},
+		'options': {
+			'spacing1': 0,
+			'spacing2': 0,
+			'spacing3': 0,
+		}
+	}
 }
 
-TEXT_FONT = ('Verdana', 12)
+
+
+TEXT_FONT = {
+	'font': {'family': PRIMARY_FONT_FAMILY, 'size': 12},
+	'options': {
+		'spacing1': 0,
+		'spacing2': 0,
+		'spacing3': 0,
+	}
+}
 MONOSPACE_FONT = ('Courier New', 12)

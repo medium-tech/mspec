@@ -5,6 +5,7 @@ lingo:
 block:
     - heading: 'Text Formatting'
       level: 1
+      
     - heading: 'A Few more examples'
       level: 2
     
