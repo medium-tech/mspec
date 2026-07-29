@@ -108,8 +108,12 @@ def _eval_link(tk_ctx: LingoTKinterContext, symbol: L_SYM_link):
 def _eval_value(tk_ctx: LingoTKinterContext, symbol: L_SYM_value):
     if symbol.type == 'list' and symbol.element_type == 'str':
         tk_ctx.text_widget.insert('end', '\n')
-        for element in symbol.value:
-            tk_ctx.text_widget.insert('end', f'• {element}\n')
+        if symbol.display.format in ['bullets', 'numbers']:
+            for n, element in enumerate(symbol.value, start=1):
+                prefix = '• ' if symbol.display.format == 'bullets' else f'{n}. '
+                tk_ctx.text_widget.insert('end', f'{prefix}{element}\n')
+        else:
+            raise RuntimeError(f'Cannot render list value in text spec with display format: {symbol.display.format}')
 
     elif symbol.type == 'struct':
         tk_ctx.text_widget.insert('end', '\n')

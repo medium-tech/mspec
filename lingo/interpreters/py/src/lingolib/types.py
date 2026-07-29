@@ -164,7 +164,7 @@ class LingoListDisplayOptions(NamedTuple):
 				raise ValueError(f'unsupported key in lingo list display options: {key!r}')
 
 		parsed_data = {}
-
+		
 		format_raw = data.get('format', LingoListDisplayFormats.bullets)
 		if isinstance(format_raw, str):
 			parsed_data['format'] = LingoListDisplayFormats(format_raw)
