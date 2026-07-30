@@ -57,8 +57,6 @@ HEADING_FONTS = {
 	}
 }
 
-
-
 TEXT_FONT = {
 	'font': {'family': PRIMARY_FONT_FAMILY, 'size': 12},
 	'options': {
@@ -67,4 +65,12 @@ TEXT_FONT = {
 		'spacing3': 0,
 	}
 }
+
 MONOSPACE_FONT = ('Courier New', 12)
+
+TABLE_HEADER_FONT = {
+	'font': {'family': MONOSPACE_FONT[0], 'size': 12, 'weight': 'bold'},
+}
+TABLE_TEXT_FONT = {
+	'font': {'family': MONOSPACE_FONT[0], 'size': 12},
+}

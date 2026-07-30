@@ -11,6 +11,8 @@ from lingolib.constants import (
     HEADING_FONTS,
     TEXT_FONT,
     MONOSPACE_FONT,
+    TABLE_HEADER_FONT,
+    TABLE_TEXT_FONT,
 )
 from lingolib.context import LingoContext
 from lingolib.parsing import LingoASTTextSpec
@@ -27,6 +29,9 @@ class LingoTKinterContext:
     in_text_block: bool = False
 
 DisplayRuntimeSymbols = L_SYM_break | L_SYM_heading | L_SYM_text | L_SYM_link | L_SYM_value
+
+TK_TABLE_TEXT_TAG = 'table-monospace'
+TK_TABLE_HEADER_TAG = 'table-header-monospace'
 
 #
 # helpers
@@ -75,15 +80,104 @@ def _configure_heading_styles(tk_ctx: LingoTKinterContext):
             heading_opts.update(heading.get('options', {}))
             tk_ctx.text_widget.tag_configure(f'heading-{level}', **heading_opts)
 
+def _configure_table_styles(tk_ctx: LingoTKinterContext):
+    
+    if TK_TABLE_TEXT_TAG not in tk_ctx.text_widget.tag_names():
+        table_text_font = (
+            TABLE_TEXT_FONT['font']['family'], 
+            TABLE_TEXT_FONT['font']['size'],
+            TABLE_TEXT_FONT['font'].get('weight', 'normal'),
+        )
+        tk_ctx.text_widget.tag_configure(TK_TABLE_TEXT_TAG, font=table_text_font)
+
+    if TK_TABLE_HEADER_TAG not in tk_ctx.text_widget.tag_names():
+        table_header_font = (
+            TABLE_HEADER_FONT['font']['family'], 
+            TABLE_HEADER_FONT['font']['size'],
+            TABLE_HEADER_FONT['font'].get('weight', 'normal'),
+        )
+        tk_ctx.text_widget.tag_configure(TK_TABLE_HEADER_TAG, font=table_header_font)
+
 def _create_table_from_list_of_structs(tk_ctx: LingoTKinterContext, symbol:L_SYM_value):
+
+    #
+    # init
+    #
+
     if symbol.display.format != 'table':
         raise RuntimeError(f'Cannot render list of struct value in text spec with display format: {symbol.display.format}')
+
+    _configure_table_styles(tk_ctx)
 
     if tk_ctx.main_block_index != 0:
         tk_ctx.text_widget.insert('end', '\n')
 
     headers:list[LingoTableHeader] = symbol.display.headers
-    rows:list[dict] = symbol.value
+    if len(headers) == 0:
+        raise RuntimeError('Table display format requires one or more headers')
+
+    #
+    # normalize rows
+    #
+
+    rows:list[dict] = []
+    for row_index, row_expr in enumerate(symbol.value):
+        try:
+            row_value = unwrap_expression(tk_ctx.lingo, row_expr)
+        except Exception:
+            if isinstance(row_expr, L_SYM_value) and row_expr.type == 'struct' and isinstance(row_expr.value, dict):
+                row_value = row_expr.value
+            elif isinstance(row_expr, dict):
+                row_value = row_expr
+            else:
+                raise RuntimeError(f'Expected table row at index {row_index} to be struct/dict, got: {type(row_expr).__name__}')
+
+        rows.append(row_value)
+
+    #
+    # build cells
+    #
+
+    table_cells:list[list[str]] = []
+    for row_index, row in enumerate(rows):
+
+        row_cells:list[str] = []
+        for header in headers:
+            if header.field not in row:
+                raise RuntimeError(f'Missing expected table field {header.field!r} in row at index {row_index}')
+            
+            row_cells.append(value_to_str(unwrap_expression(tk_ctx.lingo, row[header.field])))
+
+        table_cells.append(row_cells)
+
+    #
+    # calculate size
+    #
+
+    header_titles = [header.text for header in headers]
+
+    col_widths = []
+    for col_i, title in enumerate(header_titles):
+        widest_cell = max((len(cells[col_i]) for cells in table_cells), default=0)
+        col_widths.append(max(len(title), widest_cell))
+
+    #
+    # render table
+    #
+
+    def border_line() -> str:
+        return '•-' + '-•-'.join('-' * width for width in col_widths) + '-•\n'
+
+    def data_line(cells: list[str]) -> str:
+        padded_cells = [f'{cell:<{col_widths[i]}}' for i, cell in enumerate(cells)]
+        return '| ' + ' | '.join(padded_cells) + ' |\n'
+
+    tk_ctx.text_widget.insert('end', border_line(), (TK_TABLE_TEXT_TAG,))
+    tk_ctx.text_widget.insert('end', data_line(header_titles), (TK_TABLE_HEADER_TAG,))
+    tk_ctx.text_widget.insert('end', border_line(), (TK_TABLE_TEXT_TAG,))
+    for row_cells in table_cells:
+        tk_ctx.text_widget.insert('end', data_line(row_cells), (TK_TABLE_TEXT_TAG,))
+    tk_ctx.text_widget.insert('end', border_line(), (TK_TABLE_TEXT_TAG,))
 
     
 
@@ -202,7 +296,7 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
 
     root = tkinter_ctx.root
     root.title('Lingo Text Spec')
-    root.geometry('700x400')
+    root.geometry('800x1200')
 
     text_widget = tkinter_ctx.text_widget
     text_widget.pack(fill='both', expand=True)
