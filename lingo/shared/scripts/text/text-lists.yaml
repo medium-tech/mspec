@@ -38,29 +38,32 @@ block:
           - 'Second item'
           - 'Third item'
 
-    # - text: 'A list of uniform structs can be displayed as a table with headers:'
-    #   style:
-    #         bold: true
-    # - type: 'list'
-    #   display:
-    #       format: 'table'
-    #       headers:
-    #           - text: 'Color'
-    #             field: 'color'
-    #           - text: 'Amount'
-    #             field: 'amount'
-    #           - text: 'In Stock'
-    #             field: 'in_stock'
-    #   value:
-    #       - color: 'red'
-    #         amount: 10
-    #         in_stock: true
-    #       - color: 'green'
-    #         amount: 21
-    #         in_stock: true
-    #       - color: 'blue'
-    #         amount: 0
-    #         in_stock: false
+    - text: 'A list of uniform structs can be displayed as a table with headers:'
+      style:
+            bold: true
+    - type: 'list'
+      element_type: 'struct'
+      display:
+          format: 'table'
+          headers:
+              - text: 'Color'
+                field: 'color'
+              - text: 'Amount'
+                field: 'amount'
+              - text: 'In Stock'
+                field: 'in_stock'
+      value:
+          - color: 'red'
+            amount: 10
+            in_stock: true
+          - color: 'green'
+            amount: 21
+            in_stock: true
+          - type: 'struct'
+            value:
+                color: 'blue'
+                amount: 0
+                in_stock: false
 
     # - text: 'Tables can also be made without headers:'
     # - type: 'list'

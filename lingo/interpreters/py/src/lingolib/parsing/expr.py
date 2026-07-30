@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from lingolib.constants import (
     MIN_LINE_BREAKS,
     MAX_LINE_BREAKS,
@@ -166,7 +168,22 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
                 
                 display = LingoListDisplayOptions.from_dict(data.get('display', {}))
 
-                parsed_elements = [create_expression_ast(ctx, item, f'{L_SRC}.value[{i}]') for i, item in enumerate(data['value'])]
+                if element_type == 'struct':
+                    parsed_elements = []
+                    for i, item in enumerate(data['value']):
+                        if not isinstance(item, dict):
+                            raise LingoSyntaxError(f'value type mismatch: expected list of struct, got element of type {type(item).__name__!r} at index {i}{src_info()}')
+                        
+                        elif 'type' in item:
+                            if item['type'] != 'struct':
+                                raise LingoSyntaxError(f'value type mismatch: expected list of struct, got element of type {item["type"]!r} at index {i}{src_info()}')
+                            else:
+                                parsed_elements.append(create_expression_ast(ctx, item, f'{L_SRC}.value[{i}]'))
+                        else:
+                            wrapped_struct = {'type': 'struct', 'value': deepcopy(item)}
+                            parsed_elements.append(create_expression_ast(ctx, wrapped_struct, f'{L_SRC}.value[{i}]'))
+                else:
+                    parsed_elements = [create_expression_ast(ctx, item, f'{L_SRC}.value[{i}]') for i, item in enumerate(data['value'])]
 
                 return symbols.L_SYM_value(
                     type=data['type'],
@@ -179,6 +196,7 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
                 )
 
             elif data['type'] == 'struct':
+                # breakpoint()
                 if not isinstance(data['value'], dict):
                     raise LingoSyntaxError(f'value type mismatch: expected struct, got {type(data["value"]).__name__!r}{src_info()}')
 
@@ -195,6 +213,7 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
                 )
 
             else:
+                
                 return symbols.L_SYM_value(
                     type=data['type'],
                     value=create_expression_ast(ctx, data['value'], f'{L_SRC}.value'),
@@ -257,6 +276,7 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
             L_FILE=ctx.interpreter.file,
             L_LINE=get_yaml_line(data['link']),
         )
+
     elif 'text' in keys:
         try:
             style = LingoStyleOptions(**data['style']).validate()

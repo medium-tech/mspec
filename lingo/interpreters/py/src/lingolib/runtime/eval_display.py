@@ -75,6 +75,17 @@ def _configure_heading_styles(tk_ctx: LingoTKinterContext):
             heading_opts.update(heading.get('options', {}))
             tk_ctx.text_widget.tag_configure(f'heading-{level}', **heading_opts)
 
+def _create_table_from_list_of_structs(tk_ctx: LingoTKinterContext, symbol:L_SYM_value):
+    if symbol.display.format != 'table':
+        raise RuntimeError(f'Cannot render list of struct value in text spec with display format: {symbol.display.format}')
+
+    if tk_ctx.main_block_index != 0:
+        tk_ctx.text_widget.insert('end', '\n')
+
+
+
+    
+
 #
 # symbol evaluators
 #
@@ -106,6 +117,11 @@ def _eval_link(tk_ctx: LingoTKinterContext, symbol: L_SYM_link):
     tk_ctx.text_widget.insert('end', text_value, (tag_name,))
 
 def _eval_value(tk_ctx: LingoTKinterContext, symbol: L_SYM_value):
+
+    #
+    # type str
+    #
+
     if symbol.type == 'str':
         if not isinstance(symbol.value, str):
             raise RuntimeError(f'Expected string value for type "str", got: {type(symbol.value).__name__}')
@@ -113,10 +129,14 @@ def _eval_value(tk_ctx: LingoTKinterContext, symbol: L_SYM_value):
         else:
             tk_ctx.text_widget.insert('end', symbol.value)
 
+    #
+    # ordered or unordered list
+    #
+
     elif symbol.type == 'list' and symbol.element_type == 'str':
         if tk_ctx.main_block_index != 0:
             tk_ctx.text_widget.insert('end', '\n')
-            
+
         if symbol.display.format in ['bullets', 'numbers']:
             for n, element in enumerate(symbol.value, start=1):
                 prefix = '• ' if symbol.display.format == 'bullets' else f'{n}. '
@@ -127,6 +147,17 @@ def _eval_value(tk_ctx: LingoTKinterContext, symbol: L_SYM_value):
                 tk_ctx.text_widget.insert('end', f'\n')
         else:
             raise RuntimeError(f'Cannot render list value in text spec with display format: {symbol.display.format}')
+
+    #
+    # tables
+    #
+
+    elif symbol.type == 'list' and symbol.element_type == 'struct':
+        _create_table_from_list_of_structs(tk_ctx, symbol)
+
+    #
+    # key/value pairs
+    #
 
     elif symbol.type == 'struct':
         tk_ctx.text_widget.insert('end', '\n')
@@ -184,7 +215,7 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
             _eval_display_runtime_symbol(tkinter_ctx, item)
 
         except Exception as exc:
-            raise RuntimeError(f'Error evaluating text block item {tkinter_ctx.main_block_index}: {exc}') from exc
+            raise RuntimeError(f'Error evaluating text block item {tkinter_ctx.main_block_index}: {exc}')
 
         tkinter_ctx.in_text_block = item.L_SYM_NAME in ('text', 'link')
         tkinter_ctx.main_block_index += 1
