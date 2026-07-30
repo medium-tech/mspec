@@ -38,50 +38,50 @@ block:
           - 'Second item'
           - 'Third item'
 
-    - text: 'A list of uniform structs can be displayed as a table with headers:'
-      style:
-            bold: true
-    - type: 'list'
-      display:
-          format: 'table'
-          headers:
-              - text: 'Color'
-                field: 'color'
-              - text: 'Amount'
-                field: 'amount'
-              - text: 'In Stock'
-                field: 'in_stock'
-      value:
-          - color: 'red'
-            amount: 10
-            in_stock: true
-          - color: 'green'
-            amount: 21
-            in_stock: true
-          - color: 'blue'
-            amount: 0
-            in_stock: false
+    # - text: 'A list of uniform structs can be displayed as a table with headers:'
+    #   style:
+    #         bold: true
+    # - type: 'list'
+    #   display:
+    #       format: 'table'
+    #       headers:
+    #           - text: 'Color'
+    #             field: 'color'
+    #           - text: 'Amount'
+    #             field: 'amount'
+    #           - text: 'In Stock'
+    #             field: 'in_stock'
+    #   value:
+    #       - color: 'red'
+    #         amount: 10
+    #         in_stock: true
+    #       - color: 'green'
+    #         amount: 21
+    #         in_stock: true
+    #       - color: 'blue'
+    #         amount: 0
+    #         in_stock: false
 
-    - text: 'Tables can also be made without headers:'
-    - type: 'list'
-      display:
-          format: 'table'
-          columns:
-              - 'column1'
-              - 'column2'
-              - 'column3'
-              - 'column4'
-      value:
-          - column1: 'Arbitrary information'
-            column2:
-                text: 'Arbitrary information in italic'
-                style:
-                    italic: true
-            column3: 'Even more arbitrary information'
-            column4: 'This is the last column of arbitrary information'
-          - column1: 'Space astronauts are cool'
-            column2: 'Rainbows and unicorns are also cool'
-            column3:
-                link: 'https://en.wikipedia.org/wiki/Turtle#/media/File:Turtle_diversity.jpg'
-                text: 'i like turtles'
-            column4: 'This is the last column of arbitrary information'
+    # - text: 'Tables can also be made without headers:'
+    # - type: 'list'
+    #   display:
+    #       format: 'table'
+    #       columns:
+    #           - 'column1'
+    #           - 'column2'
+    #           - 'column3'
+    #           - 'column4'
+    #   value:
+    #       - column1: 'Arbitrary information'
+    #         column2:
+    #             text: 'Arbitrary information in italic'
+    #             style:
+    #                 italic: true
+    #         column3: 'Even more arbitrary information'
+    #         column4: 'This is the last column of arbitrary information'
+    #       - column1: 'Space astronauts are cool'
+    #         column2: 'Rainbows and unicorns are also cool'
+    #         column3:
+    #             link: 'https://en.wikipedia.org/wiki/Turtle#/media/File:Turtle_diversity.jpg'
+    #             text: 'i like turtles'
+    #         column4: 'This is the last column of arbitrary information'

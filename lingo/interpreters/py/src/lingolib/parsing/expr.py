@@ -11,13 +11,13 @@ from lingolib.context import LingoContext
 from lingolib.errors import LingoSyntaxError
 import lingolib.parsing.symbols as symbols
 from lingolib.types import (
-	LingoLiteralTypeNames, 
-	LingoLanguageError, 
-	LingoLiteralTypes, 
-	LingoPrimitiveTypes, 
-	LingoStyleOptions, 
-	LingoListDisplayOptions,
-	PythonTypeNamesToLingoTypes
+    LingoLiteralTypeNames, 
+    LingoLanguageError, 
+    LingoLiteralTypes, 
+    LingoPrimitiveTypes, 
+    LingoStyleOptions, 
+    LingoListDisplayOptions,
+    PythonTypeNamesToLingoTypes
 )
 
 
@@ -82,19 +82,6 @@ def create_expression_ast(
         raise LingoSyntaxError(f'unsupported expression type: {type(data).__name__!r}')
 
 
-# def create_expression_ast_from_dict(
-#     ctx: LingoContext,
-#     data: dict,
-#     L_SRC: str,
-#     create_expression_ast,
-# ) -> symbols.ExpressionSymbols:
-#     return parse_expression_ast_from_dict(
-#         ctx=ctx,
-#         data=data,
-#         L_SRC=L_SRC,
-#         create_expression_ast=create_expression_ast,
-#     )
-
 def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
     keys = set(data.keys())
     ctx.log.debug(f'parse_expression_ast_from_dict - keys: {keys!r}')
@@ -157,26 +144,33 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
                     L_FILE=ctx.interpreter.file,
                     L_LINE=get_yaml_line(data['value'])
                 )
+            
             elif data['type'] == 'list':
                 if not isinstance(data['value'], list):
                     raise LingoSyntaxError(f'value type mismatch: expected list, got {type(data["value"]).__name__!r}{src_info()}')
 
                 try:
-                    py_element_type = type(data['value'][0]).__name__
-                    
-                except IndexError as e:
-                    raise LingoSyntaxError(f'could not determine element type for empty list, supply with "element_type" key in value symbol: {e}{src_info()}') from None
-
-                try:
-                    element_type = PythonTypeNamesToLingoTypes[py_element_type]
+                    element_type = data['element_type']
                 except KeyError as e:
-                    raise LingoSyntaxError(f'unsupported element type for list: {py_element_type!r}{src_info()}') from None
+                    ctx.log.debug(f'create_expression_ast_from_dict - list element type not specified, attempting to infer from first element: {data["value"]!r}')
+                    try:
+                        py_element_type = type(data['value'][0]).__name__
+                        
+                    except IndexError as e:
+                        raise LingoSyntaxError(f'could not determine element type for empty list, supply with "element_type" key in value symbol: {e}{src_info()}') from None
+
+                    try:
+                        element_type = PythonTypeNamesToLingoTypes[py_element_type]
+                    except KeyError as e:
+                        raise LingoSyntaxError(f'unsupported element type for list: {py_element_type!r}{src_info()}') from None
                 
                 display = LingoListDisplayOptions.from_dict(data.get('display', {}))
 
+                parsed_elements = [create_expression_ast(ctx, item, f'{L_SRC}.value[{i}]') for i, item in enumerate(data['value'])]
+
                 return symbols.L_SYM_value(
                     type=data['type'],
-                    value=data['value'],
+                    value=parsed_elements,
                     element_type=element_type,
                     display=display,
                     L_SRC=f'{L_SRC}.value',
