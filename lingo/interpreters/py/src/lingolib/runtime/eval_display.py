@@ -15,7 +15,7 @@ from lingolib.constants import (
 from lingolib.context import LingoContext
 from lingolib.parsing import LingoASTTextSpec
 from lingolib.runtime.expressions import unwrap_expression
-from lingolib.types import LingoStyleOptions, value_to_str
+from lingolib.types import LingoStyleOptions, value_to_str, LingoTableHeader
 from lingolib.parsing.symbols import *
 
 @dataclass(slots=True)
@@ -82,7 +82,8 @@ def _create_table_from_list_of_structs(tk_ctx: LingoTKinterContext, symbol:L_SYM
     if tk_ctx.main_block_index != 0:
         tk_ctx.text_widget.insert('end', '\n')
 
-
+    headers:list[LingoTableHeader] = symbol.display.headers
+    rows:list[dict] = symbol.value
 
     
 
