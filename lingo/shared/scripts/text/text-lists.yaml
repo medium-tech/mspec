@@ -65,26 +65,22 @@ block:
                 amount: 0
                 in_stock: false
 
-    # - text: 'Tables can also be made without headers:'
-    # - type: 'list'
-    #   display:
-    #       format: 'table'
-    #       columns:
-    #           - 'column1'
-    #           - 'column2'
-    #           - 'column3'
-    #           - 'column4'
-    #   value:
-    #       - column1: 'Arbitrary information'
-    #         column2:
-    #             text: 'Arbitrary information in italic'
-    #             style:
-    #                 italic: true
-    #         column3: 'Even more arbitrary information'
-    #         column4: 'This is the last column of arbitrary information'
-    #       - column1: 'Space astronauts are cool'
-    #         column2: 'Rainbows and unicorns are also cool'
-    #         column3:
-    #             link: 'https://en.wikipedia.org/wiki/Turtle#/media/File:Turtle_diversity.jpg'
-    #             text: 'i like turtles'
-    #         column4: 'This is the last column of arbitrary information'
+    - text: 'Tables can also be made without headers:'
+    - type: 'list'
+      display:
+          format: 'table'
+          columns:
+              - 'column1'
+              - 'column2'
+              - 'column3'
+              - 'column4'
+      value:
+          - column1: 'Arbitrary information'
+            column2: 'More stuff about nothing in particular'
+            column3: 'Even more arbitrary information'
+            column4: 'This is the last column of arbitrary information'
+            
+          - column1: 'Space astronauts are cool'
+            column2: 'Rainbows and unicorns are also cool'
+            column3: 'Even more arbitrary information'
+            column4: 'This is the last column of arbitrary information'

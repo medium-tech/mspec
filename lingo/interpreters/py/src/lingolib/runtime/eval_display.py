@@ -112,9 +112,17 @@ def _create_table_from_list_of_structs(tk_ctx: LingoTKinterContext, symbol:L_SYM
     if tk_ctx.main_block_index != 0:
         tk_ctx.text_widget.insert('end', '\n')
 
-    headers:list[LingoTableHeader] = symbol.display.headers
-    if len(headers) == 0:
-        raise RuntimeError('Table display format requires one or more headers')
+    if len(symbol.display.headers) > 0:
+        column_fields:list[str] = [header.field for header in symbol.display.headers]
+        column_headers:list[str] = [header.text for header in symbol.display.headers]
+    else:
+        column_fields:list[str] = symbol.display.columns
+        column_headers:list[str] = []
+
+    if len(column_fields) == 0:
+        raise RuntimeError(f'Cannot render list of struct value in text spec with no headers or columns specified.')
+
+    has_col_headers = len(column_headers) > 0
 
     #
     # normalize rows
@@ -142,11 +150,12 @@ def _create_table_from_list_of_structs(tk_ctx: LingoTKinterContext, symbol:L_SYM
     for row_index, row in enumerate(rows):
 
         row_cells:list[str] = []
-        for header in headers:
-            if header.field not in row:
-                raise RuntimeError(f'Missing expected table field {header.field!r} in row at index {row_index}')
+        for field in column_fields:
             
-            row_cells.append(value_to_str(unwrap_expression(tk_ctx.lingo, row[header.field])))
+            if field not in row:
+                raise RuntimeError(f'Missing expected table field {field!r} in row at index {row_index}')
+            
+            row_cells.append(value_to_str(unwrap_expression(tk_ctx.lingo, row[field])))
 
         table_cells.append(row_cells)
 
@@ -154,12 +163,11 @@ def _create_table_from_list_of_structs(tk_ctx: LingoTKinterContext, symbol:L_SYM
     # calculate size
     #
 
-    header_titles = [header.text for header in headers]
-
     col_widths = []
-    for col_i, title in enumerate(header_titles):
+    for col_i, _field_name in enumerate(column_fields):
+        header_title = column_headers[col_i] if has_col_headers else ''
         widest_cell = max((len(cells[col_i]) for cells in table_cells), default=0)
-        col_widths.append(max(len(title), widest_cell))
+        col_widths.append(max(len(header_title), widest_cell))
 
     #
     # render table
@@ -172,11 +180,15 @@ def _create_table_from_list_of_structs(tk_ctx: LingoTKinterContext, symbol:L_SYM
         padded_cells = [f'{cell:<{col_widths[i]}}' for i, cell in enumerate(cells)]
         return '| ' + ' | '.join(padded_cells) + ' |\n'
 
+    if has_col_headers:
+        tk_ctx.text_widget.insert('end', border_line(), (TK_TABLE_TEXT_TAG,))
+        tk_ctx.text_widget.insert('end', data_line(column_headers), (TK_TABLE_HEADER_TAG,))
+
     tk_ctx.text_widget.insert('end', border_line(), (TK_TABLE_TEXT_TAG,))
-    tk_ctx.text_widget.insert('end', data_line(header_titles), (TK_TABLE_HEADER_TAG,))
-    tk_ctx.text_widget.insert('end', border_line(), (TK_TABLE_TEXT_TAG,))
+
     for row_cells in table_cells:
         tk_ctx.text_widget.insert('end', data_line(row_cells), (TK_TABLE_TEXT_TAG,))
+
     tk_ctx.text_widget.insert('end', border_line(), (TK_TABLE_TEXT_TAG,))
 
     

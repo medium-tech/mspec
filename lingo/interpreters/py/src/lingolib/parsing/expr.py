@@ -19,6 +19,7 @@ from lingolib.types import (
     LingoPrimitiveTypes, 
     LingoStyleOptions, 
     LingoListDisplayOptions,
+    LingoTableHeader,
     PythonTypeNamesToLingoTypes
 )
 
@@ -167,6 +168,10 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
                         raise LingoSyntaxError(f'unsupported element type for list: {py_element_type!r}{src_info()}') from None
                 
                 display = LingoListDisplayOptions.from_dict(data.get('display', {}))
+
+                if display.format == 'table':
+                    if element_type != 'struct':
+                        raise LingoSyntaxError(f'list display format "table" requires element_type "struct", got: {element_type!r}{src_info()}')
 
                 if element_type == 'struct':
                     parsed_elements = []
