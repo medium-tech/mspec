@@ -6,3 +6,6 @@ class LingoSyntaxError(LingoLibError):
 
 class LingoTypeError(LingoLibError):
 	pass
+
+class LingoUnknownSymbolError(LingoLibError):
+	pass

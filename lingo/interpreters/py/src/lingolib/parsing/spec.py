@@ -23,9 +23,9 @@ SPEC_ROOT_RULES = {
         'required': {'lingo', 'modules'},
         'optional': {'meta', 'import'},
     },
-    'ui': {
-        'required': {'lingo', 'state', 'ops', 'output'},
-        'optional': {'meta', 'backend', 'import'},
+    'gui': {
+        'required': {'lingo', 'block'},
+        'optional': {'meta', 'state', 'ops', 'backend', 'import'},
     },
     'text': {
         'required': {'lingo', 'block'},
@@ -88,6 +88,7 @@ def create_spec_ast_from_dict(ctx: LingoContext, data: dict) -> LingoASTSpec:
                     raise LingoSyntaxError(f'lingo spec must be a string literal, got: {type(value).__name__!r}')
                 else:
                     lingo_args['spec'] = value
+                    
             case 'version':
                 if not isinstance(value, str):
                     raise LingoSyntaxError(f'lingo version must be a string literal, got: {type(value).__name__!r}')
@@ -103,19 +104,20 @@ def create_spec_ast_from_dict(ctx: LingoContext, data: dict) -> LingoASTSpec:
 
     validate_spec_root(lingo.spec, data)
 
-    if lingo.spec == 'exe':
-        return spec_exe_ast_from_dict(
-            ctx=ctx,
-            lingo=lingo,
-            data=data
-        )
+    match lingo.spec:
+        case 'exe':
+            return spec_exe_ast_from_dict(
+                ctx=ctx,
+                lingo=lingo,
+                data=data
+            )
 
-    if lingo.spec == 'text':
-        return spec_text_ast_from_dict(
-            ctx=ctx,
-            lingo=lingo,
-            data=data
-        )
+        case 'text':
+            return spec_text_ast_from_dict(
+                ctx=ctx,
+                lingo=lingo,
+                data=data
+            )
 
-    else:
-        raise LingoSyntaxError(f'spec {lingo.spec!r} passed root validation, but AST parser is not implemented yet')
+        case _:
+            raise NotImplementedError(f'spec {lingo.spec!r} passed root validation, but AST parser is not implemented')

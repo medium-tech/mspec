@@ -27,7 +27,7 @@ state:
     
     view_people: 'lingo.model_list'
 
-output:
+block:
     - heading: 'App Ops'
 
     - heading: 'Say Hello'

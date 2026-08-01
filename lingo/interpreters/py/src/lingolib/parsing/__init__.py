@@ -3,7 +3,7 @@ from .ast import (
 	LingoASTExeSpec, 
 	LingoASTLibSpec, 
 	LingoASTAppSpec,
-	LingoASTUISpec,
+	LingoASTGUISpec,
 	LingoASTTextSpec,
 	LingoASTSpec, 
 	lingo_ast_to_string

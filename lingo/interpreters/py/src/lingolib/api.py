@@ -4,19 +4,20 @@ from lingolib.context import LingoContext, LingoInterpreterContext
 from lingolib.errors import LingoSyntaxError
 from lingolib.parsing import (
     lingo_ast_to_string,
-	create_spec_ast_from_dict, 
+    create_spec_ast_from_dict, 
     YamlLocationLoader,
     LingoASTSpec, 
-	LingoASTExeSpec, 
-	LingoASTAppSpec, 
-	LingoASTUISpec,
-	LingoASTLibSpec,
+    LingoASTExeSpec, 
+    LingoASTAppSpec, 
+    LingoASTGUISpec,
+    LingoASTLibSpec,
     LingoASTTextSpec
 )
 
 from lingolib.runtime.eval import (
-	evaluate_exe_spec,
-	evaluate_text_spec
+    evaluate_exe_spec,
+    evaluate_text_spec,
+    evaluate_gui_spec
 )
 
 import yaml
@@ -67,7 +68,9 @@ def serve_ast(ctx: LingoContext, ast: LingoASTSpec):
         raise LingoSyntaxError(f'Cannot serve spec type: {ast.lingo.spec!r}')
 
 def display_ast(ctx: LingoContext, ast: LingoASTSpec):
-    if isinstance(ast, (LingoASTUISpec, LingoASTTextSpec)):
+    if isinstance(ast, LingoASTTextSpec):
         evaluate_text_spec(ctx, ast)
+    elif isinstance(ast, LingoASTGUISpec):
+        evaluate_gui_spec(ctx, ast)
     else:
         raise LingoSyntaxError(f'Cannot display spec type: {ast.lingo.spec!r}')

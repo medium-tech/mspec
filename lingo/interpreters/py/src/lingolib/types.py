@@ -43,10 +43,12 @@ PythonTypeNamesToLingoTypes = {
 
 class LingoScriptSpecsEnum(StrEnum):
 	app = 'app'
+	data = 'data'
 	exe = 'exe'
+	gui = 'gui'
 	lib = 'lib'
 	text = 'text'
-	ui = 'ui'
+	super = 'super'
 
 LingoScriptSpecs = [spec.value for spec in LingoScriptSpecsEnum]
 

@@ -21,7 +21,7 @@ ops:
                     state: counter
                 b: 1
 
-output:
+block:
     - button:
         func: 'increment_counter'
         text: 'increment count'

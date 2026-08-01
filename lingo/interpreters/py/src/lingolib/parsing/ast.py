@@ -14,7 +14,7 @@ class LingoASTAppSpec:
     pass
 
 @dataclass
-class LingoASTUISpec:
+class LingoASTGUISpec:
     pass
 
 @dataclass
@@ -27,7 +27,7 @@ class LingoASTLibSpec:
     pass
 
 
-LingoASTSpec = LingoASTExeSpec | LingoASTLibSpec | LingoASTAppSpec | LingoASTUISpec | LingoASTTextSpec
+LingoASTSpec = LingoASTExeSpec | LingoASTLibSpec | LingoASTAppSpec | LingoASTGUISpec | LingoASTTextSpec
 
 
 @dataclass

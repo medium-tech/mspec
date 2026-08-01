@@ -15,9 +15,10 @@ from lingolib.constants import (
     TABLE_TEXT_FONT,
 )
 from lingolib.context import LingoContext
-from lingolib.parsing import LingoASTTextSpec
+from lingolib.errors import LingoUnknownSymbolError
+from lingolib.parsing import LingoASTTextSpec, LingoASTGUISpec
 from lingolib.runtime.expressions import unwrap_expression
-from lingolib.types import LingoStyleOptions, value_to_str, LingoTableHeader
+from lingolib.types import LingoStyleOptions, value_to_str
 from lingolib.parsing.symbols import *
 
 @dataclass(slots=True)
@@ -249,7 +250,7 @@ def _eval_value(tk_ctx: LingoTKinterContext, symbol: L_SYM_value):
                 prefix = '• ' if symbol.display.format == 'bullets' else f'{n}. '
                 tk_ctx.text_widget.insert('end', f'{prefix}')
 
-                _eval_display_runtime_symbol(tk_ctx, element)
+                _eval_text_runtime_symbol(tk_ctx, element)
 
                 tk_ctx.text_widget.insert('end', f'\n')
         else:
@@ -279,7 +280,10 @@ def _eval_value(tk_ctx: LingoTKinterContext, symbol: L_SYM_value):
     else:
         raise RuntimeError(f'Cannot render value type in text spec with type: {symbol.type} and element type: {symbol.element_type}')
 
-def _eval_display_runtime_symbol(tk_ctx: LingoTKinterContext, symbol: DisplayRuntimeSymbols):
+def _eval_button(tk_ctx: LingoTKinterContext, symbol):
+    pass
+
+def _eval_text_runtime_symbol(tk_ctx: LingoTKinterContext, symbol: DisplayRuntimeSymbols):
     match symbol.L_SYM_NAME:
         case 'break':
             _eval_break(tk_ctx, symbol)
@@ -292,7 +296,17 @@ def _eval_display_runtime_symbol(tk_ctx: LingoTKinterContext, symbol: DisplayRun
         case 'value':
             _eval_value(tk_ctx, symbol)
         case _:
-            raise RuntimeError(f'Cannot render symbol in text spec: {symbol.L_SYM_NAME}')
+            raise LingoUnknownSymbolError(symbol.L_SYM_NAME)
+
+def _eval_gui_runtime_symbol(tk_ctx: LingoTKinterContext, symbol):
+    try:
+        _eval_text_runtime_symbol(tk_ctx, symbol)
+    except LingoUnknownSymbolError as e:
+        match symbol.L_SYM_NAME:
+            case 'button':
+                pass
+            case _:
+                raise LingoUnknownSymbolError(symbol.L_SYM_NAME)
 
 #
 # spec evaluators
@@ -319,10 +333,48 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
 
     for item in ast.block.items:
         try:
-            _eval_display_runtime_symbol(tkinter_ctx, item)
+            _eval_text_runtime_symbol(tkinter_ctx, item)
 
-        except Exception as exc:
-            raise RuntimeError(f'Error evaluating text block item {tkinter_ctx.main_block_index}: {exc}')
+        except LingoUnknownSymbolError as e:
+            raise RuntimeError(f'Unknown symbol "{e}" in text spec at index {tkinter_ctx.main_block_index}')
+
+        except Exception as e:
+            raise RuntimeError(f'Error evaluating text block item {tkinter_ctx.main_block_index}: {e}')
+
+        tkinter_ctx.in_text_block = item.L_SYM_NAME in ('text', 'link')
+        tkinter_ctx.main_block_index += 1
+        
+    text_widget.configure(state='disabled')
+    root.mainloop()
+
+def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
+
+    tkinter_ctx = LingoTKinterContext(
+        root=tkinter.Tk(),
+        text_widget=tkinter.Text(wrap='word', padx=12, pady=12, font=(TEXT_FONT['font']['family'], TEXT_FONT['font']['size'])),
+        lingo=ctx,
+    )
+
+    root = tkinter_ctx.root
+    root.title('Lingo GUI Spec')
+    root.geometry('800x1200')
+
+    text_widget = tkinter_ctx.text_widget
+    text_widget.pack(fill='both', expand=True)
+
+    _configure_heading_styles(tkinter_ctx)
+
+    tkinter_ctx.in_text_block = False
+
+    for item in ast.block.items:
+        try:
+            _eval_gui_runtime_symbol(tkinter_ctx, item)
+
+        except LingoUnknownSymbolError as e:
+            raise RuntimeError(f'Unknown symbol "{e}" in GUI spec at index {tkinter_ctx.main_block_index}')
+
+        except Exception as e:
+            raise RuntimeError(f'Error evaluating GUI block item {tkinter_ctx.main_block_index}: {e}')
 
         tkinter_ctx.in_text_block = item.L_SYM_NAME in ('text', 'link')
         tkinter_ctx.main_block_index += 1
