@@ -15,7 +15,8 @@ class LingoASTAppSpec:
 
 @dataclass
 class LingoASTGUISpec:
-    pass
+    lingo: symbols.L_SYM_lingo
+    block: symbols.L_SYM_block
 
 @dataclass
 class LingoASTTextSpec:

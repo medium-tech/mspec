@@ -47,89 +47,6 @@ class L_SYM_main(NamedTuple):
 		return 'spec'
 
 
-class L_SYM_block(NamedTuple):
-
-	L_SRC: str
-	items: list[expression]
-	L_FILE: str = ''
-	L_LINE: int = -1
-
-	@property
-	def L_SYM_NAME(self):
-		return 'block'
-
-	@property
-	def L_SYM_TYPE(self):
-		return 'spec'
-
-
-class L_SYM_text(NamedTuple):
-
-	L_SRC: str
-	text: expression
-	style: LingoStyleOptions
-	L_FILE: str = ''
-	L_LINE: int = -1
-
-	@property
-	def L_SYM_NAME(self):
-		return 'text'
-
-	@property
-	def L_SYM_TYPE(self):
-		return 'expression'
-
-
-class L_SYM_break(NamedTuple):
-
-	L_SRC: str
-	breaks: expression | None = None
-	L_FILE: str = ''
-	L_LINE: int = -1
-
-	@property
-	def L_SYM_NAME(self):
-		return 'break'
-
-	@property
-	def L_SYM_TYPE(self):
-		return 'expression'
-
-
-class L_SYM_link(NamedTuple):
-
-	L_SRC: str
-	link: expression | str = ''
-	text: expression | str = ''
-	L_FILE: str = ''
-	L_LINE: int = -1
-
-	@property
-	def L_SYM_NAME(self):
-		return 'link'
-
-	@property
-	def L_SYM_TYPE(self):
-		return 'expression'
-
-
-class L_SYM_heading(NamedTuple):
-
-	L_SRC: str
-	text: expression | None = None
-	level: int = 1
-	L_FILE: str = ''
-	L_LINE: int = -1
-
-	@property
-	def L_SYM_NAME(self):
-		return 'heading'
-
-	@property
-	def L_SYM_TYPE(self):
-		return 'expression'
-
-
 #####
 #
 #
@@ -139,7 +56,7 @@ class L_SYM_heading(NamedTuple):
 #####
 
 #
-# uncategorized
+# core
 #
 
 class L_SYM_value(NamedTuple):
@@ -302,10 +219,115 @@ class L_SYM_join(NamedTuple):
 	def L_SYM_TYPE(self):
 		return 'expression'
 
+
+#
+# display
+#
+
+
+class L_SYM_block(NamedTuple):
+
+	L_SRC: str
+	items: list[expression]
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'block'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'display'
+
+
+class L_SYM_text(NamedTuple):
+
+	L_SRC: str
+	text: expression
+	style: LingoStyleOptions
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'text'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'display'
+
+
+class L_SYM_break(NamedTuple):
+
+	L_SRC: str
+	breaks: expression | None = None
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'break'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'display'
+
+
+class L_SYM_link(NamedTuple):
+
+	L_SRC: str
+	link: expression | str = ''
+	text: expression | str = ''
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'link'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'display'
+
+
+class L_SYM_heading(NamedTuple):
+
+	L_SRC: str
+	text: expression | None = None
+	level: int = 1
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'heading'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'display'
+
+class L_SYM_button(NamedTuple):
+
+	L_SRC: str
+	call: str = ''
+	text: expression | str = ''
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'button'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'display'
+
 # each line corresponds to a function group
+
 ExpressionSymbols = \
 	L_SYM_value | L_SYM_error | L_SYM_handle \
 	| L_SYM_eq \
 	| L_SYM_int | L_SYM_add \
 	| L_SYM_str | L_SYM_concat | L_SYM_join \
-	| L_SYM_text | L_SYM_break | L_SYM_link
+	| L_SYM_text | L_SYM_break | L_SYM_link | L_SYM_heading | L_SYM_button

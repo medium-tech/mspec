@@ -209,12 +209,16 @@ def _eval_header(tk_ctx: LingoTKinterContext, symbol: L_SYM_heading):
     tk_ctx.text_widget.insert('end', f'{pre_spacer}{text_value}', (f'heading-{level_value}',))
 
 def _eval_text(tk_ctx: LingoTKinterContext, symbol: L_SYM_text):
+    assert isinstance(symbol.style, LingoStyleOptions)
+
     if not tk_ctx.in_text_block and tk_ctx.main_block_index != 0:
         tk_ctx.text_widget.insert('end', '\n')
 
     text_value = unwrap_expression(tk_ctx.lingo, symbol.text)
-    assert isinstance(symbol.style, LingoStyleOptions)
 
+    if not isinstance(text_value, str):
+        raise RuntimeError(f'Expected string value for text symbol, got: {type(text_value).__name__}')
+    
     tag_name = _configure_text_style(tk_ctx, symbol.style)
     tk_ctx.text_widget.insert('end', text_value, (tag_name,))
 
@@ -280,8 +284,17 @@ def _eval_value(tk_ctx: LingoTKinterContext, symbol: L_SYM_value):
     else:
         raise RuntimeError(f'Cannot render value type in text spec with type: {symbol.type} and element type: {symbol.element_type}')
 
-def _eval_button(tk_ctx: LingoTKinterContext, symbol):
-    pass
+def _eval_button(tk_ctx: LingoTKinterContext, symbol: L_SYM_button):
+    """placeholder button that just prints a msg to console when clicked"""
+    def on_button_click():
+        print(f'Button clicked: {symbol.call}')
+
+    text_value = unwrap_expression(tk_ctx.lingo, symbol.text)
+    if not isinstance(text_value, str):
+        raise RuntimeError(f'Expected string value for button text, got: {type(text_value).__name__}')
+
+    button = tkinter.Button(tk_ctx.text_widget, text=text_value, command=on_button_click)
+    tk_ctx.text_widget.window_create('end', window=button)
 
 def _eval_text_runtime_symbol(tk_ctx: LingoTKinterContext, symbol: DisplayRuntimeSymbols):
     match symbol.L_SYM_NAME:
@@ -298,13 +311,13 @@ def _eval_text_runtime_symbol(tk_ctx: LingoTKinterContext, symbol: DisplayRuntim
         case _:
             raise LingoUnknownSymbolError(symbol.L_SYM_NAME)
 
-def _eval_gui_runtime_symbol(tk_ctx: LingoTKinterContext, symbol):
+def _eval_gui_runtime_symbol(tk_ctx: LingoTKinterContext, symbol: DisplayRuntimeSymbols):
     try:
         _eval_text_runtime_symbol(tk_ctx, symbol)
     except LingoUnknownSymbolError as e:
         match symbol.L_SYM_NAME:
             case 'button':
-                pass
+                _eval_button(tk_ctx, symbol)
             case _:
                 raise LingoUnknownSymbolError(symbol.L_SYM_NAME)
 

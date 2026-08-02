@@ -19,7 +19,6 @@ from lingolib.types import (
     LingoPrimitiveTypes, 
     LingoStyleOptions, 
     LingoListDisplayOptions,
-    LingoTableHeader,
     PythonTypeNamesToLingoTypes
 )
 
@@ -294,6 +293,27 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
             style=style,
             L_FILE=ctx.interpreter.file,
             L_LINE=get_yaml_line(data['text']),
+        )
+
+    elif 'button' in keys:
+        try:
+            call_str = data['button']['call']
+            text_expr = data['button']['text']
+        except KeyError as e:
+            breakpoint()
+            raise LingoSyntaxError(f'button symbol missing required key: {e}{src_info()}')
+        
+        if not isinstance(call_str, str):
+            raise LingoSyntaxError(f'button call must be a string literal, got: {type(call_str).__name__!r}{src_info()}')
+
+        text_expr = create_expression_ast(ctx, text_expr, f'{L_SRC}.button.text')
+
+        return symbols.L_SYM_button(
+            L_SRC=f'{L_SRC}.button',
+            call=call_str,
+            text=text_expr,
+            L_FILE=ctx.interpreter.file,
+            L_LINE=get_yaml_line(data['button']),
         )
 
     else:
