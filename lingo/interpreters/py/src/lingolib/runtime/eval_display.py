@@ -3,17 +3,7 @@ import webbrowser
 
 from dataclasses import dataclass
 
-from lingolib.constants import (
-    MIN_LINE_BREAKS,
-    MAX_LINE_BREAKS,
-    MIN_HEADING_LEVEL,
-    MAX_HEADING_LEVEL,
-    HEADING_FONTS,
-    TEXT_FONT,
-    MONOSPACE_FONT,
-    TABLE_HEADER_FONT,
-    TABLE_TEXT_FONT,
-)
+from lingolib.constants import *
 from lingolib.context import LingoContext
 from lingolib.errors import LingoUnknownSymbolError
 from lingolib.parsing import LingoASTTextSpec, LingoASTGUISpec
@@ -293,8 +283,24 @@ def _eval_button(tk_ctx: LingoTKinterContext, symbol: L_SYM_button):
     if not isinstance(text_value, str):
         raise RuntimeError(f'Expected string value for button text, got: {type(text_value).__name__}')
 
-    button = tkinter.Button(tk_ctx.text_widget, text=text_value, command=on_button_click)
-    tk_ctx.text_widget.window_create('end', window=button)
+    button = tkinter.Button(
+        tk_ctx.text_widget,
+        text=text_value,
+        command=on_button_click,
+        background=BUTTON_BACKGROUND_COLOR,
+        activebackground=BUTTON_BACKGROUND_COLOR,
+        foreground=BUTTON_TEXT_COLOR,
+        activeforeground=BUTTON_TEXT_COLOR,
+        borderwidth=BUTTON_BORDER_WIDTH,
+        relief=BUTTON_RELIEF,
+        highlightthickness=BUTTON_FOCUS_HIGHLIGHT_THICKNESS,
+        highlightcolor=BUTTON_FOCUS_HIGHLIGHT_COLOR,
+        highlightbackground=BUTTON_FOCUS_HIGHLIGHT_BACKGROUND,
+        padx=BUTTON_PADDING_X,
+        pady=BUTTON_PADDING_Y,
+        cursor=BUTTON_CURSOR,
+    )
+    tk_ctx.text_widget.window_create('end', window=button, padx=BUTTON_MARGIN_X, pady=BUTTON_MARGIN_Y)
 
 def _eval_text_runtime_symbol(tk_ctx: LingoTKinterContext, symbol: DisplayRuntimeSymbols):
     match symbol.L_SYM_NAME:

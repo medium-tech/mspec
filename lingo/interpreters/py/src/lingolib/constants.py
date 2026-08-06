@@ -74,3 +74,16 @@ TABLE_HEADER_FONT = {
 TABLE_TEXT_FONT = {
 	'font': {'family': MONOSPACE_FONT[0], 'size': 12},
 }
+
+BUTTON_BACKGROUND_COLOR = 'white'
+BUTTON_TEXT_COLOR = 'black'
+BUTTON_PADDING_X = 2
+BUTTON_PADDING_Y = 4
+BUTTON_MARGIN_X = 5
+BUTTON_MARGIN_Y = 6
+BUTTON_BORDER_WIDTH = 1
+BUTTON_RELIEF = 'raised'						# raised, sunken, flat, ridge, solid, and groove
+BUTTON_FOCUS_HIGHLIGHT_THICKNESS = 1
+BUTTON_FOCUS_HIGHLIGHT_COLOR = '#5b9dd9'
+BUTTON_FOCUS_HIGHLIGHT_BACKGROUND = 'white'
+BUTTON_CURSOR = 'hand2'						# https://www.tcl-lang.org/man/tcl8.6/TkCmd/cursors.htm
