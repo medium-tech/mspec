@@ -1,10 +1,36 @@
 from typing import Any
 
-from lingolib.parsing import symbols
+from lingolib.parsing import symbols, LingoASTExeSpec
 from lingolib.context import LingoContext
 from lingolib.errors import LingoLibError, LingoTypeError
 from lingolib.types import LingoPrimitiveTypes, LingoValue, LingoLanguageError, error_to_str, value_to_str
 
+__all__ = [
+	'unwrap_value',
+	'evaluate_exe_spec',
+	'execute_expression',
+	'unwrap_expression'
+]
+
+#
+# types and errors
+#
+
+def unwrap_value(ctx, expr:LingoPrimitiveTypes|symbols.L_SYM_value) -> Any:
+    if isinstance(expr, (LingoPrimitiveTypes, LingoLanguageError)):
+        return expr
+    elif isinstance(expr, symbols.L_SYM_value):
+        if isinstance(expr.value, LingoPrimitiveTypes):
+            return expr.value
+        else:
+            return unwrap_value(ctx, L_EXPR_value(ctx, expr.value))
+    elif isinstance(expr, LingoValue):
+        if isinstance(expr.value, LingoPrimitiveTypes):
+            return expr.value
+        else:
+            return unwrap_value(ctx, L_EXPR_value(ctx, symbols.L_SYM_value(type=expr.type, value=expr.value)))
+    else:
+        raise LingoTypeError(f'could not unwrap: {type(expr).__name__}')
 
 class LingoErrorPassThrough(Exception):
     """
@@ -27,6 +53,13 @@ def raise_error(item: Any) -> Any:
     else:
         return item
 
+#
+# execution
+#
+
+def evaluate_exe_spec(ctx: LingoContext, ast: LingoASTExeSpec):
+    return unwrap_expression(ctx, ast.main.expr)
+
 def execute_expression(ctx: LingoContext, expr):
     if isinstance(expr, LingoLanguageError):
         return expr
@@ -44,27 +77,11 @@ def execute_expression(ctx: LingoContext, expr):
         except Exception as e:
             raise LingoLibError(f'error executing expression: {e.__class__.__name__}: {e}')
     
-def unwrap_value(ctx, expr:LingoPrimitiveTypes|symbols.L_SYM_value) -> Any:
-    if isinstance(expr, (LingoPrimitiveTypes, LingoLanguageError)):
-        return expr
-    elif isinstance(expr, symbols.L_SYM_value):
-        if isinstance(expr.value, LingoPrimitiveTypes):
-            return expr.value
-        else:
-            return unwrap_value(ctx, L_EXPR_value(ctx, expr.value))
-    elif isinstance(expr, LingoValue):
-        if isinstance(expr.value, LingoPrimitiveTypes):
-            return expr.value
-        else:
-            return unwrap_value(ctx, L_EXPR_value(ctx, symbols.L_SYM_value(type=expr.type, value=expr.value)))
-    else:
-        raise LingoTypeError(f'could not unwrap: {type(expr).__name__}')
-    
 def unwrap_expression(ctx, expr):
     return unwrap_value(ctx, execute_expression(ctx, expr))
     
 #
-# expression executors
+# symbol executors
 #
 
 def L_EXPR_value(ctx, symbol:symbols.L_SYM_value):

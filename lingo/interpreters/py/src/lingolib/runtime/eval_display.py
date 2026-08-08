@@ -7,7 +7,7 @@ from lingolib.constants import *
 from lingolib.context import LingoContext
 from lingolib.errors import LingoUnknownSymbolError
 from lingolib.parsing import LingoASTTextSpec, LingoASTGUISpec
-from lingolib.runtime.expressions import unwrap_expression
+from lingolib.runtime.eval_exe import unwrap_expression
 from lingolib.types import LingoStyleOptions, value_to_str
 from lingolib.parsing.symbols import *
 
