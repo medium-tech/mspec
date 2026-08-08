@@ -2,28 +2,29 @@ lingo:
     spec: 'gui'
     version: '0.1.0b'
 
-# state:
-#     counter:
-#         define: int
-#         default: 0
+state:
+    counter:
+        define: int
+        default: 0
 
-# ops:
-#     increment_counter:
-#         description: 'Increment the counter by 1.'
+ops:
+    increment_counter:
+        description: 'Increment the counter by 1.'
 
-#         return:
-#             type: int
-#             description: 'The new counter value after incrementing.'
+        return:
+            type: int
+            description: 'The new counter value after incrementing.'
 
-#         func:
-#             add:
-#                 a:
-#                     state: counter
-#                 b: 1
+        func:
+            add:
+                a:
+                    state: counter
+                b: 1
 
 block:
     - button:
         call: 'increment_counter'
         text: 'increment count'
     - 'total count: '
-    # - str: {state: counter}
+    - str:
+        get: state.counter

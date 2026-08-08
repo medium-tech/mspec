@@ -46,6 +46,36 @@ class L_SYM_main(NamedTuple):
 	def L_SYM_TYPE(self):
 		return 'spec'
 
+class L_SYM_state(NamedTuple):
+
+	L_SRC: str
+	fields: dict[str, L_SYM_define]
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'state'
+	
+	@property
+	def L_SYM_TYPE(self):
+		return 'spec'
+
+class L_SYM_ops(NamedTuple):
+	
+	L_SRC: str
+	funcs: dict[str, L_SYM_func]
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'ops'
+	
+	@property
+	def L_SYM_TYPE(self):
+		return 'spec'
+
 
 #####
 #
@@ -73,6 +103,25 @@ class L_SYM_value(NamedTuple):
 	@property
 	def L_SYM_NAME(self):
 		return 'value'
+	
+	@property
+	def L_SYM_TYPE(self):
+		return 'expression'
+
+class L_SYM_define(NamedTuple):
+
+	L_SRC: str
+	name: str
+	type: ValueTypesEnum
+	default: expression|None = None
+	element_type: str = ''
+	display: LingoListDisplayOptions|None = None
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'define'
 	
 	@property
 	def L_SYM_TYPE(self):
@@ -105,6 +154,39 @@ class L_SYM_handle(NamedTuple):
 	@property
 	def L_SYM_NAME(self):
 		return 'handle'
+	
+	@property
+	def L_SYM_TYPE(self):
+		return 'expression'
+
+class L_SYM_get(NamedTuple):
+
+	L_SRC: str
+	name: str
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'get'
+	
+	@property
+	def L_SYM_TYPE(self):
+		return 'expression'
+
+class L_SYM_func(NamedTuple):
+
+	L_SRC: str
+	name: str
+	args: list[expression]
+	return_: L_SYM_define
+	description: str = ''
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'func'
 	
 	@property
 	def L_SYM_TYPE(self):
