@@ -36,14 +36,21 @@ def parse_define_symbol(
 
     if 'default' in data:
         args['default'] = create_expression_ast(ctx, data['default'], f'{L_SRC}.default')
+        
     if 'element_type' in data:
         if not isinstance(data['element_type'], str):
             raise LingoSyntaxError(f'element_type for {name!r} must be string, got: {type(data["element_type"]).__name__!r}')
         args['element_type'] = data['element_type']
+        
     if 'display' in data:
         if not isinstance(data['display'], dict):
             raise LingoSyntaxError(f'display for {name!r} must be mapping, got: {type(data["display"]).__name__!r}')
         args['display'] = LingoListDisplayOptions.from_dict(data['display'])
+
+    if 'description' in data:
+        if not isinstance(data['description'], str):
+            raise LingoSyntaxError(f'description for {name!r} must be string, got: {type(data["description"]).__name__!r}')
+        args['description'] = data['description']
 
     allowed_keys = {'define', 'default', 'element_type', 'display', 'description'}
     unsupported = set(data.keys()) - allowed_keys
@@ -82,21 +89,12 @@ def parse_func_symbol(ctx: LingoContext, name: str, data: dict) -> symbols.L_SYM
 
     parsed_func_expr = create_expression_ast(ctx, func_expr_data, f'ops.{name}.func')
 
-    return_data = data.get('return', {})
-    if not isinstance(return_data, dict):
-        raise LingoSyntaxError(f'return block for ops function {name!r} must be a mapping, got: {type(return_data).__name__!r}')
-
-    return_type = return_data.get('type', 'str')
-    if not isinstance(return_type, str):
-        raise LingoSyntaxError(f'return.type for ops function {name!r} must be string, got: {type(return_type).__name__!r}')
-
-    return_symbol = symbols.L_SYM_define(
-        L_SRC=f'ops.{name}.return',
-        name=f'{name}.return',
-        type=return_type,
-        L_FILE=ctx.interpreter.file,
-        L_LINE=get_yaml_line(return_data) if return_data else get_yaml_line(data)
-    )
+    try:
+        return_data = data['return']
+    except KeyError:
+        raise LingoSyntaxError(f'ops function {name!r} missing required key: return') from None
+    
+    return_symbol = parse_define_symbol(ctx, f'{name}.return', return_data, f'ops.{name}.return')
 
     args_data = data.get('args', {})
     if not isinstance(args_data, dict):

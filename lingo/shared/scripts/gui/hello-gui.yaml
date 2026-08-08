@@ -4,6 +4,7 @@ lingo:
 
 state:
     counter:
+        description: 'The current count value.'
         define: int
         default: 0
 
@@ -12,8 +13,8 @@ ops:
         description: 'Increment the counter by 1.'
 
         return:
-            type: int
             description: 'The new counter value after incrementing.'
+            define: int
 
         func:
             add:

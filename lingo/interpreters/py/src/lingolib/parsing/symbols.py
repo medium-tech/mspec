@@ -42,6 +42,7 @@ class L_SYM_define(NamedTuple):
 	default: expression|None = None
 	element_type: str = ''
 	display: LingoListDisplayOptions|None = None
+	description: str = ''
 	L_FILE: str = ''
 	L_LINE: int = -1
 
