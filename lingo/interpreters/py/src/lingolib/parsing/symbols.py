@@ -101,6 +101,22 @@ class L_SYM_get(NamedTuple):
 	def L_SYM_TYPE(self):
 		return 'expression'
 
+class L_SYM_set(NamedTuple):
+
+	L_SRC: str
+	name: str
+	value: expression
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'set'
+	
+	@property
+	def L_SYM_TYPE(self):
+		return 'expression'
+
 class L_SYM_func(NamedTuple):
 
 	L_SRC: str
@@ -336,7 +352,7 @@ class L_SYM_button(NamedTuple):
 # each line corresponds to a function group
 
 ExpressionSymbols = \
-	L_SYM_value | L_SYM_define | L_SYM_error | L_SYM_handle | L_SYM_get | L_SYM_func \
+	L_SYM_value | L_SYM_define | L_SYM_error | L_SYM_handle | L_SYM_get | L_SYM_set | L_SYM_func \
 	| L_SYM_eq \
 	| L_SYM_int | L_SYM_add \
 	| L_SYM_str | L_SYM_concat | L_SYM_join \

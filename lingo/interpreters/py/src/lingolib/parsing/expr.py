@@ -247,6 +247,9 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
     elif keys == {'get'}:
         return parse_expr_get(ctx, data, L_SRC, src_info)
 
+    elif keys == {'set', 'to'}:
+        return parse_expr_set(ctx, data, L_SRC, src_info)
+
     elif keys == {'break'}:
         if isinstance(data['break'], int) and (MIN_LINE_BREAKS <= data['break'] <= MAX_LINE_BREAKS):
             return symbols.L_SYM_break(
@@ -439,4 +442,18 @@ def parse_expr_get(ctx, data: dict, L_SRC: str, src_info):
         L_SRC=f'{L_SRC}.get',
         L_FILE=ctx.interpreter.file,
         L_LINE=get_yaml_line(data['get'])
+    )
+
+
+def parse_expr_set(ctx, data: dict, L_SRC: str, src_info):
+
+    if not isinstance(data['set'], str):
+        raise LingoSyntaxError(f'set symbol requires a string path, got: {type(data["set"]).__name__!r}{src_info()}')
+
+    return symbols.L_SYM_set(
+        name=data['set'],
+        value=create_expression_ast(ctx, data['to'], f'{L_SRC}.set.to'),
+        L_SRC=f'{L_SRC}.set',
+        L_FILE=ctx.interpreter.file,
+        L_LINE=get_yaml_line(data['set'])
     )

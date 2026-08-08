@@ -17,10 +17,12 @@ ops:
             define: int
 
         func:
-            add:
-                a:
-                    get: state.counter
-                b: 1
+            set: 'state.counter'
+            to:
+                add:
+                    a:
+                        get: state.counter
+                    b: 1
 
 block:
     - button:
