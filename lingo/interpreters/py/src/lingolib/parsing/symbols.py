@@ -2,80 +2,6 @@ from typing import Optional, NamedTuple
 
 from lingolib.types import LingoListDisplayOptions, expression, ValueTypesEnum, LingoStyleOptions
 
-#####
-#
-#
-# spec symbols
-#
-#
-#####
-
-class L_SYM_lingo(NamedTuple):
-
-	L_SRC: str
-	spec: str
-	version: str
-	L_FILE: str = ''
-	L_LINE: int = -1
-
-	
-	def __str__(self):
-		return f'L_SYM_lingo(spec={self.spec!r}, version={self.version!r})'
-
-	@property
-	def L_SYM_NAME(self):
-		return 'lingo'
-	
-	@property
-	def L_SYM_TYPE(self):
-		return 'spec'
-
-
-class L_SYM_main(NamedTuple):
-
-	L_SRC: str
-	expr: expression
-	L_FILE: str = ''
-	L_LINE: int = -1
-
-	@property
-	def L_SYM_NAME(self):
-		return 'main'
-
-	@property
-	def L_SYM_TYPE(self):
-		return 'spec'
-
-class L_SYM_state(NamedTuple):
-
-	L_SRC: str
-	fields: dict[str, L_SYM_define]
-	L_FILE: str = ''
-	L_LINE: int = -1
-
-	@property
-	def L_SYM_NAME(self):
-		return 'state'
-	
-	@property
-	def L_SYM_TYPE(self):
-		return 'spec'
-
-class L_SYM_ops(NamedTuple):
-	
-	L_SRC: str
-	funcs: dict[str, L_SYM_func]
-	L_FILE: str = ''
-	L_LINE: int = -1
-
-	@property
-	def L_SYM_NAME(self):
-		return 'ops'
-	
-	@property
-	def L_SYM_TYPE(self):
-		return 'spec'
-
 
 #####
 #
@@ -413,3 +339,78 @@ ExpressionSymbols = \
 	| L_SYM_int | L_SYM_add \
 	| L_SYM_str | L_SYM_concat | L_SYM_join \
 	| L_SYM_text | L_SYM_break | L_SYM_link | L_SYM_heading | L_SYM_button
+
+
+#####
+#
+#
+# spec symbols
+#
+#
+#####
+
+class L_SYM_lingo(NamedTuple):
+
+	L_SRC: str
+	spec: str
+	version: str
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	
+	def __str__(self):
+		return f'L_SYM_lingo(spec={self.spec!r}, version={self.version!r})'
+
+	@property
+	def L_SYM_NAME(self):
+		return 'lingo'
+	
+	@property
+	def L_SYM_TYPE(self):
+		return 'spec'
+
+
+class L_SYM_main(NamedTuple):
+
+	L_SRC: str
+	expr: expression
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'main'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'spec'
+
+class L_SYM_state(NamedTuple):
+
+	L_SRC: str
+	fields: dict[str, L_SYM_define]
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'state'
+	
+	@property
+	def L_SYM_TYPE(self):
+		return 'spec'
+
+class L_SYM_ops(NamedTuple):
+	
+	L_SRC: str
+	funcs: dict[str, L_SYM_func]
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'ops'
+	
+	@property
+	def L_SYM_TYPE(self):
+		return 'spec'
