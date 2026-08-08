@@ -244,6 +244,9 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
     elif keys == {'join'}:
         return parse_expr_join(ctx, data, L_SRC, src_info)
 
+    elif keys == {'get'}:
+        return parse_expr_get(ctx, data, L_SRC, src_info)
+
     elif keys == {'break'}:
         if isinstance(data['break'], int) and (MIN_LINE_BREAKS <= data['break'] <= MAX_LINE_BREAKS):
             return symbols.L_SYM_break(
@@ -424,3 +427,16 @@ def parse_expr_join(ctx, data: dict, L_SRC: str, src_info):
                 raise LingoSyntaxError(f'join symbol does not support key: {arg!r}{src_info()}')
 
     return symbols.L_SYM_join(**args)
+
+
+def parse_expr_get(ctx, data: dict, L_SRC: str, src_info):
+
+    if not isinstance(data['get'], str):
+        raise LingoSyntaxError(f'get symbol requires a string path, got: {type(data["get"]).__name__!r}{src_info()}')
+
+    return symbols.L_SYM_get(
+        name=data['get'],
+        L_SRC=f'{L_SRC}.get',
+        L_FILE=ctx.interpreter.file,
+        L_LINE=get_yaml_line(data['get'])
+    )

@@ -17,6 +17,8 @@ class LingoASTAppSpec:
 class LingoASTGUISpec:
     lingo: symbols.L_SYM_lingo
     block: symbols.L_SYM_block
+    state: symbols.L_SYM_state | None = None
+    ops: symbols.L_SYM_ops | None = None
 
 @dataclass
 class LingoASTTextSpec:
@@ -60,6 +62,15 @@ def lingo_ast_to_string(spec: LingoASTSpec, indent=0):
                     output.append(lingo_ast_to_string(item, indent + 2))
                 else:
                     output.append('  ' * (indent + 1) + f'{item!r}')
+        elif isinstance(value, dict):
+            output.append('  ' * indent + f'{name}:')
+            for key, item in value.items():
+                if hasattr(item, 'L_SYM_NAME'):
+                    output.append('  ' * (indent + 1) + f'{key}:')
+                    output.append('  ' * (indent + 2) + f'L_SYM_{item.L_SYM_NAME}')
+                    output.append(lingo_ast_to_string(item, indent + 3))
+                else:
+                    output.append('  ' * (indent + 1) + f'{key}: {item!r}')
         elif isinstance(value, (str, int, float, bool)):
             output.append('  ' * indent + f'{name}: {value!r}')
 

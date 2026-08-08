@@ -105,6 +105,7 @@ class L_SYM_func(NamedTuple):
 	L_SRC: str
 	name: str
 	args: list[expression]
+	func: expression
 	return_: L_SYM_define
 	description: str = ''
 	L_FILE: str = ''
@@ -334,7 +335,7 @@ class L_SYM_button(NamedTuple):
 # each line corresponds to a function group
 
 ExpressionSymbols = \
-	L_SYM_value | L_SYM_error | L_SYM_handle \
+	L_SYM_value | L_SYM_define | L_SYM_error | L_SYM_handle | L_SYM_get | L_SYM_func \
 	| L_SYM_eq \
 	| L_SYM_int | L_SYM_add \
 	| L_SYM_str | L_SYM_concat | L_SYM_join \

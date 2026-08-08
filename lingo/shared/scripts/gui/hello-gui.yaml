@@ -18,7 +18,7 @@ ops:
         func:
             add:
                 a:
-                    state: counter
+                    get: state.counter
                 b: 1
 
 block:
@@ -26,5 +26,5 @@ block:
         call: 'increment_counter'
         text: 'increment count'
     - 'total count: '
-    - str:
+    - text:
         get: state.counter
