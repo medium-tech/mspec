@@ -1,3 +1,17 @@
+# Beta Version
+For the beta version see [Beta Readme](./lingo/README.md).
+
+## mtester
+
+Testing framework to automate gui testing across languages
+
+⚠️ proof of concept only ⚠️
+
+
+# Alpha Version
+
+This is the old alpha version on the readme file, to be deleted.
+
 # mspec
 
 This project creates a single scripting and markup rendering language that is able to build:
@@ -32,7 +46,6 @@ To accomplish this there and three script specs:
   - [Deploying to PyPI](#deploying-to-pypi)
 - [Philosophy](#philosophy)
 - [Other](#other)
-  - [mtester](#mtester)
   - [mtemplate](#mtemplate)
 
 # language specs
@@ -376,12 +389,6 @@ Both of them generally serialize the same data and have simple serialization/des
 
 
 # Other
-
-## mtester
-
-Testing framework to automate gui testing across languages
-
-⚠️ proof of concept only ⚠️
 
 
 ## mtemplate
