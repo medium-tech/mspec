@@ -1,6 +1,8 @@
 import tkinter
+import json
 import webbrowser
 from tkinter import messagebox
+from pprint import pprint
 
 
 from lingolib.constants import *
@@ -16,6 +18,15 @@ DisplayRuntimeSymbols = L_SYM_break | L_SYM_heading | L_SYM_text | L_SYM_link | 
 
 TK_TABLE_TEXT_TAG = 'table-monospace'
 TK_TABLE_HEADER_TAG = 'table-header-monospace'
+
+def _debug_state(ctx: LingoContext):
+    if hasattr(ctx.tk, 'state'):
+        try:
+            print(json.dumps(ctx.tk.state.values, indent=4, sort_keys=True))
+        except:
+            pprint(ctx.tk.state.values)
+    else:
+        ctx.log.debug('no state context available')
 
 #
 # rendering helpers
@@ -385,6 +396,10 @@ def _configure_menu_bar(ctx: LingoContext):
     lingo_menu.add_command(
         label='About Lingo',
         command=lambda: messagebox.showinfo('Lingo', 'Lingo Runtime\nTkinter preview window')
+    )
+    lingo_menu.add_command(
+        label='Debug State',
+        command=lambda: _debug_state(ctx)
     )
     menubar.add_cascade(label='Lingo', menu=lingo_menu)
 
