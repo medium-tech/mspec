@@ -16,7 +16,6 @@ params:
 
     name:
         define: str
-        default: 'World'
 
 main:
     join:
