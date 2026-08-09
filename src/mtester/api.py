@@ -1,16 +1,14 @@
-#
-# mtester api placeholders
-#
-
-from datetime import datetime, UTC
-from pathlib import Path
+import shutil
 import subprocess
 import uuid
 import os
+import platform
+
+from datetime import datetime, UTC
+from pathlib import Path
+from typing import Any
 
 from .types import RegionBox, PixelRGB
-
-from typing import Any
 
 from PIL import Image, ImageGrab
 import pytesseract
@@ -18,6 +16,15 @@ import pytesseract
 
 _RUNNING_SESSIONS: dict[str, subprocess.Popen] = {}
 
+def mtester_dir(reset:bool=False) -> Path:
+	output_dir = Path.cwd() / '.mtester'
+	if reset:
+		try:
+			shutil.rmtree(output_dir)
+		except FileNotFoundError:
+			pass
+	output_dir.mkdir(parents=True, exist_ok=True)
+	return output_dir
 
 def _placeholder_result(function_name: str, **kwargs) -> dict[str, Any]:
 	print(f'mtester.api.{function_name} called with args: {kwargs}')
@@ -112,9 +119,7 @@ def stop_target(session_id: str, force: bool = False) -> dict[str, Any]:
 def capture_screen(region: RegionBox | None = None) -> dict[str, Any]:
 	print(f'mtester.api.capture_screen called with args: region={region}')
 
-	output_dir = Path.cwd() / '.mtester'
-	output_dir.mkdir(parents=True, exist_ok=True)
-	output_path = output_dir / 'test_frame.png'
+	output_path = mtester_dir() / 'test_frame.png'
 
 	try:
 		if region is None:
@@ -151,6 +156,119 @@ def capture_screen(region: RegionBox | None = None) -> dict[str, Any]:
 	# Args: region is optional (x, y, width, height) screen crop; None captures the full primary screen.
 	# Does: captures a screenshot that can be used for OCR, color checks, and layout assertions.
 	# Returns: dict containing image path/bytes metadata plus width/height and timestamp.
+
+
+def list_windows() -> dict[str, Any]:
+	print('mtester.api.list_windows called')
+
+	if platform.system() != 'Darwin':
+		return {
+			'ok': False,
+			'function': 'list_windows',
+			'error': 'Window listing is currently implemented for macOS only.',
+			'windows': [],
+		}
+
+	script = r'''
+tell application "System Events"
+	set output_text to ""
+	repeat with p in (application processes whose background only is false)
+		set app_name to name of p
+		repeat with w in windows of p
+			try
+				set win_name to name of w
+				set win_pos to position of w
+				set win_size to size of w
+				set entry_text to app_name & "\t" & win_name & "\t" & (item 1 of win_pos as text) & "\t" & (item 2 of win_pos as text) & "\t" & (item 1 of win_size as text) & "\t" & (item 2 of win_size as text)
+				if output_text is not "" then
+					set output_text to output_text & linefeed
+				end if
+				set output_text to output_text & entry_text
+			end try
+		end repeat
+	end repeat
+	return output_text
+end tell
+'''
+
+	try:
+		proc = subprocess.run(
+			['osascript', '-e', script],
+			capture_output=True,
+			text=True,
+			check=False,
+		)
+	except Exception as e:
+		return {
+			'ok': False,
+			'function': 'list_windows',
+			'error': f'{e.__class__.__name__}: {e}',
+			'windows': [],
+		}
+
+	if proc.returncode != 0:
+		return {
+			'ok': False,
+			'function': 'list_windows',
+			'error': (proc.stderr or proc.stdout or '').strip(),
+			'windows': [],
+		}
+
+	windows = []
+	for index, line in enumerate(proc.stdout.splitlines()):
+		parts = line.split('\t')
+		if len(parts) != 6:
+			continue
+
+		try:
+			x = int(parts[2].strip())
+			y = int(parts[3].strip())
+			width = int(parts[4].strip())
+			height = int(parts[5].strip())
+		except ValueError:
+			continue
+
+		windows.append({
+			'index': index,
+			'app': parts[0].strip(),
+			'title': parts[1].strip(),
+			'x': x,
+			'y': y,
+			'width': width,
+			'height': height,
+		})
+
+	return {
+		'ok': True,
+		'function': 'list_windows',
+		'windows': windows,
+		'count': len(windows),
+	}
+
+
+def select_window(windows: list[dict[str, Any]], index: int) -> dict[str, Any]:
+	print(f'mtester.api.select_window called with args: index={index}')
+
+	if not windows:
+		return {
+			'ok': False,
+			'function': 'select_window',
+			'error': 'No windows available to select.',
+		}
+
+	if index < 0 or index >= len(windows):
+		return {
+			'ok': False,
+			'function': 'select_window',
+			'error': f'Index out of range: {index}',
+			'max_index': len(windows) - 1,
+		}
+
+	return {
+		'ok': True,
+		'function': 'select_window',
+		'selected': windows[index],
+	}
 
 
 def ocr_extract(image_path: str, region: RegionBox | None = None) -> dict[str, Any]:
@@ -308,7 +426,6 @@ def assert_ocr_text(expected: str, image_path: str, region: RegionBox | None = N
 		},
 		'found': passed,
 		'expected': expected,
-		'ocr_text': ocr_text,
 		'ocr': ocr_result,
 	}
 	# Args: expected is required text, image_path is OCR source image, region optionally scopes the check.

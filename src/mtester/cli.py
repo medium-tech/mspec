@@ -15,14 +15,17 @@ def json_print(data) -> None:
 
 def parse_args(argv: list[str] | None = None):
     parser = argparse.ArgumentParser(
-        description='mtester: application testing with image OCR and color detection'
+        description='mtester: application testing with image OCR and color detection (manual window picking is macOS-only for now)'
     )
     subparsers = parser.add_subparsers(dest='command', required=True)
 
     identify_parser = subparsers.add_parser('identify', help='Identify image properties')
     identify_parser.add_argument('source', help='Path to the source image')
 
-    manual_parser = subparsers.add_parser('manual', help='Run a manual PoC test flow against a lingo spec')
+    manual_parser = subparsers.add_parser(
+        'manual',
+        help='Run a manual PoC test flow against a lingo spec (window list/select is macOS-only for now)'
+    )
     manual_parser.add_argument('spec', help='Path to lingo spec file')
     manual_parser.add_argument('--assert-ocr-text', dest='assert_ocr_text', help='Assert text appears in OCR output')
     manual_parser.add_argument('--assert-stdout', dest='assert_stdout', help='Assert text appears in target stdout')
