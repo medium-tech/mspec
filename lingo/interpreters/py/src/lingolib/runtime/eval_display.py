@@ -4,8 +4,9 @@ import webbrowser
 
 from lingolib.constants import *
 from lingolib.context import LingoContext, LingoStateRuntimeContext
-from lingolib.errors import LingoUnknownSymbolError
+from lingolib.errors import LingoUnknownSymbolError, LingoRuntimeError
 from lingolib.parsing import LingoASTTextSpec, LingoASTGUISpec
+from lingolib.runtime.eval_core import raise_runtime_error
 from lingolib.runtime.eval_exe import unwrap_expression
 from lingolib.types import LingoStyleOptions, value_to_str, LingoLanguageError, error_to_str, LingoPrimitiveTypes
 from lingolib.parsing.symbols import *
@@ -95,7 +96,7 @@ def _create_table_from_list_of_structs(ctx: LingoContext, symbol:L_SYM_value):
     #
 
     if symbol.display.format != 'table':
-        raise RuntimeError(f'Cannot render list of struct value in text spec with display format: {symbol.display.format}')
+        raise_runtime_error(symbol, f'Cannot render list of struct values with display format: {symbol.display.format}')
 
     _configure_table_styles(ctx)
 
@@ -110,7 +111,7 @@ def _create_table_from_list_of_structs(ctx: LingoContext, symbol:L_SYM_value):
         column_headers:list[str] = []
 
     if len(column_fields) == 0:
-        raise RuntimeError(f'Cannot render list of struct value in text spec with no headers or columns specified.')
+        raise_runtime_error(symbol, f'Cannot render list of struct value in text spec with no headers or columns specified.')
 
     has_col_headers = len(column_headers) > 0
 
@@ -128,7 +129,7 @@ def _create_table_from_list_of_structs(ctx: LingoContext, symbol:L_SYM_value):
             elif isinstance(row_expr, dict):
                 row_value = row_expr
             else:
-                raise RuntimeError(f'Expected table row at index {row_index} to be struct/dict, got: {type(row_expr).__name__}')
+                raise_runtime_error(symbol, f'Expected table row at index {row_index} to be struct/dict, got: {type(row_expr).__name__}')
 
         rows.append(row_value)
 
@@ -143,7 +144,7 @@ def _create_table_from_list_of_structs(ctx: LingoContext, symbol:L_SYM_value):
         for field in column_fields:
             
             if field not in row:
-                raise RuntimeError(f'Missing expected table field {field!r} in row at index {row_index}')
+                raise_runtime_error(symbol, f'Missing expected table field {field!r} in row at index {row_index}')
             
             row_cells.append(value_to_str(unwrap_expression(ctx, row[field])))
 
@@ -218,16 +219,18 @@ def _eval_text(ctx: LingoContext, symbol: L_SYM_text):
         tag_name = _configure_text_style(ctx, symbol.style)
 
     else:
-        raise RuntimeError(f'Expected string value for text symbol, got: {type(text_value).__name__}')
+        raise_runtime_error(symbol, f'Expected string value for text symbol, got: {type(text_value).__name__}')
 
     
     ctx.tk.text_widget.insert('end', text_to_insert, (tag_name,))
+    ctx.tk.in_text_block = True
 
 def _eval_link(ctx: LingoContext, symbol: L_SYM_link):
     text_value = unwrap_expression(ctx, symbol.text) if symbol.text else unwrap_expression(ctx, symbol.link)
     link_value = unwrap_expression(ctx, symbol.link)
     tag_name = _configure_link_style(ctx, link_value)
     ctx.tk.text_widget.insert('end', text_value, (tag_name,))
+    ctx.tk.in_text_block = True
 
 def _eval_value(ctx: LingoContext, symbol: L_SYM_value):
 
@@ -237,10 +240,11 @@ def _eval_value(ctx: LingoContext, symbol: L_SYM_value):
 
     if symbol.type == 'str':
         if not isinstance(symbol.value, str):
-            raise RuntimeError(f'Expected string value for type "str", got: {type(symbol.value).__name__}')
+            raise_runtime_error(symbol, f'Expected string value for type "str", got: {type(symbol.value).__name__}')
 
         else:
             ctx.tk.text_widget.insert('end', symbol.value)
+            ctx.tk.in_text_block = True
 
     #
     # ordered or unordered list
@@ -259,7 +263,7 @@ def _eval_value(ctx: LingoContext, symbol: L_SYM_value):
 
                 ctx.tk.text_widget.insert('end', f'\n')
         else:
-            raise RuntimeError(f'Cannot render list value in text spec with display format: {symbol.display.format}')
+            raise_runtime_error(f'Cannot render list value in text spec with display format: {symbol.display.format}')
 
     #
     # tables
@@ -283,7 +287,7 @@ def _eval_value(ctx: LingoContext, symbol: L_SYM_value):
                 ctx.tk.text_widget.insert('end', f'{str(key):<{max_key_length + 2}} {value_to_str(value)}\n', (struct_tag,))
 
     else:
-        raise RuntimeError(f'Cannot render value type in text spec with type: {symbol.type} and element type: {symbol.element_type}')
+        raise_runtime_error(symbol, f'Cannot render value type in text spec with type: {symbol.type} and element type: {symbol.element_type}')
 
 # gui #
 
@@ -294,7 +298,7 @@ def _eval_button(ctx: LingoContext, symbol: L_SYM_button):
 
     text_value = unwrap_expression(ctx, symbol.text)
     if not isinstance(text_value, str):
-        raise RuntimeError(f'Expected string value for button text, got: {type(text_value).__name__}')
+        raise_runtime_error(symbol, f'Expected string value for button text, got: {type(text_value).__name__}')
 
     button = tkinter.Button(
         ctx.tk.text_widget,
@@ -388,12 +392,14 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
             _eval_text_runtime_symbol(ctx, item)
 
         except LingoUnknownSymbolError as e:
-            raise RuntimeError(f'Unknown symbol "{e}" in text spec at index {tk_ctx.main_block_index}')
+            raise_runtime_error(item, f'Unknown symbol "{e}" in text spec at index {tk_ctx.main_block_index}')
+
+        except LingoRuntimeError:
+            raise
 
         except Exception as e:
-            raise RuntimeError(f'Error evaluating text block item {tk_ctx.main_block_index}: {e}')
+            raise_runtime_error(item, f'Error evaluating text block item {tk_ctx.main_block_index}: {e}')
 
-        tk_ctx.in_text_block = item.L_SYM_NAME in ('text', 'link')
         tk_ctx.main_block_index += 1
         
     tk_ctx.text_widget.configure(state='disabled')
@@ -425,12 +431,14 @@ def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
             _eval_gui_runtime_symbol(ctx, item)
 
         except LingoUnknownSymbolError as e:
-            raise RuntimeError(f'Unknown symbol "{e}" in GUI spec at index {tk_ctx.main_block_index}')
+            raise_runtime_error(item, f'Unknown symbol "{e}" in GUI spec at index {tk_ctx.main_block_index}')
+
+        except LingoRuntimeError:
+            raise
 
         except Exception as e:
-            raise RuntimeError(f'Error evaluating GUI block item {tk_ctx.main_block_index}: {e}')
+            raise_runtime_error(item, f'Error evaluating GUI block item {tk_ctx.main_block_index}: {e}')
 
-        tk_ctx.in_text_block = item.L_SYM_NAME in ('text', 'link')
         tk_ctx.main_block_index += 1
 
     

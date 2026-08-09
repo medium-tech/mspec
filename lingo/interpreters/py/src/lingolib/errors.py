@@ -1,6 +1,9 @@
 class LingoLibError(Exception):
 	pass
 
+class LingoRuntimeError(LingoLibError):
+	pass
+
 class LingoSyntaxError(LingoLibError):
 	pass
 
