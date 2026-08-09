@@ -24,9 +24,10 @@ def parse_args(argv: list[str] | None = None):
 
     manual_parser = subparsers.add_parser('manual', help='Run a manual PoC test flow against a lingo spec')
     manual_parser.add_argument('spec', help='Path to lingo spec file')
-    manual_parser.add_argument('--ocr-extract', dest='ocr_extract', help='Assert text appears in OCR output')
+    manual_parser.add_argument('--assert-ocr-text', dest='assert_ocr_text', help='Assert text appears in OCR output')
     manual_parser.add_argument('--assert-stdout', dest='assert_stdout', help='Assert text appears in target stdout')
     manual_parser.add_argument('--assert-stderr', dest='assert_stderr', help='Assert text appears in target stderr')
+    manual_parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose logging')
 
     return parser.parse_args(argv)
 

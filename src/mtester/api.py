@@ -6,12 +6,14 @@ from datetime import datetime, UTC
 from pathlib import Path
 import subprocess
 import uuid
+import os
 
 from .types import RegionBox, PixelRGB
 
 from typing import Any
 
-from PIL import ImageGrab
+from PIL import Image, ImageGrab
+import pytesseract
 
 
 _RUNNING_SESSIONS: dict[str, subprocess.Popen] = {}
@@ -152,9 +154,97 @@ def capture_screen(region: RegionBox | None = None) -> dict[str, Any]:
 
 
 def ocr_extract(image_path: str, region: RegionBox | None = None) -> dict[str, Any]:
-	result = _placeholder_result('ocr_extract', image_path=image_path, region=region)
-	result['text'] = ''
-	return result
+	print(f'mtester.api.ocr_extract called with args: image_path={image_path!r}, region={region}')
+
+	if not os.path.exists(image_path):
+		return {
+			'ok': False,
+			'function': 'ocr_extract',
+			'args': {
+				'image_path': image_path,
+				'region': region,
+			},
+			'error': f'Image file not found: {image_path}',
+			'text': '',
+			'tokens': [],
+		}
+
+	try:
+		with Image.open(image_path) as source_image:
+			working_image = source_image.convert('RGB')
+
+			if region is not None:
+				x, y, width, height = region
+				if width <= 0 or height <= 0:
+					return {
+						'ok': False,
+						'function': 'ocr_extract',
+						'args': {
+							'image_path': image_path,
+							'region': region,
+						},
+						'error': f'Invalid region size: width={width}, height={height}',
+						'text': '',
+						'tokens': [],
+					}
+
+				crop_box = (x, y, x + width, y + height)
+				working_image = working_image.crop(crop_box)
+
+			ocr_text = pytesseract.image_to_string(working_image)
+			ocr_data = pytesseract.image_to_data(working_image, output_type=pytesseract.Output.DICT)
+
+		tokens = []
+		conf_values = []
+		for index, raw_text in enumerate(ocr_data.get('text', [])):
+			text_value = raw_text.strip()
+			if text_value == '':
+				continue
+
+			try:
+				confidence = float(ocr_data['conf'][index])
+			except (ValueError, TypeError):
+				confidence = -1.0
+
+			if confidence >= 0:
+				conf_values.append(confidence)
+
+			tokens.append({
+				'text': text_value,
+				'left': int(ocr_data['left'][index]),
+				'top': int(ocr_data['top'][index]),
+				'width': int(ocr_data['width'][index]),
+				'height': int(ocr_data['height'][index]),
+				'confidence': confidence,
+			})
+
+		average_confidence = (sum(conf_values) / len(conf_values)) if conf_values else -1.0
+
+		return {
+			'ok': True,
+			'function': 'ocr_extract',
+			'args': {
+				'image_path': image_path,
+				'region': region,
+			},
+			'text': ocr_text.strip(),
+			'tokens': tokens,
+			'token_count': len(tokens),
+			'average_confidence': average_confidence,
+		}
+
+	except Exception as e:
+		return {
+			'ok': False,
+			'function': 'ocr_extract',
+			'args': {
+				'image_path': image_path,
+				'region': region,
+			},
+			'error': f'{e.__class__.__name__}: {e}',
+			'text': '',
+			'tokens': [],
+		}
 	# Args: image_path points to an image file, region optionally limits OCR to a crop rectangle.
 	# Does: extracts text with positional metadata from the image using OCR.
 	# Returns: dict with plain text plus token/line boxes and confidence scores.
@@ -189,38 +279,100 @@ def type_text(text: str, submit: bool = False) -> dict[str, Any]:
 	# Returns: dict with typed length, submit flag, and input delivery status.
 
 
-def assert_text(expected: str, image_path: str, region: RegionBox | None = None, case_sensitive: bool = False) -> dict[str, Any]:
-	return _placeholder_result(
-		'assert_text',
-		expected=expected,
-		image_path=image_path,
-		region=region,
-		case_sensitive=case_sensitive,
+def assert_ocr_text(expected: str, image_path: str, region: RegionBox | None = None, case_sensitive: bool = False) -> dict[str, Any]:
+	print(
+		'mtester.api.assert_ocr_text called with args: '
+		f'expected={expected!r}, image_path={image_path!r}, region={region}, case_sensitive={case_sensitive}'
 	)
+
+	ocr_result = ocr_extract(image_path=image_path, region=region)
+	ocr_text = str(ocr_result.get('text', ''))
+
+	if not case_sensitive:
+		expected_check = expected.lower()
+		ocr_text_check = ocr_text.lower()
+	else:
+		expected_check = expected
+		ocr_text_check = ocr_text
+
+	passed = expected_check in ocr_text_check
+
+	return {
+		'ok': passed,
+		'function': 'assert_ocr_text',
+		'args': {
+			'expected': expected,
+			'image_path': image_path,
+			'region': region,
+			'case_sensitive': case_sensitive,
+		},
+		'found': passed,
+		'expected': expected,
+		'ocr_text': ocr_text,
+		'ocr': ocr_result,
+	}
 	# Args: expected is required text, image_path is OCR source image, region optionally scopes the check.
 	# Does: verifies expected text appears in OCR output with optional case sensitivity rules.
 	# Returns: dict with pass/fail, matched spans, and diagnostic OCR excerpts.
 
 
 def assert_stdout(expected: str, stdout_text: str, case_sensitive: bool = False) -> dict[str, Any]:
-	return _placeholder_result(
-		'assert_stdout',
-		expected=expected,
-		stdout_text=stdout_text,
-		case_sensitive=case_sensitive,
+	print(
+		'mtester.api.assert_stdout called with args: '
+		f'expected={expected!r}, stdout_text=<len {len(stdout_text)}>, case_sensitive={case_sensitive}'
 	)
+
+	if not case_sensitive:
+		expected_check = expected.lower()
+		stdout_check = stdout_text.lower()
+	else:
+		expected_check = expected
+		stdout_check = stdout_text
+
+	passed = expected_check in stdout_check
+
+	return {
+		'ok': passed,
+		'function': 'assert_stdout',
+		'args': {
+			'expected': expected,
+			'case_sensitive': case_sensitive,
+		},
+		'found': passed,
+		'expected': expected,
+		'stdout_text': stdout_text,
+	}
 	# Args: expected is required text and stdout_text is collected process stdout from the app run.
 	# Does: verifies expected text appears in stdout with optional case sensitivity.
 	# Returns: dict with pass/fail and matching diagnostics for stdout assertions.
 
 
 def assert_stderr(expected: str, stderr_text: str, case_sensitive: bool = False) -> dict[str, Any]:
-	return _placeholder_result(
-		'assert_stderr',
-		expected=expected,
-		stderr_text=stderr_text,
-		case_sensitive=case_sensitive,
+	print(
+		'mtester.api.assert_stderr called with args: '
+		f'expected={expected!r}, stderr_text=<len {len(stderr_text)}>, case_sensitive={case_sensitive}'
 	)
+
+	if not case_sensitive:
+		expected_check = expected.lower()
+		stderr_check = stderr_text.lower()
+	else:
+		expected_check = expected
+		stderr_check = stderr_text
+
+	passed = expected_check in stderr_check
+
+	return {
+		'ok': passed,
+		'function': 'assert_stderr',
+		'args': {
+			'expected': expected,
+			'case_sensitive': case_sensitive,
+		},
+		'found': passed,
+		'expected': expected,
+		'stderr_text': stderr_text,
+	}
 	# Args: expected is required text and stderr_text is collected process stderr from the app run.
 	# Does: verifies expected text appears in stderr with optional case sensitivity.
 	# Returns: dict with pass/fail and matching diagnostics for stderr assertions.
