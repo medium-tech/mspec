@@ -34,6 +34,9 @@ def _placeholder_result(function_name: str, **kwargs) -> dict[str, Any]:
 		'args': kwargs,
 	}
 
+#
+# low level program interface
+#
 
 def launch_target(command: list[str], cwd: str | None = None, env: dict[str, str] | None = None) -> dict[str, Any]:
 	print(f'mtester.api.launch_target called with args: command={command}, cwd={cwd}, env={env}')
@@ -337,6 +340,9 @@ def ocr_extract(image_path: str, region: RegionBox | None = None) -> dict[str, A
 	# Does: extracts text with positional metadata from the image using OCR.
 	# Returns: dict with plain text plus token/line boxes and confidence scores.
 
+#
+# assertions and detections
+#
 
 def detect_colors(image_path: str, palette: dict[str, tuple[int, int, int]]) -> dict[str, Any]:
 	return _placeholder_result('detect_colors', image_path=image_path, palette=palette)
