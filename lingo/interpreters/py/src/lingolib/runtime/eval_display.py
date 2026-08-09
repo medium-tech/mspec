@@ -1,5 +1,6 @@
 import tkinter
 import webbrowser
+from tkinter import messagebox
 
 
 from lingolib.constants import *
@@ -367,6 +368,28 @@ def _init_runtime_state(ctx: LingoContext, state_symbol: L_SYM_state) -> LingoSt
     state_values = {field_name: unwrap_expression(ctx, field_value.default) for field_name, field_value in state_fields.items()}
     return LingoStateRuntimeContext(fields=state_fields, values=state_values)
 
+
+def _configure_menu_bar(ctx: LingoContext):
+    menubar = tkinter.Menu(ctx.tk.root)
+
+    file_menu = tkinter.Menu(menubar, tearoff=0)
+    file_menu.add_command(label='Stop Running File', command=ctx.tk.root.destroy)
+    menubar.add_cascade(label='File', menu=file_menu)
+
+    edit_menu = tkinter.Menu(menubar, tearoff=0)
+    edit_menu.add_command(label='Copy', command=lambda: ctx.tk.text_widget.event_generate('<<Copy>>'))
+    edit_menu.add_command(label='Select All', command=lambda: ctx.tk.text_widget.event_generate('<<SelectAll>>'))
+    menubar.add_cascade(label='Edit', menu=edit_menu)
+
+    lingo_menu = tkinter.Menu(menubar, tearoff=0)
+    lingo_menu.add_command(
+        label='About Lingo',
+        command=lambda: messagebox.showinfo('Lingo', 'Lingo Runtime\nTkinter preview window')
+    )
+    menubar.add_cascade(label='Lingo', menu=lingo_menu)
+
+    ctx.tk.root.configure(menu=menubar)
+
 #
 # spec evaluators
 #
@@ -379,6 +402,7 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
     
     tk_ctx.root.title('Lingo Text Spec')
     tk_ctx.root.geometry('800x1200')
+    _configure_menu_bar(ctx)
 
     tk_ctx.text_widget.pack(fill='both', expand=True)
 
@@ -418,6 +442,7 @@ def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
 
     tk_ctx.root.title('Lingo GUI Spec')
     tk_ctx.root.geometry('800x1200')
+    _configure_menu_bar(ctx)
 
     tk_ctx.text_widget.pack(fill='both', expand=True)
 
