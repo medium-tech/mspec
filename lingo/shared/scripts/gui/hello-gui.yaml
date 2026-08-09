@@ -29,5 +29,5 @@ block:
         call: 'ops.increment_counter'
         text: 'increment count'
     - 'total count: '
-    - text:
-        get: state.counter
+    # - text:
+    #     get: state.counter

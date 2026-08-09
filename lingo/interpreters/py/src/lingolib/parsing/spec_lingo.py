@@ -77,7 +77,7 @@ def create_spec_ast_from_dict(ctx: LingoContext, data: dict) -> LingoASTSpec:
 
     lingo_args = {
         'L_SRC': 'lingo',
-        'L_FILE': ctx.interpreter.file,
+        'L_FILE': ctx.parser.file,
         'L_LINE': get_yaml_line(data)
     }
     for lingo_key, value in data['lingo'].items():

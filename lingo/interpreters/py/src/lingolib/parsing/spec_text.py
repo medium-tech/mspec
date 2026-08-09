@@ -31,7 +31,7 @@ def spec_text_ast_from_dict(
     block = symbols.L_SYM_block(
         L_SRC='block',
         items=block_items,
-        L_FILE=ctx.interpreter.file,
+        L_FILE=ctx.parser.file,
         L_LINE=get_yaml_line(block_data),
     )
 

@@ -28,7 +28,7 @@ def parse_define_symbol(
         'L_SRC': f'{L_SRC}.define',
         'name': name,
         'type': define_type,
-        'L_FILE': ctx.interpreter.file,
+        'L_FILE': ctx.parser.file,
         'L_LINE': get_yaml_line(data)
     }
 
@@ -91,6 +91,6 @@ def parse_func_symbol(ctx: LingoContext, name: str, data: dict) -> symbols.L_SYM
         func=parsed_func_expr,
         return_=return_symbol,
         description=data.get('description', ''),
-        L_FILE=ctx.interpreter.file,
+        L_FILE=ctx.parser.file,
         L_LINE=get_yaml_line(data)
     )

@@ -1,23 +1,14 @@
 import tkinter
 import webbrowser
 
-from dataclasses import dataclass
 
 from lingolib.constants import *
-from lingolib.context import LingoContext
+from lingolib.context import LingoContext, LingoTKRuntimeContext
 from lingolib.errors import LingoUnknownSymbolError
 from lingolib.parsing import LingoASTTextSpec, LingoASTGUISpec
 from lingolib.runtime.eval_exe import unwrap_expression
 from lingolib.types import LingoStyleOptions, value_to_str
 from lingolib.parsing.symbols import *
-
-@dataclass(slots=True)
-class LingoTKinterContext:
-    root: tkinter.Tk
-    text_widget: tkinter.Text
-    lingo: LingoContext
-    main_block_index: int = 0
-    in_text_block: bool = False
 
 DisplayRuntimeSymbols = L_SYM_break | L_SYM_heading | L_SYM_text | L_SYM_link | L_SYM_value
 
@@ -28,7 +19,7 @@ TK_TABLE_HEADER_TAG = 'table-header-monospace'
 # helpers
 #
 
-def _configure_text_style(tk_ctx: LingoTKinterContext, style: LingoStyleOptions) -> str:
+def _configure_text_style(tk_ctx: LingoTKRuntimeContext, style: LingoStyleOptions) -> str:
     tag_name = f'text-bold-{style.bold}-italic-{style.italic}-underline-{style.underline}-color-{style.color}'
 
     
@@ -55,7 +46,7 @@ def _configure_text_style(tk_ctx: LingoTKinterContext, style: LingoStyleOptions)
 
     return tag_name
 
-def _configure_link_style(tk_ctx: LingoTKinterContext, url: str) -> str:
+def _configure_link_style(tk_ctx: LingoTKRuntimeContext, url: str) -> str:
     tag_name = f'link-{url}'
 
     if tag_name not in tk_ctx.text_widget.tag_names():
@@ -64,14 +55,14 @@ def _configure_link_style(tk_ctx: LingoTKinterContext, url: str) -> str:
 
     return tag_name
 
-def _configure_heading_styles(tk_ctx: LingoTKinterContext):
+def _configure_heading_styles(tk_ctx: LingoTKRuntimeContext):
     for level in range(MIN_HEADING_LEVEL, MAX_HEADING_LEVEL + 1):
             heading = HEADING_FONTS[level]
             heading_opts = {'font': (heading['font']['family'], heading['font']['size'])}
             heading_opts.update(heading.get('options', {}))
             tk_ctx.text_widget.tag_configure(f'heading-{level}', **heading_opts)
 
-def _configure_table_styles(tk_ctx: LingoTKinterContext):
+def _configure_table_styles(tk_ctx: LingoTKRuntimeContext):
     
     if TK_TABLE_TEXT_TAG not in tk_ctx.text_widget.tag_names():
         table_text_font = (
@@ -89,7 +80,7 @@ def _configure_table_styles(tk_ctx: LingoTKinterContext):
         )
         tk_ctx.text_widget.tag_configure(TK_TABLE_HEADER_TAG, font=table_header_font)
 
-def _create_table_from_list_of_structs(tk_ctx: LingoTKinterContext, symbol:L_SYM_value):
+def _create_table_from_list_of_structs(tk_ctx: LingoTKRuntimeContext, symbol:L_SYM_value):
 
     #
     # init
@@ -182,23 +173,23 @@ def _create_table_from_list_of_structs(tk_ctx: LingoTKinterContext, symbol:L_SYM
 
     tk_ctx.text_widget.insert('end', border_line(), (TK_TABLE_TEXT_TAG,))
 
-    
-
 #
 # symbol evaluators
 #
 
-def _eval_break(tk_ctx: LingoTKinterContext, symbol: L_SYM_break):
+# text #
+
+def _eval_break(tk_ctx: LingoTKRuntimeContext, symbol: L_SYM_break):
     num_breaks = max(MIN_LINE_BREAKS, min(MAX_LINE_BREAKS, symbol.breaks))
     tk_ctx.text_widget.insert('end', '\n' * num_breaks)
 
-def _eval_header(tk_ctx: LingoTKinterContext, symbol: L_SYM_heading):
+def _eval_header(tk_ctx: LingoTKRuntimeContext, symbol: L_SYM_heading):
     text_value = unwrap_expression(tk_ctx.lingo, symbol.text)
     level_value = max(MIN_HEADING_LEVEL, min(MAX_HEADING_LEVEL, symbol.level))
     pre_spacer = '\n' if tk_ctx.main_block_index != 0 else ''
     tk_ctx.text_widget.insert('end', f'{pre_spacer}{text_value}', (f'heading-{level_value}',))
 
-def _eval_text(tk_ctx: LingoTKinterContext, symbol: L_SYM_text):
+def _eval_text(tk_ctx: LingoTKRuntimeContext, symbol: L_SYM_text):
     assert isinstance(symbol.style, LingoStyleOptions)
 
     if not tk_ctx.in_text_block and tk_ctx.main_block_index != 0:
@@ -212,13 +203,13 @@ def _eval_text(tk_ctx: LingoTKinterContext, symbol: L_SYM_text):
     tag_name = _configure_text_style(tk_ctx, symbol.style)
     tk_ctx.text_widget.insert('end', text_value, (tag_name,))
 
-def _eval_link(tk_ctx: LingoTKinterContext, symbol: L_SYM_link):
+def _eval_link(tk_ctx: LingoTKRuntimeContext, symbol: L_SYM_link):
     text_value = unwrap_expression(tk_ctx.lingo, symbol.text) if symbol.text else unwrap_expression(tk_ctx.lingo, symbol.link)
     link_value = unwrap_expression(tk_ctx.lingo, symbol.link)
     tag_name = _configure_link_style(tk_ctx, link_value)
     tk_ctx.text_widget.insert('end', text_value, (tag_name,))
 
-def _eval_value(tk_ctx: LingoTKinterContext, symbol: L_SYM_value):
+def _eval_value(tk_ctx: LingoTKRuntimeContext, symbol: L_SYM_value):
 
     #
     # type str
@@ -274,7 +265,9 @@ def _eval_value(tk_ctx: LingoTKinterContext, symbol: L_SYM_value):
     else:
         raise RuntimeError(f'Cannot render value type in text spec with type: {symbol.type} and element type: {symbol.element_type}')
 
-def _eval_button(tk_ctx: LingoTKinterContext, symbol: L_SYM_button):
+# gui #
+
+def _eval_button(tk_ctx: LingoTKRuntimeContext, symbol: L_SYM_button):
     """placeholder button that just prints a msg to console when clicked"""
     def on_button_click():
         print(f'Button clicked: {symbol.call}')
@@ -302,7 +295,11 @@ def _eval_button(tk_ctx: LingoTKinterContext, symbol: L_SYM_button):
     )
     tk_ctx.text_widget.window_create('end', window=button, padx=BUTTON_MARGIN_X, pady=BUTTON_MARGIN_Y)
 
-def _eval_text_runtime_symbol(tk_ctx: LingoTKinterContext, symbol: DisplayRuntimeSymbols):
+#
+# spec dispatch
+#
+
+def _eval_text_runtime_symbol(tk_ctx: LingoTKRuntimeContext, symbol: DisplayRuntimeSymbols):
     match symbol.L_SYM_NAME:
         case 'break':
             _eval_break(tk_ctx, symbol)
@@ -317,7 +314,7 @@ def _eval_text_runtime_symbol(tk_ctx: LingoTKinterContext, symbol: DisplayRuntim
         case _:
             raise LingoUnknownSymbolError(symbol.L_SYM_NAME)
 
-def _eval_gui_runtime_symbol(tk_ctx: LingoTKinterContext, symbol: DisplayRuntimeSymbols):
+def _eval_gui_runtime_symbol(tk_ctx: LingoTKRuntimeContext, symbol: DisplayRuntimeSymbols):
     try:
         _eval_text_runtime_symbol(tk_ctx, symbol)
     except LingoUnknownSymbolError as e:
@@ -331,72 +328,71 @@ def _eval_gui_runtime_symbol(tk_ctx: LingoTKinterContext, symbol: DisplayRuntime
 # spec evaluators
 #
 
-def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
-
-    tkinter_ctx = LingoTKinterContext(
-        root=tkinter.Tk(),
-        text_widget=tkinter.Text(wrap='word', padx=12, pady=12, font=(TEXT_FONT['font']['family'], TEXT_FONT['font']['size'])),
-        lingo=ctx,
+def _init_tk_context(ctx: LingoContext) -> LingoTKRuntimeContext:
+    return LingoContext.add_tk_runtime_context(
+        ctx, 
+        root=tkinter.Tk(), 
+        text_widget=tkinter.Text(wrap='word', padx=12, pady=12, font=(TEXT_FONT['font']['family'], TEXT_FONT['font']['size']))
     )
 
-    root = tkinter_ctx.root
-    root.title('Lingo Text Spec')
-    root.geometry('800x1200')
+def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
 
-    text_widget = tkinter_ctx.text_widget
-    text_widget.pack(fill='both', expand=True)
+    ctx = _init_tk_context(ctx)
 
-    _configure_heading_styles(tkinter_ctx)
+    tk_ctx = ctx.tk
+    
+    tk_ctx.root.title('Lingo Text Spec')
+    tk_ctx.root.geometry('800x1200')
 
-    tkinter_ctx.in_text_block = False
+    tk_ctx.text_widget.pack(fill='both', expand=True)
+
+    _configure_heading_styles(tk_ctx)
+
+    tk_ctx.in_text_block = False
 
     for item in ast.block.items:
         try:
-            _eval_text_runtime_symbol(tkinter_ctx, item)
+            _eval_text_runtime_symbol(tk_ctx, item)
 
         except LingoUnknownSymbolError as e:
-            raise RuntimeError(f'Unknown symbol "{e}" in text spec at index {tkinter_ctx.main_block_index}')
+            raise RuntimeError(f'Unknown symbol "{e}" in text spec at index {tk_ctx.main_block_index}')
 
         except Exception as e:
-            raise RuntimeError(f'Error evaluating text block item {tkinter_ctx.main_block_index}: {e}')
+            raise RuntimeError(f'Error evaluating text block item {tk_ctx.main_block_index}: {e}')
 
-        tkinter_ctx.in_text_block = item.L_SYM_NAME in ('text', 'link')
-        tkinter_ctx.main_block_index += 1
+        tk_ctx.in_text_block = item.L_SYM_NAME in ('text', 'link')
+        tk_ctx.main_block_index += 1
         
-    text_widget.configure(state='disabled')
-    root.mainloop()
+    tk_ctx.text_widget.configure(state='disabled')
+    tk_ctx.root.mainloop()
 
 def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
 
-    tkinter_ctx = LingoTKinterContext(
-        root=tkinter.Tk(),
-        text_widget=tkinter.Text(wrap='word', padx=12, pady=12, font=(TEXT_FONT['font']['family'], TEXT_FONT['font']['size'])),
-        lingo=ctx,
-    )
+    ctx = _init_tk_context(ctx)
 
-    root = tkinter_ctx.root
-    root.title('Lingo GUI Spec')
-    root.geometry('800x1200')
+    tk_ctx = ctx.tk
 
-    text_widget = tkinter_ctx.text_widget
-    text_widget.pack(fill='both', expand=True)
+    tk_ctx.root.title('Lingo GUI Spec')
+    tk_ctx.root.geometry('800x1200')
 
-    _configure_heading_styles(tkinter_ctx)
+    tk_ctx.text_widget.pack(fill='both', expand=True)
 
-    tkinter_ctx.in_text_block = False
+    _configure_heading_styles(tk_ctx)
+
+    tk_ctx.in_text_block = False
 
     for item in ast.block.items:
         try:
-            _eval_gui_runtime_symbol(tkinter_ctx, item)
+            _eval_gui_runtime_symbol(tk_ctx, item)
 
         except LingoUnknownSymbolError as e:
-            raise RuntimeError(f'Unknown symbol "{e}" in GUI spec at index {tkinter_ctx.main_block_index}')
+            raise RuntimeError(f'Unknown symbol "{e}" in GUI spec at index {tk_ctx.main_block_index}')
 
         except Exception as e:
-            raise RuntimeError(f'Error evaluating GUI block item {tkinter_ctx.main_block_index}: {e}')
+            raise RuntimeError(f'Error evaluating GUI block item {tk_ctx.main_block_index}: {e}')
 
-        tkinter_ctx.in_text_block = item.L_SYM_NAME in ('text', 'link')
-        tkinter_ctx.main_block_index += 1
+        tk_ctx.in_text_block = item.L_SYM_NAME in ('text', 'link')
+        tk_ctx.main_block_index += 1
         
-    text_widget.configure(state='disabled')
-    root.mainloop()
+    tk_ctx.text_widget.configure(state='disabled')
+    tk_ctx.root.mainloop()

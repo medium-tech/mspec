@@ -32,7 +32,7 @@ def spec_exe_ast_from_dict(
         main: symbols.L_SYM_main = symbols.L_SYM_main(
             L_SRC='main',
             expr=main_expr,
-            L_FILE=ctx.interpreter.file,
+            L_FILE=ctx.parser.file,
             L_LINE=get_yaml_line(main_dict)
         )
     except KeyError:

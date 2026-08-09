@@ -1,6 +1,6 @@
 import os
 
-from lingolib.context import LingoContext, LingoInterpreterContext
+from lingolib.context import LingoContext
 from lingolib.errors import LingoSyntaxError
 from lingolib.parsing import (
     lingo_ast_to_string,
@@ -10,7 +10,6 @@ from lingolib.parsing import (
     LingoASTExeSpec, 
     LingoASTAppSpec, 
     LingoASTGUISpec,
-    LingoASTLibSpec,
     LingoASTTextSpec
 )
 
@@ -30,7 +29,7 @@ def create_ast_from_file(ctx: LingoContext, path: str) -> LingoASTSpec:
     except yaml.YAMLError as e:
         raise LingoSyntaxError(f'failed to parse YAML file {path}: {e}')
     
-    parser_ctx = LingoInterpreterContext.new_from_ctx(ctx, file=os.path.abspath(path))
+    parser_ctx = LingoContext.add_parser_context(ctx, src='', file=os.path.abspath(path), line=0, col=0)
     return create_spec_ast_from_dict(parser_ctx, doc)
 
 # file wrappers #

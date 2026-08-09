@@ -37,7 +37,7 @@ def create_expression_ast(
         type_name = type(data).__name__
         value = data.replace(r'\n', '\n').replace(r'\t', '\t') if type_name == 'str' else data
         try:
-            l_file = ctx.interpreter.file
+            l_file = ctx.parser.file
             l_line = get_yaml_line(data)
         except AttributeError:
             l_file = ''
@@ -54,7 +54,7 @@ def create_expression_ast(
     elif isinstance(data, LingoLanguageError):
         ctx.log.debug(f'create_expression_ast - error: {data!r}')
         try:
-            l_file = ctx.interpreter.file
+            l_file = ctx.parser.file
             l_line = get_yaml_line(data)
         except AttributeError:
             l_file = ''
@@ -92,8 +92,8 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
 
     def src_info():
         msg = f"; '{L_SRC}'"
-        if ctx.interpreter.file:
-            msg += f' in file {ctx.interpreter.file!r}'
+        if ctx.parser.file:
+            msg += f' in file {ctx.parser.file!r}'
             if line_no != -1:
                 msg += f' at line {line_no}'
         return msg
@@ -102,14 +102,14 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
         return symbols.L_SYM_handle(
             L_SRC=f'{L_SRC}.handle',
             expr=create_expression_ast(ctx, data['handle'], f'{L_SRC}.handle.expr'),
-            L_FILE=ctx.interpreter.file,
+            L_FILE=ctx.parser.file,
             L_LINE=get_yaml_line(data['handle'])
         )
 
     elif 'error' in keys:
         args = {
             'L_SRC': f'{L_SRC}.error',
-            'L_FILE': ctx.interpreter.file,
+            'L_FILE': ctx.parser.file,
             'L_LINE': get_yaml_line(data)
         }
         for key in keys:
@@ -143,7 +143,7 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
                     type=data['type'],
                     value=value,
                     L_SRC=f'{L_SRC}.value',
-                    L_FILE=ctx.interpreter.file,
+                    L_FILE=ctx.parser.file,
                     L_LINE=get_yaml_line(data['value'])
                 )
             
@@ -195,7 +195,7 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
                     element_type=element_type,
                     display=display,
                     L_SRC=f'{L_SRC}.value',
-                    L_FILE=ctx.interpreter.file,
+                    L_FILE=ctx.parser.file,
                     L_LINE=get_yaml_line(data['value'])
                 )
 
@@ -212,7 +212,7 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
                     type=data['type'],
                     value=data['value'],
                     L_SRC=f'{L_SRC}.value',
-                    L_FILE=ctx.interpreter.file,
+                    L_FILE=ctx.parser.file,
                     L_LINE=get_yaml_line(data['value'])
                 )
 
@@ -222,7 +222,7 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
                     type=data['type'],
                     value=create_expression_ast(ctx, data['value'], f'{L_SRC}.value'),
                     L_SRC=f'{L_SRC}.value',
-                    L_FILE=ctx.interpreter.file,
+                    L_FILE=ctx.parser.file,
                     L_LINE=get_yaml_line(data['value'])
                 )
 
@@ -255,7 +255,7 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
             return symbols.L_SYM_break(
                         L_SRC=f'{L_SRC}.break',
                         breaks=data['break'],
-                        L_FILE=ctx.interpreter.file,
+                        L_FILE=ctx.parser.file,
                         L_LINE=get_yaml_line(data['break']),
                     )
         else:
@@ -269,7 +269,7 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
             L_SRC=f'{L_SRC}.heading',
             text=create_expression_ast(ctx, data['heading'], f'{L_SRC}.heading.text'),
             level=level,
-            L_FILE=ctx.interpreter.file,
+            L_FILE=ctx.parser.file,
             L_LINE=get_yaml_line(data['heading']),
         )
 
@@ -283,7 +283,7 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
             L_SRC=f'{L_SRC}.link',
             link=create_expression_ast(ctx, data['link'], f'{L_SRC}.link'),
             text=text_expr,
-            L_FILE=ctx.interpreter.file,
+            L_FILE=ctx.parser.file,
             L_LINE=get_yaml_line(data['link']),
         )
 
@@ -297,7 +297,7 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
             L_SRC=f'{L_SRC}.text',
             text=create_expression_ast(ctx, data['text'], f'{L_SRC}.text'),
             style=style,
-            L_FILE=ctx.interpreter.file,
+            L_FILE=ctx.parser.file,
             L_LINE=get_yaml_line(data['text']),
         )
 
@@ -318,7 +318,7 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
             L_SRC=f'{L_SRC}.button',
             call=call_str,
             text=text_expr,
-            L_FILE=ctx.interpreter.file,
+            L_FILE=ctx.parser.file,
             L_LINE=get_yaml_line(data['button']),
         )
 
@@ -340,7 +340,7 @@ def parse_expr_eq(ctx, data: dict, L_SRC: str, src_info):
         a=create_expression_ast(ctx, a_expr, f'{L_SRC}.eq.a'),
         b=create_expression_ast(ctx, b_expr, f'{L_SRC}.eq.b'),
         L_SRC=f'{L_SRC}.eq',
-        L_FILE=ctx.interpreter.file,
+        L_FILE=ctx.parser.file,
         L_LINE=get_yaml_line(data['eq'])
     )
 
@@ -349,7 +349,7 @@ def parse_expr_int(ctx, data: dict, L_SRC: str, src_info):
     keys = set(data.keys())
     args = {
         'L_SRC': f'{L_SRC}.int',
-        'L_FILE': ctx.interpreter.file,
+        'L_FILE': ctx.parser.file,
         'L_LINE': get_yaml_line(data)
     }
 
@@ -383,7 +383,7 @@ def parse_expr_add(ctx, data: dict, L_SRC: str, src_info):
         a=create_expression_ast(ctx, a_expr, f'{L_SRC}.add.a'),
         b=create_expression_ast(ctx, b_expr, f'{L_SRC}.add.b'),
         L_SRC=f'{L_SRC}.add',
-        L_FILE=ctx.interpreter.file,
+        L_FILE=ctx.parser.file,
         L_LINE=get_yaml_line(data['add'])
     )
 
@@ -394,7 +394,7 @@ def parse_expr_str(ctx, data: dict, L_SRC: str):
     return symbols.L_SYM_str(
         object=create_expression_ast(ctx, data['str'], f'{L_SRC}.str.object'),
         L_SRC=f'{L_SRC}.str',
-        L_FILE=ctx.interpreter.file,
+        L_FILE=ctx.parser.file,
         L_LINE=get_yaml_line(data['str'])
     )
 
@@ -405,7 +405,7 @@ def parse_expr_concat(ctx, data: dict, L_SRC: str, src_info):
         return symbols.L_SYM_concat(
             items=create_expression_ast(ctx, data['concat'], f'{L_SRC}.concat.items'),
             L_SRC=f'{L_SRC}.concat',
-            L_FILE=ctx.interpreter.file,
+            L_FILE=ctx.parser.file,
             L_LINE=get_yaml_line(data['concat'])
         )
     else:
@@ -416,7 +416,7 @@ def parse_expr_join(ctx, data: dict, L_SRC: str, src_info):
     ctx.log.debug(f'create_expression_ast_from_dict - join expression: {data}')
     args = {
         'L_SRC': f'{L_SRC}.join',
-        'L_FILE': ctx.interpreter.file,
+        'L_FILE': ctx.parser.file,
         'L_LINE': get_yaml_line(data)
     }
 
@@ -440,7 +440,7 @@ def parse_expr_get(ctx, data: dict, L_SRC: str, src_info):
     return symbols.L_SYM_get(
         name=data['get'],
         L_SRC=f'{L_SRC}.get',
-        L_FILE=ctx.interpreter.file,
+        L_FILE=ctx.parser.file,
         L_LINE=get_yaml_line(data['get'])
     )
 
@@ -454,6 +454,6 @@ def parse_expr_set(ctx, data: dict, L_SRC: str, src_info):
         name=data['set'],
         value=create_expression_ast(ctx, data['to'], f'{L_SRC}.set.to'),
         L_SRC=f'{L_SRC}.set',
-        L_FILE=ctx.interpreter.file,
+        L_FILE=ctx.parser.file,
         L_LINE=get_yaml_line(data['set'])
     )

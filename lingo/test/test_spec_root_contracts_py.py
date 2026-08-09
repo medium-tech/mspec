@@ -8,7 +8,7 @@ if str(PY_SRC) not in sys.path:
     sys.path.insert(0, str(PY_SRC))
 
 
-from lingolib.context import LingoContext, LingoInterpreterContext
+from lingolib.context import LingoContext, LingoParserContext
 from lingolib.errors import LingoSyntaxError
 from lingolib.parsing import create_spec_ast_from_dict
 
@@ -17,7 +17,7 @@ class TestSpecRootContractsPython(unittest.TestCase):
 
     def _ctx(self) -> LingoContext:
         return LingoContext(
-            interpreter=LingoInterpreterContext(
+            parser=LingoParserContext(
                 file='<memory>'
             )
         )

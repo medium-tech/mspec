@@ -22,7 +22,7 @@ def _parse_state_symbol(ctx: LingoContext, data: dict) -> symbols.L_SYM_state:
     return symbols.L_SYM_state(
         L_SRC='state',
         fields=fields,
-        L_FILE=ctx.interpreter.file,
+        L_FILE=ctx.parser.file,
         L_LINE=get_yaml_line(data)
     )
 
@@ -40,7 +40,7 @@ def _parse_ops_symbol(ctx: LingoContext, data: dict) -> symbols.L_SYM_ops:
     return symbols.L_SYM_ops(
         L_SRC='ops',
         funcs=funcs,
-        L_FILE=ctx.interpreter.file,
+        L_FILE=ctx.parser.file,
         L_LINE=get_yaml_line(data)
     )
 
@@ -68,7 +68,7 @@ def spec_gui_ast_from_dict(
     block = symbols.L_SYM_block(
         L_SRC='block',
         items=block_items,
-        L_FILE=ctx.interpreter.file,
+        L_FILE=ctx.parser.file,
         L_LINE=get_yaml_line(block_data),
     )
 
