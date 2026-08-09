@@ -162,12 +162,7 @@ def list_windows() -> dict[str, Any]:
 	print('mtester.api.list_windows called')
 
 	if platform.system() != 'Darwin':
-		return {
-			'ok': False,
-			'function': 'list_windows',
-			'error': 'Window listing is currently implemented for macOS only.',
-			'windows': [],
-		}
+		raise RuntimeError('list_windows is only supported on macOS currently.')
 
 	script = r'''
 tell application "System Events"
@@ -243,31 +238,6 @@ end tell
 		'function': 'list_windows',
 		'windows': windows,
 		'count': len(windows),
-	}
-
-
-def select_window(windows: list[dict[str, Any]], index: int) -> dict[str, Any]:
-	print(f'mtester.api.select_window called with args: index={index}')
-
-	if not windows:
-		return {
-			'ok': False,
-			'function': 'select_window',
-			'error': 'No windows available to select.',
-		}
-
-	if index < 0 or index >= len(windows):
-		return {
-			'ok': False,
-			'function': 'select_window',
-			'error': f'Index out of range: {index}',
-			'max_index': len(windows) - 1,
-		}
-
-	return {
-		'ok': True,
-		'function': 'select_window',
-		'selected': windows[index],
 	}
 
 

@@ -15,7 +15,7 @@ def json_print(data) -> None:
 
 def parse_args(argv: list[str] | None = None):
     parser = argparse.ArgumentParser(
-        description='mtester: application testing with image OCR and color detection (manual window picking is macOS-only for now)'
+        description='mtester: application testing with image OCR and color detection'
     )
     subparsers = parser.add_subparsers(dest='command', required=True)
 
@@ -27,6 +27,9 @@ def parse_args(argv: list[str] | None = None):
         help='Run a manual PoC test flow against a lingo spec (window list/select is macOS-only for now)'
     )
     manual_parser.add_argument('spec', help='Path to lingo spec file')
+    manual_parser.add_argument('--window-title', dest='window_title', help='Window title to select (currently only OSX)')
+    manual_parser.add_argument('--select-window', dest='select_window', action='store_true', help='Select a window from the list of open windows (currently only OSX)')
+    manual_parser.add_argument('--capture-region', dest='capture_region', help='Capture region in format x,y,width,height (cannot supply w/ --select-window)')
     manual_parser.add_argument('--assert-ocr-text', dest='assert_ocr_text', help='Assert text appears in OCR output')
     manual_parser.add_argument('--assert-stdout', dest='assert_stdout', help='Assert text appears in target stdout')
     manual_parser.add_argument('--assert-stderr', dest='assert_stderr', help='Assert text appears in target stderr')
