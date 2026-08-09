@@ -6,10 +6,10 @@ from lingolib.errors import LingoLibError, LingoTypeError
 from lingolib.types import LingoPrimitiveTypes, LingoValue, LingoLanguageError, error_to_str, value_to_str
 
 __all__ = [
-	'unwrap_value',
-	'evaluate_exe_spec',
-	'execute_expression',
-	'unwrap_expression'
+    'unwrap_value',
+    'evaluate_exe_spec',
+    'execute_expression',
+    'unwrap_expression'
 ]
 
 #
@@ -84,6 +84,45 @@ def unwrap_expression(ctx, expr):
 # symbol executors
 #
 
+# core #
+
+def L_EXPR_get(ctx, symbol:symbols.L_SYM_get):
+    try:
+        # currently only state.<field> is supported
+        # eventually self.<field> and params.<field>
+        # as well as 
+        data_source, field_name = symbol.name.split('.')
+    except ValueError:
+        return LingoLanguageError(f'get symbol name must be in the form data_source.field_name, got: {symbol.name!r}', code='GET_EXPR_NAME_ERROR')
+
+    # get data source #
+
+    match data_source:
+        case 'state':
+
+            try:
+                data = ctx.tk.state.values
+            except AttributeError as e:
+                error_code = 'GET_EXPR_MISSING_STATE'
+                error_msg = f'no state context available for {field_name!r}'
+                ctx.log.error(f'{error_code} - {error_msg}, python exc: {e.__class__.__name__}: {e}')
+                return LingoLanguageError(f'{error_code} - {error_msg}', code=error_code)
+            
+        case _:
+            return LingoLanguageError(f'unsupported data source "{data_source}" for get: {symbol.name!r}', code='GET_EXPR_NAME_ERROR')
+
+    # get field from data source #
+
+    try:
+        value = data[field_name]
+    except KeyError as e:
+        error_code = 'GET_EXPR_KEY_ERROR'
+        error_msg = f'missing {field_name!r} in {symbol.name}'
+        ctx.log.error(f'{error_code} {error_msg}, python exc: {e.__class__.__name__}: {e}')
+        return LingoLanguageError(error_msg, code=error_code)
+    
+    return value
+
 def L_EXPR_value(ctx, symbol:symbols.L_SYM_value):
 
     result = unwrap_expression(ctx, symbol.value)
@@ -116,7 +155,7 @@ def L_EXPR_handle(ctx, symbol:symbols.L_SYM_handle):
     else:
         return result
     
-# comparison
+# comparison #
 
 def L_EXPR_eq(ctx, symbol:symbols.L_SYM_eq):
     try:
@@ -127,7 +166,7 @@ def L_EXPR_eq(ctx, symbol:symbols.L_SYM_eq):
     
     return LingoValue(type='bool', value=a == b)
 
-# int
+# int #
 
 def L_EXPR_int(ctx, symbol:symbols.L_SYM_int):
     try:
@@ -167,7 +206,7 @@ def L_EXPR_add(ctx, symbol:symbols.L_SYM_add):
     else:
         return LingoLanguageError(f'args must be int or float for add symbol, got a: {type(a).__name__} and b: {type(b).__name__}', code='TYPE_ERROR')
 
-# str
+# str #
 
 def L_EXPR_str(ctx, symbol:symbols.L_SYM_str):
 
@@ -207,6 +246,7 @@ def L_EXPR_join(ctx, symbol:symbols.L_SYM_join):
 
 
 EXPRESSION_HANDLERS = {
+    'get': L_EXPR_get,
     'value': L_EXPR_value,
     'error': L_EXPR_error,
     'handle': L_EXPR_handle,

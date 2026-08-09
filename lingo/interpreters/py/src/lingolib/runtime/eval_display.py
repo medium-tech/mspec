@@ -3,11 +3,11 @@ import webbrowser
 
 
 from lingolib.constants import *
-from lingolib.context import LingoContext
+from lingolib.context import LingoContext, LingoStateRuntimeContext
 from lingolib.errors import LingoUnknownSymbolError
 from lingolib.parsing import LingoASTTextSpec, LingoASTGUISpec
 from lingolib.runtime.eval_exe import unwrap_expression
-from lingolib.types import LingoStyleOptions, value_to_str
+from lingolib.types import LingoStyleOptions, value_to_str, LingoLanguageError, error_to_str, LingoPrimitiveTypes
 from lingolib.parsing.symbols import *
 
 DisplayRuntimeSymbols = L_SYM_break | L_SYM_heading | L_SYM_text | L_SYM_link | L_SYM_value
@@ -16,7 +16,7 @@ TK_TABLE_TEXT_TAG = 'table-monospace'
 TK_TABLE_HEADER_TAG = 'table-header-monospace'
 
 #
-# helpers
+# rendering helpers
 #
 
 def _configure_text_style(ctx: LingoContext, style: LingoStyleOptions) -> str:
@@ -54,6 +54,14 @@ def _configure_link_style(ctx: LingoContext, url: str) -> str:
         ctx.tk.text_widget.tag_bind(tag_name, '<Button-1>', lambda _event, target=url: webbrowser.open_new_tab(target))
 
     return tag_name
+
+def _configure_error_style(ctx: LingoContext) -> str:
+    font = ERROR_TEXT_FONT['font']
+    ctx.tk.text_widget.tag_configure(
+        'text-error', 
+        foreground='red', 
+        font=(font['family'], font['size'], font.get('weight', 'normal'))
+    )
 
 def _configure_heading_styles(ctx: LingoContext):
     for level in range(MIN_HEADING_LEVEL, MAX_HEADING_LEVEL + 1):
@@ -197,11 +205,23 @@ def _eval_text(ctx: LingoContext, symbol: L_SYM_text):
 
     text_value = unwrap_expression(ctx, symbol.text)
 
-    if not isinstance(text_value, str):
+    if isinstance(text_value, LingoLanguageError):
+        text_to_insert = error_to_str(text_value)
+        tag_name = 'text-error'
+
+    elif isinstance(text_value, str):
+        text_to_insert = text_value
+        tag_name = _configure_text_style(ctx, symbol.style)
+
+    elif isinstance(text_value, LingoPrimitiveTypes):
+        text_to_insert = value_to_str(text_value)
+        tag_name = _configure_text_style(ctx, symbol.style)
+
+    else:
         raise RuntimeError(f'Expected string value for text symbol, got: {type(text_value).__name__}')
+
     
-    tag_name = _configure_text_style(ctx, symbol.style)
-    ctx.tk.text_widget.insert('end', text_value, (tag_name,))
+    ctx.tk.text_widget.insert('end', text_to_insert, (tag_name,))
 
 def _eval_link(ctx: LingoContext, symbol: L_SYM_link):
     text_value = unwrap_expression(ctx, symbol.text) if symbol.text else unwrap_expression(ctx, symbol.link)
@@ -325,15 +345,27 @@ def _eval_gui_runtime_symbol(ctx: LingoContext, symbol: DisplayRuntimeSymbols):
                 raise LingoUnknownSymbolError(symbol.L_SYM_NAME)
 
 #
-# spec evaluators
+# spec helpers
 #
+
+def _init_root_tk_text_widget():
+    return tkinter.Text(wrap='word', padx=12, pady=12, font=(TEXT_FONT['font']['family'], TEXT_FONT['font']['size']))
 
 def _init_tk_context(ctx: LingoContext) -> LingoContext:
     return LingoContext.add_tk_runtime_context(
         ctx, 
         root=tkinter.Tk(), 
-        text_widget=tkinter.Text(wrap='word', padx=12, pady=12, font=(TEXT_FONT['font']['family'], TEXT_FONT['font']['size']))
+        text_widget=_init_root_tk_text_widget()
     )
+
+def _init_runtime_state(ctx: LingoContext, state_symbol: L_SYM_state) -> LingoStateRuntimeContext:
+    state_fields = state_symbol.fields
+    state_values = {field_name: unwrap_expression(ctx, field_value.default) for field_name, field_value in state_fields.items()}
+    return LingoStateRuntimeContext(fields=state_fields, values=state_values)
+
+#
+# spec evaluators
+#
 
 def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
 
@@ -347,6 +379,7 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
     tk_ctx.text_widget.pack(fill='both', expand=True)
 
     _configure_heading_styles(ctx)
+    _configure_error_style(ctx)
 
     tk_ctx.in_text_block = False
 
@@ -368,7 +401,12 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
 
 def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
 
-    ctx = _init_tk_context(ctx)
+    ctx = LingoContext.add_tk_runtime_context(
+        ctx, 
+        root=tkinter.Tk(), 
+        text_widget=_init_root_tk_text_widget(),
+        state=_init_runtime_state(ctx, ast.state) if ast.state else None
+    )
 
     tk_ctx = ctx.tk
 
@@ -378,6 +416,7 @@ def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
     tk_ctx.text_widget.pack(fill='both', expand=True)
 
     _configure_heading_styles(ctx)
+    _configure_error_style(ctx)
 
     tk_ctx.in_text_block = False
 
@@ -393,6 +432,8 @@ def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
 
         tk_ctx.in_text_block = item.L_SYM_NAME in ('text', 'link')
         tk_ctx.main_block_index += 1
+
+    
         
     tk_ctx.text_widget.configure(state='disabled')
     tk_ctx.root.mainloop()

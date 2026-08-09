@@ -75,6 +75,10 @@ TABLE_TEXT_FONT = {
 	'font': {'family': MONOSPACE_FONT[0], 'size': 12},
 }
 
+ERROR_TEXT_FONT = {
+	'font': {'family': MONOSPACE_FONT[0], 'size': 12, 'weight': 'bold', 'color': 'red'},
+}
+
 BUTTON_BACKGROUND_COLOR = 'white'
 BUTTON_TEXT_COLOR = 'black'
 BUTTON_PADDING_X = 2

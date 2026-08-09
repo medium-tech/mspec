@@ -15,6 +15,22 @@ from lingolib.types import LingoListDisplayOptions, expression, ValueTypesEnum, 
 # core
 #
 
+class L_SYM_call(NamedTuple):
+	
+	L_SRC: str
+	func: expression
+	args: list[expression]
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'call'
+	
+	@property
+	def L_SYM_TYPE(self):
+		return 'expression'
+
 class L_SYM_value(NamedTuple):
 	"""a value symbol is a symbol that represents a value, such as a variable or a literal"""
 
