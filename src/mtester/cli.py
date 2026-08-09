@@ -1,0 +1,47 @@
+#
+# mtester cli
+#
+
+import argparse
+import json
+
+from mtester import ops
+from mtester.ops import manual_flow
+
+
+def json_print(data) -> None:
+    print(json.dumps(data, indent=4, sort_keys=True))
+
+
+def parse_args(argv: list[str] | None = None):
+    parser = argparse.ArgumentParser(
+        description='mtester: application testing with image OCR and color detection'
+    )
+    subparsers = parser.add_subparsers(dest='command', required=True)
+
+    identify_parser = subparsers.add_parser('identify', help='Identify image properties')
+    identify_parser.add_argument('source', help='Path to the source image')
+
+    manual_parser = subparsers.add_parser('manual', help='Run a manual PoC test flow against a lingo spec')
+    manual_parser.add_argument('spec', help='Path to lingo spec file')
+    manual_parser.add_argument('--ocr-extract', dest='ocr_extract', help='Assert text appears in OCR output')
+    manual_parser.add_argument('--assert-stdout', dest='assert_stdout', help='Assert text appears in target stdout')
+    manual_parser.add_argument('--assert-stderr', dest='assert_stderr', help='Assert text appears in target stderr')
+
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None):
+    args = parse_args(argv)
+
+    if args.command == 'identify':
+        result = ops.identify(args.source)
+        json_print(result)
+        return
+
+    elif args.command == 'manual':
+        result = manual_flow(args)
+        json_print(result)
+        return
+    else:
+        raise RuntimeError(f'Unsupported command: {args.command!r}')

@@ -1,113 +1,81 @@
-import os
+from mtester import api
+from mtester.api import capture_screen, launch_target, stop_target
 
-import pytesseract
-from PIL import Image
 
-#
-# funcs
-#
+from typing import Any
 
-def extract_text_via_ocr(image) -> str:
-	"""pass in a pillow image and return the extracted text"""
-	return pytesseract.image_to_string(image).lower().strip()
 
-def detect_colors(image) -> dict:
-    """Detects if the image contains green, yellow, or red (with shade tolerance)."""
-    # Downsample for speed
-    small_img = image.convert('RGB').resize((64, 64))
-    pixels = list(small_img.getdata())
+def run_flow(flow_path: str, variables: dict[str, Any] | None = None) -> dict[str, Any]:
+	print(f'mtester.api.run_flow called with args: flow_path={flow_path}, variables={variables}')
 
-    found = {'red': False, 'green': False, 'yellow': False}
+	variables = variables or {}
+	command = variables.get('command', ['python', '-m', 'lingolib', 'display', flow_path])
+	cwd = variables.get('cwd')
+	env = variables.get('env')
+	region = variables.get('region')
+	force_stop = variables.get('force_stop', False)
 
-    for r, g, b in pixels:
-        # Red: high R, low G/B
-        if r > 150 and g < 100 and b < 100:
-            found['red'] = True
-        # Green: high G, low R/B
-        elif g > 150 and r < 100 and b < 100:
-            found['green'] = True
-        # Yellow: high R and G, low B
-        elif r > 150 and g > 150 and b < 100:
-            found['yellow'] = True
+	launch_result = launch_target(command=command, cwd=cwd, env=env)
+	session_id = launch_result.get('session_id', '')
 
-        # Early exit if all found
-        if all(found.values()):
-            break
+	capture_result = None
+	stop_result = None
 
-    return found
+	try:
+		capture_result = capture_screen(region=region)
+	finally:
+		if session_id:
+			stop_result = stop_target(session_id=session_id, force=force_stop)
 
-#
-# ops
-#
-
-def identify(source: str) -> dict:
-
-	# default results #
-
-	result = {
-		'file': {
-			'source': source,
-			'exists': False,
-			'extension': ''
+	return {
+		'ok': True,
+		'function': 'run_flow',
+		'args': {
+			'flow_path': flow_path,
+			'variables': variables,
 		},
-		'text': '',
-		'colors': {
-			'green': False,
-			'yellow': False,
-			'red': False
-		},
-		'problems': [],
-		'over_all_status': False
+		'launch': launch_result,
+		'capture': capture_result,
+		'stop': stop_result,
 	}
 
-	# file details #
-	try:
-		result['file']['exists'] = os.path.exists(source)
-	except Exception as e:
-		result['problems'].append(f'Error stating file: {e.__class__.__name__}: {e}')
-		return result
 
-	if not result['file']['exists']:
-		result['problems'].append(f'File not found: {source}')
-		return result
-	
-	file_extension = os.path.splitext(source)[1][1:].lower()
-	result['file']['extension'] = file_extension
-	
-	if not file_extension in ['png', 'jpg', 'jpeg', 'bmp', 'gif']:
-		result['problems'].append(f'Unsupported file type: {file_extension}')
-		return result
-	
-	# load image #
-	try:
-		image = Image.open(source)
-	except Exception as e:
-		result['problems'].append(f'Failed to load image: {e.__class__.__name__}: {e}')
-		return result
+def manual_flow(args) -> dict:
+    # PoC execution flow: launch target, capture screenshot, run optional assertions, then stop target.
+    launch_result = api.launch_target(
+        command=['python', '-m', 'lingolib', '-v', 'display', args.spec],
+    )
 
-	# text extraction #
-	try:
-		result['text'] = extract_text_via_ocr(image)
-	except Exception as e:
-		result['problems'].append(f'OCR extraction failed: {e.__class__.__name__}: {e}')
-		
-	# color detection #
-	try:
-		result['colors'] = detect_colors(image)
-	except Exception as e:
-		result['problems'].append(f'Color detection failed: {e.__class__.__name__}: {e}')
+    if input('Press Enter when window is ready to capture') == '':
+        pass
 
+    capture_result = api.capture_screen()
+    image_path = capture_result.get('image_path', '')
 
-	# analyze results #
-	status_color_problem = sum([result['colors']['green'], result['colors']['yellow'], result['colors']['red']]) > 1
+    ocr_result = None
+    text_assert_result = None
+    if args.ocr_extract:
+        ocr_result = api.ocr_extract(image_path=image_path)
+        text_assert_result = api.assert_text(expected=args.ocr_extract, image_path=image_path)
 
-	if status_color_problem:
-		colors_detected = [color for color, detected in result['colors'].items() if detected]
-		err_msg = 'Multiple status colors detected: ' + ', '.join(colors_detected)
-		result['problems'].append(err_msg)
+    stdout_assert_result = None
+    if args.assert_stdout:
+        stdout_assert_result = api.assert_stdout(expected=args.assert_stdout, stdout_text='')
 
-	# overall status #
-	result['over_all_status'] = len(result['problems']) == 0
+    stderr_assert_result = None
+    if args.assert_stderr:
+        stderr_assert_result = api.assert_stderr(expected=args.assert_stderr, stderr_text='')
 
-	# return results #
-	return result
+    stop_result = api.stop_target(session_id=launch_result.get('session_id', 'manual-session-1'))
+
+    return {
+        'command': 'manual',
+        'spec': args.spec,
+        'launch': launch_result,
+        'capture': capture_result,
+        'ocr_extract': ocr_result,
+        'assert_text': text_assert_result,
+        'assert_stdout': stdout_assert_result,
+        'assert_stderr': stderr_assert_result,
+        'stop': stop_result,
+    }
