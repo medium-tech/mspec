@@ -10,7 +10,7 @@ state:
 
 ops:
     increment_counter:
-        description: 'Increment the counter by 1.'
+        description: 'Increment the counter by 1 and return the new value.'
 
         return:
             description: 'The new counter value after incrementing.'
@@ -26,7 +26,7 @@ ops:
 
 block:
     - button:
-        call: 'increment_counter'
+        call: 'ops.increment_counter'
         text: 'increment count'
     - 'total count: '
     - text:

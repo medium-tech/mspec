@@ -87,7 +87,8 @@ The Python interpreter library lives in `./src/lingolib` and is split by respons
 - `parsing/` - parser entrypoints + expression/spec parsing + YAML line tracking
   - `symbols.py` - AST symbol definitions (`L_SYM_*`) for spec, expression, and display symbols.
   - `state.py`: state of yaml parser, for determining yaml line numbers for lingo tracebacks
-  - `spec.py`: top-level `lingo` parsing, root validation, and spec dispatch.
+  - `spec_lingo.py`: top-level `lingo` parsing, root validation, and spec dispatch.
+    - `spec_core.py` - reusable parsing funcs for spec parsers
 	- spec-specific AST builders:
 	  - `spec_exe.py`
 	  - `spec_text.py`
