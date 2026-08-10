@@ -46,8 +46,8 @@ def create_context(args: argparse.Namespace) -> MTesterContext:
             window_title=args.window_title,
             select_window=args.select_window,
             assert_ocr_text=args.assert_ocr_text,
-            assert_stdout=args.assert_stdout,
-            assert_stderr=args.assert_stderr,
+            assert_stdout_text=args.assert_stdout,
+            assert_stderr_text=args.assert_stderr,
             verbose=args.verbose
         )
     )

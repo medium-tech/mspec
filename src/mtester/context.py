@@ -16,8 +16,8 @@ class MTesterConfig:
 	window_title: str | None = None
 	select_window: bool = False
 	assert_ocr_text: list[str] | None = None
-	assert_stdout: list[str] | None = None
-	assert_stderr: list[str] | None = None
+	assert_stdout_text: list[str] | None = None
+	assert_stderr_text: list[str] | None = None
 	verbose: bool = False
 	
 

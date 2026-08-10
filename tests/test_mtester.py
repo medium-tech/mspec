@@ -56,7 +56,7 @@ class TestMTester(unittest.TestCase):
             config=MTesterConfig(
                 spec_path=Path('lingo/shared/scripts/gui/hello-gui.yaml').resolve(),
                 window_title='Lingo GUI Spec',
-                assert_stderr=['lingo'],
+                assert_stderr_text=['lingo'],
                 verbose=False,
             )
         )

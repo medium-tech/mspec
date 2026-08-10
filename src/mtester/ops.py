@@ -119,19 +119,19 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
 
     stop_result = api.stop_target(ctx, session_id=launch_result.get('session_id', 'manual-session-1'))
 
-    if config.assert_stdout:
+    if config.assert_stdout_text:
         stdout_assert_result = []
         stdout_text = stop_result['stdout'].lower()
-        for expected_stdout_text in config.assert_stdout:
+        for expected_stdout_text in config.assert_stdout_text:
             stdout_assert_result.append({
                 'text': expected_stdout_text,
                 'found': expected_stdout_text.lower() in stdout_text,
             })
 
-    if config.assert_stderr:
+    if config.assert_stderr_text:
         stderr_assert_result = []
         stderr_text = stop_result['stderr'].lower()
-        for expected_stderr_text in config.assert_stderr:
+        for expected_stderr_text in config.assert_stderr_text:
             stderr_assert_result.append({
                 'text': expected_stderr_text,
                 'found': expected_stderr_text.lower() in stderr_text,
