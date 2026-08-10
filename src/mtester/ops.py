@@ -17,7 +17,8 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
         command=['python', '-m', 'lingolib', '-v', 'display', config.spec_path],
     )
 
-    mtest_dir = ctx.set_test_dir(test_name='manual_flow', reset=True)
+    if ctx.test_dir is None:
+        ctx.set_test_dir(test_name='manual_flow', reset=True)
 
     # wait for window to open #
 
