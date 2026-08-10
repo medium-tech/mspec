@@ -100,25 +100,22 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
     # assertions
     #
 
-    ocr_result = None
+    ocr_extract = None
     ocr_text_assert_result = None
     if config.assert_ocr_text:
-        ocr_result = api.ocr_extract(ctx, image_path=image_path)
-        ocr_text_assert_result = api.assert_ocr_text(ctx, expected=config.assert_ocr_text, image_path=image_path)
+        ocr_extract = api.ocr_extract(ctx, image_path=image_path)
+        ocr_text_assert_result = config.assert_ocr_text.lower() in ocr_extract['text'].lower()
 
     stdout_assert_result = None
-
     stderr_assert_result = None
+
     stop_result = api.stop_target(ctx, session_id=launch_result.get('session_id', 'manual-session-1'))
 
-    stdout_text = str(stop_result.get('stdout', ''))
-    stderr_text = str(stop_result.get('stderr', ''))
-
     if config.assert_stdout:
-        stdout_assert_result = api.assert_stdout(ctx, expected=config.assert_stdout, stdout_text=stdout_text)
+        stdout_assert_result = config.assert_stdout.lower() in stop_result['stdout'].lower()
 
     if config.assert_stderr:
-        stderr_assert_result = api.assert_stderr(ctx, expected=config.assert_stderr, stderr_text=stderr_text)
+        stderr_assert_result = config.assert_stderr.lower() in stop_result['stderr'].lower()
 
     #
     # output
@@ -131,7 +128,7 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
         'windows': windows_result,
         'selected_window': selected_window,
         'capture': capture_result,
-        'ocr_extract': ocr_result,
+        'ocr_extract': ocr_extract,
         'assert_ocr_text': ocr_text_assert_result,
         'assert_stdout': stdout_assert_result,
         'assert_stderr': stderr_assert_result,
@@ -140,7 +137,7 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
 
     # write report to disk #
 
-    output_path = ctx.test_dir / 'manual_flow_output.json'
+    output_path = ctx.test_dir / 'output.json'
     with open(output_path, 'w') as f:
         f.write(json_pprint(full_output))
 

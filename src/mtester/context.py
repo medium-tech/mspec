@@ -37,3 +37,7 @@ class MTesterContext:
 		self.test_dir.mkdir(parents=True, exist_ok=True)
 
 		return self.test_dir
+
+	def __post_init__(self):
+		if self.config.verbose:
+			self.log.setLevel(logging.DEBUG)

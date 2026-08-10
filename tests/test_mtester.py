@@ -47,7 +47,7 @@ class TestMTester(unittest.TestCase):
             result = manual_flow(ctx, wait_for_window=0.0)
 
         self.assertIn('assert_ocr_text', result)
-        self.assertTrue(result['assert_ocr_text']['found'])
+        self.assertTrue(result['assert_ocr_text'])
 
     @unittest.skipUnless(platform.system() == 'Darwin', 'manual_flow smoke tests are macOS-only')
     def test_manual_flow_finds_stderr_text(self):
@@ -68,4 +68,4 @@ class TestMTester(unittest.TestCase):
             result = manual_flow(ctx, wait_for_window=0.0)
 
         self.assertIn('assert_stderr', result)
-        self.assertTrue(result['assert_stderr']['found'])
+        self.assertTrue(result['assert_stderr'])

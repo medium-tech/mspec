@@ -18,21 +18,12 @@ import pytesseract
 _RUNNING_SESSIONS: dict[str, subprocess.Popen] = {}
 
 
-
-def _placeholder_result(ctx: MTesterContext, function_name: str, **kwargs) -> dict[str, Any]:
-	ctx.log.info(f'mtester.api.{function_name} called with args: {kwargs}')
-	return {
-		'ok': True,
-		'function': function_name,
-		'args': kwargs,
-	}
-
 #
 # low level program interface
 #
 
 def launch_target(ctx: MTesterContext, command: list[str], cwd: str | None = None, env: dict[str, str] | None = None) -> dict[str, Any]:
-	ctx.log.info(f'mtester.api.launch_target called with args: command={command}, cwd={cwd}, env={env}')
+	ctx.log.debug(f'mtester.api.launch_target called with args: command={command}, cwd={cwd}, env={env}')
 
 	process = subprocess.Popen(
 		command,
@@ -65,7 +56,7 @@ def launch_target(ctx: MTesterContext, command: list[str], cwd: str | None = Non
 
 
 def stop_target(ctx: MTesterContext, session_id: str, force: bool = False) -> dict[str, Any]:
-	ctx.log.info(f'mtester.api.stop_target called with args: session_id={session_id}, force={force}')
+	ctx.log.debug(f'mtester.api.stop_target called with args: session_id={session_id}, force={force}')
 
 	process = _RUNNING_SESSIONS.get(session_id)
 	if process is None:
@@ -113,7 +104,7 @@ def stop_target(ctx: MTesterContext, session_id: str, force: bool = False) -> di
 
 
 def capture_screen(ctx: MTesterContext, output_path: Path, region: RegionBox | None = None) -> dict[str, Any]:
-	ctx.log.info(f'mtester.api.capture_screen called with args: region={region}')
+	ctx.log.debug(f'mtester.api.capture_screen called with args: region={region}')
 
 	try:
 		if region is None:
@@ -153,7 +144,7 @@ def capture_screen(ctx: MTesterContext, output_path: Path, region: RegionBox | N
 
 
 def list_windows(ctx: MTesterContext) -> dict[str, Any]:
-	ctx.log.info('mtester.api.list_windows called')
+	ctx.log.debug('mtester.api.list_windows called')
 
 	if platform.system() != 'Darwin':
 		raise RuntimeError('list_windows is only supported on macOS currently.')
@@ -236,7 +227,7 @@ end tell
 
 
 def ocr_extract(ctx: MTesterContext, image_path: str, region: RegionBox | None = None) -> dict[str, Any]:
-	ctx.log.info(f'mtester.api.ocr_extract called with args: image_path={image_path!r}, region={region}')
+	ctx.log.debug(f'mtester.api.ocr_extract called with args: image_path={image_path!r}, region={region}')
 
 	if not os.path.exists(image_path):
 		return {
@@ -330,106 +321,3 @@ def ocr_extract(ctx: MTesterContext, image_path: str, region: RegionBox | None =
 	# Args: image_path points to an image file, region optionally limits OCR to a crop rectangle.
 	# Does: extracts text with positional metadata from the image using OCR.
 	# Returns: dict with plain text plus token/line boxes and confidence scores.
-
-
-#
-# assertions and detections
-#
-
-
-def assert_ocr_text(ctx: MTesterContext, expected: str, image_path: str, region: RegionBox | None = None, case_sensitive: bool = False) -> dict[str, Any]:
-	ctx.log.info(
-		'mtester.api.assert_ocr_text called with args: '
-		f'expected={expected!r}, image_path={image_path!r}, region={region}, case_sensitive={case_sensitive}'
-	)
-
-	ocr_result = ocr_extract(ctx, image_path=image_path, region=region)
-	ocr_text = str(ocr_result.get('text', ''))
-
-	if not case_sensitive:
-		expected_check = expected.lower()
-		ocr_text_check = ocr_text.lower()
-	else:
-		expected_check = expected
-		ocr_text_check = ocr_text
-
-	passed = expected_check in ocr_text_check
-
-	return {
-		'ok': passed,
-		'function': 'assert_ocr_text',
-		'args': {
-			'expected': expected,
-			'image_path': image_path,
-			'region': region,
-			'case_sensitive': case_sensitive,
-		},
-		'found': passed,
-		'expected': expected,
-		'ocr': ocr_result,
-	}
-	# Args: expected is required text, image_path is OCR source image, region optionally scopes the check.
-	# Does: verifies expected text appears in OCR output with optional case sensitivity rules.
-	# Returns: dict with pass/fail, matched spans, and diagnostic OCR excerpts.
-
-
-def assert_stdout(ctx: MTesterContext, expected: str, stdout_text: str, case_sensitive: bool = False) -> dict[str, Any]:
-	ctx.log.info(
-		'mtester.api.assert_stdout called with args: '
-		f'expected={expected!r}, stdout_text=<len {len(stdout_text)}>, case_sensitive={case_sensitive}'
-	)
-
-	if not case_sensitive:
-		expected_check = expected.lower()
-		stdout_check = stdout_text.lower()
-	else:
-		expected_check = expected
-		stdout_check = stdout_text
-
-	passed = expected_check in stdout_check
-
-	return {
-		'ok': passed,
-		'function': 'assert_stdout',
-		'args': {
-			'expected': expected,
-			'case_sensitive': case_sensitive,
-		},
-		'found': passed,
-		'expected': expected,
-		'stdout_text': stdout_text,
-	}
-	# Args: expected is required text and stdout_text is collected process stdout from the app run.
-	# Does: verifies expected text appears in stdout with optional case sensitivity.
-	# Returns: dict with pass/fail and matching diagnostics for stdout assertions.
-
-
-def assert_stderr(ctx: MTesterContext, expected: str, stderr_text: str, case_sensitive: bool = False) -> dict[str, Any]:
-	ctx.log.info(
-		'mtester.api.assert_stderr called with args: '
-		f'expected={expected!r}, stderr_text=<len {len(stderr_text)}>, case_sensitive={case_sensitive}'
-	)
-
-	if not case_sensitive:
-		expected_check = expected.lower()
-		stderr_check = stderr_text.lower()
-	else:
-		expected_check = expected
-		stderr_check = stderr_text
-
-	passed = expected_check in stderr_check
-
-	return {
-		'ok': passed,
-		'function': 'assert_stderr',
-		'args': {
-			'expected': expected,
-			'case_sensitive': case_sensitive,
-		},
-		'found': passed,
-		'expected': expected,
-		'stderr_text': stderr_text,
-	}
-	# Args: expected is required text and stderr_text is collected process stderr from the app run.
-	# Does: verifies expected text appears in stderr with optional case sensitivity.
-	# Returns: dict with pass/fail and matching diagnostics for stderr assertions.
