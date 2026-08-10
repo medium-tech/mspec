@@ -14,6 +14,7 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
     #
 
     launch_result = api.launch_target(
+        ctx,
         command=['python', '-m', 'lingolib', '-v', 'display', config.spec_path],
     )
 
@@ -37,7 +38,7 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
     # crop by window dimensions if --select-window is specified #
     
     if config.select_window or config.window_title:
-        windows_result = api.list_windows()
+        windows_result = api.list_windows(ctx)
     
         if windows_result.get('ok'):
             windows = windows_result.get('windows', [])
@@ -102,22 +103,22 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
     ocr_result = None
     ocr_text_assert_result = None
     if config.assert_ocr_text:
-        ocr_result = api.ocr_extract(image_path=image_path)
-        ocr_text_assert_result = api.assert_ocr_text(expected=config.assert_ocr_text, image_path=image_path)
+        ocr_result = api.ocr_extract(ctx, image_path=image_path)
+        ocr_text_assert_result = api.assert_ocr_text(ctx, expected=config.assert_ocr_text, image_path=image_path)
 
     stdout_assert_result = None
 
     stderr_assert_result = None
-    stop_result = api.stop_target(session_id=launch_result.get('session_id', 'manual-session-1'))
+    stop_result = api.stop_target(ctx, session_id=launch_result.get('session_id', 'manual-session-1'))
 
     stdout_text = str(stop_result.get('stdout', ''))
     stderr_text = str(stop_result.get('stderr', ''))
 
     if config.assert_stdout:
-        stdout_assert_result = api.assert_stdout(expected=config.assert_stdout, stdout_text=stdout_text)
+        stdout_assert_result = api.assert_stdout(ctx, expected=config.assert_stdout, stdout_text=stdout_text)
 
     if config.assert_stderr:
-        stderr_assert_result = api.assert_stderr(expected=config.assert_stderr, stderr_text=stderr_text)
+        stderr_assert_result = api.assert_stderr(ctx, expected=config.assert_stderr, stderr_text=stderr_text)
 
     #
     # output

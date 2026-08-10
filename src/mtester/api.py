@@ -19,8 +19,8 @@ _RUNNING_SESSIONS: dict[str, subprocess.Popen] = {}
 
 
 
-def _placeholder_result(function_name: str, **kwargs) -> dict[str, Any]:
-	print(f'mtester.api.{function_name} called with args: {kwargs}')
+def _placeholder_result(ctx: MTesterContext, function_name: str, **kwargs) -> dict[str, Any]:
+	ctx.log.info(f'mtester.api.{function_name} called with args: {kwargs}')
 	return {
 		'ok': True,
 		'function': function_name,
@@ -31,8 +31,8 @@ def _placeholder_result(function_name: str, **kwargs) -> dict[str, Any]:
 # low level program interface
 #
 
-def launch_target(command: list[str], cwd: str | None = None, env: dict[str, str] | None = None) -> dict[str, Any]:
-	print(f'mtester.api.launch_target called with args: command={command}, cwd={cwd}, env={env}')
+def launch_target(ctx: MTesterContext, command: list[str], cwd: str | None = None, env: dict[str, str] | None = None) -> dict[str, Any]:
+	ctx.log.info(f'mtester.api.launch_target called with args: command={command}, cwd={cwd}, env={env}')
 
 	process = subprocess.Popen(
 		command,
@@ -64,8 +64,8 @@ def launch_target(command: list[str], cwd: str | None = None, env: dict[str, str
 	# Returns: dict with process metadata, such as pid, start_time, and opaque session_id.
 
 
-def stop_target(session_id: str, force: bool = False) -> dict[str, Any]:
-	print(f'mtester.api.stop_target called with args: session_id={session_id}, force={force}')
+def stop_target(ctx: MTesterContext, session_id: str, force: bool = False) -> dict[str, Any]:
+	ctx.log.info(f'mtester.api.stop_target called with args: session_id={session_id}, force={force}')
 
 	process = _RUNNING_SESSIONS.get(session_id)
 	if process is None:
@@ -113,7 +113,7 @@ def stop_target(session_id: str, force: bool = False) -> dict[str, Any]:
 
 
 def capture_screen(ctx: MTesterContext, output_path: Path, region: RegionBox | None = None) -> dict[str, Any]:
-	print(f'mtester.api.capture_screen called with args: region={region}')
+	ctx.log.info(f'mtester.api.capture_screen called with args: region={region}')
 
 	try:
 		if region is None:
@@ -152,8 +152,8 @@ def capture_screen(ctx: MTesterContext, output_path: Path, region: RegionBox | N
 	# Returns: dict containing image path/bytes metadata plus width/height and timestamp.
 
 
-def list_windows() -> dict[str, Any]:
-	print('mtester.api.list_windows called')
+def list_windows(ctx: MTesterContext) -> dict[str, Any]:
+	ctx.log.info('mtester.api.list_windows called')
 
 	if platform.system() != 'Darwin':
 		raise RuntimeError('list_windows is only supported on macOS currently.')
@@ -235,8 +235,8 @@ end tell
 	}
 
 
-def ocr_extract(image_path: str, region: RegionBox | None = None) -> dict[str, Any]:
-	print(f'mtester.api.ocr_extract called with args: image_path={image_path!r}, region={region}')
+def ocr_extract(ctx: MTesterContext, image_path: str, region: RegionBox | None = None) -> dict[str, Any]:
+	ctx.log.info(f'mtester.api.ocr_extract called with args: image_path={image_path!r}, region={region}')
 
 	if not os.path.exists(image_path):
 		return {
@@ -331,46 +331,19 @@ def ocr_extract(image_path: str, region: RegionBox | None = None) -> dict[str, A
 	# Does: extracts text with positional metadata from the image using OCR.
 	# Returns: dict with plain text plus token/line boxes and confidence scores.
 
+
 #
 # assertions and detections
 #
 
-def detect_colors(image_path: str, palette: dict[str, tuple[int, int, int]]) -> dict[str, Any]:
-	return _placeholder_result('detect_colors', image_path=image_path, palette=palette)
-	# Args: image_path points to an image file, palette maps names to target RGB values.
-	# Example palette: {'red': (255, 0, 0), 'yellow': (255, 255, 0), 'green': (0, 255, 0)}
-	# Does: detects approximate color matches in the image and computes summary match statistics.
-	# Returns: dict keyed by palette name with hit booleans, counts, and optional bounding boxes.
 
-
-def detect_widgets(image_path: str, widget_types: list[str]) -> dict[str, Any]:
-	return _placeholder_result('detect_widgets', image_path=image_path, widget_types=widget_types)
-	# Args: image_path points to an image file, widget_types lists expected widgets like button/input/table.
-	# Does: runs lightweight detection heuristics for supported GUI widgets.
-	# Returns: dict with detected widget instances, each including type, bounding box, and confidence.
-
-
-def click_point(x: int, y: int, button: str = 'left') -> dict[str, Any]:
-	return _placeholder_result('click_point', x=x, y=y, button=button)
-	# Args: x/y are absolute screen coordinates, button selects mouse button.
-	# Does: performs a click action at the given coordinates for UI interaction tests.
-	# Returns: dict describing action result and any platform-level input warnings.
-
-
-def type_text(text: str, submit: bool = False) -> dict[str, Any]:
-	return _placeholder_result('type_text', text=text, submit=submit)
-	# Args: text is keyboard input content, submit controls whether Enter is pressed after typing.
-	# Does: sends keyboard input to the currently focused UI element.
-	# Returns: dict with typed length, submit flag, and input delivery status.
-
-
-def assert_ocr_text(expected: str, image_path: str, region: RegionBox | None = None, case_sensitive: bool = False) -> dict[str, Any]:
-	print(
+def assert_ocr_text(ctx: MTesterContext, expected: str, image_path: str, region: RegionBox | None = None, case_sensitive: bool = False) -> dict[str, Any]:
+	ctx.log.info(
 		'mtester.api.assert_ocr_text called with args: '
 		f'expected={expected!r}, image_path={image_path!r}, region={region}, case_sensitive={case_sensitive}'
 	)
 
-	ocr_result = ocr_extract(image_path=image_path, region=region)
+	ocr_result = ocr_extract(ctx, image_path=image_path, region=region)
 	ocr_text = str(ocr_result.get('text', ''))
 
 	if not case_sensitive:
@@ -400,8 +373,8 @@ def assert_ocr_text(expected: str, image_path: str, region: RegionBox | None = N
 	# Returns: dict with pass/fail, matched spans, and diagnostic OCR excerpts.
 
 
-def assert_stdout(expected: str, stdout_text: str, case_sensitive: bool = False) -> dict[str, Any]:
-	print(
+def assert_stdout(ctx: MTesterContext, expected: str, stdout_text: str, case_sensitive: bool = False) -> dict[str, Any]:
+	ctx.log.info(
 		'mtester.api.assert_stdout called with args: '
 		f'expected={expected!r}, stdout_text=<len {len(stdout_text)}>, case_sensitive={case_sensitive}'
 	)
@@ -431,8 +404,8 @@ def assert_stdout(expected: str, stdout_text: str, case_sensitive: bool = False)
 	# Returns: dict with pass/fail and matching diagnostics for stdout assertions.
 
 
-def assert_stderr(expected: str, stderr_text: str, case_sensitive: bool = False) -> dict[str, Any]:
-	print(
+def assert_stderr(ctx: MTesterContext, expected: str, stderr_text: str, case_sensitive: bool = False) -> dict[str, Any]:
+	ctx.log.info(
 		'mtester.api.assert_stderr called with args: '
 		f'expected={expected!r}, stderr_text=<len {len(stderr_text)}>, case_sensitive={case_sensitive}'
 	)
@@ -460,27 +433,3 @@ def assert_stderr(expected: str, stderr_text: str, case_sensitive: bool = False)
 	# Args: expected is required text and stderr_text is collected process stderr from the app run.
 	# Does: verifies expected text appears in stderr with optional case sensitivity.
 	# Returns: dict with pass/fail and matching diagnostics for stderr assertions.
-
-
-def assert_color(name: str, image_path: str, rgb: PixelRGB, tolerance: int = 20) -> dict[str, Any]:
-	return _placeholder_result('assert_color', name=name, image_path=image_path, rgb=rgb, tolerance=tolerance)
-	# Args: name labels the color check, image_path is source image, rgb is target color, tolerance is channel delta.
-	# Does: verifies whether the target color is present within tolerance in the image.
-	# Returns: dict with pass/fail plus hit ratios and sampled pixel evidence.
-
-
-def assert_layout(expected_items: list[dict[str, Any]], image_path: str, tolerance_px: int = 8) -> dict[str, Any]:
-	return _placeholder_result(
-		'assert_layout',
-		expected_items=expected_items,
-		image_path=image_path,
-		tolerance_px=tolerance_px,
-	)
-	# Args: expected_items describes expected labels/widgets and approximate boxes, image_path is source image.
-	# Does: compares detected/ocr positions against expected layout relationships with pixel tolerance.
-	# Returns: dict with pass/fail and per-item deviations for alignment/placement debugging.
-
-
-	# Args: flow_path points to a declarative test flow file, variables provides optional runtime substitutions.
-	# Does: executes a multi-step scenario combining actions, captures, and assertions.
-	# Returns: dict with overall pass/fail, step-by-step results, and artifact references.
