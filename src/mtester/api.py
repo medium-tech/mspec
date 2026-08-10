@@ -8,7 +8,8 @@ from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
-from .types import RegionBox, PixelRGB
+from mtester.context import MTesterContext
+from mtester.types import RegionBox, PixelRGB
 
 from PIL import Image, ImageGrab
 import pytesseract
@@ -16,15 +17,7 @@ import pytesseract
 
 _RUNNING_SESSIONS: dict[str, subprocess.Popen] = {}
 
-def mtester_dir(reset:bool=False) -> Path:
-	output_dir = Path.cwd() / '.mtester'
-	if reset:
-		try:
-			shutil.rmtree(output_dir)
-		except FileNotFoundError:
-			pass
-	output_dir.mkdir(parents=True, exist_ok=True)
-	return output_dir
+
 
 def _placeholder_result(function_name: str, **kwargs) -> dict[str, Any]:
 	print(f'mtester.api.{function_name} called with args: {kwargs}')
@@ -119,10 +112,8 @@ def stop_target(session_id: str, force: bool = False) -> dict[str, Any]:
 	# Returns: dict with termination status, exit_code when available, and any shutdown notes.
 
 
-def capture_screen(region: RegionBox | None = None) -> dict[str, Any]:
+def capture_screen(ctx: MTesterContext, output_path: Path, region: RegionBox | None = None) -> dict[str, Any]:
 	print(f'mtester.api.capture_screen called with args: region={region}')
-
-	output_path = mtester_dir() / 'test_frame.png'
 
 	try:
 		if region is None:

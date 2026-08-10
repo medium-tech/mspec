@@ -3,14 +3,12 @@
 #
 
 import argparse
-import json
 
-from mtester import ops
+from pathlib import Path
+
+from mtester.context import MTesterConfig, MTesterContext
 from mtester.ops import manual_flow
-
-
-def json_print(data) -> None:
-    print(json.dumps(data, indent=4, sort_keys=True))
+from mtester.types import RegionBox, json_pprint
 
 
 def parse_args(argv: list[str] | None = None):
@@ -18,9 +16,6 @@ def parse_args(argv: list[str] | None = None):
         description='mtester: application testing with image OCR and color detection'
     )
     subparsers = parser.add_subparsers(dest='command', required=True)
-
-    identify_parser = subparsers.add_parser('identify', help='Identify image properties')
-    identify_parser.add_argument('source', help='Path to the source image')
 
     manual_parser = subparsers.add_parser(
         'manual',
@@ -37,18 +32,38 @@ def parse_args(argv: list[str] | None = None):
 
     return parser.parse_args(argv)
 
+def create_context(args: argparse.Namespace) -> MTesterContext:
+
+    if args.capture_region and args.select_window:
+        raise RuntimeError('Cannot supply both --capture-region and --select-window')
+
+    if args.capture_region:
+        x, y, width, height = map(int, args.capture_region.split(','))
+        capture_region = RegionBox(x=x, y=y, width=width, height=height)
+    else:
+        capture_region = None
+
+    new_ctx = MTesterContext(
+        config=MTesterConfig(
+            spec_path=Path(args.spec).resolve(),
+            capture_region=capture_region,
+            window_title=args.window_title,
+            select_window=args.select_window,
+            assert_ocr_text=args.assert_ocr_text,
+            assert_stdout=args.assert_stdout,
+            assert_stderr=args.assert_stderr,
+            verbose=args.verbose
+        )
+    )
+
+    return new_ctx
 
 def main(argv: list[str] | None = None):
     args = parse_args(argv)
-
-    if args.command == 'identify':
-        result = ops.identify(args.source)
-        json_print(result)
-        return
-
-    elif args.command == 'manual':
-        result = manual_flow(args)
-        json_print(result)
+    ctx = create_context(args)
+    if args.command == 'manual':
+        result = manual_flow(ctx)
+        print(json_pprint(result))
         return
     else:
         raise RuntimeError(f'Unsupported command: {args.command!r}')

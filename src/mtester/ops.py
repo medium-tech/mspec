@@ -3,55 +3,23 @@ import json
 from typing import Any
 
 from mtester import api
-from mtester.api import capture_screen, launch_target, stop_target, mtester_dir
+from mtester.context import MTesterContext, MTesterConfig
+from mtester.types import RegionBox, json_pprint
 
 
-def run_flow(flow_path: str, variables: dict[str, Any] | None = None) -> dict[str, Any]:
-    print(f'mtester.api.run_flow called with args: flow_path={flow_path}, variables={variables}')
+def manual_flow(ctx: MTesterContext) -> dict:
 
-    variables = variables or {}
-    command = variables.get('command', ['python', '-m', 'lingolib', 'display', flow_path])
-    cwd = variables.get('cwd')
-    env = variables.get('env')
-    region = variables.get('region')
-    force_stop = variables.get('force_stop', False)
-
-    launch_result = launch_target(command=command, cwd=cwd, env=env)
-    session_id = launch_result.get('session_id', '')
-
-    capture_result = None
-    stop_result = None
-
-    try:
-        capture_result = capture_screen(region=region)
-    finally:
-        if session_id:
-            stop_result = stop_target(session_id=session_id, force=force_stop)
-
-    return {
-        'ok': True,
-        'function': 'run_flow',
-        'args': {
-            'flow_path': flow_path,
-            'variables': variables,
-        },
-        'launch': launch_result,
-        'capture': capture_result,
-        'stop': stop_result,
-    }
-
-
-def manual_flow(args) -> dict:
-
+    config: MTesterConfig = ctx.config
+    
     #
     # run program
     #
 
     launch_result = api.launch_target(
-        command=['python', '-m', 'lingolib', '-v', 'display', args.spec],
+        command=['python', '-m', 'lingolib', '-v', 'display', config.spec_path],
     )
 
-    mtest_dir = api.mtester_dir(reset=True)
+    mtest_dir = ctx.set_test_dir(test_name='manual_flow', reset=True)
 
     # wait for window to open #
 
@@ -67,10 +35,8 @@ def manual_flow(args) -> dict:
     selected_window = None
 
     # crop by window dimensions if --select-window is specified #
-
-    if args.capture_region and args.select_window:
-        raise RuntimeError('Cannot supply both --capture-region and --select-window')
-    elif args.select_window or args.window_title:
+    
+    if config.select_window or config.window_title:
         windows_result = api.list_windows()
     
         if windows_result.get('ok'):
@@ -78,7 +44,7 @@ def manual_flow(args) -> dict:
 
             # interactively select a window if --select-window is specified #
 
-            if args.select_window:
+            if config.select_window:
                 if len(windows) == 0:
                     raise RuntimeError('No windows found to select from')
                 
@@ -97,41 +63,38 @@ def manual_flow(args) -> dict:
                     raise RuntimeError(f'Invalid window index: {selected_index}')
 
                 if selected_window:
-                    capture_region = (
-                        selected_window['x'],
-                        selected_window['y'],
-                        selected_window['width'],
-                        selected_window['height'],
+                    capture_region = RegionBox(
+                        x=selected_window['x'],
+                        y=selected_window['y'],
+                        width=selected_window['width'],
+                        height=selected_window['height'],
                     )
 
             # select window by title if --window-title is specified #
             
-            elif args.window_title:
-                filtered_windows = [w for w in windows if args.window_title == w['title']]
+            elif config.window_title:
+                filtered_windows = [w for w in windows if config.window_title == w['title']]
                 if len(filtered_windows) != 1:
-                    raise RuntimeError(f'Expected exactly one window matching title: {args.window_title!r}, found {len(filtered_windows)}')
+                    raise RuntimeError(f'Expected exactly one window matching title: {config.window_title!r}, found {len(filtered_windows)}')
 
                 selected_window = filtered_windows[0]
-                capture_region = (
-                    selected_window['x'],
-                    selected_window['y'],
-                    selected_window['width'],
-                    selected_window['height'],
+                capture_region = RegionBox(
+                    x=selected_window['x'],
+                    y=selected_window['y'],
+                    width=selected_window['width'],
+                    height=selected_window['height'],
                 )
 
-    elif args.capture_region:
-        try:
-            x, y, width, height = map(int, args.capture_region.split(','))
-            capture_region = (x, y, width, height)
-        except ValueError:
-            raise RuntimeError('Invalid --capture-region format. Expected: x,y,width,height')
+    elif config.capture_region:
+        capture_region = config.capture_region
 
     #
     # capture screen
     #
 
-    capture_result = api.capture_screen(region=capture_region)
-    image_path = capture_result['image_path']
+    image_path = ctx.test_dir / 'test_frame.png'
+    capture_result = api.capture_screen(ctx, output_path=image_path, region=capture_region)
+    
 
     #
     # assertions
@@ -139,9 +102,9 @@ def manual_flow(args) -> dict:
 
     ocr_result = None
     ocr_text_assert_result = None
-    if args.assert_ocr_text:
+    if config.assert_ocr_text:
         ocr_result = api.ocr_extract(image_path=image_path)
-        ocr_text_assert_result = api.assert_ocr_text(expected=args.assert_ocr_text, image_path=image_path)
+        ocr_text_assert_result = api.assert_ocr_text(expected=config.assert_ocr_text, image_path=image_path)
 
     stdout_assert_result = None
 
@@ -151,11 +114,11 @@ def manual_flow(args) -> dict:
     stdout_text = str(stop_result.get('stdout', ''))
     stderr_text = str(stop_result.get('stderr', ''))
 
-    if args.assert_stdout:
-        stdout_assert_result = api.assert_stdout(expected=args.assert_stdout, stdout_text=stdout_text)
+    if config.assert_stdout:
+        stdout_assert_result = api.assert_stdout(expected=config.assert_stdout, stdout_text=stdout_text)
 
-    if args.assert_stderr:
-        stderr_assert_result = api.assert_stderr(expected=args.assert_stderr, stderr_text=stderr_text)
+    if config.assert_stderr:
+        stderr_assert_result = api.assert_stderr(expected=config.assert_stderr, stderr_text=stderr_text)
 
     #
     # output
@@ -163,7 +126,7 @@ def manual_flow(args) -> dict:
 
     full_output = {
         'command': 'manual',
-        'spec': args.spec,
+        'spec_path': config.spec_path,
         'launch': launch_result,
         'windows': windows_result,
         'selected_window': selected_window,
@@ -177,24 +140,24 @@ def manual_flow(args) -> dict:
 
     # write report to disk #
 
-    output_path = mtest_dir / 'manual_flow_output.json'
+    output_path = ctx.test_dir / 'manual_flow_output.json'
     with open(output_path, 'w') as f:
-        json.dump(full_output, f, indent=4, sort_keys=True)
+        f.write(json_pprint(full_output))
 
     # return dict with results #
 
-    if args.verbose:
+    if config.verbose:
         return full_output
     else:
         test_keys = ['assert_ocr_text', 'assert_stdout', 'assert_stderr']
         filtered_output = {k: v for k, v in full_output.items() if k in test_keys}
         try:
             del filtered_output['assert_ocr_text']['ocr']['tokens']
-        except KeyError:
+        except (KeyError, TypeError):
             pass
         try:
             ocr_text = filtered_output['assert_ocr_text']['ocr']['text']
             filtered_output['assert_ocr_text']['ocr']['text'] = ocr_text[:250] + '...' if len(ocr_text) > 100 else ocr_text
-        except KeyError:
+        except (KeyError, TypeError):
             pass
         return filtered_output
