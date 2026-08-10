@@ -102,20 +102,32 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
 
     ocr_extract = None
     ocr_text_assert_result = None
+    ocr_not_text_assert_result = None
 
-    if config.assert_ocr_text:
+    if config.assert_ocr_text or config.assert_not_ocr_text:
         ocr_extract = api.ocr_extract(ctx, image_path=image_path)
         ocr_text = ocr_extract['text'].lower()
 
-        ocr_text_assert_result = []
-        for expected_ocr_text in config.assert_ocr_text:
-            ocr_text_assert_result.append({
-                'text': expected_ocr_text,
-                'found': expected_ocr_text.lower() in ocr_text,
-            })
+        if config.assert_ocr_text:
+            ocr_text_assert_result = []
+            for expected_ocr_text in config.assert_ocr_text:
+                ocr_text_assert_result.append({
+                    'text': expected_ocr_text,
+                    'found': expected_ocr_text.lower() in ocr_text,
+                })
+
+        if config.assert_not_ocr_text:
+            ocr_not_text_assert_result = []
+            for unexpected_ocr_text in config.assert_not_ocr_text:
+                ocr_not_text_assert_result.append({
+                    'text': unexpected_ocr_text,
+                    'not_found': unexpected_ocr_text.lower() not in ocr_text,
+                })
 
     stdout_assert_result = None
+    stdout_not_assert_result = None
     stderr_assert_result = None
+    stderr_not_assert_result = None
 
     stop_result = api.stop_target(ctx, session_id=launch_result.get('session_id', 'manual-session-1'))
 
@@ -128,6 +140,15 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
                 'found': expected_stdout_text.lower() in stdout_text,
             })
 
+    if config.assert_not_stdout_text:
+        stdout_not_assert_result = []
+        stdout_text = stop_result['stdout'].lower()
+        for unexpected_stdout_text in config.assert_not_stdout_text:
+            stdout_not_assert_result.append({
+                'text': unexpected_stdout_text,
+                'not_found': unexpected_stdout_text.lower() not in stdout_text,
+            })
+
     if config.assert_stderr_text:
         stderr_assert_result = []
         stderr_text = stop_result['stderr'].lower()
@@ -135,6 +156,15 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
             stderr_assert_result.append({
                 'text': expected_stderr_text,
                 'found': expected_stderr_text.lower() in stderr_text,
+            })
+
+    if config.assert_not_stderr_text:
+        stderr_not_assert_result = []
+        stderr_text = stop_result['stderr'].lower()
+        for unexpected_stderr_text in config.assert_not_stderr_text:
+            stderr_not_assert_result.append({
+                'text': unexpected_stderr_text,
+                'not_found': unexpected_stderr_text.lower() not in stderr_text,
             })
 
     #
@@ -150,8 +180,11 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
         'capture': capture_result,
         'ocr_extract': ocr_extract,
         'assert_ocr_text': ocr_text_assert_result,
+        'assert_not_ocr_text': ocr_not_text_assert_result,
         'assert_stdout': stdout_assert_result,
+        'assert_not_stdout': stdout_not_assert_result,
         'assert_stderr': stderr_assert_result,
+        'assert_not_stderr': stderr_not_assert_result,
         'stop': stop_result,
     }
 
@@ -166,8 +199,7 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
     if config.verbose:
         return full_output
     else:
-        test_keys = ['assert_ocr_text', 'assert_stdout', 'assert_stderr']
-        filtered_output = {k: v for k, v in full_output.items() if k in test_keys}
+        filtered_output = {k: v for k, v in full_output.items() if k.startswith('assert')}
         try:
             del filtered_output['assert_ocr_text']['ocr']['tokens']
         except (KeyError, TypeError):

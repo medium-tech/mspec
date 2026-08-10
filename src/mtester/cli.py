@@ -22,8 +22,11 @@ def parse_args(argv: list[str] | None = None):
     manual_parser.add_argument('--select-window', dest='select_window', action='store_true', help='Select a window from the list of open windows (currently only OSX)')
     manual_parser.add_argument('--capture-region', dest='capture_region', help='Capture region in format x,y,width,height (cannot supply w/ --select-window)')
     manual_parser.add_argument('--assert-ocr-text', dest='assert_ocr_text', nargs='+', help='Assert text appears in OCR output')
-    manual_parser.add_argument('--assert-stdout', dest='assert_stdout', nargs='+', help='Assert text appears in target stdout')
-    manual_parser.add_argument('--assert-stderr', dest='assert_stderr', nargs='+', help='Assert text appears in target stderr')
+    manual_parser.add_argument('--assert-not-ocr-text', dest='assert_not_ocr_text', nargs='+', help='Assert text does NOT appear in OCR output')
+    manual_parser.add_argument('--assert-stdout', dest='assert_stdout_text', nargs='+', help='Assert text appears in target stdout')
+    manual_parser.add_argument('--assert-not-stdout', dest='assert_not_stdout_text', nargs='+', help='Assert text does NOT appear in target stdout')
+    manual_parser.add_argument('--assert-stderr', dest='assert_stderr_text', nargs='+', help='Assert text appears in target stderr')
+    manual_parser.add_argument('--assert-not-stderr', dest='assert_not_stderr_text', nargs='+', help='Assert text does NOT appear in target stderr')
     manual_parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose logging')
 
     return parser.parse_args(argv)
@@ -46,8 +49,11 @@ def create_context(args: argparse.Namespace) -> MTesterContext:
             window_title=args.window_title,
             select_window=args.select_window,
             assert_ocr_text=args.assert_ocr_text,
-            assert_stdout_text=args.assert_stdout,
-            assert_stderr_text=args.assert_stderr,
+            assert_not_ocr_text=args.assert_not_ocr_text,
+            assert_stdout_text=args.assert_stdout_text,
+            assert_not_stdout_text=args.assert_not_stdout_text,
+            assert_stderr_text=args.assert_stderr_text,
+            assert_not_stderr_text=args.assert_not_stderr_text,
             verbose=args.verbose
         )
     )

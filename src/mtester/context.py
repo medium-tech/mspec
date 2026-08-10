@@ -15,11 +15,16 @@ class MTesterConfig:
 	capture_region: RegionBox | None = None
 	window_title: str | None = None
 	select_window: bool = False
-	assert_ocr_text: list[str] | None = None
-	assert_stdout_text: list[str] | None = None
-	assert_stderr_text: list[str] | None = None
 	verbose: bool = False
-	
+
+	assert_ocr_text: list[str] | None = None
+	assert_not_ocr_text: list[str] | None = None
+
+	assert_stdout_text: list[str] | None = None
+	assert_not_stdout_text: list[str] | None = None
+
+	assert_stderr_text: list[str] | None = None
+	assert_not_stderr_text: list[str] | None = None
 
 @dataclass(slots=True)
 class MTesterContext:
