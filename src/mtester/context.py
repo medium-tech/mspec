@@ -1,9 +1,13 @@
 import shutil
+import logging
 
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from mtester.types import RegionBox
+
+from lingolib.context import init_logger
+
 
 @dataclass(slots=True)
 class MTesterConfig:
@@ -22,6 +26,7 @@ class MTesterConfig:
 class MTesterContext:
 	test_dir: Path | None = None
 	config: MTesterConfig = field(default_factory=MTesterConfig)
+	log: logging.Logger = field(default_factory=init_logger)
 
 	def set_test_dir(self, test_name:str, reset:bool=False) -> Path:
 		self.test_dir = Path.cwd() / '.mtester' / test_name

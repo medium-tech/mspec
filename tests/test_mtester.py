@@ -17,8 +17,14 @@ class TestMTester(unittest.TestCase):
 
     def test_can_import_mtester(self):
         import mtester
-
         self.assertIsNotNone(mtester)
+
+    def test_can_import_lingolib(self):
+        import lingolib
+        self.assertIsNotNone(lingolib)
+
+        from lingolib.context import init_logger
+        self.assertIsNotNone(init_logger)
 
     @unittest.skipUnless(platform.system() == 'Darwin', 'manual_flow smoke tests are macOS-only')
     def test_manual_flow_finds_ocr_text(self):
@@ -63,6 +69,3 @@ class TestMTester(unittest.TestCase):
 
         self.assertIn('assert_stderr', result)
         self.assertTrue(result['assert_stderr']['found'])
-
-    def _disabled_test_failure(self):
-        self.assertEqual(1, 12)
