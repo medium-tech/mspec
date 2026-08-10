@@ -15,9 +15,9 @@ class MTesterConfig:
 	capture_region: RegionBox | None = None
 	window_title: str | None = None
 	select_window: bool = False
-	assert_ocr_text: str | None = None
-	assert_stdout: str | None = None
-	assert_stderr: str | None = None
+	assert_ocr_text: list[str] | None = None
+	assert_stdout: list[str] | None = None
+	assert_stderr: list[str] | None = None
 	verbose: bool = False
 	
 

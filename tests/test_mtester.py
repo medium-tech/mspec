@@ -32,7 +32,7 @@ class TestMTester(unittest.TestCase):
             config=MTesterConfig(
                 spec_path=Path('lingo/shared/scripts/gui/hello-gui.yaml').resolve(),
                 window_title='Lingo GUI Spec',
-                assert_ocr_text='total count',
+                assert_ocr_text=['total',  'count'],
                 verbose=False,
             )
         )
@@ -47,7 +47,8 @@ class TestMTester(unittest.TestCase):
             result = manual_flow(ctx, wait_for_window=0.0)
 
         self.assertIn('assert_ocr_text', result)
-        self.assertTrue(result['assert_ocr_text'])
+        for case in result['assert_ocr_text']:
+            self.assertTrue(case['found'], f"Expected OCR text '{case['text']}' not found in output")
 
     @unittest.skipUnless(platform.system() == 'Darwin', 'manual_flow smoke tests are macOS-only')
     def test_manual_flow_finds_stderr_text(self):
@@ -55,7 +56,7 @@ class TestMTester(unittest.TestCase):
             config=MTesterConfig(
                 spec_path=Path('lingo/shared/scripts/gui/hello-gui.yaml').resolve(),
                 window_title='Lingo GUI Spec',
-                assert_stderr='lingo',
+                assert_stderr=['lingo'],
                 verbose=False,
             )
         )
@@ -68,4 +69,6 @@ class TestMTester(unittest.TestCase):
             result = manual_flow(ctx, wait_for_window=0.0)
 
         self.assertIn('assert_stderr', result)
-        self.assertTrue(result['assert_stderr'])
+        for case in result['assert_stderr']:
+            self.assertTrue(case['found'], f"Expected stderr text '{case['text']}' not found in output")
+

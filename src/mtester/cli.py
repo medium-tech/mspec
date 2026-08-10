@@ -21,9 +21,9 @@ def parse_args(argv: list[str] | None = None):
     manual_parser.add_argument('--window-title', dest='window_title', help='Window title to select (currently only OSX)')
     manual_parser.add_argument('--select-window', dest='select_window', action='store_true', help='Select a window from the list of open windows (currently only OSX)')
     manual_parser.add_argument('--capture-region', dest='capture_region', help='Capture region in format x,y,width,height (cannot supply w/ --select-window)')
-    manual_parser.add_argument('--assert-ocr-text', dest='assert_ocr_text', help='Assert text appears in OCR output')
-    manual_parser.add_argument('--assert-stdout', dest='assert_stdout', help='Assert text appears in target stdout')
-    manual_parser.add_argument('--assert-stderr', dest='assert_stderr', help='Assert text appears in target stderr')
+    manual_parser.add_argument('--assert-ocr-text', dest='assert_ocr_text', nargs='+', help='Assert text appears in OCR output')
+    manual_parser.add_argument('--assert-stdout', dest='assert_stdout', nargs='+', help='Assert text appears in target stdout')
+    manual_parser.add_argument('--assert-stderr', dest='assert_stderr', nargs='+', help='Assert text appears in target stderr')
     manual_parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose logging')
 
     return parser.parse_args(argv)
