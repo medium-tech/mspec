@@ -1,13 +1,11 @@
-import json
-
-from typing import Any
+import time
 
 from mtester import api
 from mtester.context import MTesterContext, MTesterConfig
 from mtester.types import RegionBox, json_pprint
 
 
-def manual_flow(ctx: MTesterContext) -> dict:
+def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
 
     config: MTesterConfig = ctx.config
     
@@ -23,8 +21,9 @@ def manual_flow(ctx: MTesterContext) -> dict:
 
     # wait for window to open #
 
-    if input('Press Enter after the target window opens') == '':
-        pass
+    # if input('Press Enter after the target window opens') == '':
+    #     pass
+    time.sleep(wait_for_window)
 
     #
     # get capture region (cropping)
