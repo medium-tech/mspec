@@ -1,7 +1,3 @@
-#
-# mtester cli
-#
-
 import argparse
 
 from pathlib import Path

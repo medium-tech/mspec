@@ -1,4 +1,3 @@
-import shutil
 import subprocess
 import uuid
 import os
@@ -9,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from mtester.context import MTesterContext
-from mtester.types import RegionBox, PixelRGB
+from mtester.types import RegionBox
 
 from PIL import Image, ImageGrab
 import pytesseract
