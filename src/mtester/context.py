@@ -19,7 +19,6 @@ class MTesterConfig:
 	assert_stdout: str | None = None
 	assert_stderr: str | None = None
 	verbose: bool = False
-
 	
 
 @dataclass(slots=True)
