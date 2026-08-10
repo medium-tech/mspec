@@ -95,7 +95,6 @@ def manual_flow(ctx: MTesterContext) -> dict:
     image_path = ctx.test_dir / 'test_frame.png'
     capture_result = api.capture_screen(ctx, output_path=image_path, region=capture_region)
     
-
     #
     # assertions
     #
