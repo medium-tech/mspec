@@ -11,7 +11,8 @@ from mtester import api
 from mtester.context import MTesterConfig, MTesterContext
 from mtester.types import RegionBox
 
-WINDOW_TITLE = 'Lingo GUI Spec'
+WINDOW_TITLE_TEXT_SPEC = 'Lingo Text Spec'
+WINDOW_TITLE_GUI_SPEC = 'Lingo GUI Spec'
 
 IS_DARWIN = platform.system() == 'Darwin'
 RUN_GUI_TESTS = os.environ.get('RUN_GUI_TESTS', '0') == '1'
@@ -34,11 +35,52 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
         self.assertIsNotNone(init_logger)
 
     @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'display smoke tests are macOS-only and require RUN_GUI_TESTS=1')
+    def test_display_hello_text_test(self):
+        ctx = MTesterContext(
+            config=MTesterConfig(
+                spec_path=Path('lingo/shared/scripts/text/hello-text.yaml').resolve(),
+                verbose=False,
+            )
+        )
+        ctx.set_test_dir(test_name='test_display_hello_text_test', reset=True)
+
+        launch_result = api.launch_target(
+            ctx,
+            command=['python', '-m', 'lingolib', '-v', 'display', ctx.config.spec_path],
+        )
+        self.assertTrue(launch_result.ok, msg=str(launch_result))
+
+        try:
+            region = api.get_region_for_window_title(ctx, window_title=WINDOW_TITLE_TEXT_SPEC)
+
+            frame_result = api.capture_test_frame(
+                ctx,
+                name='start_frame',
+                region=region,
+                wait_for_window=0.5,
+                extract_ocr=True,
+            )
+            capture_result = frame_result.capture_result
+            ocr_result = frame_result.ocr_result
+
+            self.assertTrue(capture_result.ok, msg=str(capture_result))
+            self.assertIsNotNone(ocr_result)
+            self.assertTrue(ocr_result.ok, msg=str(ocr_result))
+            self.assertIn('world', ocr_result.text.lower())
+
+        finally:
+            session_result = api.stop_target(ctx, session_id=launch_result.session_id)
+
+        self.assertIsNotNone(session_result)
+        self.assertTrue(session_result.ok, msg=str(session_result))
+        self.assertIn('hello.world', session_result.stderr)
+
+    @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'display smoke tests are macOS-only and require RUN_GUI_TESTS=1')
     def test_display_hello_gui_test(self):
         ctx = MTesterContext(
             config=MTesterConfig(
                 spec_path=Path('lingo/shared/scripts/gui/hello-gui.yaml').resolve(),
-                window_title=WINDOW_TITLE,
+                window_title=WINDOW_TITLE_GUI_SPEC,
                 verbose=False,
             )
         )
@@ -51,7 +93,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
         self.assertTrue(launch_result.ok, msg=str(launch_result))
 
         try:
-            region = api.get_region_for_window_title(ctx, window_title=WINDOW_TITLE)
+            region = api.get_region_for_window_title(ctx, window_title=WINDOW_TITLE_GUI_SPEC)
 
             frame_result = api.capture_test_frame(
                 ctx,
