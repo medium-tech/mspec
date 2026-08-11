@@ -52,7 +52,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
 
             frame_result = api.capture_test_frame(
                 ctx,
-                name='hello_world',
+                name='start_frame',
                 region=region,
                 wait_for_window=0.5,
                 extract_ocr=True,
