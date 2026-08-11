@@ -76,6 +76,9 @@ class OcrToken:
 	height: int
 	confidence: float
 
+	def get_region_box(self) -> RegionBox:
+		return RegionBox(x=self.left, y=self.top, width=self.width, height=self.height)
+
 
 @dataclass(slots=True)
 class LaunchTargetResult:

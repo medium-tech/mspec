@@ -259,24 +259,14 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
                 color_assertions=[
                     ColorRegionAssertion(
                         name='wikipedia_has_blue',
-                        region=RegionBox(
-                            x=wikipedia_token.left,
-                            y=wikipedia_token.top,
-                            width=wikipedia_token.width,
-                            height=wikipedia_token.height,
-                        ),
+                        region=wikipedia_token.get_region_box(),
                         color=PixelRGB(r=0, g=0, b=255),
                         expected_present=True,
                         tolerance=110,
                     ),
                     ColorRegionAssertion(
                         name='basic_has_no_blue',
-                        region=RegionBox(
-                            x=basic_token.left,
-                            y=basic_token.top,
-                            width=basic_token.width,
-                            height=basic_token.height,
-                        ),
+                        region=basic_token.get_region_box(),
                         color=PixelRGB(r=0, g=0, b=255),
                         expected_present=False,
                         tolerance=110,
