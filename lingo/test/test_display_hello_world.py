@@ -33,11 +33,15 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
         from lingolib.context import init_logger
         self.assertIsNotNone(init_logger)
 
+    #
+    # text specs
+    #
+
     @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'display smoke tests are macOS-only and require RUN_GUI_TESTS=1')
-    def test_display_hello_text_test(self):
+    def test_display_hello_text_1(self):
         spec_path = Path('lingo/shared/scripts/text/hello-text.yaml').resolve()
         ctx = MTesterContext(verbose=False)
-        ctx.set_test_dir(test_name='test_display_hello_text_test', reset=True)
+        ctx.set_test_dir(test_name='test_display_hello_text_1', reset=True)
 
         launch_result = api.launch_target(
             ctx,
@@ -69,6 +73,82 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
         self.assertIsNotNone(session_result)
         self.assertTrue(session_result.ok, msg=str(session_result))
         self.assertIn('hello.world', session_result.stderr)
+
+    @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'display smoke tests are macOS-only and require RUN_GUI_TESTS=1')
+    def test_display_hello_text_2(self):
+        spec_path = Path('lingo/shared/scripts/text/hello-text-2.yaml').resolve()
+        ctx = MTesterContext(verbose=False)
+        ctx.set_test_dir(test_name='test_display_hello_text_2', reset=True)
+
+        launch_result = api.launch_target(
+            ctx,
+            command=['python', '-m', 'lingolib', '-v', 'display', spec_path],
+        )
+        self.assertTrue(launch_result.ok, msg=str(launch_result))
+
+        try:
+            region = api.get_region_for_window_title(ctx, window_title=WINDOW_TITLE_TEXT_SPEC)
+
+            frame_result = api.capture_test_frame(
+                ctx,
+                name='start_frame',
+                region=region,
+                wait_for_window=0.5,
+                extract_ocr=True,
+            )
+            capture_result = frame_result.capture_result
+            ocr_result = frame_result.ocr_result
+
+            self.assertTrue(capture_result.ok, msg=str(capture_result))
+            self.assertIsNotNone(ocr_result)
+            self.assertTrue(ocr_result.ok, msg=str(ocr_result))
+
+            #
+            # ocr text output
+            #
+
+            expected_texts = [
+                'Text Formatting',
+                'A Simple Example',
+                'rich text document',
+                'line breaks'
+            ]
+            ocr_text_lower = ocr_result.text.lower()
+            for expected_text in expected_texts:
+                self.assertIn(expected_text.lower(), ocr_text_lower, msg=f"Expected OCR text '{expected_text}' not found in output")
+
+            #
+            # text vertical placement
+            #
+
+            # get first word of each line #
+
+            line_1_word_1 = ocr_result.tokens[0]
+            line_2_word_1 = ocr_result.tokens[2]
+            line_3_word_1 = ocr_result.tokens[5]
+            line_4_word_1 = ocr_result.tokens[20]
+
+            assert line_1_word_1.text.lower() == 'text', f"Expected first word of line 1 to be 'Text', got '{line_1_word_1.text}'"
+            assert line_2_word_1.text.lower() == 'a', f"Expected first word of line 2 to be 'A', got '{line_2_word_1.text}'"
+            assert line_3_word_1.text.lower() == 'this', f"Expected first word of line 3 to be 'rich', got '{line_3_word_1.text}'"
+            assert line_4_word_1.text.lower() == 'line', f"Expected first word of line 4 to be 'line', got '{line_4_word_1.text}'"
+
+            # confirm each line is placed beneath the previous line #
+
+            self.assertGreater(line_2_word_1.top, line_1_word_1.top, msg=f"Expected line 2 top value to be greater than line 1 top value, got {line_2_word_1.top=} & {line_1_word_1.top}")
+            self.assertGreater(line_3_word_1.top, line_2_word_1.top, msg=f"Expected line 3 top value to be greater than line 2 top value, got {line_3_word_1.top=} & {line_2_word_1.top}")
+            self.assertGreater(line_4_word_1.top, line_3_word_1.top, msg=f"Expected line 4 top value to be greater than line 3 top value, got {line_4_word_1.top=} & {line_3_word_1.top}")
+
+        finally:
+            session_result = api.stop_target(ctx, session_id=launch_result.session_id)
+
+        self.assertIsNotNone(session_result)
+        self.assertTrue(session_result.ok, msg=str(session_result))
+        
+
+    #
+    # gui specs
+    #
 
     @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'display smoke tests are macOS-only and require RUN_GUI_TESTS=1')
     def test_display_hello_gui_test(self):

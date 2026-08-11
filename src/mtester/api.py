@@ -1,7 +1,6 @@
 import subprocess
 import time
 import uuid
-import json
 import os
 import platform
 

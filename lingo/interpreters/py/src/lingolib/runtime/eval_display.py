@@ -419,7 +419,7 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
     tk_ctx = ctx.tk
     
     tk_ctx.root.title('Lingo Text Spec')
-    tk_ctx.root.geometry('800x1200')
+    tk_ctx.root.geometry('800x800')
     _configure_menu_bar(ctx)
 
     tk_ctx.text_widget.pack(fill='both', expand=True)
@@ -460,7 +460,7 @@ def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
     tk_ctx = ctx.tk
 
     tk_ctx.root.title('Lingo GUI Spec')
-    tk_ctx.root.geometry('800x1200')
+    tk_ctx.root.geometry('800x800')
     _configure_menu_bar(ctx)
 
     tk_ctx.text_widget.pack(fill='both', expand=True)

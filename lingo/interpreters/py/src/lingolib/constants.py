@@ -58,7 +58,7 @@ HEADING_FONTS = {
 }
 
 TEXT_FONT = {
-	'font': {'family': PRIMARY_FONT_FAMILY, 'size': 12},
+	'font': {'family': PRIMARY_FONT_FAMILY, 'size': 14},
 	'options': {
 		'spacing1': 0,
 		'spacing2': 0,
@@ -66,17 +66,17 @@ TEXT_FONT = {
 	}
 }
 
-MONOSPACE_FONT = ('Courier New', 12)
+MONOSPACE_FONT = ('Courier New', 14)
 
 TABLE_HEADER_FONT = {
-	'font': {'family': MONOSPACE_FONT[0], 'size': 12, 'weight': 'bold'},
+	'font': {'family': MONOSPACE_FONT[0], 'size': 14, 'weight': 'bold'},
 }
 TABLE_TEXT_FONT = {
-	'font': {'family': MONOSPACE_FONT[0], 'size': 12},
+	'font': {'family': MONOSPACE_FONT[0], 'size': 14},
 }
 
 ERROR_TEXT_FONT = {
-	'font': {'family': MONOSPACE_FONT[0], 'size': 12, 'weight': 'bold', 'color': 'red'},
+	'font': {'family': MONOSPACE_FONT[0], 'size': 14, 'weight': 'bold', 'color': 'red'},
 }
 
 BUTTON_BACKGROUND_COLOR = 'white'
