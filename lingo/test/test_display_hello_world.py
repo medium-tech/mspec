@@ -41,41 +41,32 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
         )
         ctx.set_test_dir(test_name='test_display_hello_gui_test', reset=True)
 
-        launch_result = None
-        session_result = None
+        launch_result = api.launch_target(
+            ctx,
+            command=['python', '-m', 'lingolib', '-v', 'display', ctx.config.spec_path],
+        )
+        self.assertTrue(launch_result.ok, msg=str(launch_result))
 
-        with patch.dict(
-            os.environ,
-            {'PATH': f'{Path(sys.executable).parent}:{os.environ.get("PATH", "")}'},
-            clear=False,
-        ):
-            launch_result = api.launch_target(
+        try:
+            region = api.get_region_for_window_title(ctx, window_title=WINDOW_TITLE)
+
+            frame_result = api.capture_test_frame(
                 ctx,
-                command=['python', '-m', 'lingolib', '-v', 'display', ctx.config.spec_path],
+                name='hello_world',
+                region=region,
+                wait_for_window=0.5,
+                extract_ocr=True,
             )
-            self.assertTrue(launch_result.ok, msg=str(launch_result))
+            capture_result = frame_result.capture_result
+            ocr_result = frame_result.ocr_result
 
-            try:
-                region = api.get_region_for_window_title(ctx, window_title=WINDOW_TITLE)
+            self.assertTrue(capture_result.ok, msg=str(capture_result))
+            self.assertIsNotNone(ocr_result)
+            self.assertTrue(ocr_result.ok, msg=str(ocr_result))
+            self.assertIn('total count', ocr_result.text.lower())
 
-                frame_result = api.capture_test_frame(
-                    ctx,
-                    name='hello_world',
-                    region=region,
-                    wait_for_window=0.5,
-                    extract_ocr=True,
-                )
-                capture_result = frame_result.capture_result
-                ocr_result = frame_result.ocr_result
-
-                self.assertTrue(capture_result.ok, msg=str(capture_result))
-                self.assertIsNotNone(ocr_result)
-                self.assertTrue(ocr_result.ok, msg=str(ocr_result))
-                self.assertIn('total count', ocr_result.text.lower())
-
-            finally:
-                if launch_result and launch_result.session_id:
-                    session_result = api.stop_target(ctx, session_id=launch_result.session_id)
+        finally:
+            session_result = api.stop_target(ctx, session_id=launch_result.session_id)
 
         self.assertIsNotNone(session_result)
         self.assertTrue(session_result.ok, msg=str(session_result))
