@@ -1,6 +1,7 @@
 import subprocess
 import time
 import uuid
+import json
 import os
 import platform
 
@@ -9,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from mtester.context import MTesterContext, MTesterConfig
-from mtester.types import RegionBox
+from mtester.types import RegionBox, json_pprint
 
 from PIL import Image, ImageGrab
 import pytesseract
@@ -53,6 +54,7 @@ def launch_target(ctx: MTesterContext, command: list[str], cwd: str | None = Non
     # Args: command is the process argv, cwd is optional working directory, env is optional env var overrides.
     # Does: starts the target app process for UI testing and returns a process/session descriptor.
     # Returns: dict with process metadata, such as pid, start_time, and opaque session_id.
+
 
 def get_region_for_window_title(ctx: MTesterContext, window_title: str) -> RegionBox:
     ctx.log.debug(f'mtester.api.get_region_for_window_title called with args: window_title={window_title}')
@@ -346,7 +348,6 @@ def ocr_extract(ctx: MTesterContext, image_path: str, region: RegionBox | None =
     # Does: extracts text with positional metadata from the image using OCR.
     # Returns: dict with plain text plus token/line boxes and confidence scores.
 
-
 #
 # high level services
 #
@@ -370,7 +371,7 @@ def capture_test_frame(ctx: MTesterContext, name: str | Path, region: RegionBox 
     # capture screen
     #
 
-    image_path = ctx.test_dir / f'frame_{name}.png'
+    image_path = ctx.test_dir / f'frame_{name}_capture.png'
     capture_result = capture_screen(ctx, output_path=image_path, region=region)
 
     if not capture_result.get('ok', False):
@@ -380,6 +381,9 @@ def capture_test_frame(ctx: MTesterContext, name: str | Path, region: RegionBox 
         ocr_result = ocr_extract(ctx, image_path=image_path)
         if not ocr_result.get('ok', False):
             raise RuntimeError(f"Failed to extract OCR: {ocr_result.get('error', 'Unknown error')}")
+        ocr_debug_path = ctx.test_dir / f'frame_{name}_ocr_result.json'
+        with open(ocr_debug_path, 'w+') as f:
+            f.write(json_pprint(ocr_result))
     else:
         ocr_result = None
 
