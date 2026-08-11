@@ -1,15 +1,14 @@
 import os
 import platform
-import sys
-import time
 import unittest
+import itertools
 
 from pathlib import Path
 from unittest.mock import patch
 
 from mtester import api
 from mtester.context import MTesterContext
-from mtester.types import ColorRegionAssertion, PixelRGB, RegionBox
+from mtester.types import ColorRegionAssertion, PixelRGB
 
 WINDOW_TITLE_TEXT_SPEC = 'Lingo Text Spec'
 WINDOW_TITLE_GUI_SPEC = 'Lingo GUI Spec'
@@ -242,24 +241,36 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
             # link blue color detection
             #
 
+            # raw url
+            https_filter = lambda token: not token.text.lower().startswith('https')
+            raw_link_token = next(itertools.dropwhile(https_filter, ocr_result.tokens), None)
+
             ocr_result.seek_token(0)
 
-            wikipedia_token = ocr_result.find_token('wikipedia')
+            # example of link with text "Wikipedia"
+            text_link_token = ocr_result.find_token('wikipedia')
+
+            # word that is not a link
             basic_token = ocr_result.find_token('basic')
 
-            self.assertIsNotNone(wikipedia_token, msg='Could not find token for "Wikipedia" in OCR tokens')
+            self.assertIsNotNone(raw_link_token, msg='Could not find token for raw link starting with "https" in OCR tokens')
+            self.assertIsNotNone(text_link_token, msg='Could not find token for "Wikipedia" in OCR tokens')
             self.assertIsNotNone(basic_token, msg='Could not find token for "basic" in OCR tokens')
-
-            assert wikipedia_token is not None
-            assert basic_token is not None
 
             color_result = api.assert_colors_in_regions(
                 ctx,
                 image_path=capture_result.image_path,
                 color_assertions=[
                     ColorRegionAssertion(
-                        name='wikipedia_has_blue',
-                        region=wikipedia_token.get_region_box(),
+                        name='raw_link_has_blue',
+                        region=raw_link_token.get_region_box(),
+                        color=PixelRGB(r=0, g=0, b=255),
+                        expected_present=True,
+                        tolerance=110,
+                    ),
+                    ColorRegionAssertion(
+                        name='wikipedia_text_link_has_blue',
+                        region=text_link_token.get_region_box(),
                         color=PixelRGB(r=0, g=0, b=255),
                         expected_present=True,
                         tolerance=110,
@@ -275,9 +286,10 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
             )
 
             self.assertTrue(color_result.ok, msg=str(color_result))
-            self.assertEqual(len(color_result.assertions), 2)
+            self.assertEqual(len(color_result.assertions), 3, msg=f"Expected 3 color assertions, got {len(color_result.assertions)}")
             self.assertTrue(color_result.assertions[0].passed, msg=str(color_result.assertions[0]))
             self.assertTrue(color_result.assertions[1].passed, msg=str(color_result.assertions[1]))
+            self.assertTrue(color_result.assertions[2].passed, msg=str(color_result.assertions[2]))
             
         finally:
             session_result = api.stop_target(ctx, session_id=launch_result.session_id)
