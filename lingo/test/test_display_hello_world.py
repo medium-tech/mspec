@@ -53,7 +53,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
                 ctx,
                 command=['python', '-m', 'lingolib', '-v', 'display', ctx.config.spec_path],
             )
-            self.assertTrue(launch_result.get('ok', False), msg=str(launch_result))
+            self.assertTrue(launch_result.ok, msg=str(launch_result))
 
             try:
                 region = api.get_region_for_window_title(ctx, window_title=WINDOW_TITLE)
@@ -65,18 +65,18 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
                     wait_for_window=0.5,
                     extract_ocr=True,
                 )
-                capture_result = frame_result['capture_result']
-                ocr_result = frame_result['ocr_result']
+                capture_result = frame_result.capture_result
+                ocr_result = frame_result.ocr_result
 
-                self.assertTrue(capture_result.get('ok', False), msg=str(capture_result))
+                self.assertTrue(capture_result.ok, msg=str(capture_result))
                 self.assertIsNotNone(ocr_result)
-                self.assertTrue(ocr_result.get('ok', False), msg=str(ocr_result))
-                self.assertIn('total count', str(ocr_result.get('text', '')).lower())
+                self.assertTrue(ocr_result.ok, msg=str(ocr_result))
+                self.assertIn('total count', ocr_result.text.lower())
 
             finally:
-                if launch_result and launch_result.get('session_id'):
-                    session_result = api.stop_target(ctx, session_id=launch_result['session_id'])
+                if launch_result and launch_result.session_id:
+                    session_result = api.stop_target(ctx, session_id=launch_result.session_id)
 
         self.assertIsNotNone(session_result)
-        self.assertTrue(session_result.get('ok', False), msg=str(session_result))
-        self.assertIn(':: DEBUG ::', str(session_result.get('stderr', '')))
+        self.assertTrue(session_result.ok, msg=str(session_result))
+        self.assertIn(':: DEBUG ::', session_result.stderr)

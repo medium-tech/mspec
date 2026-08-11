@@ -43,8 +43,8 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
     if config.select_window or config.window_title:
         windows_result = api.list_windows(ctx)
     
-        if windows_result.get('ok'):
-            windows = windows_result.get('windows', [])
+        if windows_result.ok:
+            windows = windows_result.windows
 
             # interactively select a window if --select-window is specified #
 
@@ -55,8 +55,8 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
                 print('\nDetected windows:')
                 for window in windows:
                     print(
-                        f"[{window['index']}] {window['app']} :: {window['title']} "
-                        f"@ ({window['x']}, {window['y']}) {window['width']}x{window['height']}"
+                        f'[{window.index}] {window.app} :: {window.title} '
+                        f'@ ({window.x}, {window.y}) {window.width}x{window.height}'
                     )
 
                 raw_index = input('Select window index (Enter for 0): ').strip()
@@ -68,25 +68,25 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
 
                 if selected_window:
                     capture_region = RegionBox(
-                        x=selected_window['x'],
-                        y=selected_window['y'],
-                        width=selected_window['width'],
-                        height=selected_window['height'],
+                        x=selected_window.x,
+                        y=selected_window.y,
+                        width=selected_window.width,
+                        height=selected_window.height,
                     )
 
             # select window by title if --window-title is specified #
             
             elif config.window_title:
-                filtered_windows = [w for w in windows if config.window_title == w['title']]
+                filtered_windows = [w for w in windows if config.window_title == w.title]
                 if len(filtered_windows) != 1:
                     raise RuntimeError(f'Expected exactly one window matching title: {config.window_title!r}, found {len(filtered_windows)}')
 
                 selected_window = filtered_windows[0]
                 capture_region = RegionBox(
-                    x=selected_window['x'],
-                    y=selected_window['y'],
-                    width=selected_window['width'],
-                    height=selected_window['height'],
+                    x=selected_window.x,
+                    y=selected_window.y,
+                    width=selected_window.width,
+                    height=selected_window.height,
                 )
 
     elif config.capture_region:
@@ -109,7 +109,7 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
 
     if config.assert_ocr_text or config.assert_not_ocr_text:
         ocr_extract = api.ocr_extract(ctx, image_path=image_path)
-        ocr_text = ocr_extract['text'].lower()
+        ocr_text = ocr_extract.text.lower()
 
         if config.assert_ocr_text:
             ocr_text_assert_result = []
@@ -132,11 +132,11 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
     stderr_assert_result = None
     stderr_not_assert_result = None
 
-    stop_result = api.stop_target(ctx, session_id=launch_result.get('session_id', 'manual-session-1'))
+    stop_result = api.stop_target(ctx, session_id=launch_result.session_id)
 
     if config.assert_stdout_text:
         stdout_assert_result = []
-        stdout_text = stop_result['stdout'].lower()
+        stdout_text = stop_result.stdout.lower()
         for expected_stdout_text in config.assert_stdout_text:
             stdout_assert_result.append({
                 'text': expected_stdout_text,
@@ -145,7 +145,7 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
 
     if config.assert_not_stdout_text:
         stdout_not_assert_result = []
-        stdout_text = stop_result['stdout'].lower()
+        stdout_text = stop_result.stdout.lower()
         for unexpected_stdout_text in config.assert_not_stdout_text:
             stdout_not_assert_result.append({
                 'text': unexpected_stdout_text,
@@ -154,7 +154,7 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
 
     if config.assert_stderr_text:
         stderr_assert_result = []
-        stderr_text = stop_result['stderr'].lower()
+        stderr_text = stop_result.stderr.lower()
         for expected_stderr_text in config.assert_stderr_text:
             stderr_assert_result.append({
                 'text': expected_stderr_text,
@@ -163,7 +163,7 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
 
     if config.assert_not_stderr_text:
         stderr_not_assert_result = []
-        stderr_text = stop_result['stderr'].lower()
+        stderr_text = stop_result.stderr.lower()
         for unexpected_stderr_text in config.assert_not_stderr_text:
             stderr_not_assert_result.append({
                 'text': unexpected_stderr_text,
