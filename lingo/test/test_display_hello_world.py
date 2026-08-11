@@ -8,8 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from mtester import api
-from mtester.context import MTesterConfig, MTesterContext
-from mtester.types import RegionBox
+from mtester.context import MTesterContext
 
 WINDOW_TITLE_TEXT_SPEC = 'Lingo Text Spec'
 WINDOW_TITLE_GUI_SPEC = 'Lingo GUI Spec'
@@ -36,17 +35,13 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
 
     @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'display smoke tests are macOS-only and require RUN_GUI_TESTS=1')
     def test_display_hello_text_test(self):
-        ctx = MTesterContext(
-            config=MTesterConfig(
-                spec_path=Path('lingo/shared/scripts/text/hello-text.yaml').resolve(),
-                verbose=False,
-            )
-        )
+        spec_path = Path('lingo/shared/scripts/text/hello-text.yaml').resolve()
+        ctx = MTesterContext(verbose=False)
         ctx.set_test_dir(test_name='test_display_hello_text_test', reset=True)
 
         launch_result = api.launch_target(
             ctx,
-            command=['python', '-m', 'lingolib', '-v', 'display', ctx.config.spec_path],
+            command=['python', '-m', 'lingolib', '-v', 'display', spec_path],
         )
         self.assertTrue(launch_result.ok, msg=str(launch_result))
 
@@ -77,18 +72,13 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
 
     @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'display smoke tests are macOS-only and require RUN_GUI_TESTS=1')
     def test_display_hello_gui_test(self):
-        ctx = MTesterContext(
-            config=MTesterConfig(
-                spec_path=Path('lingo/shared/scripts/gui/hello-gui.yaml').resolve(),
-                window_title=WINDOW_TITLE_GUI_SPEC,
-                verbose=False,
-            )
-        )
+        spec_path = Path('lingo/shared/scripts/gui/hello-gui.yaml').resolve()
+        ctx = MTesterContext(verbose=False)
         ctx.set_test_dir(test_name='test_display_hello_gui_test', reset=True)
 
         launch_result = api.launch_target(
             ctx,
-            command=['python', '-m', 'lingolib', '-v', 'display', ctx.config.spec_path],
+            command=['python', '-m', 'lingolib', '-v', 'display', spec_path],
         )
         self.assertTrue(launch_result.ok, msg=str(launch_result))
 

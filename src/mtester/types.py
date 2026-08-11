@@ -24,6 +24,24 @@ class PixelRGB(NamedTuple):
 		return f"PixelRGB(r={self.r}, g={self.g}, b={self.b})"
 
 
+@dataclass(slots=True)
+class ManualFlowOptions:
+	spec_path: Path
+	capture_region: RegionBox | None = None
+	window_title: str | None = None
+	select_window: bool = False
+	verbose: bool = False
+
+	assert_ocr_text: list[str] | None = None
+	assert_not_ocr_text: list[str] | None = None
+
+	assert_stdout_text: list[str] | None = None
+	assert_not_stdout_text: list[str] | None = None
+
+	assert_stderr_text: list[str] | None = None
+	assert_not_stderr_text: list[str] | None = None
+
+
 class MTesterJSONEncoder(json.JSONEncoder):
 	def default(self, obj):
 		if isinstance(obj, Path):

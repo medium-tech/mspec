@@ -7,9 +7,8 @@ import platform
 
 from datetime import datetime, UTC
 from pathlib import Path
-from typing import Any
 
-from mtester.context import MTesterContext, MTesterConfig
+from mtester.context import MTesterContext
 from mtester.types import (
     CaptureScreenResult,
     CaptureTestFrameResult,

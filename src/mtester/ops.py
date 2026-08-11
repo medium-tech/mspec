@@ -1,16 +1,11 @@
 import time
 
-from pathlib import Path
-from typing import Any
-
 from mtester import api
-from mtester.context import MTesterContext, MTesterConfig
-from mtester.types import RegionBox, json_pprint
+from mtester.context import MTesterContext
+from mtester.types import ManualFlowOptions, RegionBox, json_pprint
 
 
-def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
-
-    config: MTesterConfig = ctx.config
+def manual_flow(ctx: MTesterContext, options: ManualFlowOptions, wait_for_window: float = 0.5) -> dict:
     
     #
     # run program
@@ -18,7 +13,7 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
 
     launch_result = api.launch_target(
         ctx,
-        command=['python', '-m', 'lingolib', '-v', 'display', config.spec_path],
+        command=['python', '-m', 'lingolib', '-v', 'display', options.spec_path],
     )
 
     if ctx.test_dir is None:
@@ -40,7 +35,7 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
 
     # crop by window dimensions if --select-window is specified #
     
-    if config.select_window or config.window_title:
+    if options.select_window or options.window_title:
         windows_result = api.list_windows(ctx)
     
         if windows_result.ok:
@@ -48,7 +43,7 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
 
             # interactively select a window if --select-window is specified #
 
-            if config.select_window:
+            if options.select_window:
                 if len(windows) == 0:
                     raise RuntimeError('No windows found to select from')
                 
@@ -76,10 +71,10 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
 
             # select window by title if --window-title is specified #
             
-            elif config.window_title:
-                filtered_windows = [w for w in windows if config.window_title == w.title]
+            elif options.window_title:
+                filtered_windows = [w for w in windows if options.window_title == w.title]
                 if len(filtered_windows) != 1:
-                    raise RuntimeError(f'Expected exactly one window matching title: {config.window_title!r}, found {len(filtered_windows)}')
+                    raise RuntimeError(f'Expected exactly one window matching title: {options.window_title!r}, found {len(filtered_windows)}')
 
                 selected_window = filtered_windows[0]
                 capture_region = RegionBox(
@@ -89,8 +84,8 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
                     height=selected_window.height,
                 )
 
-    elif config.capture_region:
-        capture_region = config.capture_region
+    elif options.capture_region:
+        capture_region = options.capture_region
 
     #
     # capture screen
@@ -107,21 +102,21 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
     ocr_text_assert_result = None
     ocr_not_text_assert_result = None
 
-    if config.assert_ocr_text or config.assert_not_ocr_text:
+    if options.assert_ocr_text or options.assert_not_ocr_text:
         ocr_extract = api.ocr_extract(ctx, image_path=image_path)
         ocr_text = ocr_extract.text.lower()
 
-        if config.assert_ocr_text:
+        if options.assert_ocr_text:
             ocr_text_assert_result = []
-            for expected_ocr_text in config.assert_ocr_text:
+            for expected_ocr_text in options.assert_ocr_text:
                 ocr_text_assert_result.append({
                     'text': expected_ocr_text,
                     'found': expected_ocr_text.lower() in ocr_text,
                 })
 
-        if config.assert_not_ocr_text:
+        if options.assert_not_ocr_text:
             ocr_not_text_assert_result = []
-            for unexpected_ocr_text in config.assert_not_ocr_text:
+            for unexpected_ocr_text in options.assert_not_ocr_text:
                 ocr_not_text_assert_result.append({
                     'text': unexpected_ocr_text,
                     'not_found': unexpected_ocr_text.lower() not in ocr_text,
@@ -134,37 +129,37 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
 
     stop_result = api.stop_target(ctx, session_id=launch_result.session_id)
 
-    if config.assert_stdout_text:
+    if options.assert_stdout_text:
         stdout_assert_result = []
         stdout_text = stop_result.stdout.lower()
-        for expected_stdout_text in config.assert_stdout_text:
+        for expected_stdout_text in options.assert_stdout_text:
             stdout_assert_result.append({
                 'text': expected_stdout_text,
                 'found': expected_stdout_text.lower() in stdout_text,
             })
 
-    if config.assert_not_stdout_text:
+    if options.assert_not_stdout_text:
         stdout_not_assert_result = []
         stdout_text = stop_result.stdout.lower()
-        for unexpected_stdout_text in config.assert_not_stdout_text:
+        for unexpected_stdout_text in options.assert_not_stdout_text:
             stdout_not_assert_result.append({
                 'text': unexpected_stdout_text,
                 'not_found': unexpected_stdout_text.lower() not in stdout_text,
             })
 
-    if config.assert_stderr_text:
+    if options.assert_stderr_text:
         stderr_assert_result = []
         stderr_text = stop_result.stderr.lower()
-        for expected_stderr_text in config.assert_stderr_text:
+        for expected_stderr_text in options.assert_stderr_text:
             stderr_assert_result.append({
                 'text': expected_stderr_text,
                 'found': expected_stderr_text.lower() in stderr_text,
             })
 
-    if config.assert_not_stderr_text:
+    if options.assert_not_stderr_text:
         stderr_not_assert_result = []
         stderr_text = stop_result.stderr.lower()
-        for unexpected_stderr_text in config.assert_not_stderr_text:
+        for unexpected_stderr_text in options.assert_not_stderr_text:
             stderr_not_assert_result.append({
                 'text': unexpected_stderr_text,
                 'not_found': unexpected_stderr_text.lower() not in stderr_text,
@@ -176,7 +171,7 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
 
     full_output = {
         'command': 'manual',
-        'spec_path': config.spec_path,
+        'spec_path': options.spec_path,
         'launch': launch_result,
         'windows': windows_result,
         'selected_window': selected_window,
@@ -199,7 +194,7 @@ def manual_flow(ctx: MTesterContext, wait_for_window: float = 0.5) -> dict:
 
     # return dict with results #
 
-    if config.verbose:
+    if options.verbose:
         return full_output
     else:
         filtered_output = {k: v for k, v in full_output.items() if k.startswith('assert')}

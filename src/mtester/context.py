@@ -4,32 +4,13 @@ import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from mtester.types import RegionBox
-
 from lingolib.context import init_logger
 
 
 @dataclass(slots=True)
-class MTesterConfig:
-	spec_path: Path
-	capture_region: RegionBox | None = None
-	window_title: str | None = None
-	select_window: bool = False
-	verbose: bool = False
-
-	assert_ocr_text: list[str] | None = None
-	assert_not_ocr_text: list[str] | None = None
-
-	assert_stdout_text: list[str] | None = None
-	assert_not_stdout_text: list[str] | None = None
-
-	assert_stderr_text: list[str] | None = None
-	assert_not_stderr_text: list[str] | None = None
-
-@dataclass(slots=True)
 class MTesterContext:
 	test_dir: Path | None = None
-	config: MTesterConfig = field(default_factory=MTesterConfig)
+	verbose: bool = False
 	log: logging.Logger = field(default_factory=init_logger)
 
 	def set_test_dir(self, test_name:str, reset:bool=False) -> Path:
@@ -44,5 +25,5 @@ class MTesterContext:
 		return self.test_dir
 
 	def __post_init__(self):
-		if self.config.verbose:
+		if self.verbose:
 			self.log.setLevel(logging.DEBUG)

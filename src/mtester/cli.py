@@ -2,9 +2,9 @@ import argparse
 
 from pathlib import Path
 
-from mtester.context import MTesterConfig, MTesterContext
+from mtester.context import MTesterContext
 from mtester.ops import manual_flow
-from mtester.types import RegionBox, json_pprint
+from mtester.types import ManualFlowOptions, RegionBox, json_pprint
 
 
 def parse_args(argv: list[str] | None = None):
@@ -33,6 +33,11 @@ def parse_args(argv: list[str] | None = None):
 
 def create_context(args: argparse.Namespace) -> MTesterContext:
 
+    return MTesterContext(verbose=args.verbose)
+
+
+def create_manual_flow_options(args: argparse.Namespace) -> ManualFlowOptions:
+
     if args.capture_region and args.select_window:
         raise RuntimeError('Cannot supply both --capture-region and --select-window')
 
@@ -42,29 +47,26 @@ def create_context(args: argparse.Namespace) -> MTesterContext:
     else:
         capture_region = None
 
-    new_ctx = MTesterContext(
-        config=MTesterConfig(
-            spec_path=Path(args.spec).resolve(),
-            capture_region=capture_region,
-            window_title=args.window_title,
-            select_window=args.select_window,
-            assert_ocr_text=args.assert_ocr_text,
-            assert_not_ocr_text=args.assert_not_ocr_text,
-            assert_stdout_text=args.assert_stdout_text,
-            assert_not_stdout_text=args.assert_not_stdout_text,
-            assert_stderr_text=args.assert_stderr_text,
-            assert_not_stderr_text=args.assert_not_stderr_text,
-            verbose=args.verbose
-        )
+    return ManualFlowOptions(
+        spec_path=Path(args.spec).resolve(),
+        capture_region=capture_region,
+        window_title=args.window_title,
+        select_window=args.select_window,
+        assert_ocr_text=args.assert_ocr_text,
+        assert_not_ocr_text=args.assert_not_ocr_text,
+        assert_stdout_text=args.assert_stdout_text,
+        assert_not_stdout_text=args.assert_not_stdout_text,
+        assert_stderr_text=args.assert_stderr_text,
+        assert_not_stderr_text=args.assert_not_stderr_text,
+        verbose=args.verbose,
     )
-
-    return new_ctx
 
 def main(argv: list[str] | None = None):
     args = parse_args(argv)
     ctx = create_context(args)
     if args.command == 'manual':
-        result = manual_flow(ctx)
+        options = create_manual_flow_options(args)
+        result = manual_flow(ctx, options)
         print(json_pprint(result))
         return
     else:
