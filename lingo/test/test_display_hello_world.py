@@ -196,7 +196,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
             struct_value_1 = ocr_result.tokens[69]
             struct_value_2 = ocr_result.tokens[71]
             struct_value_3 = ocr_result.tokens[74]
-            struct_value_4 = ocr_result.tokens[77]
+            struct_value_4 = ocr_result.tokens[76]
 
             assert struct_value_1.text.lower() == 'true', f"Expected first struct value to be 'true', got '{struct_value_1.text}'"
             assert struct_value_2.text == '42', f"Expected second struct value to be '42', got '{struct_value_2.text}'"
