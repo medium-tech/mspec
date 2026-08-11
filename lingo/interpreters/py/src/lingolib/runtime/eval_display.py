@@ -1,6 +1,9 @@
+import sys
 import tkinter
 import json
 import webbrowser
+import signal
+
 from tkinter import messagebox
 from pprint import pprint
 
@@ -443,6 +446,7 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
         
     tk_ctx.text_widget.configure(state='disabled')
     tk_ctx.root.mainloop()
+    ctx.log.debug('GUI spec evaluation complete, exiting mainloop')
 
 def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
 
@@ -485,3 +489,4 @@ def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
         
     tk_ctx.text_widget.configure(state='disabled')
     tk_ctx.root.mainloop()
+    ctx.log.debug('GUI spec evaluation complete, exiting mainloop')

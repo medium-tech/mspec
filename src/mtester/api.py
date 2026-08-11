@@ -93,15 +93,18 @@ def stop_target(ctx: MTesterContext, session_id: str, force: bool = False) -> di
 
     if process.poll() is None:
         if force:
+            ctx.log.debug(f'Forcefully killing process with PID {process.pid} for session_id {session_id}')
             process.kill()
         else:
+            ctx.log.debug(f'Terminating process with PID {process.pid} for session_id {session_id}')
             process.terminate()
 
         try:
-            stdout_text, stderr_text = process.communicate(timeout=2.0)
+            stdout_text, stderr_text = process.communicate(timeout=15.0)
         except subprocess.TimeoutExpired:
+            ctx.log.warning(f'Process with PID {process.pid} did not terminate in time, forcefully killing it.')
             process.kill()
-            stdout_text, stderr_text = process.communicate(timeout=2.0)
+            stdout_text, stderr_text = process.communicate(timeout=15.0)
     else:
         stdout_text, stderr_text = process.communicate()
 

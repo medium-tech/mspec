@@ -154,3 +154,54 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
             self.assertIn(expected_stderr_text, stderr_text)
         for unexpected_stderr_text in ['peanut butter']:
             self.assertNotIn(unexpected_stderr_text, stderr_text)
+
+    @unittest.skipUnless(platform.system() == 'Darwin', 'display smoke tests are macOS-only')
+    def test_display_hello_gui_test(self):
+        ctx = MTesterContext(
+            config=MTesterConfig(
+                spec_path=Path('lingo/shared/scripts/gui/hello-gui.yaml').resolve(),
+                window_title=WINDOW_TITLE,
+                verbose=False,
+            )
+        )
+        ctx.set_test_dir(test_name='test_display_hello_gui_test', reset=True)
+
+        launch_result = None
+        session_result = None
+
+        with patch.dict(
+            os.environ,
+            {'PATH': f'{Path(sys.executable).parent}:{os.environ.get("PATH", "")}'},
+            clear=False,
+        ):
+            launch_result = api.launch_target(
+                ctx,
+                command=['python', '-m', 'lingolib', '-v', 'display', ctx.config.spec_path],
+            )
+            self.assertTrue(launch_result.get('ok', False), msg=str(launch_result))
+
+            try:
+                region = api.get_region_for_window_title(ctx, window_title=WINDOW_TITLE)
+
+                frame_result = api.capture_test_frame(
+                    ctx,
+                    name='hello_world',
+                    region=region,
+                    wait_for_window=0.5,
+                    extract_ocr=True,
+                )
+                capture_result = frame_result['capture_result']
+                ocr_result = frame_result['ocr_result']
+
+                self.assertTrue(capture_result.get('ok', False), msg=str(capture_result))
+                self.assertIsNotNone(ocr_result)
+                self.assertTrue(ocr_result.get('ok', False), msg=str(ocr_result))
+                self.assertIn('total count', str(ocr_result.get('text', '')).lower())
+
+            finally:
+                if launch_result and launch_result.get('session_id'):
+                    session_result = api.stop_target(ctx, session_id=launch_result['session_id'])
+
+        self.assertIsNotNone(session_result)
+        self.assertTrue(session_result.get('ok', False), msg=str(session_result))
+        self.assertIn(':: DEBUG ::', str(session_result.get('stderr', '')))
