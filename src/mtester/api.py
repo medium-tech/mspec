@@ -9,12 +9,16 @@ from pathlib import Path
 
 from mtester.context import MTesterContext
 from mtester.types import (
+    ColorAssertionsResult,
+    ColorRegionAssertion,
+    ColorRegionAssertionResult,
     CaptureScreenResult,
     CaptureTestFrameResult,
     LaunchTargetResult,
     ListWindowsResult,
     OcrExtractResult,
     OcrToken,
+    PixelRGB,
     RegionBox,
     StopTargetResult,
     WindowInfo,
@@ -392,3 +396,92 @@ def capture_test_frame(ctx: MTesterContext, name: str | Path, region: RegionBox 
         capture_result=capture_result,
         ocr_result=ocr_result,
     )
+
+
+def assert_colors_in_regions(
+    ctx: MTesterContext,
+    image_path: str | Path,
+    color_assertions: list[ColorRegionAssertion],
+) -> ColorAssertionsResult:
+    ctx.log.debug(
+        f'mtester.api.assert_colors_in_regions called with args: '
+        f'image_path={image_path!r}'
+    )
+
+    image_path_str = str(image_path)
+
+    try:
+        with Image.open(image_path_str) as source_image:
+            image = source_image.convert('RGB')
+            image_width, image_height = image.size
+            pixels = image.load()
+
+            assertion_results: list[ColorRegionAssertionResult] = []
+            for assertion in color_assertions:
+                x0 = max(0, assertion.region.x)
+                y0 = max(0, assertion.region.y)
+                x1 = min(image_width, assertion.region.x + assertion.region.width)
+                y1 = min(image_height, assertion.region.y + assertion.region.height)
+
+                if x1 <= x0 or y1 <= y0:
+                    assertion_results.append(ColorRegionAssertionResult(
+                        name=assertion.name,
+                        passed=False,
+                        expected_present=assertion.expected_present,
+                        found=False,
+                        match_count=0,
+                        pixel_count=0,
+                        match_ratio=0.0,
+                        region=assertion.region,
+                        color=assertion.color,
+                        tolerance=assertion.tolerance,
+                    ))
+                    continue
+
+                match_count = 0
+                pixel_count = (x1 - x0) * (y1 - y0)
+
+                target: PixelRGB = assertion.color
+                tolerance = max(0, assertion.tolerance)
+
+                for y in range(y0, y1):
+                    for x in range(x0, x1):
+                        r, g, b = pixels[x, y]
+                        if (
+                            abs(r - target.r) <= tolerance
+                            and abs(g - target.g) <= tolerance
+                            and abs(b - target.b) <= tolerance
+                        ):
+                            match_count += 1
+
+                found = match_count > 0
+                passed = (found == assertion.expected_present)
+                match_ratio = (match_count / pixel_count) if pixel_count > 0 else 0.0
+
+                assertion_results.append(ColorRegionAssertionResult(
+                    name=assertion.name,
+                    passed=passed,
+                    expected_present=assertion.expected_present,
+                    found=found,
+                    match_count=match_count,
+                    pixel_count=pixel_count,
+                    match_ratio=match_ratio,
+                    region=assertion.region,
+                    color=assertion.color,
+                    tolerance=tolerance,
+                ))
+
+        return ColorAssertionsResult(
+            ok=all(item.passed for item in assertion_results),
+            function='assert_colors_in_regions',
+            image_path=image_path_str,
+            assertions=assertion_results,
+        )
+
+    except Exception as e:
+        return ColorAssertionsResult(
+            ok=False,
+            function='assert_colors_in_regions',
+            image_path=image_path_str,
+            error=f'{e.__class__.__name__}: {e}',
+        )

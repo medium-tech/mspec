@@ -7,6 +7,6 @@ block:
       level: 1
     - heading: 'A Simple Example'
       level: 2
-    - text: 'This is an example of a rich text document. It can define headings, texts, and'
+    - text: 'This is a sample of a rich text document. It can define headings, texts, and'
     - break: 1
     - text: 'line breaks.'

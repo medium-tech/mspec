@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 from mtester import api
 from mtester.context import MTesterContext
+from mtester.types import ColorRegionAssertion, PixelRGB, RegionBox
 
 WINDOW_TITLE_TEXT_SPEC = 'Lingo Text Spec'
 WINDOW_TITLE_GUI_SPEC = 'Lingo GUI Spec'
@@ -121,23 +122,23 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
             # text vertical placement
             #
 
-            # get first word of each line #
+            # get a unique word from each line #
 
-            line_1_word_1 = ocr_result.tokens[0]
-            line_2_word_1 = ocr_result.tokens[2]
-            line_3_word_1 = ocr_result.tokens[5]
-            line_4_word_1 = ocr_result.tokens[20]
+            line_1_word = ocr_result.find_token('formatting')
+            line_2_word = ocr_result.find_token('simple')
+            line_3_word = ocr_result.find_token('sample')
+            line_4_word = ocr_result.find_token('line')
 
-            assert line_1_word_1.text.lower() == 'text', f"Expected first word of line 1 to be 'Text', got '{line_1_word_1.text}'"
-            assert line_2_word_1.text.lower() == 'a', f"Expected first word of line 2 to be 'A', got '{line_2_word_1.text}'"
-            assert line_3_word_1.text.lower() == 'this', f"Expected first word of line 3 to be 'rich', got '{line_3_word_1.text}'"
-            assert line_4_word_1.text.lower() == 'line', f"Expected first word of line 4 to be 'line', got '{line_4_word_1.text}'"
+            self.assertIsNotNone(line_1_word, msg='Could not find token "formatting"')
+            self.assertIsNotNone(line_2_word, msg='Could not find token "simple"')
+            self.assertIsNotNone(line_3_word, msg='Could not find token "sample"')
+            self.assertIsNotNone(line_4_word, msg='Could not find token "line"')
 
             # confirm each line is placed beneath the previous line #
 
-            self.assertGreater(line_2_word_1.top, line_1_word_1.top, msg=f"Expected line 2 top value to be greater than line 1 top value, got {line_2_word_1.top=} & {line_1_word_1.top}")
-            self.assertGreater(line_3_word_1.top, line_2_word_1.top, msg=f"Expected line 3 top value to be greater than line 2 top value, got {line_3_word_1.top=} & {line_2_word_1.top}")
-            self.assertGreater(line_4_word_1.top, line_3_word_1.top, msg=f"Expected line 4 top value to be greater than line 3 top value, got {line_4_word_1.top=} & {line_3_word_1.top}")
+            self.assertGreater(line_2_word.top, line_1_word.top, msg=f"Expected line 2 top value to be greater than line 1 top value, got {line_2_word.top=} & {line_1_word.top}")
+            self.assertGreater(line_3_word.top, line_2_word.top, msg=f"Expected line 3 top value to be greater than line 2 top value, got {line_3_word.top=} & {line_2_word.top}")
+            self.assertGreater(line_4_word.top, line_3_word.top, msg=f"Expected line 4 top value to be greater than line 3 top value, got {line_4_word.top=} & {line_3_word.top}")
 
         finally:
             session_result = api.stop_target(ctx, session_id=launch_result.session_id)
@@ -178,13 +179,17 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
             # list vertical placement
             #
 
-            list_item_1_word_1 = ocr_result.tokens[28]
-            list_item_2_word_1 = ocr_result.tokens[36]
-            list_item_3_word_1 = ocr_result.tokens[43]
+            list_item_1_word_1 = ocr_result.find_token('apples')
+            list_item_2_word_1 = ocr_result.find_token('potatoes')
+            list_item_3_word_1 = ocr_result.find_token('bison')
 
-            assert list_item_1_word_1.text.lower() == 'this', f"Expected first word of list item 1 to be 'this', got '{list_item_1_word_1.text}'"
-            assert list_item_2_word_1.text.lower() == 'another', f"Expected first word of list item 2 to be 'another', got '{list_item_2_word_1.text}'"
-            assert list_item_3_word_1.text.lower() == 'and', f"Expected first word of list item 3 to be 'and', got '{list_item_3_word_1.text}'"
+            self.assertIsNotNone(list_item_1_word_1, msg='Could not find token "apples" for list item 1')
+            self.assertIsNotNone(list_item_2_word_1, msg='Could not find token "potatoes" for list item 2')
+            self.assertIsNotNone(list_item_3_word_1, msg='Could not find token "bison" for list item 3')
+
+            assert list_item_1_word_1.text.lower() == 'apples', f"Expected first word of list item 1 to be 'apples', got '{list_item_1_word_1.text}'"
+            assert list_item_2_word_1.text.lower() == 'potatoes', f"Expected first word of list item 2 to be 'potatoes', got '{list_item_2_word_1.text}'"
+            assert list_item_3_word_1.text.lower() == 'bison', f"Expected first word of list item 3 to be 'bison', got '{list_item_3_word_1.text}'"
 
             self.assertGreater(list_item_2_word_1.top, list_item_1_word_1.top, msg=f"Expected list item 2 top value to be greater than list item 1 top value, got {list_item_2_word_1.top=} & {list_item_1_word_1.top}")
             self.assertGreater(list_item_3_word_1.top, list_item_2_word_1.top, msg=f"Expected list item 3 top value to be greater than list item 2 top value, got {list_item_3_word_1.top=} & {list_item_2_word_1.top}")
@@ -193,19 +198,96 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
             # struct vertical placement
             #
 
-            struct_value_1 = ocr_result.tokens[69]
-            struct_value_2 = ocr_result.tokens[71]
-            struct_value_3 = ocr_result.tokens[74]
-            struct_value_4 = ocr_result.tokens[76]
+            struct_bool_key = ocr_result.find_token('boolean')
+            self.assertIsNotNone(struct_bool_key, msg='Could not find struct key token "boolean"')
+            assert struct_bool_key is not None
+
+            struct_value_1 = ocr_result.next_token()
+
+            struct_int_key = ocr_result.find_token('integer')
+            self.assertIsNotNone(struct_int_key, msg='Could not find struct key token "integer"')
+            assert struct_int_key is not None
+            struct_value_2 = ocr_result.next_token()
+
+            struct_float_key = ocr_result.find_token('float')
+            self.assertIsNotNone(struct_float_key, msg='Could not find struct key token "float"')
+            assert struct_float_key is not None
+            struct_value_3 = ocr_result.next_token()
+
+            struct_string_key = ocr_result.find_token('string')
+            self.assertIsNotNone(struct_string_key, msg='Could not find struct key token "string"')
+            assert struct_string_key is not None
+            struct_value_4 = ocr_result.next_token()
+
+            self.assertIsNotNone(struct_value_1, msg='Could not find value token after "boolean"')
+            self.assertIsNotNone(struct_value_2, msg='Could not find value token after "integer"')
+            self.assertIsNotNone(struct_value_3, msg='Could not find value token after "float"')
+            self.assertIsNotNone(struct_value_4, msg='Could not find value token after "string"')
+
+            assert struct_value_1 is not None
+            assert struct_value_2 is not None
+            assert struct_value_3 is not None
+            assert struct_value_4 is not None
 
             assert struct_value_1.text.lower() == 'true', f"Expected first struct value to be 'true', got '{struct_value_1.text}'"
             assert struct_value_2.text == '42', f"Expected second struct value to be '42', got '{struct_value_2.text}'"
             assert struct_value_3.text == '3.14', f"Expected third struct value to be '3.14', got '{struct_value_3.text}'"
-            assert struct_value_4.text.lower() == 'hello.world', f"Expected fourth struct value to be 'hello.world', got '{struct_value_4.text}'"
+            assert struct_value_4.text.lower() == 'hello', f"Expected fourth struct value to be 'hello', got '{struct_value_4.text}'"
 
             self.assertGreater(struct_value_2.top, struct_value_1.top, msg=f"Expected struct value 2 top value to be greater than struct value 1 top value, got {struct_value_2.top=} & {struct_value_1.top}")
             self.assertGreater(struct_value_3.top, struct_value_2.top, msg=f"Expected struct value 3 top value to be greater than struct value 2 top value, got {struct_value_3.top=} & {struct_value_2.top}")
             self.assertGreater(struct_value_4.top, struct_value_3.top, msg=f"Expected struct value 4 top value to be greater than struct value 3 top value, got {struct_value_4.top=} & {struct_value_3.top}")
+
+            #
+            # link blue color detection
+            #
+
+            ocr_result.seek_token(0)
+
+            wikipedia_token = ocr_result.find_token('wikipedia')
+            basic_token = ocr_result.find_token('basic')
+
+            self.assertIsNotNone(wikipedia_token, msg='Could not find token for "Wikipedia" in OCR tokens')
+            self.assertIsNotNone(basic_token, msg='Could not find token for "basic" in OCR tokens')
+
+            assert wikipedia_token is not None
+            assert basic_token is not None
+
+            color_result = api.assert_colors_in_regions(
+                ctx,
+                image_path=capture_result.image_path,
+                color_assertions=[
+                    ColorRegionAssertion(
+                        name='wikipedia_has_blue',
+                        region=RegionBox(
+                            x=wikipedia_token.left,
+                            y=wikipedia_token.top,
+                            width=wikipedia_token.width,
+                            height=wikipedia_token.height,
+                        ),
+                        color=PixelRGB(r=0, g=0, b=255),
+                        expected_present=True,
+                        tolerance=110,
+                    ),
+                    ColorRegionAssertion(
+                        name='basic_has_no_blue',
+                        region=RegionBox(
+                            x=basic_token.left,
+                            y=basic_token.top,
+                            width=basic_token.width,
+                            height=basic_token.height,
+                        ),
+                        color=PixelRGB(r=0, g=0, b=255),
+                        expected_present=False,
+                        tolerance=110,
+                    ),
+                ],
+            )
+
+            self.assertTrue(color_result.ok, msg=str(color_result))
+            self.assertEqual(len(color_result.assertions), 2)
+            self.assertTrue(color_result.assertions[0].passed, msg=str(color_result.assertions[0]))
+            self.assertTrue(color_result.assertions[1].passed, msg=str(color_result.assertions[1]))
             
         finally:
             session_result = api.stop_target(ctx, session_id=launch_result.session_id)

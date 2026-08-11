@@ -130,9 +130,76 @@ class OcrExtractResult:
 	token_count: int = 0
 	average_confidence: float = -1.0
 	error: str | None = None
+	_current_index: int = field(default=0, init=False, repr=False)
+
+	def seek_token(self, index: int):
+		"""Set the current token cursor to the specified index."""
+		if index < 0 or index >= self.token_count:
+			raise IndexError(f'Index out of range: {index}')
+		self._current_index = index
+
+	def next_token(self) -> OcrToken | None:
+		"""Return token at current cursor and advance cursor by one."""
+		if self._current_index >= self.token_count:
+			return None
+
+		token = self.tokens[self._current_index]
+		self._current_index += 1
+		return token
+
+	def find_token(self, text: str, skip: int = 0) -> OcrToken | None:
+		"""Search from current cursor for matching token, advancing cursor as tokens are scanned."""
+		if skip < 0:
+			raise ValueError(f'skip must be >= 0, got: {skip}')
+
+		skipped = 0
+		target_text = text.lower()
+
+		while self._current_index < self.token_count:
+			token = self.tokens[self._current_index]
+			self._current_index += 1
+
+			if token.text.lower() == target_text:
+				if skipped == skip:
+					return token
+				skipped += 1
+
+		return None
 
 
 @dataclass(slots=True)
 class CaptureTestFrameResult:
 	capture_result: CaptureScreenResult
 	ocr_result: OcrExtractResult | None = None
+
+
+@dataclass(slots=True)
+class ColorRegionAssertion:
+	name: str
+	region: RegionBox
+	color: PixelRGB
+	expected_present: bool
+	tolerance: int = 40
+
+
+@dataclass(slots=True)
+class ColorRegionAssertionResult:
+	name: str
+	passed: bool
+	expected_present: bool
+	found: bool
+	match_count: int
+	pixel_count: int
+	match_ratio: float
+	region: RegionBox
+	color: PixelRGB
+	tolerance: int
+
+
+@dataclass(slots=True)
+class ColorAssertionsResult:
+	ok: bool
+	function: str
+	image_path: str
+	assertions: list[ColorRegionAssertionResult] = field(default_factory=list)
+	error: str | None = None

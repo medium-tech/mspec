@@ -17,17 +17,17 @@ block:
     - text: ' or as the raw url: '
     - link: 'https://www.wikipedia.org'
 
-    - text: '. Or basic lists of strings (shown as a bulleted list):'
+    - text: '. And basic lists:'
     - type: 'list'
       value:
-        - "this is a string in a list"
-        - "another hardcoded string in a list"
-        - "and finally, a third string in a list"
+        - "apples are a fruit"
+        - "potatoes are a vegetable"
+        - "bison is a mammal"
 
-    - text: 'A struct displays as a 2 column table of its fields and values converted to strings:'
+    - text: 'A struct displays as a 2 column table of its fields and values:'
     - type: 'struct'
       value:
-        x_bool: true
-        x_int: 42
-        x_float: 3.14
-        x_string: "hello.world"
+        boolean: true
+        integer: 42
+        float: 3.14
+        string: "hello"
