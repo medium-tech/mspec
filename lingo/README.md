@@ -108,15 +108,23 @@ Beta work should migrate selected examples into `lingo/specs/` and
 From the repository root:
 
 ```bash
-python -m unittest lingo.test.test_setup
-python -m unittest lingo.test.test_hello_world
+./test.sh
+```
+This script runs tests _(only for beta version)_ in:
+* `./tests/`
+* `lingo/test`
+
+
+To run full tests including GUI tests which **do not work in a VSCode sandbox**, and currently **require OSX**:
+```bash
+./test.sh --gui
 ```
 
-`test_setup.py` checks required toolchains. `test_hello_world.py` builds/runs
-each interpreter and validates output.
+other shortcuts:
 
-Next iteration expands tests into:
+```bash
+export RUN_GUI_TESTS=1
 
-- cross-language CLI contract tests in Python
-- per-language internal unit tests in each interpreter package
-- shared fixtures in `lingo/shared/fixtures`
+python -m unittest lingo.test.test_display_hello_world.TestLingoDisplayRunTimeHelloWorld
+python -m unittest lingo.test.test_exe_contract_py
+```
