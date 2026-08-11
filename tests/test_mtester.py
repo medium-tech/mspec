@@ -43,12 +43,7 @@ class TestMTester(unittest.TestCase):
 
         ctx.set_test_dir(test_name='test_manual_flow_finds_ocr_text', reset=True)
 
-        with patch.dict(
-            os.environ,
-            {'PATH': f'{Path(sys.executable).parent}:{os.environ.get("PATH", "")}'},
-            clear=False,
-        ):
-            result = manual_flow(ctx, options, wait_for_window=0.0)
+        result = manual_flow(ctx, options, wait_for_window=0.0)
 
         self.assertIn('assert_ocr_text', result)
         for case in result['assert_ocr_text']:
