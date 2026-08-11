@@ -13,6 +13,9 @@ from mtester.types import RegionBox
 
 WINDOW_TITLE = 'Lingo GUI Spec'
 
+IS_DARWIN = platform.system() == 'Darwin'
+RUN_GUI_TESTS = os.environ.get('RUN_GUI_TESTS', '0') == '1'
+
 class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
 
     @classmethod
@@ -30,7 +33,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
         from lingolib.context import init_logger
         self.assertIsNotNone(init_logger)
 
-    @unittest.skipUnless(platform.system() == 'Darwin', 'display smoke tests are macOS-only')
+    @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'display smoke tests are macOS-only and require RUN_GUI_TESTS=1')
     def test_display_hello_gui_test(self):
         ctx = MTesterContext(
             config=MTesterConfig(

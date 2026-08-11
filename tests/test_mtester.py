@@ -8,6 +8,9 @@ from unittest.mock import patch
 from mtester.context import MTesterConfig, MTesterContext
 from mtester.ops import manual_flow
 
+IS_DARWIN = platform.system() == 'Darwin'
+RUN_GUI_TESTS = os.environ.get('RUN_GUI_TESTS', '0') == '1'
+
 
 class TestMTester(unittest.TestCase):
 
@@ -26,7 +29,7 @@ class TestMTester(unittest.TestCase):
         from lingolib.context import init_logger
         self.assertIsNotNone(init_logger)
 
-    @unittest.skipUnless(platform.system() == 'Darwin', 'manual_flow smoke tests are macOS-only')
+    @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'manual flow tests are macOS-only and require RUN_GUI_TESTS=1')
     def test_manual_flow_finds_ocr_text(self):
         ctx = MTesterContext(
             config=MTesterConfig(
