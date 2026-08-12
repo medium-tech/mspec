@@ -33,7 +33,7 @@ def create_expression_ast(
 ) -> symbols.ExpressionSymbols:
 
     if isinstance(data, LingoPrimitiveTypes):
-        ctx.log.debug(f'create_expression_ast - literal: {data!r}')
+        # ctx.log.debug(f'create_expression_ast - literal: {data!r}')
         type_name = type(data).__name__
         value = data.replace(r'\n', '\n').replace(r'\t', '\t') if type_name == 'str' else data
         try:
@@ -52,7 +52,7 @@ def create_expression_ast(
         )
 
     elif isinstance(data, LingoLanguageError):
-        ctx.log.debug(f'create_expression_ast - error: {data!r}')
+        # ctx.log.debug(f'create_expression_ast - error: {data!r}')
         try:
             l_file = ctx.parser.file
             l_line = get_yaml_line(data)
@@ -69,7 +69,7 @@ def create_expression_ast(
         )
 
     elif isinstance(data, list):
-        ctx.log.debug(f'create_expression_ast - list: {data!r}')
+        # ctx.log.debug(f'create_expression_ast - list: {data!r}')
         return [create_expression_ast(ctx, item, f'{L_SRC}[{i}]') for i, item in enumerate(data)]
 
     elif isinstance(data, dict):
@@ -86,7 +86,7 @@ def create_expression_ast(
 
 def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
     keys = set(data.keys())
-    ctx.log.debug(f'parse_expression_ast_from_dict - keys: {keys!r}')
+    # ctx.log.debug(f'parse_expression_ast_from_dict - keys: {keys!r}')
 
     line_no = get_yaml_line(data)
 

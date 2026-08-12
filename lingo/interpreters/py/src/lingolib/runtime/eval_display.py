@@ -23,17 +23,41 @@ TK_TABLE_TEXT_TAG = 'table-monospace'
 TK_TABLE_HEADER_TAG = 'table-header-monospace'
 
 def _debug_state(ctx: LingoContext):
-    if hasattr(ctx.tk, 'state'):
-        try:
-            print(json.dumps(ctx.tk.state.values, indent=4, sort_keys=True))
-        except:
-            pprint(ctx.tk.state.values)
+    if ctx.tk.state:
+        print(json.dumps(ctx.tk.state.values, indent=4, sort_keys=True))
     else:
-        ctx.log.debug('no state context available')
+        print(f'{ctx.tk.state=}')
 
 #
-# rendering helpers
+# tkinter helpers
 #
+
+def _configure_menu_bar(ctx: LingoContext):
+    menubar = tkinter.Menu(ctx.tk.root)
+
+    file_menu = tkinter.Menu(menubar, tearoff=0)
+    file_menu.add_command(label='Stop Running File', command=ctx.tk.root.destroy)
+    menubar.add_cascade(label='File', menu=file_menu)
+
+    edit_menu = tkinter.Menu(menubar, tearoff=0)
+    edit_menu.add_command(label='Copy', command=lambda: ctx.tk.text_widget.event_generate('<<Copy>>'))
+    edit_menu.add_command(label='Select All', command=lambda: ctx.tk.text_widget.event_generate('<<SelectAll>>'))
+    menubar.add_cascade(label='Edit', menu=edit_menu)
+
+    lingo_menu = tkinter.Menu(menubar, tearoff=0)
+    lingo_menu.add_command(
+        label='About Lingo',
+        command=lambda: messagebox.showinfo('Lingo', 'Lingo Runtime\nTkinter preview window')
+    )
+    lingo_menu.add_command(
+        label='Debug State',
+        command=lambda: _debug_state(ctx)
+    )
+    menubar.add_cascade(label='Lingo', menu=lingo_menu)
+
+    ctx.tk.root.configure(menu=menubar)
+
+# styles #
 
 def _configure_text_style(ctx: LingoContext, style: LingoStyleOptions) -> str:
     tag_name = f'text-bold-{style.bold}-italic-{style.italic}-underline-{style.underline}-color-{style.color}'
@@ -212,6 +236,7 @@ def _eval_header(ctx: LingoContext, symbol: L_SYM_heading):
     level_value = max(MIN_HEADING_LEVEL, min(MAX_HEADING_LEVEL, symbol.level))
     pre_spacer = '\n' if ctx.tk.main_block_index != 0 else ''
     ctx.tk.text_widget.insert('end', f'{pre_spacer}{text_value}', (f'heading-{level_value}',))
+    ctx.tk.in_text_block = False
 
 def _eval_text(ctx: LingoContext, symbol: L_SYM_text):
     assert isinstance(symbol.style, LingoStyleOptions)
@@ -252,6 +277,8 @@ def _eval_value(ctx: LingoContext, symbol: L_SYM_value):
     #
     # type str
     #
+
+    ctx.tk.in_text_block = False
 
     if symbol.type == 'str':
         if not isinstance(symbol.value, str):
@@ -381,32 +408,6 @@ def _init_runtime_state(ctx: LingoContext, state_symbol: L_SYM_state) -> LingoSt
     state_fields = state_symbol.fields
     state_values = {field_name: unwrap_expression(ctx, field_value.default) for field_name, field_value in state_fields.items()}
     return LingoStateRuntimeContext(fields=state_fields, values=state_values)
-
-
-def _configure_menu_bar(ctx: LingoContext):
-    menubar = tkinter.Menu(ctx.tk.root)
-
-    file_menu = tkinter.Menu(menubar, tearoff=0)
-    file_menu.add_command(label='Stop Running File', command=ctx.tk.root.destroy)
-    menubar.add_cascade(label='File', menu=file_menu)
-
-    edit_menu = tkinter.Menu(menubar, tearoff=0)
-    edit_menu.add_command(label='Copy', command=lambda: ctx.tk.text_widget.event_generate('<<Copy>>'))
-    edit_menu.add_command(label='Select All', command=lambda: ctx.tk.text_widget.event_generate('<<SelectAll>>'))
-    menubar.add_cascade(label='Edit', menu=edit_menu)
-
-    lingo_menu = tkinter.Menu(menubar, tearoff=0)
-    lingo_menu.add_command(
-        label='About Lingo',
-        command=lambda: messagebox.showinfo('Lingo', 'Lingo Runtime\nTkinter preview window')
-    )
-    lingo_menu.add_command(
-        label='Debug State',
-        command=lambda: _debug_state(ctx)
-    )
-    menubar.add_cascade(label='Lingo', menu=lingo_menu)
-
-    ctx.tk.root.configure(menu=menubar)
 
 #
 # spec evaluators

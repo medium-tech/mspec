@@ -64,10 +64,6 @@ def launch_target(ctx: MTesterContext, command: list[str], cwd: str | None = Non
         start_time=datetime.now(UTC).isoformat(),
     )
     return result
-    # Args: command is the process argv, cwd is optional working directory, env is optional env var overrides.
-    # Does: starts the target app process for UI testing and returns a process/session descriptor.
-    # Returns: dict with process metadata, such as pid, start_time, and opaque session_id.
-
 
 def get_region_for_window_title(ctx: MTesterContext, window_title: str) -> RegionBox:
     ctx.log.debug(f'mtester.api.get_region_for_window_title called with args: window_title={window_title}')
@@ -89,7 +85,6 @@ def get_region_for_window_title(ctx: MTesterContext, window_title: str) -> Regio
         width=selected_window.width,
         height=selected_window.height,
     )
-
 
 def stop_target(ctx: MTesterContext, session_id: str, force: bool = False) -> StopTargetResult:
     ctx.log.debug(f'mtester.api.stop_target called with args: session_id={session_id}, force={force}')
@@ -137,10 +132,6 @@ def stop_target(ctx: MTesterContext, session_id: str, force: bool = False) -> St
         stdout=stdout_text,
         stderr=stderr_text,
     )
-    # Args: session_id identifies a running target, force controls graceful vs immediate shutdown.
-    # Does: stops the target app process started by launch_target.
-    # Returns: dict with termination status, exit_code when available, and any shutdown notes.
-
 
 def capture_screen(ctx: MTesterContext, output_path: Path, region: RegionBox | None = None) -> CaptureScreenResult:
     ctx.log.debug(f'mtester.api.capture_screen called with args: region={region}')
@@ -177,10 +168,6 @@ def capture_screen(ctx: MTesterContext, output_path: Path, region: RegionBox | N
             image_path=str(output_path),
             error=f'{e.__class__.__name__}: {e}',
         )
-    # Args: region is optional (x, y, width, height) screen crop; None captures the full primary screen.
-    # Does: captures a screenshot that can be used for OCR, color checks, and layout assertions.
-    # Returns: dict containing image path/bytes metadata plus width/height and timestamp.
-
 
 def list_windows(ctx: MTesterContext) -> ListWindowsResult:
     ctx.log.debug('mtester.api.list_windows called')
@@ -261,7 +248,6 @@ end tell
         windows=windows,
         count=len(windows),
     )
-
 
 def ocr_extract(ctx: MTesterContext, image_path: str | Path, region: RegionBox | None = None) -> OcrExtractResult:
     ctx.log.debug(f'mtester.api.ocr_extract called with args: image_path={image_path!r}, region={region}')
@@ -351,9 +337,6 @@ def ocr_extract(ctx: MTesterContext, image_path: str | Path, region: RegionBox |
             },
             error=f'{e.__class__.__name__}: {e}',
         )
-    # Args: image_path points to an image file, region optionally limits OCR to a crop rectangle.
-    # Does: extracts text with positional metadata from the image using OCR.
-    # Returns: dict with plain text plus token/line boxes and confidence scores.
 
 #
 # high level services
@@ -396,7 +379,6 @@ def capture_test_frame(ctx: MTesterContext, name: str | Path, region: RegionBox 
         capture_result=capture_result,
         ocr_result=ocr_result,
     )
-
 
 def assert_colors_in_regions(
     ctx: MTesterContext,

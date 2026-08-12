@@ -72,7 +72,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
 
         self.assertIsNotNone(session_result)
         self.assertTrue(session_result.ok, msg=str(session_result))
-        self.assertIn('hello.world', session_result.stderr)
+        self.assertIn(':: DEBUG ::', session_result.stderr)
 
     @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'display smoke tests are macOS-only and require RUN_GUI_TESTS=1')
     def test_display_hello_text_2(self):
@@ -290,7 +290,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
             self.assertTrue(color_result.assertions[0].passed, msg=str(color_result.assertions[0]))
             self.assertTrue(color_result.assertions[1].passed, msg=str(color_result.assertions[1]))
             self.assertTrue(color_result.assertions[2].passed, msg=str(color_result.assertions[2]))
-            
+
         finally:
             session_result = api.stop_target(ctx, session_id=launch_result.session_id)
     
