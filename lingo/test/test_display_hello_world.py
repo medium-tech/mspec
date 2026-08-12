@@ -297,6 +297,126 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
         self.assertIsNotNone(session_result)
         self.assertTrue(session_result.ok, msg=str(session_result))
 
+    @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'display smoke tests are macOS-only and require RUN_GUI_TESTS=1')
+    def test_display_text_styles(self):
+        spec_path = Path('lingo/shared/scripts/text/text-styles.yaml').resolve()
+        ctx = MTesterContext(verbose=False)
+        ctx.set_test_dir(test_name='test_display_text_styles', reset=True)
+
+        launch_result = api.launch_target(
+            ctx,
+            command=['python', '-m', 'lingolib', '-v', 'display', spec_path],
+        )
+        self.assertTrue(launch_result.ok, msg=str(launch_result))
+
+        try:
+            region = api.get_region_for_window_title(ctx, window_title=WINDOW_TITLE_TEXT_SPEC)
+
+            frame_result = api.capture_test_frame(
+                ctx,
+                name='start_frame',
+                region=region,
+                wait_for_window=0.5,
+                extract_ocr=True,
+            )
+            capture_result = frame_result.capture_result
+            ocr_result = frame_result.ocr_result
+
+            self.assertTrue(capture_result.ok, msg=str(capture_result))
+            self.assertIsNotNone(ocr_result)
+            self.assertTrue(ocr_result.ok, msg=str(ocr_result))
+
+
+            #
+            # text line order
+            #
+
+            word_text = ocr_result.find_token('text')
+            word_decorations = ocr_result.find_token('decorations')
+            word_aardvark = ocr_result.find_token('aardvark')
+            word_thistle = ocr_result.find_token('thistle')
+            word_rainbow = ocr_result.find_token('rainbow')
+            word_red = ocr_result.find_token('red')
+            word_print = ocr_result.find_token('print')
+            word_cyan = ocr_result.find_token('cyan')
+            word_shades = ocr_result.find_token('shades')
+            word_white = ocr_result.find_token('white')
+
+            self.assertIsNotNone(word_text, msg='Could not find token "Text"')
+            self.assertIsNotNone(word_decorations, msg='Could not find token "Decorations"')
+            self.assertIsNotNone(word_aardvark, msg='Could not find token "aardvark"')
+            self.assertIsNotNone(word_thistle, msg='Could not find token "thistle"')
+            self.assertIsNotNone(word_rainbow, msg='Could not find token "Rainbow"')
+            self.assertIsNotNone(word_red, msg='Could not find token "red"')
+            self.assertIsNotNone(word_print, msg='Could not find token "print"')
+            self.assertIsNotNone(word_cyan, msg='Could not find token "cyan"')
+            self.assertIsNotNone(word_shades, msg='Could not find token "shades"')
+            self.assertIsNotNone(word_white, msg='Could not find token "white"')
+
+            self.assertGreater(word_decorations.top, word_text.top, msg=f'Expected "Decorations" to be lower than "Text", got {word_decorations.top=} & {word_text.top=}')
+            self.assertGreater(word_aardvark.top, word_decorations.top, msg=f'Expected "aardvark" to be lower than "Decorations", got {word_aardvark.top=} & {word_decorations.top=}')
+            self.assertGreater(word_thistle.top, word_aardvark.top, msg=f'Expected "thistle" to be lower than "aardvark", got {word_thistle.top=} & {word_aardvark.top=}')
+            self.assertGreater(word_rainbow.top, word_thistle.top, msg=f'Expected "Rainbow" to be lower than "thistle", got {word_rainbow.top=} & {word_thistle.top=}')
+            self.assertGreater(word_red.top, word_rainbow.top, msg=f'Expected "red" to be lower than "Rainbow", got {word_red.top=} & {word_rainbow.top=}')
+            self.assertGreater(word_print.top, word_red.top, msg=f'Expected "print" to be lower than "red", got {word_print.top=} & {word_red.top=}')
+            self.assertGreater(word_cyan.top, word_print.top, msg=f'Expected "cyan" to be lower than "print", got {word_cyan.top=} & {word_print.top=}')
+            self.assertGreater(word_shades.top, word_cyan.top, msg=f'Expected "shades" to be lower than "cyan", got {word_shades.top=} & {word_cyan.top=}')
+            self.assertGreater(word_white.top, word_shades.top, msg=f'Expected "white" to be lower than "shades", got {word_white.top=} & {word_shades.top=}')
+
+            #
+            # text colors
+            #
+
+            ocr_result.seek_token(0)
+
+            red_token = ocr_result.find_token('red')
+            green_token = ocr_result.find_token('green')
+            blue_token = ocr_result.find_token('blue')
+
+            self.assertIsNotNone(red_token, msg='Could not find token "red" for color assertion')
+            self.assertIsNotNone(green_token, msg='Could not find token "green" for color assertion')
+            self.assertIsNotNone(blue_token, msg='Could not find token "blue" for color assertion')
+
+            color_result = api.assert_colors_in_regions(
+                ctx,
+                image_path=capture_result.image_path,
+                color_assertions=[
+                    ColorRegionAssertion(
+                        name='red_word_has_red',
+                        region=red_token.get_region_box(),
+                        color=PixelRGB(r=255, g=0, b=0),
+                        expected_present=True,
+                        tolerance=120,
+                    ),
+                    ColorRegionAssertion(
+                        name='green_word_has_green',
+                        region=green_token.get_region_box(),
+                        color=PixelRGB(r=0, g=128, b=0),
+                        expected_present=True,
+                        tolerance=120,
+                    ),
+                    ColorRegionAssertion(
+                        name='blue_word_has_blue',
+                        region=blue_token.get_region_box(),
+                        color=PixelRGB(r=0, g=0, b=255),
+                        expected_present=True,
+                        tolerance=120,
+                    )
+                ],
+            )
+
+            self.assertTrue(color_result.ok, msg=str(color_result))
+            self.assertEqual(len(color_result.assertions), 3, msg=f'Expected 3 color assertions, got {len(color_result.assertions)}')
+            self.assertTrue(color_result.assertions[0].passed, msg=str(color_result.assertions[0]))
+            self.assertTrue(color_result.assertions[1].passed, msg=str(color_result.assertions[1]))
+            self.assertTrue(color_result.assertions[2].passed, msg=str(color_result.assertions[2]))
+
+        finally:
+            session_result = api.stop_target(ctx, session_id=launch_result.session_id)
+
+        self.assertIsNotNone(session_result)
+        self.assertTrue(session_result.ok, msg=str(session_result))
+
 
     #
     # gui specs
