@@ -6,6 +6,7 @@ from lingo.test.contracts import (
     list_exe_contract_files,
     load_exe_contracts,
     parse_tag_filter_from_env,
+    EXE_SCRIPT_DIR,
 )
 
 
@@ -61,6 +62,24 @@ class TestExeContractPython(unittest.TestCase):
                     )
 
         print(f':: exe :: ran {filtered_contracts_len} of {all_contracts_len} exe contracts (tags: {tag_filter})')
+
+    def test_exe_verbosity_flag(self):
+        # Test that the -v flag produces verbose output
+        script_path = EXE_SCRIPT_DIR / 'hello-str.yaml'
+
+        # test with verbose flag #
+
+        result = run_exe_with_python(script_path, params={}, verbose=True)
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn('lingo str testing', result.stdout)
+        self.assertIn(':: DEBUG ::', result.stderr)          # expect debug messages with --verbose
+
+        # test without verbose flag #
+
+        result = run_exe_with_python(script_path, params={}, verbose=False)
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn('lingo str testing', result.stdout)
+        self.assertNotIn(':: DEBUG ::', result.stderr)      # expect no debug messages without --verbose
 
 
 if __name__ == '__main__':
