@@ -3,50 +3,43 @@ lingo:
     version: '0.1.0b'
 
 block:
-    - heading: 'Demo of Text Block Style Options'
+    - heading: 'Text Styles and Colors'
       level: 1
 
-    - heading: 'Text Styles'
+    - heading: 'Decorations'
       level: 2
 
-    - text: 'bold text '
+    - text: 'aardvark '
       style: 
         bold: true
 
-    - text: 'italic text '
+    - text: 'elephant '
       style:
         italic: true
-    - text: 'underlined text '
+    - text: 'volcano '
       style:
         underline: true
 
     - break: 1
 
-    - text: 'bold and italic '
+    - text: 'thistle and whistle '
       style:
         bold: true
         italic: true
 
-    - text: 'bold and underlined '
+    - text: 'alfred and gertrude '
       style:
         bold: true
         underline: true
-
-    - break: 1
     
-    - text: 'bold, italic, and underlined '
+    - text: 'caterpillar, elephant, and iguana '
       style:
         bold: true
         italic: true
         underline: true
     
-    - break: 1
-
-    - heading: 'Text Colors'
+    - heading: 'Rainbow Colors'
       level: 2
-    
-    - heading: 'The Rainbow'
-      level: 3
     
     - text: 'red '
       style:
@@ -77,8 +70,8 @@ block:
         bold: true
         color: 'violet'
     
-    - heading: 'Primary Colors of Print (CMYK)'
-      level: 3
+    - heading: 'Print Colors (CMYK)'
+      level: 2
     
     - text: 'cyan '
       style:
