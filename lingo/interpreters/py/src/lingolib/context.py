@@ -3,7 +3,7 @@ import tkinter
 import logging
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, NamedTuple
 
 __all__ = [
     'DEFAULT_LOG_LEVEL_NAME',
@@ -37,6 +37,20 @@ class LingoStateRuntimeContext:
     fields: dict[str, 'L_SYM_define']
     values: dict[str, any] = field(default_factory=dict)
 
+#
+# runtime
+#
+
+class LingoRegisteredFunction(NamedTuple):
+    name: str
+    ast: 'L_SYM_func'
+
+
+@dataclass
+class LingoRegistry:
+    ops: dict[str, LingoRegisteredFunction] = field(default_factory=dict)
+
+
 @dataclass(slots=True)
 class LingoTKRuntimeContext:
     root: tkinter.Tk
@@ -44,6 +58,13 @@ class LingoTKRuntimeContext:
     main_block_index: int = 0
     in_text_block: bool = False
     state: Optional[LingoStateRuntimeContext] = None
+    registry: Optional[LingoRegistry] = None
+
+
+
+#
+# parser
+#
 
 @dataclass(slots=True)
 class LingoParserContext:
@@ -51,6 +72,10 @@ class LingoParserContext:
     file: str = ''
     line: int = 0
     col: int = 0
+
+#
+# main context
+#
 
 @dataclass(slots=True)
 class LingoContext:

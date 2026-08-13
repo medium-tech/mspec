@@ -177,3 +177,6 @@ class LingoListDisplayOptions(NamedTuple):
 		parsed_data['columns'] = data.get('columns', [])
 
 		return cls(**parsed_data).validate()
+
+
+	pass
