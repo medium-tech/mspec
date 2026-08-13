@@ -433,7 +433,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
     #
 
     @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'display smoke tests are macOS-only and require RUN_GUI_TESTS=1')
-    def test_display_hello_gui_test(self):
+    def test_display_hello_gui(self):
         spec_path = Path('lingo/shared/scripts/gui/hello-gui.yaml').resolve()
         ctx = MTesterContext(verbose=False)
         ctx.set_test_dir(test_name='test_display_hello_gui_test', reset=True)
@@ -460,7 +460,24 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
             self.assertTrue(capture_result.ok, msg=str(capture_result))
             self.assertIsNotNone(ocr_result)
             self.assertTrue(ocr_result.ok, msg=str(ocr_result))
+
+            # check initial text and counter value #
+
             self.assertIn('total count', ocr_result.text.lower())
+            self.assertIn('3', ocr_result.text.lower())     # default is 3 because its less ambiguous than O/O/o for OCR tests
+            self.assertNotIn('4', ocr_result.text.lower())
+
+            # get button #
+
+            button_token = ocr_result.find_token('increment')
+            self.assertIsNotNone(button_token, msg='Could not find button token "increment" for button')
+
+            # click button #
+
+            pass
+
+            # confirm counter incremented #
+            
 
         finally:
             session_result = api.stop_target(ctx, session_id=launch_result.session_id)

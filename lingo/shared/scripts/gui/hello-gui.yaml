@@ -4,9 +4,9 @@ lingo:
 
 state:
     counter:
-        description: 'The current count value.'
+        description: 'The current count value, default is 3 because its less ambiguous than O/O/o for OCR tests'
         define: int
-        default: 0
+        default: 3
 
 ops:
     increment_counter:
