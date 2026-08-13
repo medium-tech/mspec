@@ -115,7 +115,7 @@ This script runs tests _(only for beta version)_ in:
 * `lingo/test`
 
 
-To run full tests including GUI tests which **do not work in a VSCode sandbox**, and currently **require OSX** and **cliclick**. GUI tests will take control of your mouse to simulate clicks, when you run the tests you should wait for them to complete before using your computer again, or the tests maay fail.
+To run full tests including GUI tests which **do not work in a VSCode sandbox**, and currently **require OSX** and **cliclick**. GUI tests will launch windows and take control of your mouse to simulate clicks, when you run the tests you should wait for them to complete before using your computer again, or the tests may fail.
 
 ```bash
 # install deps
