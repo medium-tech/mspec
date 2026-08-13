@@ -115,16 +115,13 @@ This script runs tests _(only for beta version)_ in:
 * `lingo/test`
 
 
-To run full tests including GUI tests which **do not work in a VSCode sandbox**, and currently **require OSX**:
+To run full tests including GUI tests which **do not work in a VSCode sandbox**, and currently **require OSX** and **cliclick**. GUI tests will take control of your mouse to simulate clicks, when you run the tests you should wait for them to complete before using your computer again, or the tests maay fail.
+
 ```bash
+# install deps
+brew install cliclick
+
+# run gui tests
 ./test.sh --gui
 ```
 
-other shortcuts:
-
-```bash
-export RUN_GUI_TESTS=1
-
-python -m unittest lingo.test.test_display_hello_world.TestLingoDisplayRunTimeHelloWorld
-python -m unittest lingo.test.test_exe_contract_py
-```
