@@ -2,6 +2,7 @@ import tkinter
 import json
 import webbrowser
 
+from typing import Callable
 from tkinter import messagebox
 
 
@@ -416,6 +417,35 @@ def _init_runtime_state(ctx: LingoContext, state_symbol: L_SYM_state) -> LingoSt
 # spec evaluators
 #
 
+def _evaluate_display_spec(ctx: LingoContext, ast: LingoASTTextSpec | LingoASTGUISpec) -> Callable[[], None]:
+
+    if isinstance(ast, LingoASTTextSpec):
+        symbol_evaluator = _eval_text_runtime_symbol
+        spec_name = 'TEXT'
+    elif isinstance(ast, LingoASTGUISpec):
+        symbol_evaluator = _eval_gui_runtime_symbol
+        spec_name = 'GUI'
+    else:
+        raise LingoRuntimeError(f'Expected AST of type LingoASTTextSpec or LingoASTGUISpec, got: {type(ast).__name__}')
+
+    def render_func():
+        for item in ast.block.items:
+            try:
+                symbol_evaluator(ctx, item)
+
+            except LingoUnknownSymbolError as e:
+                raise_runtime_error(item, f'Unknown symbol "{e}" in {spec_name} spec at index {ctx.tk.main_block_index}')
+
+            except LingoRuntimeError:
+                raise
+
+            except Exception as e:
+                raise_runtime_error(item, f'Error evaluating {spec_name} block item {ctx.tk.main_block_index}: {e}')
+
+            ctx.tk.main_block_index += 1
+
+    return render_func
+
 def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
 
     ctx = LingoContext.add_tk_runtime_context(
@@ -426,26 +456,11 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
 
     _configure_root_window(ctx, window_title='Lingo Text Spec')
 
-    tk_ctx = ctx.tk
+    render = _evaluate_display_spec(ctx, ast)
+    render()
 
-    for item in ast.block.items:
-        try:
-            _eval_text_runtime_symbol(ctx, item)
-
-        except LingoUnknownSymbolError as e:
-            raise_runtime_error(item, f'Unknown symbol "{e}" in text spec at index {tk_ctx.main_block_index}')
-
-        except LingoRuntimeError:
-            raise
-
-        except Exception as e:
-            raise_runtime_error(item, f'Error evaluating text block item {tk_ctx.main_block_index}: {e}')
-
-        tk_ctx.main_block_index += 1
-        
-    tk_ctx.text_widget.configure(state='disabled')
-    tk_ctx.root.mainloop()
-    ctx.log.debug('GUI spec evaluation complete, exiting mainloop')
+    ctx.tk.root.mainloop()
+    ctx.log.debug('Text spec evaluation complete, exiting mainloop')
 
 def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
 
@@ -458,23 +473,8 @@ def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
 
     _configure_root_window(ctx, window_title='Lingo GUI Spec')
 
-    tk_ctx = ctx.tk
+    render = _evaluate_display_spec(ctx, ast)
+    render()
 
-    for item in ast.block.items:
-        try:
-            _eval_gui_runtime_symbol(ctx, item)
-
-        except LingoUnknownSymbolError as e:
-            raise_runtime_error(item, f'Unknown symbol "{e}" in GUI spec at index {tk_ctx.main_block_index}')
-
-        except LingoRuntimeError:
-            raise
-
-        except Exception as e:
-            raise_runtime_error(item, f'Error evaluating GUI block item {tk_ctx.main_block_index}: {e}')
-
-        tk_ctx.main_block_index += 1
-        
-    tk_ctx.text_widget.configure(state='disabled')
-    tk_ctx.root.mainloop()
+    ctx.tk.root.mainloop()
     ctx.log.debug('GUI spec evaluation complete, exiting mainloop')
