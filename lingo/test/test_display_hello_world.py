@@ -349,8 +349,8 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
             word_red = ocr_result.find_token('red')
             word_print = ocr_result.find_token('print')
             word_magenta = ocr_result.find_token('magenta') # use magenta because its color is more reliable for OCR than cyan
-            word_shades = ocr_result.find_token('shades')
-            word_white = ocr_result.find_token('white')
+            word_monochrome = ocr_result.find_token('monochrome')
+            word_gray = ocr_result.find_token('gray')
 
             self.assertIsNotNone(word_text, msg='Could not find token "Text"')
             self.assertIsNotNone(word_decorations, msg='Could not find token "Decorations"')
@@ -360,8 +360,8 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
             self.assertIsNotNone(word_red, msg='Could not find token "red"')
             self.assertIsNotNone(word_print, msg='Could not find token "print"')
             self.assertIsNotNone(word_magenta, msg='Could not find token "magenta"')
-            self.assertIsNotNone(word_shades, msg='Could not find token "shades"')
-            self.assertIsNotNone(word_white, msg='Could not find token "white"')
+            self.assertIsNotNone(word_monochrome, msg='Could not find token "Monochrome Colors"')
+            self.assertIsNotNone(word_gray, msg='Could not find token "gray"')
 
             self.assertGreater(word_decorations.top, word_text.top, msg=f'Expected "Decorations" to be lower than "Text", got {word_decorations.top=} & {word_text.top=}')
             self.assertGreater(word_aardvark.top, word_decorations.top, msg=f'Expected "aardvark" to be lower than "Decorations", got {word_aardvark.top=} & {word_decorations.top=}')
@@ -370,8 +370,8 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
             self.assertGreater(word_red.top, word_rainbow.top, msg=f'Expected "red" to be lower than "Rainbow", got {word_red.top=} & {word_rainbow.top=}')
             self.assertGreater(word_print.top, word_red.top, msg=f'Expected "print" to be lower than "red", got {word_print.top=} & {word_red.top=}')
             self.assertGreater(word_magenta.top, word_print.top, msg=f'Expected "magenta" to be lower than "print", got {word_magenta.top=} & {word_print.top=}')
-            self.assertGreater(word_shades.top, word_magenta.top, msg=f'Expected "shades" to be lower than "magenta", got {word_shades.top=} & {word_magenta.top=}')
-            self.assertGreater(word_white.top, word_shades.top, msg=f'Expected "white" to be lower than "shades", got {word_white.top=} & {word_shades.top=}')
+            self.assertGreater(word_monochrome.top, word_magenta.top, msg=f'Expected "Monochrome Colors" to be lower than "magenta", got {word_monochrome.top=} & {word_magenta.top=}')
+            self.assertGreater(word_gray.top, word_monochrome.top, msg=f'Expected "gray" to be lower than "Monochrome Colors", got {word_gray.top=} & {word_monochrome.top=}')
 
             #
             # text colors

@@ -90,7 +90,7 @@ block:
         bold: true
         color: 'black'
     
-    - heading: 'Shades of Gray'
+    - heading: 'Monochrome Colors'
       level: 3
     
     - text: 'white '

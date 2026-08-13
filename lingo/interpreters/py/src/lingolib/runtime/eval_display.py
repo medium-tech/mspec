@@ -1,11 +1,8 @@
-import sys
 import tkinter
 import json
 import webbrowser
-import signal
 
 from tkinter import messagebox
-from pprint import pprint
 
 
 from lingolib.constants import *
@@ -31,6 +28,19 @@ def _debug_state(ctx: LingoContext):
 #
 # tkinter helpers
 #
+
+def _configure_root_window(ctx: LingoContext, window_title: str, window_size: tuple[int, int] = (800, 800)):
+    ctx.tk.root.title(window_title)
+    ctx.tk.root.geometry(f'{window_size[0]}x{window_size[1]}')
+    # ctx.tk.root.configure(background='white')
+    
+    _configure_menu_bar(ctx)
+    ctx.tk.text_widget.pack(fill='both', expand=True)
+
+    _configure_heading_styles(ctx)
+    _configure_error_style(ctx)
+
+    ctx.tk.in_text_block = False
 
 def _configure_menu_bar(ctx: LingoContext):
     menubar = tkinter.Menu(ctx.tk.root)
@@ -397,13 +407,6 @@ def _eval_gui_runtime_symbol(ctx: LingoContext, symbol: DisplayRuntimeSymbols):
 def _init_root_tk_text_widget():
     return tkinter.Text(wrap='word', padx=12, pady=12, font=(TEXT_FONT['font']['family'], TEXT_FONT['font']['size']))
 
-def _init_tk_context(ctx: LingoContext) -> LingoContext:
-    return LingoContext.add_tk_runtime_context(
-        ctx, 
-        root=tkinter.Tk(), 
-        text_widget=_init_root_tk_text_widget()
-    )
-
 def _init_runtime_state(ctx: LingoContext, state_symbol: L_SYM_state) -> LingoStateRuntimeContext:
     state_fields = state_symbol.fields
     state_values = {field_name: unwrap_expression(ctx, field_value.default) for field_name, field_value in state_fields.items()}
@@ -415,20 +418,15 @@ def _init_runtime_state(ctx: LingoContext, state_symbol: L_SYM_state) -> LingoSt
 
 def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
 
-    ctx = _init_tk_context(ctx)
+    ctx = LingoContext.add_tk_runtime_context(
+        ctx, 
+        root=tkinter.Tk(), 
+        text_widget=_init_root_tk_text_widget()
+    )
+
+    _configure_root_window(ctx, window_title='Lingo Text Spec')
 
     tk_ctx = ctx.tk
-    
-    tk_ctx.root.title('Lingo Text Spec')
-    tk_ctx.root.geometry('800x800')
-    _configure_menu_bar(ctx)
-
-    tk_ctx.text_widget.pack(fill='both', expand=True)
-
-    _configure_heading_styles(ctx)
-    _configure_error_style(ctx)
-
-    tk_ctx.in_text_block = False
 
     for item in ast.block.items:
         try:
@@ -458,18 +456,9 @@ def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
         state=_init_runtime_state(ctx, ast.state) if ast.state else None
     )
 
+    _configure_root_window(ctx, window_title='Lingo GUI Spec')
+
     tk_ctx = ctx.tk
-
-    tk_ctx.root.title('Lingo GUI Spec')
-    tk_ctx.root.geometry('800x800')
-    _configure_menu_bar(ctx)
-
-    tk_ctx.text_widget.pack(fill='both', expand=True)
-
-    _configure_heading_styles(ctx)
-    _configure_error_style(ctx)
-
-    tk_ctx.in_text_block = False
 
     for item in ast.block.items:
         try:
@@ -485,8 +474,6 @@ def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
             raise_runtime_error(item, f'Error evaluating GUI block item {tk_ctx.main_block_index}: {e}')
 
         tk_ctx.main_block_index += 1
-
-    
         
     tk_ctx.text_widget.configure(state='disabled')
     tk_ctx.root.mainloop()
