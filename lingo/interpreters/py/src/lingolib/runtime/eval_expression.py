@@ -1,0 +1,262 @@
+from typing import Any
+
+from lingolib.context import LingoContext
+from lingolib.errors import LingoLibError, LingoTypeError
+from lingolib import symbols
+from lingolib.types import LingoPrimitiveTypes, LingoValue, LingoLanguageError, error_to_str, value_to_str
+
+__all__ = [
+    'unwrap_value',
+    'evaluate_expression',
+    'unwrap_expression'
+]
+
+#
+# types and errors
+#
+
+def unwrap_value(ctx, expr:LingoPrimitiveTypes|symbols.L_SYM_value) -> Any:
+    if isinstance(expr, (LingoPrimitiveTypes, LingoLanguageError)):
+        return expr
+    elif isinstance(expr, symbols.L_SYM_value):
+        if isinstance(expr.value, LingoPrimitiveTypes):
+            return expr.value
+        else:
+            return unwrap_value(ctx, L_EXPR_value(ctx, expr.value))
+    elif isinstance(expr, LingoValue):
+        if isinstance(expr.value, LingoPrimitiveTypes):
+            return expr.value
+        else:
+            return unwrap_value(ctx, L_EXPR_value(ctx, symbols.L_SYM_value(type=expr.type, value=expr.value)))
+    else:
+        raise LingoTypeError(f'could not unwrap: {type(expr).__name__}')
+
+class LingoErrorPassThrough(Exception):
+    """
+    The lingo languge has an error symbol used similarly to Go's error handling, where instead of throwing an exception, a function can return an error value.
+    in lingo, if any function/symbol arg is an error it will automatically pass that through as its return value without executing the function/symbol's main logic.
+    The only lingo function that will not pass it through is the handle symbol, which converts the error to a string value and returns that.
+
+    But in the python interpreter, sometimes its better to raise and catch exceptions, and for that we use this exception.
+    The actual lingo error is passed around as LingoLanguageError which is a NamedTuple,
+    These are different than LingoLibError and its subclasses which are used for actual exceptions in the interpreter implementation, and should not be confused with LingoLanguageError.
+    """
+
+    def __init__(self, error: LingoLanguageError):
+        self.error = error
+
+def raise_error(item: Any) -> Any:
+    """useful for iterating over long sequences, to avoid multiple iterations to check for errors"""
+    if isinstance(item, LingoLanguageError):
+        raise LingoErrorPassThrough(item)
+    else:
+        return item
+
+#
+# execution
+#
+
+def evaluate_expression(ctx: LingoContext, expr):
+    if isinstance(expr, LingoLanguageError):
+        return expr
+    else:
+        try:
+            expr_callable = get_expression_handler(expr.L_SYM_NAME)
+        except AttributeError:
+            if isinstance(expr, (LingoPrimitiveTypes, LingoValue)):
+                return expr
+            else:
+                raise LingoTypeError(f'expected expression to be symbol, got: {type(expr).__name__}') from None
+        
+        try:
+            return expr_callable(ctx, expr)
+        except Exception as e:
+            raise LingoLibError(f'error executing expression: {e.__class__.__name__}: {e}')
+    
+def unwrap_expression(ctx, expr):
+    return unwrap_value(ctx, evaluate_expression(ctx, expr))
+    
+#
+# symbol executors
+#
+
+# core #
+
+def L_EXPR_get(ctx, symbol:symbols.L_SYM_get):
+    try:
+        # currently only state.<field> is supported
+        # eventually self.<field> and params.<field>
+        # as well as 
+        data_source, field_name = symbol.name.split('.')
+    except ValueError:
+        return LingoLanguageError(f'get symbol name must be in the form data_source.field_name, got: {symbol.name!r}', code='GET_EXPR_NAME_ERROR')
+
+    # get data source #
+
+    match data_source:
+        case 'state':
+
+            try:
+                data = ctx.tk.state.values
+            except AttributeError as e:
+                error_code = 'GET_EXPR_MISSING_STATE'
+                error_msg = f'no state context available for {field_name!r}'
+                ctx.log.error(f'{error_code} - {error_msg}, python exc: {e.__class__.__name__}: {e}')
+                return LingoLanguageError(f'{error_code} - {error_msg}', code=error_code)
+            
+        case _:
+            return LingoLanguageError(f'unsupported data source "{data_source}" for get: {symbol.name!r}', code='GET_EXPR_NAME_ERROR')
+
+    # get field from data source #
+
+    try:
+        value = data[field_name]
+    except KeyError as e:
+        error_code = 'GET_EXPR_KEY_ERROR'
+        error_msg = f'missing {field_name!r} in {symbol.name}'
+        ctx.log.error(f'{error_code} {error_msg}, python exc: {e.__class__.__name__}: {e}')
+        return LingoLanguageError(error_msg, code=error_code)
+    
+    return value
+
+def L_EXPR_value(ctx, symbol:symbols.L_SYM_value):
+
+    result = unwrap_expression(ctx, symbol.value)
+    if isinstance(result, LingoLanguageError):
+        return result
+    if type(result).__name__ != symbol.type:
+        return LingoLanguageError(f'value type mismatch: expected {symbol.type!r}, got {type(result).__name__!r}', code='TYPE_ERROR')
+
+    if symbol.type == 'list':
+        verify_element_type = lambda x: type(x).__name__ != symbol.element_type
+        if any(verify_element_type(item) for item in result):
+            return LingoLanguageError(f'value type mismatch: expected list of {symbol.element_type!r}, got {[type(item).__name__ for item in result]}', code='TYPE_ERROR')
+    
+    return LingoValue(
+        type=symbol.type, 
+        value=result
+    )
+
+def L_EXPR_error(ctx:LingoContext, symbol:symbols.L_SYM_error):
+    if not isinstance(symbol.error, str) or not isinstance(symbol.code, str):
+        return LingoLanguageError(f'error and code fields of error symbol must be literal str values', code='TYPE_ERROR')
+    else:
+        return LingoLanguageError(error=symbol.error, code=symbol.code)
+    
+def L_EXPR_handle(ctx, symbol:symbols.L_SYM_handle):
+    result = evaluate_expression(ctx, symbol.expr)
+    
+    if isinstance(result, LingoLanguageError):
+        return error_to_str(result)
+    else:
+        return result
+    
+# comparison #
+
+def L_EXPR_eq(ctx, symbol:symbols.L_SYM_eq):
+    try:
+        a = raise_error(unwrap_expression(ctx, symbol.a))
+        b = raise_error(unwrap_expression(ctx, symbol.b))
+    except LingoErrorPassThrough as e:
+        return e.error
+    
+    return LingoValue(type='bool', value=a == b)
+
+# int #
+
+def L_EXPR_int(ctx, symbol:symbols.L_SYM_int):
+    try:
+        number = raise_error(unwrap_expression(ctx, symbol.number))
+        base = raise_error(unwrap_expression(ctx, symbol.base))
+    except LingoErrorPassThrough as e:
+        return e.error
+    
+    if isinstance(number, int):
+        if base == 10:
+            try:
+                return LingoValue(type='int', value=number)
+            except (TypeError, ValueError) as e:
+                return LingoLanguageError(f'cannot convert {number!r} to int: {e}')
+        else:
+            return LingoLanguageError(f'Must provide number as str to use base other than 10')
+    elif isinstance(number, str):
+        try:
+            return LingoValue(type='int', value=int(number, base=base))
+        except (TypeError, ValueError) as e:
+            return LingoLanguageError(f'cannot convert {number!r} to int with base {base}: {e}')
+    else:
+        return LingoLanguageError(f'Number must be int or str, got {type(number).__name__}')
+    
+def L_EXPR_add(ctx, symbol:symbols.L_SYM_add):
+    try:
+        a = raise_error(unwrap_expression(ctx, symbol.a))
+        b = raise_error(unwrap_expression(ctx, symbol.b))
+    except LingoErrorPassThrough as e:
+        return e.error
+
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        return LingoValue(
+            type='int' if isinstance(a, int) and isinstance(b, int) else 'float', 
+            value=a + b
+        )
+    else:
+        return LingoLanguageError(f'args must be int or float for add symbol, got a: {type(a).__name__} and b: {type(b).__name__}', code='TYPE_ERROR')
+
+# str #
+
+def L_EXPR_str(ctx, symbol:symbols.L_SYM_str):
+
+    primitive = unwrap_expression(ctx, symbol.object)
+
+    if isinstance(primitive, LingoLanguageError):
+        return primitive
+
+    else:
+        return LingoValue(type='str', value=value_to_str(primitive))
+
+def L_EXPR_concat(ctx, symbol:symbols.L_SYM_concat):
+    try:
+        items = [raise_error(unwrap_expression(ctx, item)) for item in symbol.items]
+    except LingoErrorPassThrough as e:
+        return e.error
+    
+    try:
+        return LingoValue(type='str', value=''.join(items))
+    except TypeError as e:
+        ctx.log.debug(f'error concatenating items: {e.__class__.__name__}: {e}')
+        return LingoLanguageError(f'all items for concat symbol must be str')
+    
+def L_EXPR_join(ctx, symbol:symbols.L_SYM_join):
+    try:
+        items = [raise_error(unwrap_expression(ctx, item)) for item in symbol.items]
+        separator = raise_error(unwrap_expression(ctx, symbol.separator))
+    except LingoErrorPassThrough as e:
+        return e.error
+    
+    try:
+        return LingoValue(type='str', value=separator.join(items))
+    
+    except TypeError as e:
+        ctx.log.debug(f'error joining items: {e.__class__.__name__}: {e}')
+        return LingoLanguageError(f'separator and all items for join symbol must be str')
+
+
+EXPRESSION_HANDLERS = {
+    'get': L_EXPR_get,
+    'value': L_EXPR_value,
+    'error': L_EXPR_error,
+    'handle': L_EXPR_handle,
+    'eq': L_EXPR_eq,
+    'int': L_EXPR_int,
+    'add': L_EXPR_add,
+    'str': L_EXPR_str,
+    'concat': L_EXPR_concat,
+    'join': L_EXPR_join,
+}
+
+
+def get_expression_handler(sym_name: str):
+    try:
+        return EXPRESSION_HANDLERS[sym_name]
+    except KeyError:
+        raise LingoLibError(f'unsupported expression symbol: {sym_name!r}')

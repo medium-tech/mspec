@@ -13,12 +13,12 @@ from lingolib.parsing import (
     LingoASTTextSpec
 )
 
-from lingolib.runtime.eval import (
-    evaluate_exe_spec,
+from lingolib.runtime.eval_lingo import (
     evaluate_text_spec,
     evaluate_gui_spec
 )
 
+from lingolib.runtime.eval_exe import evaluate_exe_spec
 import yaml
 
 

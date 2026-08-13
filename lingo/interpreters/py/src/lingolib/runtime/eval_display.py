@@ -10,8 +10,8 @@ from lingolib.constants import *
 from lingolib.context import LingoContext, LingoStateRuntimeContext
 from lingolib.errors import LingoUnknownSymbolError, LingoRuntimeError
 from lingolib.parsing import LingoASTTextSpec, LingoASTGUISpec
-from lingolib.runtime.eval_core import raise_runtime_error
-from lingolib.runtime.eval_exe import unwrap_expression
+from lingolib.runtime.shared import raise_runtime_error
+from lingolib.runtime.eval_expression import unwrap_expression
 from lingolib.runtime.registry import init_registry
 from lingolib.types import LingoStyleOptions, value_to_str, LingoLanguageError, error_to_str, LingoPrimitiveTypes
 from lingolib.symbols import *

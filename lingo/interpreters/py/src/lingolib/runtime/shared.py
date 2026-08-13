@@ -1,4 +1,4 @@
-from lingolib.errors import LingoLibError, LingoRuntimeError
+from lingolib.errors import LingoRuntimeError
 from lingolib.symbols import ExpressionSymbols
 
 __all__ = [
