@@ -11,7 +11,7 @@ from lingolib.context import LingoContext, LingoStateRuntimeContext
 from lingolib.errors import LingoUnknownSymbolError, LingoRuntimeError
 from lingolib.parsing import LingoASTTextSpec, LingoASTGUISpec
 from lingolib.runtime.shared import raise_runtime_error
-from lingolib.runtime.eval_expression import unwrap_expression
+from lingolib.runtime.eval_expression import unwrap_expression, evaluate_expression
 from lingolib.runtime.registry import init_registry
 from lingolib.types import LingoStyleOptions, value_to_str, LingoLanguageError, error_to_str, LingoPrimitiveTypes
 from lingolib.symbols import *
@@ -347,12 +347,44 @@ def _eval_value(ctx: LingoContext, symbol: L_SYM_value):
 
 def _eval_button(ctx: LingoContext, symbol: L_SYM_button):
     """placeholder button that just prints a msg to console when clicked"""
+
+    #
+    # button click handler
+    #
+
     def on_button_click():
-        print(f'Button clicked: {symbol.call} {ctx.tk.registry=}')
+        ctx.log.debug(f'Button clicked: {symbol.text} {symbol.call}')
+
+        # init #
+
+        call_parts = symbol.call.split('.')
+        if len(call_parts) != 2 or call_parts[0] != 'ops':
+            raise_runtime_error(symbol, f'Button call function must be in the form "ops.<function>", got: {symbol.call!r}')
+
+        # get function #
+
+        try:
+            registered_func = ctx.tk.registry.ops[call_parts[1]]
+        except KeyError:
+            raise_runtime_error(symbol, f'Button call function {symbol.call!r} not found in registry.ops')
+
+        # call function #
+
+        function_return = evaluate_expression(ctx, registered_func.ast.func)
+        
+        ctx.log.debug(f'{registered_func=} {function_return=}')
+
+    #
+    # button text
+    #
 
     text_value = unwrap_expression(ctx, symbol.text)
     if not isinstance(text_value, str):
         raise_runtime_error(symbol, f'Expected string value for button text, got: {type(text_value).__name__}')
+
+    #
+    # tk button
+    #
 
     button = tkinter.Button(
         ctx.tk.text_widget,
@@ -371,6 +403,7 @@ def _eval_button(ctx: LingoContext, symbol: L_SYM_button):
         pady=BUTTON_PADDING_Y,
         cursor=BUTTON_CURSOR,
     )
+
     ctx.tk.text_widget.window_create('end', window=button, padx=BUTTON_MARGIN_X, pady=BUTTON_MARGIN_Y)
 
 #

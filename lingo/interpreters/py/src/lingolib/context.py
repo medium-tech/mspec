@@ -47,6 +47,12 @@ class LingoRegisteredFunction(NamedTuple):
     name: str
     ast: L_SYM_func
 
+    def __str__(self):
+        return f'LingoRegisteredFunction(name={self.name})'
+
+    def __repr__(self):
+        return str(self)
+
 
 @dataclass
 class LingoRegistry:
