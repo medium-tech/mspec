@@ -9,7 +9,7 @@ allow access to:
 
 """
 
-from lingolib.parsing.symbols import L_SYM_ops
+from lingolib.symbols import L_SYM_ops
 from lingolib.context import LingoRegisteredFunction, LingoRegistry, LingoContext
 
 

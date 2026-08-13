@@ -5,6 +5,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional, NamedTuple
 
+from lingolib.symbols import L_SYM_define, L_SYM_func
+
 __all__ = [
     'DEFAULT_LOG_LEVEL_NAME',
     'DEFAULT_LOG_LEVEL',
@@ -34,7 +36,7 @@ def init_logger(level=DEFAULT_LOG_LEVEL):
 
 @dataclass(slots=True)
 class LingoStateRuntimeContext:
-    fields: dict[str, 'L_SYM_define']
+    fields: dict[str, L_SYM_define]
     values: dict[str, any] = field(default_factory=dict)
 
 #
@@ -43,7 +45,7 @@ class LingoStateRuntimeContext:
 
 class LingoRegisteredFunction(NamedTuple):
     name: str
-    ast: 'L_SYM_func'
+    ast: L_SYM_func
 
 
 @dataclass

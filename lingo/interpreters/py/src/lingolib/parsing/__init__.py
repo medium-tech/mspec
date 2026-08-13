@@ -1,4 +1,4 @@
-from .ast import (
+from ..ast import (
 	LingoASTExpression, 
 	LingoASTExeSpec, 
 	LingoASTLibSpec, 

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from lingolib.types import LingoStyleOptions, LingoListDisplayOptions
-import lingolib.parsing.symbols as symbols
+import lingolib.symbols as symbols
 
 
 @dataclass

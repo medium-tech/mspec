@@ -1,10 +1,10 @@
-import lingolib.parsing.symbols as symbols
+import lingolib.symbols as symbols
 
 from lingolib.context import LingoContext
 from lingolib.errors import LingoSyntaxError
 from lingolib.types import LingoScriptSpecs
 
-from .ast import LingoASTSpec
+from ..ast import LingoASTSpec
 from .spec_exe import spec_exe_ast_from_dict
 from .spec_text import spec_text_ast_from_dict
 from .spec_gui import spec_gui_ast_from_dict

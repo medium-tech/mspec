@@ -1,9 +1,9 @@
-import lingolib.parsing.symbols as symbols
+import lingolib.symbols as symbols
 
 from lingolib.context import LingoContext
 from lingolib.errors import LingoSyntaxError
 
-from .ast import LingoASTExeSpec
+from ..ast import LingoASTExeSpec
 from .state import get_yaml_line
 from .expr import create_expression_ast
 

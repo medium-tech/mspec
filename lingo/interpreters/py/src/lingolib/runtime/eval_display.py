@@ -13,7 +13,7 @@ from lingolib.parsing import LingoASTTextSpec, LingoASTGUISpec
 from lingolib.runtime.eval_core import raise_runtime_error
 from lingolib.runtime.eval_exe import unwrap_expression
 from lingolib.types import LingoStyleOptions, value_to_str, LingoLanguageError, error_to_str, LingoPrimitiveTypes
-from lingolib.parsing.symbols import *
+from lingolib.symbols import *
 
 DisplayRuntimeSymbols = L_SYM_break | L_SYM_heading | L_SYM_text | L_SYM_link | L_SYM_value
 

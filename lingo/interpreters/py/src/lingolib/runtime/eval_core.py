@@ -1,5 +1,5 @@
 from lingolib.errors import LingoLibError, LingoRuntimeError
-from lingolib.parsing.symbols import ExpressionSymbols
+from lingolib.symbols import ExpressionSymbols
 
 __all__ = [
 	'raise_runtime_error'

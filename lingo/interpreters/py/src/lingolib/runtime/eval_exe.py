@@ -1,8 +1,9 @@
 from typing import Any
 
-from lingolib.parsing import symbols, LingoASTExeSpec
+from lingolib.parsing import LingoASTExeSpec
 from lingolib.context import LingoContext
 from lingolib.errors import LingoLibError, LingoTypeError
+from lingolib import symbols
 from lingolib.types import LingoPrimitiveTypes, LingoValue, LingoLanguageError, error_to_str, value_to_str
 
 __all__ = [
