@@ -12,6 +12,7 @@ from lingolib.errors import LingoUnknownSymbolError, LingoRuntimeError
 from lingolib.parsing import LingoASTTextSpec, LingoASTGUISpec
 from lingolib.runtime.eval_core import raise_runtime_error
 from lingolib.runtime.eval_exe import unwrap_expression
+from lingolib.runtime.registry import init_registry
 from lingolib.types import LingoStyleOptions, value_to_str, LingoLanguageError, error_to_str, LingoPrimitiveTypes
 from lingolib.symbols import *
 
@@ -347,7 +348,7 @@ def _eval_value(ctx: LingoContext, symbol: L_SYM_value):
 def _eval_button(ctx: LingoContext, symbol: L_SYM_button):
     """placeholder button that just prints a msg to console when clicked"""
     def on_button_click():
-        print(f'Button clicked: {symbol.call}')
+        print(f'Button clicked: {symbol.call} {ctx.tk.registry=}')
 
     text_value = unwrap_expression(ctx, symbol.text)
     if not isinstance(text_value, str):
@@ -470,6 +471,9 @@ def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
         text_widget=_init_root_tk_text_widget(),
         state=_init_runtime_state(ctx, ast.state) if ast.state else None
     )
+
+    init_registry(ctx, ast.ops)
+
 
     _configure_root_window(ctx, window_title='Lingo GUI Spec')
 

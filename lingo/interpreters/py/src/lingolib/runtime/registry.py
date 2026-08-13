@@ -12,12 +12,16 @@ allow access to:
 from lingolib.symbols import L_SYM_ops
 from lingolib.context import LingoRegisteredFunction, LingoRegistry, LingoContext
 
+__all__ = [
+	'init_registry',
+	'add_ops_to_registry',
+]
 
 #
 # api
 #
 
-def init_registry(ctx: LingoContext):
+def init_registry(ctx: LingoContext, ops: L_SYM_ops | None = None):
 	if ctx.tk is None:
 		raise RuntimeError('LingoContext.tk runtime has not been initialized')
 
@@ -25,10 +29,13 @@ def init_registry(ctx: LingoContext):
 		ctx.tk.registry = LingoRegistry()
 	else:
 		raise RuntimeError('Runtime registry has already been initialized')
+	
+	if ops is not None:
+		add_ops_to_registry(ctx, ops)
 
 def add_ops_to_registry(ctx: LingoContext, ops: L_SYM_ops):
 	if ctx.tk is None or ctx.tk.registry is None:
 		raise RuntimeError('LingoContext.tk.registry has not been initialized')
 
-	for op_name, op_func in ops.ops.items():
+	for op_name, op_func in ops.funcs.items():
 		ctx.tk.registry.ops[op_name] = LingoRegisteredFunction(name=op_name, ast=op_func)

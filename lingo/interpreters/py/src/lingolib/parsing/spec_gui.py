@@ -72,15 +72,6 @@ def spec_gui_ast_from_dict(
         L_LINE=get_yaml_line(block_data),
     )
 
-    
-    if 'state' in data:
-        state_symbol = _parse_state_symbol(ctx, data['state'])
-    else:
-        state_symbol = None
-
-    if 'ops' in data:
-        ops_symbol = _parse_ops_symbol(ctx, data['ops'])
-    else:
-        ops_symbol = None
-
+    state_symbol = _parse_state_symbol(ctx, data.get('state', dict()))
+    ops_symbol = _parse_ops_symbol(ctx, data.get('ops', dict()))
     return LingoASTGUISpec(lingo=lingo, block=block, state=state_symbol, ops=ops_symbol)
