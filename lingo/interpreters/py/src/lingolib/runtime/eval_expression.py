@@ -150,7 +150,48 @@ def L_EXPR_handle(ctx, symbol:symbols.L_SYM_handle):
         return error_to_str(result)
     else:
         return result
+
+def L_EXPR_set(ctx, symbol:symbols.L_SYM_set):
+	try:
+		data_source, field_name = symbol.name.split('.')
+	except ValueError:
+		return LingoLanguageError(f'set symbol name must be in the form data_source.field_name, got: {symbol.name!r}', code='SET_EXPR_NAME_ERROR')
+
+	# get data source #
+
+	match data_source:
+		case 'state':
+
+			try:
+				data = ctx.tk.state.values
+			except AttributeError as e:
+				error_code = 'SET_EXPR_MISSING_STATE'
+				error_msg = f'no state context available for {field_name!r}'
+				ctx.log.error(f'{error_code} - {error_msg}, python exc: {e.__class__.__name__}: {e}')
+				return LingoLanguageError(f'{error_code} - {error_msg}', code=error_code)
+			
+		case _:
+			return LingoLanguageError(f'unsupported data source "{data_source}" for set: {symbol.name!r}', code='SET_EXPR_NAME_ERROR')
+
+	# evaluate expression #
+
+	value = evaluate_expression(ctx, symbol.value)
+	if isinstance(value, LingoLanguageError):
+		return value
+
+	# type check #
+
+	primitive_value = unwrap_value(ctx, value)
+
+	if type(primitive_value).__name__ != ctx.tk.state.fields[field_name].type:
+		return LingoLanguageError(f'set value type mismatch: expected {ctx.tk.state.fields[field_name].type!r}, got {type(primitive_value).__name__!r}', code='TYPE_ERROR')
+
+	# set and return #
     
+	data[field_name] = primitive_value
+    
+	return value
+	
 # comparison #
 
 def L_EXPR_eq(ctx, symbol:symbols.L_SYM_eq):
@@ -243,6 +284,7 @@ def L_EXPR_join(ctx, symbol:symbols.L_SYM_join):
 
 EXPRESSION_HANDLERS = {
     'get': L_EXPR_get,
+    'set': L_EXPR_set,
     'value': L_EXPR_value,
     'error': L_EXPR_error,
     'handle': L_EXPR_handle,

@@ -3,9 +3,10 @@ import tkinter
 import logging
 
 from dataclasses import dataclass, field
-from typing import Optional, NamedTuple
+from typing import Callable, Optional, NamedTuple
 
 from lingolib.symbols import L_SYM_define, L_SYM_func
+from lingolib.errors import LingoRuntimeError
 
 __all__ = [
     'DEFAULT_LOG_LEVEL_NAME',
@@ -58,6 +59,8 @@ class LingoRegisteredFunction(NamedTuple):
 class LingoRegistry:
     ops: dict[str, LingoRegisteredFunction] = field(default_factory=dict)
 
+def no_draw_method():
+    raise LingoRuntimeError('redraw function has not been set')
 
 @dataclass(slots=True)
 class LingoTKRuntimeContext:
@@ -65,9 +68,10 @@ class LingoTKRuntimeContext:
     text_widget: tkinter.Text
     main_block_index: int = 0
     in_text_block: bool = False
+    redraw: Callable = no_draw_method
     state: Optional[LingoStateRuntimeContext] = None
     registry: Optional[LingoRegistry] = None
-
+    
 
 
 #

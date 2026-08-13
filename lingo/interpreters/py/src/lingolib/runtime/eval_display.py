@@ -353,7 +353,7 @@ def _eval_button(ctx: LingoContext, symbol: L_SYM_button):
     #
 
     def on_button_click():
-        ctx.log.debug(f'Button clicked: {symbol.text} {symbol.call}')
+        ctx.log.debug(f'button clicked: {symbol.call}')
 
         # init #
 
@@ -366,13 +366,15 @@ def _eval_button(ctx: LingoContext, symbol: L_SYM_button):
         try:
             registered_func = ctx.tk.registry.ops[call_parts[1]]
         except KeyError:
-            raise_runtime_error(symbol, f'Button call function {symbol.call!r} not found in registry.ops')
+            raise_runtime_error(symbol, f'Button call function {symbol.call} not found in registry.ops')
 
         # call function #
 
         function_return = evaluate_expression(ctx, registered_func.ast.func)
         
-        ctx.log.debug(f'{registered_func=} {function_return=}')
+        ctx.log.debug(f'button result for {symbol.call}: {function_return}')
+
+        ctx.tk.redraw()
 
     #
     # button text
@@ -440,7 +442,9 @@ def _eval_gui_runtime_symbol(ctx: LingoContext, symbol: DisplayRuntimeSymbols):
 #
 
 def _init_root_tk_text_widget():
-    return tkinter.Text(wrap='word', padx=12, pady=12, font=(TEXT_FONT['font']['family'], TEXT_FONT['font']['size']))
+    tk_text = tkinter.Text(wrap='word', padx=12, pady=12, font=(TEXT_FONT['font']['family'], TEXT_FONT['font']['size']))
+
+    return tk_text
 
 def _init_runtime_state(ctx: LingoContext, state_symbol: L_SYM_state) -> LingoStateRuntimeContext:
     state_fields = state_symbol.fields
@@ -463,6 +467,11 @@ def _evaluate_display_spec(ctx: LingoContext, ast: LingoASTTextSpec | LingoASTGU
         raise LingoRuntimeError(f'Expected AST of type LingoASTTextSpec or LingoASTGUISpec, got: {type(ast).__name__}')
 
     def render_func():
+
+        ctx.tk.text_widget.config(state=tkinter.NORMAL) # enable user input in the text widget, needed to reset text
+        
+        ctx.tk.text_widget.delete('1.0', 'end') # reset all text in text_widget
+
         for item in ast.block.items:
             try:
                 symbol_evaluator(ctx, item)
@@ -477,6 +486,8 @@ def _evaluate_display_spec(ctx: LingoContext, ast: LingoASTTextSpec | LingoASTGU
                 raise_runtime_error(item, f'Error evaluating {spec_name} block item {ctx.tk.main_block_index}: {e}')
 
             ctx.tk.main_block_index += 1
+
+        ctx.tk.text_widget.config(state=tkinter.DISABLED) # disable user input in the text widget
 
     return render_func
 
@@ -507,11 +518,10 @@ def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
 
     init_registry(ctx, ast.ops)
 
-
     _configure_root_window(ctx, window_title='Lingo GUI Spec')
 
-    render = _evaluate_display_spec(ctx, ast)
-    render()
+    ctx.tk.redraw = _evaluate_display_spec(ctx, ast)
+    ctx.tk.redraw()
 
     ctx.tk.root.mainloop()
     ctx.log.debug('GUI spec evaluation complete, exiting mainloop')
