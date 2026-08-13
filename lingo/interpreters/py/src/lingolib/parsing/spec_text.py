@@ -5,7 +5,7 @@ from lingolib.errors import LingoSyntaxError
 
 from ..ast import LingoASTTextSpec
 from .state import get_yaml_line
-from .expr import create_expression_ast
+from .spec_expression import create_expression_ast
 
 
 def spec_text_ast_from_dict(

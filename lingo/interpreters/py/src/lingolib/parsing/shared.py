@@ -2,7 +2,7 @@ import lingolib.symbols as symbols
 
 from lingolib.context import LingoContext
 from lingolib.errors import LingoSyntaxError
-from lingolib.parsing.expr import create_expression_ast
+from lingolib.parsing.spec_expression import create_expression_ast
 from lingolib.parsing.state import get_yaml_line
 from lingolib.types import LingoListDisplayOptions
 

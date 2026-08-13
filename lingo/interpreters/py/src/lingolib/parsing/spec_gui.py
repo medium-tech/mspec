@@ -1,4 +1,4 @@
-from lingolib.parsing.spec_core import parse_define_symbol, parse_func_symbol
+from lingolib.parsing.shared import parse_define_symbol, parse_func_symbol
 import lingolib.symbols as symbols
 
 from lingolib.context import LingoContext
@@ -6,7 +6,7 @@ from lingolib.errors import LingoSyntaxError
 
 from ..ast import LingoASTGUISpec
 from .state import get_yaml_line
-from .expr import create_expression_ast
+from .spec_expression import create_expression_ast
 
 
 def _parse_state_symbol(ctx: LingoContext, data: dict) -> symbols.L_SYM_state:
