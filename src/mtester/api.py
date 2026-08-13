@@ -20,6 +20,7 @@ from mtester.types import (
     OcrToken,
     PixelRGB,
     RegionBox,
+    SimulateClickResult,
     StopTargetResult,
     WindowInfo,
     json_pprint,
@@ -168,6 +169,70 @@ def capture_screen(ctx: MTesterContext, output_path: Path, region: RegionBox | N
             image_path=str(output_path),
             error=f'{e.__class__.__name__}: {e}',
         )
+
+def simulate_click(ctx: MTesterContext, x: int, y: int, double_click: bool = False) -> SimulateClickResult:
+    """
+    params:
+        ctx: MTesterContext - the context object for logging and configuration
+        x: int - the x-coordinate of the click
+        y: int - the y-coordinate of the click
+        double_click: bool - whether to perform a double click (default: False)
+            useful for targets that require the window to be focused before the click registers
+    returns:
+        SimulateClickResult - the result of the click simulation, including success status and any error
+    """
+
+    ctx.log.debug(f'mtester.api.simulate_click called with args: x={x}, y={y}')
+
+    num_clicks = 2 if double_click else 1
+
+    try:
+        # click twice since some targets require the window to be focused before the click registers
+        for _ in range(num_clicks):
+            proc = subprocess.run(
+                ['cliclick', f'c:{x},{y}'],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if proc.returncode != 0:
+                break
+    except Exception as e:
+        return SimulateClickResult(
+            ok=False,
+            function='simulate_click',
+            args={
+                'x': x,
+                'y': y,
+            },
+            x=x,
+            y=y,
+            error=f'{e.__class__.__name__}: {e}',
+        )
+
+    if proc.returncode != 0:
+        return SimulateClickResult(
+            ok=False,
+            function='simulate_click',
+            args={
+                'x': x,
+                'y': y,
+            },
+            x=x,
+            y=y,
+            error=(proc.stderr or proc.stdout or '').strip(),
+        )
+
+    return SimulateClickResult(
+        ok=True,
+        function='simulate_click',
+        args={
+            'x': x,
+            'y': y,
+        },
+        x=x,
+        y=y,
+    )
 
 def list_windows(ctx: MTesterContext) -> ListWindowsResult:
     ctx.log.debug('mtester.api.list_windows called')

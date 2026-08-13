@@ -115,6 +115,16 @@ class CaptureScreenResult:
 
 
 @dataclass(slots=True)
+class SimulateClickResult:
+	ok: bool
+	function: str
+	args: dict[str, Any]
+	x: int
+	y: int
+	error: str | None = None
+
+
+@dataclass(slots=True)
 class ListWindowsResult:
 	ok: bool
 	function: str

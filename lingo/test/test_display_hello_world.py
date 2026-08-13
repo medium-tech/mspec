@@ -449,7 +449,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
 
             frame_result = api.capture_test_frame(
                 ctx,
-                name='start_frame',
+                name='frame_01',
                 region=region,
                 wait_for_window=0.5,
                 extract_ocr=True,
@@ -474,10 +474,32 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
 
             # click button #
 
-            pass
+            button_region = button_token.get_region_box()
+            click_x = region.x + button_region.x + button_region.width // 2
+            click_y = region.y + button_region.y + button_region.height // 2
+
+            click_result = api.simulate_click(ctx, x=click_x, y=click_y, double_click=True)
+            self.assertTrue(click_result.ok, msg=str(click_result))
 
             # confirm counter incremented #
-            
+
+            updated_frame_result = api.capture_test_frame(
+                ctx,
+                name='frame_02',
+                region=region,
+                wait_for_window=0.1,
+                extract_ocr=True,
+            )
+            updated_capture_result = updated_frame_result.capture_result
+            updated_ocr_result = updated_frame_result.ocr_result
+
+            self.assertTrue(updated_capture_result.ok, msg=str(updated_capture_result))
+            self.assertIsNotNone(updated_ocr_result)
+            self.assertTrue(updated_ocr_result.ok, msg=str(updated_ocr_result))
+
+            self.assertIn('total count', updated_ocr_result.text.lower())
+            self.assertIn('4', updated_ocr_result.text.lower())
+            self.assertNotIn('3', updated_ocr_result.text.lower())
 
         finally:
             session_result = api.stop_target(ctx, session_id=launch_result.session_id)
