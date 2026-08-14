@@ -5,7 +5,7 @@ lingo:
 meta:
     description: 'Hello world for importing functions and models for validation'
 
-import:
+imports:
     - 'hello-library.yaml'
 
 main:

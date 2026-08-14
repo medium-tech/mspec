@@ -16,10 +16,11 @@ from lingolib.types import LingoListDisplayOptions, expression, ValueTypesEnum, 
 #
 
 class L_SYM_call(NamedTuple):
-	
+	"""call a lib module function by dotted reference, with args keyed by parameter name"""
+
 	L_SRC: str
-	func: expression
-	args: list[expression]
+	func: str
+	args: dict[str, expression]
 	L_FILE: str = ''
 	L_LINE: int = -1
 
@@ -104,15 +105,34 @@ class L_SYM_handle(NamedTuple):
 		return 'expression'
 
 class L_SYM_get(NamedTuple):
+	"""access a named field from a data source, e.g. get: state.counter (shorthand) or get: {field: counter, from: state}"""
 
 	L_SRC: str
-	name: str
+	field: str
+	from_: expression
 	L_FILE: str = ''
 	L_LINE: int = -1
 
 	@property
 	def L_SYM_NAME(self):
 		return 'get'
+	
+	@property
+	def L_SYM_TYPE(self):
+		return 'expression'
+
+class L_SYM_validate(NamedTuple):
+	"""validate an expression's value against a define shape, either inline or a dotted reference to an imported module define"""
+
+	L_SRC: str
+	item: expression
+	against: L_SYM_define | str
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'validate'
 	
 	@property
 	def L_SYM_TYPE(self):
@@ -387,6 +407,7 @@ class L_SYM_button(NamedTuple):
 ExpressionSymbols = \
 	L_SYM_value | L_SYM_define | L_SYM_error | L_SYM_handle | L_SYM_get | L_SYM_set | L_SYM_func \
 	| L_SYM_args \
+	| L_SYM_call | L_SYM_validate \
 	| L_SYM_eq \
 	| L_SYM_int | L_SYM_add \
 	| L_SYM_str | L_SYM_concat | L_SYM_join \
@@ -432,6 +453,22 @@ class L_SYM_main(NamedTuple):
 	@property
 	def L_SYM_NAME(self):
 		return 'main'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'spec'
+
+class L_SYM_imports(NamedTuple):
+	"""paths of lib specs to import, e.g. for use with the call and validate symbols"""
+
+	L_SRC: str
+	paths: list[str]
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'imports'
 
 	@property
 	def L_SYM_TYPE(self):

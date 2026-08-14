@@ -15,7 +15,7 @@ from .state import get_yaml_line
 SPEC_ROOT_RULES = {
     'exe': {
         'required': {'lingo', 'main'},
-        'optional': {'meta', 'import'},
+        'optional': {'meta', 'imports'},
     },
     'lib': {
         'required': {'lingo', 'modules'},
@@ -23,11 +23,11 @@ SPEC_ROOT_RULES = {
     },
     'app': {
         'required': {'lingo', 'modules'},
-        'optional': {'meta', 'import'},
+        'optional': {'meta', 'imports'},
     },
     'gui': {
         'required': {'lingo', 'block'},
-        'optional': {'meta', 'state', 'ops', 'backend', 'import'},
+        'optional': {'meta', 'state', 'ops', 'backend', 'imports'},
     },
     'text': {
         'required': {'lingo', 'block'},

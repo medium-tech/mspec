@@ -107,3 +107,19 @@ def parse_func_symbol(ctx: LingoContext, name: str, data: dict) -> symbols.L_SYM
         L_FILE=ctx.parser.file,
         L_LINE=get_yaml_line(data)
     )
+
+
+def parse_imports_symbol(ctx: LingoContext, data: list) -> symbols.L_SYM_imports:
+    if not isinstance(data, list):
+        raise LingoSyntaxError(f'imports symbol must be a list, got: {type(data).__name__!r}')
+
+    for index, item in enumerate(data):
+        if not isinstance(item, str):
+            raise LingoSyntaxError(f'imports[{index}] must be a string, got: {type(item).__name__!r}')
+
+    return symbols.L_SYM_imports(
+        L_SRC='imports',
+        paths=data,
+        L_FILE=ctx.parser.file,
+        L_LINE=get_yaml_line(data)
+    )

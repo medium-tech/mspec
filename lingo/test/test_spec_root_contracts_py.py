@@ -45,8 +45,8 @@ class TestSpecRootContractsPython(unittest.TestCase):
             'meta': {
                 'name': 'hello-world',
             },
-            'import': [
-                {'path': './shared/lib/math.yaml'},
+            'imports': [
+                './shared/lib/math.yaml',
             ],
         }
 

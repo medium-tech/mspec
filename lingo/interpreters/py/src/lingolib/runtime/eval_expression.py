@@ -83,37 +83,42 @@ def unwrap_expression(ctx, expr):
 # core #
 
 def L_EXPR_get(ctx, symbol:symbols.L_SYM_get):
-    try:
-        # currently only state.<field> is supported
-        # eventually self.<field> and params.<field>
-        # as well as 
-        data_source, field_name = symbol.name.split('.')
-    except ValueError:
-        return LingoLanguageError(f'get symbol name must be in the form data_source.field_name, got: {symbol.name!r}', code='GET_EXPR_NAME_ERROR')
+    # currently only the 'state' data source is supported
+    # eventually 'self' and 'params' as well as arbitrary struct expressions
+    from_value = unwrap_expression(ctx, symbol.from_)
+    if isinstance(from_value, LingoLanguageError):
+        return from_value
 
     # get data source #
 
-    match data_source:
-        case 'state':
+    if isinstance(from_value, str):
+        match from_value:
+            case 'state':
 
-            try:
-                data = ctx.tk.state.values
-            except AttributeError as e:
-                error_code = 'GET_EXPR_MISSING_STATE'
-                error_msg = f'no state context available for {field_name!r}'
-                ctx.log.error(f'{error_code} - {error_msg}, python exc: {e.__class__.__name__}: {e}')
-                return LingoLanguageError(f'{error_code} - {error_msg}', code=error_code)
-            
-        case _:
-            return LingoLanguageError(f'unsupported data source "{data_source}" for get: {symbol.name!r}', code='GET_EXPR_NAME_ERROR')
+                try:
+                    data = ctx.tk.state.values
+                except AttributeError as e:
+                    error_code = 'GET_EXPR_MISSING_STATE'
+                    error_msg = f'no state context available for {symbol.field!r}'
+                    ctx.log.error(f'{error_code} - {error_msg}, python exc: {e.__class__.__name__}: {e}')
+                    return LingoLanguageError(f'{error_code} - {error_msg}', code=error_code)
+
+            case _:
+                return LingoLanguageError(f'unsupported data source {from_value!r} for get field {symbol.field!r}', code='GET_EXPR_NAME_ERROR')
+
+    elif isinstance(from_value, dict):
+        data = from_value
+
+    else:
+        return LingoLanguageError(f'get "from" must resolve to a data source name (str) or a struct (dict), got: {type(from_value).__name__}', code='GET_EXPR_TYPE_ERROR')
 
     # get field from data source #
 
     try:
-        value = data[field_name]
+        value = data[symbol.field]
     except KeyError as e:
         error_code = 'GET_EXPR_KEY_ERROR'
-        error_msg = f'missing {field_name!r} in {symbol.name}'
+        error_msg = f'missing field {symbol.field!r} in {from_value!r}'
         ctx.log.error(f'{error_code} {error_msg}, python exc: {e.__class__.__name__}: {e}')
         return LingoLanguageError(error_msg, code=error_code)
     

@@ -247,6 +247,12 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
     elif keys == {'get'}:
         return parse_expr_get(ctx, data, L_SRC, src_info)
 
+    elif keys == {'validate'}:
+        return parse_expr_validate(ctx, data, L_SRC, src_info)
+
+    elif 'call' in keys:
+        return parse_expr_call(ctx, data, L_SRC, src_info)
+
     elif keys == {'args'}:
         return parse_expr_args(ctx, data, L_SRC, src_info)
 
@@ -437,14 +443,107 @@ def parse_expr_join(ctx, data: dict, L_SRC: str, src_info):
 
 def parse_expr_get(ctx, data: dict, L_SRC: str, src_info):
 
-    if not isinstance(data['get'], str):
-        raise LingoSyntaxError(f'get symbol requires a string path, got: {type(data["get"]).__name__!r}{src_info()}')
+    get_data = data['get']
 
-    return symbols.L_SYM_get(
-        name=data['get'],
-        L_SRC=f'{L_SRC}.get',
+    if isinstance(get_data, str):
+        parts = get_data.split('.')
+        if len(parts) != 2:
+            raise LingoSyntaxError(f'get symbol shorthand must be in the form data_source.field_name, got: {get_data!r}{src_info()}')
+
+        from_str, field_name = parts
+
+        return symbols.L_SYM_get(
+            field=field_name,
+            from_=create_expression_ast(ctx, from_str, f'{L_SRC}.get.from'),
+            L_SRC=f'{L_SRC}.get',
+            L_FILE=ctx.parser.file,
+            L_LINE=get_yaml_line(get_data)
+        )
+
+    elif isinstance(get_data, dict):
+        get_keys = set(get_data.keys())
+        if get_keys != {'field', 'from'}:
+            raise LingoSyntaxError(f'get field mapping requires exactly "field" and "from" keys, got: {", ".join(sorted(get_keys))}{src_info()}')
+
+        if not isinstance(get_data['field'], str):
+            raise LingoSyntaxError(f'get field name must be a string, got: {type(get_data["field"]).__name__!r}{src_info()}')
+
+        return symbols.L_SYM_get(
+            field=get_data['field'],
+            from_=create_expression_ast(ctx, get_data['from'], f'{L_SRC}.get.from'),
+            L_SRC=f'{L_SRC}.get',
+            L_FILE=ctx.parser.file,
+            L_LINE=get_yaml_line(get_data)
+        )
+
+    else:
+        raise LingoSyntaxError(f'get symbol requires a string path or a field/from mapping, got: {type(get_data).__name__!r}{src_info()}')
+
+
+def parse_expr_validate(ctx, data: dict, L_SRC: str, src_info):
+    # deferred import to avoid a circular import with shared.py, which imports create_expression_ast from this module
+    from lingolib.parsing.shared import parse_define_symbol
+
+    validate_data = data['validate']
+    if not isinstance(validate_data, dict):
+        raise LingoSyntaxError(f'validate symbol requires a mapping, got: {type(validate_data).__name__!r}{src_info()}')
+
+    try:
+        item_data = validate_data['item']
+    except KeyError:
+        raise LingoSyntaxError(f'validate symbol missing required key: item{src_info()}') from None
+
+    try:
+        against_data = validate_data['against']
+    except KeyError:
+        raise LingoSyntaxError(f'validate symbol missing required key: against{src_info()}') from None
+
+    unsupported = set(validate_data.keys()) - {'item', 'against'}
+    if unsupported:
+        raise LingoSyntaxError(f'unsupported key(s) in validate symbol: {", ".join(sorted(unsupported))}{src_info()}')
+
+    item_expr = create_expression_ast(ctx, item_data, f'{L_SRC}.validate.item')
+
+    if isinstance(against_data, str):
+        against = against_data
+    elif isinstance(against_data, dict):
+        against = parse_define_symbol(ctx, 'against', against_data, f'{L_SRC}.validate.against')
+    else:
+        raise LingoSyntaxError(f'validate against must be a string reference or a define mapping, got: {type(against_data).__name__!r}{src_info()}')
+
+    return symbols.L_SYM_validate(
+        item=item_expr,
+        against=against,
+        L_SRC=f'{L_SRC}.validate',
         L_FILE=ctx.parser.file,
-        L_LINE=get_yaml_line(data['get'])
+        L_LINE=get_yaml_line(validate_data)
+    )
+
+
+def parse_expr_call(ctx, data: dict, L_SRC: str, src_info):
+
+    unsupported = set(data.keys()) - {'call', 'args'}
+    if unsupported:
+        raise LingoSyntaxError(f'unsupported key(s) in call symbol: {", ".join(sorted(unsupported))}{src_info()}')
+
+    if not isinstance(data['call'], str):
+        raise LingoSyntaxError(f'call symbol requires a string function reference, got: {type(data["call"]).__name__!r}{src_info()}')
+
+    args_data = data.get('args', {})
+    if not isinstance(args_data, dict):
+        raise LingoSyntaxError(f'call args must be a mapping, got: {type(args_data).__name__!r}{src_info()}')
+
+    args = {
+        arg_name: create_expression_ast(ctx, arg_data, f'{L_SRC}.call.args.{arg_name}')
+        for arg_name, arg_data in args_data.items()
+    }
+
+    return symbols.L_SYM_call(
+        func=data['call'],
+        args=args,
+        L_SRC=f'{L_SRC}.call',
+        L_FILE=ctx.parser.file,
+        L_LINE=get_yaml_line(data['call'])
     )
 
 

@@ -8,6 +8,7 @@ import lingolib.symbols as symbols
 class LingoASTExeSpec:
     lingo: symbols.L_SYM_lingo
     main: symbols.L_SYM_main
+    imports: symbols.L_SYM_imports | None = None
 
 @dataclass
 class LingoASTAppSpec:
