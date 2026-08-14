@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from mtester.context import MTesterContext
-from mtester.runtime import IS_DARWIN, RUN_GUI_TESTS, get_window_region
+from mtester.runtime import RUN_GUI_TESTS, get_window_region
 from mtester.ops import manual_flow
 from mtester.types import ManualFlowOptions
 
@@ -28,7 +28,7 @@ class TestMTester(unittest.TestCase):
         from lingolib.context import init_logger
         self.assertIsNotNone(init_logger)
 
-    @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'manual flow tests are macOS-only and require RUN_GUI_TESTS=1')
+    @unittest.skipUnless(RUN_GUI_TESTS, 'manual flow tests require RUN_GUI_TESTS=1')
     def test_manual_flow_finds_ocr_text(self):
         ctx = MTesterContext(verbose=False)
         options = ManualFlowOptions(

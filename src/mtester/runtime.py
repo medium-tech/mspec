@@ -36,6 +36,9 @@ if QUICK_WINDOW:
 def get_window_region(ctx, window_title:str) -> RegionBox:
 	global WINDOW_REGION_CACHE
 
+	if not IS_DARWIN:
+		raise RuntimeError('Window region detection is only supported on macOS.')
+
 	# print(f'\n\tget_window_region: {WINDOW_REGION_CACHE=} {QUICK_WINDOW=} {window_title=}')
 	
 	if WINDOW_REGION_CACHE is None or not QUICK_WINDOW:

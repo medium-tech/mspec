@@ -24,6 +24,11 @@ show_help() {
 	echo "Quick window mode:"
 	echo "  In quick window mode, the script will skip querying the OS for the window region and use a cached value instead."
 	echo "  This can speed up tests that require window region information, but may be less reliable if the window region changes during the test run."
+	echo "  This requires running the script once with --setup-window to cache the window region before running tests in quick window mode."
+
+	echo "Setup Window:"
+	echo "  In setup window mode, the script will query the OS for the window region and cache it for future runs."
+	echo "  It currently has limited OS support, see README.md for details."
 }
 
 

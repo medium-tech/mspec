@@ -9,6 +9,8 @@ interpreter packages. Each interpreter should support:
 - a library API for embedding
 - a CLI for script execution
 
+[Testing](#tests)
+
 ## standardized cli contract
 
 `lingo` below stands in for each language binary.
@@ -114,14 +116,56 @@ This script runs tests _(only for beta version)_ in:
 * `./tests/`
 * `lingo/test`
 
+### GUI tests
+GUI tests will launch windows and take control of your mouse to simulate clicks, when you run the tests you should wait for them to complete before using your computer again, or the tests may fail.
 
-To run full tests including GUI tests which **do not work in a VSCode sandbox**, and currently **require OSX** and **cliclick**. GUI tests will launch windows and take control of your mouse to simulate clicks, when you run the tests you should wait for them to complete before using your computer again, or the tests may fail.
-
+The GUI tests **do not work in a VSCode sandbox**, but are run like this: 
 ```bash
-# install deps
-brew install cliclick
-
-# run gui tests
 ./test.sh --gui
 ```
 
+#### GUI Test Config
+A config is needed to define the coordinates of the window for the screen capture process. It goes in `./.mtester/config.json`, example:
+```json
+{
+    "window_region": {
+        "height": 828,
+        "width": 800,
+        "x": 5,
+        "y": 35
+    }
+}
+```
+This can be created automatically with:
+
+```bash
+./test.sh --setup-window
+```
+
+This command currently **requires OSX** and [cliclick](https://github.com/BlueM/cliclick)
+
+```bash
+brew install cliclick
+```
+
+To create one manually you need to fill out the config values based on the window location/size of the tkinter window when you run lingo `gui` or `text` specs.
+
+#### full cli
+```   
+Usage: ./test.sh [options]
+Options:
+  -h, --help            		Show this help message and exit
+  --gui                 		Run GUI tests (default: skip GUI tests)
+  --no-gui              		Skip GUI tests (default: run GUI tests)
+  --gui-only            		Only run GUI tests, skipping all non-GUI tests (implies --gui)
+  --quick-window, -qw   		Skip querying the OS for window region (default: query the OS for window region)
+  --no-quick-window, -nqw 	Query the OS for window region (default: skip querying the OS for window region)
+  --setup-window        		Query and cache the test window region, then exit
+Quick window mode:
+  In quick window mode, the script will skip querying the OS for the window region and use a cached value instead.
+  This can speed up tests that require window region information, but may be less reliable if the window region changes during the test run.
+  This requires running the script once with --setup-window to cache the window region before running tests in quick window mode.
+Setup Window:
+  In setup window mode, the script will query the OS for the window region and cache it for future runs.
+  It currently has limited OS support, see README.md for details.
+```

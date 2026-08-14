@@ -6,7 +6,7 @@ import itertools
 
 from pathlib import Path
 from unittest.mock import patch
-from mtester.runtime import IS_DARWIN, RUN_GUI_TESTS, get_window_region
+from mtester.runtime import RUN_GUI_TESTS, get_window_region
 from mtester import api
 from mtester.context import MTesterContext
 from mtester.types import ColorRegionAssertion, PixelRGB, RegionBox
@@ -35,7 +35,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
     # text specs
     #
 
-    @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'display smoke tests are macOS-only and require RUN_GUI_TESTS=1')
+    @unittest.skipUnless(RUN_GUI_TESTS, 'display smoke tests require RUN_GUI_TESTS=1')
     def test_display_hello_text_1(self):
         spec_path = Path('lingo/shared/scripts/text/hello-text.yaml').resolve()
         ctx = MTesterContext(verbose=False)
@@ -72,7 +72,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
         self.assertTrue(session_result.ok, msg=str(session_result))
         self.assertIn(':: DEBUG ::', session_result.stderr)
 
-    @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'display smoke tests are macOS-only and require RUN_GUI_TESTS=1')
+    @unittest.skipUnless(RUN_GUI_TESTS, 'display smoke tests require RUN_GUI_TESTS=1')
     def test_display_hello_text_2(self):
         spec_path = Path('lingo/shared/scripts/text/hello-text-2.yaml').resolve()
         ctx = MTesterContext(verbose=False)
@@ -129,7 +129,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
         self.assertIsNotNone(session_result)
         self.assertTrue(session_result.ok, msg=str(session_result))
 
-    @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'display smoke tests are macOS-only and require RUN_GUI_TESTS=1')
+    @unittest.skipUnless(RUN_GUI_TESTS, 'display smoke tests require RUN_GUI_TESTS=1')
     def test_display_hello_text_3(self):
         spec_path = Path('lingo/shared/scripts/text/hello-text-3.yaml').resolve()
         ctx = MTesterContext(verbose=False)
@@ -281,7 +281,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
         self.assertIsNotNone(session_result)
         self.assertTrue(session_result.ok, msg=str(session_result))
 
-    @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'display smoke tests are macOS-only and require RUN_GUI_TESTS=1')
+    @unittest.skipUnless(RUN_GUI_TESTS, 'display smoke tests require RUN_GUI_TESTS=1')
     def test_display_text_styles(self):
         spec_path = Path('lingo/shared/scripts/text/text-styles.yaml').resolve()
         ctx = MTesterContext(verbose=False)
@@ -406,7 +406,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
     # gui specs
     #
 
-    @unittest.skipUnless(IS_DARWIN and RUN_GUI_TESTS, 'display smoke tests are macOS-only and require RUN_GUI_TESTS=1')
+    @unittest.skipUnless(RUN_GUI_TESTS, 'display smoke tests require RUN_GUI_TESTS=1')
     def test_display_hello_gui(self):
         spec_path = Path('lingo/shared/scripts/gui/hello-gui.yaml').resolve()
         ctx = MTesterContext(verbose=False)
