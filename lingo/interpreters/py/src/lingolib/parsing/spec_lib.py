@@ -54,7 +54,7 @@ def _parse_modules_symbol(ctx: LingoContext, data: dict) -> symbols.L_SYM_module
 
     return symbols.L_SYM_modules(
         L_SRC='modules',
-        modules=modules,
+        members=modules,
         L_FILE=ctx.parser.file,
         L_LINE=get_yaml_line(data)
     )

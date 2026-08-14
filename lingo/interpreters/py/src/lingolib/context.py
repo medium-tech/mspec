@@ -5,7 +5,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Callable, Optional, NamedTuple
 
-from lingolib.symbols import L_SYM_define, L_SYM_func
+from lingolib.symbols import L_SYM_define, L_SYM_func, L_SYM_value
 from lingolib.errors import LingoRuntimeError
 
 __all__ = [
@@ -54,10 +54,32 @@ class LingoRegisteredFunction(NamedTuple):
     def __repr__(self):
         return str(self)
 
+class LingoRegisteredValue(NamedTuple):
+    name: str
+    ast: L_SYM_value
+
+    def __str__(self):
+        return f'LingoRegisteredValue(name={self.name})'
+
+    def __repr__(self):
+        return str(self)
+
+class LingoRegisteredDefinition(NamedTuple):
+    name: str
+    ast: L_SYM_define
+
+    def __str__(self):
+        return f'LingoRegisteredDefinition(name={self.name})'
+
+    def __repr__(self):
+        return str(self)
+
 
 @dataclass
 class LingoRegistry:
     ops: dict[str, LingoRegisteredFunction] = field(default_factory=dict)
+    lib: dict[str, LingoRegisteredFunction | LingoRegisteredValue | LingoRegisteredDefinition] = field(default_factory=dict)
+    call_args_stack: list[dict] = field(default_factory=list)
 
 def no_draw_method():
     raise LingoRuntimeError('redraw function has not been set')
@@ -70,7 +92,6 @@ class LingoTKRuntimeContext:
     in_text_block: bool = False
     redraw: Callable = no_draw_method
     state: Optional[LingoStateRuntimeContext] = None
-    registry: Optional[LingoRegistry] = None
     
 
 
@@ -94,6 +115,7 @@ class LingoContext:
     log: logging.Logger = field(default_factory=init_logger)
     parser: Optional[LingoParserContext] = None
     tk: Optional[LingoTKRuntimeContext] = None
+    registry: Optional[LingoRegistry] = None
 
     @classmethod
     def add_parser_context(cls, ctx: 'LingoContext', src: str, file: str, line: int, col: int):
@@ -109,5 +131,6 @@ class LingoContext:
         return cls(
             log=ctx.log,
             parser=ctx.parser,
-            tk=tk_runtime_context
+            tk=tk_runtime_context,
+            registry=ctx.registry
         )

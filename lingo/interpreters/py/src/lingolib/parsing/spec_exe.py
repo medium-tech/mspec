@@ -41,6 +41,6 @@ def spec_exe_ast_from_dict(
     except Exception as e:
         raise LingoSyntaxError(f'error creating main symbol: {e}')
 
-    imports = parse_imports_symbol(ctx, data['imports']) if 'imports' in data else None
+    imports = parse_imports_symbol(ctx, data.get('imports', []))
 
     return LingoASTExeSpec(lingo=lingo, main=main, imports=imports)

@@ -6,7 +6,7 @@ meta:
     description: 'Hello world for importing functions and models for validation'
 
 imports:
-    - 'hello-library.yaml'
+    - '../lib/hello-library.yaml'
 
 main:
     call: 'hello_ns.say_hello'

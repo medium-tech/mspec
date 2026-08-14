@@ -364,7 +364,7 @@ def _eval_button(ctx: LingoContext, symbol: L_SYM_button):
         # get function #
 
         try:
-            registered_func = ctx.tk.registry.ops[call_parts[1]]
+            registered_func = ctx.registry.ops[call_parts[1]]
         except KeyError:
             raise_runtime_error(symbol, f'Button call function {symbol.call} not found in registry.ops')
 

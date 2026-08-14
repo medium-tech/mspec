@@ -523,7 +523,7 @@ class L_SYM_module(NamedTuple):
 class L_SYM_modules(NamedTuple):
 
 	L_SRC: str
-	modules: dict[str, L_SYM_module]
+	members: dict[str, L_SYM_module]
 	L_FILE: str = ''
 	L_LINE: int = -1
 
