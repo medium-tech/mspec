@@ -113,6 +113,7 @@ def L_EXPR_get(ctx, symbol:symbols.L_SYM_get):
 
     elif isinstance(from_value, str):
         if from_value == 'state':
+            data_key = symbol.field
             try:
                 data_source = ctx.tk.state.values
             except AttributeError as e:
