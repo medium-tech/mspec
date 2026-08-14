@@ -27,10 +27,6 @@ def setup_window_config() -> None:
 		command=[sys.executable, '-m', 'lingolib', '-v', 'display', str(WINDOW_SETUP_SPEC)],
 	)
 
-	time.sleep(1)
-
-	print(f'launch_result: {launch_result}')
-
 	if not launch_result.ok:
 		raise RuntimeError(f'Failed to launch window setup target: {launch_result.error}')
 
@@ -62,7 +58,6 @@ def setup_window_config() -> None:
 
 	MTESTER_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 	config = {
-		'window_title': WINDOW_TITLE_GUI_SPEC,
 		'window_region': {
 			'x': window_region.x,
 			'y': window_region.y,
@@ -72,6 +67,7 @@ def setup_window_config() -> None:
 	}
 	MTESTER_CONFIG_PATH.write_text(json.dumps(config, indent=4, sort_keys=True) + '\n')
 	print(f'Cached window configuration in {MTESTER_CONFIG_PATH}')
+	print(json.dumps(config, indent=4, sort_keys=True))
 
 if __name__ == '__main__':
 	setup_window_config()

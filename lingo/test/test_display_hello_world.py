@@ -1,4 +1,5 @@
 import os
+import json
 import platform
 import unittest
 import itertools
@@ -27,6 +28,12 @@ It is based on the assumption that the window size and location does not change 
 """
 
 WINDOW_REGION_CACHE: RegionBox | None = None
+
+if QUICK_WINDOW:
+    config_path = Path.cwd() / '.mtester' / 'config.json'
+    with open(config_path, 'r') as f:
+        config_data = json.load(f)
+        WINDOW_REGION_CACHE = RegionBox(**config_data['window_region'])
 
 class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
 
