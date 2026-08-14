@@ -19,5 +19,5 @@ main:
                         item:
                             get:
                                 field: 'sample_person'
-                                from: 'hello_ns'
+                                from: 'lib.hello_ns'
                         against: 'hello_ns.person'
