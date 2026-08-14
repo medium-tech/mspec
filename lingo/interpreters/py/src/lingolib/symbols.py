@@ -59,6 +59,7 @@ class L_SYM_define(NamedTuple):
 	element_type: str = ''
 	display: LingoListDisplayOptions|None = None
 	description: str = ''
+	fields: 'dict[str, L_SYM_define] | None' = None
 	L_FILE: str = ''
 	L_LINE: int = -1
 
@@ -112,6 +113,22 @@ class L_SYM_get(NamedTuple):
 	@property
 	def L_SYM_NAME(self):
 		return 'get'
+	
+	@property
+	def L_SYM_TYPE(self):
+		return 'expression'
+
+class L_SYM_args(NamedTuple):
+	"""reference to a named argument of the enclosing func"""
+
+	L_SRC: str
+	name: str
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'args'
 	
 	@property
 	def L_SYM_TYPE(self):
@@ -369,6 +386,7 @@ class L_SYM_button(NamedTuple):
 
 ExpressionSymbols = \
 	L_SYM_value | L_SYM_define | L_SYM_error | L_SYM_handle | L_SYM_get | L_SYM_set | L_SYM_func \
+	| L_SYM_args \
 	| L_SYM_eq \
 	| L_SYM_int | L_SYM_add \
 	| L_SYM_str | L_SYM_concat | L_SYM_join \
@@ -444,6 +462,37 @@ class L_SYM_ops(NamedTuple):
 	@property
 	def L_SYM_NAME(self):
 		return 'ops'
+	
+	@property
+	def L_SYM_TYPE(self):
+		return 'spec'
+
+class L_SYM_module(NamedTuple):
+
+	L_SRC: str
+	name: str
+	members: dict[str, L_SYM_define | L_SYM_value | L_SYM_func]
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'module'
+	
+	@property
+	def L_SYM_TYPE(self):
+		return 'spec'
+
+class L_SYM_modules(NamedTuple):
+
+	L_SRC: str
+	modules: dict[str, L_SYM_module]
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'modules'
 	
 	@property
 	def L_SYM_TYPE(self):

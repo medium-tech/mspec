@@ -19,7 +19,7 @@ def parse_define_symbol(
     try:
         define_type = data['define']
     except KeyError:
-        raise LingoSyntaxError(f'missing required define key for {name!r}') from None
+        raise LingoSyntaxError(f'define symbol for {name!r} missing required key: define') from None
 
     if not isinstance(define_type, str):
         raise LingoSyntaxError(f'define type for {name!r} must be string, got: {type(define_type).__name__!r}')
@@ -50,7 +50,20 @@ def parse_define_symbol(
             raise LingoSyntaxError(f'description for {name!r} must be string, got: {type(data["description"]).__name__!r}')
         args['description'] = data['description']
 
-    allowed_keys = {'define', 'default', 'element_type', 'display', 'description'}
+    if 'fields' in data:
+        if define_type != 'struct':
+            raise LingoSyntaxError(f'fields key is only valid for struct defines, got type {define_type!r} for {name!r}')
+
+        fields_data = data['fields']
+        if not isinstance(fields_data, dict):
+            raise LingoSyntaxError(f'fields for {name!r} must be a mapping, got: {type(fields_data).__name__!r}')
+
+        args['fields'] = {
+            field_name: parse_define_symbol(ctx, field_name, field_data, f'{L_SRC}.fields.{field_name}')
+            for field_name, field_data in fields_data.items()
+        }
+
+    allowed_keys = {'define', 'type', 'default', 'element_type', 'display', 'description', 'fields'}
     unsupported = set(data.keys()) - allowed_keys
     if unsupported:
         raise LingoSyntaxError(f'unsupported key(s) in define block for {name!r}: {", ".join(sorted(unsupported))}')
@@ -75,7 +88,7 @@ def parse_func_symbol(ctx: LingoContext, name: str, data: dict) -> symbols.L_SYM
         raise LingoSyntaxError(f'ops function {name!r} missing required key: return') from None
 
     return_symbol = parse_define_symbol(ctx, f'{name}.return', return_data, f'ops.{name}.return')
-
+    
     args_data = data.get('args', {})
     if not isinstance(args_data, dict):
         raise LingoSyntaxError(f'args block for ops function {name!r} must be a mapping, got: {type(args_data).__name__!r}')

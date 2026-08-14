@@ -8,7 +8,7 @@ meta:
     description: 'Hello world for a frontend application.'
     development_notes: |
         Note that in the widget.model or widget.op field we reference the path via the 
-        backend path (my_app.<name>) even though it's available at hello_ns.person
+        backend path (backend.my_app.<name>) even though it's available at hello_ns.person
         as well. Using the backend path is required because that path is how to derive
         the url endpoint.
 
@@ -33,15 +33,15 @@ block:
     - heading: 'Say Hello'
       level: 2
     - widget:
-        bind: 'say_hello'
-        op: 'my_app.say_hello'
+        bind: 'state.say_hello'
+        op: 'backend.my_app.say_hello'
 
     - heading: 'App Models'
 
     - heading: 'View Person'
       level: 2
     - widget:
-        model: 'my_app.person'
+        model: 'backend.my_app.person'
         display: 'view'
         model_id: 
             params: person_id
@@ -49,13 +49,13 @@ block:
     - heading: 'Create Person'
       level: 2
     - widget:
-        bind: 'create_person'
-        model: 'my_app.person'
+        bind: 'state.create_person'
+        model: 'backend.my_app.person'
         display: 'create'
 
     - heading: 'Person List'
       level: 2
     - widget:
-        model: 'my_app.person'
+        model: 'backend.my_app.person'
         display: 'list'
     

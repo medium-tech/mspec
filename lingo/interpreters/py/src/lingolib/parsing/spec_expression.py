@@ -247,6 +247,9 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
     elif keys == {'get'}:
         return parse_expr_get(ctx, data, L_SRC, src_info)
 
+    elif keys == {'args'}:
+        return parse_expr_args(ctx, data, L_SRC, src_info)
+
     elif keys == {'set', 'to'}:
         return parse_expr_set(ctx, data, L_SRC, src_info)
 
@@ -456,4 +459,17 @@ def parse_expr_set(ctx, data: dict, L_SRC: str, src_info):
         L_SRC=f'{L_SRC}.set',
         L_FILE=ctx.parser.file,
         L_LINE=get_yaml_line(data['set'])
+    )
+
+
+def parse_expr_args(ctx, data: dict, L_SRC: str, src_info):
+
+    if not isinstance(data['args'], str):
+        raise LingoSyntaxError(f'args symbol requires a string name, got: {type(data["args"]).__name__!r}{src_info()}')
+
+    return symbols.L_SYM_args(
+        name=data['args'],
+        L_SRC=f'{L_SRC}.args',
+        L_FILE=ctx.parser.file,
+        L_LINE=get_yaml_line(data['args'])
     )

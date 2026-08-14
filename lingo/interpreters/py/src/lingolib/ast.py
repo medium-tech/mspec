@@ -27,7 +27,8 @@ class LingoASTTextSpec:
 
 @dataclass
 class LingoASTLibSpec:
-    pass
+    lingo: symbols.L_SYM_lingo
+    modules: symbols.L_SYM_modules
 
 
 LingoASTSpec = LingoASTExeSpec | LingoASTLibSpec | LingoASTAppSpec | LingoASTGUISpec | LingoASTTextSpec

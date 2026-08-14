@@ -23,12 +23,12 @@ modules:
             description: 'Say hello to a person.'
             args:
                 name:
-                    type: str
+                    define: str
                     description: 'The name to greet.'
                     default: 'World'
 
             return:
-                type: str
+                define: str
                 description: 'A greeting message.'
             
             func:
