@@ -1,0 +1,14 @@
+lingo:
+    spec: 'test'
+    version: '0.1.0b'
+
+tests:
+    - spec: 'scripts/exe/hello-import.yaml'
+      tags:
+        - smoke
+      cases:
+        - name: 'default'
+          params: {}
+          expect:
+              exit_code: 0
+              stdout: 'Hello, Zoe! Welcome to the world of Lingo.'

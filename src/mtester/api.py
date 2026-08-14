@@ -262,26 +262,42 @@ tell application "System Events"
 end tell
 '''
 
-    try:
-        proc = subprocess.run(
-            ['osascript', '-e', script],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except Exception as e:
-        return ListWindowsResult(
-            ok=False,
-            function='list_windows',
-            error=f'{e.__class__.__name__}: {e}',
-        )
+    # "every application process whose ..." is a live query; if a process launches or exits while
+    # System Events is iterating it, macOS can raise a transient "Invalid index (-1719)" error.
+    # retrying is the standard workaround since the enumeration itself is not reliably atomic.
+    max_attempts = 3
+    retry_delay = 0.3
+    last_error = ''
 
-    if proc.returncode != 0:
-        return ListWindowsResult(
-            ok=False,
-            function='list_windows',
-            error=(proc.stderr or proc.stdout or '').strip(),
-        )
+    for attempt in range(1, max_attempts + 1):
+        try:
+            proc = subprocess.run(
+                ['osascript', '-e', script],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except Exception as e:
+            return ListWindowsResult(
+                ok=False,
+                function='list_windows',
+                error=f'{e.__class__.__name__}: {e}',
+            )
+
+        if proc.returncode == 0:
+            break
+
+        last_error = (proc.stderr or proc.stdout or '').strip()
+
+        if '-1719' not in last_error or attempt == max_attempts:
+            return ListWindowsResult(
+                ok=False,
+                function='list_windows',
+                error=last_error,
+            )
+
+        ctx.log.debug(f'list_windows attempt {attempt} hit a transient error, retrying: {last_error}')
+        time.sleep(retry_delay)
 
     windows = []
     for index, line in enumerate(proc.stdout.splitlines()):
