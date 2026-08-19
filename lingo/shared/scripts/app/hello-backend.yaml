@@ -5,11 +5,13 @@ lingo:
 meta:
     description: 'Hello world for a backend application'
 
-import:
-    - 'hello-library.yaml'
+imports:
+    - '../lib/hello-library.yaml'
 
 modules:
+
     my_app:
+
         ops:
             say_hello: 'hello_ns.say_hello'
 

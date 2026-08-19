@@ -12,6 +12,10 @@ meta:
 import:
     - 'hello-library.yaml'
 
+constants:
+    greeting: 'Hello, World!'
+    a_number: 42
+
 models:
     favorites:
         define: struct

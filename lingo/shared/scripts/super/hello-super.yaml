@@ -6,13 +6,28 @@ meta:
     description: 'Hello world for super spec with multiple sub-specs.'
 
 specs:
-    - lingo-stdlib.yaml
-    - hello-library.yaml
-    - hello-data.yaml
-    - hello-frontend.yaml
-    - hello-backend.yaml
+    - embed_test:
+        lingo:
+            spec: 'data'
+            version: '0.1.0b'
+        meta:
+            description: 'Super spec parsing needs to support embedded specs for this to be usabled as a caching format.'
+
+        constants:
+            placeholder: true
+      
+    - ../lib/lingo-stdlib.yaml
+    - ../lib/hello-library.yaml
+    - ../data/hello-anonymous-data.yaml
+    - ../app/hello-backend.yaml
+    - ../gui/hello-frontend.yaml
 
 run:
-    spec: 'hello-frontend.yaml'
+    # when the specs list above is parsed, each is given an id that can be referenced here in the run section.
+    # the first one above is an embedded spec. These should have one top level key ("embed_test" in this example) which will become its id
+    # for the remaining examples, the id will be derived from the filename without the extension.
+    # 
+    # ids must be unique within all defined specs
+    spec: 'hello-frontend'
     params:
         person_id: '1'

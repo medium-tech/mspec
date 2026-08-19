@@ -13,13 +13,16 @@ modules:
                     default: 'initial'
                 form:
                     define: struct
-                    default: {}
+                    # default:
+                    #     unknown: 'Form fields will be supplied by the widget.'
                 form_errors:
                     define: struct
-                    default: {}
+                    # default:
+                    #     unknown: 'Form errors will be supplied by the widget.'
                 result:
                     define: any
-                    default: ''
+                    # default:
+                    #     unknown: 'Result will be supplied by the widget.'
 
         model_create:
             define: struct
@@ -29,13 +32,16 @@ modules:
                     default: 'initial'
                 form:
                     define: struct
-                    default: {}
+                    # default:
+                    #     unknown: 'Form fields will be supplied by the widget.'
                 form_errors:
                     define: struct
-                    default: {}
+                    # default:
+                    #     unknown: 'Form errors will be supplied by the widget.'
                 result:
                     define: any
-                    default: ''
+                    # default:
+                    #     unknown: 'Result will be supplied by the widget.'
         
         model_list:
             define: struct
@@ -51,7 +57,9 @@ modules:
                     default: 10
                 total:
                     define: int
-                    default: -1
+                    # default:
+                    #     unknown: 'Total will be known after the list is retrieved.'
                 result:
                     define: list
-                    default: []
+                    # default:
+                    #     unknown: 'List will be known after the list is retrieved.'

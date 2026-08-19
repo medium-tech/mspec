@@ -28,18 +28,24 @@ state:
     view_people: 'lingo.model_list'
 
 block:
+    # ops #
+
     - heading: 'App Ops'
 
     - heading: 'Say Hello'
       level: 2
-    - widget:
-        bind: 'state.say_hello'
-        op: 'backend.my_app.say_hello'
 
+    - widget:
+        op: 'backend.my_app.say_hello'
+        bind: 'state.say_hello'
+    
+    # models #
+    
     - heading: 'App Models'
 
     - heading: 'View Person'
       level: 2
+
     - widget:
         model: 'backend.my_app.person'
         display: 'view'
@@ -48,13 +54,15 @@ block:
 
     - heading: 'Create Person'
       level: 2
+
     - widget:
-        bind: 'state.create_person'
         model: 'backend.my_app.person'
+        bind: 'state.create_person'
         display: 'create'
 
     - heading: 'Person List'
       level: 2
+
     - widget:
         model: 'backend.my_app.person'
         display: 'list'
