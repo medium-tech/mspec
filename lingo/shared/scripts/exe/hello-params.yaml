@@ -24,16 +24,16 @@ main:
             - concat:
                 - 'is_enabled: '
                 - str:
-                    params: is_enabled
+                    get: params.is_enabled
 
             - concat:
                 - 'count plus 1: '
                 - str:
                     add:
                         a:
-                            params: count
+                            get: params.count
                         b: 1
 
             - concat:
                 - 'hello, '
-                - params: name
+                - get: params.name
