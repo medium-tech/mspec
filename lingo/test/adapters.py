@@ -17,13 +17,21 @@ class AdapterResult:
 
 # adapters #
 
-def run_exe_with_python(script_path: Path, params: dict, **kwargs) -> AdapterResult:
-    if params:
-        raise ValueError('exe contract params are not supported yet by the Python beta CLI')
+def _param_value_to_cli_str(value) -> str:
+    if isinstance(value, bool):
+        return 'true' if value else 'false'
+    else:
+        return str(value)
 
+def run_exe_with_python(script_path: Path, params: dict, **kwargs) -> AdapterResult:
     verbose_flag = ['-v'] if kwargs.get('verbose', False) else []
 
-    cmd = [sys.executable, '-m', 'lingolib'] + verbose_flag + ['exe', str(script_path)]
+    param_args = []
+    for field_name, value in params.items():
+        flag = f'--{field_name.replace("_", "-")}'
+        param_args.extend([flag, _param_value_to_cli_str(value)])
+
+    cmd = [sys.executable, '-m', 'lingolib'] + verbose_flag + ['exe', str(script_path)] + param_args
     
     result = subprocess.run(
         cmd,

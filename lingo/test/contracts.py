@@ -68,10 +68,13 @@ def _parse_case(case_data: dict, file_path: Path) -> ExeContractCase:
     if not isinstance(stdout, str):
         raise ValueError(f'{file_path}: case {name}.expect.stdout must be a string')
 
+    # empty stdout means no output at all (e.g. a hard crash before any print), so no trailing newline is expected
+    expected_stdout = '' if stdout == '' else stdout + '\n'
+
     return ExeContractCase(
         name=name,
         params=params,
-        expect=ExeCaseExpectation(exit_code=exit_code, stdout=stdout + '\n'),
+        expect=ExeCaseExpectation(exit_code=exit_code, stdout=expected_stdout),
     )
 
 

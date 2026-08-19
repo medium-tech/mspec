@@ -1,0 +1,49 @@
+lingo:
+    spec: 'test'
+    version: '0.1.0b'
+
+tests:
+    - spec: 'scripts/exe/hello-params.yaml'
+      tags:
+        - smoke
+        - params
+      cases:
+        - name: 'defaults with required name'
+          params:
+              name: 'Brad'
+          expect:
+              exit_code: 0
+              stdout: |-
+                  is_enabled: false
+                  count plus 1: 1
+                  hello, Brad
+
+        - name: 'all params overridden'
+          params:
+              is_enabled: true
+              count: 5
+              name: 'Ada'
+          expect:
+              exit_code: 0
+              stdout: |-
+                  is_enabled: true
+                  count plus 1: 6
+                  hello, Ada
+
+        - name: 'bool alt spelling'
+          params:
+              is_enabled: 'yes'
+              count: 0
+              name: 'Grace'
+          expect:
+              exit_code: 0
+              stdout: |-
+                  is_enabled: true
+                  count plus 1: 1
+                  hello, Grace
+
+        - name: 'missing required name'
+          params: {}
+          expect:
+              exit_code: 1
+              stdout: ''

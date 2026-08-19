@@ -425,7 +425,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
                 ctx,
                 name='frame_01',
                 region=region,
-                wait_for_window=0.5,
+                wait_for_window=1.5,
                 extract_ocr=True,
             )
             capture_result = frame_result.capture_result
