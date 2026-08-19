@@ -3,7 +3,6 @@ import argparse
 from pathlib import Path
 
 from mtester.context import MTesterContext
-from mtester.ops import manual_flow
 from mtester.types import ManualFlowOptions, RegionBox, json_pprint
 
 
@@ -64,10 +63,11 @@ def create_manual_flow_options(args: argparse.Namespace) -> ManualFlowOptions:
 def main(argv: list[str] | None = None):
     args = parse_args(argv)
     ctx = create_context(args)
+    raise RuntimeError(f'cli not supported')
     if args.command == 'manual':
-        options = create_manual_flow_options(args)
-        result = manual_flow(ctx, options)
-        print(json_pprint(result))
+        # options = create_manual_flow_options(args)
+        # result = manual_flow(ctx, options)
+        # print(json_pprint(result))
         return
     else:
         raise RuntimeError(f'Unsupported command: {args.command!r}')

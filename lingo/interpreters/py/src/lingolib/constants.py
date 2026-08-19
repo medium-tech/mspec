@@ -1,5 +1,6 @@
 MIN_LINE_BREAKS = 1
 MAX_LINE_BREAKS = 5
+
 MIN_HEADING_LEVEL = 1
 MAX_HEADING_LEVEL = 6
 
@@ -57,8 +58,10 @@ HEADING_FONTS = {
 	}
 }
 
+DEFAULT_TEXT_SIZE = 14
+
 TEXT_FONT = {
-	'font': {'family': PRIMARY_FONT_FAMILY, 'size': 14},
+	'font': {'family': PRIMARY_FONT_FAMILY, 'size': DEFAULT_TEXT_SIZE},
 	'options': {
 		'spacing1': 0,
 		'spacing2': 0,
@@ -66,19 +69,22 @@ TEXT_FONT = {
 	}
 }
 
-MONOSPACE_FONT = ('Courier New', 14)
+MONOSPACE_FONT = ('Courier New', DEFAULT_TEXT_SIZE)
 
 TABLE_HEADER_FONT = {
-	'font': {'family': MONOSPACE_FONT[0], 'size': 14, 'weight': 'bold'},
+	'font': {'family': MONOSPACE_FONT[0], 'size': DEFAULT_TEXT_SIZE, 'weight': 'bold'},
 }
 TABLE_TEXT_FONT = {
-	'font': {'family': MONOSPACE_FONT[0], 'size': 14},
+	'font': {'family': MONOSPACE_FONT[0], 'size': DEFAULT_TEXT_SIZE},
 }
 
 ERROR_TEXT_FONT = {
-	'font': {'family': MONOSPACE_FONT[0], 'size': 14, 'weight': 'bold', 'color': 'red'},
+	'font': {'family': MONOSPACE_FONT[0], 'size': DEFAULT_TEXT_SIZE, 'weight': 'bold', 'color': 'red'},
 }
 
+BUTTON_FONT = {
+	'font': {'family': PRIMARY_FONT_FAMILY, 'size': DEFAULT_TEXT_SIZE}
+}
 BUTTON_BACKGROUND_COLOR = 'white'
 BUTTON_TEXT_COLOR = 'black'
 BUTTON_PADDING_X = 2

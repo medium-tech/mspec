@@ -366,7 +366,7 @@ def ocr_extract(ctx: MTesterContext, image_path: str | Path, region: RegionBox |
                 crop_box = (x, y, x + width, y + height)
                 working_image = working_image.crop(crop_box)
 
-            ocr_text = pytesseract.image_to_string(working_image)
+            ocr_text = pytesseract.image_to_string(working_image, config='--psm 6')
             ocr_data = pytesseract.image_to_data(working_image, output_type=pytesseract.Output.DICT)
 
         tokens = []
