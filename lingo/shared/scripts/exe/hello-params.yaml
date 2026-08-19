@@ -9,13 +9,16 @@ params:
     is_enabled:
         define: bool
         default: false
+        description: 'A test boolean value'
 
     count:
         define: int
         default: 0
+        description: 'A test integer value'
 
     name:
         define: str
+        description: 'The name of the person to greet'
 
 main:
     join:

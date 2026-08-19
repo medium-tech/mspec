@@ -60,6 +60,7 @@ class L_SYM_define(NamedTuple):
 	element_type: str = ''
 	display: LingoListDisplayOptions|None = None
 	description: str = ''
+	secure: bool = False
 	fields: 'dict[str, L_SYM_define] | None' = None
 	L_FILE: str = ''
 	L_LINE: int = -1
@@ -485,6 +486,22 @@ class L_SYM_state(NamedTuple):
 	def L_SYM_NAME(self):
 		return 'state'
 	
+	@property
+	def L_SYM_TYPE(self):
+		return 'spec'
+
+class L_SYM_params(NamedTuple):
+	"""user-supplied input for an exe spec (cli args) or gui spec (url query string args)"""
+
+	L_SRC: str
+	fields: dict[str, L_SYM_define]
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'params'
+
 	@property
 	def L_SYM_TYPE(self):
 		return 'spec'

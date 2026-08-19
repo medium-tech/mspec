@@ -12,7 +12,7 @@ from lingolib.errors import LingoUnknownSymbolError, LingoRuntimeError
 from lingolib.parsing import LingoASTTextSpec, LingoASTGUISpec
 from lingolib.runtime.shared import raise_runtime_error
 from lingolib.runtime.eval_expression import unwrap_expression, evaluate_expression
-from lingolib.runtime.registry import init_registry
+from lingolib.runtime.registry import init_registry, add_params_to_registry
 from lingolib.types import LingoStyleOptions, value_to_str, LingoLanguageError, error_to_str, LingoPrimitiveTypes
 from lingolib.symbols import *
 
@@ -41,8 +41,6 @@ def _configure_root_window(ctx: LingoContext, window_title: str, window_size: tu
 
     _configure_heading_styles(ctx)
     _configure_error_style(ctx)
-
-    ctx.tk.in_text_block = False
 
 def _configure_menu_bar(ctx: LingoContext):
     menubar = tkinter.Menu(ctx.tk.root)
@@ -253,7 +251,9 @@ def _eval_header(ctx: LingoContext, symbol: L_SYM_heading):
 def _eval_text(ctx: LingoContext, symbol: L_SYM_text):
     assert isinstance(symbol.style, LingoStyleOptions)
 
-    if not ctx.tk.in_text_block and ctx.tk.main_block_index != 0:
+    # breakpoint()
+
+    if not ctx.tk.in_text_block and not ctx.tk.in_value_block:
         ctx.tk.text_widget.insert('end', '\n')
 
     text_value = unwrap_expression(ctx, symbol.text)
@@ -297,6 +297,9 @@ def _eval_value(ctx: LingoContext, symbol: L_SYM_value):
             raise_runtime_error(symbol, f'Expected string value for type "str", got: {type(symbol.value).__name__}')
 
         else:
+            if not ctx.tk.in_text_block and not ctx.tk.in_value_block:
+                ctx.tk.text_widget.insert('end', '\n')
+
             ctx.tk.text_widget.insert('end', symbol.value)
             ctx.tk.in_text_block = True
 
@@ -305,6 +308,8 @@ def _eval_value(ctx: LingoContext, symbol: L_SYM_value):
     #
 
     elif symbol.type == 'list' and symbol.element_type == 'str':
+        ctx.tk.in_value_block = True
+
         if ctx.tk.main_block_index != 0:
             ctx.tk.text_widget.insert('end', '\n')
 
@@ -319,19 +324,25 @@ def _eval_value(ctx: LingoContext, symbol: L_SYM_value):
         else:
             raise_runtime_error(f'Cannot render list value in text spec with display format: {symbol.display.format}')
 
+        ctx.tk.in_value_block = False
+
     #
     # tables
     #
 
     elif symbol.type == 'list' and symbol.element_type == 'struct':
+        ctx.tk.in_value_block = True
         _create_table_from_list_of_structs(ctx, symbol)
-
+        ctx.tk.in_value_block = False
     #
     # key/value pairs
     #
 
     elif symbol.type == 'struct':
-        ctx.tk.text_widget.insert('end', '\n')
+        ctx.tk.in_value_block = True
+        if ctx.tk.main_block_index != 0:
+            ctx.tk.text_widget.insert('end', '\n')
+
         if symbol.value:
             max_key_length = max(len(str(key)) for key in symbol.value.keys())
             struct_tag = 'struct-monospace'
@@ -340,6 +351,7 @@ def _eval_value(ctx: LingoContext, symbol: L_SYM_value):
             for key, value in symbol.value.items():
                 ctx.tk.text_widget.insert('end', f'{str(key):<{max_key_length + 2}} {value_to_str(value)}\n', (struct_tag,))
 
+        ctx.tk.in_value_block = False
     else:
         raise_runtime_error(symbol, f'Cannot render value type in text spec with type: {symbol.type} and element type: {symbol.element_type}')
 
@@ -472,6 +484,11 @@ def _evaluate_display_spec(ctx: LingoContext, ast: LingoASTTextSpec | LingoASTGU
         
         ctx.tk.text_widget.delete('1.0', 'end') # reset all text in text_widget
 
+        ctx.tk.main_block_index = 0
+        # first = ast.block.items[0]
+        ctx.tk.in_text_block = isinstance(ast.block.items[0], L_SYM_text) or (isinstance(ast.block.items[0], L_SYM_value) and ast.block.items[0].type == 'str')
+        # breakpoint()
+
         for item in ast.block.items:
             try:
                 symbol_evaluator(ctx, item)
@@ -507,7 +524,7 @@ def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
     ctx.tk.root.mainloop()
     ctx.log.debug('Text spec evaluation complete, exiting mainloop')
 
-def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
+def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec, cli_args: list[str] = []):
 
     ctx = LingoContext.add_tk_runtime_context(
         ctx, 
@@ -517,7 +534,7 @@ def evaluate_gui_spec(ctx: LingoContext, ast: LingoASTGUISpec):
     )
 
     init_registry(ctx, ast.ops)
-
+    add_params_to_registry(ctx, ast.params, cli_args=cli_args)
     _configure_root_window(ctx, window_title='Lingo GUI Spec')
 
     ctx.tk.redraw = _evaluate_display_spec(ctx, ast)

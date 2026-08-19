@@ -100,7 +100,7 @@ def unwrap_expression(ctx, expr):
 
 def L_EXPR_get(ctx, symbol:symbols.L_SYM_get):
     # 'state' and lib module namespaces (e.g. 'hello_ns') are supported
-    # eventually 'self' and 'params' as well as arbitrary struct expressions
+    # eventually 'self' as well as arbitrary struct expressions
     from_value = unwrap_expression(ctx, symbol.from_)
     if isinstance(from_value, LingoLanguageError):
         return from_value
@@ -119,6 +119,16 @@ def L_EXPR_get(ctx, symbol:symbols.L_SYM_get):
             except AttributeError as e:
                 error_code = 'GET_EXPR_NOT_FOUND'
                 error_msg = f'no state context available for {symbol.field!r}'
+                ctx.log.error(f'{error_code} - {error_msg}, python exc: {e.__class__.__name__}: {e}')
+                return LingoLanguageError(f'{error_code} - {error_msg}', code=error_code)
+
+        elif from_value == 'params':
+            data_key = symbol.field
+            try:
+                data_source = ctx.registry.params
+            except AttributeError as e:
+                error_code = 'GET_EXPR_NOT_FOUND'
+                error_msg = f'no registry context available for {symbol.field!r}'
                 ctx.log.error(f'{error_code} - {error_msg}, python exc: {e.__class__.__name__}: {e}')
                 return LingoLanguageError(f'{error_code} - {error_msg}', code=error_code)
 

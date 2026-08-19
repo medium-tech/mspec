@@ -79,6 +79,7 @@ class LingoRegisteredDefinition(NamedTuple):
 class LingoRegistry:
     ops: dict[str, LingoRegisteredFunction] = field(default_factory=dict)
     lib: dict[str, LingoRegisteredFunction | LingoRegisteredValue | LingoRegisteredDefinition] = field(default_factory=dict)
+    params: dict[str, any] = field(default_factory=dict)
     call_args_stack: list[dict] = field(default_factory=list)
 
 def no_draw_method():
@@ -90,6 +91,7 @@ class LingoTKRuntimeContext:
     text_widget: tkinter.Text
     main_block_index: int = 0
     in_text_block: bool = False
+    in_value_block: bool = False	# used for lists, structs and tables
     redraw: Callable = no_draw_method
     state: Optional[LingoStateRuntimeContext] = None
     

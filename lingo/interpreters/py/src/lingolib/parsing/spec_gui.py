@@ -1,4 +1,4 @@
-from lingolib.parsing.shared import parse_define_symbol, parse_func_symbol
+from lingolib.parsing.shared import parse_define_symbol, parse_func_symbol, parse_params_symbol
 import lingolib.symbols as symbols
 
 from lingolib.context import LingoContext
@@ -74,4 +74,5 @@ def spec_gui_ast_from_dict(
 
     state_symbol = _parse_state_symbol(ctx, data.get('state', dict()))
     ops_symbol = _parse_ops_symbol(ctx, data.get('ops', dict()))
-    return LingoASTGUISpec(lingo=lingo, block=block, state=state_symbol, ops=ops_symbol)
+    params_symbol = parse_params_symbol(ctx, data.get('params', dict()))
+    return LingoASTGUISpec(lingo=lingo, block=block, state=state_symbol, ops=ops_symbol, params=params_symbol)

@@ -32,6 +32,8 @@ def parse_define_symbol(
         'L_LINE': get_yaml_line(data)
     }
 
+    # TODO: rewrite the below section to use duck typing for performance
+
     if 'default' in data:
         args['default'] = create_expression_ast(ctx, data['default'], f'{L_SRC}.default')
 
@@ -63,7 +65,12 @@ def parse_define_symbol(
             for field_name, field_data in fields_data.items()
         }
 
-    allowed_keys = {'define', 'type', 'default', 'element_type', 'display', 'description', 'fields'}
+    if 'secure' in data:
+        if not isinstance(data['secure'], bool):
+            raise LingoSyntaxError(f'secure for {name!r} must be boolean, got: {type(data["secure"]).__name__!r}')
+        args['secure'] = data['secure']
+
+    allowed_keys = {'define', 'type', 'default', 'element_type', 'display', 'description', 'fields', 'secure'}
     unsupported = set(data.keys()) - allowed_keys
     if unsupported:
         raise LingoSyntaxError(f'unsupported key(s) in define block for {name!r}: {", ".join(sorted(unsupported))}')
@@ -120,6 +127,24 @@ def parse_imports_symbol(ctx: LingoContext, data: list) -> symbols.L_SYM_imports
     return symbols.L_SYM_imports(
         L_SRC='imports',
         paths=data,
+        L_FILE=ctx.parser.file,
+        L_LINE=get_yaml_line(data)
+    )
+
+
+def parse_params_symbol(ctx: LingoContext, data: dict) -> symbols.L_SYM_params:
+    if not isinstance(data, dict):
+        raise LingoSyntaxError(f'params symbol must be a mapping, got: {type(data).__name__!r}')
+
+    fields = {}
+    for field_name, field_data in data.items():
+        if not isinstance(field_name, str):
+            raise LingoSyntaxError(f'params field names must be strings, got: {type(field_name).__name__!r}')
+        fields[field_name] = parse_define_symbol(ctx, field_name, field_data, f'params.{field_name}')
+
+    return symbols.L_SYM_params(
+        L_SRC='params',
+        fields=fields,
         L_FILE=ctx.parser.file,
         L_LINE=get_yaml_line(data)
     )

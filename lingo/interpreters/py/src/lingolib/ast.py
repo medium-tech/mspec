@@ -9,6 +9,7 @@ class LingoASTExeSpec:
     lingo: symbols.L_SYM_lingo
     main: symbols.L_SYM_main
     imports: symbols.L_SYM_imports | None = None
+    params: symbols.L_SYM_params | None = None
 
 @dataclass
 class LingoASTAppSpec:
@@ -20,6 +21,7 @@ class LingoASTGUISpec:
     block: symbols.L_SYM_block
     state: symbols.L_SYM_state | None = None
     ops: symbols.L_SYM_ops | None = None
+    params: symbols.L_SYM_params | None = None
 
 @dataclass
 class LingoASTTextSpec:

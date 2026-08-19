@@ -1,0 +1,35 @@
+lingo:
+    spec: 'gui'
+    version: '0.1.0b'
+
+meta:
+    description: 'Hello world for user input params (bool, int, str) in a gui spec.'
+
+params:
+    is_enabled:
+        define: bool
+        default: false
+        description: 'A test boolean value'
+
+    count:
+        define: int
+        default: 0
+        description: 'A test integer value'
+
+    name:
+        define: str
+        description: 'Name of the person to greet'
+
+block:
+    - heading: 'Hello, Params!'
+    - 'name: '
+    - text:
+        get: params.name
+    - break: 1
+    - 'is_enabled: '
+    - text:
+        get: params.is_enabled
+    - break: 1
+    - 'count: '
+    - text:
+        get: params.count

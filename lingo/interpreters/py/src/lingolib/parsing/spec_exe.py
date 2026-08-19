@@ -4,7 +4,7 @@ from lingolib.context import LingoContext
 from lingolib.errors import LingoSyntaxError
 
 from ..ast import LingoASTExeSpec
-from .shared import parse_imports_symbol
+from .shared import parse_imports_symbol, parse_params_symbol
 from .state import get_yaml_line
 from .spec_expression import create_expression_ast
 
@@ -42,5 +42,6 @@ def spec_exe_ast_from_dict(
         raise LingoSyntaxError(f'error creating main symbol: {e}')
 
     imports = parse_imports_symbol(ctx, data.get('imports', []))
+    params = parse_params_symbol(ctx, data.get('params', dict()))
 
-    return LingoASTExeSpec(lingo=lingo, main=main, imports=imports)
+    return LingoASTExeSpec(lingo=lingo, main=main, imports=imports, params=params)

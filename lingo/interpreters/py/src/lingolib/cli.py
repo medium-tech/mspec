@@ -10,10 +10,11 @@ HELP = (
     'usage: lingolib [--help] <command> [args]\n'
     '\n'
     'commands:\n'
-    '  exe <path>    load, parse, execute an exe spec and print result\n'
+    '  exe <path> <params>    load, parse, execute an exe spec and print result\n'
+    '  display <path> <params>    load, parse, display a text or GUI spec\n'
     '  debug <path>  load, parse, print the AST for a spec\n'
     '\n'
-    'supported specs: exe\n'
+    'supported specs: exe, text, gui\n'
 )
 
 class LingoCLIParseError(Exception):
@@ -49,10 +50,10 @@ def parse_cli(ctx: LingoContext):
     # command
    
     if command == 'exe':
-        if len(remaining_args) != 1:
-            raise LingoCLIParseError('exe command requires only a path argument')
+        if len(remaining_args) < 1:
+            raise LingoCLIParseError('exe command requires a path argument')
     
-        result = execute_file(ctx, remaining_args[0])
+        result = execute_file(ctx, remaining_args[0], cli_args=remaining_args[1:])
         result_type = type(result).__name__
         ctx.log.debug(f'exe return type: {result_type}')
         
@@ -66,11 +67,11 @@ def parse_cli(ctx: LingoContext):
             print(value_to_str(result))
 
     elif command == 'display':
-        if len(remaining_args) != 1:
-            raise LingoCLIParseError('display command requires only a path argument')
+        if len(remaining_args) < 1:
+            raise LingoCLIParseError('display command requires a path argument')
         
         try:
-            display_file(ctx, remaining_args[0])
+            display_file(ctx, remaining_args[0], cli_args=remaining_args[1:])
 
         except Exception as e:
             ctx.log.error(f'error displaying spec: {e}', exc_info=True)

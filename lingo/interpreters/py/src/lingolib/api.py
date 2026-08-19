@@ -38,13 +38,13 @@ def debug_file(ctx: LingoContext, path: str):
     lingo_ast = create_ast_from_file(ctx, path)
     debug_ast(ctx, lingo_ast)
 
-def execute_file(ctx: LingoContext, path: str):
+def execute_file(ctx: LingoContext, path: str, cli_args: list[str] = []):
     lingo_ast = create_ast_from_file(ctx, path)
-    return execute_ast(ctx, lingo_ast)
+    return execute_ast(ctx, lingo_ast, cli_args=cli_args)
 
-def display_file(ctx: LingoContext, path: str):
+def display_file(ctx: LingoContext, path: str, cli_args: list[str] = []):
     lingo_ast = create_ast_from_file(ctx, path)
-    return display_ast(ctx, lingo_ast)
+    return display_ast(ctx, lingo_ast, cli_args=cli_args)
 
 # ast commands #
 
@@ -54,9 +54,9 @@ def debug_ast(ctx: LingoContext, ast: LingoASTSpec):
     else:
         raise LingoSyntaxError(f'Cannot debug spec type: {ast.lingo.spec!r}')
     
-def execute_ast(ctx: LingoContext, ast: LingoASTSpec):
+def execute_ast(ctx: LingoContext, ast: LingoASTSpec, cli_args: list[str] = []):
     if isinstance(ast, LingoASTExeSpec):
-        return evaluate_exe_spec(ctx, ast)
+        return evaluate_exe_spec(ctx, ast, cli_args=cli_args)
     else:
         raise LingoSyntaxError(f'Cannot execute spec type: {ast.lingo.spec!r}')
     
@@ -66,10 +66,10 @@ def serve_ast(ctx: LingoContext, ast: LingoASTSpec):
     else:
         raise LingoSyntaxError(f'Cannot serve spec type: {ast.lingo.spec!r}')
 
-def display_ast(ctx: LingoContext, ast: LingoASTSpec):
+def display_ast(ctx: LingoContext, ast: LingoASTSpec, cli_args: list[str] = []):
     if isinstance(ast, LingoASTTextSpec):
         evaluate_text_spec(ctx, ast)
     elif isinstance(ast, LingoASTGUISpec):
-        evaluate_gui_spec(ctx, ast)
+        evaluate_gui_spec(ctx, ast, cli_args)
     else:
         raise LingoSyntaxError(f'Cannot display spec type: {ast.lingo.spec!r}')
