@@ -1,7 +1,7 @@
 from typing import Any
 
 from lingolib import symbols
-from lingolib.errors import LingoLibError, LingoTypeError
+from lingolib.errors import LingoLibError, LingoRuntimeError, LingoTypeError
 
 from lingolib.context import (
 	LingoContext, 
@@ -106,6 +106,7 @@ def L_EXPR_get(ctx, symbol:symbols.L_SYM_get):
         return from_value
 
     # get data source #
+    source_access_type = 'key'
 
     if isinstance(from_value, dict):
         data_source = from_value
@@ -123,6 +124,7 @@ def L_EXPR_get(ctx, symbol:symbols.L_SYM_get):
                 return LingoLanguageError(f'{error_code} - {error_msg}', code=error_code)
 
         elif from_value == 'params':
+            source_access_type = 'attr'
             data_key = symbol.field
             try:
                 data_source = ctx.registry.params
@@ -147,7 +149,13 @@ def L_EXPR_get(ctx, symbol:symbols.L_SYM_get):
     # get field from data source #
 
     try:
-        value = data_source[data_key]
+        if source_access_type == 'key':
+            value = data_source[data_key]
+        elif source_access_type == 'attr':
+            value = getattr(data_source, data_key)
+        else:
+            raise LingoRuntimeError(f'unsupported source access type: {source_access_type}')
+        
     except (TypeError, AttributeError) as e:
         error_code = 'GET_EXPR_TYPE_ERROR'
         error_msg = f'data source {from_value!r} is wrong type: {type(data_source).__name__!r}'

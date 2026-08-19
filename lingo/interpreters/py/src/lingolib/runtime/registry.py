@@ -12,6 +12,7 @@ allow access to:
 import os
 import sys
 
+from collections import namedtuple
 from getpass import getpass
 
 from lingolib.symbols import L_SYM_ops, L_SYM_modules, L_SYM_imports, L_SYM_func, L_SYM_value, L_SYM_define, L_SYM_params
@@ -233,22 +234,26 @@ def add_params_to_registry(ctx: LingoContext, params: L_SYM_params, cli_args: li
 	sep = lambda msg: print(f'\n{"=" * 15} {msg} {"=" * 15}')
 
 	user_was_prompted = False
+	raw_values = {}
 
 	for field_name, field_def in params.fields.items():
 		try:
 			raw_value = raw_cli_values[field_name]
-			ctx.registry.params[field_name] = _convert_cli_value(field_name, field_def.type, raw_value)
+			raw_values[field_name] = _convert_cli_value(field_name, field_def.type, raw_value)
 
 		except KeyError:
 			if field_def.default is not None:
-				ctx.registry.params[field_name] = unwrap_expression(ctx, field_def.default)
+				raw_values[field_name] = unwrap_expression(ctx, field_def.default)
 			elif interactive_enabled:
 				if not user_was_prompted:
 					sep('start interactive mode')
-				ctx.registry.params[field_name] = _prompt_cli_user_for_param(field_name, field_def)
+				raw_values[field_name] = _prompt_cli_user_for_param(field_name, field_def)
 				user_was_prompted = True
 			else:
 				raise LingoRuntimeError(f'missing required param: {field_name!r}')
 
 	if user_was_prompted:
 		sep('end interactive mode')
+
+	ctx.registry.params = namedtuple('Params', raw_values.keys())(**raw_values)
+	

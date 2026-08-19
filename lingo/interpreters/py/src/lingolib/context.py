@@ -1,3 +1,4 @@
+from collections import namedtuple
 import os
 import tkinter
 import logging
@@ -79,7 +80,7 @@ class LingoRegisteredDefinition(NamedTuple):
 class LingoRegistry:
     ops: dict[str, LingoRegisteredFunction] = field(default_factory=dict)
     lib: dict[str, LingoRegisteredFunction | LingoRegisteredValue | LingoRegisteredDefinition] = field(default_factory=dict)
-    params: dict[str, any] = field(default_factory=dict)
+    params: NamedTuple = field(default_factory=lambda: namedtuple('Params', [])())
     call_args_stack: list[dict] = field(default_factory=list)
 
 def no_draw_method():
@@ -94,8 +95,6 @@ class LingoTKRuntimeContext:
     in_value_block: bool = False	# used for lists, structs and tables
     redraw: Callable = no_draw_method
     state: Optional[LingoStateRuntimeContext] = None
-    
-
 
 #
 # parser
