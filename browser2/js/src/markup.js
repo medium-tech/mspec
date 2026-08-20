@@ -41,6 +41,39 @@ function initDateTimeFromInput(value) {
     }
 }
 
+function _handleInvalidSessionToken() {
+	console.log('Invalid session token detected');
+
+	// delete local storage for access_token
+	localStorage.removeItem('access_token');
+	// optionally, redirect to login page
+	window.location.href = '/social/account';
+}
+
+function checkForInvalidSessionToken(response) {
+	// check if an error response is for an invalid session token
+	// if so, delete the token and redirect the user to the login page
+
+	const msg = 'invalid session token';
+	try {
+		if (typeof response === 'string') {
+			if (response.toLowerCase().includes(msg)) _handleInvalidSessionToken();
+		}else{
+			// handle non-string error
+			if (response.hasOwnProperty('error')) {
+				if (response.error.hasOwnProperty('message')) {
+					if (response.error.message.toLowerCase().includes(msg)) _handleInvalidSessionToken();
+				}
+			}else if(response.hasOwnProperty('message')) {
+				if (response.message.toLowerCase().includes(msg)) _handleInvalidSessionToken();
+			}
+		}
+	}catch(e){
+		console.error('Error checking for invalid session token:', e);
+	}
+
+}
+
 function normalizeDateTimeValue(value) {
 	// for model fields fields with type: datetime
     if (value === null || typeof value === 'undefined' || value === '') {
@@ -271,6 +304,7 @@ async function fileSystemIngestStart(file) {
         } else {
             const errMsg = `Error ingesting file: ${response.status} - ${response.statusText}`;
             const responseText = await response.text();
+			checkForInvalidSessionToken(responseText);
             console.error(errMsg, response, responseText);
             return {'error': errMsg};
         }
@@ -316,6 +350,7 @@ async function mediaCreateImage(file) {
         } else {
             const errMsg = `Error creating image: ${response.status} - ${response.statusText}`;
             const responseText = await response.text();
+			checkForInvalidSessionToken(responseText);
             console.error(errMsg, response, responseText);
             return {'error': errMsg};
         }
@@ -361,6 +396,7 @@ async function mediaIngestMasterImage(file) {
         } else {
 			const responseData = await response.json();
 			let errMsg = '';
+			checkForInvalidSessionToken(responseData);
 			if (responseData.hasOwnProperty('error') && responseData.error.hasOwnProperty('message')) {
 				errMsg = responseData.error.message
 			}else{
@@ -767,6 +803,7 @@ function _fileSystemGetFileContentArgs(app, expression, ctx) {
                 }
             } else {
                 console.error('file_system.get_file_content - HTTP error while fetching file metadata:', response.status, response.statusText);
+                checkForInvalidSessionToken(response.json());
                 return defaultFileName;
             }
         } catch (error) {
@@ -807,6 +844,7 @@ function _mediaGetMediaFileContentArgs(app, expression, ctx) {
                     return defaultFileId;
                 }
             } else {
+				checkForInvalidSessionToken(response.json());
                 console.error('media.get_media_file_content - HTTP error while fetching media metadata:', response.status, response.statusText);
                 return defaultFileId;
             }
@@ -839,6 +877,7 @@ function _mediaGetMediaFileContentArgs(app, expression, ctx) {
                     return defaultFileName;
                 }
             } else {
+				checkForInvalidSessionToken(response.json());
                 console.error('media.get_media_file_content - HTTP error while fetching file metadata:', response.status, response.statusText);
                 return defaultFileName;
             }
@@ -1386,6 +1425,7 @@ const lingoFunctionLookup = {
                         return {state: 'success', item_id: responseData.id, field_errors: {}};
                     } else {
                         const errorData = await response.json();
+						checkForInvalidSessionToken(errorData);
                         let errorMessage = `${response.status} ${response.statusText}`;
                         let fieldErrors = {};
                         if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
@@ -1418,6 +1458,7 @@ const lingoFunctionLookup = {
                         return {state: 'loaded', data: responseData};
                     } else {
                         const errorData = await response.json();
+						checkForInvalidSessionToken(errorData);
                         let errorMessage = `${response.status} ${response.statusText}`;
                         if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
                             errorMessage = errorData.error.message;
@@ -1446,6 +1487,7 @@ const lingoFunctionLookup = {
                         return {state: 'edited', data: responseData, field_errors: {}};
                     } else {
                         const errorData = await response.json();
+						checkForInvalidSessionToken(errorData);
                         let errorMessage = `${response.status} ${response.statusText}`;
                         let fieldErrors = {};
                         if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
@@ -1476,6 +1518,7 @@ const lingoFunctionLookup = {
                         return {state: 'deleted'};
                     } else {
                         const errorData = await response.json();
+						checkForInvalidSessionToken(errorData);
                         let errorMessage = `${response.status} ${response.statusText}`;
                         if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
                             errorMessage = errorData.error.message;
@@ -1511,6 +1554,7 @@ const lingoFunctionLookup = {
                         };
                     } else {
                         const errorData = await response.json();
+						checkForInvalidSessionToken(errorData);
                         let errorMessage = `${response.status} ${response.statusText}`;
                         if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
                             errorMessage = errorData.error.message;
@@ -1578,6 +1622,7 @@ const lingoFunctionLookup = {
 
                     } else {
                         const errorData = await response.json();
+						checkForInvalidSessionToken(errorData);
                         let errorMessage = `${response.status} ${response.statusText}`;
 						
 						if (errorData.hasOwnProperty('error')) {
@@ -1666,6 +1711,7 @@ const lingoFunctionLookup = {
                         app.clientState.forms[formName].state = 'success';
                     } else {
                         const errorData = await response.json();
+						checkForInvalidSessionToken(errorData);
                         let errorMessage = `${response.status} ${response.statusText}`;
                         if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
                             errorMessage = errorData.error.message;
@@ -1709,6 +1755,7 @@ const lingoFunctionLookup = {
                         return {acknowledged: true, message: 'File download complete'};
                     } else {
                         const errorData = await response.json();
+						checkForInvalidSessionToken(errorData);
                         let errorMessage = `${response.status} ${response.statusText}`;
                         if (errorData.hasOwnProperty('error') && errorData.error.hasOwnProperty('message')) {
                             errorMessage = errorData.error.message;
@@ -6387,6 +6434,7 @@ function createViewerElement(app, element, ctx = null) {
 
             } else {
                 const errorData = await response.json();
+				checkForInvalidSessionToken(errorData);
                 mediaState.status = 'error';
                 mediaState.error = errorData.error || 'Failed to load image';
                 console.error('Error response from get-media-file-content:', errorData);
