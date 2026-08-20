@@ -416,7 +416,6 @@ def _eval_button(ctx: LingoContext, symbol: L_SYM_button):
         padx=BUTTON_PADDING_X,
         pady=BUTTON_PADDING_Y,
         cursor=BUTTON_CURSOR,
-
 		font=(BUTTON_FONT['font']['family'], BUTTON_FONT['font']['size']),
     )
 

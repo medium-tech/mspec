@@ -1,6 +1,4 @@
-import os
-import json
-import platform
+import time
 import unittest
 import itertools
 
@@ -13,6 +11,12 @@ from mtester.types import ColorRegionAssertion, PixelRGB, RegionBox
 
 WINDOW_TITLE_TEXT_SPEC = 'Lingo Text Spec'
 WINDOW_TITLE_GUI_SPEC = 'Lingo GUI Spec'
+
+"""
+TODO: optimize use of .lower() for performance
+
+
+"""
 
 class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
 
@@ -423,7 +427,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
 
             frame_result = api.capture_test_frame(
                 ctx,
-                name='frame_01',
+                name='01',
                 region=region,
                 wait_for_window=1.5,
                 extract_ocr=True,
@@ -459,7 +463,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
 
             updated_frame_result = api.capture_test_frame(
                 ctx,
-                name='frame_02',
+                name='02',
                 region=region,
                 wait_for_window=0.1,
                 extract_ocr=True,
@@ -481,3 +485,129 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
         self.assertIsNotNone(session_result)
         self.assertTrue(session_result.ok, msg=str(session_result))
         self.assertIn(':: DEBUG ::', session_result.stderr)
+
+    @unittest.skipUnless(RUN_GUI_TESTS, 'display smoke tests require RUN_GUI_TESTS=1')
+    def test_display_hello_gui_params(self):
+        spec_path = Path('lingo/shared/scripts/gui/hello-gui-params.yaml').resolve()
+        ctx = MTesterContext(verbose=False)
+        ctx.set_test_dir(test_name='test_display_hello_gui_params', reset=True)
+        cmd = ['python', '-m', 'lingolib', '-v', 'display', spec_path]
+
+        #
+        # supply name arg
+        #
+
+        name_launch_result = api.launch_target(
+            ctx,
+            command=cmd + ['--name', 'alfred'],
+        )
+        self.assertTrue(name_launch_result.ok, msg=str(name_launch_result))
+
+        try:
+            self.window_region = get_window_region(ctx, window_title=WINDOW_TITLE_TEXT_SPEC)
+
+            name_frame_result = api.capture_test_frame(
+                ctx,
+                name='supply_name',
+                region=self.window_region,
+                wait_for_window=0.5,
+                extract_ocr=True,
+            )
+            name_capture_result = name_frame_result.capture_result
+            name_ocr_result = name_frame_result.ocr_result
+            
+
+            self.assertTrue(name_capture_result.ok, msg=str(name_capture_result))
+            self.assertIsNotNone(name_ocr_result)
+            self.assertTrue(name_ocr_result.ok, msg=str(name_ocr_result))
+
+            name_ocr_text = name_ocr_result.text.lower()
+            self.assertIn('alfred', name_ocr_text)
+            self.assertIn('0', name_ocr_text)
+            self.assertIn('false', name_ocr_text)
+
+        finally:
+            name_session_result = api.stop_target(ctx, session_id=name_launch_result.session_id)
+
+        self.assertIsNotNone(name_session_result)
+        self.assertTrue(name_session_result.ok, msg=str(name_session_result))
+        
+        #
+        # supply all args
+        #
+
+        all_args_launch_result = api.launch_target(
+            ctx,
+            command=cmd + ['--name', 'linda', '--count', '123', '--is-enabled', 'true'],
+        )
+        self.assertTrue(all_args_launch_result.ok, msg=str(all_args_launch_result))
+
+        try:
+            self.window_region = get_window_region(ctx, window_title=WINDOW_TITLE_TEXT_SPEC)
+
+            all_args_frame_result = api.capture_test_frame(
+                ctx,
+                name='supply_all_args',
+                region=self.window_region,
+                wait_for_window=0.5,
+                extract_ocr=True,
+            )
+            all_args_capture_result = all_args_frame_result.capture_result
+            all_args_ocr_result = all_args_frame_result.ocr_result
+
+            self.assertTrue(all_args_capture_result.ok, msg=str(all_args_capture_result))
+            self.assertIsNotNone(all_args_ocr_result)
+            self.assertTrue(all_args_ocr_result.ok, msg=str(all_args_ocr_result))
+
+            all_args_ocr_text = all_args_ocr_result.text.lower()
+            self.assertIn('linda', all_args_ocr_text)
+            self.assertIn('123', all_args_ocr_text)
+            self.assertIn('true', all_args_ocr_text)
+
+            # confirm defaults are not present
+            self.assertNotIn('0', all_args_ocr_text)
+            self.assertNotIn('false', all_args_ocr_text)
+
+        finally:
+            all_args_session_result = api.stop_target(ctx, session_id=all_args_launch_result.session_id)
+
+        self.assertIsNotNone(all_args_session_result)
+        self.assertTrue(all_args_session_result.ok, msg=str(all_args_session_result))
+
+        #
+        # missing name arg
+        #
+
+        missing_launch_result = api.launch_target(
+            ctx,
+            command=cmd,
+        )
+
+        time.sleep(.5)
+
+        missing_session_result = api.stop_target(ctx, session_id=missing_launch_result.session_id, force=True)
+
+        self.assertIsNotNone(missing_session_result)
+        self.assertTrue(missing_session_result.ok, msg=str(missing_session_result))
+        
+        err_msg = "missing required param: 'name'"
+        self.assertIn(err_msg, missing_session_result.stderr)
+
+        #
+        # invalid name arg
+        #
+
+        invalid_launch_result = api.launch_target(
+            ctx,
+            command=cmd + ['--name'],
+        )
+
+        time.sleep(.5)
+
+        invalid_session_result = api.stop_target(ctx, session_id=invalid_launch_result.session_id, force=True)
+
+        self.assertIsNotNone(invalid_session_result)
+        self.assertTrue(invalid_session_result.ok, msg=str(invalid_session_result))
+        
+        err_msg = "missing value for param CLI flag: '--name'"
+        self.assertIn(err_msg, invalid_session_result.stderr)
