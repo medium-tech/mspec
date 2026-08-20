@@ -443,7 +443,6 @@ class L_SYM_lingo(NamedTuple):
 	def L_SYM_TYPE(self):
 		return 'spec'
 
-
 class L_SYM_main(NamedTuple):
 
 	L_SRC: str

@@ -12,27 +12,88 @@ modules:
 
     my_app:
 
-        ops:
-            say_hello: 'hello_ns.say_hello'
+        #
+        # functions
+        #
 
-            say_goodbye:
-                description: 'Say goodbye to a person.'
-                args:
-                    name:
-                        type: str
-                        description: 'The name to bid farewell.'
-                        default: 'World'
+        #
+        # - L_SYM_func creates a POST endpoint at /api/<module>/<function>
+        # - request body is mapped to function args
+        # - returns response as YAML, primitives will be wrapped in a value symbol
+        #
 
-                return:
+        # imported function
+        say_hello: 'hello_ns.say_hello'
+
+        # locally defined function
+        say_goodbye:
+            description: 'Say goodbye to a person.'
+            args:
+                name:
                     type: str
-                    description: 'A farewell message.'
+                    description: 'The name to bid farewell.'
+                    default: 'World'
 
-                func:
-                    concat:
-                        - 'Goodbye, '
-                        - args: name
-                        - '! See you next time in the world of Lingo.'
+            return:
+                type: str
+                description: 'A farewell message.'
+
+            func:
+                concat:
+                    - 'Goodbye, '
+                    - args: name
+                    - '! See you next time in the world of Lingo.'
+
+        #
+        # constants
+        #
+
+        #
+        # - L_SYM_value - creates a GET endpoint at /api/<module>/<constant>
+        # - returns value as YAML
+        #
         
-        models:
-            person:
-                model: 'hello_ns.person'
+        # constant str
+        constant_a:
+            type: str
+            value: 'I am a constant value'
+
+        # constant struct
+        constant_b:
+            type: struct
+            value:
+                field1: true
+                field2: 12
+                field3: 3.14
+                field4: 'i am a constant'
+        
+        #
+        # models / crud endpoint
+        #
+
+        #
+        # - L_SYM_define creates CRUD endpoints (must be type struct)
+        #       - query:    GET     /api/<module>/<model>?<filters>
+        #       - create:   POST    /api/<module>/<model>
+        #       - read:     GET     /api/<module>/<model>/<id>
+        #       - update:   PUT     /api/<module>/<model>/<id>
+        #       - delete:   DELETE  /api/<module>/<model>/<id>
+        #       
+        # - request body is mapped to function args for create and update
+        # - returns response as YAML, primitives will be wrapped in a value symbol
+        #
+
+        # imported struct definition
+        person:
+            model: 'hello_ns.person'
+
+        # locally defined struct
+        favorites:
+            define: struct
+            fields:
+                color:
+                    type: str
+                    description: 'Favorite color.'
+                number:
+                    type: int
+                    description: 'Favorite number.'
