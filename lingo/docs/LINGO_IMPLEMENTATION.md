@@ -8,9 +8,9 @@
 
 ## Spec implementation status
 
-| Language | exe | app | ui | text | lib | test | super | data |
+| Language | exe | app | gui | text | lib | test | super | data |
 |---|---|---|---|---|---|---|---|---|
-| Python | 🟡 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| Python | 🟢 | 🟡 | 🟢 | 🟢 | 🟢 | 🟡 | 🔴 | 🔴 |
 | JavaScript | 🔴 | n/a | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
 | Go | 🔴 | 🔴 | n/a | n/a | 🔴 | 🔴 | 🔴 | 🔴 |
 | Haskell | 🔴 | n/a | n/a | n/a |🔴 | 🔴 | 🔴 | 🔴 |

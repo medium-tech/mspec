@@ -3,8 +3,9 @@
 ## Table of Contents
 
 1. [Overview](#overview)
-1. [Lingo Document Header](#lingo-document-header)
+1. [Lingo Document](#lingo-document)
 1. [Language Specs](#language-specs)
+1. [Language Runtimes](#language-runtimes)
 1. [Related Documentation](#related-documentation)
 
 ## Overview
@@ -14,17 +15,30 @@ spec type with `lingo.spec`, then follows the structure for that spec.
 
 Each spec represents a different runtime concern:
 
-- `exe`: execute a `main` expression and return a value
-- `app`: backend and admin CLI definition
-- `ui`: UI spec that can talk to an `app` backend
-- `text`: subset of `ui` for formatted text payloads
-- `lib`: reusable modules and functions importable by other specs
-- `test`: reusable test cases for interpreters and specs
-- `super`: compose many spec files into one run target
-- `data`: serialized Lingo data (backend-linked or anonymous)
+### Specs
+
+| name | description | runtime(s) |
+| --- | --- | --- |
+| [exe](#exe-spec) | execute a `main` expression and return a value | [exe](#exe-runtime) |
+| [app](#app) | backend and admin CLI definition | [server](#server-runtime), [client](#client-runtime) |
+| [gui](#gui) | GUI spec that can talk to an `app` backend | [display](#display-runtime) |
+| [text](#text) | subset of `gui` for formatted text payloads | [display](#display-runtime) |
+| [lib](#lib) | reusable modules and functions importable by other specs | *not run directy* |
+| [test](#test) | reusable test cases for interpreters and specs | *not run directy* |
+| [data](#data) | serialized lingo data | *not run directy* |
+| [super](#super) | compose many spec files into one run target | [exe](#exe-runtime), [server](#server-runtime), [client](#client-runtime), [display](#display-runtime) |
+
+
+### Runtimes
+| name | description |
+| --- | --- |
+| [exe](#exe-runtime) | run a script via command line |
+| [server](#server-runtime) | run a web server |
+| [client](#client-runtime) | http client to talk to a web server |
+| [display](#display-runtime) | open a window and display a graphical user interface
 
 ### Expressions
-Lingo expressions return a dynamically calculated value. See [expressions](./LINGO_EXPRESSIONS.md) for more.
+Lingo expressions return a dynamically calculated value. They are used by each spec to create a dynamic application. See [expressions](./LINGO_EXPRESSIONS.md) for more.
 
 ### Built in application framework
 Lingo is not only a fully feature general purpose programming language but also an application framework supporting crud database ops and an api, cli, gui interface. The gui will support the web browser via html/css/js and also clients in multiple programming languages.
@@ -44,16 +58,9 @@ I'm not some phd language expert so I don't know if this qualifies as purely-fun
 
 The theory is that when you combine all of these language restrictions with static typing it becomes much more difficult to write bad code. Bad code = slow and/or buggy code. By removing for and while loops and requiring functional iteration it becomes very difficult to exit iteration wrong, unlike with nested loops and break and continue statements in other languages. The limitations on branching restrict your application to only necessary paths. No side effects means that every value defined must be used at least once. Combined with static typing, lingo attempts to reduce human (developer) error by removing unnecesary language features.
 
-### Still in beta
+## Lingo Document
 
-Status at this stage:
-
-- In progress: `exe` is being implemented in the python intepreter
-- Drafted and evolving: `app`, `ui`, `text`, `lib`, `test`, `super`, `data`
-
-## Lingo Document Header
-
-Every spec starts with:
+A spec file is a YAML file that contains a valid lingo spec. Each lingo spec will have the following object. See below for additional requirements and features of each spec.
 
 ```yaml
 lingo:
@@ -61,11 +68,9 @@ lingo:
   version: '0.1.0b'
 ```
 
-After that root object, the allowed keys depend on the selected spec.
-
 ## Language Specs
 
-### exe
+### exe spec
 ---
 Use:
 
@@ -128,7 +133,7 @@ main:
       params: name
 ```
 
-### app
+### app spec
 ---
 
 Use:
@@ -159,7 +164,7 @@ modules:
     models: {}
 ```
 
-### ui
+### gui spec
 ---
 
 Use:
@@ -187,7 +192,7 @@ ops: {}
 output: []
 ```
 
-### text
+### text spec
 ---
 
 Use:
@@ -211,7 +216,7 @@ block:
   - text: 'Hello from text spec.'
 ```
 
-### lib
+### lib spec
 ---
 
 Use:
@@ -248,7 +253,7 @@ modules:
           - args: name
 ```
 
-### test
+### test spec
 ---
 
 Use:
@@ -279,7 +284,7 @@ tests:
           stdout: 'hello.world'
 ```
 
-### super
+### super spec
 ---
 Use:
 
@@ -310,7 +315,7 @@ run:
   params: {}
 ```
 
-### data
+### data spec
 ---
 Use:
 
@@ -339,6 +344,19 @@ data:
       - id: '1'
         label: 'First item'
 ```
+
+## Language Runtimes
+### exe runtime
+placeholder...
+
+### server runtime
+placeholder...
+
+### client runtime
+placeholder...
+
+### display runtime
+placeholder...
 
 ## Related Documentation
 

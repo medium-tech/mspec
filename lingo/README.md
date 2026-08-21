@@ -3,27 +3,33 @@
 This directory contains the beta rewrite bootstrap for Lingo across five
 language interpreters: Python, JavaScript, Go, Haskell, and C.
 
-The beta is organized around a shared spec model plus language-idiomatic
-interpreter packages. Each interpreter should support:
+Each interpreter should support:
 
 - a library API for embedding
 - a CLI for script execution
 
-[Testing](#tests)
+**Quick Links:**
+* [CLI](#standardized-interpreter-entrypoint-lingosh)
+* [Testing](#tests)
+* [GUI Tests](#gui-tests)
+* [Python Interpreter Readme](./interpreters/py/README.md)
+* [Lingo Language Docs](./docs/LINGO_LANGUAGE.md)
+* [Implementation Status](./docs/LINGO_IMPLEMENTATION.md)
 
-## standardized cli contract
+## Development Status
+The core of the language is being worked out in the [python interpreter](./interpreters/py/README.md). Once the design is finished and hello worlds work and are tested for all specs and runtimes, we'll use AI to brute force the functions in the [alpha language](../docs/LINGO_FUNCTIONS.md) to expand the vocabulary. Then the new language will be fully defined and AI will blast through each other languages' interpreter.
 
-`lingo` below stands in for each language binary.
+## Language overview
+This project creates a single scripting and markup rendering language that is able to build:
+* server/client apps w/ crud db operations
+* interactive user interfaces
+* general purpose programs
 
-- `lingo --help`: print help menu
-- `lingo exe <path>`: load, parse, execute, print result
+The language's primary notation format will be a visual node editor
 
-Notes:
+It is designed to be **lightweight, cross-os and cross-language** w/ interpreters and renderers in multiple languages. `YAML` is the serialization format. Unlike the modern browser where your state is spread between 3 languages (html/js/css) a single `YAML` file defines everything. Layout, style, scripting, even the data model for CRUD operations. A simple syntax is able to define models with fields and their types and then a framework app creates server endpoints, cli commands and db operations for the models. There is another syntax for rendering visual elements such as buttons, text and inputs and their layouts. Both share an extension set of functions for scripting.
 
-- keep CLI behavior standardized across languages
-- avoid large CLI frameworks for now; use small manual parsing for parity
-
-## standardized entrypoint contract (lingo.sh)
+## standardized interpreter entrypoint (lingo.sh)
 
 Each interpreter directory should expose the same wrapper entrypoint:
 
@@ -65,9 +71,6 @@ Precedence order for wrapper configuration:
 - global fallback environment variable
 - wrapper default
 
-The goal is one muscle-memory interface for daily work while preserving
-language-native build and execution details under each interpreter package.
-
 ## layout
 
 ```text
@@ -80,30 +83,34 @@ lingo/
 │   ├── hs/
 │   ├── js/
 │   └── py/
-├── specs/
 ├── shared/
 │   ├── scripts/
 │   │   └── exe/
-│   │       └── hello-world.yaml
-│   ├── fixtures/     # cross-language input/output test data
-│   └── docs/         # spec-specific notes used by all interpreters
-└── test/
+│   │       └── hello-str.yaml
+│   │   └── ..other-specs.../
+│   ├── tests/	# cross-language input/output test data
+│   └── docs/   # spec-specific notes used by all interpreters
+└── test/		# cross-language tests written in python	(uses mtester)
+src/
+├── mtester/	# tests for cross language guis w/ screenshotting, OCR and pixel evaluation
+tests/
+├── test_mtester.py	# tests for the mtester module
 ```
+
 
 The `shared/` directory is the cross-language source of truth for built-in
 scripts and test data. Interpreter-specific tests should consume the same files.
 
 ## relation to alpha data
 
-Alpha examples live in `src/mspec/data/`, including:
+Besides the code listed above in [layout](#layout) most of the code and docs are for the alpha version.
 
-- `src/mspec/data/generator` (renamed to `app` in beta)
-- `src/mspec/data/lingo/pages`
-- `src/mspec/data/lingo/rich-text`
-- `src/mspec/data/lingo/scripts` (mapped to `exe`/`lib` in beta naming)
+Alpha specs from `src/mspec/data/` have been renamed:
 
-Beta work should migrate selected examples into `lingo/specs/` and
-`lingo/shared/` with the new naming.
+- `./generator/` --> renamed to `app`
+- `./lingo/pages` --> renamed to `gui`
+- `./lingo/rich-text` --> renamed to `text`
+- `./lingo/scripts` --> renamed to `exe`
 
 ## tests
 
