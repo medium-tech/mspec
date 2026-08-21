@@ -1,3 +1,10 @@
+⚠️ this is the alpha version ⚠️
+
+**branches:**
+* `main` - development for alpha
+* `release/alpha-1` - releases for live website running alpha. Use [Deploying to PyPI](#deploying-to-pypi) in this file.
+* `beta-refactor` - the lingo language beta. once it can support the website, it will be redeployed w/ beta and the alpha code will be removed from the repo.
+
 # mspec
 
 This project creates a single scripting and markup rendering language that is able to build:
