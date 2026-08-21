@@ -344,6 +344,8 @@ template apps from which templates are extracted.
     pip install -r requirements-dev.txt
 
 ### finalizing release
+1. merge `main` into `release/alpha-1`
+
 1. run `python -m mtemplate cache` to ensure distributed templates are up to date
 
 1. increment version in `pyproject.toml` file
@@ -354,7 +356,9 @@ template apps from which templates are extracted.
 	* mapp browser tests
 	* browser2 js dev tests
 
-### build and publish release:
+1. make commit with message `version - <version> | <description>`
+
+### build and publish release
 
 1. build distributions
 
@@ -370,6 +374,9 @@ template apps from which templates are extracted.
 
         twine upload dist/*
 
+### merge
+ 
+1. merge `release/alpha-1` into `main`
 
 # Philosophy
 * lightweight
