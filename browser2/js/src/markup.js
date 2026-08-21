@@ -25,6 +25,45 @@ window.disableProtocol = disableProtocol;
 // Date/time formatting
 const datetimeFormatStr = '%Y-%m-%dT%H:%M:%S';
 const modelTimestampFields = ['date_created', 'date_modified'];
+const maxCellTextLength = 75;
+
+function truncateRichText(richText, maxLength) {
+	// this is used to shorten rich text content, usefule for model lists where we don't need the whole text
+	// this concats each piece of rich text content up to the max length to determine overall length
+	// it returns the rich text minus the text block that exceeds the max length
+	// it will also return early if a line break is found
+
+	// while the rich text spec supports more than text and break keywords, the UI form only supports those
+	// so this function expects only text and breaks and will return early if anything else is found
+    console.log('TRUNCATE_RICH_TEXT', richText);
+
+	let newRichTextBlock = [];
+	let currentLength = 0;
+
+	const srcBlock = richText.block;
+	const srcBlockLen = srcBlock.length;
+	
+	for (let i = 0; i < srcBlockLen; i++) {
+		let block = srcBlock[i];
+		if (block.hasOwnProperty('text')) {
+			currentLength += block.text.length;
+			if (currentLength <= maxLength) {
+				newRichTextBlock.push(block);
+			} else {
+				block.text = block.text.substring(0, block.text.length - (currentLength - maxLength)) + '...';
+				newRichTextBlock.push(block);
+				break;
+			}
+		} else if (block.type === 'break') {
+			break;
+		} else {
+			// unsupported block type, return early
+			break;
+		}
+	}
+
+	return { block: newRichTextBlock, lingo: richText.lingo };
+}
 
 function initDateTimeFromInput(value) {
     // for model fields fields with type: datetime
@@ -4199,7 +4238,7 @@ function _renderModelList(app, element, ctx = null) {
     }
 
     // convert values for display
-
+	
     let itemsForTable = [];
 	for (let rawItem of state.items) {
 		let itemForTable = JSON.parse(JSON.stringify(rawItem));
@@ -4207,16 +4246,20 @@ function _renderModelList(app, element, ctx = null) {
 		for (const [name, field] of Object.entries(definition.fields)) {
 			// iterate over fields and convert rich text fields from JSON
 			const fieldDef = definition.fields[name];
-			console.log('renderModelList - processing field for table display:', name, fieldDef);
+			// console.log('renderModelList - processing field for table display:', name, fieldDef);
 			
 			if(fieldDef.type === 'str' && fieldDef.rich_text === true) {
-				console.log('renderModelList - processing rich text field:', name);
+				// console.log('renderModelList - processing rich text field:', name);
 				try{
-					itemForTable.value[field.name.snake_case] = JSON.parse(rawItem.value[name]);
+					const decodedRichText = JSON.parse(rawItem.value[name])
+					itemForTable.value[field.name.snake_case] = truncateRichText(decodedRichText, maxCellTextLength);
 				}catch(e){
 					console.error(`Error parsing rich text content for field ${name} in item:`, e, 'content:', rawItem);
 					throw new Error(`Invalid rich text content for field ${name} in item: ${e.message}`);
 				}
+			}else if(fieldDef.type === 'str' && rawItem.value[name].length > maxCellTextLength) {
+				itemForTable.value[field.name.snake_case] = rawItem.value[name].slice(0, maxCellTextLength) + '...';
+
 			}else if(fieldDef.type === 'datetime') {
 				itemForTable.value[field.name.snake_case] = formatModelTimestampLocal(rawItem.value[name]);
 			}
@@ -4231,7 +4274,7 @@ function _renderModelList(app, element, ctx = null) {
 
 		itemsForTable.push(itemForTable);
 
-		console.log('renderModelList - post processing:', rawItem, itemForTable);
+		// console.log('renderModelList - post processing:', rawItem, itemForTable);
 	}
 
     elements.push({
@@ -5003,7 +5046,7 @@ function createButtonElement(app, element, ctx) {
     if (element.hasOwnProperty('disabled')) {
         const disabled = unwrapValue(lingoExecute(app, element.disabled, ctx));
         button.disabled = disabled;
-		console.log('createButtonElement - setting disabled state:', disabled, element);
+		// console.log('createButtonElement - setting disabled state:', disabled, element);
     }
 
     let onClick;
