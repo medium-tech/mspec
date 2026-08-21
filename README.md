@@ -346,6 +346,8 @@ template apps from which templates are extracted.
 ### finalizing release
 1. merge `main` into `release/alpha-1`
 
+1. run `./build.sh` from repo root
+
 1. run `python -m mtemplate cache` to ensure distributed templates are up to date
 
 1. increment version in `pyproject.toml` file

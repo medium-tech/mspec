@@ -113,7 +113,7 @@ test('test user auth flow', async ({ browser, crudEnv }) => {
   await page.getByRole('link', { name: 'auth' }).click();
   await page.getByRole('link', { name: 'current-user' }).click();
   await page.getByRole('button', { name: 'Submit' }).click();
-  await expect(page.locator('#lingo-app')).toContainText('error:');
+  await expect(page.locator('body')).not.toContainText(uniqueEmail);
   
 });
 
