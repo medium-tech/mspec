@@ -27,7 +27,7 @@ This project creates a single scripting and markup rendering language that is ab
 
 The language's primary notation format will be a visual node editor
 
-It is designed to be **lightweight, cross-os and cross-language** w/ interpreters and renderers in multiple languages. `YAML` is the serialization format. Unlike the modern browser where your state is spread between 3 languages (html/js/css) a single `YAML` file defines everything. Layout, style, scripting, even the data model for CRUD operations. A simple syntax is able to define models with fields and their types and then a framework app creates server endpoints, cli commands and db operations for the models. There is another syntax for rendering visual elements such as buttons, text and inputs and their layouts. Both share an extension set of functions for scripting.
+It is designed to be **lightweight, cross-os and cross-language** w/ interpreters and renderers in multiple languages. `YAML` is the serialization format. Unlike the modern browser where your state is spread between 3 languages (html/js/css) a single `YAML` file defines everything. Layout, style, scripting, even the data model for CRUD operations. A simple syntax is able to define models with fields and their types and then a framework app creates server endpoints, cli commands and db operations for the models. There is another syntax for rendering visual elements such as buttons, text and inputs and their layouts. Both share an extension set of functions for scripting. See [language documentation](./docs/LINGO_LANGUAGE.md) for more.
 
 ## standardized interpreter entrypoint (lingo.sh)
 
@@ -35,6 +35,7 @@ Each interpreter directory should expose the same wrapper entrypoint:
 
 - `./lingo.sh --help`
 - `./lingo.sh exe <path>`
+- `./lingo.sh display <path>`
 - `./lingo.sh --verbose <command> [args]` (or `-v`)
 - `./lingo.sh --run-mode <dev|built> <command> [args]` (or `-r`, for interpreters that support build/run modes)
 
