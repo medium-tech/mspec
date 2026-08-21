@@ -93,18 +93,26 @@ function checkForInvalidSessionToken(response) {
 	// check if an error response is for an invalid session token
 	// if so, delete the token and redirect the user to the login page
 
-	const msg = 'invalid session token';
+	const msg1 = 'invalid session token';
+	const msg2 = 'invalid access token';
+	const msg3 = 'session has expired'
+
+	const hasError = (msg) => {
+		const msgAsLower = msg.toLowerCase();
+		return msgAsLower.includes(msg1) || msgAsLower.includes(msg2) || msgAsLower.includes(msg3);
+	};
+
 	try {
 		if (typeof response === 'string') {
-			if (response.toLowerCase().includes(msg)) _handleInvalidSessionToken();
+			if (hasError(response)) _handleInvalidSessionToken();
 		}else{
 			// handle non-string error
 			if (response.hasOwnProperty('error')) {
 				if (response.error.hasOwnProperty('message')) {
-					if (response.error.message.toLowerCase().includes(msg)) _handleInvalidSessionToken();
+					if (hasError(response.error.message)) _handleInvalidSessionToken();
 				}
 			}else if(response.hasOwnProperty('message')) {
-				if (response.message.toLowerCase().includes(msg)) _handleInvalidSessionToken();
+				if (hasError(response.message)) _handleInvalidSessionToken();
 			}
 		}
 	}catch(e){

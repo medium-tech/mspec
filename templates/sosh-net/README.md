@@ -21,8 +21,12 @@ digital ocean notes
 	* proxy mode --> disabled
 
 ## deployment steps
-* from /home/sosh/mspec
-* activate venv
-* pull new changes
-* run pip install again for mspec repo to install new version
-* restart server
+1. ssh into server
+1. `su sosh`
+1. `cd /home/sosh/mspec`
+1. `source .venv/bin/activate`
+1. `git pull`
+1. `pip install --upgrade mspec`
+1. Check that `/home/sosh/mspec/.venv/lib/python3.12/site-packages/mspec/data/mapp-ui/src/markup.js` is the new version
+1. `cd templates/sosh-net/`
+1. `./server.sh restart`
