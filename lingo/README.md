@@ -17,7 +17,7 @@ Each interpreter should support:
 * [Implementation Status](./docs/LINGO_IMPLEMENTATION.md)
 
 ## Development Status
-The core of the language is being worked out in the [python interpreter](./interpreters/py/README.md). Once the design is finished and hello worlds work and are tested for all specs and runtimes, we'll use AI to brute force the functions in the [alpha language](../docs/LINGO_FUNCTIONS.md) to expand the vocabulary. Then the new language will be fully defined and AI will blast through each other languages' interpreter.
+The core of the language is being worked out in the [python interpreter](./interpreters/py/README.md). Once the design is finished and hello worlds work and are tested for all specs and runtimes, we'll use AI to brute force the functions in the [alpha language](../docs/LINGO_FUNCTIONS.md) to expand the vocabulary. Then the lingo language will be fully defined and AI will blast through each other languages' interpreter using python as a reference. Not all specs/runtimes are planned in every language, see [lingo implementation](./docs/LINGO_IMPLEMENTATION.md) for feature matrix.
 
 ## Language overview
 This project creates a single scripting and markup rendering language that is able to build:
@@ -25,9 +25,11 @@ This project creates a single scripting and markup rendering language that is ab
 * interactive user interfaces
 * general purpose programs
 
-The language's primary notation format will be a visual node editor
+The language's primary notation format will be a visual node editor. Proof of concept for an old alpha lingo version exists in [this repo](https://github.com/medium-tech/bl-mspec-dev). YAML will be the serialization layer and could also be used as a notation format.
 
-It is designed to be **lightweight, cross-os and cross-language** w/ interpreters and renderers in multiple languages. `YAML` is the serialization format. Unlike the modern browser where your state is spread between 3 languages (html/js/css) a single `YAML` file defines everything. Layout, style, scripting, even the data model for CRUD operations. A simple syntax is able to define models with fields and their types and then a framework app creates server endpoints, cli commands and db operations for the models. There is another syntax for rendering visual elements such as buttons, text and inputs and their layouts. Both share an extension set of functions for scripting. See [language documentation](./docs/LINGO_LANGUAGE.md) for more.
+It is designed to be **lightweight, cross-os and cross-language** w/ interpreters and renderers in multiple languages. Unlike the modern browser where your state is spread between 3 languages (html/js/css) a single `YAML` file defines everything. Layout, style, scripting, even the backend data model for CRUD operations and custom backend functions `ops`.
+
+The language is intentionally simple in its syntax and features, very strict, but with a deep pythonic vocabulary. It is designed to make it difficult to write buggy or slow applications. See [language documentation](./docs/LINGO_LANGUAGE.md) for more.
 
 ## standardized interpreter entrypoint (lingo.sh)
 
