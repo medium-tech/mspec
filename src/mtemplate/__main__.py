@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 import argparse
+import json
 
 from pathlib import Path
 
 from mspec.core import load_generator_spec
-# from mtemplate.test import test_spec
-from mtemplate.core import setup_generated_app, run_server_and_app_tests
-# from mtemplate.browser1 import MTemplateBrowser1Project
-# from mtemplate.py import MTemplatePyProject
-from mtemplate.mapp_py import MappPyProject
+from mtemplate.core import MTemplate, MTemplateExtractor
+
 
 # parser #
 
@@ -21,11 +19,15 @@ Available commands:
 
 parser = argparse.ArgumentParser(description=description, prog='mtemplate', formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('command', choices=['render', 'cache', 'setup'], help='command to run')
+parser.add_argument('--source', '-s', type=Path, default=None, help='source file to render (if command is "render")')
+parser.add_argument('--output', type=Path, default=None, help='output file for rendering')
+parser.add_argument('--vars', type=str, default=None, help='JSON string of variables to pass to the template')
+
 parser.add_argument('--spec', type=str, default='dev-app.yaml', help='spec file to use, first attempt to use <spec> if it exists, else try <spec> in the built in template repo')
 # parser.add_argument('--env-file', type=str, default=None, help='path to .env file to copy to output dir for python app (if rendering python app)')
-parser.add_argument('--app', type=str, default='mapp-py', choices=['mapp-py'], help='Which app(s) to apply command to, "mapp-py" is current, others are deprecated')
+parser.add_argument('--app', type=str, default='none', choices=['mapp-py', 'none'], help='Which app(s) to apply command to, "mapp-py" is current, others are deprecated')
 parser.add_argument('--source-dir', type=Path, default=None, help='source directory of generated app to setup or test (if command is "setup" or "test")')
-parser.add_argument('--output', type=Path, default=None, help='output directory for rendering')
+
 parser.add_argument('--debug', action='store_true', help='write jinja template files for debugging, and do not erase output dir before rendering')
 parser.add_argument('--disable-strict', action='store_true', help='disable jinja strict mode when rendering - discouraged but may be useful for debugging')
 parser.add_argument('--use-cache', action='store_true', default=True, help='use cached templates if available (default: True)')
@@ -67,6 +69,17 @@ elif args.command == 'render':
     if args.app == 'mapp-py':
         mapp_py_out = None if args.output is None else args.output
         MappPyProject.render(args.spec, mapp_py_out, args.debug, args.disable_strict, use_cache, args.as_builtin)
+    elif args.app == 'none':
+        extractor = MTemplateExtractor.from_file(args.source)
+        vars = extractor.template_vars.copy()
+        vars.update({'macro': extractor.macros})
+        if args.vars is not None:
+            vars.update(json.loads(args.vars))
+
+        mtemplate = MTemplate(name=str(args.source), template_str=extractor.template_string(), variables=vars)
+        rendered_template = mtemplate.render_template()
+        if args.output is None:
+            print(rendered_template)
     else:
         raise RuntimeError(f'Unknown app value: {args.app}')
 
