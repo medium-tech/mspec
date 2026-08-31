@@ -10,7 +10,7 @@ from functools import reduce
 from collections import OrderedDict
 from dataclasses import dataclass
 
-from jinja2 import FunctionLoader, StrictUndefined, TemplateError, Undefined
+from jinja2 import FunctionLoader, StrictUndefined, TemplateError, Undefined, UndefinedError
 from jinja2 import Environment as JinjaEnv
 
 
@@ -37,114 +37,6 @@ iso_format_string = '%Y-%m-%dT%H:%M:%S.%f'
 
 class MTemplateError(Exception):
     pass
-
-class MTemplate:
-
-    prefixes = {}
-
-    def __init__(self, name:str, template_str:str, variables:Optional[dict]=None, jinja_env: Optional[JinjaEnv]=None, **kwargs) -> 'MTemplate':
-        self.name = name
-        self.template_str = template_str
-
-        self.debug = kwargs.get('debug', False)
-        self.disable_strict = kwargs.get('disable_strict', False)
-
-        self.variables = dict() if variables is None else variables.copy()
-        
-        self.variables['enumerate'] = enumerate
-        self.variables['py_escape_single_quote'] = py_escape_single_quote
-
-        self.jinja = self._init_jinja_env() if jinja_env is None else jinja_env
-
-        self.jinja.globals.update(self.variables)
-
-    def _init_jinja_env(self) -> JinjaEnv:
-        return JinjaEnv(
-            autoescape=False,
-            loader=FunctionLoader(lambda _: self.template_str),
-            undefined=Undefined if self.disable_strict else StrictUndefined,
-            comment_start_string='/*--', 
-            comment_end_string='--*/'
-        )
-
-        
-
-    #
-    # rendering
-    #
-
-    def _write_file(self, path:Path, data:str):
-        try:
-            with open(path, 'w+') as f:
-                f.write(data)
-        except FileNotFoundError:
-            os.makedirs(path.parent)
-            with open(path, 'w+') as f:
-                f.write(data)
-
-        if path.suffix == '.sh':
-            out_stat = path.stat()
-            os.chmod(path.as_posix(), out_stat.st_mode | stat.S_IEXEC)
-
-    def render_template(self, output:Optional[Path|str]=None) -> str:
-
-        #
-        # render template
-        #
-
-        try:
-            jinja_template = self.jinja.get_template(self.name)
-            rendered_template = jinja_template.render()
-        except TemplateError as e:
-            raise TemplateError(f'{e.__class__.__name__}:{e} in template {output}')
-        except MTemplateError as e:
-            raise MTemplateError(f'{e.__class__.__name__}:{e} in template {output}')
-
-        
-        # write file (if requested) #
-
-        if output is not None:
-            out_path = Path(output)
-
-            # write jinja template in debug mode #
-
-            if self.debug:
-                debug_output_path = out_path.with_name(out_path.name + '.jinja2')
-                try:
-                    self._write_file(debug_output_path, self.template_str)
-                    
-                except Exception as e:
-                    print(f':: error writing debug template :: {debug_output_path}: {e}')
-                raise
-
-        return rendered_template if not self.debug else self.template_str
-
-    
-
-    #
-    # ops
-    #
-
-    @classmethod
-    def apply_slots_to_children(cls, debug:bool=False):
-        raise NotImplementedError(f'not implemented for new MTemplate class after refactor')
-        template_proj = cls({}, debug=debug)
-        paths = template_proj.load_template_paths()
-        for macro in paths['macro_only']:
-            try:
-                new_template_content = apply_template_slots(macro['src'])
-            except NoParentDefinedError:
-                if debug:
-                    print(f'Warning no parent defined in macro template: {macro["src"]}')
-                continue
-            
-            if debug:
-                print(f'Would have applied slots to macro template: {macro["src"]}')
-            else:
-                with open(macro['src'], 'w') as f:
-                    f.write(new_template_content)
-                print(f'Applied slots to macro template: {macro["src"]}')
-
 
 @dataclass
 class MTemplateMacro:
@@ -213,19 +105,46 @@ class MTemplateMacro:
 class MTemplateExtractor:
     """extract a jinja template from a source file"""
 
-    def __init__(self, path:str|Path, prefix='#', postfix='', single_quotes=False, emit_syntax=False) -> None:
+    def __init__(self, path:str|Path, **kwargs) -> 'MTemplateExtractor':
         self.path = Path(path)
-        self.prefix = prefix
-        self.postfix = postfix
-        self.single_quotes = single_quotes
-        self.template = ''
+        self.debug = kwargs.get('debug', False)
+        self.disable_strict = kwargs.get('disable_strict', False)
+
+        self.jinja = JinjaEnv(
+            autoescape=False,
+            loader=FunctionLoader(lambda _: self.template_string()),
+            undefined=Undefined if self.disable_strict else StrictUndefined,
+            comment_start_string='/*--', 
+            comment_end_string='--*/'
+        )
+
+        if path.suffix in ['.js', '.ts']:
+            self.prefix = '//'
+            self.postfix = ''
+            self.single_quotes = False
+        elif path.suffix in ['.html', '.htm']:
+            self.prefix = '<!--'
+            self.postfix = '-->'
+            self.single_quotes = False
+        elif path.suffix == '.css':
+            self.prefix = '/*'
+            self.postfix = '*/'
+            self.single_quotes = False
+        elif path.suffix == '.json':
+            self.prefix = '"_": "'
+            self.postfix = '",'
+            self.single_quotes = True
+        else:
+            self.prefix = kwargs.get('prefix', '#')
+            self.postfix = kwargs.get('postfix', '')
+            self.single_quotes = kwargs.get('single_quotes', False)
+
         self.template_lines = []
         self.template_vars = {}
         self.macros = {}
-        self.emit_syntax = emit_syntax
 
     #
-    # parsing methods
+    # util methods
     #
 
     def _load_json(self, data:str):
@@ -233,6 +152,23 @@ class MTemplateExtractor:
             return json.loads(data.replace("'", '"'))
         else:
             return json.loads(data)
+
+    def _write_file(self, path:Path, data:str):
+        try:
+            with open(path, 'w+') as f:
+                f.write(data)
+        except FileNotFoundError:
+            os.makedirs(path.parent)
+            with open(path, 'w+') as f:
+                f.write(data)
+
+        if path.suffix == '.sh':
+            out_stat = path.stat()
+            os.chmod(path.as_posix(), out_stat.st_mode | stat.S_IEXEC)
+
+    #
+    # parsing methods
+    #
 
     def _parse_vars_line(self, line:str):
         try:
@@ -483,6 +419,8 @@ class MTemplateExtractor:
                 raise MTemplateError(f'Unterminated for loop in file {self.path}')
             if open_if_statements > 0:
                 raise MTemplateError(f'Unterminated if statement in file {self.path}')
+
+        self.jinja.globals.update(self.template_vars)
     
     #
     # file methods
@@ -495,34 +433,41 @@ class MTemplateExtractor:
             template = template.replace(key, '{{ ' + value + ' }}')
         return template
 
-    @classmethod
-    def from_file(cls, path:str|Path, emit_syntax:bool=False) -> 'MTemplateExtractor':
-        path = Path(path)
+    def render_template(self, vars: Optional[dict]=None, output:Optional[Path|str]=None) -> str:
 
-        if path.suffix in ['.js', '.ts']:
-            prefix = '//'
-            postfix = ''
-            single_quotes = False
-        elif path.suffix in ['.html', '.htm']:
-            prefix = '<!--'
-            postfix = '-->'
-            single_quotes = False
-        elif path.suffix == '.css':
-            prefix = '/*'
-            postfix = '*/'
-            single_quotes = False
-        elif path.suffix == '.json':
-            prefix = '"_": "'
-            postfix = '",'
-            single_quotes = True
-        else:
-            prefix = '#'
-            postfix = ''
-            single_quotes = False
+        #
+        # render template
+        #
 
-        instance = cls(path, prefix=prefix, postfix=postfix, single_quotes=single_quotes, emit_syntax=emit_syntax)
-        instance.parse()
-        return instance
+        try:
+            jinja_template = self.jinja.get_template(str(self.path))
+            rendered_template = jinja_template.render(vars or dict())
+        except UndefinedError as e:
+            raise TemplateError(f'{e} in template "{self.name}"')
+        except TemplateError as e:
+            raise TemplateError(f'{e.__class__.__name__}:{e} in template "{self.name}"')
+        except MTemplateError as e:
+            raise MTemplateError(f'{e.__class__.__name__}:{e} in template "{self.name}"')
+
+        
+        # write file (if requested) #
+
+        if output is not None:
+            out_path = Path(output)
+
+            # write jinja template in debug mode #
+
+            if self.debug:
+                debug_output_path = out_path.with_name(out_path.name + '.jinja2')
+                try:
+                    self._write_file(debug_output_path, self.template_str)
+                    
+                except Exception as e:
+                    print(f':: error writing debug template :: {debug_output_path}: {e}')
+                raise
+
+        return rendered_template if not self.debug else self.template_str
+
 
 #
 # utility functions
@@ -543,13 +488,35 @@ def indent_lines(lines:str, indent:int=2) -> str:
 
 
 #
-# slots
+# slots - old feature, doesn't work after refactor
+#          designed to keep two separate files in sync
 #
 
-class NoParentDefinedError(Exception):
-    pass
+# class NoParentDefinedError(Exception):
+#     pass
 
-def apply_template_slots(child_path: Path | str) -> str:
+
+# def apply_slots_to_children(cls, debug:bool=False):
+#     raise NotImplementedError(f'not implemented for new MTemplate class after refactor')
+#     template_proj = cls({}, debug=debug)
+#     paths = template_proj.load_template_paths()
+#     for macro in paths['macro_only']:
+#         try:
+#             new_template_content = apply_template_slots(macro['src'])
+#         except NoParentDefinedError:
+#             if debug:
+#                 print(f'Warning no parent defined in macro template: {macro["src"]}')
+#             continue
+        
+#         if debug:
+#             print(f'Would have applied slots to macro template: {macro["src"]}')
+#         else:
+#             with open(macro['src'], 'w') as f:
+#                 f.write(new_template_content)
+#             print(f'Applied slots to macro template: {macro["src"]}')
+
+
+# def apply_template_slots(child_path: Path | str) -> str:
     """Given a child template path, regenerate the child template
     by replacing the slot commands in the parent template with the
     corresponding slot content from the child template.

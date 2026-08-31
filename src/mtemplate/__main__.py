@@ -4,110 +4,32 @@ import json
 
 from pathlib import Path
 
-from mspec.core import load_generator_spec
-from mtemplate.core import MTemplate, MTemplateExtractor
+from mtemplate.core import MTemplateExtractor
 
 
 # parser #
 
-description = """mtemplate  -  Medium Tech Template App Generator CLI\n
-Available commands:
-    render:    generate an app from a spec file
-    cache:     cache jinja2 templates
-    setup:     setup a generated app
-"""
-
-parser = argparse.ArgumentParser(description=description, prog='mtemplate', formatter_class=argparse.RawTextHelpFormatter)
-parser.add_argument('command', choices=['render', 'cache', 'setup'], help='command to run')
+parser = argparse.ArgumentParser(prog='mtemplate', formatter_class=argparse.RawTextHelpFormatter)
+parser.add_argument('command', choices=['render'], help='command to run')
 parser.add_argument('--source', '-s', type=Path, default=None, help='source file to render (if command is "render")')
 parser.add_argument('--output', type=Path, default=None, help='output file for rendering')
 parser.add_argument('--vars', type=str, default=None, help='JSON string of variables to pass to the template')
 
-parser.add_argument('--spec', type=str, default='dev-app.yaml', help='spec file to use, first attempt to use <spec> if it exists, else try <spec> in the built in template repo')
-# parser.add_argument('--env-file', type=str, default=None, help='path to .env file to copy to output dir for python app (if rendering python app)')
-parser.add_argument('--app', type=str, default='none', choices=['mapp-py', 'none'], help='Which app(s) to apply command to, "mapp-py" is current, others are deprecated')
-parser.add_argument('--source-dir', type=Path, default=None, help='source directory of generated app to setup or test (if command is "setup" or "test")')
-
-parser.add_argument('--debug', action='store_true', help='write jinja template files for debugging, and do not erase output dir before rendering')
-parser.add_argument('--disable-strict', action='store_true', help='disable jinja strict mode when rendering - discouraged but may be useful for debugging')
-parser.add_argument('--use-cache', action='store_true', default=True, help='use cached templates if available (default: True)')
-parser.add_argument('--no-cache', action='store_true', help='do not use cached templates, extract fresh templates')
-parser.add_argument('--as-builtin', action='store_true', help='when rendering, do not emit a mapp.yaml spec, this means the template app will use the built-in spec file dynamically. This is useful for developing built in specs, otherwise ignore.')
-# parser.add_argument('--cmd', type=str, nargs='*', default=None, help='CLI command for template app (used with "test-spec" command)')
-# parser.add_argument('--host', type=str, default=None, help='host for http client in "test-spec" command (if host diff than in spec file)')
-
 args = parser.parse_args()
 
-# Determine use_cache value
-use_cache = args.use_cache and not args.no_cache
 
 # run program #
 
-if args.command == 'cache':
-    # if args.app in ['both', 'py']:
-    #     raise RuntimeError('py app cache command is deprecated')
-    #     # MTemplatePyProject.build_cache(load_generator_spec(args.spec))
-        
-    # if args.app in ['both', 'browser1']:
-    #     raise RuntimeError('browser1 app cache command is deprecated')
-    #     # MTemplateBrowser1Project.build_cache(load_generator_spec(args.spec))
-        
-    if args.app == 'mapp-py':
-        MappPyProject.build_cache(load_generator_spec(args.spec))
+if args.command == 'render':
+    extractor = MTemplateExtractor(args.source)
 
-elif args.command == 'render':
-    # if args.app in ['both', 'py']:
-    #     raise RuntimeError('py app render command is deprecated')
-    #     py_out = None if args.output is None else args.output / 'py'
-    #     # MTemplatePyProject.render(load_generator_spec(args.spec), args.env_file, py_out, args.debug, args.disable_strict, use_cache)
+    template_vars = dict() if args.vars is None else json.loads(args.vars)
 
-    # elif args.app in ['both', 'browser1']:
-    #     raise RuntimeError('browser1 app render command is deprecated')
-    #     browser1_out = None if args.output is None else args.output / 'browser1'
-    #     # MTemplateBrowser1Project.render(load_generator_spec(args.spec), args.env_file, browser1_out, args.debug, args.disable_strict, use_cache)
-    
-    if args.app == 'mapp-py':
-        mapp_py_out = None if args.output is None else args.output
-        MappPyProject.render(args.spec, mapp_py_out, args.debug, args.disable_strict, use_cache, args.as_builtin)
-    elif args.app == 'none':
-        extractor = MTemplateExtractor.from_file(args.source)
-        vars = extractor.template_vars.copy()
-        vars.update({'macro': extractor.macros})
-        if args.vars is not None:
-            vars.update(json.loads(args.vars))
+    extractor.parse()
+    rendered_template = extractor.render_template(template_vars)
 
-        mtemplate = MTemplate(name=str(args.source), template_str=extractor.template_string(), variables=vars)
-        rendered_template = mtemplate.render_template()
-        if args.output is None:
-            print(rendered_template)
-    else:
-        raise RuntimeError(f'Unknown app value: {args.app}')
-
-elif args.command == 'setup':
-    if args.source_dir is None:
-        print('Error: --source-dir is required for setup command')
-    else:
-        setup_generated_app(args.source_dir)
-
-# elif args.command == 'test':
-#     if args.source_dir is None:
-#         print('Error: --source-dir is required for test command')
-#     else:
-#         run_server_and_app_tests(args.source_dir)
-
-# elif args.command == 'test-spec':
-#     result = test_spec(args.spec, args.cmd, args.host, args.env_file)
-#     if not result:
-#         raise SystemExit(1)
-
-# elif args.command == 'slots':
-    # if args.app in ['both', 'py']:
-    #     raise RuntimeError('py app slots command is deprecated')
-    #     # MTemplatePyProject.apply_slots_to_children(debug=args.debug)
-
-    # if args.app in ['both', 'browser1']:
-    #     raise RuntimeError('browser1 app slots command is deprecated')
-    #     # MTemplateBrowser1Project.apply_slots_to_children(debug=args.debug)
+    if args.output is None:
+        print(rendered_template)
 
 else:
     parser.print_help()
