@@ -4,7 +4,7 @@ import json
 
 from pathlib import Path
 
-from mtemplate.core import MTemplateExtractor
+from mtemplate.core import MTemplate
 
 
 # parser #
@@ -21,7 +21,7 @@ args = parser.parse_args()
 # run program #
 
 if args.command == 'render':
-    extractor = MTemplateExtractor(args.source)
+    extractor = MTemplate(args.source)
 
     template_vars = dict() if args.vars is None else json.loads(args.vars)
 

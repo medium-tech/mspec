@@ -19,7 +19,7 @@ __all__ = [
     'MTemplateError',
 
     'MTemplateMacro',
-    'MTemplateExtractor',
+    'MTemplate',
     
     'sort_dict_by_key_length',
     'py_escape_single_quote',
@@ -102,10 +102,10 @@ class MTemplateMacro:
         return str(current_data)
 
 
-class MTemplateExtractor:
+class MTemplate:
     """extract a jinja template from a source file"""
 
-    def __init__(self, path:str|Path, **kwargs) -> 'MTemplateExtractor':
+    def __init__(self, path:str|Path, **kwargs) -> 'MTemplate':
         self.path = Path(path)
         self.debug = kwargs.get('debug', False)
         self.disable_strict = kwargs.get('disable_strict', False)
@@ -208,6 +208,10 @@ class MTemplateExtractor:
         
         return '{{ ' + insert_stmt.strip() + ' }}\n'
 
+    #
+    # api
+    #
+    
     def parse(self):
 
         ignoring = False
@@ -421,10 +425,6 @@ class MTemplateExtractor:
                 raise MTemplateError(f'Unterminated if statement in file {self.path}')
 
         self.jinja.globals.update(self.template_vars)
-    
-    #
-    # file methods
-    #
 
     def template_string(self) -> str:
         """create template string for jinja"""
