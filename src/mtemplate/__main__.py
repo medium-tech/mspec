@@ -26,9 +26,8 @@ args = parser.parse_args()
 
 if args.command == 'render':
     template_vars = dict() if args.vars is None else json.loads(args.vars)
-    templates = [args.source / p for p in os.listdir(args.source)]
     
-    extractor = MTemplateExtractor.init_from_paths(templates, debug=args.debug, disable_strict=args.disable_strict)
+    extractor = MTemplateExtractor.init_from_dir(args.source, debug=args.debug, disable_strict=args.disable_strict)
     rendered_template = extractor.render_template(args.template, template_vars, output=args.output)
 
     if args.output is None:

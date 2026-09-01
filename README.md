@@ -396,12 +396,4 @@ A templating project to embed templating commands into real code.
 
 ⚠️ Currently in refactoring state, docs may be out of date ⚠️
 
-Templates in `./templates`:
-* `mapp-py` - used to bootstrap a [mapp framework](#mapp-framework) app
-* `go` - deprecated
-* `py` - deprecated
-* `browser1` - deprecated
-
-see docs:
-* [syntax](./docs/MTEMPLATE_SYNTAX.md)
-* [legacy](./docs/MTEMPLATE_SYNTAX.md)
+[docs](./docs/MTEMPLATE_SYNTAX.md)

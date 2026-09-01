@@ -441,11 +441,17 @@ class MTemplateExtractor:
     disable_strict: bool = False
 
     @classmethod
-    def init_from_paths(cls, template_paths: list[Path], **kwargs):
-        template_paths = [Path(p) for p in template_paths]
-
+    def init_from_dir(cls, source:str|Path, **kwargs):
+        
+        src_dir = Path(source)
         disable_strict = kwargs.get('disable_strict', False)
-        templates: dict[str, MTemplate] = {p.name: MTemplate(p).parse().template_string() for p in template_paths}
+
+
+        # recursively collect all files from source
+        template_paths = [p for p in src_dir.rglob('*') if p.is_file()]
+        
+        # store in templates lookup, keys are relative paths to source directory
+        templates: dict[str, MTemplate] = {str(p.relative_to(src_dir)): MTemplate(p).parse().template_string() for p in template_paths}
 
         return cls(
             template_paths=template_paths, 
