@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import os
 
 from pathlib import Path
 
-from mtemplate.core import MTemplate
+from mtemplate.core import MTemplateExtractor
 
 
 # parser #
 
 parser = argparse.ArgumentParser(prog='mtemplate', formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('command', choices=['render'], help='command to run')
-parser.add_argument('--source', '-s', type=Path, default=None, help='source file to render (if command is "render")')
+parser.add_argument('--source', '-s', type=Path, default=None, help='source directory for templates')
+parser.add_argument('--debug', action='store_true', help='debug jinja template, if no --output provided it will be printed to screen, otherwise it will be written to <output>.jinja2')
+parser.add_argument('--disable-strict', action='store_true', help='disable strict mode for jinja template rendering, not recommended for general use, only debugging')
+parser.add_argument('--template', '-t', type=str, default=None, help='template file to render')
 parser.add_argument('--output', type=Path, default=None, help='output file for rendering')
 parser.add_argument('--vars', type=str, default=None, help='JSON string of variables to pass to the template')
 
@@ -21,12 +25,11 @@ args = parser.parse_args()
 # run program #
 
 if args.command == 'render':
-    extractor = MTemplate(args.source)
-
     template_vars = dict() if args.vars is None else json.loads(args.vars)
-
-    extractor.parse()
-    rendered_template = extractor.render_template(template_vars)
+    templates = [args.source / p for p in os.listdir(args.source)]
+    
+    extractor = MTemplateExtractor.init_from_paths(templates, debug=args.debug, disable_strict=args.disable_strict)
+    rendered_template = extractor.render_template(args.template, template_vars, output=args.output)
 
     if args.output is None:
         print(rendered_template)

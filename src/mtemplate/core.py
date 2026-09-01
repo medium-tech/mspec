@@ -110,13 +110,7 @@ class MTemplate:
         self.debug = kwargs.get('debug', False)
         self.disable_strict = kwargs.get('disable_strict', False)
 
-        self.jinja = JinjaEnv(
-            autoescape=False,
-            loader=FunctionLoader(lambda _: self.template_string()),
-            undefined=Undefined if self.disable_strict else StrictUndefined,
-            comment_start_string='/*--', 
-            comment_end_string='--*/'
-        )
+        # self.jinja = jinja
 
         if path.suffix in ['.js', '.ts']:
             self.prefix = '//'
@@ -424,7 +418,7 @@ class MTemplate:
             if open_if_statements > 0:
                 raise MTemplateError(f'Unterminated if statement in file {self.path}')
 
-        self.jinja.globals.update(self.template_vars)
+        return self
 
     def template_string(self) -> str:
         """create template string for jinja"""
@@ -433,21 +427,61 @@ class MTemplate:
             template = template.replace(key, '{{ ' + value + ' }}')
         return template
 
-    def render_template(self, vars: Optional[dict]=None, output:Optional[Path|str]=None) -> str:
+@dataclass
+class MTemplateExtractor:
+    # input
+    template_paths: list[Path]
 
+    # internal 
+    templates: dict[str, MTemplate]
+    jinja: JinjaEnv
+
+    # config
+    debug: bool = False
+    disable_strict: bool = False
+
+    @classmethod
+    def init_from_paths(cls, template_paths: list[Path], **kwargs):
+        template_paths = [Path(p) for p in template_paths]
+
+        disable_strict = kwargs.get('disable_strict', False)
+        templates: dict[str, MTemplate] = {p.name: MTemplate(p).parse().template_string() for p in template_paths}
+
+        return cls(
+            template_paths=template_paths, 
+            debug=kwargs.get('debug', False),
+            disable_strict=disable_strict,
+            templates=templates,
+            jinja= JinjaEnv(
+                autoescape=False,
+                loader=FunctionLoader(lambda path: templates[path]),
+                undefined=Undefined if disable_strict else StrictUndefined,
+                comment_start_string='/*--', 
+                comment_end_string='--*/'
+            )
+        )
+
+    def render_template(self, name:str, vars: Optional[dict]=None, output:Optional[Path|str]=None) -> str:
+    
         #
         # render template
         #
 
         try:
-            jinja_template = self.jinja.get_template(str(self.path))
+            jinja_template = self.jinja.get_template(name)
             rendered_template = jinja_template.render(vars or dict())
+        except KeyError as exc:
+            if name is None:
+                raise TemplateError(f'Template name is required')
+            else:
+                raise TemplateError(f'Template "{name}" not found: {exc}')
+
         except UndefinedError as e:
-            raise TemplateError(f'{e} in template "{self.name}"')
+            raise TemplateError(f'{e} in template "{name}"')
         except TemplateError as e:
-            raise TemplateError(f'{e.__class__.__name__}:{e} in template "{self.name}"')
+            raise TemplateError(f'{e.__class__.__name__}:{e} in template "{name}"')
         except MTemplateError as e:
-            raise MTemplateError(f'{e.__class__.__name__}:{e} in template "{self.name}"')
+            raise MTemplateError(f'{e.__class__.__name__}:{e} in template "{name}"')
 
         
         # write file (if requested) #
@@ -467,7 +501,6 @@ class MTemplate:
                 raise
 
         return rendered_template if not self.debug else self.template_str
-
 
 #
 # utility functions
