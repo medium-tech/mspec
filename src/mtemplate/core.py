@@ -102,8 +102,6 @@ class MTemplate:
 
     def __init__(self, path:str|Path, **kwargs) -> 'MTemplate':
         self.path = Path(path)
-        self.debug = kwargs.get('debug', False)
-        self.disable_strict = kwargs.get('disable_strict', False)
 
         # self.jinja = jinja
 
@@ -512,13 +510,13 @@ class MTemplateExtractor:
             if self.debug:
                 debug_output_path = out_path.with_name(out_path.name + '.jinja2')
                 try:
-                    self._write_file(debug_output_path, self.template_str)
+                    self._write_file(debug_output_path, self.templates[name])
                     
                 except Exception as e:
                     print(f':: error writing debug template :: {debug_output_path}: {e}')
                 raise
-
-        return rendered_template if not self.debug else self.template_str
+        
+        return rendered_template if not self.debug else self.templates[name]
 
 #
 # utility functions
