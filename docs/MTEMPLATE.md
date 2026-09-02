@@ -160,7 +160,7 @@ The `for` command creates Jinja2 for loops in templates, with variable replaceme
 
 **Examples:**
 
-Python (nested loops, see [templates/tests/test_for.py](../templates/tests/test_for.py)):
+Python nested loops, see [templates/tests/test_for.py](../templates/tests/test_for.py):
 ```python
 # for :: {% for msg in msgs -%} :: {"hello": "msg", "hello_lower": "msg.lower()"}
 # say - hello_lower
