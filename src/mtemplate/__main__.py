@@ -14,7 +14,7 @@ parser.add_argument('--source', '-s', type=Path, default=None, help='source dire
 parser.add_argument('--debug', action='store_true', help='debug jinja template, if no --output provided it will be printed to screen, otherwise it will be written to <output>.jinja2')
 parser.add_argument('--disable-strict', action='store_true', help='disable strict mode for jinja template rendering, not recommended for general use, only debugging')
 parser.add_argument('--template', '-t', type=str, default=None, help='template file to render')
-parser.add_argument('--output', type=Path, default=None, help='output file for rendering')
+parser.add_argument('--output', '-o', type=Path, default=None, help='output file for rendering')
 parser.add_argument('--vars', type=str, default=None, help='JSON string of variables to pass to the template')
 
 args = parser.parse_args()

@@ -451,7 +451,7 @@ extractor = MTemplateExtractor.init_from_dir('templates/tests')
 
 `init_from_dir(source, **kwargs)` accepts:
 - `source`: `str | Path` - directory to recursively scan for template files
-- `debug`: `bool` - intended to make `render_template` return the intermediate jinja template string instead of the rendered output; ⚠️ currently raises an `AttributeError` when set to `True` because `MTemplateExtractor` never sets a `template_str` attribute (see `render_template` in `src/mtemplate/core.py`)
+- `debug`: `bool` - intended to make `render_template`, when rendering a template, if true, also write the jinja file if an output is provided, otherwise print the jinja template to stdout.
 - `disable_strict`: `bool` - when `True`, undefined variables render as empty instead of raising an error (not recommended outside of debugging)
 
 **Rendering a template:**

@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import json
 import stat
 
@@ -139,19 +140,6 @@ class MTemplate:
             return json.loads(data.replace("'", '"'))
         else:
             return json.loads(data)
-
-    def _write_file(self, path:Path, data:str):
-        try:
-            with open(path, 'w+') as f:
-                f.write(data)
-        except FileNotFoundError:
-            os.makedirs(path.parent)
-            with open(path, 'w+') as f:
-                f.write(data)
-
-        if path.suffix == '.sh':
-            out_stat = path.stat()
-            os.chmod(path.as_posix(), out_stat.st_mode | stat.S_IEXEC)
 
     #
     # parsing methods
@@ -477,7 +465,42 @@ class MTemplateExtractor:
             jinja=jinja_env
         )
 
+    def _write_file(self, path:Path, data:str):
+        try:
+            with open(path, 'w+') as f:
+                f.write(data)
+        except FileNotFoundError:
+            os.makedirs(path.parent)
+            with open(path, 'w+') as f:
+                f.write(data)
+
+        if path.suffix == '.sh':
+            out_stat = path.stat()
+            os.chmod(path.as_posix(), out_stat.st_mode | stat.S_IEXEC)
+
     def render_template(self, name:str, vars: Optional[dict]=None, output:Optional[Path|str]=None) -> str:
+
+        output = None if output is None else Path(output)
+
+        #
+        # debug
+        #
+
+        if self.debug:
+            try:
+                template_string = self.templates[name]
+            except KeyError:
+                raise ValueError(f'Missing template string for: {name}')
+            
+            if output is None:
+                return template_string
+
+            else:
+                debug_output_path = output.with_name(output.name + '.jinja2')
+                try:
+                    self._write_file(debug_output_path, template_string)
+                except Exception as e:
+                    raise TemplateError(f':: error writing debug template :: {debug_output_path}: {e}')
     
         #
         # render template
@@ -500,23 +523,15 @@ class MTemplateExtractor:
             raise MTemplateError(f'{e.__class__.__name__}:{e} in template "{name}"')
 
         
-        # write file (if requested) #
+        #
+        # output
+        #
 
         if output is not None:
-            out_path = Path(output)
+            self._write_file(output, rendered_template)
 
-            # write jinja template in debug mode #
+        return rendered_template
 
-            if self.debug:
-                debug_output_path = out_path.with_name(out_path.name + '.jinja2')
-                try:
-                    self._write_file(debug_output_path, self.templates[name])
-                    
-                except Exception as e:
-                    print(f':: error writing debug template :: {debug_output_path}: {e}')
-                raise
-        
-        return rendered_template if not self.debug else self.templates[name]
 
 #
 # utility functions
