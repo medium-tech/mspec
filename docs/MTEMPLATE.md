@@ -279,16 +279,14 @@ The `macro` command defines reusable template macros that can be called from oth
 
 Python:
 ```python
-# macro :: py_create_model_table :: {"single_model": "model_name_snake_case", "field_list": "field_names"}
-cursor.execute("CREATE TABLE IF NOT EXISTS single_model(id INTEGER PRIMARY KEY, field_list)")
+# macro :: greet_person :: {"Person": "name"}
+print('Greetings Person!')
 # end macro ::
 ```
 
-This creates a macro that can be called like:
+This creates a macro with one argument `name` that can be called like:
 ```python
-This creates a macro that can be called like:
-```python
-# insert :: macro.py_create_model_table({"model_name_snake_case": "user", "field_names": "name, email"})
+# insert :: macro.greet_person(name='Python')
 ```
 
 ### slot
@@ -322,6 +320,8 @@ child templates
 
 ### parent
 
+⚠️ not currently implemented in refactor ⚠️
+
 The `parent` command establishes a parent-child relationship between templates, it is used to define a template as a child and what file is its parent. See [About Parent/Child Slots](#about-parentchild-slots) for more.
 
 **Syntax:**
@@ -347,6 +347,7 @@ The `parent` command should be placed at the end of the child template file, aft
 ⚠️ not currently implemented in refactor ⚠️
 
 **Motivation**
+
 The `mtemplate` system is a template system that extracts templates from syntactically valid code. As such variations in templates may require multiple templates and duplicated template code. For example, the model in `templates/.../single_model/db.py` does not require authentican, but `templates/.../multi_model/db.py` does. Both templates are needed to create a `db.py`, the one in `single_model` is the parent template and the `multi_model` is the child. The child defines an authentication macro inside a slot and the parent uses conditional statements to apply the variation (macro) when needed. The several lines inside the children's slots are the only thing different about it than the parent template. When changes to parent model are made they can be syncronized to the child template using slots. The `slot` and `slot end` commands in the child define the variation, and the matching `slot` command in the parent defines where the variation should be placed in the parent.
 
 **Workflow:**
