@@ -26,6 +26,7 @@ __all__ = [
     'indent_lines'
 ]
 
+
 #
 # types
 #
@@ -465,19 +466,6 @@ class MTemplateExtractor:
             jinja=jinja_env
         )
 
-    def _write_file(self, path:Path, data:str):
-        try:
-            with open(path, 'w+') as f:
-                f.write(data)
-        except FileNotFoundError:
-            os.makedirs(path.parent)
-            with open(path, 'w+') as f:
-                f.write(data)
-
-        if path.suffix == '.sh':
-            out_stat = path.stat()
-            os.chmod(path.as_posix(), out_stat.st_mode | stat.S_IEXEC)
-
     def render_template(self, name:str, vars: Optional[dict]=None, output:Optional[Path|str]=None) -> str:
 
         output = None if output is None else Path(output)
@@ -498,7 +486,7 @@ class MTemplateExtractor:
             else:
                 debug_output_path = output.with_name(output.name + '.jinja2')
                 try:
-                    self._write_file(debug_output_path, template_string)
+                    write_file(debug_output_path, template_string)
                 except Exception as e:
                     raise TemplateError(f':: error writing debug template :: {debug_output_path}: {e}')
     
@@ -521,21 +509,165 @@ class MTemplateExtractor:
             raise TemplateError(f'{e.__class__.__name__}:{e} in template "{name}"')
         except MTemplateError as e:
             raise MTemplateError(f'{e.__class__.__name__}:{e} in template "{name}"')
-
         
         #
         # output
         #
 
         if output is not None:
-            self._write_file(output, rendered_template)
+            write_file(output, rendered_template)
 
         return rendered_template
 
 
 #
+# slots
+#
+
+
+def apply_template_slots(child_path: Path|str, output:Optional[Path|str]=None) -> str:
+    """Given a child template path, regenerate the child template
+    by replacing the slot commands in the parent template with the
+    corresponding slot content from the child template.
+
+    args:
+        child_path: Path or str - path to the child template file
+
+    returns:
+        str - the generated child template content
+    """
+
+    #
+    # init
+    #
+
+    child_template_path = Path(child_path)
+
+    with open(child_template_path) as f:
+        child_content = f.readlines()
+
+    #
+    # parse child template
+    #
+
+    parent_commands = []
+    child_template_lines = []
+    slots_in_child = []
+    all_slot_content = {}
+    inside_slot = False
+    current_slot_name = None
+    parent_line = None
+
+    for line in child_content:
+        if line.strip().startswith('# parent ::'):
+            if inside_slot:
+                raise ValueError(f'parent command not allowed inside slot: {current_slot_name}')
+            
+            parent_commands.append(line)
+            parent_line = line
+
+        elif line.strip().startswith('# slot ::'):
+            if inside_slot:
+                raise ValueError(f'Nested slots are not supported (slot: {slot_name})')
+            
+            inside_slot = True
+
+            child_slot_name = line.strip().split('::')[1].strip()
+            current_slot_name = child_slot_name
+            slots_in_child.append(current_slot_name)
+            all_slot_content[current_slot_name] = [line]
+        
+        elif inside_slot and line.strip().startswith('# end slot'):
+            if not inside_slot:
+                raise ValueError(f'End slot found without matching start slot (slot: {current_slot_name})')
+            all_slot_content[current_slot_name].append(line)
+            current_slot_name = None
+            inside_slot = False
+        
+        elif inside_slot:
+            all_slot_content[current_slot_name].append(line)
+
+        else:
+            child_template_lines.append(line)
+
+    if not parent_commands:
+        raise ValueError(f'No parent defined in child template: {child_template_path}')
+
+    elif len(parent_commands) > 1:
+        raise ValueError('Multiple parent templates found, only one parent template is supported.')
+    
+    # get parent template path #
+
+    parent_line = parent_commands[0]
+
+    try:
+        parent_path_str = parent_line.strip().split('::')[1].strip()
+    except IndexError:
+        raise ValueError('Invalid parent template command format.')
+    
+    parent_template = child_template_path.parent / parent_path_str
+
+    with open(parent_template) as f:
+        parent_content = f.readlines()
+
+    #
+    # generate child template from parent
+    #
+
+    output_lines = []
+    slots_replaced = []
+
+    for line in parent_content:
+        if line.strip().startswith('# slot ::'):
+            try:
+                slot_name = line.strip().split('::')[1].strip()
+            except IndexError:
+                raise ValueError('Invalid slot command format.')
+            try:
+                slot_content = all_slot_content[slot_name]
+            except KeyError:
+                raise ValueError(f'Slot "{slot_name}" in parent not found in child')
+
+            output_lines.extend(slot_content)
+            slots_replaced.append(slot_name)
+
+        else:
+            output_lines.append(line)
+
+    output_lines.append(f'\n{parent_line}')
+
+    if not slots_replaced:
+        raise ValueError('No slots were replaced; ensure slot names match between parent and child templates.')
+
+    if sorted(list(set(slots_replaced))) != sorted(slots_in_child):
+        slots_not_used = set(slots_in_child) - set(slots_replaced)
+        raise ValueError(f'Some slots in child template were not used in parent template: {slots_not_used}')
+
+    rendered_template = ''.join(output_lines)
+
+    if output is not None:
+        write_file(output, rendered_template)
+
+    return rendered_template
+
+
+#
 # utility functions
 #
+
+
+def write_file(path:Path, data:str):
+    try:
+        with open(path, 'w+') as f:
+            f.write(data)
+    except FileNotFoundError:
+        os.makedirs(path.parent)
+        with open(path, 'w+') as f:
+            f.write(data)
+
+    if path.suffix == '.sh':
+        out_stat = path.stat()
+        os.chmod(path.as_posix(), out_stat.st_mode | stat.S_IEXEC)
 
 def sort_dict_by_key_length(dictionary:dict) -> OrderedDict:
     """sort dictionary by key length in descending order, it is used when replacing template variables,
@@ -549,153 +681,3 @@ def py_escape_single_quote(s:str) -> str:
 def indent_lines(lines:str, indent:int=2) -> str:
     '''Indent each line of a multi-line string for pretty printing'''
     return '\n'.join(f'{"\t" * indent}{line}' for line in lines.splitlines())
-
-
-#
-# slots - old feature, doesn't work after refactor
-#          designed to keep two separate files in sync
-#
-
-# class NoParentDefinedError(Exception):
-#     pass
-
-
-# def apply_slots_to_children(cls, debug:bool=False):
-#     # raise NotImplementedError(f'not implemented for new MTemplate class after refactor')
-#     template_proj = cls({}, debug=debug)
-#     paths = template_proj.load_template_paths()
-#     for macro in paths['macro_only']:
-#         try:
-#             new_template_content = apply_template_slots(macro['src'])
-#         except NoParentDefinedError:
-#             if debug:
-#                 print(f'Warning no parent defined in macro template: {macro["src"]}')
-#             continue
-        
-#         if debug:
-#             print(f'Would have applied slots to macro template: {macro["src"]}')
-#         else:
-#             with open(macro['src'], 'w') as f:
-#                 f.write(new_template_content)
-#             print(f'Applied slots to macro template: {macro["src"]}')
-
-
-# def apply_template_slots(child_path: Path | str) -> str:
-#     """Given a child template path, regenerate the child template
-#     by replacing the slot commands in the parent template with the
-#     corresponding slot content from the child template.
-
-#     args:
-#         child_path: Path or str - path to the child template file
-
-#     returns:
-#         str - the generated child template content
-#     """
-
-#     #
-#     # init
-#     #
-
-#     child_template_path = Path(child_path)
-
-#     with open(child_template_path) as f:
-#         child_content = f.readlines()
-
-#     #
-#     # parse child template
-#     #
-
-#     parent_commands = []
-#     child_template_lines = []
-#     slots_in_child = []
-#     all_slot_content = {}
-#     inside_slot = False
-#     current_slot_name = None
-#     parent_line = None
-
-#     for line in child_content:
-#         if line.strip().startswith('# parent ::'):
-#             if inside_slot:
-#                 raise ValueError(f'parent command not allowed inside slot: {current_slot_name}')
-            
-#             parent_commands.append(line)
-#             parent_line = line
-
-#         elif line.strip().startswith('# slot ::'):
-#             if inside_slot:
-#                 raise ValueError(f'Nested slots are not supported (slot: {slot_name})')
-            
-#             inside_slot = True
-
-#             child_slot_name = line.strip().split('::')[1].strip()
-#             current_slot_name = child_slot_name
-#             slots_in_child.append(current_slot_name)
-#             all_slot_content[current_slot_name] = [line]
-        
-#         elif inside_slot and line.strip().startswith('# end slot'):
-#             if not inside_slot:
-#                 raise ValueError(f'End slot found without matching start slot (slot: {current_slot_name})')
-#             all_slot_content[current_slot_name].append(line)
-#             current_slot_name = None
-#             inside_slot = False
-        
-#         elif inside_slot:
-#             all_slot_content[current_slot_name].append(line)
-
-#         else:
-#             child_template_lines.append(line)
-
-#     if not parent_commands:
-#         raise NoParentDefinedError(f'No parent defined in child template: {child_template_path}')
-
-#     elif len(parent_commands) > 1:
-#         raise ValueError('Multiple parent templates found, only one parent template is supported.')
-    
-#     # get parent template path #
-
-#     parent_line = parent_commands[0]
-
-#     try:
-#         parent_path_str = parent_line.strip().split('::')[1].strip()
-#     except IndexError:
-#         raise ValueError('Invalid parent template command format.')
-    
-#     parent_template = child_template_path.parent / parent_path_str
-
-#     with open(parent_template) as f:
-#         parent_content = f.readlines()
-
-#     #
-#     # generate child template from parent
-#     #
-
-#     output_lines = []
-#     slots_replaced = []
-
-#     for line in parent_content:
-#         if line.strip().startswith('# slot ::'):
-#             try:
-#                 slot_name = line.strip().split('::')[1].strip()
-#             except IndexError:
-#                 raise ValueError('Invalid slot command format.')
-#             try:
-#                 slot_content = all_slot_content[slot_name]
-#             except KeyError:
-#                 raise ValueError(f'Slot "{slot_name}" in parent not found in child')
-
-#             output_lines.extend(slot_content)
-#             slots_replaced.append(slot_name)
-
-#         else:
-#             output_lines.append(line)
-
-#     output_lines.append(f'\n{parent_line}')
-
-#     if not slots_replaced:
-#         raise ValueError('No slots were replaced; ensure slot names match between parent and child templates.')
-
-#     if sorted(list(set(slots_replaced))) != sorted(slots_in_child):
-#         slots_not_used = set(slots_in_child) - set(slots_replaced)
-#         raise ValueError(f'Some slots in child template were not used in parent template: {slots_not_used}')
-
-#     return ''.join(output_lines)

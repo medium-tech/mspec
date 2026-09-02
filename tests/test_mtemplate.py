@@ -7,7 +7,7 @@ from pathlib import Path
 
 from jinja2 import TemplateError
 
-from mtemplate.core import MTemplateExtractor
+from mtemplate.core import MTemplateExtractor, apply_template_slots
 
 
 sample_dir = Path(__file__).parent.parent / 'templates/tests'
@@ -38,6 +38,17 @@ class TestMTester(unittest.TestCase):
             args.append('--disable-strict')
         if output is not None:
             args += ['-o', output]
+        return subprocess.run(args, capture_output=True, text=True)
+
+    def _call_mtemplate_slots(self, child_source:Path, output:str=None) -> subprocess.CompletedProcess:
+        args = [
+            'python', '-m', 'mtemplate', 'slots', 
+            '-s', str(child_source), 
+        ]
+
+        if output is not None:
+            args += ['-o', output]
+            
         return subprocess.run(args, capture_output=True, text=True)
 
     def _process_err(self, result:subprocess.CompletedProcess) -> str:
@@ -113,6 +124,75 @@ class TestMTester(unittest.TestCase):
 
         self.assertTrue(debug_output_path.exists())
         self.assertEqual(debug_output_path.read_text().strip(), "print('Hello, {{ user_name }}.')")
+
+    def test_cli_slots(self):
+
+        #
+        # setup
+        #
+
+        output_dir = self._mk_tmp_dir('test_cli_slots')
+        parent_path = output_dir / 'test_parent.py'
+        child_path = output_dir / 'test_child.py'
+
+        shutil.copy(sample_dir / 'test_parent.py', parent_path)
+        shutil.copy(sample_dir / 'test_child.py', child_path)
+
+        self.assertTrue(parent_path.exists())
+        self.assertTrue(child_path.exists())
+
+        orig_msg = 'i am the parent template'
+        new_msg = 'i am a unittest for slots'
+
+        orig_parent_text = parent_path.read_text()
+        orig_child_text = child_path.read_text()
+
+        self.assertIn(orig_msg, orig_parent_text)
+        self.assertIn(orig_msg, orig_child_text)
+
+        #
+        # change parent text
+        #
+
+        with open(parent_path, 'w') as parent_src:
+            parent_src.truncate()
+            parent_src.write(orig_parent_text.replace(orig_msg, new_msg))
+
+        #
+        # render slots - print to stdout
+        #
+
+        result_1 = self._call_mtemplate_slots(child_path)
+
+        expected_output = """# slot :: custom_imports
+from typing import List
+# end slot ::
+
+print('i am a unittest for slots')
+
+# slot :: custom_code
+def custom_function():
+    pass
+# end slot ::
+
+# parent :: ./test_parent.py"""
+
+        self.assertEqual(result_1.returncode, 0)
+        self.assertEqual(expected_output.strip(), result_1.stdout.strip())
+
+        #
+        # render slots - write to file
+        #
+
+        # confirm child template hasn't changed
+        self.assertNotIn(new_msg, child_path.read_text())
+
+        result_2 = self._call_mtemplate_slots(child_path, output=child_path)
+
+        self.assertEqual(result_2.returncode, 0)
+
+        self.assertNotIn(orig_msg, child_path.read_text())
+        self.assertIn(new_msg, child_path.read_text())
 
     #
     # api features
