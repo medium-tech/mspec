@@ -105,29 +105,29 @@ class MTemplate:
     def __init__(self, path:str|Path, **kwargs) -> 'MTemplate':
         self.path = Path(path)
 
-        # self.jinja = jinja
+        lower_suffix = self.path.suffix.lower()
 
-        if path.suffix in ['.js', '.ts']:
+        if lower_suffix in ['.js', '.ts']:
             self.prefix = '//'
             self.postfix = ''
             self.single_quotes = False
-        elif path.suffix in ['.html', '.htm']:
+        elif lower_suffix in ['.html', '.htm']:
             self.prefix = '<!--'
             self.postfix = '-->'
             self.single_quotes = False
-        elif path.suffix == '.css':
+        elif lower_suffix == '.css':
             self.prefix = '/*'
             self.postfix = '*/'
             self.single_quotes = False
-        elif path.suffix == '.json':
+        elif lower_suffix == '.json':
             self.prefix = '"_": "'
             self.postfix = '",'
             self.single_quotes = True
-        elif path.suffix == '.md':
+        elif lower_suffix == '.md':
             self.prefix = '####'
             self.postfix = ''
             self.single_quotes = False
-        elif path.suffix in ['.yaml', '.yml']:
+        elif lower_suffix in ['.yaml', '.yml']:
             self.prefix = '#'
             self.postfix = ''
             self.single_quotes = False

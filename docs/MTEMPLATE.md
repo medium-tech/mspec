@@ -59,7 +59,7 @@ mtemplate commands follow the pattern: `<comment_start> <command> :: <arguments>
 
 ### Comment Syntax by Language
 
-mtemplate automatically detects the appropriate comment syntax based on the following chart. If the file extension is not defined it will default to Python.
+mtemplate automatically detects the appropriate comment syntax based on the following chart. If the file extension is not defined it will default to Python. Extensions are case insensitive.
 
 | Language 				| Extension 			| JSON Quotes 	| Comment Start	| Commend End 	| Example [vars](#vars) command |
 |----------				|-----------			|---			|---------------|---------------|---------|
