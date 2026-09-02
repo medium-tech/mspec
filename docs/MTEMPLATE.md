@@ -6,8 +6,9 @@ mtemplate is a code templating system that allows you to extract dynamic templat
 
 - [Overview](#overview)
 - [How It Works](#how-it-works)
-- [Comment Syntax by Language](#comment-syntax-by-language)
 - [Template Commands](#template-commands)
+  - [Comment Syntax by Language](#comment-syntax-by-language)
+- [Render Template Commands](#render-template-commands)
   - [vars](#vars)
   - [if / elif / else branching](#if--elif--else-branching)
   - [for](#for)
@@ -15,6 +16,7 @@ mtemplate is a code templating system that allows you to extract dynamic templat
   - [insert](#insert)
   - [replace](#replace)
   - [macro](#macro)
+- [Parent / Child Template Commands](#parent--child-template-commands)
   - [slot](#slot)
   - [parent](#parent)
 - [About Parent/Child Slots](#about-parentchild-slots)
@@ -44,24 +46,45 @@ The mtemplate extractor processes this file and generates a jinja template:
 port = {{ config.port }}
 ```
 
-
-## Comment Syntax by Language
-
-mtemplate automatically detects the appropriate comment syntax based on file extensions:
-
-| Language | Extension | Comment Syntax | Example |
-|----------|-----------|----------------|---------|
-| Python | `.py` | `#` | `# vars :: {"old": "new"}` |
-| JavaScript/TypeScript | `.js`, `.ts` | `//` | `// vars :: {"old": "new"}` |
-| HTML | `.html`, `.htm` | `<!-- -->` | `<!-- vars :: {"old": "new"} -->` |
-| CSS | `.css` | `/* */` | `/* vars :: {"old": "new"} */` |
-| JSON | `.json` | `"_": " ",` | `"_": " vars :: {'old': 'new'}",` |
-
-**Note**: JSON doesn't have native comments, so mtemplate uses a special `"_"` key with single quotes inside the string to work around this limitation.
-
 ## Template Commands
 
-All mtemplate commands follow the pattern: `<comment_start> <command> :: <arguments> <comment_end>`
+mtemplate commands follow the pattern: `<comment_start> <command> :: <arguments> <comment_end>`. 
+
+* `<comment_start>` - this will vary by language
+
+### Comment Syntax by Language
+
+mtemplate automatically detects the appropriate comment syntax based on the following chart. If the file extension is not defined it will default to Python.
+
+| Language 				| Extension 			| Comment Start	| Commend End 	| Example [vars](#vars) command |
+|----------				|-----------			|---------------|---------------|---------|
+| Python 				| `.py` 				| `#` 			|		n/a		| `# vars :: {"old": "new"}` |
+| JavaScript/TypeScript | `.js`, `.ts` 			| `//` 			|		n/a		| `// vars :: {"old": "new"}` |
+| HTML 					| `.html`, `.htm` 		| `<!--` 	| 	`-->` 		| `<!-- vars :: {"old": "new"} -->` |
+| CSS 					| `.css` 				| `/*` 		| 	`*/` 		| `/* vars :: {"old": "new"} */` |
+| JSON 					| `.json` 				| `"_": "`	 	|	`",`		| `"_": " vars :: {'old': 'new'}",` |
+
+
+
+**Note**: JSON doesn't have comments, so mtemplate uses a soecial key with a string value containing the template command, it must all be on a single line to work correctly. Example:
+
+```json
+{
+    "_": " vars :: {'template_app': 'project_name'}",
+    "name": "template_app"
+}
+```
+
+If passed `mtemplate` as the `project_name` variable when rendering, the above template would output the following: 
+```json
+{
+    "name": "mtemplate"
+}
+```
+
+## Render Template Commands
+
+The following commands can be used with the render api.
 
 ### vars
 
@@ -303,75 +326,101 @@ This creates a macro with one argument `name` that can be called like:
 # insert :: macro.greet_person(name='Python')
 ```
 
+## Parent / Child Template Commands
+
+The following commands are used with the slots API.
+
 ### slot
 
-⚠️ not currently implemented in refactor ⚠️
-
-The `slot` command is used for parenting. In a parent template the slot defines the location to be replaced and in a child it is used with a `slot end` command to define the regoin that will be replaced in the parent. Slots are used in conjunction with the `parent` command to create a parent-child template relationship, see [About Parent/Child Slots](#about-parentchild-slots) for more.
+The `slot` command is used for parenting. In a parent template the slot defines the location to be replaced and in a child it is used with an `end slot` command to define the region that will be replaced in the parent. Slots are used in conjunction with the `parent` command to create a parent-child template relationship, see [About Parent/Child Slots](#about-parentchild-slots) for more.
 
 Each slot defined in the child must have a `slot` and `end slot` command, but in the parent each slot is only a `slot` command.
+
+⚠️ Unlike other commands, `slot`/`parent` are currently only recognized with the Python `#` comment prefix, regardless of the file's extension (see `apply_template_slots` in `src/mtemplate/core.py`).
 
 **Syntax:**
 
 parent templates
 ```
 ... content in parent file ...
-<comment> slot :: <slot_name>
+# slot :: <slot_name>
 ... more content in parent file ...
 ```
 
 child templates
 ```
-... content in parent file ...
-<comment> slot :: <slot_name>
+... content in child file ...
+# slot :: <slot_name>
 ... child slot content ...
-<comment> end slot ::
-... content in parent file ...
+# end slot ::
+... content in child file ...
 ```
 
 **Arguments:**
 - `slot_name`: Unique identifier for the slot within the template
 
-### parent
+**Example (see [templates/tests/test_parent.py](../templates/tests/test_parent.py) and [templates/tests/test_child.py](../templates/tests/test_child.py)):**
 
-⚠️ not currently implemented in refactor ⚠️
+Parent:
+```python
+# slot :: custom_imports
+
+print('i am the parent template')
+
+# slot :: custom_code
+```
+
+Child:
+```python
+# slot :: custom_imports
+from typing import List
+# end slot ::
+
+print('i am the parent template')
+
+# slot :: custom_code
+def custom_function():
+    pass
+# end slot ::
+
+# parent :: ./test_parent.py
+```
+
+### parent
 
 The `parent` command establishes a parent-child relationship between templates, it is used to define a template as a child and what file is its parent. See [About Parent/Child Slots](#about-parentchild-slots) for more.
 
 **Syntax:**
 ```
-<comment> parent :: <relative_path_to_parent>
+# parent :: <relative_path_to_parent>
 ```
 
 **Arguments:**
-- `relative_path_to_parent`: Relative path from the child template to its parent template
+- `relative_path_to_parent`: Path to the parent template, relative to the child template's directory
 
 **Example:**
 
-Python:
 ```python
-# parent :: ../single_model/__init__.py
+# parent :: ./test_parent.py
 ```
 
 **Location:**
-The `parent` command should be placed at the end of the child template file, after all slot definitions. This isn't necessary, but when the child is re-generated the `parent` line will be emitted in the last line because the parser doesn't know where it should be placed.
+The `parent` command should be placed at the end of the child template file, after all slot definitions. This isn't necessary, but when the child is re-generated the `parent` line will be emitted as the last line because the parser doesn't know where it should be placed. A child template may only have one `parent` command.
 
 ## About Parent/Child Slots
 
-⚠️ not currently implemented in refactor ⚠️
+⚠️ This feature currently only supports python.
 
-**Motivation**
+The slots feature allows us to create parent child templates by inserting the parent template into a child template. When using the slots API, all commands from the [render commands](#render-template-commands) are ignored, this allows the child to be rendered after it is synchronized with the parent.
 
-The `mtemplate` system is a template system that extracts templates from syntactically valid code. As such variations in templates may require multiple templates and duplicated template code. For example, the model in `templates/.../single_model/db.py` does not require authentican, but `templates/.../multi_model/db.py` does. Both templates are needed to create a `db.py`, the one in `single_model` is the parent template and the `multi_model` is the child. The child defines an authentication macro inside a slot and the parent uses conditional statements to apply the variation (macro) when needed. The several lines inside the children's slots are the only thing different about it than the parent template. When changes to parent model are made they can be syncronized to the child template using slots. The `slot` and `slot end` commands in the child define the variation, and the matching `slot` command in the parent defines where the variation should be placed in the parent.
-
-**Workflow:**
+**Workflow (see [templates/tests/test_parent.py](../templates/tests/test_parent.py), [templates/tests/test_child.py](../templates/tests/test_child.py) and `test_cli_slots` in [tests/test_mtemplate.py](../tests/test_mtemplate.py)):**
 
 1. **Define parent template** with slots:
    ```python
    # slot :: custom_imports
-   
-   from core import *
-   
+
+   print('i am the parent template')
+
    # slot :: custom_code
    ```
 
@@ -380,59 +429,61 @@ The `mtemplate` system is a template system that extracts templates from syntact
    # slot :: custom_imports
    from typing import List
    # end slot ::
-   
-   from core import *
-   
+
+   print('i am the parent template')
+
    # slot :: custom_code
    def custom_function():
        pass
    # end slot ::
-   
-   # parent :: ../single_model/__init__.py
+
+   # parent :: ./test_parent.py
    ```
     Copy and paste the parent to create the child, then add code variations using slots in the child and create a corresponding slot in the parent where the variation should go. 
 
 1. **Make changes in parent template**
     ```python
    # slot :: custom_imports
-   
-   from core import *
-   from other_module import more_code
-   
+
+   print('i am a unittest for slots')
+
    # slot :: custom_code
    ```
 
-1. **Synchronize templates**, conceptually, by running a `slots` command that:
-   - Finds all child templates (templates with a `parent` command) in `./templates/`
-   - For each child, reads its parent template
-   - Replaces slots in the parent with corresponding slot content from the child
-   - Writes the result back to the child template file
-   - Preserves the `parent` command at the end
+1. **Synchronize changes to child** by running:
+   ```bash
+   python -m mtemplate slots -s <path_to_child_template> [-o <output_path>]
+   ```
 
-   ⚠️ There is currently no `slots` command: `python -m mtemplate` only accepts the `render` command (see [CLI](#cli)), and the supporting functions (`apply_template_slots`, `apply_slots_to_children`, `NoParentDefinedError`) are commented out in `src/mtemplate/core.py`.
+   This command:
+   - Reads the child template's `parent` command to find its parent template
+   - Replaces each `# slot :: <name>` line in the parent with the corresponding slot content (including the `slot`/`end slot` lines) from the child
+   - Preserves the `parent` command at the end
+   - If `-o`/`--output` is given, writes the result to that path (commonly the child template's own path, to update it in place); otherwise prints the result to stdout
 
 1. **Child template output** will now have the new import with all of it's custom code right where it's supposed to be
     ```python
    # slot :: custom_imports
    from typing import List
    # end slot ::
-   
-   from core import *
-   from other_module import more_code
-   
+
+   print('i am a unittest for slots')
+
    # slot :: custom_code
    def custom_function():
        pass
    # end slot ::
-   
-   # parent :: ../single_model/__init__.py
+
+   # parent :: ./test_parent.py
    ```
 
-**Error Handling (as designed, not currently implemented):**
-- If a child has a slot not present in the parent: Error raised
-- If a parent has a slot not defined in the child: Error raised
-- If no parent is defined in a child template passed to `apply_template_slots()`: `NoParentDefinedError` raised
-- If multiple parent commands exist: Error raised
+**Error Handling:**
+- If a child has a slot not present in the parent: `ValueError` raised
+- If a parent has a slot not defined in the child: `ValueError` raised
+- If no parent is defined in the child template: `ValueError` raised
+- If multiple parent commands exist in the child template: `ValueError` raised
+- If a `parent` command appears inside a slot, or an `end slot` appears without a matching `slot`, or slots are nested: `ValueError` raised
+
 
 ## API
 
@@ -451,8 +502,8 @@ extractor = MTemplateExtractor.init_from_dir('templates/tests')
 
 `init_from_dir(source, **kwargs)` accepts:
 - `source`: `str | Path` - directory to recursively scan for template files
-- `debug`: `bool` - intended to make `render_template`, when rendering a template, if true, also write the jinja file if an output is provided, otherwise print the jinja template to stdout.
-- `disable_strict`: `bool` - when `True`, undefined variables render as empty instead of raising an error (not recommended outside of debugging)
+- `debug`: `bool` - when `True`, `render_template` returns the raw (unrendered) jinja template string instead of the rendered output; if `output` is also given, the raw template is written to `<output>.jinja2` and the normal rendered output is still written to `output`
+- `disable_strict`: `bool` - when `True`, undefined variables render as empty instead of raising an error **(not recommended outside of debugging)**
 
 **Rendering a template:**
 ```python
@@ -477,24 +528,36 @@ extractor = MTemplateExtractor.init_from_dir(sample_dir)
 rendered_template = extractor.render_template('test_branching.py', {'color': 'green', 'option': True})
 ```
 
+### apply_template_slots
+
+`apply_template_slots(child_path, output=None)` implements the [slot](#slot)/[parent](#parent) synchronization described in [About Parent/Child Slots](#about-parentchild-slots). It reads the child template at `child_path`, finds its `parent` template, and returns the parent's content with each `# slot :: <name>` line replaced by the matching slot block from the child. If `output` (`Path | str`) is given, the result is also written to that path. Raises `ValueError` for the error cases listed under [About Parent/Child Slots](#about-parentchild-slots).
+
+**Example (see `test_cli_slots` in [tests/test_mtemplate.py](../tests/test_mtemplate.py)):**
+```python
+from mtemplate.core import apply_template_slots
+
+regenerated_child = apply_template_slots('templates/tests/test_child.py')
+```
+
 ## CLI
 
 The CLI entry point is `src/mtemplate/__main__.py`, invoked as `python -m mtemplate`.
 
 ```bash
 python -m mtemplate render --source <dir> --template <name> [--vars <json>] [--output <path>] [--debug] [--disable-strict]
+python -m mtemplate slots --source <child_template_path> [--output <path>]
 ```
 
 **Arguments:**
-- `command`: currently only `render` is supported
-- `--source`, `-s`: source directory to scan for templates
-- `--template`, `-t`: relative path of the template file to render
-- `--vars`: JSON string of variables passed to the template
-- `--output`: file path to write the rendered output to; if omitted, the result is printed to stdout
-- `--debug`: intended to print/write the intermediate jinja template instead of the rendered output (writes to `<output>.jinja2` if `--output` is set); ⚠️ currently broken, raises an `AttributeError` (see note under [API](#api))
-- `--disable-strict`: disable strict undefined-variable checking (debugging only)
+- `command`: `render` or `slots`
+- `--source`, `-s`: for `render`, the source directory to scan for templates; for `slots`, the path to the child template file
+- `--template`, `-t`: relative path of the template file to render (`render` only)
+- `--vars`: JSON string of variables passed to the template (`render` only)
+- `--output`, `-o`: file path to write the result to; if omitted, the result is printed to stdout
+- `--debug`: print/write the raw jinja template instead of the rendered output (writes to `<output>.jinja2` if `--output` is set) (`render` only)
+- `--disable-strict`: disable strict undefined-variable checking, **not recommended for general use, only debugging** (`render` only)
 
-**Examples (see [tests/test_mtemplate.py](../tests/test_mtemplate.py) for more):**
+**`render` examples (see [tests/test_mtemplate.py](../tests/test_mtemplate.py) for more):**
 ```bash
 python -m mtemplate render -s templates/tests/ -t test_hello_world.py --vars '{"user_name": "Alice"}'
 ```
@@ -503,3 +566,13 @@ python -m mtemplate render -s templates/tests/ -t test_for.py --vars '{"msgs": [
 ```
 
 If a required variable is missing, the command exits with a non-zero return code and prints an error to stderr, e.g. `'user_name' is undefined`.
+
+**`slots` examples (see `test_cli_slots` in [tests/test_mtemplate.py](../tests/test_mtemplate.py)):**
+```bash
+# print the regenerated child template to stdout
+python -m mtemplate slots -s templates/tests/test_child.py
+```
+```bash
+# regenerate the child template in place
+python -m mtemplate slots -s templates/tests/test_child.py -o templates/tests/test_child.py
+```
