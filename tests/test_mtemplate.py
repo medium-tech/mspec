@@ -129,10 +129,29 @@ print('Goodbye Bob')
     #
 
     def test_api_hello_world(self):
-        pass
+        template = 'test_hello_world.py'
+        extractor = MTemplateExtractor.init_from_dir(sample_dir)
+
+        rendered_template = extractor.render_template(template, {'user_name': 'Alice'})
+        self.assertEqual(rendered_template.strip(), "print('Hello, Alice.')")
 
     def test_api_test_for(self):
-        pass
+        template = 'test_for.py'
+        extractor = MTemplateExtractor.init_from_dir(sample_dir)
+
+        rendered_template = extractor.render_template(template, {'msgs': ['Hello', 'Goodbye'], 'names': ['Alice', 'Bob']})
+
+        expected_output = """
+# say - hello
+print('Hello Alice')
+print('Hello Bob')
+
+# say - goodbye
+print('Goodbye Alice')
+print('Goodbye Bob')
+""".strip()
+
+        self.assertEqual(rendered_template.strip(), expected_output)
 
     def test_api_branching(self):
         template = 'test_branching.py'
