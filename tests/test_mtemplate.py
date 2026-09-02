@@ -1,4 +1,5 @@
 import json
+import shutil
 import subprocess
 import unittest
 
@@ -10,11 +11,21 @@ from mtemplate.core import MTemplateExtractor
 
 
 sample_dir = Path(__file__).parent.parent / 'templates/tests'
+tmp_dir = Path(__file__).parent / 'tmp'
 
 
 class TestMTester(unittest.TestCase):
 
-    def _call_mtemplate_render(self, template_name:str, variables:dict, debug:bool=False, disable_strict:bool=False) -> subprocess.CompletedProcess:
+    @classmethod
+    def setUpClass(cls):
+        shutil.rmtree(tmp_dir)
+
+    def mk_tmp_dir(self, name:str) -> Path:
+        output_dir = tmp_dir / name
+        output_dir.mkdir(parents=True, exist_ok=True)
+        return output_dir
+
+    def _call_mtemplate_render(self, template_name:str, variables:dict, debug:bool=False, disable_strict:bool=False, output:str=None) -> subprocess.CompletedProcess:
         args = [
             'python', '-m', 'mtemplate', 'render', 
             '-s', 'templates/tests/', 
@@ -25,6 +36,8 @@ class TestMTester(unittest.TestCase):
             args.append('--debug')
         if disable_strict:
             args.append('--disable-strict')
+        if output is not None:
+            args += ['-o', output]
         return subprocess.run(args, capture_output=True, text=True)
 
     def _process_err(self, result:subprocess.CompletedProcess) -> str:
@@ -61,6 +74,19 @@ class TestMTester(unittest.TestCase):
         result = self._call_mtemplate_render(template_name, {'user_name': 'Alice'})
         self.assertEqual(result.returncode, 0, self._process_err(result))
         self.assertEqual(result.stdout.strip(), "print('Hello, Alice.')")
+
+    def test_cli_write_output(self):
+        template_name = 'test_hello_world.py'
+
+        output_dir = self.mk_tmp_dir('test_cli_write_output')
+        output_path = output_dir / 'output.py'
+        self.assertFalse(output_path.exists())
+
+        result = self._call_mtemplate_render(template_name, {'user_name': 'Alice'}, output=str(output_path))
+        self.assertEqual(result.returncode, 0, self._process_err(result))
+        self.assertEqual(result.stdout, '')
+        self.assertTrue(output_path.exists())
+        self.assertEqual(output_path.read_text().strip(), "print('Hello, Alice.')")
 
     #
     # cli test files
