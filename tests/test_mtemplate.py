@@ -16,7 +16,7 @@ class TestMTester(unittest.TestCase):
     # cli tests
     #
 
-    def _call_mtemplate_render(self, template_name:str, variables:dict, debug:bool=False) -> subprocess.CompletedProcess:
+    def _call_mtemplate_render(self, template_name:str, variables:dict, debug:bool=False, disable_strict:bool=False) -> subprocess.CompletedProcess:
         args = [
             'python', '-m', 'mtemplate', 'render', 
             '-s', 'templates/tests/', 
@@ -25,6 +25,8 @@ class TestMTester(unittest.TestCase):
         ]
         if debug:
             args.append('--debug')
+        if disable_strict:
+            args.append('--disable-strict')
         return subprocess.run(args, capture_output=True, text=True)
 
     def _process_err(self, result:subprocess.CompletedProcess) -> str:
@@ -36,6 +38,14 @@ class TestMTester(unittest.TestCase):
         result = self._call_mtemplate_render(template_name, {})
         self.assertEqual(result.returncode, 1, self._process_err(result))
         self.assertIn("'user_name' is undefined", result.stderr)
+
+    def test_cli_disable_strict(self):
+        template_name = 'test_hello_world.py'
+
+        result = self._call_mtemplate_render(template_name, {}, disable_strict=True)
+        self.assertEqual(result.returncode, 0, self._process_err(result))
+        self.assertNotIn("'user_name' is undefined", result.stderr)
+        self.assertEqual(result.stdout.strip(), "print('Hello, .')")
     
     def test_cli_test_hello_world(self):
         template_name = 'test_hello_world.py'
@@ -78,6 +88,19 @@ print('Goodbye Bob')
     #
     # api tests
     #
+
+    def test_api_debug_mode(self):
+        template = 'test_hello_world.py'
+
+        # debug mode returns the raw jinja template, undefined vars are not needed
+        debug_extractor = MTemplateExtractor.init_from_dir(sample_dir, debug=True)
+        rendered_template = debug_extractor.render_template(template, {})
+        self.assertEqual(rendered_template.strip(), "print('Hello, {{ user_name }}.')")
+
+        # without debug mode, the same template renders normally and requires vars
+        extractor = MTemplateExtractor.init_from_dir(sample_dir)
+        rendered_template = extractor.render_template(template, {'user_name': 'Alice'})
+        self.assertEqual(rendered_template.strip(), "print('Hello, Alice.')")
 
     def test_api_branching(self):
         template = 'test_branching.py'
