@@ -16,13 +16,15 @@ class TestMTester(unittest.TestCase):
     # cli tests
     #
 
-    def _call_mtemplate_render(self, template_name:str, variables:dict) -> subprocess.CompletedProcess:
+    def _call_mtemplate_render(self, template_name:str, variables:dict, debug:bool=False) -> subprocess.CompletedProcess:
         args = [
             'python', '-m', 'mtemplate', 'render', 
             '-s', 'templates/tests/', 
             '-t', template_name, 
             '--vars', json.dumps(variables)
         ]
+        if debug:
+            args.append('--debug')
         return subprocess.run(args, capture_output=True, text=True)
 
     def _process_err(self, result:subprocess.CompletedProcess) -> str:
@@ -59,6 +61,19 @@ print('Goodbye Bob')
 """.strip()
 
         self.assertEqual(result.stdout.strip(), expected_output)
+
+    def test_cli_debug_mode(self):
+        template_name = 'test_hello_world.py'
+
+        # debug mode prints the raw jinja template, undefined vars are not needed
+        result = self._call_mtemplate_render(template_name, {}, debug=True)
+        self.assertEqual(result.returncode, 0, self._process_err(result))
+        self.assertEqual(result.stdout.strip(), "print('Hello, {{ user_name }}.')")
+
+        # without debug mode, the same template renders normally and requires vars
+        result = self._call_mtemplate_render(template_name, {'user_name': 'Alice'})
+        self.assertEqual(result.returncode, 0, self._process_err(result))
+        self.assertEqual(result.stdout.strip(), "print('Hello, Alice.')")
 
     #
     # api tests
