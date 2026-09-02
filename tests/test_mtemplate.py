@@ -22,7 +22,7 @@ class TestMTester(unittest.TestCase):
 
     def mk_tmp_dir(self, name:str) -> Path:
         output_dir = tmp_dir / name
-        output_dir.mkdir(parents=True, exist_ok=True)
+        output_dir.mkdir(parents=True, exist_ok=False)
         return output_dir
 
     def _call_mtemplate_render(self, template_name:str, variables:dict, debug:bool=False, disable_strict:bool=False, output:str=None) -> subprocess.CompletedProcess:
@@ -87,6 +87,25 @@ class TestMTester(unittest.TestCase):
         self.assertEqual(result.stdout, '')
         self.assertTrue(output_path.exists())
         self.assertEqual(output_path.read_text().strip(), "print('Hello, Alice.')")
+
+    def test_cli_write_output_with_debug(self):
+        template_name = 'test_hello_world.py'
+
+        output_dir = self.mk_tmp_dir('test_cli_write_output_with_debug')
+        output_path = output_dir / 'output.py'
+        debug_output_path = output_dir / 'output.py.jinja2'
+        self.assertFalse(output_path.exists())
+        self.assertFalse(debug_output_path.exists())
+
+        result = self._call_mtemplate_render(template_name, {'user_name': 'Alice'}, debug=True, output=str(output_path))
+        self.assertEqual(result.returncode, 0, self._process_err(result))
+        self.assertEqual(result.stdout, '')
+
+        self.assertTrue(output_path.exists())
+        self.assertEqual(output_path.read_text().strip(), "print('Hello, Alice.')")
+
+        self.assertTrue(debug_output_path.exists())
+        self.assertEqual(debug_output_path.read_text().strip(), "print('Hello, {{ user_name }}.')")
 
     #
     # cli test files
