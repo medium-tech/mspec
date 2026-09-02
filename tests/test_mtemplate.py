@@ -288,3 +288,16 @@ print('Greetings Charlie!')
 """.strip()
 
         self.assertEqual(rendered_template.strip(), expected_output)
+
+    def test_api_markdown(self):
+        template = 'test_md.md'
+
+        extractor = MTemplateExtractor.init_from_dir(sample_dir)
+        rendered_template = extractor.render_template(template, {'project': 'mtemplate'})
+
+        expected_output = """
+# This is a README file for mtemplate
+
+And this is the description of it!"""
+
+        self.assertEqual(rendered_template.strip(), expected_output.strip())

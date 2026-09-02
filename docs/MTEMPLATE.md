@@ -51,19 +51,24 @@ port = {{ config.port }}
 mtemplate commands follow the pattern: `<comment_start> <command> :: <arguments> <comment_end>`. 
 
 * `<comment_start>` - this will vary by language
+* `<command>` - the name of the command to use
+* `<arguments>` - see docs for each command's arguments
+* `<comment_end>` - depending on the language an end comment may be needed.
+
+**Quotes** Many commands accept a json object as an argument, for these, most languages expect standard json using double quotes `"` to enclose strings. But when embedding in JSON, single quotes `'` are used to avoid unreadable escaping. See example below the table.
 
 ### Comment Syntax by Language
 
 mtemplate automatically detects the appropriate comment syntax based on the following chart. If the file extension is not defined it will default to Python.
 
-| Language 				| Extension 			| Comment Start	| Commend End 	| Example [vars](#vars) command |
-|----------				|-----------			|---------------|---------------|---------|
-| Python 				| `.py` 				| `#` 			|		n/a		| `# vars :: {"old": "new"}` |
-| JavaScript/TypeScript | `.js`, `.ts` 			| `//` 			|		n/a		| `// vars :: {"old": "new"}` |
-| HTML 					| `.html`, `.htm` 		| `<!--` 	| 	`-->` 		| `<!-- vars :: {"old": "new"} -->` |
-| CSS 					| `.css` 				| `/*` 		| 	`*/` 		| `/* vars :: {"old": "new"} */` |
-| JSON 					| `.json` 				| `"_": "`	 	|	`",`		| `"_": " vars :: {'old': 'new'}",` |
-
+| Language 				| Extension 			| JSON Quotes 	| Comment Start	| Commend End 	| Example [vars](#vars) command |
+|----------				|-----------			|---			|---------------|---------------|---------|
+| Python 				| `.py` 				| `"`			| `#` 			|		n/a		| `# vars :: {"old": "new"}` |
+| JavaScript/TypeScript | `.js`, `.ts` 			| `"`			| `//` 			|		n/a		| `// vars :: {"old": "new"}` |
+| HTML 					| `.html`, `.htm` 		| `"`			| `<!--` 		| 	`-->` 		| `<!-- vars :: {"old": "new"} -->` |
+| CSS 					| `.css` 				| `"`			| `/*` 			| 	`*/` 		| `/* vars :: {"old": "new"} */` |
+| JSON 					| `.json` 				| `'`			| `"_": "`	 	|	`",`		| `"_": " vars :: {'old': 'new'}",` |
+| Markdown				| `.md`					| `"`			| `####` 		|		n/a		| `#### vars :: {"old": "new"}` |
 
 
 **Note**: JSON doesn't have comments, so mtemplate uses a soecial key with a string value containing the template command, it must all be on a single line to work correctly. Example:
@@ -92,11 +97,13 @@ The `vars` command defines template variables for string replacement in the curr
 
 **Syntax:**
 ```
-<comment> vars :: {"old_string": "jinja_template_variable"}
+<comment> vars :: <variable definition>
 ```
 
 **Arguments:**
-- JSON object mapping strings to replace with Jinja2 template variables
+- `<variable definition>` - JSON object mapping strings to replace with Jinja2 template variables
+  - the keys represent the string in the template to be replaced with the jinja variable in each string.
+  - ex: {"template_string": "jinja_variable"}
 
 **Examples:**
 
@@ -175,8 +182,8 @@ The `for` command creates Jinja2 for loops in templates, with variable replaceme
 ```
 
 **Arguments:**
-- Jinja2 for loop expression (e.g., `{% for item in collection %}`)
-- JSON object mapping strings to replace within the loop with template variables (or a Python dict literal, which is `eval`'d if it isn't valid JSON)
+- `<jinja_for_expression>` - for loop expression using [jinja syntax](https://jinja.palletsprojects.com/en/stable/templates/#for) (e.g., `{% for item in collection %}`)
+- `<replacement_vars>` - JSON object mapping strings to replace within the loop with template variables (or a Python dict literal, which is `eval`'d if it isn't valid JSON)
 
 **Modifiers:**
 - `<comment> end for :: rstrip` - omits the trailing newline after the emitted `{% endfor %}`, useful when nesting loops so that only the innermost iteration adds a newline
@@ -255,7 +262,7 @@ The `insert` command inserts a Jinja2 expression directly into the template at t
 ```
 
 **Arguments:**
-- Any valid Jinja2 expression (variables, function calls, etc.)
+- `<jinja_expression>` - Any valid [Jinja2 expression](https://jinja.palletsprojects.com/en/stable/templates) (variables, function calls, etc.)
 
 **Examples:**
 
@@ -285,6 +292,9 @@ The `replace` command replaces a block of lines with a single Jinja2 expression.
 <comment> end replace ::
 ```
 
+**Arguments:**
+- `<jinja_expression>` - Any valid [Jinja2 expression](https://jinja.palletsprojects.com/en/stable/templates) (variables, function calls, etc.)
+
 **Examples:**
 
 Python:
@@ -309,8 +319,8 @@ The `macro` command defines reusable template macros that can be called from oth
 ```
 
 **Arguments:**
-- `macro_name`: Name of the macro to be defined
-- `parameter_mapping`: JSON object mapping template strings to macro parameter names
+- `<macro_name>`: Name of the macro to be defined
+- `<parameter_mapping>`: JSON object mapping template strings to macro parameter names
 
 **Examples:**
 
@@ -324,6 +334,11 @@ print('Greetings Person!')
 This creates a macro with one argument `name` that can be called like:
 ```python
 # insert :: macro.greet_person(name='Python')
+```
+
+You can also call it with a template variable:
+```python
+# insert :: macro.greet_person(name=my_variable)
 ```
 
 ## Parent / Child Template Commands
@@ -396,7 +411,7 @@ The `parent` command establishes a parent-child relationship between templates, 
 ```
 
 **Arguments:**
-- `relative_path_to_parent`: Path to the parent template, relative to the child template's directory
+- `relative_path_to_parent`: Path to the parent template, relative to the child template
 
 **Example:**
 

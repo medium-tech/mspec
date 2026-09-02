@@ -123,6 +123,10 @@ class MTemplate:
             self.prefix = '"_": "'
             self.postfix = '",'
             self.single_quotes = True
+        elif path.suffix == '.md':
+            self.prefix = '####'
+            self.postfix = ''
+            self.single_quotes = False
         else:
             self.prefix = kwargs.get('prefix', '#')
             self.postfix = kwargs.get('postfix', '')
