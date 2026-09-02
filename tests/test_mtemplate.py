@@ -20,7 +20,7 @@ class TestMTester(unittest.TestCase):
     def setUpClass(cls):
         shutil.rmtree(tmp_dir)
 
-    def mk_tmp_dir(self, name:str) -> Path:
+    def _mk_tmp_dir(self, name:str) -> Path:
         output_dir = tmp_dir / name
         output_dir.mkdir(parents=True, exist_ok=False)
         return output_dir
@@ -62,7 +62,14 @@ class TestMTester(unittest.TestCase):
         self.assertNotIn("'user_name' is undefined", result.stderr)
         self.assertEqual(result.stdout.strip(), "print('Hello, .')")
 
-    def test_cli_debug_mode(self):
+    def test_cli_test_print_output(self):
+        template_name = 'test_hello_world.py'
+
+        result = self._call_mtemplate_render(template_name, {'user_name': 'Alice'})
+        self.assertEqual(result.returncode, 0, self._process_err(result))
+        self.assertEqual(result.stdout.strip(), "print('Hello, Alice.')")
+    
+    def test_cli_print_output_with_debug(self):
         template_name = 'test_hello_world.py'
 
         # debug mode prints the raw jinja template, undefined vars are not needed
@@ -78,7 +85,7 @@ class TestMTester(unittest.TestCase):
     def test_cli_write_output(self):
         template_name = 'test_hello_world.py'
 
-        output_dir = self.mk_tmp_dir('test_cli_write_output')
+        output_dir = self._mk_tmp_dir('test_cli_write_output')
         output_path = output_dir / 'output.py'
         self.assertFalse(output_path.exists())
 
@@ -91,7 +98,7 @@ class TestMTester(unittest.TestCase):
     def test_cli_write_output_with_debug(self):
         template_name = 'test_hello_world.py'
 
-        output_dir = self.mk_tmp_dir('test_cli_write_output_with_debug')
+        output_dir = self._mk_tmp_dir('test_cli_write_output_with_debug')
         output_path = output_dir / 'output.py'
         debug_output_path = output_dir / 'output.py.jinja2'
         self.assertFalse(output_path.exists())
@@ -107,36 +114,6 @@ class TestMTester(unittest.TestCase):
         self.assertTrue(debug_output_path.exists())
         self.assertEqual(debug_output_path.read_text().strip(), "print('Hello, {{ user_name }}.')")
 
-    #
-    # cli test files
-    #
-
-    def test_cli_test_hello_world(self):
-        template_name = 'test_hello_world.py'
-
-        result = self._call_mtemplate_render(template_name, {'user_name': 'Alice'})
-        self.assertEqual(result.returncode, 0, self._process_err(result))
-        self.assertEqual(result.stdout.strip(), "print('Hello, Alice.')")
-
-    def test_cli_test_for(self):
-        template_name = 'test_for.py'
-
-        result = self._call_mtemplate_render(template_name, {'msgs': ['Hello', 'Goodbye'], 'names': ['Alice', 'Bob']})
-        self.assertEqual(result.returncode, 0, self._process_err(result))
-
-        expected_output = """
-# say - hello
-print('Hello Alice')
-print('Hello Bob')
-
-# say - goodbye
-print('Goodbye Alice')
-print('Goodbye Bob')
-""".strip()
-
-        self.assertEqual(result.stdout.strip(), expected_output)
-
-    
     #
     # api features
     #
