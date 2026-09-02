@@ -18,6 +18,8 @@ mtemplate is a code templating system that allows you to extract dynamic templat
   - [slot](#slot)
   - [parent](#parent)
 - [About Parent/Child Slots](#about-parentchild-slots)
+- [API](#api)
+- [CLI](#cli)
 
 ## Overview
 
@@ -426,3 +428,73 @@ python -m mtemplate slots --debug
 ```
 
 In debug mode, the command shows what would be updated without actually modifying files, and may show warnings.
+
+## API
+
+The core API lives in `src/mtemplate/core.py` and is used to extract templates from a directory of source files and render them with a set of variables.
+
+### MTemplateExtractor
+
+`MTemplateExtractor` loads every file in a source directory, parses out template commands and macros, and exposes a jinja environment that can render any of the loaded templates by relative path.
+
+**Creating an extractor:**
+```python
+from mtemplate.core import MTemplateExtractor
+
+extractor = MTemplateExtractor.init_from_dir('templates/tests')
+```
+
+`init_from_dir(source, **kwargs)` accepts:
+- `source`: `str | Path` - directory to recursively scan for template files
+- `debug`: `bool` - when `True`, `render_template` returns the intermediate jinja template string instead of the rendered output
+- `disable_strict`: `bool` - when `True`, undefined variables render as empty instead of raising an error (not recommended outside of debugging)
+
+**Rendering a template:**
+```python
+rendered = extractor.render_template('test_hello_world.py', {'user_name': 'Alice'})
+```
+
+`render_template(name, vars=None, output=None)` accepts:
+- `name`: relative path (as a string) of the template file within `source`, e.g. `'test_hello_world.py'`
+- `vars`: dict of variables available to the template during rendering
+- `output`: optional `Path | str`, if given the rendered output is written to this path
+
+Errors are raised as `mtemplate.core.MTemplateError` (invalid template commands) or `jinja2.TemplateError` (undefined variables, invalid jinja syntax) with the template name included in the message.
+
+**Example (see [tests/test_mtemplate.py](../tests/test_mtemplate.py) for more):**
+```python
+from pathlib import Path
+from mtemplate.core import MTemplateExtractor
+
+sample_dir = Path('templates/tests')
+extractor = MTemplateExtractor.init_from_dir(sample_dir)
+
+rendered_template = extractor.render_template('test_branching.py', {'color': 'green', 'option': True})
+```
+
+## CLI
+
+The CLI entry point is `src/mtemplate/__main__.py`, invoked as `python -m mtemplate`.
+
+```bash
+python -m mtemplate render --source <dir> --template <name> [--vars <json>] [--output <path>] [--debug] [--disable-strict]
+```
+
+**Arguments:**
+- `command`: currently only `render` is supported
+- `--source`, `-s`: source directory to scan for templates
+- `--template`, `-t`: relative path of the template file to render
+- `--vars`: JSON string of variables passed to the template
+- `--output`: file path to write the rendered output to; if omitted, the result is printed to stdout
+- `--debug`: print/write the intermediate jinja template instead of the rendered output (writes to `<output>.jinja2` if `--output` is set)
+- `--disable-strict`: disable strict undefined-variable checking (debugging only)
+
+**Examples (see [tests/test_mtemplate.py](../tests/test_mtemplate.py) for more):**
+```bash
+python -m mtemplate render -s templates/tests/ -t test_hello_world.py --vars '{"user_name": "Alice"}'
+```
+```bash
+python -m mtemplate render -s templates/tests/ -t test_for.py --vars '{"msgs": ["Hello", "Goodbye"], "names": ["Alice", "Bob"]}'
+```
+
+If a required variable is missing, the command exits with a non-zero return code and prints an error to stderr, e.g. `'user_name' is undefined`.
