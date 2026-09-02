@@ -4,6 +4,8 @@ import unittest
 
 from pathlib import Path
 
+from jinja2 import TemplateError
+
 from mtemplate.core import MTemplateExtractor
 
 
@@ -11,10 +13,6 @@ sample_dir = Path(__file__).parent.parent / 'templates/tests'
 
 
 class TestMTester(unittest.TestCase):
-
-    #
-    # cli tests
-    #
 
     def _call_mtemplate_render(self, template_name:str, variables:dict, debug:bool=False, disable_strict:bool=False) -> subprocess.CompletedProcess:
         args = [
@@ -32,6 +30,10 @@ class TestMTester(unittest.TestCase):
     def _process_err(self, result:subprocess.CompletedProcess) -> str:
         return f'code: {result.returncode}; output: {result.stdout + result.stderr}'
 
+    #
+    # cli features
+    #
+    
     def test_cli_missing_template_variable(self):
         template_name = 'test_hello_world.py'
 
@@ -46,7 +48,24 @@ class TestMTester(unittest.TestCase):
         self.assertEqual(result.returncode, 0, self._process_err(result))
         self.assertNotIn("'user_name' is undefined", result.stderr)
         self.assertEqual(result.stdout.strip(), "print('Hello, .')")
-    
+
+    def test_cli_debug_mode(self):
+        template_name = 'test_hello_world.py'
+
+        # debug mode prints the raw jinja template, undefined vars are not needed
+        result = self._call_mtemplate_render(template_name, {}, debug=True)
+        self.assertEqual(result.returncode, 0, self._process_err(result))
+        self.assertEqual(result.stdout.strip(), "print('Hello, {{ user_name }}.')")
+
+        # without debug mode, the same template renders normally and requires vars
+        result = self._call_mtemplate_render(template_name, {'user_name': 'Alice'})
+        self.assertEqual(result.returncode, 0, self._process_err(result))
+        self.assertEqual(result.stdout.strip(), "print('Hello, Alice.')")
+
+    #
+    # cli test files
+    #
+
     def test_cli_test_hello_world(self):
         template_name = 'test_hello_world.py'
 
@@ -72,22 +91,25 @@ print('Goodbye Bob')
 
         self.assertEqual(result.stdout.strip(), expected_output)
 
-    def test_cli_debug_mode(self):
-        template_name = 'test_hello_world.py'
-
-        # debug mode prints the raw jinja template, undefined vars are not needed
-        result = self._call_mtemplate_render(template_name, {}, debug=True)
-        self.assertEqual(result.returncode, 0, self._process_err(result))
-        self.assertEqual(result.stdout.strip(), "print('Hello, {{ user_name }}.')")
-
-        # without debug mode, the same template renders normally and requires vars
-        result = self._call_mtemplate_render(template_name, {'user_name': 'Alice'})
-        self.assertEqual(result.returncode, 0, self._process_err(result))
-        self.assertEqual(result.stdout.strip(), "print('Hello, Alice.')")
-
+    
     #
-    # api tests
+    # api features
     #
+
+    def test_api_missing_template_variable(self):
+        template = 'test_hello_world.py'
+        extractor = MTemplateExtractor.init_from_dir(sample_dir)
+
+        with self.assertRaises(TemplateError) as ctx:
+            extractor.render_template(template, {})
+        self.assertIn("'user_name' is undefined", str(ctx.exception))
+
+    def test_api_disable_strict(self):
+        template = 'test_hello_world.py'
+        extractor = MTemplateExtractor.init_from_dir(sample_dir, disable_strict=True)
+
+        rendered_template = extractor.render_template(template, {})
+        self.assertEqual(rendered_template.strip(), "print('Hello, .')")
 
     def test_api_debug_mode(self):
         template = 'test_hello_world.py'
@@ -101,6 +123,16 @@ print('Goodbye Bob')
         extractor = MTemplateExtractor.init_from_dir(sample_dir)
         rendered_template = extractor.render_template(template, {'user_name': 'Alice'})
         self.assertEqual(rendered_template.strip(), "print('Hello, Alice.')")
+
+    #
+    # api test files
+    #
+
+    def test_api_hello_world(self):
+        pass
+
+    def test_api_test_for(self):
+        pass
 
     def test_api_branching(self):
         template = 'test_branching.py'
