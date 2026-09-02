@@ -28,6 +28,7 @@ The `mtemplate` system solves a fundamental problem with traditional templating:
 `mtemplate` parses the source file and extracts commands from code comments. It then creates a [jinja](https://pypi.org/project/Jinja2/) template and renders it with provided variables.
 
 For example, instead of writing this invalid Python code with jinja syntax:
+
 ```python
 port = {{ config.port }}  # Invalid Python syntax
 ```

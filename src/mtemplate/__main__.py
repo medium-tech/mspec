@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-import argparse
 import json
+import argparse
 
 from pathlib import Path
 
 from mtemplate.core import MTemplateExtractor
-
 
 # parser #
 
@@ -19,7 +18,6 @@ parser.add_argument('--output', type=Path, default=None, help='output file for r
 parser.add_argument('--vars', type=str, default=None, help='JSON string of variables to pass to the template')
 
 args = parser.parse_args()
-
 
 # run program #
 
