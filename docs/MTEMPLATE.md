@@ -142,7 +142,7 @@ Python:
 
 ### for
 
-The `for` command creates Jinja2 for loops in templates, with variable replacements within the loop block.
+The `for` command creates Jinja2 for loops in templates, with variable replacements within the loop block. `for` loops may be nested.
 
 **Syntax:**
 ```
@@ -153,9 +153,22 @@ The `for` command creates Jinja2 for loops in templates, with variable replaceme
 
 **Arguments:**
 - Jinja2 for loop expression (e.g., `{% for item in collection %}`)
-- JSON object mapping strings to replace within the loop with template variables
+- JSON object mapping strings to replace within the loop with template variables (or a Python dict literal, which is `eval`'d if it isn't valid JSON)
+
+**Modifiers:**
+- `<comment> end for :: rstrip` - omits the trailing newline after the emitted `{% endfor %}`, useful when nesting loops so that only the innermost iteration adds a newline
 
 **Examples:**
+
+Python (nested loops, see [templates/tests/test_for.py](../templates/tests/test_for.py)):
+```python
+# for :: {% for msg in msgs -%} :: {"hello": "msg", "hello_lower": "msg.lower()"}
+# say - hello_lower
+# for :: {% for name in names -%} :: {"john": "name"}
+print('hello john')
+# end for ::
+# end for ::
+```
 
 Python:
 ```python
@@ -389,17 +402,14 @@ The `mtemplate` system is a template system that extracts templates from syntact
    # slot :: custom_code
    ```
 
-1. **Synchronize templates** by running:
-   ```bash
-   python -m mtemplate slots
-   ```
-   
-   This command:
+1. **Synchronize templates**, conceptually, by running a `slots` command that:
    - Finds all child templates (templates with a `parent` command) in `./templates/`
    - For each child, reads its parent template
    - Replaces slots in the parent with corresponding slot content from the child
    - Writes the result back to the child template file
    - Preserves the `parent` command at the end
+
+   ⚠️ There is currently no `slots` command: `python -m mtemplate` only accepts the `render` command (see [CLI](#cli)), and the supporting functions (`apply_template_slots`, `apply_slots_to_children`, `NoParentDefinedError`) are commented out in `src/mtemplate/core.py`.
 
 1. **Child template output** will now have the new import with all of it's custom code right where it's supposed to be
     ```python
@@ -418,18 +428,11 @@ The `mtemplate` system is a template system that extracts templates from syntact
    # parent :: ../single_model/__init__.py
    ```
 
-**Error Handling:**
+**Error Handling (as designed, not currently implemented):**
 - If a child has a slot not present in the parent: Error raised
 - If a parent has a slot not defined in the child: Error raised
 - If no parent is defined in a child template passed to `apply_template_slots()`: `NoParentDefinedError` raised
 - If multiple parent commands exist: Error raised
-
-**Debug Mode:**
-```bash
-python -m mtemplate slots --debug
-```
-
-In debug mode, the command shows what would be updated without actually modifying files, and may show warnings.
 
 ## API
 
@@ -448,7 +451,7 @@ extractor = MTemplateExtractor.init_from_dir('templates/tests')
 
 `init_from_dir(source, **kwargs)` accepts:
 - `source`: `str | Path` - directory to recursively scan for template files
-- `debug`: `bool` - when `True`, `render_template` returns the intermediate jinja template string instead of the rendered output
+- `debug`: `bool` - intended to make `render_template` return the intermediate jinja template string instead of the rendered output; ⚠️ currently raises an `AttributeError` when set to `True` because `MTemplateExtractor` never sets a `template_str` attribute (see `render_template` in `src/mtemplate/core.py`)
 - `disable_strict`: `bool` - when `True`, undefined variables render as empty instead of raising an error (not recommended outside of debugging)
 
 **Rendering a template:**
@@ -488,7 +491,7 @@ python -m mtemplate render --source <dir> --template <name> [--vars <json>] [--o
 - `--template`, `-t`: relative path of the template file to render
 - `--vars`: JSON string of variables passed to the template
 - `--output`: file path to write the rendered output to; if omitted, the result is printed to stdout
-- `--debug`: print/write the intermediate jinja template instead of the rendered output (writes to `<output>.jinja2` if `--output` is set)
+- `--debug`: intended to print/write the intermediate jinja template instead of the rendered output (writes to `<output>.jinja2` if `--output` is set); ⚠️ currently broken, raises an `AttributeError` (see note under [API](#api))
 - `--disable-strict`: disable strict undefined-variable checking (debugging only)
 
 **Examples (see [tests/test_mtemplate.py](../tests/test_mtemplate.py) for more):**

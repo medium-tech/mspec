@@ -57,6 +57,7 @@ print('Hello Bob')
 print('Goodbye Alice')
 print('Goodbye Bob')
 """.strip()
+
         self.assertEqual(result.stdout.strip(), expected_output)
 
     #
