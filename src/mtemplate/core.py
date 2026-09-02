@@ -429,14 +429,12 @@ class MTemplate:
 
 @dataclass
 class MTemplateExtractor:
-    # input
     template_paths: list[Path]
 
-    # internal 
-    templates: dict[str, MTemplate]
+    templates: dict[str, str]
+    template_objects: dict[str, MTemplate]
     jinja: JinjaEnv
 
-    # config
     debug: bool = False
     disable_strict: bool = False
 
@@ -451,20 +449,39 @@ class MTemplateExtractor:
         template_paths = [p for p in src_dir.rglob('*') if p.is_file()]
         
         # store in templates lookup, keys are relative paths to source directory
-        templates: dict[str, MTemplate] = {str(p.relative_to(src_dir)): MTemplate(p).parse().template_string() for p in template_paths}
+        template_objs: dict[str, MTemplate] = {str(p.relative_to(src_dir)): MTemplate(p).parse() for p in template_paths}
+        template_strs = {}
+        macros = {}
+
+        # compile macros #
+        for template_name, template in template_objs.items():
+            for macro_name, macro in template.macros.items():
+                if macro_name in macros:
+                    raise ValueError(f'Duplicate macro "{macro_name}" found in template "{template_name}"')
+                else:
+                    macros[macro_name] = macro
+            template_strs[template_name] = template.template_string()
+
+        # jinja #
+
+        jinja_env = JinjaEnv(
+            autoescape=False,
+            loader=FunctionLoader(lambda path: template_strs[path]),
+            undefined=Undefined if disable_strict else StrictUndefined,
+            comment_start_string='/*--', 
+            comment_end_string='--*/',
+        )
+        jinja_env.globals.update({'macro': macros})
+        
+        # return instance #
 
         return cls(
             template_paths=template_paths, 
             debug=kwargs.get('debug', False),
             disable_strict=disable_strict,
-            templates=templates,
-            jinja= JinjaEnv(
-                autoescape=False,
-                loader=FunctionLoader(lambda path: templates[path]),
-                undefined=Undefined if disable_strict else StrictUndefined,
-                comment_start_string='/*--', 
-                comment_end_string='--*/'
-            )
+            templates=template_strs,
+            template_objects=template_objs,
+            jinja=jinja_env
         )
 
     def render_template(self, name:str, vars: Optional[dict]=None, output:Optional[Path|str]=None) -> str:

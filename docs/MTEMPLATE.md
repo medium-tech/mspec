@@ -1,4 +1,4 @@
-# mtemplate - template syntax
+# mtemplate
 
 mtemplate is a code templating system that allows you to extract dynamic templates from syntactically valid code. Instead of writing templates in Jinja2 syntax (which can't be run directly), mtemplate embeds templating commands in language comments, allowing template applications to remain fully runnable and testable.
 
@@ -8,22 +8,24 @@ mtemplate is a code templating system that allows you to extract dynamic templat
 - [How It Works](#how-it-works)
 - [Comment Syntax by Language](#comment-syntax-by-language)
 - [Template Commands](#template-commands)
-  - [vars](#vars-command)
+  - [vars](#vars)
   - [if / elif / else branching](#if--elif--else-branching)
-  - [for](#for-command)
-  - [ignore](#ignore-command)
-  - [insert](#insert-command)
-  - [replace](#replace-command)
-  - [macro](#macro-command)
-  - [slot](#slot-command)
-  - [parent](#parent-command)
+  - [for](#for)
+  - [ignore](#ignore)
+  - [insert](#insert)
+  - [replace](#replace)
+  - [macro](#macro)
+  - [slot](#slot)
+  - [parent](#parent)
 - [About Parent/Child Slots](#about-parentchild-slots)
 
 ## Overview
 
-The mtemplate system solves a fundamental problem with traditional templating: Jinja2 templates are not syntactically valid in their target language, making them impossible to run and test directly. mtemplate embeds templating directives in code comments, allowing the template application to be a fully functional, runnable application.
+The `mtemplate` system solves a fundamental problem with traditional templating: templates are not syntactically valid in their target language, making them impossible to run and test directly. `mtemplate` embeds templating directives in code comments, allowing the template application to be a fully functional, runnable application. It currently supports several languages, [see below](#comment-syntax-by-language).
 
-For example, instead of writing this invalid Python code:
+`mtemplate` parses the source file and extracts commands from code comments. It then creates a [jinja](https://pypi.org/project/Jinja2/) template and renders it with provided variables.
+
+For example, instead of writing this invalid Python code with jinja syntax:
 ```python
 port = {{ config.port }}  # Invalid Python syntax
 ```
@@ -31,22 +33,14 @@ port = {{ config.port }}  # Invalid Python syntax
 You write this valid Python code with mtemplate commands:
 ```python
 # vars :: {"8080": "config.port"}
-port = 8080  # Valid Python that can be run and tested
+port = 8080
 ```
 
-The mtemplate extractor processes this file and generates a Jinja2 template:
+The mtemplate extractor processes this file and generates a jinja template:
 ```python
 port = {{ config.port }}
 ```
 
-## How It Works
-
-Currently this project is tightly coupled to the template apps in `./templates`, they have custom code in the `mtemplate` module that helps dynamically generate them. 
-
-1. **Template Applications**: You create working applications in `templates/` directories that can be run and tested
-2. **Templating Commands**: You embed mtemplate commands in code comments
-3. **Template Extraction**: The `mtemplate` tool processes these files and creates Jinja2 templates
-4. **Code Generation**: The templates are used with YAML spec files to generate new applications
 
 ## Comment Syntax by Language
 
@@ -66,7 +60,7 @@ mtemplate automatically detects the appropriate comment syntax based on file ext
 
 All mtemplate commands follow the pattern: `<comment_start> <command> :: <arguments> <comment_end>`
 
-### vars Command
+### vars
 
 The `vars` command defines template variables for string replacement in the current file.
 
@@ -143,7 +137,7 @@ Python:
 # end if ::
 ```
 
-### for Command
+### for
 
 The `for` command creates Jinja2 for loops in templates, with variable replacements within the loop block.
 
@@ -184,7 +178,7 @@ test('validate field_name', () => {
 // end for ::
 ```
 
-### ignore Command
+### ignore
 
 The `ignore` command excludes lines from the generated template. Useful for template-specific code that shouldn't appear in generated applications.
 
@@ -212,7 +206,7 @@ HTML:
 <!-- end ignore :: -->
 ```
 
-### insert Command
+### insert
 
 The `insert` command inserts a Jinja2 expression directly into the template at the specified location.
 
@@ -241,7 +235,7 @@ JavaScript:
 // insert :: config.api_endpoints | join(', ')
 ```
 
-### replace Command
+### replace
 
 The `replace` command replaces a block of lines with a single Jinja2 expression.
 
@@ -264,7 +258,7 @@ class DefaultFields:
 
 This replaces the entire class definition with `{{ model.name.pascal_case + "Fields" }}`.
 
-### macro Command
+### macro
 
 The `macro` command defines reusable template macros that can be called from other templates.
 
@@ -295,7 +289,9 @@ This creates a macro that can be called like:
 # insert :: macro.py_create_model_table({"model_name_snake_case": "user", "field_names": "name, email"})
 ```
 
-### slot Command
+### slot
+
+⚠️ not currently implemented in refactor ⚠️
 
 The `slot` command is used for parenting. In a parent template the slot defines the location to be replaced and in a child it is used with a `slot end` command to define the regoin that will be replaced in the parent. Slots are used in conjunction with the `parent` command to create a parent-child template relationship, see [About Parent/Child Slots](#about-parentchild-slots) for more.
 
@@ -322,7 +318,7 @@ child templates
 **Arguments:**
 - `slot_name`: Unique identifier for the slot within the template
 
-### parent Command
+### parent
 
 The `parent` command establishes a parent-child relationship between templates, it is used to define a template as a child and what file is its parent. See [About Parent/Child Slots](#about-parentchild-slots) for more.
 
@@ -345,6 +341,8 @@ Python:
 The `parent` command should be placed at the end of the child template file, after all slot definitions. This isn't necessary, but when the child is re-generated the `parent` line will be emitted in the last line because the parser doesn't know where it should be placed.
 
 ## About Parent/Child Slots
+
+⚠️ not currently implemented in refactor ⚠️
 
 **Motivation**
 The `mtemplate` system is a template system that extracts templates from syntactically valid code. As such variations in templates may require multiple templates and duplicated template code. For example, the model in `templates/.../single_model/db.py` does not require authentican, but `templates/.../multi_model/db.py` does. Both templates are needed to create a `db.py`, the one in `single_model` is the parent template and the `multi_model` is the child. The child defines an authentication macro inside a slot and the parent uses conditional statements to apply the variation (macro) when needed. The several lines inside the children's slots are the only thing different about it than the parent template. When changes to parent model are made they can be syncronized to the child template using slots. The `slot` and `slot end` commands in the child define the variation, and the matching `slot` command in the parent defines where the variation should be placed in the parent.

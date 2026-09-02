@@ -396,4 +396,4 @@ A templating project to embed templating commands into real code.
 
 ⚠️ Currently in refactoring state, docs may be out of date ⚠️
 
-[docs](./docs/MTEMPLATE_SYNTAX.md)
+[docs](./docs/MTEMPLATE.md)
