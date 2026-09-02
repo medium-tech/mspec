@@ -5,6 +5,8 @@ import unittest
 
 from pathlib import Path
 
+import yaml
+
 from jinja2 import TemplateError
 
 from mtemplate.core import MTemplateExtractor, apply_template_slots
@@ -236,6 +238,53 @@ def custom_function():
 
         rendered_template = extractor.render_template(template, {'user_name': 'Alice'})
         self.assertEqual(rendered_template.strip(), "print('Hello, Alice.')")
+
+    def test_api_hello_world_javascript(self):
+        template = 'test_hello_world.js'
+        extractor = MTemplateExtractor.init_from_dir(sample_dir)
+
+        rendered_template = extractor.render_template(template, {'user_name': 'Alice'})
+        self.assertEqual(rendered_template.strip(), "console.log('Hello, Alice.');")
+
+    def test_api_hello_world_html(self):
+        template = 'test_hello_world.html'
+        extractor = MTemplateExtractor.init_from_dir(sample_dir)
+
+        rendered_template = extractor.render_template(template, {'user_name': 'Alice'})
+        self.assertEqual(rendered_template.strip(), '<p>Hello, Alice.</p>')
+
+    def test_api_hello_world_css(self):
+        template = 'test_hello_world.css'
+        extractor = MTemplateExtractor.init_from_dir(sample_dir)
+
+        rendered_template = extractor.render_template(template, {'user_name': 'Alice'})
+        expected_output = """
+.greeting::after {
+    content: 'Hello, Alice.';
+}
+""".strip()
+
+        self.assertEqual(rendered_template.strip(), expected_output)
+
+    def test_api_hello_world_json(self):
+        template = 'test_hello_world.json'
+        extractor = MTemplateExtractor.init_from_dir(sample_dir)
+
+        rendered_template = extractor.render_template(template, {'user_name': 'Alice'})
+        json_output = json.loads(rendered_template)
+        self.assertEqual(json_output['message'], 'Hello, Alice.')
+        self.assertEqual(len(json_output), 1)
+
+    def test_api_hello_world_yaml(self):
+        template = 'test_hello_world.yaml'
+        extractor = MTemplateExtractor.init_from_dir(sample_dir)
+
+        rendered_template = extractor.render_template(template, {'user_name': 'Alice'})
+        yaml_output = yaml.safe_load(rendered_template)
+        self.assertEqual(yaml_output['hello']['world']['message'], 'Hello, Alice!')
+        self.assertEqual(len(yaml_output), 1)
+        self.assertEqual(len(yaml_output['hello']), 1)
+        self.assertEqual(len(yaml_output['hello']['world']), 1)
 
     def test_api_test_for(self):
         template = 'test_for.py'

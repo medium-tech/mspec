@@ -1,0 +1,4 @@
+/* vars :: {"Person": "user_name"} */
+.greeting::after {
+    content: 'Hello, Person.';
+}

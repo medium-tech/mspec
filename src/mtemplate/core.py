@@ -127,6 +127,10 @@ class MTemplate:
             self.prefix = '####'
             self.postfix = ''
             self.single_quotes = False
+        elif path.suffix in ['.yaml', '.yml']:
+            self.prefix = '#'
+            self.postfix = ''
+            self.single_quotes = False
         else:
             self.prefix = kwargs.get('prefix', '#')
             self.postfix = kwargs.get('postfix', '')

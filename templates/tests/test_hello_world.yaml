@@ -1,0 +1,4 @@
+# vars :: {"Person": "user_name"}
+hello:
+    world:
+        message: "Hello, Person!"

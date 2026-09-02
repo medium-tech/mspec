@@ -69,6 +69,7 @@ mtemplate automatically detects the appropriate comment syntax based on the foll
 | CSS 					| `.css` 				| `"`			| `/*` 			| 	`*/` 		| `/* vars :: {"old": "new"} */` |
 | JSON 					| `.json` 				| `'`			| `"_": "`	 	|	`",`		| `"_": " vars :: {'old': 'new'}",` |
 | Markdown				| `.md`					| `"`			| `####` 		|		n/a		| `#### vars :: {"old": "new"}` |
+| Yaml					| `.yaml`, `.yml`		| `"`			| `#`			|		n/a		| `# vars :: {"old": "new"}` |
 
 
 **Note**: JSON doesn't have comments, so mtemplate uses a soecial key with a string value containing the template command, it must all be on a single line to work correctly. Example:
