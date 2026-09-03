@@ -2,7 +2,7 @@
 uwsgi:
     plugin: python3
     pythonpath: /home/sosh/mspec/.venv/lib/python3.12/site-packages
-    http-socket: :8008
+    http-socket: 127.0.0.1:8008
     wsgi-file: server.py
     master: true
     safe-pidfile: app/server.pid
