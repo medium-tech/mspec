@@ -18,44 +18,6 @@ sudo apt update
 sudo apt install -y python3.12-venv uwsgi uwsgi-plugin-python3 nginx certbot python3-certbot-nginx mediainfo ffmpeg
 ```
 
-Create or activate the application's virtual environment and install its
-dependencies as usual. The app directory should be owned by the deployment
-user, for example `/srv/example-app`.
-
-```bash
-sudo adduser --system --group --home /srv/example-app deploy
-sudo mkdir -p /srv/example-app
-sudo chown -R deploy:deploy /srv/example-app
-sudo -iu deploy
-cd /srv/example-app
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-### Configure uWSGI
-
-In `.env`, use the Linux config and production URLs. The public URL must be
-HTTPS; leaving `localhost` here causes links and verification emails to point
-at the wrong host.
-
-```dotenv
-CONFIG_FILE=uwsgi-linux.yaml
-MAPP_CLIENT_HOST=https://example.com
-MAPP_EMAIL_VERIFICATION_URL=https://example.com/com/verify-email-address
-MAPP_EMAIL_INVITE_USER_URL=https://example.com/social/account
-MAPP_SERVER_DEVELOPMENT_MODE=false
-MAPP_AUTH_SECRET_KEY=<output of: openssl rand -hex 32>
-```
-
-Edit `uwsgi-linux.yaml` so uWSGI is reachable only from Nginx. Keep the
-existing settings, but change its socket line to:
-
-```yaml
-	http-socket: 127.0.0.1:8008
-```
-
-Do not bind this socket to `:8008` or expose it through a cloud load balancer.
-Start it once and verify the private endpoint before configuring Nginx:
 
 ```bash
 ./server.sh start
@@ -63,53 +25,7 @@ Start it once and verify the private endpoint before configuring Nginx:
 curl -I http://127.0.0.1:8008/
 ```
 
-### Run uWSGI with systemd
-
-Create `/etc/systemd/system/example-app.service` as root:
-
-```ini
-[Unit]
-Description=example app uWSGI server
-After=network.target
-
-[Service]
-Type=forking
-User=deploy
-Group=deploy
-WorkingDirectory=/srv/example-app
-EnvironmentFile=/srv/example-app/.env
-ExecStart=/srv/example-app/server.sh start
-ExecStop=/srv/example-app/server.sh stop
-ExecReload=/srv/example-app/server.sh restart
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Enable and start the service:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now example-app
-sudo systemctl status example-app
-sudo journalctl -u example-app -f
-```
-
-### Configure DNS, firewall, and Nginx
-
-Create an `A` (and, if used, `AAAA`) DNS record for `example.com` pointing to
-the server. Wait until DNS resolves before requesting the certificate. Allow
-SSH, HTTP, and HTTPS, but do not open port `8008`:
-
-```bash
-sudo ufw allow OpenSSH
-sudo ufw allow 'Nginx Full'
-sudo ufw enable
-sudo ufw status verbose
-```
-
-Create `/etc/nginx/sites-available/example-app`:
+Create `/etc/nginx/sites-available/sosh-server`:
 
 ```nginx
 server {
@@ -134,7 +50,7 @@ server {
 Enable and validate the site:
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/example-app /etc/nginx/sites-enabled/example-app
+sudo ln -s /etc/nginx/sites-available/sosh-server /etc/nginx/sites-enabled/sosh-server
 sudo nginx -t
 sudo systemctl reload nginx
 curl -I http://example.com/

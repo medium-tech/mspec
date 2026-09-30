@@ -632,6 +632,9 @@ for file_path in get_mapp_ui_files(ui_src_dir):
         content=content,
         content_type=content_type
     )
+    print(f'added static file {file_path.name} from {file_path}')
+
+print(f'found {len(static_files)} static files in {ui_src_dir=}')
 
 static_files['api/spec'] = StaticFileData(
     content=mapp_spec,                  # FUTURE OPTIMIZE: serialize only once at startup
