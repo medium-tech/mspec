@@ -504,7 +504,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
         self.assertTrue(name_launch_result.ok, msg=str(name_launch_result))
 
         try:
-            self.window_region = get_window_region(ctx, window_title=WINDOW_TITLE_TEXT_SPEC)
+            self.window_region = get_window_region(ctx, window_title=WINDOW_TITLE_GUI_SPEC)
 
             name_frame_result = api.capture_test_frame(
                 ctx,
@@ -543,7 +543,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
         self.assertTrue(all_args_launch_result.ok, msg=str(all_args_launch_result))
 
         try:
-            self.window_region = get_window_region(ctx, window_title=WINDOW_TITLE_TEXT_SPEC)
+            self.window_region = get_window_region(ctx, window_title=WINDOW_TITLE_GUI_SPEC)
 
             all_args_frame_result = api.capture_test_frame(
                 ctx,
