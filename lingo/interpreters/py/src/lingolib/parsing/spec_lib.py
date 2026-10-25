@@ -25,7 +25,7 @@ def _parse_module_member(ctx: LingoContext, name: str, data: dict, L_SRC: str) -
         raise LingoSyntaxError(f'module member {name!r} must contain one of: define, value, func')
 
 
-def _parse_module_symbol(ctx: LingoContext, name: str, data: dict) -> symbols.L_SYM_module:
+def _parse_module_symbol(ctx: LingoContext, name: str, data: dict) -> symbols.L_SYM_lib_module:
     if not isinstance(data, dict):
         raise LingoSyntaxError(f'module {name!r} must be a mapping, got: {type(data).__name__!r}')
 
@@ -34,7 +34,7 @@ def _parse_module_symbol(ctx: LingoContext, name: str, data: dict) -> symbols.L_
         for member_name, member_data in data.items()
     }
 
-    return symbols.L_SYM_module(
+    return symbols.L_SYM_lib_module(
         L_SRC=f'modules.{name}',
         name=name,
         members=members,
@@ -43,7 +43,7 @@ def _parse_module_symbol(ctx: LingoContext, name: str, data: dict) -> symbols.L_
     )
 
 
-def _parse_modules_symbol(ctx: LingoContext, data: dict) -> symbols.L_SYM_modules:
+def _parse_modules_symbol(ctx: LingoContext, data: dict) -> symbols.L_SYM_lib_modules:
     if not isinstance(data, dict):
         raise LingoSyntaxError(f'modules symbol must be a mapping, got: {type(data).__name__!r}')
 
@@ -52,7 +52,7 @@ def _parse_modules_symbol(ctx: LingoContext, data: dict) -> symbols.L_SYM_module
         for module_name, module_data in data.items()
     }
 
-    return symbols.L_SYM_modules(
+    return symbols.L_SYM_lib_modules(
         L_SRC='modules',
         members=modules,
         L_FILE=ctx.parser.file,

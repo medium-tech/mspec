@@ -15,7 +15,7 @@ import sys
 from collections import namedtuple
 from getpass import getpass
 
-from lingolib.symbols import L_SYM_ops, L_SYM_modules, L_SYM_imports, L_SYM_func, L_SYM_value, L_SYM_define, L_SYM_params
+from lingolib.symbols import L_SYM_ops, L_SYM_lib_modules, L_SYM_imports, L_SYM_func, L_SYM_value, L_SYM_define, L_SYM_params
 from lingolib.context import (
 	LingoRegisteredFunction,
 	LingoRegisteredValue,
@@ -60,7 +60,7 @@ def add_ops_to_registry(ctx: LingoContext, ops: L_SYM_ops):
 	for op_name, op_func in ops.funcs.items():
 		ctx.registry.ops[op_name] = LingoRegisteredFunction(name=op_name, ast=op_func)
 
-def add_modules_to_registry(ctx: LingoContext, modules: L_SYM_modules):
+def add_modules_to_registry(ctx: LingoContext, modules: L_SYM_lib_modules):
 	if ctx.registry is None:
 		raise RuntimeError('LingoContext.registry has not been initialized')
 	

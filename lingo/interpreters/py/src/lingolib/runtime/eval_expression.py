@@ -283,6 +283,20 @@ def L_EXPR_call(ctx, symbol:symbols.L_SYM_call):
         return LingoLanguageError(f'{symbol.func!r} is not callable', code='CALL_EXPR_NOT_CALLABLE')
 
     func_symbol = registered_func.ast
+    if func_symbol.reference is not None:
+        try:
+            registered_func = ctx.registry.lib[func_symbol.reference]
+        except KeyError:
+            return LingoLanguageError(
+                f'function reference {func_symbol.reference!r} not found in registry',
+                code='CALL_EXPR_NOT_FOUND',
+            )
+        if not isinstance(registered_func, LingoRegisteredFunction):
+            return LingoLanguageError(
+                f'{func_symbol.reference!r} is not callable',
+                code='CALL_EXPR_NOT_CALLABLE',
+            )
+        func_symbol = registered_func.ast
 
     # evaluate call args #
 

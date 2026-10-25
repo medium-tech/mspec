@@ -422,7 +422,7 @@ def _eval_button(ctx: LingoContext, symbol: L_SYM_button):
     ctx.tk.text_widget.window_create('end', window=button, padx=BUTTON_MARGIN_X, pady=BUTTON_MARGIN_Y)
 
 #
-# spec dispatch
+# symbol dispatch
 #
 
 def _eval_text_runtime_symbol(ctx: LingoContext, symbol: DisplayRuntimeSymbols):
@@ -451,7 +451,7 @@ def _eval_gui_runtime_symbol(ctx: LingoContext, symbol: DisplayRuntimeSymbols):
                 raise LingoUnknownSymbolError(symbol.L_SYM_NAME)
 
 #
-# spec helpers
+# runtime helpers
 #
 
 def _init_root_tk_text_widget():
@@ -463,10 +463,6 @@ def _init_runtime_state(ctx: LingoContext, state_symbol: L_SYM_state) -> LingoSt
     state_fields = state_symbol.fields
     state_values = {field_name: unwrap_expression(ctx, field_value.default) for field_name, field_value in state_fields.items()}
     return LingoStateRuntimeContext(fields=state_fields, values=state_values)
-
-#
-# spec evaluators
-#
 
 def _evaluate_display_spec(ctx: LingoContext, ast: LingoASTTextSpec | LingoASTGUISpec) -> Callable[[], None]:
 
@@ -508,6 +504,10 @@ def _evaluate_display_spec(ctx: LingoContext, ast: LingoASTTextSpec | LingoASTGU
         ctx.tk.text_widget.config(state=tkinter.DISABLED) # disable user input in the text widget
 
     return render_func
+
+#
+# spec evaluators
+#
 
 def evaluate_text_spec(ctx: LingoContext, ast: LingoASTTextSpec):
 

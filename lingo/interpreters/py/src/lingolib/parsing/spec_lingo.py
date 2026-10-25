@@ -9,6 +9,7 @@ from .spec_exe import spec_exe_ast_from_dict
 from .spec_text import spec_text_ast_from_dict
 from .spec_gui import spec_gui_ast_from_dict
 from .spec_lib import spec_lib_ast_from_dict
+from .spec_app import spec_app_ast_from_dict
 from .state import get_yaml_line
 
 
@@ -129,6 +130,13 @@ def create_spec_ast_from_dict(ctx: LingoContext, data: dict) -> LingoASTSpec:
 
         case 'lib':
             return spec_lib_ast_from_dict(
+                ctx=ctx,
+                lingo=lingo,
+                data=data
+            )
+
+        case 'app':
+            return spec_app_ast_from_dict(
                 ctx=ctx,
                 lingo=lingo,
                 data=data

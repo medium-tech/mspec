@@ -46,9 +46,46 @@ python -m pip install -e .
 ./lingo.sh --help
 ./lingo.sh exe ../../shared/scripts/exe/hello-world.yaml
 ./lingo.sh -v exe ../../shared/scripts/exe/hello-world.yaml
+./lingo.sh server ../../shared/scripts/app/hello-backend.yaml
+./lingo.sh client ../../shared/scripts/app/hello-backend.yaml \
+  --op my_app.say_hello --json '{"name": "Ada"}'
+./lingo.sh client ../../shared/scripts/app/hello-backend.yaml \
+  --op my_app.say_hello --params name=Ada
 ```
 
 `build` is intentionally unsupported for Python wrappers (source execution only).
+
+The app `server` command serves operations at `POST /<module>/<op>` and currently
+requires the `uwsgi` executable on `PATH`. The server runs in the foreground.
+The `client` command sends a JSON object as the request body and pretty-prints
+the JSON response.
+Use either `--json` for a complete JSON object or `--params name=value [...]`
+to supply individual values. Individual values are converted using the op's
+declared `bool`, `int`, `float`, or `str` parameter types. Add `-i` to prompt
+for required values not supplied with `--params`; fields marked `secure: true`
+are prompted with `getpass` so input is not echoed. By default, response fields
+marked `secure: true` are replaced with `"REDACTED"` before display. Pass
+`--show` to reveal those fields. `--show` is an explicit opt-in and should only
+be used when revealing sensitive values is appropriate.
+
+Server and client configuration is provided through environment variables:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `LINGO_SERVER_HOST` | `127.0.0.1` | Server bind address |
+| `LINGO_SERVER_PORT` | `8000` | Server bind port |
+| `LINGO_SERVER_PROCESSES` | `1` | Number of uWSGI worker processes |
+| `LINGO_SERVER_MAX_BODY_BYTES` | `1048576` | Maximum accepted JSON request size |
+| `LINGO_SERVER_LOG_MAX_SIZE` | `104857600` | uWSGI log rotation size in bytes |
+| `LINGO_CLIENT_HOST` | `http://<host>:<port>` | Server base URL for the client |
+
+For example, to change the port for both commands:
+
+```bash
+LINGO_SERVER_PORT=8080 ./lingo.sh server ../../shared/scripts/app/hello-backend.yaml
+LINGO_SERVER_PORT=8080 ./lingo.sh client ../../shared/scripts/app/hello-backend.yaml \
+  --op my_app.say_goodbye --json '{"name": "Ada"}'
+```
 
 wrapper binary overrides:
 
@@ -81,7 +118,7 @@ See [Lingo Readme](../../README.md#tests)
 The Python interpreter library lives in `./src/lingolib`:
 
 - `api.py` - file/AST entrypoints for running and debugging spec files (`execute_file`, `display_file`, `debug_file`, ...)
-- `cli.py` - cli wrapper for `api.py` (`exe`, `display`, `debug` commands)
+- `cli.py` - cli wrapper for `api.py` (`exe`, `display`, `debug`, `server`, `client` commands)
 - `symbols.py` - AST symbol definitions (`L_SYM_*`) for spec, expression, and display symbols
 - `ast.py` - AST dataclasses (`LingoASTExeSpec`, `LingoASTGUISpec`, `LingoASTTextSpec`, etc.) and `lingo_ast_to_string(...)` for debugging
 - `types.py` - shared value/type aliases and the accepted spec names (`app`, `data`, `exe`, `gui`, `lib`, `super`, `text`)
@@ -105,6 +142,7 @@ The Python interpreter library lives in `./src/lingolib`:
   - spec-specific AST evaluators:
     - `eval_exe.py` - builds on `eval_expression.py` for executing a full lingo `exe` spec with `evaluate_exe_spec`
     - `eval_display.py` - evaluate a `text` or `gui` spec by opening a `tkinter` window
+      - `eval_server.py` / `eval_client.py` - serve app-spec ops through uWSGI and invoke them using urllib
   - `registry.py` - `init_registry` / `add_ops_to_registry` for making `gui` spec `ops` callable at runtime
   - `shared.py` - shared runtime helpers (`raise_runtime_error`)
 
@@ -159,7 +197,7 @@ Right now the implemented specs are `exe`, `text`, and `gui`. The type layer als
 	- Extend the `match lingo.spec:` block in `create_spec_ast_from_dict(...)` to call `spec_<name>_ast_from_dict(...)`.
 
 1. Add execution path in `./src/lingolib/api.py`
-	- Add or reuse the correct entrypoint for the new AST in `execute_ast(...)`, `display_ast(...)`, or `serve_ast(...)`.
+	- Add or reuse the correct entrypoint for the new AST in `execute_ast(...)`, `execute_client_ast(...)`, `display_ast(...)`, or `serve_ast(...)`.
 	- If the spec needs a new runtime evaluator, add it under `./src/lingolib/runtime/` and wire it into `api.py`.
 
 1. Add CLI behavior as needed in `./src/lingolib/cli.py`

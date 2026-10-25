@@ -55,7 +55,7 @@ class L_SYM_define(NamedTuple):
 
 	L_SRC: str
 	name: str
-	type: ValueTypesEnum
+	type: ValueTypesEnum | None
 	default: expression|None = None
 	element_type: str = ''
 	display: LingoListDisplayOptions|None = None
@@ -64,6 +64,7 @@ class L_SYM_define(NamedTuple):
 	fields: 'dict[str, L_SYM_define] | None' = None
 	L_FILE: str = ''
 	L_LINE: int = -1
+	reference: str | None = None
 
 	@property
 	def L_SYM_NAME(self):
@@ -175,12 +176,13 @@ class L_SYM_func(NamedTuple):
 
 	L_SRC: str
 	name: str
-	args: list[expression]
-	func: expression
-	return_: L_SYM_define
+	args: list[expression] | None = None
+	func: expression | None = None
+	return_: L_SYM_define | None = None
 	description: str = ''
 	L_FILE: str = ''
 	L_LINE: int = -1
+	reference: str | None = None
 
 	@property
 	def L_SYM_NAME(self):
@@ -521,7 +523,7 @@ class L_SYM_ops(NamedTuple):
 	def L_SYM_TYPE(self):
 		return 'spec'
 
-class L_SYM_module(NamedTuple):
+class L_SYM_lib_module(NamedTuple):
 
 	L_SRC: str
 	name: str
@@ -537,10 +539,10 @@ class L_SYM_module(NamedTuple):
 	def L_SYM_TYPE(self):
 		return 'spec'
 
-class L_SYM_modules(NamedTuple):
+class L_SYM_lib_modules(NamedTuple):
 
 	L_SRC: str
-	members: dict[str, L_SYM_module]
+	members: dict[str, L_SYM_lib_module]
 	L_FILE: str = ''
 	L_LINE: int = -1
 
@@ -548,6 +550,38 @@ class L_SYM_modules(NamedTuple):
 	def L_SYM_NAME(self):
 		return 'modules'
 	
+	@property
+	def L_SYM_TYPE(self):
+		return 'spec'
+
+class L_SYM_app_module(NamedTuple):
+
+	L_SRC: str
+	name: str
+	ops: L_SYM_ops
+	models: dict[str, L_SYM_define]
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'app_module'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'spec'
+
+class L_SYM_app_modules(NamedTuple):
+
+	L_SRC: str
+	members: dict[str, L_SYM_app_module]
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'app_modules'
+
 	@property
 	def L_SYM_TYPE(self):
 		return 'spec'

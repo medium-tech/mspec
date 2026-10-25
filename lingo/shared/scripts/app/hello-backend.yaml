@@ -32,7 +32,62 @@ modules:
                         - 'Goodbye, '
                         - args: name
                         - '! See you next time in the world of Lingo.'
-        
+
+            echo_types:
+                description: 'Echo primitive operation parameters as text.'
+                args:
+                    enabled:
+                        type: bool
+                    count:
+                        type: int
+                    ratio:
+                        type: float
+                    label:
+                        type: str
+
+                return:
+                    type: str
+
+                func:
+                    concat:
+                        - str: {args: enabled}
+                        - '|'
+                        - str: {args: count}
+                        - '|'
+                        - str: {args: ratio}
+                        - '|'
+                        - args: label
+
+            secure_test:
+                description: 'Test secure input and outputs'
+                args:
+                    name:
+                        type: str
+                        secure: true
+
+                return:
+                    type: struct
+                    fields:
+                        name:
+                            define: str
+                        token:
+                            define: str
+                            secure: true
+
+                func:
+                    type: struct
+                    value:
+                        name: 'Ada'
+                        token: 'private-token'
+
         models:
             person:
                 model: 'hello_ns.person'
+
+            post:
+                define: struct
+                fields:
+                    title:
+                        define: str
+                    message:
+                        define: int

@@ -13,7 +13,7 @@ This chart shows which specs have **proof of concept** implementation.
 
 | Language | exe | app | gui | text | lib | test | super | data |
 |---|---|---|---|---|---|---|---|---|
-| Python | 🟢 | 🟡 | 🟢 | 🟢 | 🟢 | 🟡 | 🔴 | 🔴 |
+| Python | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡 | 🔴 | 🔴 |
 | JavaScript | 🔴 | n/a | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
 | Go | 🔴 | 🔴 | n/a | n/a | 🔴 | 🔴 | 🔴 | 🔴 |
 | Haskell | 🔴 | n/a | n/a | n/a |🔴 | 🔴 | 🔴 | 🔴 |
@@ -21,4 +21,5 @@ This chart shows which specs have **proof of concept** implementation.
 
 ### Plan:
 * 🟡 turn all PoCs green for python
+* 🔴 add additional types, struct, list, multi-dim lists, time, date, datetime
 * 🔴 javascript PoCs for JS (except app spec)

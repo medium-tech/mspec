@@ -13,7 +13,9 @@ class LingoASTExeSpec:
 
 @dataclass
 class LingoASTAppSpec:
-    pass
+    lingo: symbols.L_SYM_lingo
+    modules: symbols.L_SYM_app_modules
+    imports: symbols.L_SYM_imports | None = None
 
 @dataclass
 class LingoASTGUISpec:
@@ -31,7 +33,7 @@ class LingoASTTextSpec:
 @dataclass
 class LingoASTLibSpec:
     lingo: symbols.L_SYM_lingo
-    modules: symbols.L_SYM_modules
+    modules: symbols.L_SYM_lib_modules
 
 
 LingoASTSpec = LingoASTExeSpec | LingoASTLibSpec | LingoASTAppSpec | LingoASTGUISpec | LingoASTTextSpec

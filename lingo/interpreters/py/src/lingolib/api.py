@@ -19,6 +19,9 @@ from lingolib.runtime.eval_lingo import (
 )
 
 from lingolib.runtime.eval_exe import evaluate_exe_spec
+from lingolib.runtime.eval_server import run_server
+from lingolib.runtime.eval_client import evaluate_client_spec
+
 import yaml
 
 
@@ -46,6 +49,30 @@ def display_file(ctx: LingoContext, path: str, cli_args: list[str] = []):
     lingo_ast = create_ast_from_file(ctx, path)
     return display_ast(ctx, lingo_ast, cli_args=cli_args)
 
+def serve_file(ctx: LingoContext, path: str):
+    app_ast = create_ast_from_file(ctx, path)
+    return serve_ast(ctx, app_ast)
+
+def execute_client_file(
+    ctx: LingoContext,
+    path: str,
+    op_reference: str,
+    request_body: str | None = None,
+    params: list[str] | None = None,
+    interactive: bool = False,
+    show_secure: bool = False,
+):
+    app_ast = create_ast_from_file(ctx, path)
+    return execute_client_ast(
+        ctx,
+        app_ast,
+        op_reference,
+        request_body=request_body,
+        params=params,
+        interactive=interactive,
+        show_secure=show_secure,
+    )
+
 # ast commands #
 
 def debug_ast(ctx: LingoContext, ast: LingoASTSpec):
@@ -62,9 +89,31 @@ def execute_ast(ctx: LingoContext, ast: LingoASTSpec, cli_args: list[str] = []):
     
 def serve_ast(ctx: LingoContext, ast: LingoASTSpec):
     if isinstance(ast, LingoASTAppSpec):
-        raise NotImplementedError('app spec execution not yet implemented')
+        return run_server(ast.lingo.L_FILE)
     else:
         raise LingoSyntaxError(f'Cannot serve spec type: {ast.lingo.spec!r}')
+
+def execute_client_ast(
+    ctx: LingoContext,
+    ast: LingoASTSpec,
+    op_reference: str,
+    request_body: str | None = None,
+    params: list[str] | None = None,
+    interactive: bool = False,
+    show_secure: bool = False,
+):
+    if isinstance(ast, LingoASTAppSpec):
+        return evaluate_client_spec(
+            ctx,
+            ast,
+            op_reference,
+            request_body=request_body,
+            params=params,
+            interactive=interactive,
+            show_secure=show_secure,
+        )
+    else:
+        raise LingoSyntaxError(f'Cannot run client for spec type: {ast.lingo.spec!r}')
 
 def display_ast(ctx: LingoContext, ast: LingoASTSpec, cli_args: list[str] = []):
     if isinstance(ast, LingoASTTextSpec):
