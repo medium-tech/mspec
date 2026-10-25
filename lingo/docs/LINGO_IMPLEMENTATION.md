@@ -2,11 +2,14 @@
 
 ### status colors
 
-|not started|in progress|working but no test coverage|finished with test coverage|not planned|
-|--|--|--|--| --|
-|🔴|🟡|🟠|🟢|n/a|
+|not started|in progress|finished with test coverage|not planned|
+|--|--|--|--|
+|🔴|🟡|🟢|n/a|
 
 ## Spec implementation status
+
+### Prood of Concept Table
+This chart shows which specs have **proof of concept** implementation.
 
 | Language | exe | app | gui | text | lib | test | super | data |
 |---|---|---|---|---|---|---|---|---|
@@ -15,3 +18,7 @@
 | Go | 🔴 | 🔴 | n/a | n/a | 🔴 | 🔴 | 🔴 | 🔴 |
 | Haskell | 🔴 | n/a | n/a | n/a |🔴 | 🔴 | 🔴 | 🔴 |
 | C | 🔴 | n/a | n/a | n/a | 🔴 | 🔴 | 🔴 | 🔴 |
+
+### Plan:
+* 🟡 turn all PoCs green for python
+* 🔴 javascript PoCs for JS (except app spec)
