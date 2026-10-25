@@ -10,9 +10,9 @@ HELP = (
     'usage: lingolib [--help] <command> [args]\n'
     '\n'
     'commands:\n'
-    '  exe <path> <params>    load, parse, execute an exe spec and print result\n'
-    '  display <path> <params>    load, parse, display a text or GUI spec\n'
-    '  debug <path>  load, parse, print the AST for a spec\n'
+    '  exe <path> <params>          load, parse, execute an exe spec and print result\n'
+    '  display <path> <params>      load, parse, display a text or GUI spec\n'
+    '  debug <path>                 load, parse, print the AST for a spec\n'
     '\n'
     'supported specs: exe, text, gui\n'
 )
@@ -22,21 +22,12 @@ class LingoCLIParseError(Exception):
 
 
 def parse_cli(ctx: LingoContext):
+
     args = sys.argv[1:]
-    
-    # collect options, command and remaining args
+
+    # options and help #
 
     options = list(takewhile(lambda arg: arg.startswith('-'), args))
-    num_options = len(options)
-    
-    try:
-        command = args[num_options]
-    except IndexError:
-        raise LingoCLIParseError('no command specified')
-
-    remaining_args = args[num_options + 1:]
-
-    # options and help
 
     if '--help' in options or '-h' in options:
         print(HELP)
@@ -47,7 +38,16 @@ def parse_cli(ctx: LingoContext):
         for handler in ctx.log.handlers:
             handler.setLevel('DEBUG')
 
-    # command
+    # command #
+
+    num_options = len(options)
+    
+    try:
+        command = args[num_options]
+    except IndexError:
+        raise LingoCLIParseError('no command specified')
+
+    remaining_args = args[num_options + 1:]
    
     if command == 'exe':
         if len(remaining_args) < 1:
