@@ -131,50 +131,55 @@ def parse_cli(ctx: LingoContext):
         index = 0
         while index < len_client_options:
             flag = client_options[index]
-            if flag == '-i':
-                if interactive:
-                    raise LingoCLIParseError('-i may only be specified once')
-                interactive = True
-                index += 1
-                continue
-            if flag == '--show':
-                if show_secure:
-                    raise LingoCLIParseError('--show may only be specified once')
-                show_secure = True
-                index += 1
-                continue
-            if flag == '--params':
-                if params is not None:
-                    raise LingoCLIParseError('--params may only be specified once')
-                params = []
-                index += 1
-                while index < len_client_options and not client_options[index].startswith('-'):
-                    params.append(client_options[index])
+            match flag:
+                case '-i':
+                    if interactive:
+                        raise LingoCLIParseError('-i may only be specified once')
+                    interactive = True
                     index += 1
-                continue
-            if flag not in ('--op', '--json'):
-                raise LingoCLIParseError(f'unknown client option: {flag}')
-            if index + 1 >= len_client_options:
-                raise LingoCLIParseError(f'{flag} requires a value')
-            value = client_options[index + 1]
-            if flag == '--op':
-                if op_reference is not None:
-                    raise LingoCLIParseError('--op may only be specified once')
-                op_reference = value
-            else:
-                if request_body is not None:
-                    raise LingoCLIParseError('--json may only be specified once')
-                request_body = value
-            index += 2
+
+                case '--show':
+                    if show_secure:
+                        raise LingoCLIParseError('--show may only be specified once')
+                    show_secure = True
+                    index += 1
+
+                case '--params':
+                    if params is not None:
+                        raise LingoCLIParseError('--params may only be specified once')
+                    params = []
+                    index += 1
+                    while index < len_client_options and not client_options[index].startswith('-'):
+                        params.append(client_options[index])
+                        index += 1
+
+                case '--op' | '--json':
+                    if index + 1 >= len_client_options:
+                        raise LingoCLIParseError(f'{flag} requires a value')
+                    value = client_options[index + 1]
+                    if flag == '--op':
+                        if op_reference is not None:
+                            raise LingoCLIParseError('--op may only be specified once')
+                        op_reference = value
+                    else:
+                        if request_body is not None:
+                            raise LingoCLIParseError('--json may only be specified once')
+                        request_body = value
+                    index += 2
+
+                case _:
+                    raise LingoCLIParseError(f'unknown client option: {flag}')
+
         if op_reference is None:
             raise LingoCLIParseError('client command requires --op <module.op>')
+        
         if params == [] and not interactive:
             raise LingoCLIParseError('--params requires at least one name=value')
+        
         if request_body is None:
             if params is None and not interactive:
-                raise LingoCLIParseError(
-                    'client command requires --json, --params, or -i'
-                )
+                raise LingoCLIParseError('client command requires --json, --params, or -i')
+            
         elif params is not None or interactive:
             raise LingoCLIParseError('--json cannot be combined with --params or -i')
 
@@ -188,6 +193,7 @@ def parse_cli(ctx: LingoContext):
             show_secure=show_secure,
         )
         print_response(response)
+        
     else:
         raise LingoCLIParseError(f'unknown command: {command}')
 
