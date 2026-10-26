@@ -18,15 +18,17 @@ from lingolib.types import LingoLanguageError
 
 from lingolib.runtime.eval_expression import unwrap_expression
 from lingolib.runtime.registry import add_lib_to_registry, init_registry
+from lingolib.runtime.shared import (
+    DEFAULT_HOST,
+    DEFAULT_LOG_MAX_SIZE,
+    DEFAULT_MAX_BODY_BYTES,
+    DEFAULT_PORT,
+    DEFAULT_SERVER_PROCESSES,
+)
 
 
 UWSGI_LOG_FORMAT = "%('    ') :: RESP :: %(status) :: %(method) %(uri) :: %(size) bytes in %(msecs) msecs :: %(request_id)"
 
-DEFAULT_HOST = '127.0.0.1'
-DEFAULT_PORT = 8000
-DEFAULT_SERVER_PROCESSES = 1
-DEFAULT_MAX_BODY_BYTES = 1_048_576	# ~1MB
-DEFAULT_LOG_MAX_SIZE = 104_857_600	# ~100MB
 
 
 class ServerConfig(NamedTuple):

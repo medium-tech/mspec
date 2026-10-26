@@ -13,7 +13,7 @@ from lingolib.context import LingoContext
 from lingolib.errors import LingoLibError
 from lingolib.types import value_to_str, error_to_str
 from lingolib.runtime.eval_client import print_response
-from lingolib.runtime.eval_server import DEFAULT_HOST, DEFAULT_PORT, DEFAULT_SERVER_PROCESSES, DEFAULT_MAX_BODY_BYTES, DEFAULT_LOG_MAX_SIZE
+from lingolib.runtime.shared import DEFAULT_HOST, DEFAULT_PORT, DEFAULT_SERVER_PROCESSES, DEFAULT_MAX_BODY_BYTES, DEFAULT_LOG_MAX_SIZE
 
 HELP = (
     'usage: lingolib [--help] <command> [args]\n'

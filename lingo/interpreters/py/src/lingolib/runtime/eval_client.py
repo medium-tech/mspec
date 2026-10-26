@@ -12,7 +12,7 @@ from lingolib.runtime.registry import (
     add_lib_to_registry,
     init_registry,
 )
-from lingolib.runtime.shared import convert_cli_value
+from lingolib.runtime.shared import DEFAULT_HOST, DEFAULT_PORT, convert_cli_value
 from lingolib.symbols import L_SYM_func
 
 
@@ -122,8 +122,8 @@ def call_op(op_reference: str, request_body: str) -> object:
     ):
         raise LingoRuntimeError('--json must contain a JSON object with string keys')
 
-    server_host = os.environ.get('LINGO_SERVER_HOST', '127.0.0.1')
-    server_port = os.environ.get('LINGO_SERVER_PORT', '8000')
+    server_host = os.environ.get('LINGO_SERVER_HOST', DEFAULT_HOST)
+    server_port = os.environ.get('LINGO_SERVER_PORT', DEFAULT_PORT)
     base_url = os.environ.get(
         'LINGO_CLIENT_HOST',
         f'http://{server_host}:{server_port}',

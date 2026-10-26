@@ -6,6 +6,12 @@ from lingolib.runtime.eval_expression import unwrap_expression
 from getpass import getpass
 
 __all__ = [
+	'DEFAULT_HOST',
+	'DEFAULT_PORT',
+	'DEFAULT_SERVER_PROCESSES',
+	'DEFAULT_MAX_BODY_BYTES',
+	'DEFAULT_LOG_MAX_SIZE',
+
 	'raise_runtime_error',
 
 	'CLIHelpMenuRequested',
@@ -15,6 +21,12 @@ __all__ = [
 	'create_help_string',
 	'prompt_cli_user_for_param'
 ]
+
+DEFAULT_HOST = '127.0.0.1'
+DEFAULT_PORT = 8000
+DEFAULT_SERVER_PROCESSES = 1
+DEFAULT_MAX_BODY_BYTES = 1_048_576	# ~1MB
+DEFAULT_LOG_MAX_SIZE = 104_857_600	# ~100MB
 
 
 def raise_runtime_error(symbol: ExpressionSymbols, message: str):
