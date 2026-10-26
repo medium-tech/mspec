@@ -13,7 +13,6 @@ import os
 import sys
 
 from collections import namedtuple
-from getpass import getpass
 
 from lingolib.symbols import L_SYM_ops, L_SYM_lib_modules, L_SYM_imports, L_SYM_func, L_SYM_value, L_SYM_define, L_SYM_params
 from lingolib.context import (
@@ -26,6 +25,7 @@ from lingolib.context import (
 from lingolib.errors import LingoRuntimeError
 from lingolib.parsing import create_spec_ast_from_dict, YamlLocationLoader, LingoASTLibSpec
 from lingolib.runtime.eval_expression import unwrap_expression
+from lingolib.runtime.shared import parse_cli_params, convert_cli_value, CLIHelpMenuRequested, create_help_string, prompt_cli_user_for_param
 
 import yaml
 
@@ -37,8 +37,6 @@ __all__ = [
 	'add_params_to_registry',
 ]
 
-class CLIHelpMenuRequested(Exception):
-	pass
 
 #
 # api
@@ -104,121 +102,10 @@ def add_lib_to_registry(ctx: LingoContext, imports: L_SYM_imports):
 
 		add_modules_to_registry(ctx, import_ast.modules)
 
-CLI_BOOL_TRUE_VALUES = {'1', 't', 'true', 'y', 'yes'}
-CLI_BOOL_FALSE_VALUES = {'0', 'f', 'false', 'n', 'no'}
 
 #
 # params | cli input parsing
 #
-
-def _parse_cli_bool(field_name: str, raw_value: str) -> bool:
-	normalized = raw_value.lower()
-	if normalized in CLI_BOOL_TRUE_VALUES:
-		return True
-	elif normalized in CLI_BOOL_FALSE_VALUES:
-		return False
-	else:
-		raise LingoRuntimeError(f'invalid bool value for param {field_name!r}: {raw_value!r}')
-
-def _convert_cli_value(field_name: str, field_type: str, raw_value: str):
-	match field_type:
-		case 'bool':
-			return _parse_cli_bool(field_name, raw_value)
-		case 'int':
-			try:
-				return int(raw_value)
-			except ValueError:
-				raise LingoRuntimeError(f'invalid int value for param {field_name!r}: {raw_value!r}') from None
-		case 'float':
-			try:
-				return float(raw_value)
-			except ValueError:
-				raise LingoRuntimeError(f'invalid float value for param {field_name!r}: {raw_value!r}') from None
-		case 'str':
-			return raw_value
-		case _:
-			raise LingoRuntimeError(f'param {field_name!r} has unsupported type for CLI parsing: {field_type!r}')
-
-def _parse_cli_params(fields: dict[str, L_SYM_define], cli_args: list[str]) -> tuple[dict[str, str], bool]:
-	"""parse --field-name value pairs from the CLI args following the exe spec path
-
-	returns a tuple containing a dict and a bool
-		- dict[str, str]: mapping of field names to raw CLI values
-		- bool: true if interactive mode is enabled
-	
-	"""
-
-	raw_values = {}
-	index = 0
-	input_len = len(cli_args)
-	interactive = False
-
-	while index < input_len:
-
-		flag = cli_args[index]
-
-		# special flags #
-
-		if flag == '--help':
-					raise CLIHelpMenuRequested()
-		
-		if flag in ('-i', '--interactive'):
-			interactive = True
-			index += 1
-			continue
-
-		# param field flags #
-
-		if not flag.startswith('--') or len(flag) < 3:
-			raise LingoRuntimeError(f'expected params flag beginning with --, got: {flag!r}') from None
-
-		field_name = flag[2:].replace('-', '_')
-
-		try:
-			raw_values[field_name] = cli_args[index + 1]
-		except IndexError:
-			raise LingoRuntimeError(f'missing value for param CLI flag: {flag!r}') from None
-
-		index += 2
-
-	return raw_values, interactive
-
-def _create_help_string(ctx: LingoContext, params: L_SYM_params) -> str:
-	headers = ('param name', 'cli arg', 'type', 'default', 'description')
-
-	rows = []
-	for field_name, field_def in params.fields.items():
-		cli_arg = f'--{field_name.replace("_", "-")}'
-		default = str(unwrap_expression(ctx, field_def.default)) if field_def.default is not None else ''
-		rows.append((field_name, cli_arg, field_def.type, default, field_def.description))
-
-	widths = [
-		max(len(headers[col]), *(len(row[col]) for row in rows)) if rows else len(headers[col])
-		for col in range(len(headers))
-	]
-
-	def format_row(row):
-		return '\t' + '  '.join(cell.ljust(width) for cell, width in zip(row, widths))
-
-	help_lines = ['Params:\n', format_row(headers), format_row(('-' * width for width in widths))]
-	help_lines.extend(format_row(row) for row in rows)
-	return '\n'.join(help_lines)
-
-def _prompt_cli_user_for_param(field_name: str, field_def: L_SYM_define) -> any:
-	while True:
-		print(f'Field {field_name} ({field_def.type})')
-		print(f'\tDescription: {field_def.description}')
-
-		if field_def.secure:
-			raw_value = getpass(f'Enter value (secure): ')
-		else:
-			raw_value = input(f'Enter value: ')
-
-		try:
-			return _convert_cli_value(field_name, field_def.type, raw_value)
-		except LingoRuntimeError as e:
-			print(f'Invalid value: {e.__class__.__name__}: {e}')
-
 
 def add_params_to_registry(ctx: LingoContext, params: L_SYM_params, cli_args: list[str] = []):
 	
@@ -226,9 +113,9 @@ def add_params_to_registry(ctx: LingoContext, params: L_SYM_params, cli_args: li
 		raise RuntimeError('LingoContext.registry has not been initialized')
 
 	try:
-		raw_cli_values, interactive_enabled = _parse_cli_params(params.fields, cli_args)
+		raw_cli_values, interactive_enabled = parse_cli_params(cli_args)
 	except CLIHelpMenuRequested:
-		print(_create_help_string(ctx, params))
+		print(create_help_string(ctx, params))
 		sys.exit(0)
 
 	sep = lambda msg: print(f'\n{"=" * 15} {msg} {"=" * 15}')
@@ -239,7 +126,7 @@ def add_params_to_registry(ctx: LingoContext, params: L_SYM_params, cli_args: li
 	for field_name, field_def in params.fields.items():
 		try:
 			raw_value = raw_cli_values[field_name]
-			raw_values[field_name] = _convert_cli_value(field_name, field_def.type, raw_value)
+			raw_values[field_name] = convert_cli_value(field_name, field_def.type, raw_value)
 
 		except KeyError:
 			if field_def.default is not None:
@@ -247,7 +134,7 @@ def add_params_to_registry(ctx: LingoContext, params: L_SYM_params, cli_args: li
 			elif interactive_enabled:
 				if not user_was_prompted:
 					sep('start interactive mode')
-				raw_values[field_name] = _prompt_cli_user_for_param(field_name, field_def)
+				raw_values[field_name] = prompt_cli_user_for_param(field_name, field_def)
 				user_was_prompted = True
 			else:
 				raise LingoRuntimeError(f'missing required param: {field_name!r}')

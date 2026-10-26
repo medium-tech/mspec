@@ -9,10 +9,10 @@ from lingolib.context import LingoContext, LingoRegisteredFunction
 from lingolib.errors import LingoRuntimeError, LingoSyntaxError
 from lingolib.parsing import LingoASTAppSpec
 from lingolib.runtime.registry import (
-    _convert_cli_value,
     add_lib_to_registry,
     init_registry,
 )
+from lingolib.runtime.shared import convert_cli_value
 from lingolib.symbols import L_SYM_func
 
 
@@ -43,7 +43,7 @@ def parse_cli_params(
         except KeyError:
             raise LingoRuntimeError(f'unknown parameter for op {func.name!r}: {name!r}')
         
-        parsed[name] = _convert_cli_value(name, str(field_type), raw_value)
+        parsed[name] = convert_cli_value(name, str(field_type), raw_value)
 
     # prompt for missing params #
 
@@ -69,7 +69,7 @@ def parse_cli_params(
                     getpass(prompt) if definition.secure else input(prompt)
                 )
                 try:
-                    parsed[name] = _convert_cli_value(
+                    parsed[name] = convert_cli_value(
                         name, str(definition.type), raw_value
                     )
                     break
