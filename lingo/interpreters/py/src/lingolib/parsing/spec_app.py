@@ -20,7 +20,7 @@ def _parse_app_op(ctx: LingoContext, name: str, data: object, L_SRC: str) -> sym
             reference=data,
         )
     else:
-        return parse_func_symbol(ctx, name, data, L_SRC=L_SRC, type_key='type')
+        return parse_func_symbol(ctx, name, data, L_SRC=L_SRC)
 
 
 def _parse_app_model(ctx: LingoContext, name: str, data: object, L_SRC: str) -> symbols.L_SYM_define:

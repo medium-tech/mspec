@@ -19,12 +19,12 @@ modules:
                 description: 'Say goodbye to a person.'
                 args:
                     name:
-                        type: str
+                        define: str
                         description: 'The name to bid farewell.'
                         default: 'World'
 
                 return:
-                    type: str
+                    define: str
                     description: 'A farewell message.'
 
                 func:
@@ -37,16 +37,16 @@ modules:
                 description: 'Echo primitive operation parameters as text.'
                 args:
                     enabled:
-                        type: bool
+                        define: bool
                     count:
-                        type: int
+                        define: int
                     ratio:
-                        type: float
+                        define: float
                     label:
-                        type: str
+                        define: str
 
                 return:
-                    type: str
+                    define: str
 
                 func:
                     concat:
@@ -62,11 +62,11 @@ modules:
                 description: 'Test secure input and outputs'
                 args:
                     name:
-                        type: str
+                        define: str
                         secure: true
 
                 return:
-                    type: struct
+                    define: struct
                     fields:
                         name:
                             define: str

@@ -12,15 +12,14 @@ def parse_define_symbol(
     name: str,
     data: dict,
     L_SRC: str,
-    type_key: str = 'define',
 ) -> symbols.L_SYM_define:
     if not isinstance(data, dict):
         raise LingoSyntaxError(f'define symbol for {name!r} must be a mapping, got: {type(data).__name__!r}')
 
     try:
-        define_type = data[type_key]
+        define_type = data['define']
     except KeyError:
-        raise LingoSyntaxError(f'define symbol for {name!r} missing required key: {type_key}') from None
+        raise LingoSyntaxError(f'define symbol for {name!r} missing required key: define') from None
 
     if not isinstance(define_type, str):
         raise LingoSyntaxError(f'define type for {name!r} must be string, got: {type(define_type).__name__!r}')
@@ -71,9 +70,7 @@ def parse_define_symbol(
             raise LingoSyntaxError(f'secure for {name!r} must be boolean, got: {type(data["secure"]).__name__!r}')
         args['secure'] = data['secure']
 
-    allowed_keys = {type_key, 'default', 'element_type', 'display', 'description', 'fields', 'secure'}
-    if type_key == 'define':
-        allowed_keys.add('type')
+    allowed_keys = {'define', 'default', 'element_type', 'display', 'description', 'fields', 'secure'}
     unsupported = set(data.keys()) - allowed_keys
     if unsupported:
         raise LingoSyntaxError(f'unsupported key(s) in define block for {name!r}: {", ".join(sorted(unsupported))}')
@@ -86,7 +83,6 @@ def parse_func_symbol(
     name: str,
     data: dict,
     L_SRC: str | None = None,
-    type_key: str = 'define',
 ) -> symbols.L_SYM_func:
     if not isinstance(data, dict):
         raise LingoSyntaxError(f'ops function {name!r} must be a mapping, got: {type(data).__name__!r}')
@@ -105,7 +101,7 @@ def parse_func_symbol(
         raise LingoSyntaxError(f'ops function {name!r} missing required key: return') from None
 
     return_symbol = parse_define_symbol(
-        ctx, f'{name}.return', return_data, f'{func_src}.return', type_key=type_key
+        ctx, f'{name}.return', return_data, f'{func_src}.return'
     )
     
     args_data = data.get('args', {})
@@ -116,7 +112,7 @@ def parse_func_symbol(
     for arg_name, arg_data in args_data.items():
         parsed_args.append(
             parse_define_symbol(
-                ctx, arg_name, arg_data, f'{func_src}.args.{arg_name}', type_key=type_key
+                ctx, arg_name, arg_data, f'{func_src}.args.{arg_name}'
             )
         )
 
