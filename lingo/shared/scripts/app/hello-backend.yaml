@@ -32,6 +32,19 @@ modules:
                         - 'Goodbye, '
                         - args: name
                         - '! See you next time in the world of Lingo.'
+            
+            create_sample:
+                description: 'Create a sample person and return the new id'
+                args: {}
+                return:
+                    define: str
+                func:
+                    db_create:
+                        model: 'hello_ns.person'
+                        data:
+                            name: 'Maria'
+                            age: 30
+
 
             echo_types:
                 description: 'Echo primitive operation parameters as text.'
