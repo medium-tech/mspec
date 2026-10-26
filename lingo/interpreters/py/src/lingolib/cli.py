@@ -68,7 +68,11 @@ def parse_cli(ctx: LingoContext):
         raise LingoCLIParseError('no command specified')
 
     remaining_args = args[num_options + 1:]
-   
+
+    if '--help' in remaining_args or '-h' in remaining_args:
+        print(HELP)
+        return
+
     if command == 'exe':
         if len(remaining_args) < 1:
             raise LingoCLIParseError('exe command requires a path argument')
@@ -107,19 +111,11 @@ def parse_cli(ctx: LingoContext):
             ctx.log.error(f'error generating AST: {e}', exc_info=True)
             sys.exit(1)
     elif command == 'server':
-        if remaining_args in (['--help'], ['-h']):
-            print(HELP)
-            return
         if len(remaining_args) != 1:
             raise LingoCLIParseError('server command requires only an app spec path')
         serve_file(ctx, remaining_args[0])
 
     elif command == 'client':
-        if remaining_args in (['--help'], ['-h']) or (
-            len(remaining_args) > 1 and remaining_args[1:] in (['--help'], ['-h'])
-        ):
-            print(HELP)
-            return
         try:
             spec_path = remaining_args[0]
         except IndexError:
