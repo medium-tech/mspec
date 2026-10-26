@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 LINGO_ROOT = Path(__file__).resolve().parents[1]
 APP_SPEC = LINGO_ROOT / 'shared' / 'scripts' / 'app' / 'hello-backend.yaml'
-
+APP_SPEC_STR = str(APP_SPEC)
 
 from lingolib.api import execute_client_file, create_ast_from_file
 from lingolib import cli
@@ -24,7 +24,7 @@ class TestAppRuntime(unittest.TestCase):
 
     def test_client_calls_inline_and_imported_ops(self):
         ctx = LingoContext()
-        ast = create_ast_from_file(ctx, str(APP_SPEC))
+        ast = create_ast_from_file(ctx, APP_SPEC_STR)
         self.assertIsInstance(ast, LingoASTAppSpec)
         app = create_wsgi_application(ctx, ast)
 
@@ -48,7 +48,7 @@ class TestAppRuntime(unittest.TestCase):
         with patch('lingolib.runtime.eval_client.urlopen', return_value=response_context) as open_url:
             result = execute_client_file(
                 LingoContext(),
-                str(APP_SPEC),
+                APP_SPEC_STR,
                 'my_app.say_hello',
                 '{"name": "Ada"}',
             )
@@ -60,7 +60,7 @@ class TestAppRuntime(unittest.TestCase):
 
     def test_params_convert_declared_types_and_run_op(self):
         ctx = LingoContext()
-        ast = create_ast_from_file(ctx, str(APP_SPEC))
+        ast = create_ast_from_file(ctx, APP_SPEC_STR)
         app = create_wsgi_application(ctx, ast)
         params = ['enabled=true', 'count=42', 'ratio=3.5', 'label=hello']
         parsed_params = parse_cli_params(
@@ -89,7 +89,7 @@ class TestAppRuntime(unittest.TestCase):
         with patch('lingolib.runtime.eval_client.urlopen', return_value=response_context) as open_url:
             execute_client_file(
                 LingoContext(),
-                str(APP_SPEC),
+                APP_SPEC_STR,
                 'my_app.say_hello',
                 params=['name=Ada'],
             )
@@ -98,7 +98,7 @@ class TestAppRuntime(unittest.TestCase):
         self.assertEqual(request.data, b'{"name": "Ada"}')
 
     def test_interactive_params_use_input(self):
-        ast = create_ast_from_file(LingoContext(), str(APP_SPEC))
+        ast = create_ast_from_file(LingoContext(), APP_SPEC_STR)
         func = ast.modules.members['my_app'].ops.funcs['echo_types']
         with patch('builtins.input', side_effect=['yes', '7', '2.5', 'hi']) as prompt, patch(
             'lingolib.runtime.eval_client.getpass'
@@ -115,7 +115,7 @@ class TestAppRuntime(unittest.TestCase):
         secure_prompt.assert_not_called()
 
     def test_interactive_secure_params_use_getpass(self):
-        ast = create_ast_from_file(LingoContext(), str(APP_SPEC))
+        ast = create_ast_from_file(LingoContext(), APP_SPEC_STR)
         func = ast.modules.members['my_app'].ops.funcs['secure_test']
         with patch('builtins.input') as prompt, patch(
             'lingolib.runtime.eval_client.getpass', return_value='hidden-value'
@@ -128,7 +128,7 @@ class TestAppRuntime(unittest.TestCase):
 
     def test_invalid_secure_prompt_value_is_not_echoed(self):
 
-        ast = create_ast_from_file(LingoContext(), str(APP_SPEC))
+        ast = create_ast_from_file(LingoContext(), APP_SPEC_STR)
         func = ast.modules.members['my_app'].ops.funcs['echo_types']
         func = func._replace(args=[func.args[0]._replace(secure=True), *func.args[1:]])
 
@@ -145,7 +145,7 @@ class TestAppRuntime(unittest.TestCase):
 
     def test_secure_response_fields_are_redacted_by_default(self):
         ctx = LingoContext()
-        ast = create_ast_from_file(ctx, str(APP_SPEC))
+        ast = create_ast_from_file(ctx, APP_SPEC_STR)
         func = ast.modules.members['my_app'].ops.funcs['secure_test']
         response = {'name': 'Ada', 'token': 'private-token'}
 
@@ -163,13 +163,13 @@ class TestAppRuntime(unittest.TestCase):
         with patch('lingolib.runtime.eval_client.call_op', return_value=raw_profile):
             redacted = execute_client_file(
                 LingoContext(),
-                str(APP_SPEC),
+                APP_SPEC_STR,
                 'my_app.secure_test',
                 request_body='{}',
             )
             shown = execute_client_file(
                 LingoContext(),
-                str(APP_SPEC),
+                APP_SPEC_STR,
                 'my_app.secure_test',
                 request_body='{}',
                 show_secure=True,
@@ -180,7 +180,7 @@ class TestAppRuntime(unittest.TestCase):
 
     def test_client_cli_accepts_individual_params(self):
         argv = [
-            'lingolib', 'client', str(APP_SPEC),
+            'lingolib', 'client', APP_SPEC_STR,
             '--op', 'my_app.echo_types',
             '--params', 'enabled=yes', 'count=4', 'ratio=0.25', 'label=hello',
         ]
@@ -196,7 +196,7 @@ class TestAppRuntime(unittest.TestCase):
 
     def test_client_cli_accepts_interactive_and_show_flags(self):
         argv = [
-            'lingolib', 'client', str(APP_SPEC),
+            'lingolib', 'client', APP_SPEC_STR,
             '--op', 'my_app.echo_types', '-i', '--show',
         ]
         with patch('lingolib.cli.sys.argv', argv), patch(
@@ -218,7 +218,7 @@ class TestAppRuntime(unittest.TestCase):
             'lingolib.runtime.eval_server.shutil.which',
             return_value='/usr/bin/uwsgi',
         ), patch('lingolib.runtime.eval_server.subprocess.run') as run:
-            run_server(str(APP_SPEC))
+            run_server(APP_SPEC_STR)
 
         command = run.call_args.args[0]
         self.assertIn('--http', command)

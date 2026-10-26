@@ -6,7 +6,7 @@ from pathlib import Path
 
 LINGO_ROOT = Path(__file__).resolve().parents[1]
 APP_SPEC = LINGO_ROOT / 'shared' / 'scripts' / 'app' / 'hello-backend.yaml'
-
+APP_SPEC_STR = str(APP_SPEC)
 
 from lingolib.api import create_ast_from_file
 from lingolib.ast import LingoASTAppSpec
@@ -17,7 +17,7 @@ from lingolib.symbols import L_SYM_define, L_SYM_func
 class TestAppSpecParsing(unittest.TestCase):
 
     def test_hello_backend_app_spec(self):
-        ast = create_ast_from_file(LingoContext(), str(APP_SPEC))
+        ast = create_ast_from_file(LingoContext(), APP_SPEC_STR)
 
         self.assertIsInstance(ast, LingoASTAppSpec)
         self.assertEqual(ast.imports.paths, ['../lib/hello-library.yaml'])
@@ -49,7 +49,7 @@ class TestAppSpecParsing(unittest.TestCase):
 
     def test_debug_command_dumps_app_ast(self):
         result = subprocess.run(
-            [sys.executable, '-m', 'lingolib', 'debug', str(APP_SPEC)],
+            [sys.executable, '-m', 'lingolib', 'debug', APP_SPEC_STR],
             capture_output=True,
             text=True,
         )
