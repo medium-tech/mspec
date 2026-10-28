@@ -34,17 +34,25 @@ modules:
                         - '! See you next time in the world of Lingo.'
             
             create_sample:
-                description: 'Create a sample person and return the new id'
+                description: 'Create a sample person and return the new object'
                 args: {}
                 return:
-                    define: str
+                    define: struct
+                    fields:
+                        id:
+                            define: str
+                        name:
+                            define: str
+                        age:
+                            define: int
                 func:
                     db_create:
                         model: 'hello_ns.person'
                         data:
-                            name: 'Maria'
-                            age: 30
-
+                            type: struct
+                            value:
+                                name: 'Maria'
+                                age: 30
 
             echo_types:
                 description: 'Echo primitive operation parameters as text.'

@@ -102,6 +102,24 @@ def add_lib_to_registry(ctx: LingoContext, imports: L_SYM_imports):
 
 		add_modules_to_registry(ctx, import_ast.modules)
 
+def resolve_model_define(ctx: LingoContext, model: L_SYM_define) -> L_SYM_define:
+	"""return the define for an app model, following a 'model' reference into the imported libs"""
+	if model.reference is None:
+		return model
+
+	if ctx.registry is None:
+		raise RuntimeError('LingoContext.registry has not been initialized')
+
+	try:
+		registered = ctx.registry.lib[model.reference]
+	except KeyError:
+		raise LingoRuntimeError(f'model reference {model.reference!r} not found in imported libraries') from None
+
+	if not isinstance(registered, LingoRegisteredDefinition):
+		raise LingoRuntimeError(f'model reference {model.reference!r} must resolve to a define, got: {type(registered).__name__}')
+
+	return registered.ast
+
 
 #
 # params | cli input parsing

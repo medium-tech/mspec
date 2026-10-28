@@ -1,0 +1,159 @@
+lingo:
+    spec: 'app'
+    version: '0.1.0b'
+
+meta:
+    description: 'Database CRUD+list models and reusable db operations'
+
+modules:
+
+    notes:
+
+        ops:
+            create_note:
+                description: 'Create a note and return the stored object.'
+                args: {}
+                return:
+                    define: struct
+                    fields:
+                        id:
+                            define: str
+                        title:
+                            define: str
+                        priority:
+                            define: int
+                        done:
+                            define: bool
+                        rating:
+                            define: float
+                        secret:
+                            define: str
+                            secure: true
+                func:
+                    db_create:
+                        model: 'notes.note'
+                        data:
+                            type: struct
+                            value:
+                                title: 'Write docs'
+                                priority: 2
+                                done: false
+                                rating: 4.5
+                                secret: 'hunter2'
+
+            read_note:
+                description: 'Read a note by id.'
+                args:
+                    id:
+                        define: str
+                return:
+                    define: struct
+                    fields:
+                        id:
+                            define: str
+                        title:
+                            define: str
+                        priority:
+                            define: int
+                        done:
+                            define: bool
+                        rating:
+                            define: float
+                        secret:
+                            define: str
+                            secure: true
+                func:
+                    db_read:
+                        model: 'notes.note'
+                        id: {args: id}
+
+            list_notes:
+                description: 'List the first notes.'
+                args: {}
+                return:
+                    define: struct
+                    fields:
+                        items:
+                            define: struct
+                        total:
+                            define: int
+                func:
+                    db_list:
+                        model: 'notes.note'
+                        offset: 0
+                        limit: 10
+
+            put_note:
+                description: 'Replace a note with fixed data.'
+                args:
+                    id:
+                        define: str
+                return:
+                    define: struct
+                    fields:
+                        id:
+                            define: str
+                func:
+                    db_put:
+                        model: 'notes.note'
+                        id: {args: id}
+                        data:
+                            type: struct
+                            value:
+                                title: 'Replaced'
+                                priority: 1
+                                done: true
+                                rating: 3.0
+                                secret: 'replaced-secret'
+
+            finish_note:
+                description: 'Mark a note as done using a partial update.'
+                args:
+                    id:
+                        define: str
+                return:
+                    define: struct
+                    fields:
+                        id:
+                            define: str
+                func:
+                    db_patch:
+                        model: 'notes.note'
+                        id: {args: id}
+                        data:
+                            type: struct
+                            value:
+                                done: true
+
+            delete_note:
+                description: 'Delete a note by id.'
+                args:
+                    id:
+                        define: str
+                return:
+                    define: struct
+                    fields:
+                        id:
+                            define: str
+                func:
+                    db_delete:
+                        model: 'notes.note'
+                        id: {args: id}
+
+        models:
+            note:
+                define: struct
+                fields:
+                    title:
+                        define: str
+                    priority:
+                        define: int
+                        default: 0
+                    done:
+                        define: bool
+                        default: false
+                    rating:
+                        define: float
+                    secret:
+                        define: str
+                        secure: true

@@ -18,6 +18,7 @@ __all__ = [
     'LingoStateRuntimeContext',
     'LingoTKRuntimeContext',
     'LingoParserContext',
+    'LingoDBRuntimeContext',
 
     'LingoContext'
 ]
@@ -108,6 +109,16 @@ class LingoParserContext:
     col: int = 0
 
 #
+# server db
+#
+
+@dataclass(slots=True)
+class LingoDBRuntimeContext:
+    path: str
+    models: dict[str, L_SYM_define] = field(default_factory=dict)	# '<module>.<model>' -> resolved define
+    references: dict[str, list[str]] = field(default_factory=dict)	# lib reference -> '<module>.<model>' keys aliasing it
+
+#
 # main context
 #
 
@@ -117,6 +128,7 @@ class LingoContext:
     parser: Optional[LingoParserContext] = None
     tk: Optional[LingoTKRuntimeContext] = None
     registry: Optional[LingoRegistry] = None
+    db: Optional[LingoDBRuntimeContext] = None
 
     @classmethod
     def add_parser_context(cls, ctx: 'LingoContext', src: str, file: str, line: int, col: int):

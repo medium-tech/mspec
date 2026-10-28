@@ -140,6 +140,111 @@ class L_SYM_validate(NamedTuple):
 	def L_SYM_TYPE(self):
 		return 'expression'
 
+class L_SYM_db_create(NamedTuple):
+	"""insert a row for an app model and return the stored object, including its generated id; only evaluated by the server runtime"""
+
+	L_SRC: str
+	model: str
+	data: expression
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'db_create'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'expression'
+
+class L_SYM_db_read(NamedTuple):
+	"""return the stored object with the given id; only evaluated by the server runtime"""
+
+	L_SRC: str
+	model: str
+	id: expression
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'db_read'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'expression'
+
+class L_SYM_db_list(NamedTuple):
+	"""return a page of stored objects as a struct with items and total; only evaluated by the server runtime"""
+
+	L_SRC: str
+	model: str
+	offset: expression | None = None
+	limit: expression | None = None
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'db_list'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'expression'
+
+class L_SYM_db_put(NamedTuple):
+	"""replace all fields of the stored object with the given id; only evaluated by the server runtime"""
+
+	L_SRC: str
+	model: str
+	id: expression
+	data: expression
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'db_put'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'expression'
+
+class L_SYM_db_patch(NamedTuple):
+	"""update a subset of fields of the stored object with the given id; only evaluated by the server runtime"""
+
+	L_SRC: str
+	model: str
+	id: expression
+	data: expression
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'db_patch'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'expression'
+
+class L_SYM_db_delete(NamedTuple):
+	"""delete the stored object with the given id and return it; only evaluated by the server runtime"""
+
+	L_SRC: str
+	model: str
+	id: expression
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'db_delete'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'expression'
+
 class L_SYM_args(NamedTuple):
 	"""reference to a named argument of the enclosing func"""
 
@@ -411,6 +516,7 @@ ExpressionSymbols = \
 	L_SYM_value | L_SYM_define | L_SYM_error | L_SYM_handle | L_SYM_get | L_SYM_set | L_SYM_func \
 	| L_SYM_args \
 	| L_SYM_call | L_SYM_validate \
+	| L_SYM_db_create | L_SYM_db_read | L_SYM_db_list | L_SYM_db_put | L_SYM_db_patch | L_SYM_db_delete \
 	| L_SYM_eq \
 	| L_SYM_int | L_SYM_add \
 	| L_SYM_str | L_SYM_concat | L_SYM_join \
