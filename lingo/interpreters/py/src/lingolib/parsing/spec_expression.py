@@ -523,7 +523,7 @@ def parse_expr_validate(ctx, data: dict, L_SRC: str, src_info):
     )
 
 
-DB_EXPRESSION_KEYS = ['db_create', 'db_read', 'db_list', 'db_put', 'db_patch', 'db_delete']
+DB_EXPRESSION_KEYS = [{'db_create'}, {'db_read'}, {'db_list'}, {'db_put'}, {'db_patch'}, {'db_delete'}]
 
 # required and optional keys for each db symbol, besides the 'model' key which they all require
 DB_EXPRESSION_ARGS = {
