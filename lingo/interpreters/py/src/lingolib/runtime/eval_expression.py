@@ -22,7 +22,8 @@ from lingolib.types import (
 __all__ = [
     'unwrap_value',
     'evaluate_expression',
-    'unwrap_expression'
+    'unwrap_expression',
+    'register_expression_handlers'
 ]
 
 #
@@ -350,12 +351,16 @@ def L_EXPR_validate(ctx, symbol:symbols.L_SYM_validate):
 
     validation_error = _validate_value_against_define(item_value, against)
     if validation_error is not None:
-        return LingoLanguageError(validation_error, code='VALIDATE_EXPR_TYPE_ERROR')
+        return validation_error
 
     return LingoValue(type=against.type, value=item_value)
 
-def _validate_value_against_define(value, define:symbols.L_SYM_define) -> LingoLanguageError | None:
-    """for now this only fully validates struct (and its nested fields); other primitives get a basic type check"""
+def _validate_value_against_define(value, define:symbols.L_SYM_define, partial:bool=False) -> LingoLanguageError | None:
+    """
+    TODO: for now this only fully validates struct (and its nested fields); other primitives get a basic type check
+
+    if partial is true, the top level struct may omit fields (e.g. for a patch), but supplied fields are still fully validated
+    """
 
     if define.type == 'struct':
         if not isinstance(value, dict):
@@ -363,11 +368,13 @@ def _validate_value_against_define(value, define:symbols.L_SYM_define) -> LingoL
 
         for field_name, field_definition in (define.fields or {}).items():
             if field_name not in value:
+                if partial:
+                    continue
                 return LingoLanguageError(f'missing field {field_name!r}', code='VALIDATION_ERROR')
 
-            field_error = _validate_value_against_define(value[field_name], field_definition)
+            field_error = _validate_value_against_define(value[field_name], field_definition, partial)
             if field_error is not None:
-                return LingoLanguageError(f'field {field_name!r}: {field_error}', code='VALIDATION_ERROR')
+                return LingoLanguageError(f'field {field_name!r}: {field_error.error}', code='VALIDATION_ERROR')
 
         # check that there are no extra fields
         extra_fields = set(value.keys()) - set((define.fields or {}).keys())
@@ -502,6 +509,14 @@ EXPRESSION_HANDLERS = {
     'concat': L_EXPR_concat,
     'join': L_EXPR_join,
 }
+
+
+def register_expression_handlers(handlers: dict):
+    """lets runtimes that own runtime-specific symbols (e.g. the server's db symbols) add their evaluators"""
+    for sym_name in handlers:
+        if sym_name in EXPRESSION_HANDLERS:
+            raise LingoLibError(f'expression handler already registered: {sym_name!r}')
+    EXPRESSION_HANDLERS.update(handlers)
 
 
 def get_expression_handler(sym_name: str):

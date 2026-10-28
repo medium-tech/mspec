@@ -250,6 +250,9 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
     elif keys == {'validate'}:
         return parse_expr_validate(ctx, data, L_SRC, src_info)
 
+    elif keys in DB_EXPRESSION_KEYS:
+        return parse_expr_db(ctx, data, L_SRC, src_info)
+
     elif 'call' in keys:
         return parse_expr_call(ctx, data, L_SRC, src_info)
 
@@ -517,6 +520,51 @@ def parse_expr_validate(ctx, data: dict, L_SRC: str, src_info):
         L_SRC=f'{L_SRC}.validate',
         L_FILE=ctx.parser.file,
         L_LINE=get_yaml_line(validate_data)
+    )
+
+
+DB_EXPRESSION_KEYS = ['db_create', 'db_read', 'db_list', 'db_put', 'db_patch', 'db_delete']
+
+# required and optional keys for each db symbol, besides the 'model' key which they all require
+DB_EXPRESSION_ARGS = {
+    'db_create': ({'data'}, set()),
+    'db_read': ({'id'}, set()),
+    'db_list': (set(), {'offset', 'limit'}),
+    'db_put': ({'id', 'data'}, set()),
+    'db_patch': ({'id', 'data'}, set()),
+    'db_delete': ({'id'}, set()),
+}
+
+def parse_expr_db(ctx, data: dict, L_SRC: str, src_info):
+    (sym_name,) = data.keys()
+    db_data = data[sym_name]
+    if not isinstance(db_data, dict):
+        raise LingoSyntaxError(f'{sym_name} symbol requires a mapping, got: {type(db_data).__name__!r}{src_info()}')
+
+    required, optional = DB_EXPRESSION_ARGS[sym_name]
+
+    model = db_data.get('model')
+    if not isinstance(model, str) or not model:
+        raise LingoSyntaxError(f'{sym_name} symbol requires a model key with a non-empty string reference{src_info()}')
+
+    missing = required - set(db_data)
+    if missing:
+        raise LingoSyntaxError(f'{sym_name} symbol missing required key(s): {", ".join(sorted(missing))}{src_info()}')
+
+    unsupported = set(db_data) - required - optional - {'model'}
+    if unsupported:
+        raise LingoSyntaxError(f'unsupported key(s) in {sym_name} symbol: {", ".join(sorted(unsupported))}{src_info()}')
+
+    args = {
+        key: create_expression_ast(ctx, db_data[key], f'{L_SRC}.{sym_name}.{key}')
+        for key in (required | optional) & set(db_data)
+    }
+    return getattr(symbols, f'L_SYM_{sym_name}')(
+        L_SRC=f'{L_SRC}.{sym_name}',
+        model=model,
+        L_FILE=ctx.parser.file,
+        L_LINE=get_yaml_line(db_data),
+        **args
     )
 
 
