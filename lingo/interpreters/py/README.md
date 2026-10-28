@@ -77,15 +77,31 @@ Server and client configuration is provided through environment variables:
 | `LINGO_SERVER_PROCESSES` | `1` | Number of uWSGI worker processes |
 | `LINGO_SERVER_MAX_BODY_BYTES` | `1048576` | Maximum accepted JSON request size |
 | `LINGO_SERVER_LOG_MAX_SIZE` | `104857600` | uWSGI log rotation size in bytes |
+| `LINGO_SERVER_DB_FILE` | `lingo.db` | SQLite file used to store app `models` |
 | `LINGO_CLIENT_HOST` | `http://<host>:<port>` | Server base URL for the client |
 
-For example, to change the port for both commands:
+#### models (CRUD + list)
 
-```bash
-LINGO_SERVER_PORT=8080 ./lingo.sh server ../../shared/scripts/app/hello-backend.yaml
-LINGO_SERVER_PORT=8080 ./lingo.sh client ../../shared/scripts/app/hello-backend.yaml \
-  --op my_app.say_goodbye --json '{"name": "Ada"}'
-```
+Each entry under an app module's `models` gets a SQLite table (`<module>_<model>`,
+created on server start; tables are never migrated, a mismatched existing table is
+an error). Models may only have scalar fields (`str`, `int`, `float`, `bool`) and
+cannot define `id`, which is an auto-generated primary key. A model cannot share a name with an op in the same module. Request bodies are validated strictly with no type conversion, (ex: `int` to `float`); field `default`s apply on create and PUT.
+
+| Request | Action | Success |
+| --- | --- | --- |
+| `POST /<module>/<model>` | create | `201` with the full object |
+| `GET /<module>/<model>?offset=&limit=` | list (`{"items": [...], "total": n}`) | `200` |
+| `GET /<module>/<model>/<id>` | read | `200` |
+| `PUT /<module>/<model>/<id>` | replace (all fields) | `200` |
+| `PATCH /<module>/<model>/<id>` | update a subset of fields | `200` |
+| `DELETE /<module>/<model>/<id>` | delete, returns the deleted object | `200` |
+
+Errors map to `400` (validation), `404` (unknown route or id), `405` and `500`.
+Op results that are Lingo errors use the same mapping.
+
+DB operations are available as lingo functions in app spec op functions as `db_create`, `db_read`, `db_list`,
+`db_put`, `db_patch` and `db_delete`. See `my_app.create_sample` in `shared/scripts/app/hello-database.yaml` for an example. They return a `error` object for missing ids or invalid data.
+
 
 wrapper binary overrides:
 
