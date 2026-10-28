@@ -12,8 +12,8 @@ from lingolib.api import (
 from lingolib.context import LingoContext
 from lingolib.errors import LingoLibError
 from lingolib.types import value_to_str, error_to_str
-from lingolib.runtime.eval_client import print_response
-from lingolib.runtime.shared import DEFAULT_HOST, DEFAULT_PORT, DEFAULT_SERVER_PROCESSES, DEFAULT_MAX_BODY_BYTES, DEFAULT_LOG_MAX_SIZE
+from lingolib.runtime.eval_client import ClientModelRequest, print_response
+from lingolib.runtime.shared import DEFAULT_DB_FILE, DEFAULT_HOST, DEFAULT_PORT, DEFAULT_SERVER_PROCESSES, DEFAULT_MAX_BODY_BYTES, DEFAULT_LOG_MAX_SIZE
 
 HELP = (
     'usage: lingolib [--help] <command> [args]\n'
@@ -24,7 +24,10 @@ HELP = (
     '  debug <path>                 load, parse, print the AST for a spec\n'
     '  server <app spec path>       run an app spec HTTP server\n'
     '  client <path> --op <module.op> [--json <object> | --params name=value ...] [-i] [--show]\n'
+    '  client <path> --model <module.model> <action> [--json <object> | --params name=value ...] [-i] [--show]\n'
     '                               -i prompts for missing args (secure args use getpass); --show reveals secure output\n'
+    '                               actions: --create, --list [--offset N] [--limit N], --get ID, --put ID, --patch ID, --delete ID\n'
+    '                               create/put/patch must provide model field(s) with --json, --params or -i\n'
     '\n'
     'server/client environment:\n'
     f'  LINGO_SERVER_HOST            bind address (default: {DEFAULT_HOST})\n'
@@ -32,6 +35,7 @@ HELP = (
     f'  LINGO_SERVER_PROCESSES       uWSGI worker processes (default: {DEFAULT_SERVER_PROCESSES})\n'
     f'  LINGO_SERVER_MAX_BODY_BYTES  request body limit (default: {DEFAULT_MAX_BODY_BYTES})\n'
     f'  LINGO_SERVER_LOG_MAX_SIZE    uWSGI log rotation size in bytes (default: {DEFAULT_LOG_MAX_SIZE})\n'
+    f'  LINGO_SERVER_DB_FILE         sqlite file for app models (default: {DEFAULT_DB_FILE})\n'
     '  LINGO_CLIENT_HOST            server base URL (default: derived from host/port)\n'
     '\n'
     'server requires the uwsgi executable on PATH. Supported specs: app, exe, text, gui\n'
@@ -124,6 +128,11 @@ def parse_cli(ctx: LingoContext):
         client_options = remaining_args[1:]
         len_client_options = len(client_options)
         op_reference = None
+        model = None
+        action = None
+        item_id = None
+        offset = None
+        limit = None
         request_body = None
         params = None
         interactive = False
@@ -153,35 +162,93 @@ def parse_cli(ctx: LingoContext):
                         params.append(client_options[index])
                         index += 1
 
-                case '--op' | '--json':
+                case '--create' | '--list':
+                    if action is not None:
+                        raise LingoCLIParseError('only one model action may be specified')
+                    action = flag[2:]
+                    index += 1
+
+                case '--op' | '--model' | '--json'  | '--offset' | '--limit' | '--get' | '--put' | '--patch' | '--delete':
                     if index + 1 >= len_client_options:
                         raise LingoCLIParseError(f'{flag} requires a value')
                     value = client_options[index + 1]
-                    if flag == '--op':
-                        if op_reference is not None:
-                            raise LingoCLIParseError('--op may only be specified once')
-                        op_reference = value
-                    else:
-                        if request_body is not None:
-                            raise LingoCLIParseError('--json may only be specified once')
-                        request_body = value
                     index += 2
+                    match flag:
+                        case '--op':
+                            if op_reference is not None:
+                                raise LingoCLIParseError('--op may only be specified once')
+                            op_reference = value
+                        case '--model':
+                            if model is not None:
+                                raise LingoCLIParseError('--model may only be specified once')
+                            model = value
+                        case '--json':
+                            if request_body is not None:
+                                raise LingoCLIParseError('--json may only be specified once')
+                            request_body = value
+                        case '--offset':
+                            if offset is not None:
+                                raise LingoCLIParseError(f'--offset may only be specified once')
+                            try:
+                                offset = int(value)
+                            except ValueError:
+                                raise LingoCLIParseError(f'--offset must be an int, got {value!r}') from None
+                            
+                        case '--limit':
+                            if limit is not None:
+                                raise LingoCLIParseError(f'--limit may only be specified once')
+                            try:
+                                limit = int(value)
+                            except ValueError:
+                                raise LingoCLIParseError(f'--limit must be an int, got {value!r}') from None
+                            
+                        case _:	# matches --get, --put, --patch, --delete
+                            if action is not None:
+                                raise LingoCLIParseError('only one model action may be specified')
+                            action = flag[2:]
+                            item_id = value
 
                 case _:
                     raise LingoCLIParseError(f'unknown client option: {flag}')
 
+        if op_reference is not None and model is not None:
+            raise LingoCLIParseError('--op and --model cannot be combined')
+
+        model_request = None
         if op_reference is None:
-            raise LingoCLIParseError('client command requires --op <module.op>')
-        
-        if params == [] and not interactive:
-            raise LingoCLIParseError('--params requires at least one name=value')
-        
-        if request_body is None:
-            if params is None and not interactive:
-                raise LingoCLIParseError('client command requires --json, --params, or -i')
-            
-        elif params is not None or interactive:
-            raise LingoCLIParseError('--json cannot be combined with --params or -i')
+            if model is None:
+                raise LingoCLIParseError('client command requires --op <module.op> or --model <module.model>')
+            if action is None:
+                raise LingoCLIParseError('--model requires an action: --create, --list, --get, --put, --patch or --delete')
+            model_request = ClientModelRequest(model, action, item_id=item_id, offset=offset, limit=limit)
+            needs_body = action in ('create', 'put')
+            allows_body = needs_body or action == 'patch'
+        else:
+            if action is not None or offset is not None or limit is not None:
+                raise LingoCLIParseError('model actions, --offset and --limit require --model')
+            needs_body = allows_body = True
+
+        if (offset is not None or limit is not None) and action != 'list':
+            raise LingoCLIParseError('--offset and --limit require --list')
+
+        has_body_args = request_body is not None or params is not None or interactive
+        if not allows_body:
+            if has_body_args:
+                raise LingoCLIParseError(f'--{action} does not accept --json, --params or -i')
+        else:
+            if params == [] and not interactive:
+                raise LingoCLIParseError('--params requires at least one name=value')
+
+            if request_body is None:
+                if needs_body and params is None and not interactive:
+                    raise LingoCLIParseError('client command requires --json, --params, or -i')
+                if action == 'patch' and params is None:
+                    raise LingoCLIParseError('--patch requires --json or --params')
+            elif params is not None or interactive:
+                raise LingoCLIParseError('--json cannot be combined with --params or -i')
+
+            if action == 'patch' and interactive:
+                raise LingoCLIParseError('-i cannot be used with --patch')
 
         response = execute_client_file(
             ctx,
@@ -191,6 +258,7 @@ def parse_cli(ctx: LingoContext):
             params=params,
             interactive=interactive,
             show_secure=show_secure,
+            model_request=model_request,
         )
         print_response(response)
         

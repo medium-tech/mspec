@@ -1,11 +1,8 @@
-import os
-
 from lingolib.context import LingoContext
 from lingolib.errors import LingoSyntaxError
 from lingolib.parsing import (
     lingo_ast_to_string,
-    create_spec_ast_from_dict, 
-    YamlLocationLoader,
+    create_ast_from_file,
     LingoASTSpec, 
     LingoASTExeSpec, 
     LingoASTAppSpec, 
@@ -14,26 +11,14 @@ from lingolib.parsing import (
 )
 
 from lingolib.runtime.eval_lingo import (
+    evaluate_exe_spec,
     evaluate_text_spec,
-    evaluate_gui_spec
+    evaluate_gui_spec,
+    evaluate_client_spec,
+    evaluate_server_spec
 )
 
-from lingolib.runtime.eval_exe import evaluate_exe_spec
-from lingolib.runtime.eval_server import run_server
-from lingolib.runtime.eval_client import evaluate_client_spec
-
-import yaml
-
-
-def create_ast_from_file(ctx: LingoContext, path: str) -> LingoASTSpec:
-    try:
-        with open(path) as f:
-            doc = yaml.load(f.read(), Loader=YamlLocationLoader)
-    except yaml.YAMLError as e:
-        raise LingoSyntaxError(f'failed to parse YAML file {path}: {e}')
-    
-    parser_ctx = LingoContext.add_parser_context(ctx, src='', file=os.path.abspath(path), line=0, col=0)
-    return create_spec_ast_from_dict(parser_ctx, doc)
+from lingolib.runtime.eval_client import ClientModelRequest
 
 # file wrappers #
 
@@ -56,11 +41,12 @@ def serve_file(ctx: LingoContext, path: str):
 def execute_client_file(
     ctx: LingoContext,
     path: str,
-    op_reference: str,
+    op_reference: str | None,
     request_body: str | None = None,
     params: list[str] | None = None,
     interactive: bool = False,
     show_secure: bool = False,
+    model_request: ClientModelRequest | None = None,
 ):
     app_ast = create_ast_from_file(ctx, path)
     return execute_client_ast(
@@ -71,6 +57,7 @@ def execute_client_file(
         params=params,
         interactive=interactive,
         show_secure=show_secure,
+        model_request=model_request,
     )
 
 # ast commands #
@@ -89,18 +76,19 @@ def execute_ast(ctx: LingoContext, ast: LingoASTSpec, cli_args: list[str] = []):
     
 def serve_ast(ctx: LingoContext, ast: LingoASTSpec):
     if isinstance(ast, LingoASTAppSpec):
-        return run_server(ast.lingo.L_FILE)
+        return evaluate_server_spec(ctx, ast)
     else:
         raise LingoSyntaxError(f'Cannot serve spec type: {ast.lingo.spec!r}')
 
 def execute_client_ast(
     ctx: LingoContext,
     ast: LingoASTSpec,
-    op_reference: str,
+    op_reference: str | None,
     request_body: str | None = None,
     params: list[str] | None = None,
     interactive: bool = False,
     show_secure: bool = False,
+    model_request: ClientModelRequest | None = None,
 ):
     if isinstance(ast, LingoASTAppSpec):
         return evaluate_client_spec(
@@ -111,6 +99,7 @@ def execute_client_ast(
             params=params,
             interactive=interactive,
             show_secure=show_secure,
+            model_request=model_request,
         )
     else:
         raise LingoSyntaxError(f'Cannot run client for spec type: {ast.lingo.spec!r}')
