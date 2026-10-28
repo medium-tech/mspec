@@ -16,6 +16,23 @@ from lingolib.symbols import L_SYM_define, L_SYM_func
 
 class TestAppSpecParsing(unittest.TestCase):
 
+    def test_hello_database_app_spec(self):
+        path = LINGO_ROOT / 'shared' / 'scripts' / 'app' / 'hello-database.yaml'
+        ast = create_ast_from_file(LingoContext(), str(path))
+
+        module = ast.modules.members['notes']
+        self.assertEqual(
+            set(module.ops.funcs),
+            {'create_note', 'read_note', 'list_notes', 'put_note', 'finish_note', 'delete_note'},
+        )
+        self.assertEqual(
+            {op.func.L_SYM_NAME for op in module.ops.funcs.values()},
+            {'db_create', 'db_read', 'db_list', 'db_put', 'db_patch', 'db_delete'},
+        )
+        note = module.models['note']
+        self.assertEqual(set(note.fields), {'title', 'priority', 'done', 'rating', 'secret'})
+        self.assertTrue(note.fields['secret'].secure)
+
     def test_hello_backend_app_spec(self):
         ast = create_ast_from_file(LingoContext(), APP_SPEC_STR)
 
