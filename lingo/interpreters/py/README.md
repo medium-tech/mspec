@@ -68,6 +68,12 @@ marked `secure: true` are replaced with `"REDACTED"` before display. Pass
 `--show` to reveal those fields. `--show` is an explicit opt-in and should only
 be used when revealing sensitive values is appropriate.
 
+The server also serves the original app spec file (the one passed to `server`)
+as YAML at `GET /lingo/spec` (`Content-Type: application/yaml; charset=utf-8`).
+Fetch and print it with `client <path> --lingo spec`. The `lingo` module name is
+reserved for these server routes: the server raises on start if an app spec
+defines a module named `lingo`.
+
 Server and client configuration is provided through environment variables:
 
 | Variable | Default | Description |

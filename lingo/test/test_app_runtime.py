@@ -460,6 +460,33 @@ class TestAppModels(unittest.TestCase):
             with self.assertRaisesRegex(LingoRuntimeError, 'only scalar types are supported'):
                 self._app(str(spec))
 
+    def test_lingo_spec_route_serves_original_yaml(self):
+        app = self._app(APP_SPEC_STR)
+        environ = {'REQUEST_METHOD': 'GET', 'PATH_INFO': '/lingo/spec', 'QUERY_STRING': '', 'wsgi.input': io.BytesIO(b'')}
+        captured = {}
+        body = b''.join(app(environ, lambda status, headers: captured.update(status=status, headers=dict(headers))))
+        self.assertEqual(captured['status'], '200 OK')
+        self.assertEqual(captured['headers']['Content-Type'], 'application/yaml; charset=utf-8')
+        self.assertEqual(body, APP_SPEC.read_bytes())
+
+        status, payload, headers = _invoke_wsgi_full(app, '/lingo/spec', method='POST')
+        self.assertEqual((status, headers['Allow']), ('405 Method Not Allowed', 'GET'))
+
+    def test_startup_rejects_lingo_module_name(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = Path(tmp) / 'bad.yaml'
+            spec.write_text("lingo:\n    spec: 'app'\n    version: '0.1.0b'\nmodules:\n    lingo:\n        models: {}\n")
+            with self.assertRaisesRegex(LingoRuntimeError, "module name 'lingo' is reserved"):
+                self._app(str(spec))
+
+    def test_client_fetches_and_prints_spec(self):
+        argv = ['lingolib', 'client', APP_SPEC_STR, '--lingo', 'spec']
+        with patch('lingolib.cli.sys.argv', argv), patch(
+            'lingolib.cli.fetch_server_spec', return_value='lingo:\n'
+        ), patch('builtins.print') as printed:
+            cli.parse_cli(LingoContext())
+        printed.assert_called_once_with('lingo:\n', end='')
+
     def test_startup_rejects_op_model_name_clash(self):
         with tempfile.TemporaryDirectory() as tmp:
             spec = Path(tmp) / 'bad.yaml'

@@ -42,6 +42,7 @@ from lingolib.runtime.shared import (
 )
 
 
+LINGO_RESERVED_MODULE = 'lingo'	# /lingo/... routes are served by the server itself
 UWSGI_LOG_FORMAT = "%('    ') :: RESP :: %(status) :: %(method) %(uri) :: %(size) bytes in %(msecs) msecs :: %(request_id)"
 
 #
@@ -521,9 +522,14 @@ def create_wsgi_application(
     max_body_bytes: int = DEFAULT_MAX_BODY_BYTES,
     db_file: str = DEFAULT_DB_FILE,
 ) -> Callable:
+    if LINGO_RESERVED_MODULE in ast.modules.members:
+        raise LingoRuntimeError(f'module name {LINGO_RESERVED_MODULE!r} is reserved for the server, rename the module')
+
     init_registry(ctx)
     add_lib_to_registry(ctx, ast.imports)
     init_db(ctx, ast, db_file)
+
+    spec_bytes = Path(ast.lingo.L_FILE).read_bytes()
 
     op_routes = {
         (module_name, op_name): op
@@ -571,6 +577,16 @@ def create_wsgi_application(
     def route(env):
         method = env.get('REQUEST_METHOD', '')
         parts = [unquote(part) for part in env.get('PATH_INFO', '').strip('/').split('/')]
+
+        if parts == [LINGO_RESERVED_MODULE, 'spec']:
+            if method != 'GET':
+                return _response(
+                    HTTPStatus.METHOD_NOT_ALLOWED,
+                    {'error': f'{method} is not supported for /lingo/spec, use: GET'},
+                    [('Allow', 'GET')],
+                )
+            return _response(HTTPStatus.OK, spec_bytes)
+
         if len(parts) not in (2, 3) or not all(parts):
             return _response(HTTPStatus.NOT_FOUND, {'error': 'expected path /<module>/<op> or /<module>/<model>[/<id>]'})
 
@@ -594,9 +610,16 @@ def create_wsgi_application(
             ctx.log.exception('uncaught error while handling request')
             status, payload, headers = _response(HTTPStatus.INTERNAL_SERVER_ERROR, {'error': 'internal server error'})
 
-        encoded = json.dumps(payload).encode('utf-8')
+        # bytes payloads are the original yaml spec file
+        if isinstance(payload, bytes):
+            encoded = payload
+            content_type = 'application/yaml; charset=utf-8'
+        else:
+            encoded = json.dumps(payload).encode('utf-8')
+            content_type = 'application/json; charset=utf-8'
+
         start_response(status, [
-            ('Content-Type', 'application/json; charset=utf-8'),
+            ('Content-Type', content_type),
             ('Content-Length', str(len(encoded))),
             *headers,
         ])

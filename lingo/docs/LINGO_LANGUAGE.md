@@ -164,6 +164,9 @@ modules:
     models: {}
 ```
 
+Note: a module cannot be named `lingo`. That name is reserved for server routes
+(e.g. `GET /lingo/spec`) and the server raises on start if it is used.
+
 ### gui spec
 ---
 

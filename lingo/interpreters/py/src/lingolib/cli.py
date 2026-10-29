@@ -12,7 +12,7 @@ from lingolib.api import (
 from lingolib.context import LingoContext
 from lingolib.errors import LingoLibError
 from lingolib.types import value_to_str, error_to_str
-from lingolib.runtime.eval_client import ClientModelRequest, print_response
+from lingolib.runtime.eval_client import ClientModelRequest, fetch_server_spec, print_response
 from lingolib.runtime.shared import DEFAULT_DB_FILE, DEFAULT_HOST, DEFAULT_PORT, DEFAULT_SERVER_PROCESSES, DEFAULT_MAX_BODY_BYTES, DEFAULT_LOG_MAX_SIZE
 
 HELP = (
@@ -26,6 +26,7 @@ HELP = (
     '  client <path> --op <module.op> [--json <object> | --params name=value ...] [-i] [--show]\n'
     '  client <path> --model <module.model> <action> [--json <object> | --params name=value ...] [-i] [--show]\n'
     '                               -i prompts for missing args (secure args use getpass); --show reveals secure output\n'
+    '  client <path> --lingo spec   fetch the original yaml app spec from the server\n'
     '                               actions: --create, --list [--offset N] [--limit N], --get ID, --put ID, --patch ID, --delete ID\n'
     '                               create/put/patch must provide model field(s) with --json, --params or -i\n'
     '\n'
@@ -167,6 +168,16 @@ def parse_cli(ctx: LingoContext):
                         raise LingoCLIParseError('only one model action may be specified')
                     action = flag[2:]
                     index += 1
+
+                case '--lingo':
+                    if index + 1 >= len_client_options:
+                        raise LingoCLIParseError('--lingo requires a value')
+                    if client_options[index + 1] != 'spec':
+                        raise LingoCLIParseError(f'--lingo only supports: spec, got {client_options[index + 1]!r}')
+                    if len_client_options != 2:
+                        raise LingoCLIParseError('--lingo cannot be combined with other client options')
+                    print(fetch_server_spec(), end='')
+                    return
 
                 case '--op' | '--model' | '--json'  | '--offset' | '--limit' | '--get' | '--put' | '--patch' | '--delete':
                     if index + 1 >= len_client_options:

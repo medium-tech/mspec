@@ -209,6 +209,18 @@ def _request(method: str, path_parts: list[str], request_body: str | None = None
     except json.JSONDecodeError as e:
         raise LingoRuntimeError(f'server returned invalid JSON: {e}') from None
 
+def fetch_server_spec() -> str:
+    """fetch the original yaml app spec text from the server's GET /lingo/spec endpoint"""
+    url = f'{_base_url()}/lingo/spec'
+    try:
+        with urlopen(Request(url, method='GET')) as response:
+            return response.read().decode('utf-8')
+    except HTTPError as e:
+        body = e.read().decode('utf-8', errors='replace')
+        raise LingoRuntimeError(f'server returned HTTP {e.code}\n{body}') from None
+    except URLError as e:
+        raise LingoRuntimeError(f'failed to connect to Lingo server at {url}: {e.reason}') from None
+
 def call_op(op_reference: str, request_body: str) -> object:
     module_name, op_name = _split_reference(op_reference, 'op')
     _validate_request_body(request_body)
