@@ -200,7 +200,6 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
                 )
 
             elif data['type'] == 'struct':
-                # breakpoint()
                 if not isinstance(data['value'], dict):
                     raise LingoSyntaxError(f'value type mismatch: expected struct, got {type(data["value"]).__name__!r}{src_info()}')
 
@@ -318,7 +317,6 @@ def parse_expression_ast_from_dict(ctx, data: dict, L_SRC: str):
             call_str = data['button']['call']
             text_expr = data['button']['text']
         except KeyError as e:
-            breakpoint()
             raise LingoSyntaxError(f'button symbol missing required key: {e}{src_info()}')
         
         if not isinstance(call_str, str):

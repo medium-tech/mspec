@@ -251,8 +251,6 @@ def _eval_header(ctx: LingoContext, symbol: L_SYM_heading):
 def _eval_text(ctx: LingoContext, symbol: L_SYM_text):
     assert isinstance(symbol.style, LingoStyleOptions)
 
-    # breakpoint()
-
     if not ctx.tk.in_text_block and not ctx.tk.in_value_block:
         ctx.tk.text_widget.insert('end', '\n')
 
@@ -484,7 +482,6 @@ def _evaluate_display_spec(ctx: LingoContext, ast: LingoASTTextSpec | LingoASTGU
         ctx.tk.main_block_index = 0
         # first = ast.block.items[0]
         ctx.tk.in_text_block = isinstance(ast.block.items[0], L_SYM_text) or (isinstance(ast.block.items[0], L_SYM_value) and ast.block.items[0].type == 'str')
-        # breakpoint()
 
         for item in ast.block.items:
             try:

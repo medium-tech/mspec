@@ -125,5 +125,4 @@ def spec_app_ast_from_dict(
     modules = _parse_app_modules(ctx, data['modules'])
     imports = parse_imports_symbol(ctx, data.get('imports', []))
     meta = parse_meta_symbol(ctx, data.get('meta', dict()))
-    breakpoint()
     return LingoASTAppSpec(lingo=lingo, modules=modules, imports=imports, meta=meta)
