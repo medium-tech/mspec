@@ -30,6 +30,10 @@ class ClientModelRequest(NamedTuple):
 MODEL_ACTIONS = ('create', 'list', 'get', 'put', 'patch', 'delete')
 
 
+#
+# cli parsing
+#
+
 def parse_cli_params(
     func: L_SYM_func,
     assignments: list[str],
@@ -40,7 +44,6 @@ def parse_cli_params(
     return _parse_assignments(
         {arg.name: arg for arg in func.args}, f'op {func.name!r}', assignments, interactive
     )
-
 
 def _parse_assignments(
     definitions: dict,
@@ -107,6 +110,30 @@ def _parse_assignments(
         
     return parsed
 
+#
+# references
+#
+
+def _split_reference(reference: str, kind: str) -> tuple[str, str]:
+    parts = reference.split('.')
+    if len(parts) != 2 or not all(parts):
+        raise LingoRuntimeError(f'{kind} must be specified as <module>.<{kind}>, got {reference!r}')
+    return parts[0], parts[1]
+
+def _resolve_client_define(ctx: LingoContext, ast: LingoASTAppSpec, model_reference: str):
+    module_name, model_name = _split_reference(model_reference, 'model')
+    module = ast.modules.members.get(module_name)
+    if module is None or model_name not in module.models:
+        raise LingoSyntaxError(f'model not found in app spec: {model_reference!r}')
+
+    if ctx.registry is None:
+        init_registry(ctx)
+    add_lib_to_registry(ctx, ast.imports)
+    return resolve_model_define(ctx, module.models[model_name])
+
+#
+# output
+#
 
 def redact_secure_output(value: object, definition, show: bool = False) -> object:
     # keys without a definition, such as a model's generated id, are not secure
@@ -125,6 +152,12 @@ def redact_secure_output(value: object, definition, show: bool = False) -> objec
         }
     return value
 
+def print_response(response: object) -> None:
+    print(json.dumps(response, indent=4, ensure_ascii=False))
+
+#
+# request
+#
 
 def _base_url() -> str:
     server_host = os.environ.get('LINGO_SERVER_HOST', DEFAULT_HOST)
@@ -134,15 +167,7 @@ def _base_url() -> str:
         f'http://{server_host}:{server_port}',
     ).rstrip('/')
 
-
-def _split_reference(reference: str, kind: str) -> tuple[str, str]:
-    parts = reference.split('.')
-    if len(parts) != 2 or not all(parts):
-        raise LingoRuntimeError(f'{kind} must be specified as <module>.<{kind}>, got {reference!r}')
-    return parts[0], parts[1]
-
-
-def _validate_json_object(request_body: str) -> None:
+def _validate_request_body(request_body: str) -> None:
     try:
         parsed_body = json.loads(request_body)
     except json.JSONDecodeError as e:
@@ -151,8 +176,6 @@ def _validate_json_object(request_body: str) -> None:
         not isinstance(key, str) for key in parsed_body
     ):
         raise LingoRuntimeError('--json must contain a JSON object with string keys')
-
-
 
 def _request(method: str, path_parts: list[str], request_body: str | None = None, query: dict | None = None) -> object:
     url = f'{_base_url()}/' + '/'.join(quote(part, safe='') for part in path_parts)
@@ -186,14 +209,13 @@ def _request(method: str, path_parts: list[str], request_body: str | None = None
     except json.JSONDecodeError as e:
         raise LingoRuntimeError(f'server returned invalid JSON: {e}') from None
 
-
 def call_op(op_reference: str, request_body: str) -> object:
     module_name, op_name = _split_reference(op_reference, 'op')
-    _validate_json_object(request_body)
+    _validate_request_body(request_body)
     return _request('POST', [module_name, op_name], request_body)
 
-
 def call_model(request: ClientModelRequest, request_body: str | None = None) -> object:
+
     module_name, model_name = _split_reference(request.model, 'model')
     path = [module_name, model_name]
     query = None
@@ -215,21 +237,13 @@ def call_model(request: ClientModelRequest, request_body: str | None = None) -> 
             raise LingoRuntimeError(f'unknown model action: {request.action!r}')
 
     if request_body is not None:
-        _validate_json_object(request_body)
+        _validate_request_body(request_body)
+
     return _request(method, path, request_body, query)
 
-
-def _resolve_client_define(ctx: LingoContext, ast: LingoASTAppSpec, model_reference: str):
-    module_name, model_name = _split_reference(model_reference, 'model')
-    module = ast.modules.members.get(module_name)
-    if module is None or model_name not in module.models:
-        raise LingoSyntaxError(f'model not found in app spec: {model_reference!r}')
-
-    if ctx.registry is None:
-        init_registry(ctx)
-    add_lib_to_registry(ctx, ast.imports)
-    return resolve_model_define(ctx, module.models[model_name])
-
+#
+# evaluators
+#
 
 def _evaluate_model_request(
     ctx: LingoContext,
@@ -240,14 +254,21 @@ def _evaluate_model_request(
     interactive: bool,
     show_secure: bool,
 ) -> object:
+
+    # init #
+
     action = model_request.action
+
     if action not in MODEL_ACTIONS:
         raise LingoSyntaxError(f'unknown model action: {action!r}')
 
     define = _resolve_client_define(ctx, ast, model_request.model)
-    has_body = action in ('create', 'put', 'patch')
 
-    if has_body:
+    # request body #
+
+    needs_request_body = action in ('create', 'put', 'patch')
+
+    if needs_request_body:
         if request_body is not None and (params is not None or interactive):
             raise LingoSyntaxError('request_body cannot be combined with params or interactive')
         if action == 'patch' and interactive:
@@ -259,8 +280,11 @@ def _evaluate_model_request(
             ))
         if request_body is None:
             raise LingoSyntaxError(f'{action} requires a request body; use json, params or interactive mode')
+        
     elif request_body is not None or params is not None or interactive:
         raise LingoSyntaxError(f'{action} does not accept a request body')
+
+    # make request and handle response #
 
     response = call_model(model_request, request_body)
 
@@ -271,8 +295,62 @@ def _evaluate_model_request(
             **response,
             'items': [redact_secure_output(item, define, show=show_secure) for item in response['items']],
         }
+    
     return redact_secure_output(response, define, show=show_secure)
 
+def _evaluate_op_request(
+        ctx: LingoContext,
+        ast: LingoASTAppSpec,
+        op_reference: str,
+        request_body: str | None = None,
+        params: list[str] | None = None,
+        interactive: bool = False,
+        show_secure: bool = False,
+) -> object:
+
+    # init #
+    
+    if not isinstance(op_reference, str) or op_reference.count('.') != 1:
+        raise LingoSyntaxError(f'op must be a string specified as <module>.<op>, got {op_reference!r}')
+
+    if request_body is not None and (params is not None or interactive):
+        raise LingoSyntaxError('request_body cannot be combined with params or interactive')
+
+    # get op #
+    
+    module_name, op_name = op_reference.split('.')
+    module = ast.modules.members.get(module_name)
+    if module is None or op_name not in module.ops.funcs:
+        raise LingoSyntaxError(f'op not found in app spec: {op_reference!r}')
+    
+    op_symbol = module.ops.funcs[op_name]
+
+    if op_symbol.reference is not None:
+        if ctx.registry is None:
+            init_registry(ctx)
+        add_lib_to_registry(ctx, ast.imports)
+        try:
+            registered_op = ctx.registry.lib[op_symbol.reference]
+        except KeyError:
+            raise LingoSyntaxError(f'op reference not found in lib: {op_symbol.reference!r}') from None
+        if not isinstance(registered_op, LingoRegisteredFunction):
+            raise LingoSyntaxError(f'op reference is not a function: {op_symbol.reference!r}')
+        op_symbol = registered_op.ast
+
+    # get input #
+
+    if params is not None or interactive:
+        request_body = json.dumps(
+            parse_cli_params(op_symbol, params or [], interactive=interactive)
+        )
+
+    if request_body is None:
+        raise LingoSyntaxError('request body is required; use params or interactive mode')
+
+    # make request and handle response #
+    
+    response = call_op(op_reference, request_body)
+    return redact_secure_output(response, op_symbol.return_, show=show_secure)
 
 def evaluate_client_spec(
     ctx: LingoContext,
@@ -288,46 +366,6 @@ def evaluate_client_spec(
         raise LingoSyntaxError('specify exactly one of op_reference or model_request')
 
     if model_request is not None:
-        return _evaluate_model_request(
-            ctx, ast, model_request, request_body, params, interactive, show_secure
-        )
-
-    if op_reference.count('.') != 1:
-        raise LingoSyntaxError(
-            f'op must be specified as <module>.<op>, got {op_reference!r}'
-        )
-    module_name, op_name = op_reference.split('.')
-    module = ast.modules.members.get(module_name)
-    if module is None or op_name not in module.ops.funcs:
-        raise LingoSyntaxError(f'op not found in app spec: {op_reference!r}')
-    op_symbol = module.ops.funcs[op_name]
-
-    if request_body is not None and (params is not None or interactive):
-        raise LingoSyntaxError('request_body cannot be combined with params or interactive')
-
-    if op_symbol.reference is not None:
-        if ctx.registry is None:
-            init_registry(ctx)
-        add_lib_to_registry(ctx, ast.imports)
-        try:
-            registered_op = ctx.registry.lib[op_symbol.reference]
-        except KeyError:
-            raise LingoSyntaxError(f'op reference not found in lib: {op_symbol.reference!r}') from None
-        if not isinstance(registered_op, LingoRegisteredFunction):
-            raise LingoSyntaxError(f'op reference is not a function: {op_symbol.reference!r}')
-        op_symbol = registered_op.ast
-
-    if params is not None or interactive:
-        request_body = json.dumps(
-            parse_cli_params(op_symbol, params or [], interactive=interactive)
-        )
-
-    if request_body is None:
-        raise LingoSyntaxError('request body is required; use params or interactive mode')
-    
-    response = call_op(op_reference, request_body)
-    return redact_secure_output(response, op_symbol.return_, show=show_secure)
-
-
-def print_response(response: object) -> None:
-    print(json.dumps(response, indent=4, ensure_ascii=False))
+        return _evaluate_model_request(ctx, ast, model_request, request_body, params, interactive, show_secure)
+    else:
+        return _evaluate_op_request(ctx, ast, op_reference, request_body, params, interactive, show_secure)

@@ -1,6 +1,0 @@
-Review server/client implementation
-
-TODO
-* db_*() - rename to _eval_db_*()
-* organize _eval_server.py
-* organize _eval_client.py

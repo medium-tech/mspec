@@ -44,6 +44,9 @@ from lingolib.runtime.shared import (
 
 UWSGI_LOG_FORMAT = "%('    ') :: RESP :: %(status) :: %(method) %(uri) :: %(size) bytes in %(msecs) msecs :: %(request_id)"
 
+#
+# config
+#
 
 class ServerConfig(NamedTuple):
     host: str
@@ -98,44 +101,6 @@ def _server_config() -> ServerConfig:
         raise LingoRuntimeError('LINGO_SERVER_DB_FILE must not be empty string')
 
     return ServerConfig(host, port, processes, max_body_bytes, log_max_size, db_file)
-
-
-def _json_value(value):
-    if isinstance(value, LingoLanguageError):
-        return {'error': value.error, 'code': value.code}
-    else:
-        return value
-
-
-def _run_op(ctx: LingoContext, func, args: dict):
-    if func.reference is not None:
-        try:
-            registered = ctx.registry.lib[func.reference]
-        except KeyError:
-            raise LingoRuntimeError(f'op reference {func.reference!r} not found') from None
-        if not isinstance(registered, LingoRegisteredFunction):
-            raise LingoRuntimeError(f'op reference {func.reference!r} is not a function')
-        func = registered.ast
-
-    if func.func is None or func.args is None:
-        raise LingoRuntimeError(f'op {func.name!r} if missing func body or args')
-
-    arg_definitions = {arg.name: arg for arg in func.args}
-    unknown_args = set(args) - set(arg_definitions)
-    if unknown_args:
-        raise LingoRuntimeError(f'unknown argument(s) for op {func.name}: {", ".join(unknown_args)}')
-
-    for arg_name, definition in arg_definitions.items():
-        if arg_name not in args:
-            if definition.default is None:
-                raise LingoRuntimeError(f'missing required argument: {arg_name}')
-            args[arg_name] = unwrap_expression(ctx, definition.default)
-
-    ctx.registry.call_args_stack.append(args)
-    try:
-        return unwrap_expression(ctx, func.func)
-    finally:
-        ctx.registry.call_args_stack.pop()
 
 
 #
@@ -225,10 +190,10 @@ def _apply_defaults(ctx: LingoContext, define: L_SYM_define, data):
             with_defaults[name] = unwrap_expression(ctx, field.default)
     return with_defaults
 
-# table #
-
 def _table_name(model_key: str) -> str:
     return model_key.replace('.', '_')
+
+# table ops #
 
 def _create_table(conn: sqlite3.Connection, model_key: str, define: L_SYM_define):
     table = _table_name(model_key)
@@ -259,6 +224,22 @@ def _select_row(conn: sqlite3.Connection, model_key: str, define: L_SYM_define, 
         f'SELECT {columns} FROM "{_table_name(model_key)}" WHERE id = ?',
         (_to_db_id(item_id),),
     ).fetchone()
+
+def _read_list_query(env) -> dict:
+    query = parse_qs(env.get('QUERY_STRING', ''), keep_blank_values=True)
+    unknown = set(query) - {'offset', 'limit'}
+    if unknown:
+        raise ValueError(f'unsupported query parameter(s): {", ".join(sorted(unknown))}')
+
+    options = {}
+    for name, values in query.items():
+        if len(values) != 1:
+            raise ValueError(f'query parameter {name!r} may only be specified once')
+        try:
+            options[name] = int(values[0])
+        except ValueError:
+            raise ValueError(f'query parameter {name!r} must be an int, got {values[0]!r}') from None
+    return options
 
 # conversion #
 
@@ -317,7 +298,6 @@ def _eval_db_create(ctx: LingoContext, model_ref: str, data) -> dict | LingoLang
 
     return {'id': item_id, **{name: data[name] for name in names}}
 
-
 def _eval_db_read(ctx: LingoContext, model_ref: str, item_id) -> dict | LingoLanguageError:
     resolved = _resolve_db_model(ctx, model_ref)
     if isinstance(resolved, LingoLanguageError):
@@ -334,7 +314,6 @@ def _eval_db_read(ctx: LingoContext, model_ref: str, item_id) -> dict | LingoLan
     if row is None:
         return _not_found(model_key, item_id)
     return _row_to_object(define, row)
-
 
 def _eval_db_list(ctx: LingoContext, model_ref: str, offset=None, limit=None) -> dict | LingoLanguageError:
     resolved = _resolve_db_model(ctx, model_ref)
@@ -358,7 +337,6 @@ def _eval_db_list(ctx: LingoContext, model_ref: str, offset=None, limit=None) ->
         ).fetchall()
 
     return {'items': [_row_to_object(define, row) for row in rows], 'total': total}
-
 
 def _eval_db_put(ctx: LingoContext, model_ref: str, item_id, data) -> dict | LingoLanguageError:
     resolved = _resolve_db_model(ctx, model_ref)
@@ -387,7 +365,6 @@ def _eval_db_put(ctx: LingoContext, model_ref: str, item_id, data) -> dict | Lin
     if cursor.rowcount == 0:
         return _not_found(model_key, item_id)
     return {'id': item_id, **{name: data[name] for name in names}}
-
 
 def _eval_db_patch(ctx: LingoContext, model_ref: str, item_id, data) -> dict | LingoLanguageError:
     resolved = _resolve_db_model(ctx, model_ref)
@@ -418,7 +395,6 @@ def _eval_db_patch(ctx: LingoContext, model_ref: str, item_id, data) -> dict | L
         row = _select_row(conn, model_key, define, item_id)
 
     return _row_to_object(define, row)
-
 
 def _eval_db_delete(ctx: LingoContext, model_ref: str, item_id) -> dict | LingoLanguageError:
     resolved = _resolve_db_model(ctx, model_ref)
@@ -471,20 +447,37 @@ register_expression_handlers({
 # wsgi helpers
 #
 
-def _response(status: HTTPStatus, payload, headers: list | None = None) -> tuple[str, object, list]:
-    return f'{status.value} {status.phrase}', payload, headers or []
+def _run_op(ctx: LingoContext, func, args: dict):
+    if func.reference is not None:
+        try:
+            registered = ctx.registry.lib[func.reference]
+        except KeyError:
+            raise LingoRuntimeError(f'op reference {func.reference!r} not found') from None
+        if not isinstance(registered, LingoRegisteredFunction):
+            raise LingoRuntimeError(f'op reference {func.reference!r} is not a function')
+        func = registered.ast
 
+    if func.func is None or func.args is None:
+        raise LingoRuntimeError(f'op {func.name!r} if missing func body or args')
 
-def _error_response(error: LingoLanguageError) -> tuple[str, object, list]:
-    return _response(ERROR_CODE_STATUS.get(error.code, HTTPStatus.INTERNAL_SERVER_ERROR), _json_value(error))
+    arg_definitions = {arg.name: arg for arg in func.args}
+    unknown_args = set(args) - set(arg_definitions)
+    if unknown_args:
+        raise LingoRuntimeError(f'unknown argument(s) for op {func.name}: {", ".join(unknown_args)}')
 
+    for arg_name, definition in arg_definitions.items():
+        if arg_name not in args:
+            if definition.default is None:
+                raise LingoRuntimeError(f'missing required argument: {arg_name}')
+            args[arg_name] = unwrap_expression(ctx, definition.default)
 
-def _result_response(result, success_status: HTTPStatus = HTTPStatus.OK) -> tuple[str, object, list]:
-    if isinstance(result, LingoLanguageError):
-        return _error_response(result)
-    else:
-        return _response(success_status, result)
+    ctx.registry.call_args_stack.append(args)
+    try:
+        return unwrap_expression(ctx, func.func)
+    finally:
+        ctx.registry.call_args_stack.pop()
 
+# json #
 
 def _read_json_body(env, max_body_bytes: int) -> dict:
     content_length = int(env.get('CONTENT_LENGTH') or '0')
@@ -498,22 +491,25 @@ def _read_json_body(env, max_body_bytes: int) -> dict:
         raise ValueError('request JSON must be an object')
     return data
 
+def _json_value(value):
+    if isinstance(value, LingoLanguageError):
+        return {'error': value.error, 'code': value.code}
+    else:
+        return value
 
-def _read_list_query(env) -> dict:
-    query = parse_qs(env.get('QUERY_STRING', ''), keep_blank_values=True)
-    unknown = set(query) - {'offset', 'limit'}
-    if unknown:
-        raise ValueError(f'unsupported query parameter(s): {", ".join(sorted(unknown))}')
+# response helpers #
 
-    options = {}
-    for name, values in query.items():
-        if len(values) != 1:
-            raise ValueError(f'query parameter {name!r} may only be specified once')
-        try:
-            options[name] = int(values[0])
-        except ValueError:
-            raise ValueError(f'query parameter {name!r} must be an int, got {values[0]!r}') from None
-    return options
+def _response(status: HTTPStatus, payload, headers: list | None = None) -> tuple[str, object, list]:
+    return f'{status.value} {status.phrase}', payload, headers or []
+
+def _error_response(error: LingoLanguageError) -> tuple[str, object, list]:
+    return _response(ERROR_CODE_STATUS.get(error.code, HTTPStatus.INTERNAL_SERVER_ERROR), _json_value(error))
+
+def _result_response(result, success_status: HTTPStatus = HTTPStatus.OK) -> tuple[str, object, list]:
+    if isinstance(result, LingoLanguageError):
+        return _error_response(result)
+    else:
+        return _response(success_status, result)
 
 #
 # wsgi application
@@ -608,9 +604,9 @@ def create_wsgi_application(
 
     return application
 
-
 def _create_uwsgi_application(spec_path: str) -> Callable:
-    import uwsgi  # only importable inside a uWSGI process
+    """used to import uWSGI application inside uWSGI subprocess only, for direct use use `create_wsgi_application`"""
+    import uwsgi
 
     config = _server_config()
     ctx = LingoContext()
@@ -618,6 +614,7 @@ def _create_uwsgi_application(spec_path: str) -> Callable:
                                                 # and it's entrypoint is this file, not api.py or cli.py
     if not isinstance(ast, LingoASTAppSpec):
         raise LingoRuntimeError(f'server requires an app spec, got {ast.lingo.spec!r}')
+    
     wsgi_application = create_wsgi_application(
         ctx, ast, max_body_bytes=config.max_body_bytes, db_file=config.db_file
     )
