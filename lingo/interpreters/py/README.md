@@ -84,8 +84,14 @@ Server and client configuration is provided through environment variables:
 
 Each entry under an app module's `models` gets a SQLite table (`<module>_<model>`,
 created on server start; tables are never migrated, a mismatched existing table is
-an error). Models may only have scalar fields (`str`, `int`, `float`, `bool`) and
-cannot define `id`, which is an auto-generated primary key. A model cannot share a name with an op in the same module. Request bodies are validated strictly with no type conversion, (ex: `int` to `float`); field `default`s apply on create and PUT.
+an error). SQLite generates each model's `id` using
+`INTEGER PRIMARY KEY AUTOINCREMENT`; IDs are serialized as strings in API
+responses and Lingo objects.
+Models may only have scalar fields (`str`, `int`, `float`, `bool`) and cannot
+define `id`, which is reserved for the generated primary key. A model cannot
+share a name with an op in the same module. Request bodies are validated strictly
+with no type conversion (e.g. `int` to `float`); field `default`s apply on create
+and PUT.
 
 | Request | Action | Success |
 | --- | --- | --- |

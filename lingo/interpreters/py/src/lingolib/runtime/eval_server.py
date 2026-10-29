@@ -5,7 +5,6 @@ import shutil
 import sqlite3
 import subprocess
 import time
-import uuid
 
 from contextlib import closing
 from http import HTTPStatus
@@ -175,12 +174,25 @@ def _check_model(model_key: str, define: L_SYM_define):
 def _create_table(conn: sqlite3.Connection, model_key: str, define: L_SYM_define):
     table = _table_name(model_key)
     columns = ''.join(f', "{name}" {SQL_TYPES[field.type]}' for name, field in define.fields.items())
-    conn.execute(f'CREATE TABLE IF NOT EXISTS "{table}" (id TEXT PRIMARY KEY{columns})')
+    conn.execute(f'CREATE TABLE IF NOT EXISTS "{table}" (id INTEGER PRIMARY KEY AUTOINCREMENT{columns})')
 
-    existing = [row[1] for row in conn.execute(f'PRAGMA table_info("{table}")')]
+    table_info = list(conn.execute(f'PRAGMA table_info("{table}")'))
+    existing = [row[1] for row in table_info]
     expected = ['id', *define.fields]
     if existing != expected:
         raise LingoRuntimeError(f'existing table {table!r} has columns {existing}, expected {expected}')
+    if table_info[0][2].upper() != 'INTEGER' or table_info[0][5] != 1:
+        raise LingoRuntimeError(
+            f'existing table {table!r} must use INTEGER PRIMARY KEY AUTOINCREMENT for id'
+        )
+    create_sql = conn.execute(
+        'SELECT sql FROM sqlite_master WHERE type = ? AND name = ?',
+        ('table', table),
+    ).fetchone()[0]
+    if 'AUTOINCREMENT' not in create_sql.upper():
+        raise LingoRuntimeError(
+            f'existing table {table!r} must use INTEGER PRIMARY KEY AUTOINCREMENT for id'
+        )
 
 
 def init_db(ctx: LingoContext, ast: LingoASTAppSpec, db_file: str):
@@ -232,7 +244,7 @@ def _resolve_db_model(ctx: LingoContext, model_ref: str) -> tuple[str, L_SYM_def
 
 
 def _row_to_object(define: L_SYM_define, row: tuple) -> dict:
-    obj = {'id': row[0]}
+    obj = {'id': str(row[0])}
     for (name, field), value in zip(define.fields.items(), row[1:]):
         obj[name] = bool(value) if field.type == 'bool' else value
     return obj
@@ -240,7 +252,10 @@ def _row_to_object(define: L_SYM_define, row: tuple) -> dict:
 
 def _select_row(conn: sqlite3.Connection, model_key: str, define: L_SYM_define, item_id) -> tuple | None:
     columns = ', '.join(['id', *(f'"{name}"' for name in define.fields)])
-    return conn.execute(f'SELECT {columns} FROM "{_table_name(model_key)}" WHERE id = ?', (item_id,)).fetchone()
+    return conn.execute(
+        f'SELECT {columns} FROM "{_table_name(model_key)}" WHERE id = ?',
+        (_db_id(item_id),),
+    ).fetchone()
 
 
 def _not_found(model_key: str, item_id) -> LingoLanguageError:
@@ -251,6 +266,13 @@ def _check_id(item_id) -> LingoLanguageError | None:
     if not isinstance(item_id, str) or not item_id:
         return LingoLanguageError(f'id must be a non-empty str, got {item_id!r}', code='VALIDATION_ERROR')
     return None
+
+
+def _db_id(item_id: str) -> int | None:
+    try:
+        return int(item_id)
+    except ValueError:
+        return None
 
 
 def _apply_defaults(ctx: LingoContext, define: L_SYM_define, data):
@@ -279,15 +301,15 @@ def db_create(ctx: LingoContext, model_ref: str, data) -> dict | LingoLanguageEr
     if validation_error is not None:
         return validation_error
 
-    item_id = uuid.uuid4().hex
     names = list(define.fields)
-    columns = ', '.join(['id', *(f'"{name}"' for name in names)])
-    placeholders = ', '.join('?' * (len(names) + 1))
+    columns = ', '.join(f'"{name}"' for name in names)
+    placeholders = ', '.join('?' * len(names))
     with closing(sqlite3.connect(ctx.db.path)) as conn:
-        conn.execute(
+        cursor = conn.execute(
             f'INSERT INTO "{_table_name(model_key)}" ({columns}) VALUES ({placeholders})',
-            [item_id, *(_to_sql(data[name]) for name in names)],
+            [_to_sql(data[name]) for name in names],
         )
+        item_id = str(cursor.lastrowid)
         conn.commit()
 
     return {'id': item_id, **{name: data[name] for name in names}}
@@ -355,7 +377,7 @@ def db_put(ctx: LingoContext, model_ref: str, item_id, data) -> dict | LingoLang
     with closing(sqlite3.connect(ctx.db.path)) as conn:
         cursor = conn.execute(
             f'UPDATE "{_table_name(model_key)}" SET {assignments} WHERE id = ?',
-            [*(_to_sql(data[name]) for name in names), item_id],
+            [*(_to_sql(data[name]) for name in names), _db_id(item_id)],
         )
         conn.commit()
 
@@ -385,7 +407,7 @@ def db_patch(ctx: LingoContext, model_ref: str, item_id, data) -> dict | LingoLa
     with closing(sqlite3.connect(ctx.db.path)) as conn:
         cursor = conn.execute(
             f'UPDATE "{_table_name(model_key)}" SET {assignments} WHERE id = ?',
-            [*(_to_sql(data[name]) for name in names), item_id],
+            [*(_to_sql(data[name]) for name in names), _db_id(item_id)],
         )
         conn.commit()
         if cursor.rowcount == 0:
@@ -409,7 +431,10 @@ def db_delete(ctx: LingoContext, model_ref: str, item_id) -> dict | LingoLanguag
         row = _select_row(conn, model_key, define, item_id)
         if row is None:
             return _not_found(model_key, item_id)
-        conn.execute(f'DELETE FROM "{_table_name(model_key)}" WHERE id = ?', (item_id,))
+        conn.execute(
+            f'DELETE FROM "{_table_name(model_key)}" WHERE id = ?',
+            (_db_id(item_id),),
+        )
         conn.commit()
 
     return _row_to_object(define, row)
