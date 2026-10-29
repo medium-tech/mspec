@@ -139,7 +139,7 @@ def _run_op(ctx: LingoContext, func, args: dict):
 
 
 #
-# database
+# db helpers
 #
 
 SQL_TYPES = {'str': 'TEXT', 'int': 'INTEGER', 'float': 'REAL', 'bool': 'INTEGER'}
@@ -151,49 +151,7 @@ ERROR_CODE_STATUS = {
     'VALIDATION_ERROR': HTTPStatus.BAD_REQUEST,
 }
 
-
-def _table_name(model_key: str) -> str:
-    return model_key.replace('.', '_')
-
-
-def _check_model(model_key: str, define: L_SYM_define):
-    if define.type != 'struct' or not define.fields:
-        raise LingoRuntimeError(f'model {model_key!r} must be a struct with at least one field')
-
-    for field_name, field_define in define.fields.items():
-        if not IDENTIFIER_PATTERN.match(field_name):
-            raise LingoRuntimeError(f'field name {field_name!r} of model {model_key!r} is not a valid database column name')
-        if field_name == 'id':
-            raise LingoRuntimeError(f'model {model_key!r} cannot define a field named "id", it is reserved for the generated id')
-        if field_define.type not in SQL_TYPES:
-            raise LingoRuntimeError(
-                f'field {field_name!r} of model {model_key!r} has type {field_define.type!r}, only scalar types are supported: {", ".join(SQL_TYPES)}'
-            )
-
-
-def _create_table(conn: sqlite3.Connection, model_key: str, define: L_SYM_define):
-    table = _table_name(model_key)
-    columns = ''.join(f', "{name}" {SQL_TYPES[field.type]}' for name, field in define.fields.items())
-    conn.execute(f'CREATE TABLE IF NOT EXISTS "{table}" (id INTEGER PRIMARY KEY AUTOINCREMENT{columns})')
-
-    table_info = list(conn.execute(f'PRAGMA table_info("{table}")'))
-    existing = [row[1] for row in table_info]
-    expected = ['id', *define.fields]
-    if existing != expected:
-        raise LingoRuntimeError(f'existing table {table!r} has columns {existing}, expected {expected}')
-    if table_info[0][2].upper() != 'INTEGER' or table_info[0][5] != 1:
-        raise LingoRuntimeError(
-            f'existing table {table!r} must use INTEGER PRIMARY KEY AUTOINCREMENT for id'
-        )
-    create_sql = conn.execute(
-        'SELECT sql FROM sqlite_master WHERE type = ? AND name = ?',
-        ('table', table),
-    ).fetchone()[0]
-    if 'AUTOINCREMENT' not in create_sql.upper():
-        raise LingoRuntimeError(
-            f'existing table {table!r} must use INTEGER PRIMARY KEY AUTOINCREMENT for id'
-        )
-
+# context #
 
 def init_db(ctx: LingoContext, ast: LingoASTAppSpec, db_file: str):
     """resolve the app's models, check they are supported and create their tables"""
@@ -225,6 +183,7 @@ def init_db(ctx: LingoContext, ast: LingoASTAppSpec, db_file: str):
             _create_table(conn, model_key, define)
         conn.commit()
 
+# model #
 
 def _resolve_db_model(ctx: LingoContext, model_ref: str) -> tuple[str, L_SYM_define] | LingoLanguageError:
     """model_ref is either an app model, <module>.<model>, or the lib reference that an app model points to"""
@@ -242,38 +201,19 @@ def _resolve_db_model(ctx: LingoContext, model_ref: str) -> tuple[str, L_SYM_def
 
     return LingoLanguageError(f'model {model_ref!r} is not defined by the app spec', code='DB_MODEL_NOT_FOUND')
 
+def _check_model(model_key: str, define: L_SYM_define):
+    if define.type != 'struct' or not define.fields:
+        raise LingoRuntimeError(f'model {model_key!r} must be a struct with at least one field')
 
-def _row_to_object(define: L_SYM_define, row: tuple) -> dict:
-    obj = {'id': str(row[0])}
-    for (name, field), value in zip(define.fields.items(), row[1:]):
-        obj[name] = bool(value) if field.type == 'bool' else value
-    return obj
-
-
-def _select_row(conn: sqlite3.Connection, model_key: str, define: L_SYM_define, item_id) -> tuple | None:
-    columns = ', '.join(['id', *(f'"{name}"' for name in define.fields)])
-    return conn.execute(
-        f'SELECT {columns} FROM "{_table_name(model_key)}" WHERE id = ?',
-        (_db_id(item_id),),
-    ).fetchone()
-
-
-def _not_found(model_key: str, item_id) -> LingoLanguageError:
-    return LingoLanguageError(f'{model_key} with id {item_id!r} not found', code='DB_NOT_FOUND')
-
-
-def _check_id(item_id) -> LingoLanguageError | None:
-    if not isinstance(item_id, str) or not item_id:
-        return LingoLanguageError(f'id must be a non-empty str, got {item_id!r}', code='VALIDATION_ERROR')
-    return None
-
-
-def _db_id(item_id: str) -> int | None:
-    try:
-        return int(item_id)
-    except ValueError:
-        return None
-
+    for field_name, field_define in define.fields.items():
+        if not IDENTIFIER_PATTERN.match(field_name):
+            raise LingoRuntimeError(f'field name {field_name!r} of model {model_key!r} is not a valid database column name')
+        if field_name == 'id':
+            raise LingoRuntimeError(f'model {model_key!r} cannot define a field named "id", it is reserved for the generated id')
+        if field_define.type not in SQL_TYPES:
+            raise LingoRuntimeError(
+                f'field {field_name!r} of model {model_key!r} has type {field_define.type!r}, only scalar types are supported: {", ".join(SQL_TYPES)}'
+            )
 
 def _apply_defaults(ctx: LingoContext, define: L_SYM_define, data):
     if not isinstance(data, dict):
@@ -285,12 +225,75 @@ def _apply_defaults(ctx: LingoContext, define: L_SYM_define, data):
             with_defaults[name] = unwrap_expression(ctx, field.default)
     return with_defaults
 
+# table #
+
+def _table_name(model_key: str) -> str:
+    return model_key.replace('.', '_')
+
+def _create_table(conn: sqlite3.Connection, model_key: str, define: L_SYM_define):
+    table = _table_name(model_key)
+    columns = ''.join(f', "{name}" {SQL_TYPES[field.type]}' for name, field in define.fields.items())
+    conn.execute(f'CREATE TABLE IF NOT EXISTS "{table}" (id INTEGER PRIMARY KEY AUTOINCREMENT{columns})')
+
+    table_info = list(conn.execute(f'PRAGMA table_info("{table}")'))
+    existing = [row[1] for row in table_info]
+    expected = ['id', *define.fields]
+    if existing != expected:
+        raise LingoRuntimeError(f'existing table {table!r} has columns {existing}, expected {expected}')
+    if table_info[0][2].upper() != 'INTEGER' or table_info[0][5] != 1:
+        raise LingoRuntimeError(
+            f'existing table {table!r} must use INTEGER PRIMARY KEY AUTOINCREMENT for id'
+        )
+    create_sql = conn.execute(
+        'SELECT sql FROM sqlite_master WHERE type = ? AND name = ?',
+        ('table', table),
+    ).fetchone()[0]
+    if 'AUTOINCREMENT' not in create_sql.upper():
+        raise LingoRuntimeError(
+            f'existing table {table!r} must use INTEGER PRIMARY KEY AUTOINCREMENT for id'
+        )
+
+def _select_row(conn: sqlite3.Connection, model_key: str, define: L_SYM_define, item_id) -> tuple | None:
+    columns = ', '.join(['id', *(f'"{name}"' for name in define.fields)])
+    return conn.execute(
+        f'SELECT {columns} FROM "{_table_name(model_key)}" WHERE id = ?',
+        (_to_db_id(item_id),),
+    ).fetchone()
+
+# conversion #
+
+def _row_to_object(define: L_SYM_define, row: tuple) -> dict:
+    obj = {'id': str(row[0])}
+    for (name, field), value in zip(define.fields.items(), row[1:]):
+        obj[name] = bool(value) if field.type == 'bool' else value
+    return obj
 
 def _to_sql(value):
     return int(value) if isinstance(value, bool) else value
 
+def _to_db_id(item_id: str) -> int | None:
+    try:
+        return int(item_id)
+    except ValueError:
+        return None
 
-def db_create(ctx: LingoContext, model_ref: str, data) -> dict | LingoLanguageError:
+# errors #
+
+def _check_id(item_id) -> LingoLanguageError | None:
+    if not isinstance(item_id, str) or not item_id:
+        return LingoLanguageError(f'id must be a non-empty str, got {item_id!r}', code='VALIDATION_ERROR')
+    return None
+
+def _not_found(model_key: str, item_id) -> LingoLanguageError:
+    return LingoLanguageError(f'{model_key} with id {item_id!r} not found', code='DB_NOT_FOUND')
+
+#
+# db symbol evaluators
+#
+
+# crud + list #
+
+def _eval_db_create(ctx: LingoContext, model_ref: str, data) -> dict | LingoLanguageError:
     resolved = _resolve_db_model(ctx, model_ref)
     if isinstance(resolved, LingoLanguageError):
         return resolved
@@ -315,7 +318,7 @@ def db_create(ctx: LingoContext, model_ref: str, data) -> dict | LingoLanguageEr
     return {'id': item_id, **{name: data[name] for name in names}}
 
 
-def db_read(ctx: LingoContext, model_ref: str, item_id) -> dict | LingoLanguageError:
+def _eval_db_read(ctx: LingoContext, model_ref: str, item_id) -> dict | LingoLanguageError:
     resolved = _resolve_db_model(ctx, model_ref)
     if isinstance(resolved, LingoLanguageError):
         return resolved
@@ -333,7 +336,7 @@ def db_read(ctx: LingoContext, model_ref: str, item_id) -> dict | LingoLanguageE
     return _row_to_object(define, row)
 
 
-def db_list(ctx: LingoContext, model_ref: str, offset=None, limit=None) -> dict | LingoLanguageError:
+def _eval_db_list(ctx: LingoContext, model_ref: str, offset=None, limit=None) -> dict | LingoLanguageError:
     resolved = _resolve_db_model(ctx, model_ref)
     if isinstance(resolved, LingoLanguageError):
         return resolved
@@ -357,7 +360,7 @@ def db_list(ctx: LingoContext, model_ref: str, offset=None, limit=None) -> dict 
     return {'items': [_row_to_object(define, row) for row in rows], 'total': total}
 
 
-def db_put(ctx: LingoContext, model_ref: str, item_id, data) -> dict | LingoLanguageError:
+def _eval_db_put(ctx: LingoContext, model_ref: str, item_id, data) -> dict | LingoLanguageError:
     resolved = _resolve_db_model(ctx, model_ref)
     if isinstance(resolved, LingoLanguageError):
         return resolved
@@ -377,7 +380,7 @@ def db_put(ctx: LingoContext, model_ref: str, item_id, data) -> dict | LingoLang
     with closing(sqlite3.connect(ctx.db.path)) as conn:
         cursor = conn.execute(
             f'UPDATE "{_table_name(model_key)}" SET {assignments} WHERE id = ?',
-            [*(_to_sql(data[name]) for name in names), _db_id(item_id)],
+            [*(_to_sql(data[name]) for name in names), _to_db_id(item_id)],
         )
         conn.commit()
 
@@ -386,7 +389,7 @@ def db_put(ctx: LingoContext, model_ref: str, item_id, data) -> dict | LingoLang
     return {'id': item_id, **{name: data[name] for name in names}}
 
 
-def db_patch(ctx: LingoContext, model_ref: str, item_id, data) -> dict | LingoLanguageError:
+def _eval_db_patch(ctx: LingoContext, model_ref: str, item_id, data) -> dict | LingoLanguageError:
     resolved = _resolve_db_model(ctx, model_ref)
     if isinstance(resolved, LingoLanguageError):
         return resolved
@@ -407,7 +410,7 @@ def db_patch(ctx: LingoContext, model_ref: str, item_id, data) -> dict | LingoLa
     with closing(sqlite3.connect(ctx.db.path)) as conn:
         cursor = conn.execute(
             f'UPDATE "{_table_name(model_key)}" SET {assignments} WHERE id = ?',
-            [*(_to_sql(data[name]) for name in names), _db_id(item_id)],
+            [*(_to_sql(data[name]) for name in names), _to_db_id(item_id)],
         )
         conn.commit()
         if cursor.rowcount == 0:
@@ -417,7 +420,7 @@ def db_patch(ctx: LingoContext, model_ref: str, item_id, data) -> dict | LingoLa
     return _row_to_object(define, row)
 
 
-def db_delete(ctx: LingoContext, model_ref: str, item_id) -> dict | LingoLanguageError:
+def _eval_db_delete(ctx: LingoContext, model_ref: str, item_id) -> dict | LingoLanguageError:
     resolved = _resolve_db_model(ctx, model_ref)
     if isinstance(resolved, LingoLanguageError):
         return resolved
@@ -433,16 +436,13 @@ def db_delete(ctx: LingoContext, model_ref: str, item_id) -> dict | LingoLanguag
             return _not_found(model_key, item_id)
         conn.execute(
             f'DELETE FROM "{_table_name(model_key)}" WHERE id = ?',
-            (_db_id(item_id),),
+            (_to_db_id(item_id),),
         )
         conn.commit()
 
     return _row_to_object(define, row)
 
-
-#
-# db symbol evaluators
-#
+# handler + registration #
 
 def _eval_db_symbol(ctx: LingoContext, db_func: Callable, symbol, *arg_names: str):
     try:
@@ -458,19 +458,17 @@ def _eval_db_symbol(ctx: LingoContext, db_func: Callable, symbol, *arg_names: st
         return result
     return LingoValue(type='struct', value=result)
 
-
 register_expression_handlers({
-    'db_create': lambda ctx, symbol: _eval_db_symbol(ctx, db_create, symbol, 'data'),
-    'db_read': lambda ctx, symbol: _eval_db_symbol(ctx, db_read, symbol, 'id'),
-    'db_list': lambda ctx, symbol: _eval_db_symbol(ctx, db_list, symbol, 'offset', 'limit'),
-    'db_put': lambda ctx, symbol: _eval_db_symbol(ctx, db_put, symbol, 'id', 'data'),
-    'db_patch': lambda ctx, symbol: _eval_db_symbol(ctx, db_patch, symbol, 'id', 'data'),
-    'db_delete': lambda ctx, symbol: _eval_db_symbol(ctx, db_delete, symbol, 'id'),
+    'db_create': lambda ctx, symbol: _eval_db_symbol(ctx, _eval_db_create, symbol, 'data'),
+    'db_read': lambda ctx, symbol: _eval_db_symbol(ctx, _eval_db_read, symbol, 'id'),
+    'db_list': lambda ctx, symbol: _eval_db_symbol(ctx, _eval_db_list, symbol, 'offset', 'limit'),
+    'db_put': lambda ctx, symbol: _eval_db_symbol(ctx, _eval_db_put, symbol, 'id', 'data'),
+    'db_patch': lambda ctx, symbol: _eval_db_symbol(ctx, _eval_db_patch, symbol, 'id', 'data'),
+    'db_delete': lambda ctx, symbol: _eval_db_symbol(ctx, _eval_db_delete, symbol, 'id'),
 })
 
-
 #
-# wsgi application
+# wsgi helpers
 #
 
 def _response(status: HTTPStatus, payload, headers: list | None = None) -> tuple[str, object, list]:
@@ -517,6 +515,9 @@ def _read_list_query(env) -> dict:
             raise ValueError(f'query parameter {name!r} must be an int, got {values[0]!r}') from None
     return options
 
+#
+# wsgi application
+#
 
 def create_wsgi_application(
     ctx: LingoContext,
@@ -547,17 +548,17 @@ def create_wsgi_application(
 
         match method, item_id:
             case 'GET', None:
-                return _result_response(db_list(ctx, model_key, **_read_list_query(env)))
+                return _result_response(_eval_db_list(ctx, model_key, **_read_list_query(env)))
             case 'GET', _:
-                return _result_response(db_read(ctx, model_key, item_id))
+                return _result_response(_eval_db_read(ctx, model_key, item_id))
             case 'DELETE', _:
-                return _result_response(db_delete(ctx, model_key, item_id))
+                return _result_response(_eval_db_delete(ctx, model_key, item_id))
             case 'POST', None:
-                return _result_response(db_create(ctx, model_key, _read_json_body(env, max_body_bytes)), HTTPStatus.CREATED)
+                return _result_response(_eval_db_create(ctx, model_key, _read_json_body(env, max_body_bytes)), HTTPStatus.CREATED)
             case 'PUT', _:
-                return _result_response(db_put(ctx, model_key, item_id, _read_json_body(env, max_body_bytes)))
+                return _result_response(_eval_db_put(ctx, model_key, item_id, _read_json_body(env, max_body_bytes)))
             case 'PATCH', _:
-                return _result_response(db_patch(ctx, model_key, item_id, _read_json_body(env, max_body_bytes)))
+                return _result_response(_eval_db_patch(ctx, model_key, item_id, _read_json_body(env, max_body_bytes)))
             case _:
                 ctx.log.error(f'Unknown error, code should not get here, likely a bug, {method=} {model_key=} {item_id=}')
                 raise LingoRuntimeError(f'Unknown error')
@@ -627,15 +628,11 @@ def _create_uwsgi_application(spec_path: str) -> Callable:
 
     return uwsgi_application
 
+#
+# entries
+#
 
-# The LINGO_APP_SPEC_FILE env var exists to tell this file whether or not to create the uwsgi application
-# when starting the server, api.py first imports this file but we don't want to create the uwsgi app yet
-# the evaluate_server_spec function will run the server as a subprocess, when it does that it will pass
-# the LINGO_APP_SPEC_FILE env var to tell this module to create the uwsgi application when needed
-# this env variable should NOT be set manually by users
-if os.environ.get('LINGO_APP_SPEC_FILE'):
-    application = _create_uwsgi_application(os.environ['LINGO_APP_SPEC_FILE'])
-
+# from spec file #
 
 def evaluate_server_spec(ctx: LingoContext, ast: LingoASTAppSpec) -> None:
     uwsgi = shutil.which('uwsgi')
@@ -671,3 +668,13 @@ def evaluate_server_spec(ctx: LingoContext, ast: LingoASTAppSpec) -> None:
         raise LingoRuntimeError(f'uWSGI executable not found: {uwsgi!r}') from None
     except subprocess.CalledProcessError as e:
         raise LingoRuntimeError(f'uWSGI exited with status {e.returncode}') from None
+
+# actual server subprocess #
+
+if os.environ.get('LINGO_APP_SPEC_FILE'):
+    # The LINGO_APP_SPEC_FILE env var exists to tell this file whether or not to create the uwsgi application
+	# when starting the server, api.py first imports this file but we don't want to create the uwsgi app yet
+	# the evaluate_server_spec function will run the server as a subprocess, when it does that it will pass
+	# the LINGO_APP_SPEC_FILE env var to tell this module to create the uwsgi application when needed
+	# this env variable should NOT be set manually by users
+    application = _create_uwsgi_application(os.environ['LINGO_APP_SPEC_FILE'])
