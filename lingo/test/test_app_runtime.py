@@ -546,6 +546,15 @@ class TestAppModels(unittest.TestCase):
         with self.assertRaises(LingoRuntimeError):
             execute_client_file(ctx, DB_SPEC_STR, None, model_request=ClientModelRequest('notes.note', 'create'), params=['bogus=1'])
 
+    def test_client_help_lists_app_spec(self):
+        argv = ['lingolib', 'client', APP_SPEC_STR, '--help']
+        with patch('lingolib.cli.sys.argv', argv), patch('builtins.print') as printed:
+            cli.parse_cli(LingoContext())
+        output = printed.call_args_list[-1].args[0]
+        self.assertIn('title: Hello Backend', output)
+        self.assertIn('my_app.say_hello', output)
+        self.assertIn('my_app.person', output)
+
     def _parse_cli(self, *args):
         argv = ['lingolib', 'client', DB_SPEC_STR, *args]
         with patch('lingolib.cli.sys.argv', argv), patch(

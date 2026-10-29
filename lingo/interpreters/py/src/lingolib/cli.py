@@ -3,12 +3,14 @@ import sys
 from itertools import takewhile
 
 from lingolib.api import (
+    create_ast_from_file,
     execute_client_file,
     debug_file,
     display_file,
     execute_file,
     serve_file,
 )
+from lingolib.ast import LingoASTAppSpec
 from lingolib.context import LingoContext
 from lingolib.errors import LingoLibError
 from lingolib.types import value_to_str, error_to_str
@@ -26,9 +28,9 @@ HELP = (
     '  client <path> --op <module.op> [--json <object> | --params name=value ...] [-i] [--show]\n'
     '  client <path> --model <module.model> <action> [--json <object> | --params name=value ...] [-i] [--show]\n'
     '                               -i prompts for missing args (secure args use getpass); --show reveals secure output\n'
-    '  client <path> --lingo spec   fetch the original yaml app spec from the server\n'
     '                               actions: --create, --list [--offset N] [--limit N], --get ID, --put ID, --patch ID, --delete ID\n'
     '                               create/put/patch must provide model field(s) with --json, --params or -i\n'
+    '  client <path> --lingo spec   fetch the original yaml app spec from the server\n'
     '\n'
     'server/client environment:\n'
     f'  LINGO_SERVER_HOST            bind address (default: {DEFAULT_HOST})\n'
@@ -44,6 +46,29 @@ HELP = (
 
 class LingoCLIParseError(Exception):
     pass
+
+
+def create_app_spec_help(ctx: LingoContext, spec_path: str) -> str:
+    ast = create_ast_from_file(ctx, spec_path)
+    if not isinstance(ast, LingoASTAppSpec):
+        raise LingoCLIParseError(f'client requires an app spec, got {ast.lingo.spec!r}')
+
+    meta = ast.meta.values if ast.meta else {}
+    lines = [
+        'app spec:',
+        f'    title: {meta.get("title", "unknown")}',
+        f'    description: {meta.get("description", "none")}',
+        '',
+        '    modules:',
+    ]
+    for module_name, module in ast.modules.members.items():
+        lines.append(f'        {module_name}:')
+        lines.append('            ops:')
+        lines.extend(f'                {module_name}.{op_name}' for op_name in module.ops.funcs)
+        lines.append('            models:')
+        lines.extend(f'                {module_name}.{model_name}' for model_name in module.models)
+
+    return '\n'.join(lines)
 
 
 def parse_cli(ctx: LingoContext):
@@ -76,6 +101,8 @@ def parse_cli(ctx: LingoContext):
 
     if '--help' in remaining_args or '-h' in remaining_args:
         print(HELP)
+        if command == 'client' and remaining_args and not remaining_args[0].startswith('-'):
+            print(create_app_spec_help(ctx, remaining_args[0]))
         return
 
     if command == 'exe':
