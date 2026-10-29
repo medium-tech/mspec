@@ -3,6 +3,7 @@ lingo:
     version: '0.1.0b'
 
 meta:
+    title: 'Hello Backend'
     description: 'Hello world for a backend application'
 
 imports:

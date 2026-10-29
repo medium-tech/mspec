@@ -583,6 +583,22 @@ class L_SYM_imports(NamedTuple):
 	def L_SYM_TYPE(self):
 		return 'spec'
 
+class L_SYM_meta(NamedTuple):
+	"""free-form spec metadata, keys must be strings and values can be any data"""
+
+	L_SRC: str
+	values: dict[str, object]
+	L_FILE: str = ''
+	L_LINE: int = -1
+
+	@property
+	def L_SYM_NAME(self):
+		return 'meta'
+
+	@property
+	def L_SYM_TYPE(self):
+		return 'spec'
+
 class L_SYM_state(NamedTuple):
 
 	L_SRC: str

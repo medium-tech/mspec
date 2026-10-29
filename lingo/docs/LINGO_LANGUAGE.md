@@ -89,6 +89,8 @@ Structure:
   - Expression reference: [LINGO_EXPRESSIONS.md](LINGO_EXPRESSIONS.md)
 - `meta` (optional):
   - Arbitrary mapping of YAML metadata for humans and tooling.
+  - Keys must be strings, values can be any YAML data. Supported by all spec types and parsed into the `meta` symbol (`L_SYM_meta`).
+  - Recommended keys: `title` and `description`; if provided they must be strings
   - Common use: description, tags, ownership, notes, or environment hints.
 - `import` (optional):
   - List of relative/known import paths to other specs (commonly `lib`).

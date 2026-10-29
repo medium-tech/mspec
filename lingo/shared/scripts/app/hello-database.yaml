@@ -3,6 +3,7 @@ lingo:
     version: '0.1.0b'
 
 meta:
+    title: 'Hello Database'
     description: 'Database CRUD+list models and reusable db operations'
 
 modules:

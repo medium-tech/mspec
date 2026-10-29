@@ -4,7 +4,7 @@ from lingolib.context import LingoContext
 from lingolib.errors import LingoSyntaxError
 
 from lingolib.ast import LingoASTAppSpec
-from lingolib.parsing.shared import parse_define_symbol, parse_func_symbol, parse_imports_symbol
+from lingolib.parsing.shared import parse_define_symbol, parse_func_symbol, parse_imports_symbol, parse_meta_symbol
 from lingolib.parsing.state import get_yaml_line
 
 
@@ -124,4 +124,6 @@ def spec_app_ast_from_dict(
 
     modules = _parse_app_modules(ctx, data['modules'])
     imports = parse_imports_symbol(ctx, data.get('imports', []))
-    return LingoASTAppSpec(lingo=lingo, modules=modules, imports=imports)
+    meta = parse_meta_symbol(ctx, data.get('meta', dict()))
+    breakpoint()
+    return LingoASTAppSpec(lingo=lingo, modules=modules, imports=imports, meta=meta)

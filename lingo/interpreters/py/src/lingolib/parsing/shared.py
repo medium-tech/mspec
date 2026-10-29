@@ -144,6 +144,27 @@ def parse_imports_symbol(ctx: LingoContext, data: list) -> symbols.L_SYM_imports
     )
 
 
+META_FIELDS_REQUIRED_TO_BE_STRINGS = ['description', 'title']
+
+def parse_meta_symbol(ctx: LingoContext, data: dict) -> symbols.L_SYM_meta:
+    if not isinstance(data, dict):
+        raise LingoSyntaxError(f'meta symbol must be a mapping, got: {type(data).__name__!r}')
+    
+    for key in data:
+        if not isinstance(key, str):
+            raise LingoSyntaxError(f'meta keys must be strings, got: {type(key).__name__!r}')
+        
+        if key in META_FIELDS_REQUIRED_TO_BE_STRINGS and not isinstance(data[key], str):
+            raise LingoSyntaxError(f'meta field {key!r} must be a string')
+
+    return symbols.L_SYM_meta(
+        L_SRC='meta',
+        values=data,
+        L_FILE=ctx.parser.file,
+        L_LINE=get_yaml_line(data)
+    )
+
+
 def parse_params_symbol(ctx: LingoContext, data: dict) -> symbols.L_SYM_params:
     if not isinstance(data, dict):
         raise LingoSyntaxError(f'params symbol must be a mapping, got: {type(data).__name__!r}')

@@ -10,12 +10,14 @@ class LingoASTExeSpec:
     main: symbols.L_SYM_main
     imports: symbols.L_SYM_imports | None = None
     params: symbols.L_SYM_params | None = None
+    meta: symbols.L_SYM_meta | None = None
 
 @dataclass
 class LingoASTAppSpec:
     lingo: symbols.L_SYM_lingo
     modules: symbols.L_SYM_app_modules
     imports: symbols.L_SYM_imports | None = None
+    meta: symbols.L_SYM_meta | None = None
 
 @dataclass
 class LingoASTGUISpec:
@@ -24,16 +26,19 @@ class LingoASTGUISpec:
     state: symbols.L_SYM_state | None = None
     ops: symbols.L_SYM_ops | None = None
     params: symbols.L_SYM_params | None = None
+    meta: symbols.L_SYM_meta | None = None
 
 @dataclass
 class LingoASTTextSpec:
     lingo: symbols.L_SYM_lingo
     block: symbols.L_SYM_block
+    meta: symbols.L_SYM_meta | None = None
 
 @dataclass
 class LingoASTLibSpec:
     lingo: symbols.L_SYM_lingo
     modules: symbols.L_SYM_lib_modules
+    meta: symbols.L_SYM_meta | None = None
 
 
 LingoASTSpec = LingoASTExeSpec | LingoASTLibSpec | LingoASTAppSpec | LingoASTGUISpec | LingoASTTextSpec

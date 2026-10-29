@@ -4,6 +4,7 @@ from lingolib.context import LingoContext
 from lingolib.errors import LingoSyntaxError
 
 from ..ast import LingoASTTextSpec
+from .shared import parse_meta_symbol
 from .state import get_yaml_line
 from .spec_expression import create_expression_ast
 
@@ -35,4 +36,4 @@ def spec_text_ast_from_dict(
         L_LINE=get_yaml_line(block_data),
     )
 
-    return LingoASTTextSpec(lingo=lingo, block=block)
+    return LingoASTTextSpec(lingo=lingo, block=block, meta=parse_meta_symbol(ctx, data.get('meta', dict())))

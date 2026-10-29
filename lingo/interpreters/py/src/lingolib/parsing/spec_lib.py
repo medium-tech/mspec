@@ -2,7 +2,7 @@ import lingolib.symbols as symbols
 
 from lingolib.context import LingoContext
 from lingolib.errors import LingoSyntaxError
-from lingolib.parsing.shared import parse_define_symbol, parse_func_symbol
+from lingolib.parsing.shared import parse_define_symbol, parse_func_symbol, parse_meta_symbol
 
 from ..ast import LingoASTLibSpec
 from .state import get_yaml_line
@@ -78,4 +78,5 @@ def spec_lib_ast_from_dict(
     return LingoASTLibSpec(
         lingo=lingo,
         modules=modules_symbol,
+        meta=parse_meta_symbol(ctx, data.get('meta', dict())),
     )
