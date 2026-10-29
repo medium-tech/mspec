@@ -142,7 +142,7 @@ def _split_reference(reference: str, kind: str) -> tuple[str, str]:
     return parts[0], parts[1]
 
 
-def _parse_json_object(request_body: str) -> dict:
+def _validate_json_object(request_body: str) -> None:
     try:
         parsed_body = json.loads(request_body)
     except json.JSONDecodeError as e:
@@ -151,7 +151,7 @@ def _parse_json_object(request_body: str) -> dict:
         not isinstance(key, str) for key in parsed_body
     ):
         raise LingoRuntimeError('--json must contain a JSON object with string keys')
-    return parsed_body
+
 
 
 def _request(method: str, path_parts: list[str], request_body: str | None = None, query: dict | None = None) -> object:
@@ -189,7 +189,7 @@ def _request(method: str, path_parts: list[str], request_body: str | None = None
 
 def call_op(op_reference: str, request_body: str) -> object:
     module_name, op_name = _split_reference(op_reference, 'op')
-    _parse_json_object(request_body)
+    _validate_json_object(request_body)
     return _request('POST', [module_name, op_name], request_body)
 
 
@@ -215,7 +215,7 @@ def call_model(request: ClientModelRequest, request_body: str | None = None) -> 
             raise LingoRuntimeError(f'unknown model action: {request.action!r}')
 
     if request_body is not None:
-        _parse_json_object(request_body)
+        _validate_json_object(request_body)
     return _request(method, path, request_body, query)
 
 
