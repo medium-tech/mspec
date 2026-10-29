@@ -13,6 +13,7 @@ from lingolib.ast import LingoASTAppSpec
 from lingolib.context import LingoContext, LingoParserContext
 from lingolib.errors import LingoSyntaxError
 from lingolib.parsing import create_spec_ast_from_dict
+from lingolib.parsing.shared import META_FIELDS_REQUIRED_TO_BE_STRINGS
 from lingolib.symbols import L_SYM_define, L_SYM_func, L_SYM_meta
 
 
@@ -43,18 +44,23 @@ class TestAppSpecParsing(unittest.TestCase):
             'x_str': 'hello',
             'x_list': [1, 2, 3],
             'x_dict': {'a': 1}
-		}
+        }
     
         data = {'lingo': {'spec': 'app', 'version': '0.1.0b'}, 'meta': meta, 'modules': {}}
-        with self.assertRaisesRegex(LingoSyntaxError, 'meta keys must be strings'):
-            ast = create_spec_ast_from_dict(LingoContext(parser=LingoParserContext(file='<memory>')), data)
-            self.assertIsInstance(ast.meta, L_SYM_meta)
-            self.assertEqual(ast.meta.values, meta)
+        ast = create_spec_ast_from_dict(LingoContext(parser=LingoParserContext(file='<memory>')), data)
+        self.assertIsInstance(ast.meta, L_SYM_meta)
+        self.assertEqual(ast.meta.values, meta)
 
     def test_meta_keys_must_be_strings(self):
         data = {'lingo': {'spec': 'app', 'version': '0.1.0b'}, 'meta': {1: 'x'}, 'modules': {}}
         with self.assertRaisesRegex(LingoSyntaxError, 'meta keys must be strings'):
             create_spec_ast_from_dict(LingoContext(parser=LingoParserContext(file='<memory>')), data)
+
+    def test_meta_values_must_be_strings(self):
+        for key in META_FIELDS_REQUIRED_TO_BE_STRINGS:
+            data = {'lingo': {'spec': 'app', 'version': '0.1.0b'}, 'meta': {key: 5}, 'modules': {}}
+            with self.assertRaisesRegex(LingoSyntaxError, f"meta field '{key}' must be a string"):
+                create_spec_ast_from_dict(LingoContext(parser=LingoParserContext(file='<memory>')), data)
 
     def test_hello_backend_app_spec(self):
         ast = create_ast_from_file(LingoContext(), APP_SPEC_STR)
