@@ -13,18 +13,18 @@ from lingolib.api import (
 from lingolib.ast import LingoASTAppSpec
 from lingolib.context import LingoContext
 from lingolib.errors import LingoLibError
-from lingolib.symbols import L_SYM_define
-from lingolib.runtime.eval_expression import unwrap_expression
 from lingolib.types import value_to_str, error_to_str
 from lingolib.runtime.eval_client import ClientModelRequest, fetch_server_spec, print_response, resolve_client_model, resolve_client_op
-from lingolib.runtime.shared import DEFAULT_DB_FILE, DEFAULT_HOST, DEFAULT_PORT, DEFAULT_SERVER_PROCESSES, DEFAULT_MAX_BODY_BYTES, DEFAULT_LOG_MAX_SIZE
+from lingolib.runtime.shared import format_key_values, describe_defines, create_params_help, DEFAULT_DB_FILE, DEFAULT_HOST, DEFAULT_PORT, DEFAULT_SERVER_PROCESSES, DEFAULT_MAX_BODY_BYTES, DEFAULT_LOG_MAX_SIZE
 
 HELP = (
     'usage: lingolib [--help] <command> [args]\n'
     '\n'
     'commands:\n'
-    '  exe <path> <params>          load, parse, execute an exe spec and print result\n'
-    '  display <path> <params>      load, parse, display a text or GUI spec\n'
+    '  exe <path> [--json <object> | --params name=value ...] [-i]   load, parse, execute an exe spec and print result\n'
+    '  display <path> [--json <object> | --params name=value ...] [-i]   load, parse, display a text or GUI spec\n'
+    '                               exe/display params: --json is a complete object, --params sets individual values,\n'
+    '                               -i prompts for missing params without defaults; --help lists the spec params\n'
     '  debug <path>                 load, parse, print the AST for a spec\n'
     '  server <app spec path>       run an app spec HTTP server\n'
     '  client <path> --op <module.op> [--json <object> | --params name=value ...] [-i] [--show]\n'
@@ -58,8 +58,10 @@ def create_app_spec_help(ctx: LingoContext, spec_path: str) -> str:
     meta = ast.meta.values if ast.meta else {}
     lines = [
         'app spec:',
-        f'    title: {meta.get("title", "unknown")}',
-        f'    description: {meta.get("description", "none")}',
+        *format_key_values([
+            ('title', str(meta.get('title', 'unknown'))),
+            ('description', str(meta.get('description', 'none'))),
+        ], '    '),
         '',
         '    modules:',
     ]
@@ -73,25 +75,6 @@ def create_app_spec_help(ctx: LingoContext, spec_path: str) -> str:
     return '\n'.join(lines)
 
 
-def _describe_define(ctx: LingoContext, define: L_SYM_define, indent: str) -> list[str]:
-    type_str = define.type
-    if define.element_type:
-        type_str = f'{type_str}[{define.element_type}]'
-
-    line = f'{indent}{define.name}: ({type_str})'
-    if define.default is not None:
-        line += f' default={unwrap_expression(ctx, define.default)!r}'
-    if define.secure:
-        line += ' secure'
-    if define.description:
-        line += f' :: {define.description}'
-
-    lines = [line]
-    for field in (define.fields or {}).values():
-        lines.extend(_describe_define(ctx, field, indent + '    '))
-    return lines
-
-
 def create_model_help(ctx: LingoContext, spec_path: str, model_reference: str) -> str:
     ast = create_ast_from_file(ctx, spec_path)
     if not isinstance(ast, LingoASTAppSpec):
@@ -100,13 +83,14 @@ def create_model_help(ctx: LingoContext, spec_path: str, model_reference: str) -
     define = resolve_client_model(ctx, ast, model_reference)
     lines = [
         'model:',
-        f'    name: {model_reference}',
-        f'    description: {define.description or "none"}',
+        *format_key_values([
+            ('name', model_reference),
+            ('description', define.description or 'none'),
+        ], '    '),
         '',
         '    fields:',
     ]
-    for field in (define.fields or {}).values():
-        lines.extend(_describe_define(ctx, field, '        '))
+    lines.extend(describe_defines(ctx, list((define.fields or {}).values()), '        '))
     return '\n'.join(lines)
 
 
@@ -118,21 +102,19 @@ def create_op_help(ctx: LingoContext, spec_path: str, op_reference: str) -> str:
     op = resolve_client_op(ctx, ast, op_reference)
     lines = [
         'op:',
-        f'    name: {op_reference}',
-        f'    description: {op.description or "none"}',
+        *format_key_values([
+            ('name', op_reference),
+            ('description', op.description or 'none'),
+        ], '    '),
         '',
         '    params:',
     ]
-    for arg in op.args or []:
-        lines.extend(_describe_define(ctx, arg, '        '))
+    lines.extend(describe_defines(ctx, list(op.args or []), '        '))
     lines.extend(['', '    return:'])
     if op.return_ is None:
         lines.append('        none')
     else:
-        return_lines = _describe_define(ctx, op.return_, '        ')
-        # the return define's generated name (<op>.return) is noise
-        return_lines[0] = return_lines[0].replace(f'{op.return_.name} ', '', 1)
-        lines.extend(return_lines)
+        lines.extend(describe_defines(ctx, [op.return_], '        '))
     return '\n'.join(lines)
 
 
@@ -177,6 +159,10 @@ def parse_cli(ctx: LingoContext):
 
     if '--help' in remaining_args or '-h' in remaining_args:
         print(HELP)
+        if command in ('exe', 'display') and remaining_args and not remaining_args[0].startswith('-'):
+            ast = create_ast_from_file(ctx, remaining_args[0])
+            params = getattr(ast, 'params', None)
+            print(create_params_help(ctx, params))
         if command == 'client' and remaining_args and not remaining_args[0].startswith('-'):
             spec_path = remaining_args[0]
             target = _client_help_target(remaining_args)

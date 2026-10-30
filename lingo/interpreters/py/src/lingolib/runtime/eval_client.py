@@ -1,7 +1,6 @@
 import json
 import os
 
-from getpass import getpass
 from typing import NamedTuple
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
@@ -15,7 +14,7 @@ from lingolib.runtime.registry import (
     init_registry,
     resolve_model_define,
 )
-from lingolib.runtime.shared import DEFAULT_HOST, DEFAULT_PORT, convert_cli_value
+from lingolib.runtime.shared import DEFAULT_HOST, DEFAULT_PORT, parse_param_assignments
 from lingolib.symbols import L_SYM_func
 
 
@@ -41,74 +40,9 @@ def parse_cli_params(
 ) -> dict:
     if func.args is None:
         raise LingoRuntimeError(f'op {func.name!r} has no parameter definitions')
-    return _parse_assignments(
+    return parse_param_assignments(
         {arg.name: arg for arg in func.args}, f'op {func.name!r}', assignments, interactive
     )
-
-def _parse_assignments(
-    definitions: dict,
-    owner: str,
-    assignments: list[str],
-    interactive: bool,
-) -> dict:
-    parsed = {}
-
-    # parse assignments from cli #
-
-    for assignment in assignments:
-        if '=' not in assignment:
-            raise LingoRuntimeError(f'parameter must use name=value format, got {assignment!r}')
-        
-        name, raw_value = assignment.split('=', 1)
-        if not name:
-            raise LingoRuntimeError(f'parameter name cannot be empty: {assignment!r}')
-            
-        if name in parsed:
-            raise LingoRuntimeError(f'parameter specified more than once: {name!r}')
-        try:
-            field_type = definitions[name].type
-        except KeyError:
-            raise LingoRuntimeError(f'unknown parameter for {owner}: {name!r}')
-        
-        parsed[name] = convert_cli_value(name, str(field_type), raw_value)
-
-    # prompt for missing params #
-
-    if interactive:
-        for name, definition in definitions.items():
-
-            # only prompt for missing params #
-
-            if name in parsed or definition.default is not None:
-                continue
-
-            # build prompt #
-
-            prompt = f'{name} ({definition.type})'
-            if definition.description:
-                prompt += f' - {definition.description}'
-            prompt += ': '
-
-            # prompt user up to 3 times #
-
-            for _ in range(3):
-                raw_value = (
-                    getpass(prompt) if definition.secure else input(prompt)
-                )
-                try:
-                    parsed[name] = convert_cli_value(
-                        name, str(definition.type), raw_value
-                    )
-                    break
-                except LingoRuntimeError as e:
-                    if definition.secure:
-                        print(f'Invalid value for secure parameter {name!r}; try again.')
-                    else:
-                        print(f'Invalid value: {e}')
-            else:
-                raise LingoRuntimeError(f'Max attempts reached for {name!r}')
-        
-    return parsed
 
 #
 # references
@@ -310,7 +244,7 @@ def _evaluate_model_request(
             raise LingoSyntaxError('interactive mode cannot be used with patch')
 
         if params is not None or interactive:
-            request_body = json.dumps(_parse_assignments(
+            request_body = json.dumps(parse_param_assignments(
                 define.fields, f'model {model_request.model!r}', params or [], interactive
             ))
         if request_body is None:

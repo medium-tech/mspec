@@ -10,7 +10,6 @@ allow access to:
 """
 
 import os
-import sys
 
 from collections import namedtuple
 
@@ -25,7 +24,7 @@ from lingolib.context import (
 from lingolib.errors import LingoRuntimeError
 from lingolib.parsing import create_spec_ast_from_dict, YamlLocationLoader, LingoASTLibSpec
 from lingolib.runtime.eval_expression import unwrap_expression
-from lingolib.runtime.shared import parse_cli_params, convert_cli_value, CLIHelpMenuRequested, create_help_string, prompt_cli_user_for_param
+from lingolib.runtime.shared import parse_params_cli_args, parse_param_assignments, parse_param_json
 
 import yaml
 
@@ -126,39 +125,28 @@ def resolve_model_define(ctx: LingoContext, model: L_SYM_define) -> L_SYM_define
 #
 
 def add_params_to_registry(ctx: LingoContext, params: L_SYM_params, cli_args: list[str] = []):
-	
+	"""parse --json, --params and -i from the CLI args, apply defaults and set ctx.registry.params"""
+
 	if ctx.registry is None:
 		raise RuntimeError('LingoContext.registry has not been initialized')
 
-	try:
-		raw_cli_values, interactive_enabled = parse_cli_params(cli_args)
-	except CLIHelpMenuRequested:
-		print(create_help_string(ctx, params))
-		sys.exit(0)
+	param_input = parse_params_cli_args(cli_args)
 
-	sep = lambda msg: print(f'\n{"=" * 15} {msg} {"=" * 15}')
+	if param_input.request_body is not None:
+		provided = parse_param_json(params.fields, 'params', param_input.request_body)
+	else:
+		provided = parse_param_assignments(
+			params.fields, 'params', param_input.assignments or [], param_input.interactive
+		)
 
-	user_was_prompted = False
 	raw_values = {}
-
 	for field_name, field_def in params.fields.items():
-		try:
-			raw_value = raw_cli_values[field_name]
-			raw_values[field_name] = convert_cli_value(field_name, field_def.type, raw_value)
-
-		except KeyError:
-			if field_def.default is not None:
-				raw_values[field_name] = unwrap_expression(ctx, field_def.default)
-			elif interactive_enabled:
-				if not user_was_prompted:
-					sep('start interactive mode')
-				raw_values[field_name] = prompt_cli_user_for_param(field_name, field_def)
-				user_was_prompted = True
-			else:
-				raise LingoRuntimeError(f'missing required param: {field_name!r}')
-
-	if user_was_prompted:
-		sep('end interactive mode')
+		if field_name in provided:
+			raw_values[field_name] = provided[field_name]
+		elif field_def.default is not None:
+			raw_values[field_name] = unwrap_expression(ctx, field_def.default)
+		else:
+			raise LingoRuntimeError(f'missing required param: {field_name!r}')
 
 	ctx.registry.params = namedtuple('Params', raw_values.keys())(**raw_values)
 	
