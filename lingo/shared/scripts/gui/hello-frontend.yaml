@@ -12,22 +12,28 @@ meta:
         as well. Using the backend path is required because that path is how to derive
         the url endpoint.
 
-params:
-    person_id:
-        define: str
-        description: 'The ID of the person to view.'
-        default: '-1'
+params: {}
 
 state:
-    say_hello:
-        define: 'lingo.op_call'
+    say_hello_state:
+        define: 'lingo.form'
+
+    say_hello_result:
+        define: str
 
     create_person:
         define: 'lingo.model_create'
     
-    view_people: 'lingo.model_list'
+    view_people_state:
+        define: 'lingo.model_list'
+    
+    view_people_items:
+        define: list
+        element_type: struct
+        fields: 'hello_ns.person'       # the fields for the struct in the list must match this (reference to model in lib spec)
 
 block:
+
     # ops #
 
     - heading: 'App Ops'
@@ -36,34 +42,19 @@ block:
       level: 2
 
     - widget:
-        op: 'backend.my_app.say_hello'
-        bind: 'state.say_hello'
+        op: 'backend.my_app.say_hello'      # generate a widget that accepts a form to start the op, then submits it to the backend and shows the result or error
+        state: 'state.say_hello_state'      # references the local state field that contains the lingo.form struct (or struct w/ compatible fields)
+        result: 'state.say_hello_result'    # references the local state field for the result, must match op return type
     
     # models #
     
     - heading: 'App Models'
 
-    - heading: 'View Person'
-      level: 2
-
-    - widget:
-        model: 'backend.my_app.person'
-        display: 'view'
-        model_id: 
-            params: person_id
-
-    - heading: 'Create Person'
-      level: 2
-
-    - widget:
-        model: 'backend.my_app.person'
-        bind: 'state.create_person'
-        display: 'create'
-
     - heading: 'Person List'
       level: 2
 
     - widget:
-        model: 'backend.my_app.person'
-        display: 'list'
-    
+        model: 'backend.my_app.person'      # generate a widget that paginates through this model and lists them as a table
+        mode: 'list'                        # currently only list is supported
+        state: 'state.view_people_state'    # reference the local state field that contains the lingo.model_list struct (or struct w/ compatible fields)
+        result: 'state.view_people_items'   # reference the local state field that will contain items returned from the backend, must be a list w/ element type struct type of model)

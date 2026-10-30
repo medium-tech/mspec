@@ -5,61 +5,41 @@ lingo:
 modules:
 
     lingo:
-        op_call:
+        form:
             define: struct
             fields:
                 status:
                     define: str
-                    default: 'initial'
-                form:
-                    define: struct
-                    # default:
-                    #     unknown: 'Form fields will be supplied by the widget.'
-                form_errors:
-                    define: struct
-                    # default:
-                    #     unknown: 'Form errors will be supplied by the widget.'
-                result:
-                    define: any
-                    # default:
-                    #     unknown: 'Result will be supplied by the widget.'
+                    default: 'initial'  # can be: initial, loading, success, error
+                
+                enabled:
+                    define: bool
+                    default: true
+                    
+                form_data:
+                    define: struct      # current form values
 
-        model_create:
-            define: struct
-            fields:
-                status:
-                    define: str
-                    default: 'initial'
-                form:
+                initial_form_data:
+                    define: struct      # initial form values   (optional)
+
+                form_errors:            # form errors by field  (optional)
                     define: struct
-                    # default:
-                    #     unknown: 'Form fields will be supplied by the widget.'
-                form_errors:
-                    define: struct
-                    # default:
-                    #     unknown: 'Form errors will be supplied by the widget.'
-                result:
-                    define: any
-                    # default:
-                    #     unknown: 'Result will be supplied by the widget.'
         
         model_list:
             define: struct
             fields:
                 status:
                     define: str
-                    default: 'initial'
+                    default: 'initial'  # can be: initial, loading, success, error
+                    
                 offset:
                     define: int
                     default: 0
+
                 size:
                     define: int
                     default: 10
+
                 total:
                     define: int
-                    # default:
-                    #     unknown: 'Total will be known after the list is retrieved.'
-                result:
-                    define: list
-                    # default:
-                    #     unknown: 'List will be known after the list is retrieved.'
+                    default: -1
