@@ -29,8 +29,7 @@ state:
     
     view_people_items:
         define: list
-        element_type: struct
-        fields: 'hello_ns.person'       # the fields for the struct in the list must match this (reference to model in lib spec)
+        element_type: 'hello_ns.person'       # the fields for the struct in the list must match this (reference to model in lib spec)
 
 block:
 
