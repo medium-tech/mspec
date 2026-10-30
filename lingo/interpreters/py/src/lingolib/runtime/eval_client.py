@@ -120,7 +120,7 @@ def _split_reference(reference: str, kind: str) -> tuple[str, str]:
         raise LingoRuntimeError(f'{kind} must be specified as <module>.<{kind}>, got {reference!r}')
     return parts[0], parts[1]
 
-def _resolve_client_define(ctx: LingoContext, ast: LingoASTAppSpec, model_reference: str):
+def resolve_client_model(ctx: LingoContext, ast: LingoASTAppSpec, model_reference: str):
     module_name, model_name = _split_reference(model_reference, 'model')
     module = ast.modules.members.get(module_name)
     if module is None or model_name not in module.models:
@@ -130,6 +130,29 @@ def _resolve_client_define(ctx: LingoContext, ast: LingoASTAppSpec, model_refere
         init_registry(ctx)
     add_lib_to_registry(ctx, ast.imports)
     return resolve_model_define(ctx, module.models[model_name])
+
+def resolve_client_op(ctx: LingoContext, ast: LingoASTAppSpec, op_reference: str) -> L_SYM_func:
+    """return the func symbol for an app op, following a reference into the imported libs"""
+    module_name, op_name = _split_reference(op_reference, 'op')
+    module = ast.modules.members.get(module_name)
+    if module is None or op_name not in module.ops.funcs:
+        raise LingoSyntaxError(f'op not found in app spec: {op_reference!r}')
+
+    op_symbol = module.ops.funcs[op_name]
+
+    if op_symbol.reference is not None:
+        if ctx.registry is None:
+            init_registry(ctx)
+        add_lib_to_registry(ctx, ast.imports)
+        try:
+            registered_op = ctx.registry.lib[op_symbol.reference]
+        except KeyError:
+            raise LingoSyntaxError(f'op reference not found in lib: {op_symbol.reference!r}') from None
+        if not isinstance(registered_op, LingoRegisteredFunction):
+            raise LingoSyntaxError(f'op reference is not a function: {op_symbol.reference!r}')
+        op_symbol = registered_op.ast
+
+    return op_symbol
 
 #
 # output
@@ -274,7 +297,7 @@ def _evaluate_model_request(
     if action not in MODEL_ACTIONS:
         raise LingoSyntaxError(f'unknown model action: {action!r}')
 
-    define = _resolve_client_define(ctx, ast, model_request.model)
+    define = resolve_client_model(ctx, ast, model_request.model)
 
     # request body #
 
@@ -329,25 +352,8 @@ def _evaluate_op_request(
         raise LingoSyntaxError('request_body cannot be combined with params or interactive')
 
     # get op #
-    
-    module_name, op_name = op_reference.split('.')
-    module = ast.modules.members.get(module_name)
-    if module is None or op_name not in module.ops.funcs:
-        raise LingoSyntaxError(f'op not found in app spec: {op_reference!r}')
-    
-    op_symbol = module.ops.funcs[op_name]
 
-    if op_symbol.reference is not None:
-        if ctx.registry is None:
-            init_registry(ctx)
-        add_lib_to_registry(ctx, ast.imports)
-        try:
-            registered_op = ctx.registry.lib[op_symbol.reference]
-        except KeyError:
-            raise LingoSyntaxError(f'op reference not found in lib: {op_symbol.reference!r}') from None
-        if not isinstance(registered_op, LingoRegisteredFunction):
-            raise LingoSyntaxError(f'op reference is not a function: {op_symbol.reference!r}')
-        op_symbol = registered_op.ast
+    op_symbol = resolve_client_op(ctx, ast, op_reference)
 
     # get input #
 
