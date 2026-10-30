@@ -46,6 +46,10 @@ python -m pip install -e .
 ./lingo.sh --help
 ./lingo.sh exe ../../shared/scripts/exe/hello-world.yaml
 ./lingo.sh -v exe ../../shared/scripts/exe/hello-world.yaml
+./lingo.sh exe ../../shared/scripts/exe/hello-params.yaml --params name=Ada count=2		# supply params as <key>=<value>
+./lingo.sh exe ../../shared/scripts/exe/hello-params.yaml --json '{"name": "Ada"}'		# supply params as a json string
+./lingo.sh exe ../../shared/scripts/exe/hello-params.yaml -i							# supply params interactively
+./lingo.sh exe ../../shared/scripts/exe/hello-params.yaml --help						# print params definition
 ./lingo.sh server ../../shared/scripts/app/hello-backend.yaml
 ./lingo.sh client ../../shared/scripts/app/hello-backend.yaml \
   --op my_app.say_hello --json '{"name": "Ada"}'

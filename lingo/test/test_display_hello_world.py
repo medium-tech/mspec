@@ -499,7 +499,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
 
         name_launch_result = api.launch_target(
             ctx,
-            command=cmd + ['--name', 'alfred'],
+            command=cmd + ['--params', 'name=alfred'],
         )
         self.assertTrue(name_launch_result.ok, msg=str(name_launch_result))
 
@@ -538,7 +538,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
 
         all_args_launch_result = api.launch_target(
             ctx,
-            command=cmd + ['--name', 'linda', '--count', '123', '--is-enabled', 'true'],
+            command=cmd + ['--params', 'name=linda', 'count=123', 'is_enabled=true'],
         )
         self.assertTrue(all_args_launch_result.ok, msg=str(all_args_launch_result))
 
@@ -599,7 +599,7 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
 
         invalid_launch_result = api.launch_target(
             ctx,
-            command=cmd + ['--name'],
+            command=cmd + ['--params'],
         )
 
         time.sleep(.5)
@@ -609,5 +609,5 @@ class TestLingoDisplayRunTimeHelloWorld(unittest.TestCase):
         self.assertIsNotNone(invalid_session_result)
         self.assertTrue(invalid_session_result.ok, msg=str(invalid_session_result))
         
-        err_msg = "missing value for param CLI flag: '--name'"
+        err_msg = "--params requires at least one name=value"
         self.assertIn(err_msg, invalid_session_result.stderr)

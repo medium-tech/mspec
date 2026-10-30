@@ -130,7 +130,7 @@ class TestAppRuntime(unittest.TestCase):
         ast = create_ast_from_file(LingoContext(), APP_SPEC_STR)
         func = ast.modules.members['my_app'].ops.funcs['echo_types']
         with patch('builtins.input', side_effect=['yes', '7', '2.5', 'hi']) as prompt, patch(
-            'lingolib.runtime.eval_client.getpass'
+            'lingolib.runtime.shared.getpass'
         ) as secure_prompt:
             params = parse_cli_params(func, [], interactive=True)
 
@@ -147,7 +147,7 @@ class TestAppRuntime(unittest.TestCase):
         ast = create_ast_from_file(LingoContext(), APP_SPEC_STR)
         func = ast.modules.members['my_app'].ops.funcs['secure_test']
         with patch('builtins.input') as prompt, patch(
-            'lingolib.runtime.eval_client.getpass', return_value='hidden-value'
+            'lingolib.runtime.shared.getpass', return_value='hidden-value'
         ) as secure_prompt:
             params = parse_cli_params(func, [], interactive=True)
 
@@ -162,7 +162,7 @@ class TestAppRuntime(unittest.TestCase):
         func = func._replace(args=[func.args[0]._replace(secure=True), *func.args[1:]])
 
         with patch('builtins.input', side_effect=['7', '2.5', 'hi']), patch(
-            'lingolib.runtime.eval_client.getpass',
+            'lingolib.runtime.shared.getpass',
             side_effect=['not-a-bool', 'yes'],
         ), patch('builtins.print') as print_output:
             params = parse_cli_params(func, [], interactive=True)
@@ -551,7 +551,7 @@ class TestAppModels(unittest.TestCase):
         with patch('lingolib.cli.sys.argv', argv), patch('builtins.print') as printed:
             cli.parse_cli(LingoContext())
         output = printed.call_args_list[-1].args[0]
-        self.assertIn('title: Hello Backend', output)
+        self.assertIn('title:       Hello Backend', output)
         self.assertIn('my_app.say_hello', output)
         self.assertIn('my_app.person', output)
 
@@ -563,15 +563,15 @@ class TestAppModels(unittest.TestCase):
 
     def test_client_help_describes_op(self):
         output = self._help_output('--op', 'my_app.say_goodbye')
-        self.assertIn('name: my_app.say_goodbye', output)
+        self.assertIn('name:        my_app.say_goodbye', output)
         self.assertIn('description: Say goodbye to a person.', output)
         self.assertIn("name: (str) default='World' :: The name to bid farewell.", output)
         self.assertIn('say_goodbye.return: (str) :: A farewell message.', output)
 
     def test_client_help_describes_model(self):
         output = self._help_output('--model', 'my_app.person')
-        self.assertIn('name: my_app.person', output)
-        self.assertIn('age: (int)', output)
+        self.assertIn('name:        my_app.person', output)
+        self.assertIn('age:  (int)', output)
 
     def test_client_help_unknown_op_or_missing_value(self):
         with self.assertRaisesRegex(LingoSyntaxError, "op not found in app spec: 'my_app.nope'"):

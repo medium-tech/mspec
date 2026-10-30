@@ -27,9 +27,13 @@ def run_exe_with_python(script_path: Path, params: dict, **kwargs) -> AdapterRes
     verbose_flag = ['-v'] if kwargs.get('verbose', False) else []
 
     param_args = []
+    has_params = False
     for field_name, value in params.items():
-        flag = f'--{field_name.replace("_", "-")}'
-        param_args.extend([flag, _param_value_to_cli_str(value)])
+        flag = f'{field_name}=' + _param_value_to_cli_str(value)
+        param_args.append(flag)
+        has_params = True
+    if has_params:
+        param_args = ['--params'] + param_args
 
     cmd = [sys.executable, '-m', 'lingolib'] + verbose_flag + ['exe', str(script_path)] + param_args
     
