@@ -10,7 +10,12 @@ modules:
             fields:
                 status:
                     define: str
-                    default: 'initial'  # can be: initial, loading, success, error
+                    default: 'initial'
+                    enum: 
+                    - initial
+                    - loading
+                    - success
+                    - error
                 
                 enabled:
                     define: bool
@@ -30,8 +35,13 @@ modules:
             fields:
                 status:
                     define: str
-                    default: 'initial'  # can be: initial, loading, success, error
-                    
+                    default: 'initial'
+                    enum:
+                    - initial
+                    - loading
+                    - success
+                    - error
+
                 offset:
                     define: int
                     default: 0
