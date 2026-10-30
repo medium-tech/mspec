@@ -1,0 +1,63 @@
+lingo:
+    spec: 'gui'
+    version: '0.1.0b'
+
+meta:
+    description: 'Demo feature of GUI state'
+
+params: {}
+
+state:
+    color:
+        define: str
+        default: 'red'
+        enum:
+          - red
+          - green
+          - blue
+    
+    friend:
+        define: 'hello_ns.person'
+        default:
+            type: struct
+            value:
+                name: 'John'
+                age: 30
+
+    list_of_friends:
+        define: list
+        element_type: 'struct'
+        fields: 'hello_ns.person'
+        default: 
+          - type: struct
+            value:
+                name: 'Alice'
+                age: 25
+          - type: struct
+            value:
+                name: 'Bob'
+                age: 28
+
+block:
+    - heading: 'State Demo'
+    - 'color: '
+    - text:
+        get: state.color
+    - "friend's name: "
+    - text:
+        get: state.friend.name
+    - 'total friends: '
+    - text:
+        len:
+            get: state.list_of_friends
+    - type: list
+      element_type: 'struct'
+      display:
+        format: table
+        headers:
+            - text: Name
+              field: name
+            - text: Age
+              field: age
+      value: 
+        get: state.list_of_friends
